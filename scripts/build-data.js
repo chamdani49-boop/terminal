@@ -1,18 +1,20 @@
 /**
- * /api/data — Vercel Serverless Function
- * Fetches 2 published Google Sheets (price history + analyst consensus),
- * computes derived statistics, returns JSON in the same shape as the legacy
- * data.json so the existing frontend works without modification.
+ * scripts/build-data.js — build-time data pipeline.
  *
- * Required env vars:
+ * Run from GitHub Actions cron (or locally) to fetch both Google Sheets,
+ * compute derived stats, and write public/data.json. The frontend serves
+ * that JSON as a static asset — no serverless function on the request path.
+ *
+ * Required env (set as GitHub Secrets, or in .env.local for dev):
  *   HISTORY_SHEET_ID, HISTORY_GID
  *   CONSENSUS_SHEET_ID, CONSENSUS_GID
- * Optional:
- *   CACHE_SECONDS (default 300)
+ *
+ * Usage:
+ *   node scripts/build-data.js
  */
 
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
 // ─────────────────────────────────────────────
 // CSV utilities
@@ -62,23 +64,19 @@ const toNum = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 
-/** Parse "5/31/2016", "31/5/2016", "2016-05-31", "May-16", … into a Date. */
+/** Parse "5/31/2016", "31/5/2016", "2016-05-31", … into a Date. */
 function parseDate(s) {
   if (s == null) return null;
   s = String(s).trim();
   if (!s) return null;
 
-  // Native parser handles ISO and many formatted strings.
   let d = new Date(s);
   if (!isNaN(d)) return d;
 
-  // M/D/YYYY or D/M/YYYY (slashes or dashes), with 2- or 4-digit year.
   const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
   if (m) {
     let [, a, b, y] = m;
     if (y.length === 2) y = (parseInt(y, 10) > 50 ? '19' : '20') + y;
-    // Heuristic: if 'a' > 12 it must be the day → D/M/Y;
-    // otherwise prefer M/D/Y (matches US-style locale that Sheets typically emits).
     if (parseInt(a, 10) > 12) {
       d = new Date(`${y}-${b.padStart(2, '0')}-${a.padStart(2, '0')}T00:00:00Z`);
     } else {
@@ -93,34 +91,22 @@ function parseDate(s) {
 // Sheet → Domain transforms
 // ─────────────────────────────────────────────
 
-/**
- * HISTORY sheet — handles the "Bulanz" GoogleFinance layout:
- *   Row 1: IDX:Bulanz | (blank) | IDX:COMPOSITE | IDX:AALI | …      (formula refs)
- *   Row 2: (blank)    | (blank) | COMPOSITE     | 1        | …      (metadata)
- *   Row 3: Bulanz     | Bulanz  | IHSG          | AALI     | …      ← HEADER
- *   Row 4: 5/31/2016  | May-16  | 4797          | 13483    | …      ← DATA
- *
- * Auto-detects the header row by looking for "IHSG"; falls back to row 3.
- * Col 0 is treated as full date, col 1 as label (auto-fills if missing).
- */
+/** History sheet (Bulanz / GoogleFinance layout). */
 function parseHistory(csv) {
   const rows = parseCsv(csv);
   if (rows.length < 2) return [];
 
-  // Find header row: contains a cell exactly equal to "IHSG".
   let headerIdx = rows.findIndex(r =>
     r.some(c => (c || '').trim().toUpperCase() === 'IHSG')
   );
-  if (headerIdx < 0) headerIdx = Math.min(2, rows.length - 1); // Bulanz default
+  if (headerIdx < 0) headerIdx = Math.min(2, rows.length - 1);
 
   const header = rows[headerIdx].map(h => (h || '').trim());
   const lc = header.map(h => h.toLowerCase());
 
-  // Prefer explicit "date"/"label" headers if present.
   let idxDate  = lc.findIndex(h => h === 'date' || h === 'tanggal');
   let idxLabel = lc.findIndex(h => h === 'label');
 
-  // Otherwise auto-detect from the first data row.
   if (idxDate < 0 || idxLabel < 0) {
     const first = rows[headerIdx + 1] || [];
     if (idxDate < 0) {
@@ -134,12 +120,10 @@ function parseHistory(csv) {
         if (/^[A-Za-z]{3}[\-\s]\d{2,4}$/.test((first[i] || '').trim())) { idxLabel = i; break; }
       }
     }
-    // Final fallback: A=date, B=label.
     if (idxDate < 0)  idxDate  = 0;
     if (idxLabel < 0) idxLabel = idxDate === 0 ? 1 : 0;
   }
 
-  // Anything else with a non-empty header is a ticker.
   const tickerCols = header
     .map((h, i) => ({ name: h.toUpperCase(), i }))
     .filter(c => c.i !== idxDate && c.i !== idxLabel && c.name !== '');
@@ -179,28 +163,16 @@ function parseHistory(csv) {
   return out;
 }
 
-/**
- * CONSENSUS sheet — handles the layout shown in screenshot:
- *   Row 1: "Pesan di dashboard" banner (merged)
- *   Row 2: 1 | 2 | _ | 3 | header
- *   Row 3: Symbol | By | _ | Lynk.id/economstock | Hitung Nilai Wajar | _ | _ | _ | 0
- *   Row 4: Symbol | # | DATE | FIRM NAME | [] | T.PRICE | DISC | %D | T.PRICE   ← HEADER
- *   Row 5+: LPPF | 1 | 2026-02-18 | Sinarmas Sekuritas | B | 2,050 | 2,050 | 0 | 2,050
- *
- * Suggestion is encoded as 1-letter code (B/N/S). pct_d in the sheet is unreliable
- * (DISC == T.PRICE in many rows) so we always recompute from latest price.
- * Only the FIRST T.PRICE column is used; the duplicate is ignored.
- */
+/** Consensus sheet. Decodes B/N/S codes; recomputes pct_d. */
 function parseConsensus(csv, latestPrices) {
   const rows = parseCsv(csv);
   if (rows.length < 2) return {};
 
-  // Find header row: looks for "Symbol" + ("DATE" or "FIRM NAME").
   let headerIdx = rows.findIndex(r => {
     const u = r.map(c => (c || '').trim().toUpperCase());
     return u.includes('SYMBOL') && (u.includes('DATE') || u.some(c => c.includes('FIRM')));
   });
-  if (headerIdx < 0) headerIdx = Math.min(3, rows.length - 1); // Bulanz default
+  if (headerIdx < 0) headerIdx = Math.min(3, rows.length - 1);
 
   const header = rows[headerIdx].map(h => (h || '').trim().toLowerCase());
 
@@ -239,7 +211,6 @@ function parseConsensus(csv, latestPrices) {
     const target = iTgt >= 0 ? toNum(row[iTgt]) : null;
     const last = latestPrices[t];
     let pct = iPct >= 0 ? toNum(row[iPct]) : null;
-    // The user's sheet has DISC == T.PRICE so %D ends up 0 — recompute when that happens.
     if ((pct == null || pct === 0) && target != null && last) {
       pct = ((target - last) / last) * 100;
     }
@@ -247,7 +218,6 @@ function parseConsensus(csv, latestPrices) {
     let dateRaw = iDate >= 0 ? (row[iDate] || '').trim() : '';
     const dParsed = parseDate(dateRaw);
     if (dParsed) {
-      // Normalise display to YYYY-MM-DD.
       dateRaw = `${dParsed.getUTCFullYear()}-${String(dParsed.getUTCMonth()+1).padStart(2,'0')}-${String(dParsed.getUTCDate()).padStart(2,'0')}`;
     }
 
@@ -272,7 +242,6 @@ function parseConsensus(csv, latestPrices) {
 // Derived metrics
 // ─────────────────────────────────────────────
 function lastFinite(arr) { for (let i = arr.length - 1; i >= 0; i--) if (Number.isFinite(arr[i])) return { v: arr[i], i }; return { v: null, i: -1 }; }
-
 function pctChange(a, b) { return (Number.isFinite(a) && Number.isFinite(b) && b !== 0) ? (a - b) / b : null; }
 
 function computeStats(history) {
@@ -286,7 +255,7 @@ function computeStats(history) {
     const { v: cur, i: iCur } = lastFinite(series);
     if (cur == null) continue;
 
-    const prev = iCur > 0 ? series[iCur - 1] : null;          // mom
+    const prev = iCur > 0 ? series[iCur - 1] : null;
     const ytdStart = (() => {
       const yr = (history[iCur].date || '').slice(0, 4);
       for (let i = 0; i <= iCur; i++) if ((history[i].date || '').startsWith(yr)) return series[i];
@@ -308,7 +277,6 @@ function computeStats(history) {
     const mean = monthlyReturns.length ? monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length : 0;
     const variance = monthlyReturns.length ? monthlyReturns.reduce((a, b) => a + (b - mean) ** 2, 0) / monthlyReturns.length : 0;
 
-    // Top YoY swings (largest 5 absolute)
     const yoy_large = [];
     for (let i = 12; i < series.length; i++) {
       const r = pctChange(series[i], series[i - 12]);
@@ -406,72 +374,70 @@ function computeConsensusSummary(consensus) {
 }
 
 // ─────────────────────────────────────────────
-// Handler
+// Main
 // ─────────────────────────────────────────────
-let STATIC = null;
-function loadStatic() {
-  if (STATIC) return STATIC;
-  const p = path.join(process.cwd(), 'lib', 'static.json');
-  STATIC = JSON.parse(fs.readFileSync(p, 'utf8'));
-  return STATIC;
+async function main() {
+  const {
+    HISTORY_SHEET_ID, HISTORY_GID = '0',
+    CONSENSUS_SHEET_ID, CONSENSUS_GID = '0',
+  } = process.env;
+
+  if (!HISTORY_SHEET_ID || !CONSENSUS_SHEET_ID) {
+    console.error('FATAL: HISTORY_SHEET_ID and CONSENSUS_SHEET_ID must be set.');
+    console.error('Set them as GitHub Secrets, or in a local .env file.');
+    process.exit(1);
+  }
+
+  console.log('Fetching sheets…');
+  const [historyCsv, consensusCsv] = await Promise.all([
+    fetchCsv(HISTORY_SHEET_ID, HISTORY_GID),
+    fetchCsv(CONSENSUS_SHEET_ID, CONSENSUS_GID),
+  ]);
+
+  console.log('Parsing & computing…');
+  const price_history = parseHistory(historyCsv);
+  const stats = computeStats(price_history);
+  const correlations = computeCorrelations(price_history);
+  const zcores = computeZcores(stats);
+
+  const latest = {};
+  for (const t of Object.keys(stats)) latest[t] = stats[t].current;
+
+  const consensus_slim = parseConsensus(consensusCsv, latest);
+  const consensus_summary = computeConsensusSummary(consensus_slim);
+
+  const staticPath = path.join(__dirname, '..', 'lib', 'static.json');
+  const stat = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+
+  const payload = {
+    price_history,
+    consensus_slim,
+    consensus_summary,
+    stats,
+    correlations,
+    zcores,
+    stock_info: stat.stock_info,
+    stock_list: stat.stock_list,
+    watchlist:  stat.watchlist,
+    _meta: {
+      generated_at: new Date().toISOString(),
+      history_rows: price_history.length,
+      consensus_tickers: Object.keys(consensus_slim).length,
+      tickers_in_history: Object.keys(price_history[0] || {}).filter(k => k !== 'label' && k !== 'date').length,
+    },
+  };
+
+  const outDir = path.join(__dirname, '..', 'public');
+  fs.mkdirSync(outDir, { recursive: true });
+  const outPath = path.join(outDir, 'data.json');
+  fs.writeFileSync(outPath, JSON.stringify(payload));
+
+  const sizeKB = (fs.statSync(outPath).size / 1024).toFixed(1);
+  console.log(`✓ Wrote ${outPath} (${sizeKB} KB)`);
+  console.log(`  ${payload._meta.history_rows} months · ${payload._meta.tickers_in_history} tickers · ${payload._meta.consensus_tickers} consensus tickers`);
 }
 
-module.exports = async (req, res) => {
-  try {
-    const {
-      HISTORY_SHEET_ID, HISTORY_GID = '0',
-      CONSENSUS_SHEET_ID, CONSENSUS_GID = '0',
-      CACHE_SECONDS = '300',
-    } = process.env;
-
-    if (!HISTORY_SHEET_ID || !CONSENSUS_SHEET_ID) {
-      return res.status(500).json({
-        error: 'Missing env vars',
-        detail: 'HISTORY_SHEET_ID and CONSENSUS_SHEET_ID must be set.',
-      });
-    }
-
-    const [historyCsv, consensusCsv] = await Promise.all([
-      fetchCsv(HISTORY_SHEET_ID, HISTORY_GID),
-      fetchCsv(CONSENSUS_SHEET_ID, CONSENSUS_GID),
-    ]);
-
-    const price_history = parseHistory(historyCsv);
-    const stats = computeStats(price_history);
-    const correlations = computeCorrelations(price_history);
-    const zcores = computeZcores(stats);
-
-    // build latest-price map for consensus % computation
-    const latest = {};
-    for (const t of Object.keys(stats)) latest[t] = stats[t].current;
-
-    const consensus_slim = parseConsensus(consensusCsv, latest);
-    const consensus_summary = computeConsensusSummary(consensus_slim);
-
-    const stat = loadStatic();
-
-    const payload = {
-      price_history,
-      consensus_slim,
-      consensus_summary,
-      stats,
-      correlations,
-      zcores,
-      stock_info: stat.stock_info,
-      stock_list: stat.stock_list,
-      watchlist:  stat.watchlist,
-      _meta: {
-        generated_at: new Date().toISOString(),
-        history_rows: price_history.length,
-        consensus_tickers: Object.keys(consensus_slim).length,
-      },
-    };
-
-    const cache = parseInt(CACHE_SECONDS, 10) || 300;
-    res.setHeader('Cache-Control', `public, s-maxage=${cache}, stale-while-revalidate=${cache * 2}`);
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.status(200).send(JSON.stringify(payload));
-  } catch (err) {
-    res.status(500).json({ error: 'data_pipeline_failed', message: err.message });
-  }
-};
+main().catch((err) => {
+  console.error('Build failed:', err);
+  process.exit(1);
+});

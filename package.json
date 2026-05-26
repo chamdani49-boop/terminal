@@ -1,14 +1,13 @@
 {
   "name": "terminal",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Economstock Terminal — dashboard saham IDX dengan data realtime dari Google Sheets, deploy di Vercel.",
+  "description": "Economstock Terminal — dashboard saham IDX. Data dibangun dari 2 Google Sheet via GitHub Actions cron, di-host statis di Cloudflare Pages.",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'static site, no build step'",
-    "start": "vercel dev"
+    "refresh": "node scripts/build-data.js",
+    "dev": "npx serve public"
   }
 }
