@@ -1,6 +1,6 @@
 # Economstock Terminal
 
-Dashboard saham IDX dengan data dari **2 Google Sheets**, di-build setiap 15 menit oleh GitHub Actions, di-host gratis & global di **Cloudflare Pages**.
+Dashboard saham IDX dengan data dari **2-3 Google Sheets**, di-build setiap 15 menit oleh GitHub Actions, di-host gratis & global di **Cloudflare Pages**.
 
 UI lanjutan dari [`dashboardeconomstock`](https://github.com/chamdani49-boop/dashboardeconomstock). Tema selaras [`rupiah-monitor`](https://github.com/chamdani49-boop/rupiah-monitor).
 
@@ -13,14 +13,16 @@ UI lanjutan dari [`dashboardeconomstock`](https://github.com/chamdani49-boop/das
 │  Google Sheet HISTORI   │
 │  (Bulanz/GoogleFinance) │ ──┐
 └─────────────────────────┘   │
-                              ├─►┌──────────────────┐  push  ┌────────────────┐
-┌─────────────────────────┐   │  │  GitHub Actions  │ ──────►│ Cloudflare     │
-│  Google Sheet KONSENSUS │ ──┘  │  cron */15 menit │        │ Pages (CDN)    │──► User
-└─────────────────────────┘      │                  │        │  /index.html   │
-                                 │  scripts/        │        │  /data.json    │
-                                 │  build-data.js   │        └────────────────┘
-                                 └──────────────────┘                ▲
-                                                                     │
+                              │
+┌─────────────────────────┐   │
+│  Google Sheet KONSENSUS │ ──┼─►┌──────────────────┐  push  ┌────────────────┐
+└─────────────────────────┘   │  │  GitHub Actions  │ ──────►│ Cloudflare     │
+                              │  │  cron */15 menit │        │ Pages (CDN)    │──► User
+┌─────────────────────────┐   │  │                  │        │  /index.html   │
+│  Google Sheet LIVE      │ ──┘  │  scripts/        │        │  /data.json    │
+│  (3 kolom: ticker,      │      │  build-data.js   │        └────────────────┘
+│   harga live, % live)   │      └──────────────────┘                ▲
+└─────────────────────────┘                                          │
                                                               CDN edge: Jakarta
                                                               cache: 2 menit
                                                               user request: 30-80ms
@@ -60,9 +62,9 @@ terminal/
 ## Setup Step-by-Step
 
 > **Yang sudah selesai:** Repo `terminal` sudah dibuat, kode sudah di-push.
-> **Yang tinggal kamu lakukan:** publish 2 sheet (5 menit), connect ke Cloudflare (5 menit), set secrets di GitHub (3 menit). Total **~13 menit**.
+> **Yang tinggal kamu lakukan:** publish 2-3 sheet (5-7 menit), connect ke Cloudflare (5 menit), set secrets di GitHub (3-5 menit). Total **~13-15 menit**.
 
-### Fase 1 — Publish 2 Google Sheet
+### Fase 1 — Publish Google Sheet (Histori & Konsensus)
 
 Untuk **masing-masing** sheet (Histori Harga & Konsensus):
 
@@ -83,21 +85,60 @@ Untuk **masing-masing** sheet (Histori Harga & Konsensus):
 
 > **Tidak perlu edit isi sheet** — parser sudah handle layout Bulanz + banner "Pesan di dashboard" + kode B/N/S.
 
+### Fase 1B — Publish Sheet LIVE (Realtime, Opsional Tapi Recommended)
+
+Sheet ke-3 ini yang bikin angka harga di hero card / watchlist / price target jadi **realtime** (update tiap workflow run). Layout-nya jauh lebih sederhana — cukup 3 kolom:
+
+| Ticker | Harga Live | % Live |
+|---|---:|---:|
+| TLKM | 5775 | -3.35% |
+| BBCA | 9500 | 1.20% |
+| AALI | 7000 | -0.50% |
+
+**Aturan kolom:**
+- **Ticker** — kode saham (boleh `TLKM` atau `IDX:TLKM`; prefix `IDX:`/`JK:` di-strip otomatis). Untuk indeks, pakai `IHSG`, `JKSE`, atau `COMPOSITE` — semua di-alias jadi `IHSG`.
+- **Harga Live** — angka, biasanya formula `=GOOGLEFINANCE("IDX:TLKM","price")`.
+- **% Live** — perubahan persentase. Format apa pun jalan: `-3.35%`, `-3.35`, atau `-0.0335`. Parser otomatis deteksi.
+
+**Header alternatif yang juga ke-detect:** `Symbol`/`Kode`/`Saham`/`Code` (ticker), `Price`/`Last`/`Last Price`/`Harga Terakhir` (harga), `Change`/`Pct`/`% Change`/`Persen` (persentase).
+
+**Cara publish:**
+
+1. Bikin tab baru di Google Sheet (boleh di sheet yang sama dengan histori, atau sheet terpisah)
+2. Isi 3 kolom di atas. Untuk auto-update, pakai formula GoogleFinance:
+   ```
+   A1: Ticker            B1: Harga Live                              C1: % Live
+   A2: TLKM              B2: =GOOGLEFINANCE("IDX:TLKM","price")      C2: =GOOGLEFINANCE("IDX:TLKM","changepct")
+   A3: BBCA              B3: =GOOGLEFINANCE("IDX:BBCA","price")      C3: =GOOGLEFINANCE("IDX:BBCA","changepct")
+   ...
+   ```
+3. **File → Share → Publish to web** → format **CSV** → **Publish**
+4. Catat `LIVE_SHEET_ID` & `LIVE_GID` dari URL editor
+
+> **Catatan tentang "% Live":**
+> - Kalau pakai `GOOGLEFINANCE(...,"changepct")`, hasilnya = persentase intra-day (vs harga close kemarin), bukan vs awal bulan. Itu yang akan ditampilkan di label "% MoM" di dashboard.
+> - Kalau mau pakai MoM proper, isi formula sendiri: `=B2/INDEX(HistoriSheet!B:B, ROW_BULAN_LALU) - 1`. Format apa pun (`%` / desimal / fraksi) akan di-handle parser.
+> - Kalau kolom **% Live** dikosongin, builder otomatis hitung MoM = `(harga_live − harga_bulan_sebelumnya) / harga_bulan_sebelumnya` dari sheet histori.
+
 ### Fase 2 — Set GitHub Repository Secrets
 
 1. Buka [github.com/chamdani49-boop/terminal/settings/secrets/actions](https://github.com/chamdani49-boop/terminal/settings/secrets/actions)
-2. Klik **New repository secret** → tambah satu per satu (4 secrets):
+2. Klik **New repository secret** → tambah satu per satu:
 
-   | Name | Value |
-   |---|---|
-   | `HISTORY_SHEET_ID` | (dari Fase 1) |
-   | `HISTORY_GID` | (dari Fase 1, biasanya `0`) |
-   | `CONSENSUS_SHEET_ID` | (dari Fase 1) |
-   | `CONSENSUS_GID` | (dari Fase 1) |
+   | Name | Value | Wajib? |
+   |---|---|---|
+   | `HISTORY_SHEET_ID` | (dari Fase 1) | ✅ |
+   | `HISTORY_GID` | (dari Fase 1, biasanya `0`) | ✅ |
+   | `CONSENSUS_SHEET_ID` | (dari Fase 1) | ✅ |
+   | `CONSENSUS_GID` | (dari Fase 1) | ✅ |
+   | `LIVE_SHEET_ID` | (dari Fase 1B) | Opsional |
+   | `LIVE_GID` | (dari Fase 1B) | Opsional |
+
+   Kalau `LIVE_SHEET_ID` dikosongin, dashboard tetap jalan — angka harga diambil dari row terakhir sheet histori. Tambah sheet live kalau mau angka realtime.
 
 3. Tes manual: buka [Actions → Refresh data from Google Sheets](https://github.com/chamdani49-boop/terminal/actions/workflows/refresh-data.yml) → **Run workflow** → **Run workflow** (warna hijau).
 4. Tunggu ~30 detik. Workflow harus selesai dengan tanda ✓ hijau.
-5. Cek [public/data.json](https://github.com/chamdani49-boop/terminal/blob/main/public/data.json) — harusnya ada commit baru dari `data-refresh[bot]`.
+5. Cek [public/data.json](https://github.com/chamdani49-boop/terminal/blob/main/public/data.json) — harusnya ada commit baru dari `data-refresh[bot]`. Cari field `"live": {...}` & `"_meta.live_tickers"` untuk verifikasi sheet live ke-baca.
 
 ### Fase 3 — Daftar & Connect Cloudflare Pages
 
@@ -215,6 +256,30 @@ Row 5: LPPF | 1 | 2026-02-18 | Sinarmas Sekuritas | B | 2,050 | 2,050 | 0 | 2,05
 - `T.PRICE` pertama dipakai (yang kedua di-ignore)
 - `%D` selalu di-recompute server-side dari target vs harga terakhir IHSG month
 
+### Live Realtime (Opsional)
+
+```
+Row 1: Ticker   | Harga Live                              | % Live
+Row 2: TLKM     | =GOOGLEFINANCE("IDX:TLKM","price")      | =GOOGLEFINANCE("IDX:TLKM","changepct")
+Row 3: BBCA     | =GOOGLEFINANCE("IDX:BBCA","price")      | =GOOGLEFINANCE("IDX:BBCA","changepct")
+```
+
+- Cuma 3 kolom yang dibaca: ticker, harga, %change. Kolom lain di sheet di-ignore.
+- Header alternatif: `Symbol`/`Kode`/`Saham`/`Code`, `Price`/`Last`/`Last Price`, `Change`/`Pct`/`% Change`/`Persen`.
+- Format `% Live` fleksibel: `-3.35%`, `-3.35`, atau `-0.0335` semua jalan.
+- Ticker boleh pakai prefix `IDX:` / `JK:` (di-strip otomatis).
+- `IHSG` / `JKSE` / `COMPOSITE` saling di-alias ke `IHSG`.
+
+**Apa yang di-overwrite di dashboard:**
+- `price_history[bulan_terakhir][TICKER]` → harga live
+- `stats[TICKER].current` → harga live
+- `stats[TICKER].mom` → `% Live` (kalau ada di sheet, kalau gak ada di-recompute dari harga bulan sebelumnya)
+- `stats[TICKER].max` / `min` → refresh kalau live break extreme historis
+- `zcores[TICKER]` → recompute pakai MoM live
+- `consensus_slim[TICKER][*].pct_d` → upside % analis di-recompute pakai harga live
+
+Hasilnya: hero card, watchlist sidebar, chart linechart (titik bulan terakhir), price target blueprint, donut consensus, dan tabel rekomendasi analis — **semua otomatis sinkron** ke harga live tanpa edit kode.
+
 ---
 
 ## Troubleshooting
@@ -227,6 +292,8 @@ Row 5: LPPF | 1 | 2026-02-18 | Sinarmas Sekuritas | B | 2,050 | 2,050 | 0 | 2,05
 | Cloudflare Pages tidak auto-deploy | Cek di Cloudflare → projectmu → Deployments — biasanya tertunda 1-2 menit | Sabar, atau klik **Retry deployment** |
 | Dashboard tampil tapi angka aneh | Header sheet kamu beda dari yang documented | Issue di repo dengan screenshot — aku adjust parser |
 | Update sheet nggak nongol di dashboard | Cache edge masih hangat (max 2 menit untuk data.json) | Tunggu, atau hard-reload (Ctrl+Shift+R) |
+| Sheet live di-set tapi angka di hero gak berubah | Header kolom gak ke-detect; cek log workflow | Cek `_meta._debug.live_cols` di `data.json`. iTicker/iPrice harus ≥0 |
+| Angka `% Live` ke-render salah (mis. -335% padahal -3.35%) | Format kolom ambigu (heuristik salah tebak) | Tambah tanda `%` di sheet (`-3.35%` jelas), atau pakai fraksi `-0.0335` |
 
 ---
 
