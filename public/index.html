@@ -692,11 +692,12 @@ let savingChartInstance = null;
 
 async function loadData() {
   try {
-    const res = await fetch('/api/data');
+    // Small cache-bust so a hard reload always sees the latest deploy.
+    const res = await fetch('data.json?v=' + Math.floor(Date.now() / 60000));
     DATA = await res.json();
     init();
   } catch(e) {
-    document.querySelector('.loading').innerHTML = '⚠️ Gagal memuat data. Cek konfigurasi env Google Sheets di Vercel.';
+    document.querySelector('.loading').innerHTML = '⚠️ Gagal memuat data. Cek apakah workflow "Refresh data" sudah pernah jalan dan menghasilkan public/data.json.';
   }
 }
 

@@ -1,0 +1,12 @@
+# Cloudflare Pages headers config (Netlify-compatible syntax).
+# Cache the data file briefly at the edge — when the workflow pushes a new
+# version, the URL is the same so we rely on a short TTL + revalidation.
+/data.json
+  Cache-Control: public, max-age=120, s-maxage=120, stale-while-revalidate=600
+
+# Static assets (the HTML shell) can be cached longer; HTML revalidates
+# instantly via Pages' atomic deploys.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

@@ -1,0 +1,50 @@
+name: Refresh data from Google Sheets
+
+on:
+  schedule:
+    # Every 15 minutes. Adjust if you want faster/slower refreshes.
+    # GitHub Actions cron minimum is 5 minutes (and they may queue under load).
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    # Allows manual "Run workflow" button in the Actions tab.
+
+# Grant the GITHUB_TOKEN write permission so the workflow can push commits.
+permissions:
+  contents: write
+
+# Prevent overlapping runs (slow runs would otherwise pile up).
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build data.json from Google Sheets
+        env:
+          HISTORY_SHEET_ID:   ${{ secrets.HISTORY_SHEET_ID }}
+          HISTORY_GID:        ${{ secrets.HISTORY_GID }}
+          CONSENSUS_SHEET_ID: ${{ secrets.CONSENSUS_SHEET_ID }}
+          CONSENSUS_GID:      ${{ secrets.CONSENSUS_GID }}
+        run: node scripts/build-data.js
+
+      - name: Commit & push if data changed
+        run: |
+          if git diff --quiet -- public/data.json; then
+            echo "No data changes detected — skipping commit."
+            exit 0
+          fi
+          git config user.name  "data-refresh[bot]"
+          git config user.email "data-refresh@economstock.local"
+          git add public/data.json
+          git commit -m "data: refresh $(date -u +%FT%TZ) [skip ci]"
+          git push
