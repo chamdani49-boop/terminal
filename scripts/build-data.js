@@ -79,6 +79,16 @@ function parseDate(s) {
   s = String(s).trim();
   if (!s) return null;
 
+  // Special live keywords: di sheet, baris paling bawah pakai "sekarang"
+  // sebagai marker realtime (formula GoogleFinance harga-bulan-berjalan).
+  // Anggap itu = awal bulan ini.
+  const lower = s.toLowerCase();
+  if (lower === 'sekarang' || lower === 'now' || lower === 'today' ||
+      lower === 'current' || lower === 'live' || lower === 'realtime') {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  }
+
   // Tolak string yang bukan kandidat tanggal sama sekali (cuma huruf, dll)
   if (!/\d/.test(s)) return null;
 
@@ -206,6 +216,22 @@ function parseHistory(csv, debug = {}) {
         idxLabel = i; break;
       }
     }
+  }
+
+  // Special-case Bulanz layout: kolom A pakai header "Bulanz" tapi isinya
+  // PERSIS sama-sama tanggal (bukan label "Mmm-YY"). Setelah heuristik di atas,
+  // idxDate dan idxLabel bisa kolaps ke kolom yg sama. Kalau iya, cari kolom
+  // label terpisah berdasarkan isi baris pertama (pola "Mmm-YY" atau "yyyy-mm").
+  if (idxLabel >= 0 && idxLabel === idxDate && firstDataRow) {
+    let altLabel = -1;
+    for (let i = 0; i < firstDataRow.length; i++) {
+      if (i === idxDate) continue;
+      const v = (firstDataRow[i] || '').trim();
+      if (/^[A-Za-z]{3,9}[-\s\/]\d{2,4}$/.test(v) || /^\d{4}[-\/]\d{1,2}$/.test(v)) {
+        altLabel = i; break;
+      }
+    }
+    idxLabel = altLabel; // kalau gak ketemu, biarin -1 (label dibangun dari date)
   }
 
   if (idxDate < 0) idxDate = 0;

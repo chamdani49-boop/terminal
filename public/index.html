@@ -168,11 +168,15 @@ a{color:inherit;text-decoration:none}
 .page{display:none;padding:18px 20px}
 .page.active{display:block}
 
-/* ── DASHBOARD MAIN ── */
-.dash-grid{display:grid;grid-template-columns:1fr 340px;gap:16px;max-width:1400px;margin:0 auto}
-@media(max-width:1100px){.dash-grid{grid-template-columns:1fr}}
-.left-col{display:flex;flex-direction:column;gap:16px}
-.right-col{display:flex;flex-direction:column;gap:16px}
+/* ── DASHBOARD MAIN ──
+   Pakai 320px sidebar (cukup untuk 3-kolom HIGH/TARGET/LOW di consensus tanpa
+   overflow). Stack ke 1-kolom di ≤1180px supaya right-col gak ngepres
+   left-col di laptop 1366×768 / 13" Mac. Di mobile, urutan di-override
+   pake CSS `order` (lihat bagian responsive di bawah).
+*/
+.dash-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;max-width:1400px;margin:0 auto}
+@media(max-width:1180px){.dash-grid{grid-template-columns:minmax(0,1fr)}}
+.left-col,.right-col{display:flex;flex-direction:column;gap:16px;min-width:0}
 
 /* ── CARDS ── */
 .card{
@@ -181,25 +185,32 @@ a{color:inherit;text-decoration:none}
   border-radius:var(--radius-lg);
   padding:18px;
   box-shadow:var(--shadow-card);
+  /* Lock card so panjang konten gak ngedorong grid keluar viewport. */
+  min-width:0;
+  overflow:hidden;
 }
 [data-theme="dark"] .card{box-shadow:var(--shadow-card),0 0 0 1px var(--border) inset}
 .card-title{
   font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
   color:var(--text);margin-bottom:14px;
+  /* Card title bisa panjang (misal "PRICE TARGET BLUEPRINT · ECONOMSTOCK").
+     Biar gak ngedorong, kasih wrap+balance. */
+  word-break:break-word;line-height:1.35;
 }
 
 /* ── STOCK HEADER ── */
 .stock-hero{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.stock-name-block{min-width:0;flex:1 1 180px}
 .stock-name-block .ticker{
   font-family:'IBM Plex Mono',monospace;
-  font-size:34px;font-weight:700;letter-spacing:1.5px;
+  font-size:34px;font-weight:700;letter-spacing:1.5px;line-height:1;
   background:var(--grad);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.stock-name-block .fullname{font-size:15px;color:var(--text);margin-top:4px;font-weight:700}
+.stock-name-block .fullname{font-size:15px;color:var(--text);margin-top:4px;font-weight:700;overflow:hidden;text-overflow:ellipsis}
 .stock-name-block .meta{font-size:12px;color:var(--text2);margin-top:4px;font-weight:500}
-.price-block{text-align:right}
-.price-block .price{font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.price-block{text-align:right;min-width:0}
+.price-block .price{font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);line-height:1.05}
 .price-block .change{font-size:14px;font-weight:700;margin-top:3px}
 .up{color:var(--green)} .dn{color:var(--red)} .neu{color:var(--text2)}
 .zcore-badge{
@@ -254,22 +265,22 @@ a{color:inherit;text-decoration:none}
 .pt-buy{border:1px solid var(--green);background:var(--green-bg)}
 
 /* ── CONSENSUS ── */
-.consensus-grid{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:center}
+.consensus-grid{display:grid;grid-template-columns:130px minmax(0,1fr);gap:12px;align-items:center}
 @media(max-width:400px){.consensus-grid{grid-template-columns:1fr}}
 .consensus-chart-wrap{position:relative;width:120px;height:120px}
-.consensus-stats{display:flex;flex-direction:column;gap:9px}
-.consensus-row{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+.consensus-stats{display:flex;flex-direction:column;gap:9px;min-width:0}
+.consensus-row{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;flex-wrap:wrap}
 .consensus-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
-.consensus-name{color:var(--text);width:70px;font-weight:700;font-size:12px;letter-spacing:.4px}
-.consensus-count{font-family:'IBM Plex Mono',monospace;font-weight:700;width:30px;font-size:14px}
-.consensus-pct{font-family:'IBM Plex Mono',monospace;color:var(--text2);font-size:12px;font-weight:600}
-.consensus-numbers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
-.cn-box{background:var(--bg2);padding:10px;text-align:center;border-radius:var(--radius)}
+.consensus-name{color:var(--text);width:70px;font-weight:700;font-size:12px;letter-spacing:.4px;flex-shrink:0}
+.consensus-count{font-family:'IBM Plex Mono',monospace;font-weight:700;width:30px;font-size:14px;flex-shrink:0}
+.consensus-pct{font-family:'IBM Plex Mono',monospace;color:var(--text2);font-size:12px;font-weight:600;margin-left:auto}
+.consensus-numbers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+.cn-box{background:var(--bg2);padding:10px 6px;text-align:center;border-radius:var(--radius);min-width:0}
 .cn-label{font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:3px;font-weight:800;letter-spacing:.6px}
-.cn-val{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.cn-val{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
 
 /* ── ANALYST TABLE ── */
-.analyst-table{width:100%;border-collapse:collapse;font-size:13px}
+.analyst-table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
 .analyst-table th{
   background:var(--bg2);color:var(--text);font-weight:800;
   padding:11px 12px;text-align:left;font-size:11px;letter-spacing:.6px;
@@ -281,7 +292,8 @@ a{color:inherit;text-decoration:none}
 .badge-buy{background:var(--green-bg);color:var(--green);border:1px solid rgba(5,150,105,.3)}
 .badge-neutral{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(217,119,6,.3)}
 .badge-sell{background:var(--red-bg);color:var(--red);border:1px solid rgba(225,29,72,.3)}
-.analyst-scroll{max-height:340px;overflow-y:auto;border-radius:var(--radius);border:1px solid var(--border)}
+/* Horizontal scroll buat layar sempit, vertical scroll buat list panjang. */
+.analyst-scroll{max-height:340px;overflow:auto;border-radius:var(--radius);border:1px solid var(--border)}
 
 /* ── TICKER SIDE PANEL ── */
 .ticker-code{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--accent);margin-bottom:3px}
@@ -384,7 +396,27 @@ select.form-control option{background:var(--card);color:var(--text)}
 .footer{padding:22px;text-align:center;font-size:13px;color:var(--text);border-top:1px solid var(--border);margin-top:24px;font-weight:500}
 .footer strong{color:var(--accent);font-weight:700}
 
-/* ── RESPONSIVE OVERRIDES ── */
+/* ── RESPONSIVE OVERRIDES ──
+   Layout reorder di layar sempit:
+   urutan natural DOM (left-col dulu, lalu right-col) mau diubah ke:
+     hero → chart → stats → yoy → price-target → consensus → analyst → watchlist
+   Triknya: di breakpoint sempit, .left-col dan .right-col jadi `display:contents`
+   sehingga semua .card-* jadi anak langsung .dash-grid (yang kita switch ke flex).
+   Lalu tinggal kasih `order` di tiap kartu. Lihat <div class="card card-..."> di HTML.
+*/
+@media(max-width:1180px){
+  .dash-grid{display:flex;flex-direction:column;gap:14px}
+  .left-col,.right-col{display:contents}
+  .card-hero{order:1}
+  .card-chart{order:2}
+  .card-stats{order:3}
+  .card-yoy{order:4}
+  .card-pt{order:5}
+  .card-consensus{order:6}
+  .card-analyst{order:7}     /* ← rekomendasi analis di bawah konsensus analis */
+  .card-watchlist{order:8}
+}
+
 @media(max-width:640px){
   .top-bar{flex-wrap:wrap;height:auto;padding:10px;gap:8px}
   .search-wrap{max-width:100%;order:-1;width:100%}
@@ -393,7 +425,19 @@ select.form-control option{background:var(--card);color:var(--text)}
   .stats-row,.stats-row-ihsg{grid-template-columns:repeat(4,1fr)}
   .pt-grid{grid-template-columns:1fr 1fr}
   .consensus-grid{grid-template-columns:100px 1fr}
-  .page{padding:14px}
+  .page{padding:14px 10px}
+  .card{padding:14px}
+  /* Kecilin hero biar muat di iPhone SE-ish (≤375px). */
+  .stock-name-block .ticker{font-size:28px}
+  .price-block .price{font-size:26px}
+  .pt-box .ptv{font-size:18px}
+  .cn-val{font-size:13px}
+  .card-title{font-size:12px;letter-spacing:1px}
+}
+@media(max-width:380px){
+  .pt-grid{grid-template-columns:1fr}
+  .stock-name-block .ticker{font-size:24px}
+  .price-block .price{font-size:22px}
 }
 
 /* ── LOADING ── */
@@ -464,12 +508,12 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="left-col">
 
       <!-- Stock Hero -->
-      <div class="card" id="stockHero">
+      <div class="card card-hero" id="stockHero">
         <div class="loading"><div class="spinner"></div> Memuat data...</div>
       </div>
 
       <!-- Chart -->
-      <div class="card">
+      <div class="card card-chart">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
           <div class="chart-legend">
             <div class="legend-item"><div class="legend-dot" style="background:#e11d48;height:4px"></div>IHSG</div>
@@ -487,19 +531,19 @@ select.form-control option{background:var(--card);color:var(--text)}
       </div>
 
       <!-- Stats Table -->
-      <div class="card" id="statsCard">
+      <div class="card card-stats" id="statsCard">
         <div class="card-title">Statistik Deskriptif</div>
         <div id="statsContent"><div class="loading"><div class="spinner"></div></div></div>
       </div>
 
       <!-- YoY Analysis -->
-      <div class="card" id="yoyCard">
+      <div class="card card-yoy" id="yoyCard">
         <div class="card-title">YoY Analysis</div>
         <div id="yoyContent"><div class="loading"><div class="spinner"></div></div></div>
       </div>
 
       <!-- Analyst Recommendations Table -->
-      <div class="card">
+      <div class="card card-analyst">
         <div class="card-title" id="analystTitle">Rekomendasi Analis</div>
         <div class="analyst-scroll">
           <table class="analyst-table">
@@ -521,7 +565,7 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="right-col">
 
       <!-- Price Target Blueprint -->
-      <div class="card">
+      <div class="card card-pt">
         <div class="card-title">Price Target Blueprint · Economstock</div>
         <div id="ptContent">
           <div class="loading"><div class="spinner"></div></div>
@@ -529,7 +573,7 @@ select.form-control option{background:var(--card);color:var(--text)}
       </div>
 
       <!-- Consensus Analyst -->
-      <div class="card">
+      <div class="card card-consensus">
         <div class="card-title">Consensus Analyst · <span id="consensusTotal" style="color:var(--text2)">—</span> Analis</div>
         <div id="consensusContent">
           <div class="loading"><div class="spinner"></div></div>
@@ -539,7 +583,7 @@ select.form-control option{background:var(--card);color:var(--text)}
       </div>
 
       <!-- Watchlist -->
-      <div class="card">
+      <div class="card card-watchlist">
         <div class="card-title">Watchlist IDX Terpilih</div>
         <div id="watchlistContent" style="max-height:400px;overflow-y:auto">
           <div class="loading"><div class="spinner"></div></div>
@@ -874,7 +918,7 @@ function renderHero(code) {
         <span class="correl-val ${corr > 0 ? 'up' : 'dn'}">${(corr * 100).toFixed(1)}%</span>
       </div>
       <div class="correl-row">
-        <span class="correl-label">May-26 · Data Bulanan IDX</span>
+        <span class="correl-label">${last.label || 'Bulan ini'} · Data Bulanan IDX</span>
       </div>
     </div>
   `;
@@ -994,7 +1038,7 @@ function renderStats(code) {
   function makeRow(label, s, cls='') {
     return `
       <div class="stat-cell ${cls}" style="text-align:left"><div class="stat-label">${label}</div></div>
-      <div class="stat-cell ${cls}"><div class="stat-label">May-26</div><div class="stat-val">${Math.round(s.current).toLocaleString('id')}</div></div>
+      <div class="stat-cell ${cls}"><div class="stat-label">${last.label || 'Bulan'}</div><div class="stat-val">${Math.round(s.current).toLocaleString('id')}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">MoM</div><div class="stat-val ${s.mom>0?'up':'dn'}">${fmt(s.mom)}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">YTD</div><div class="stat-val ${s.ytd>0?'up':'dn'}">${fmt(s.ytd)}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">YoY</div><div class="stat-val ${s.yoy>0?'up':'dn'}">${fmt(s.yoy)}</div></div>
@@ -1111,19 +1155,20 @@ function renderPriceTarget(code) {
   const pctBuy = (buyTarget - price) / price;
   const pctAvg = (avgTarget - price) / price;
 
-  // Date selector
-  const dates = ph.filter(e => e[code]).slice(-12).map(e => e.date);
-  const lastDate = dates[dates.length-1] || 'May-26';
+  // Tampilin label "May-26" / "Apr-26" dari row terakhir, bukan format ISO
+  // ("2026-04"). Row "sekarang" di sheet → label-nya "May-26", date-nya
+  // awal bulan sekarang. Lihat scripts/build-data.js#parseDate untuk detail.
+  const lastLabel = last.label || (last.date ? last.date.substring(0,7) : '');
 
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
-      <div>
+      <div style="min-width:0;flex:1 1 140px">
         <div class="ticker-code">${code}</div>
-        <div class="ticker-name">${info.name || ''}</div>
+        <div class="ticker-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${info.name || ''}</div>
       </div>
       <div style="text-align:right">
         <div class="ticker-price">${price.toLocaleString('id')}</div>
-        <div style="font-size:12px;color:var(--text2);font-weight:600">${lastDate.substring(0,7)}</div>
+        <div style="font-size:12px;color:var(--text2);font-weight:600">${lastLabel}</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
