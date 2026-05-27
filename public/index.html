@@ -164,6 +164,64 @@ a{color:inherit;text-decoration:none}
 }
 .theme-toggle:hover{color:var(--accent);border-color:var(--accent);transform:rotate(15deg)}
 
+/* ── STOCK TICKER (running sideways, mirror of rupiah-monitor pattern) ── */
+.stock-ticker{
+  position:sticky;top:var(--header-h);z-index:90;
+  background:var(--card);border-bottom:1px solid var(--border);
+  overflow:hidden;
+}
+.stock-ticker::before,.stock-ticker::after{
+  content:"";position:absolute;top:0;bottom:0;width:48px;z-index:2;pointer-events:none;
+}
+.stock-ticker::before{left:0;background:linear-gradient(to right,var(--card),transparent)}
+.stock-ticker::after {right:0;background:linear-gradient(to left, var(--card),transparent)}
+.stock-ticker-track{
+  display:inline-flex;align-items:center;gap:0;
+  padding:7px 0;white-space:nowrap;
+  animation:ticker-scroll 90s linear infinite;
+  will-change:transform;
+}
+.stock-ticker:hover .stock-ticker-track{animation-play-state:paused}
+@keyframes ticker-scroll{
+  from{transform:translate3d(0,0,0)}
+  to  {transform:translate3d(-50%,0,0)}
+}
+.st-item{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:4px 18px;cursor:pointer;
+  border-right:1px solid var(--border2);
+  transition:background-color .15s,transform .15s;
+  user-select:none;
+}
+.st-item:hover{background:var(--bg2)}
+.st-item.active{background:var(--bg2)}
+.st-item.active::before{
+  content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--accent3);box-shadow:0 0 0 3px rgba(219,39,119,.15);
+  margin-right:2px;
+}
+.st-code{
+  font-family:'IBM Plex Mono',monospace;
+  font-weight:700;font-size:13px;letter-spacing:.5px;color:var(--accent);
+}
+.st-price{
+  font-family:'IBM Plex Mono',monospace;
+  font-weight:600;font-size:13px;font-variant-numeric:tabular-nums;color:var(--text);
+}
+.st-chg{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:700;
+}
+@media(max-width:600px){
+  .stock-ticker-track{animation-duration:60s}
+  .st-item{padding:4px 12px;gap:6px}
+  .st-code,.st-price{font-size:12px}
+  .st-chg{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .stock-ticker-track{animation:none}
+}
+
 /* ── PAGES ── */
 .page{display:none;padding:18px 20px}
 .page.active{display:block}
@@ -498,6 +556,11 @@ select.form-control option{background:var(--card);color:var(--text)}
   </nav>
 </header>
 
+<!-- STOCK TICKER (running sideways — click an item to load its detail) -->
+<div class="stock-ticker" id="stockTicker" role="region" aria-label="Harga saham berjalan, klik untuk lihat detail">
+  <div class="stock-ticker-track" id="stockTickerTrack"></div>
+</div>
+
 <!-- ═══════════════════════════════════════════
      PAGE 1: MAIN DASHBOARD
 ═══════════════════════════════════════════ -->
@@ -797,6 +860,7 @@ async function loadData() {
 
 function init() {
   buildWatchlist();
+  buildStockTicker();
   buildSearchIndex();
   buildSavingStockList();
   buildDateOptions();
@@ -853,6 +917,67 @@ function selectStock(code) {
   document.querySelectorAll('.watchlist-item').forEach(el => {
     el.classList.toggle('active', el.dataset.code === code);
   });
+  // Update running ticker active
+  document.querySelectorAll('.st-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.code === code);
+  });
+}
+
+// ═══════════════════════════════════════════
+// STOCK TICKER (running sideways) — click to load detail
+// ═══════════════════════════════════════════
+function buildStockTicker() {
+  const track = document.getElementById('stockTickerTrack');
+  if (!track || !DATA) return;
+
+  const ph = DATA.price_history || [];
+  if (!ph.length) { track.innerHTML = ''; return; }
+  const lastMonth = ph[ph.length - 1] || {};
+  const prevMonth = ph[ph.length - 2] || lastMonth;
+
+  // Source list: watchlist (curated) + setiap ticker yang punya harga live
+  // tapi belum di watchlist (biar overlay live tetap muncul di ticker).
+  const wl = Array.isArray(DATA.watchlist) ? DATA.watchlist.slice() : [];
+  const liveKeys = DATA.live ? Object.keys(DATA.live) : [];
+  const seen = new Set();
+  const codes = [];
+  for (const c of [...wl, ...liveKeys]) {
+    if (!c || seen.has(c)) continue;
+    if (!Number.isFinite(lastMonth[c]) || lastMonth[c] <= 0) continue;
+    seen.add(c);
+    codes.push(c);
+  }
+  if (!codes.length) { track.innerHTML = ''; return; }
+
+  const items = codes.map(code => {
+    const cur = lastMonth[code];
+    const st = (DATA.stats && DATA.stats[code]) || {};
+    // Prefer stats.mom (sudah include %Live overlay kalau ada).
+    let pct = Number.isFinite(st.mom) ? st.mom : null;
+    if (pct == null) {
+      const prev = prevMonth[code];
+      if (Number.isFinite(prev) && prev !== 0) pct = (cur - prev) / prev;
+    }
+    return { code, price: cur, pct };
+  });
+
+  const renderItem = (it) => {
+    const cls   = it.pct == null ? 'neu' : it.pct > 0 ? 'up' : it.pct < 0 ? 'dn' : 'neu';
+    const arrow = it.pct == null ? '·'   : it.pct > 0 ? '▲'  : it.pct < 0 ? '▼'  : '·';
+    const pctStr = it.pct == null ? '—'  : Math.abs(it.pct * 100).toFixed(2) + '%';
+    const activeCls = it.code === currentStock ? ' active' : '';
+    const info = (DATA.stock_info && DATA.stock_info[it.code]) || {};
+    const tip  = `${it.code}${info.name ? ' · ' + info.name : ''} — klik untuk lihat detail`;
+    return `<span class="st-item${activeCls}" data-code="${it.code}" onclick="selectStock('${it.code}')" title="${tip}">
+      <span class="st-code">${it.code}</span>
+      <span class="st-price">${Math.round(it.price).toLocaleString('id')}</span>
+      <span class="st-chg ${cls}">${arrow} ${pctStr}</span>
+    </span>`;
+  };
+
+  // Render dua kali untuk seamless infinite loop (CSS animation -50%).
+  const html = items.map(renderItem).join('');
+  track.innerHTML = html + html;
 }
 
 // ═══════════════════════════════════════════
