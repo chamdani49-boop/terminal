@@ -44,6 +44,9 @@ expect(cleanTickerName('IDX:BBCA'),     'BBCA',     'strip IDX:');
 expect(cleanTickerName('JK:TLKM'),      'TLKM',     'strip JK:');
 expect(cleanTickerName('AALI Close'),   'AALI',     'strip Close suffix');
 expect(cleanTickerName('  ihsg  '),     'IHSG',     'trim+upper');
+expect(cleanTickerName('IDX:COMPOSITE'),'IHSG',     'COMPOSITE → IHSG (alias)');
+expect(cleanTickerName('JKSE'),         'IHSG',     'JKSE → IHSG (alias)');
+expect(cleanTickerName('JCI'),          'IHSG',     'JCI → IHSG (alias)');
 
 // ─── decodeSuggestion ───
 console.log('\n[decodeSuggestion]');
@@ -74,7 +77,7 @@ expect(h1[2].AALI, 13500, 'AALI row 2');
 expect(h1[0].date, '2024-05-01', 'date normalized');
 
 // ─── parseHistory: layout tanpa label "IHSG" (pakai COMPOSITE) ───
-console.log('\n[parseHistory] header pakai COMPOSITE, bukan IHSG');
+console.log('\n[parseHistory] header pakai COMPOSITE → di-alias jadi IHSG');
 const compositeCsv = [
   'Date,COMPOSITE,AALI,BBCA',
   '2024-05-31,7000,13000,9500',
@@ -83,11 +86,11 @@ const compositeCsv = [
 const debug2 = {};
 const h2 = parseHistory(compositeCsv, debug2);
 expect(h2.length, 2, '2 baris (composite layout)');
-expect(h2[0].COMPOSITE, 7000, 'COMPOSITE col');
+expect(h2[0].IHSG, 7000, 'COMPOSITE → IHSG (alias)');
 expect(h2[0].BBCA, 9500, 'BBCA col');
 
 // ─── parseHistory: prefix IDX: di header ticker ───
-console.log('\n[parseHistory] IDX: prefix di header');
+console.log('\n[parseHistory] IDX: prefix di header — JKSE → IHSG');
 const prefCsv = [
   'tanggal,IDX:JKSE,IDX:BBCA,IDX:TLKM',
   '5/31/2024,7000,9500,3500',
@@ -96,7 +99,7 @@ const prefCsv = [
 const debug3 = {};
 const h3 = parseHistory(prefCsv, debug3);
 expect(h3.length, 2, '2 baris (idx-prefix layout)');
-expect(h3[0].JKSE, 7000, 'JKSE setelah strip IDX:');
+expect(h3[0].IHSG, 7000, 'JKSE → IHSG (alias)');
 expect(h3[0].BBCA, 9500, 'BBCA setelah strip IDX:');
 
 // ─── parseConsensus: layout Bulanz (B/N/S codes) ───
