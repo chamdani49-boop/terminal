@@ -709,6 +709,54 @@ select.form-control option{background:var(--card);color:var(--text)}
 
 <script>
 // ═══════════════════════════════════════════
+// DATE HELPERS
+// Format ISO ("2026-05") atau Mmm-YY ("May-26") ke "Mei 2026" (id locale).
+// ═══════════════════════════════════════════
+const MONTH_ID_FULL = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const MONTH_ID_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const MONTH_NAME_TO_INDEX = {
+  jan:0, feb:1, mar:2, apr:3, may:4, mei:4, jun:5, jul:6,
+  aug:7, agu:7, ags:7, sep:8, oct:9, okt:9, nov:10, dec:11, des:11,
+};
+
+/**
+ * Formatter "bulan dan tahun" universal.
+ * Input: salah satu boleh isi.
+ *   - date  : ISO "YYYY-MM-DD" / "YYYY-MM"
+ *   - label : "May-26" / "Mei-26" / "May 2026" (Mmm-YY[YY])
+ * Output (default style="long"): "Mei 2026"
+ *         (style="short"):       "Mei 26"
+ */
+function formatMonthYear(label, date, style = 'long') {
+  let m = -1, y = -1;
+  if (date && /^\d{4}/.test(date)) {
+    const parts = String(date).split('-');
+    if (parts.length >= 2) {
+      const yy = parseInt(parts[0], 10);
+      const mm = parseInt(parts[1], 10);
+      if (Number.isInteger(yy) && Number.isInteger(mm) && mm >= 1 && mm <= 12) {
+        y = yy; m = mm - 1;
+      }
+    }
+  }
+  if (m < 0 && label) {
+    const mt = String(label).match(/^([A-Za-z]{3,9})[-\s\/](\d{2,4})$/);
+    if (mt) {
+      const mi = MONTH_NAME_TO_INDEX[mt[1].slice(0,3).toLowerCase()];
+      if (mi != null) {
+        m = mi;
+        let yy = parseInt(mt[2], 10);
+        if (yy < 100) yy = yy > 50 ? 1900 + yy : 2000 + yy;
+        y = yy;
+      }
+    }
+  }
+  if (m < 0) return label || '';
+  if (style === 'short') return `${MONTH_ID_SHORT[m]} ${String(y).slice(-2)}`;
+  return `${MONTH_ID_FULL[m]} ${y}`;
+}
+
+// ═══════════════════════════════════════════
 // THEME-AWARE CHART COLORS
 // Mirrors lib/chart-theme.ts in rupiah-monitor.
 // ═══════════════════════════════════════════
@@ -918,7 +966,7 @@ function renderHero(code) {
         <span class="correl-val ${corr > 0 ? 'up' : 'dn'}">${(corr * 100).toFixed(1)}%</span>
       </div>
       <div class="correl-row">
-        <span class="correl-label">${last.label || 'Bulan ini'} · Data Bulanan IDX</span>
+        <span class="correl-label">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'} · Data Bulanan IDX</span>
       </div>
     </div>
   `;
@@ -1155,10 +1203,11 @@ function renderPriceTarget(code) {
   const pctBuy = (buyTarget - price) / price;
   const pctAvg = (avgTarget - price) / price;
 
-  // Tampilin label "May-26" / "Apr-26" dari row terakhir, bukan format ISO
-  // ("2026-04"). Row "sekarang" di sheet → label-nya "May-26", date-nya
-  // awal bulan sekarang. Lihat scripts/build-data.js#parseDate untuk detail.
-  const lastLabel = last.label || (last.date ? last.date.substring(0,7) : '');
+  // Tampilin label "Mei 2026" — bulan + tahun (style id locale). Robust ke
+  // semua format input: kalau row pakai label "May-26" diparsed; kalau row
+  // "sekarang" yang label-nya kosong, fallback ke last.date ("2026-05-01").
+  // Lihat formatMonthYear() di atas.
+  const lastLabel = formatMonthYear(last.label, last.date, 'long');
 
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">

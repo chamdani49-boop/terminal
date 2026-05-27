@@ -1,12 +1,20 @@
 /**
  * scripts/build-data.js — build-time data pipeline.
  *
- * Fetches Google Sheets (history harga + konsensus analis), parses & enriches,
- * tulis hasilnya ke public/data.json. Frontend serve sebagai static asset.
+ * Fetches Google Sheets (history harga + konsensus analis + live realtime),
+ * parses & enriches, tulis hasilnya ke public/data.json. Frontend serve
+ * sebagai static asset.
  *
  * Required env (GitHub Secrets atau .env lokal):
  *   HISTORY_SHEET_ID, HISTORY_GID
  *   CONSENSUS_SHEET_ID, CONSENSUS_GID
+ *
+ * Optional env (live overlay):
+ *   LIVE_SHEET_ID, LIVE_GID
+ *   - Sheet dengan 3 kolom: Ticker | Harga Live | % Live
+ *   - Kalau di-set, baris terakhir price_history & stats[*].current/mom
+ *     di-overwrite pakai data live ini. Otomatis nyambung ke chart, hero,
+ *     watchlist, price target blueprint, z-core, dan analyst upside %.
  *
  * Usage:
  *   node scripts/build-data.js
@@ -516,6 +524,179 @@ function parseConsensus(csv, latestPrices, debug = {}) {
 }
 
 // ─────────────────────────────────────────────
+// Live realtime sheet parser
+// Layout sangat sederhana — 3 kolom:
+//   Ticker | Harga Live | % Live
+// (header bisa juga: Symbol/Kode/Saham, Price/Last, Change/Pct, dst.)
+// ─────────────────────────────────────────────
+function parseLive(csv, debug = {}) {
+  const rows = parseCsv(csv);
+  if (rows.length < 2) {
+    debug.live_warning = 'Live sheet has < 2 rows';
+    return {};
+  }
+
+  // Cari header row: harus punya kolom yang nyerempet ticker/symbol DAN
+  // kolom yang nyerempet price/harga/live.
+  let headerIdx = -1;
+  const limit = Math.min(rows.length, 10);
+  for (let i = 0; i < limit; i++) {
+    const r = rows[i].map(c => norm(c));
+    const hasTicker = r.some(x =>
+      x === 'ticker' || x === 'symbol' || x === 'kode' || x === 'saham' || x === 'code' ||
+      x.includes('ticker') || x.includes('symbol') || x.includes('kodesaham')
+    );
+    const hasPrice = r.some(x =>
+      x === 'live' || x === 'price' || x === 'harga' || x === 'last' ||
+      x.includes('hargalive') || x.includes('pricelive') || x.includes('lastprice') ||
+      x.includes('hargaterakhir') || x.includes('hargasaat')
+    );
+    if (hasTicker && hasPrice) { headerIdx = i; break; }
+  }
+  if (headerIdx < 0) headerIdx = 0;
+
+  const rawHeader = rows[headerIdx];
+  const header = rawHeader.map(c => norm(c));
+  debug.live_header_idx = headerIdx;
+  debug.live_header_sample = rawHeader;
+
+  const findFz = (...names) => {
+    for (const n of names) {
+      const nn = norm(n);
+      if (!nn) continue;
+      const i = header.indexOf(nn);
+      if (i >= 0) return i;
+    }
+    for (const n of names) {
+      const nn = norm(n);
+      if (!nn) continue;
+      const i = header.findIndex(h => h && h.includes(nn));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+
+  const iTicker = findFz('ticker', 'symbol', 'kode', 'kodesaham', 'saham', 'code');
+  // "live" alone bisa nyamain header "% Live"; taro paling akhir.
+  const iPrice  = findFz('hargalive', 'pricelive', 'lastprice', 'hargaterakhir', 'harga', 'price', 'last', 'live');
+  let iPct      = findFz('pctlive', 'percentlive', 'persenlive', 'changepct', 'pctchange', 'pct', 'percent', 'persen', 'change', 'persentase');
+
+  // Special-case: header yang dimulai/berisi karakter "%" (mis. "% Live",
+  // "%Change") — `norm()` gak strip "%", jadi findFz biasa gak nyamperin.
+  // Cari di rawHeader langsung sebagai fallback.
+  if (iPct < 0) {
+    for (let i = 0; i < rawHeader.length; i++) {
+      if (i === iTicker || i === iPrice) continue;
+      const v = String(rawHeader[i] || '').trim();
+      if (v.includes('%')) { iPct = i; break; }
+    }
+  }
+
+  debug.live_cols = { iTicker, iPrice, iPct };
+
+  if (iTicker < 0 || iPrice < 0) {
+    debug.live_warning = 'Could not locate ticker or price column in live sheet';
+    return {};
+  }
+
+  const out = {};
+  for (let r = headerIdx + 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row) continue;
+
+    const t = cleanTickerName(row[iTicker]);
+    if (!t || /^[\d.,\s]+$/.test(t)) continue;
+    if (t.length > 6 || /\s/.test(t)) continue;
+    if (!TICKER_RX.test(t) && t !== 'IHSG') continue;
+
+    const price = toNum(row[iPrice]);
+    if (!Number.isFinite(price) || price <= 0) continue;
+
+    // %change: "-3.35%" / "-3.35" / "-0.0335" semua valid input.
+    // Pakai parser inline (bukan toNum) supaya gak kena interpretasi
+    // Indo-thousand-sep: toNum("0.012") = 12, tapi untuk persen kita mau 0.012.
+    let pct = null;
+    if (iPct >= 0) {
+      let pctStr = String(row[iPct] || '').trim();
+      const hasPctSign = pctStr.endsWith('%');
+      if (hasPctSign) pctStr = pctStr.slice(0, -1).trim();
+      // Strip whitespace, ganti koma desimal Indo (",5" → ".5")
+      pctStr = pctStr.replace(/\s/g, '').replace(',', '.');
+      const n = pctStr ? Number(pctStr) : NaN;
+      if (Number.isFinite(n)) {
+        // Kalau ada tanda "%", atau angkanya > 1 (mis. 3.35), anggap percent →
+        // bagi 100. Kalau kecil & tanpa "%" (mis. 0.0335), anggap fractional.
+        pct = (hasPctSign || Math.abs(n) > 1) ? n / 100 : n;
+      }
+    }
+
+    out[t] = { price, change_pct: pct };
+  }
+  return out;
+}
+
+/**
+ * Overlay live data ke price_history (baris terakhir) + stats.
+ * Frontend baca `price_history[last][ticker]` & `stats[ticker].current` —
+ * cukup overwrite di sini, semua kartu (hero, chart, watchlist, price target,
+ * blueprint, analyst table) otomatis ikut update.
+ */
+function applyLiveOverlay(price_history, stats, live, debug = {}) {
+  if (!price_history.length || !live || !Object.keys(live).length) return;
+
+  const lastRow = price_history[price_history.length - 1];
+  const prevRow = price_history[price_history.length - 2] || lastRow;
+
+  let touched = 0;
+  for (const t of Object.keys(live)) {
+    const lv = live[t];
+    if (!Number.isFinite(lv.price) || lv.price <= 0) continue;
+
+    // 1) Overwrite harga bulan terakhir di history.
+    lastRow[t] = lv.price;
+
+    // 2) Overwrite stats.current. Bikin entry baru kalau ticker belum ada
+    //    di stats (mis. ticker baru di sheet live tapi belum ada history).
+    if (!stats[t]) {
+      stats[t] = {
+        current: lv.price,
+        mom: null, ytd: null, yoy: null,
+        max: lv.price, max_date: lastRow.date,
+        min: lv.price, min_date: lastRow.date,
+        avg_monthly: 0, std_monthly: 0,
+        yoy_large: [],
+      };
+    } else {
+      stats[t].current = lv.price;
+    }
+
+    // 3) MoM: kalau sheet kasih %Live, pakai itu (single source of truth
+    //    untuk angka di hero card). Kalau gak ada, recompute vs bulan
+    //    sebelumnya.
+    if (Number.isFinite(lv.change_pct)) {
+      stats[t].mom = lv.change_pct;
+    } else if (Number.isFinite(prevRow[t]) && prevRow[t] !== 0) {
+      stats[t].mom = (lv.price - prevRow[t]) / prevRow[t];
+    }
+
+    // 4) Refresh max/min kalau live break extreme historis.
+    if (lv.price > (stats[t].max ?? -Infinity)) {
+      stats[t].max = lv.price;
+      stats[t].max_date = lastRow.date;
+    }
+    if (lv.price < (stats[t].min ?? Infinity)) {
+      stats[t].min = lv.price;
+      stats[t].min_date = lastRow.date;
+    }
+
+    touched++;
+  }
+
+  debug.live_tickers_overlaid = touched;
+  debug.live_tickers_total = Object.keys(live).length;
+}
+
+// ─────────────────────────────────────────────
 // Derived metrics
 // ─────────────────────────────────────────────
 function lastFinite(arr) { for (let i = arr.length - 1; i >= 0; i--) if (Number.isFinite(arr[i])) return { v: arr[i], i }; return { v: null, i: -1 }; }
@@ -657,6 +838,7 @@ async function main() {
   const {
     HISTORY_SHEET_ID, HISTORY_GID = '0',
     CONSENSUS_SHEET_ID, CONSENSUS_GID = '0',
+    LIVE_SHEET_ID, LIVE_GID = '0',
   } = process.env;
 
   if (!HISTORY_SHEET_ID || !CONSENSUS_SHEET_ID) {
@@ -666,15 +848,26 @@ async function main() {
   }
 
   console.log('Fetching sheets…');
-  const [historyCsv, consensusCsv] = await Promise.all([
+  const fetches = [
     fetchCsv(HISTORY_SHEET_ID, HISTORY_GID),
     fetchCsv(CONSENSUS_SHEET_ID, CONSENSUS_GID),
-  ]);
+  ];
+  if (LIVE_SHEET_ID) fetches.push(fetchCsv(LIVE_SHEET_ID, LIVE_GID));
+  else console.log('  (LIVE_SHEET_ID not set — skipping live overlay)');
+
+  const [historyCsv, consensusCsv, liveCsv] = await Promise.all(fetches);
 
   console.log('Parsing & computing…');
   const debug = {};
   const price_history = parseHistory(historyCsv, debug);
   const stats = computeStats(price_history);
+
+  // Overlay live realtime data (kalau LIVE_SHEET_ID di-set). Ini akan
+  // overwrite price_history[last] + stats[*].current/mom/max/min, lalu
+  // semua kartu di frontend otomatis nyala dengan angka live.
+  const live = liveCsv ? parseLive(liveCsv, debug) : {};
+  applyLiveOverlay(price_history, stats, live, debug);
+
   const correlations = computeCorrelations(price_history);
   const zcores = computeZcores(stats);
 
@@ -704,6 +897,7 @@ async function main() {
     stats,
     correlations,
     zcores,
+    live,                 // ← raw live overlay map (juga di-overlay ke price_history & stats)
     stock_info: stat.stock_info,
     stock_list: stat.stock_list,
     watchlist:  stat.watchlist,
@@ -715,6 +909,8 @@ async function main() {
       consensus_with_target,
       consensus_with_date,
       tickers_in_history: Object.keys(price_history[0] || {}).filter(k => k !== 'label' && k !== 'date').length,
+      live_tickers: Object.keys(live).length,
+      live_enabled: !!LIVE_SHEET_ID,
       _debug: debug,
     },
   };
@@ -728,6 +924,9 @@ async function main() {
   console.log(`✓ Wrote ${outPath} (${sizeKB} KB)`);
   console.log(`  History: ${payload._meta.history_rows} months · ${payload._meta.tickers_in_history} tickers`);
   console.log(`  Consensus: ${payload._meta.consensus_tickers} tickers · ${consensus_total_rows} rows · ${consensus_with_target} with target · ${consensus_with_date} with date`);
+  if (LIVE_SHEET_ID) {
+    console.log(`  Live: ${Object.keys(live).length} tickers parsed · ${debug.live_tickers_overlaid || 0} overlaid into stats`);
+  }
   if (price_history.length < 12) {
     console.warn('  ⚠️  History rows < 12. Cek HISTORY_SHEET_ID/GID dan layout sheet.');
     console.warn('     Header sample:', JSON.stringify(debug.history_header_sample));
@@ -735,6 +934,11 @@ async function main() {
   if (consensus_with_target === 0 && consensus_total_rows > 0) {
     console.warn('  ⚠️  Tidak ada target_price terbaca. Cek nama kolom T.PRICE / TARGET di sheet konsensus.');
     console.warn('     Header sample:', JSON.stringify(debug.consensus_header_sample));
+  }
+  if (LIVE_SHEET_ID && Object.keys(live).length === 0) {
+    console.warn('  ⚠️  LIVE_SHEET_ID di-set tapi gak ada ticker terbaca dari sheet live.');
+    console.warn('     Header sample:', JSON.stringify(debug.live_header_sample));
+    console.warn('     Cek nama kolom: butuh "Ticker" + "Harga Live"/"Price"/"Last".');
   }
 }
 
@@ -745,5 +949,5 @@ if (require.main === module) {
     process.exit(1);
   });
 } else {
-  module.exports = { parseHistory, parseConsensus, parseCsv, parseDate, toNum, decodeSuggestion, cleanTickerName };
+  module.exports = { parseHistory, parseConsensus, parseLive, applyLiveOverlay, parseCsv, parseDate, toNum, decodeSuggestion, cleanTickerName };
 }

@@ -2,7 +2,7 @@
  * Local sanity tests for build-data.js parser. Tidak dijalankan di CI;
  * panggil manual: `node scripts/test-parser.js`.
  */
-const { parseHistory, parseConsensus, decodeSuggestion, cleanTickerName, toNum, parseDate } = require('./build-data.js');
+const { parseHistory, parseConsensus, parseLive, applyLiveOverlay, decodeSuggestion, cleanTickerName, toNum, parseDate } = require('./build-data.js');
 
 let pass = 0, fail = 0;
 function assert(cond, label) {
@@ -204,6 +204,138 @@ expect(c7.ACES[1].suggestion, 'NEUTRAL', 'ACES N → NEUTRAL');
 expect(c7.TLKM[0].suggestion, 'SELL', 'TLKM S → SELL');
 expect(c7.AALI[0].target_price, 8250, 'AALI target masih benar');
 expect(c7.ACES[0].date, '2026-05-25', 'ACES date masih benar');
+
+// ─── parseLive: layout sederhana (Ticker | Harga Live | % Live) ───
+console.log('\n[parseLive] layout sederhana — 3 kolom');
+const liveCsv1 = [
+  'Ticker,Harga Live,% Live',
+  'TLKM,5775,-3.35%',
+  'BBCA,9500,1.20%',
+  'AALI,7000,-0.50%',
+].join('\n');
+const debugL1 = {};
+const lv1 = parseLive(liveCsv1, debugL1);
+expect(Object.keys(lv1).sort(), ['AALI','BBCA','TLKM'], '3 tickers parsed');
+expect(lv1.TLKM.price, 5775, 'TLKM price');
+expect(Math.round(lv1.TLKM.change_pct * 10000) / 10000, -0.0335, 'TLKM "-3.35%" → -0.0335');
+expect(Math.round(lv1.BBCA.change_pct * 10000) / 10000, 0.012, 'BBCA "1.20%" → 0.012');
+
+// ─── parseLive: %change tanpa tanda "%" (heuristic absolute > 1) ───
+console.log('\n[parseLive] %change tanpa "%" — heuristic abs>1 = percent');
+const liveCsv2 = [
+  'Symbol,Price,Change',
+  'TLKM,5775,-3.35',
+  'BBCA,9500,1.2',
+].join('\n');
+const lv2 = parseLive(liveCsv2, {});
+expect(Math.round(lv2.TLKM.change_pct * 10000) / 10000, -0.0335, '"-3.35" tanpa % → -0.0335 (abs>1 heuristic)');
+expect(Math.round(lv2.BBCA.change_pct * 10000) / 10000, 0.012, '"1.2" → 0.012');
+
+// ─── parseLive: %change dalam fraksi (0.0335) — sudah benar, jangan dibagi ulang ───
+console.log('\n[parseLive] %change fraksi (sudah dibagi 100 sebelumnya)');
+const liveCsv3 = [
+  'Ticker,Harga Live,% Live',
+  'TLKM,5775,-0.0335',
+  'BBCA,9500,0.012',
+].join('\n');
+const lv3 = parseLive(liveCsv3, {});
+expect(Math.round(lv3.TLKM.change_pct * 10000) / 10000, -0.0335, '"-0.0335" → -0.0335 (apa adanya)');
+expect(Math.round(lv3.BBCA.change_pct * 10000) / 10000, 0.012, '"0.012" → 0.012');
+
+// ─── parseLive: prefix IDX:, alias COMPOSITE ───
+console.log('\n[parseLive] prefix IDX: + alias');
+const liveCsv4 = [
+  'Ticker,Harga Live,% Live',
+  'IDX:TLKM,5775,-3.35%',
+  'IDX:COMPOSITE,7100,1.0%',
+].join('\n');
+const lv4 = parseLive(liveCsv4, {});
+expect(lv4.TLKM.price, 5775, 'IDX:TLKM → TLKM');
+expect(lv4.IHSG.price, 7100, 'IDX:COMPOSITE → IHSG (alias)');
+
+// ─── parseLive: row tanpa price atau ticker invalid → di-skip ───
+console.log('\n[parseLive] skip row invalid');
+const liveCsv5 = [
+  'Ticker,Harga Live,% Live',
+  'TLKM,5775,-3.35%',
+  ',7000,1%',                    // empty ticker → skip
+  'INVALID TICKER,1000,0%',      // spasi → skip
+  'BBCA,,1.0%',                  // empty price → skip
+  'BBCA,0,1.0%',                 // zero price → skip
+  'AALI,7000,abc',               // invalid pct → price tetap masuk, pct = null
+].join('\n');
+const lv5 = parseLive(liveCsv5, {});
+expect(Object.keys(lv5).sort(), ['AALI','TLKM'], 'cuma TLKM & AALI lolos');
+expect(lv5.AALI.price, 7000, 'AALI price masih kepake');
+expect(lv5.AALI.change_pct, null, 'AALI pct invalid → null');
+
+// ─── parseLive: sheet kosong / 1 row → empty ───
+console.log('\n[parseLive] sheet kosong → empty map');
+expect(Object.keys(parseLive('', {})), [], 'csv kosong');
+expect(Object.keys(parseLive('Ticker,Harga\n', {})), [], 'cuma header');
+
+// ─── applyLiveOverlay: integrasi dengan history + stats ───
+console.log('\n[applyLiveOverlay] overwrite price_history[last] + stats');
+const ph = [
+  { date: '2026-03-01', label: 'Mar-26', TLKM: 3000, BBCA: 9000, IHSG: 7000 },
+  { date: '2026-04-01', label: 'Apr-26', TLKM: 2810, BBCA: 9200, IHSG: 6957 },
+  { date: '2026-05-01', label: 'May-26', TLKM: 2750, BBCA: 9300, IHSG: 6130 },
+];
+const stats = {
+  TLKM: { current: 2750, mom: -0.0213, max: 3000, max_date:'2026-03-01', min: 2750, min_date:'2026-05-01', avg_monthly: -0.04, std_monthly: 0.05 },
+  BBCA: { current: 9300, mom: 0.0109, max: 9300, max_date:'2026-05-01', min: 9000, min_date:'2026-03-01', avg_monthly: 0.02, std_monthly: 0.02 },
+  IHSG: { current: 6130, mom: -0.0119, max: 7000, max_date:'2026-03-01', min: 6130, min_date:'2026-05-01', avg_monthly: -0.06, std_monthly: 0.04 },
+};
+const live = {
+  TLKM: { price: 5775, change_pct: -0.0335 },
+  BBCA: { price: 9500, change_pct: 0.0215 },
+};
+const debugO = {};
+applyLiveOverlay(ph, stats, live, debugO);
+
+expect(ph[ph.length-1].TLKM, 5775, 'price_history[last].TLKM = 5775 (live)');
+expect(ph[ph.length-1].BBCA, 9500, 'price_history[last].BBCA = 9500 (live)');
+expect(ph[ph.length-1].IHSG, 6130, 'price_history[last].IHSG = unchanged (no live)');
+
+expect(stats.TLKM.current, 5775, 'stats.TLKM.current = 5775');
+expect(stats.TLKM.mom, -0.0335, 'stats.TLKM.mom = -0.0335 (dari %Live, override)');
+expect(stats.TLKM.max, 5775, 'stats.TLKM.max refreshed (5775 > 3000)');
+expect(stats.TLKM.max_date, '2026-05-01', 'max_date = bulan ini');
+
+expect(stats.BBCA.current, 9500, 'stats.BBCA.current = 9500');
+expect(stats.BBCA.mom, 0.0215, 'stats.BBCA.mom = 0.0215');
+
+expect(stats.IHSG.current, 6130, 'stats.IHSG.current = unchanged');
+assert(debugO.live_tickers_overlaid === 2, 'debug.live_tickers_overlaid = 2');
+
+// ─── applyLiveOverlay: kalau %Live missing, recompute MoM dari price_history ───
+console.log('\n[applyLiveOverlay] tanpa %Live → recompute MoM dari prevMonth');
+const ph2 = [
+  { date: '2026-04-01', label: 'Apr-26', TLKM: 5000 },
+  { date: '2026-05-01', label: 'May-26', TLKM: 5100 },
+];
+const stats2 = { TLKM: { current: 5100, mom: 0.02, max: 5100, min: 5000, avg_monthly: 0.01, std_monthly: 0.01 } };
+applyLiveOverlay(ph2, stats2, { TLKM: { price: 5500, change_pct: null } }, {});
+expect(stats2.TLKM.current, 5500, 'current update');
+// MoM = (5500 - 5000) / 5000 = 0.10
+expect(Math.round(stats2.TLKM.mom * 10000) / 10000, 0.1, 'MoM recomputed = (5500-5000)/5000 = 0.10');
+
+// ─── applyLiveOverlay: ticker baru (belum ada di stats) ───
+console.log('\n[applyLiveOverlay] ticker live yang belum ada di stats');
+const ph3 = [{ date: '2026-05-01', label: 'May-26', TLKM: 5000 }];
+const stats3 = { TLKM: { current: 5000, mom: 0, max: 5000, min: 5000, avg_monthly: 0, std_monthly: 0.01 } };
+applyLiveOverlay(ph3, stats3, { GOTO: { price: 100, change_pct: 0.05 } }, {});
+assert(stats3.GOTO != null, 'stats.GOTO created');
+expect(stats3.GOTO.current, 100, 'GOTO.current');
+expect(stats3.GOTO.mom, 0.05, 'GOTO.mom from %Live');
+
+// ─── applyLiveOverlay: empty live → no-op ───
+console.log('\n[applyLiveOverlay] live kosong → no-op');
+const ph4 = [{ date: '2026-05-01', label: 'May-26', TLKM: 5000 }];
+const stats4 = { TLKM: { current: 5000, mom: 0 } };
+applyLiveOverlay(ph4, stats4, {}, {});
+expect(ph4[0].TLKM, 5000, 'price_history unchanged');
+expect(stats4.TLKM.current, 5000, 'stats unchanged');
 
 // ─── Summary ───
 console.log(`\n──────────────────────────────────────`);

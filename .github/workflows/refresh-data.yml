@@ -35,6 +35,8 @@ jobs:
           HISTORY_GID:        ${{ secrets.HISTORY_GID }}
           CONSENSUS_SHEET_ID: ${{ secrets.CONSENSUS_SHEET_ID }}
           CONSENSUS_GID:      ${{ secrets.CONSENSUS_GID }}
+          LIVE_SHEET_ID:      ${{ secrets.LIVE_SHEET_ID }}
+          LIVE_GID:           ${{ secrets.LIVE_GID }}
         run: node scripts/build-data.js
 
       - name: Commit & push if data changed
