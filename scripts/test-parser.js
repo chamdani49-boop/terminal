@@ -27,6 +27,15 @@ assert(parseDate('') === null, 'empty → null');
 assert(parseDate('-') === null, 'dash → null');
 assert(parseDate('Foo') === null, 'no digit → null');
 
+// "sekarang" / "now" / "today" → current month start
+const _todayUTC = new Date();
+const _curIso = `${_todayUTC.getUTCFullYear()}-${String(_todayUTC.getUTCMonth()+1).padStart(2,'0')}-01`;
+const _toIso = (d) => d ? `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-01` : null;
+expect(_toIso(parseDate('sekarang')), _curIso, '"sekarang" → bulan ini');
+expect(_toIso(parseDate('Sekarang')), _curIso, '"Sekarang" (mixed case) → bulan ini');
+expect(_toIso(parseDate('now')), _curIso, '"now" → bulan ini');
+expect(_toIso(parseDate('today')), _curIso, '"today" → bulan ini');
+
 // ─── toNum ───
 console.log('\n[toNum]');
 expect(toNum('4,797'),     4797,      '"4,797" thousand-sep (US)');
@@ -101,6 +110,25 @@ const h3 = parseHistory(prefCsv, debug3);
 expect(h3.length, 2, '2 baris (idx-prefix layout)');
 expect(h3[0].IHSG, 7000, 'JKSE → IHSG (alias)');
 expect(h3[0].BBCA, 9500, 'BBCA setelah strip IDX:');
+
+// ─── parseHistory: layout produksi (Bulanz=dates di kol 0, label di kol 1) +
+//                   baris terakhir "sekarang" (live row) ───
+console.log('\n[parseHistory] Bulanz=dates + "sekarang" live row (production layout)');
+const liveCsv = [
+  'IDX:Bulanz,,IDX:COMPOSITE,IDX:TLKM,IDX:BBCA',
+  '3/31/2026,Mar-26,7048,3060,7400',
+  '4/30/2026,Apr-26,6957,2810,6450',
+  'sekarang,May-26,6130,2750,7000',
+].join('\n');
+const debug8 = {};
+const h8 = parseHistory(liveCsv, debug8);
+expect(h8.length, 3, '3 baris (Mar/Apr/May-Live)');
+expect(h8[h8.length-1].label, 'May-26', 'label baris live = "May-26" (bukan "sekarang")');
+expect(h8[h8.length-1].TLKM, 2750, 'TLKM May (live) = 2750');
+expect(h8[h8.length-1].IHSG, 6130, 'IHSG May (live) = 6130');
+const _expIso = `${_todayUTC.getUTCFullYear()}-${String(_todayUTC.getUTCMonth()+1).padStart(2,'0')}-01`;
+expect(h8[h8.length-1].date, _expIso, 'date "sekarang" → awal bulan ini');
+expect(h8[1].label, 'Apr-26', 'label baris Apr = "Apr-26" (dari kol 1, bukan "4/30/2026")');
 
 // ─── parseConsensus: layout Bulanz (B/N/S codes) ───
 console.log('\n[parseConsensus] B/N/S codes + T.PRICE');
