@@ -847,15 +847,55 @@ let consensusDonutInstance = null;
 let consensusBarInstance = null;
 let savingChartInstance = null;
 
+// Strategi loading data.json:
+//   1) Coba jsDelivr CDN dulu — track main branch git langsung. Begitu
+//      workflow refresh-data push commit, jsDelivr serve file baru dalam
+//      ~1 menit (apalagi setelah workflow purge cache jsDelivr). Bypass
+//      Cloudflare Pages deploy yang ke-skip karena `[skip ci]` di commit
+//      message data refresh.
+//   2) Fallback ke same-origin (Cloudflare Pages bundle) kalau CDN miss
+//      (mis. jsDelivr down, atau dev lokal tanpa internet ke jsDelivr).
+//
+// Repo harus public buat jsDelivr bisa akses; `chamdani49-boop/terminal`
+// memang public.
+const DATA_CDN_URL = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/data.json';
+const DATA_LOCAL_URL = 'data.json';
+
 async function loadData() {
-  try {
-    // Small cache-bust so a hard reload always sees the latest deploy.
-    const res = await fetch('data.json?v=' + Math.floor(Date.now() / 60000));
-    DATA = await res.json();
-    init();
-  } catch(e) {
-    document.querySelector('.loading').innerHTML = '⚠️ Gagal memuat data. Cek apakah workflow "Refresh data" sudah pernah jalan dan menghasilkan public/data.json.';
+  // Cache-bust per menit. jsDelivr respect query string sebagai cache key,
+  // jadi user gak akan kena versi stale ≥ 1 menit setelah commit baru.
+  const v = Math.floor(Date.now() / 60000);
+  const sources = [
+    { url: DATA_CDN_URL + '?v=' + v, label: 'jsDelivr CDN' },
+    { url: DATA_LOCAL_URL + '?v=' + v, label: 'same-origin' },
+  ];
+
+  for (const src of sources) {
+    try {
+      const res = await fetch(src.url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      // Sanity check: harus punya price_history dan stats.
+      if (!json || !json.price_history || !json.stats) {
+        throw new Error('payload tidak valid');
+      }
+      DATA = json;
+      try {
+        const meta = json._meta || {};
+        console.info(
+          `[data] loaded from ${src.label} · generated_at=${meta.generated_at} · ` +
+          `live_tickers=${meta.live_tickers ?? '-'}`
+        );
+      } catch (_) {}
+      init();
+      return;
+    } catch (e) {
+      console.warn(`[data] ${src.label} fetch gagal:`, e.message || e);
+    }
   }
+  document.querySelector('.loading').innerHTML =
+    '⚠️ Gagal memuat data dari CDN dan same-origin. Cek koneksi internet, ' +
+    'atau apakah workflow "Refresh data" sudah pernah jalan.';
 }
 
 function init() {
