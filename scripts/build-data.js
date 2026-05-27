@@ -1,11 +1,10 @@
 /**
  * scripts/build-data.js — build-time data pipeline.
  *
- * Run from GitHub Actions cron (or locally) to fetch both Google Sheets,
- * compute derived stats, and write public/data.json. The frontend serves
- * that JSON as a static asset — no serverless function on the request path.
+ * Fetches Google Sheets (history harga + konsensus analis), parses & enriches,
+ * tulis hasilnya ke public/data.json. Frontend serve sebagai static asset.
  *
- * Required env (set as GitHub Secrets, or in .env.local for dev):
+ * Required env (GitHub Secrets atau .env lokal):
  *   HISTORY_SHEET_ID, HISTORY_GID
  *   CONSENSUS_SHEET_ID, CONSENSUS_GID
  *
@@ -58,22 +57,37 @@ function parseCsv(text) {
 
 const toNum = (v) => {
   if (v === null || v === undefined) return null;
-  const s = String(v).trim().replace(/,/g, '');
-  if (s === '' || s === '-' || s.toLowerCase() === 'n/a') return null;
+  let s = String(v).trim();
+  if (!s || s === '-' || /^n\/?a$/i.test(s)) return null;
+  // Buang simbol mata uang & spasi
+  s = s.replace(/[Rp$€£¥\s]/g, '');
+  // Indo style "1.234,56" → "1234.56"
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+  // Banker style "1,234.56" → "1234.56"
+  else if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) s = s.replace(/,/g, '');
+  // Plain "1,234" tanpa decimal: anggap thousand sep
+  else if (/^-?\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
+  // Otherwise koma sebagai decimal
+  else s = s.replace(/,/g, '.');
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 };
 
-/** Parse "5/31/2016", "31/5/2016", "2016-05-31", … into a Date. */
+/** Parse berbagai format tanggal jadi Date (UTC). */
 function parseDate(s) {
   if (s == null) return null;
   s = String(s).trim();
   if (!s) return null;
 
-  let d = new Date(s);
-  if (!isNaN(d)) return d;
+  // Tolak string yang bukan kandidat tanggal sama sekali (cuma huruf, dll)
+  if (!/\d/.test(s)) return null;
 
-  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  // ISO langsung
+  let d = new Date(s);
+  if (!isNaN(d) && /\d{4}/.test(s)) return d;
+
+  // dd/mm/yyyy atau mm/dd/yyyy atau dd-mm-yyyy
+  let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
   if (m) {
     let [, a, b, y] = m;
     if (y.length === 2) y = (parseInt(y, 10) > 50 ? '19' : '20') + y;
@@ -84,49 +98,144 @@ function parseDate(s) {
     }
     if (!isNaN(d)) return d;
   }
+
+  // yyyy-mm
+  m = s.match(/^(\d{4})[\-\/](\d{1,2})$/);
+  if (m) {
+    d = new Date(`${m[1]}-${m[2].padStart(2, '0')}-01T00:00:00Z`);
+    if (!isNaN(d)) return d;
+  }
+
+  // "May 26", "Mei-26", "May-2026"
+  const monthNames = {
+    jan:0,feb:1,mar:2,apr:3,may:4,mei:4,jun:5,jul:6,aug:7,agu:7,ags:7,sep:8,oct:9,okt:9,nov:10,dec:11,des:11,
+  };
+  m = s.match(/^([A-Za-z]{3,9})[\s\-\/]+(\d{2,4})$/);
+  if (m) {
+    const mm = monthNames[m[1].slice(0,3).toLowerCase()];
+    if (mm != null) {
+      let y = m[2];
+      if (y.length === 2) y = (parseInt(y, 10) > 50 ? '19' : '20') + y;
+      d = new Date(Date.UTC(parseInt(y,10), mm, 1));
+      if (!isNaN(d)) return d;
+    }
+  }
+
   return null;
 }
 
+const norm = (s) => String(s||'').trim().toLowerCase().replace(/[\s_./\-\\(){}\[\]]+/g, '');
+
 // ─────────────────────────────────────────────
-// Sheet → Domain transforms
+// History sheet parser — robust ke berbagai layout
 // ─────────────────────────────────────────────
 
-/** History sheet (Bulanz / GoogleFinance layout). */
-function parseHistory(csv) {
+const TICKER_RX = /^[A-Z]{2,5}\d?$/;
+
+/** Bersihkan nama kolom ticker: strip prefix IDX:, JK:, dll. */
+function cleanTickerName(raw) {
+  return String(raw || '')
+    .trim()
+    .toUpperCase()
+    .replace(/^(IDX:|JK:|XIDX:|BEI:|JKSE:)/, '')
+    .replace(/\s+CLOSE$/i, '')
+    .replace(/\s+PRICE$/i, '')
+    .trim();
+}
+
+/** Cari row yang paling mungkin header — punya banyak ticker-shaped string. */
+function findHistoryHeaderRow(rows) {
+  let best = { idx: -1, count: 0 };
+  const limit = Math.min(rows.length, 25);
+  for (let i = 0; i < limit; i++) {
+    const row = rows[i];
+    let count = 0;
+    let hasIhsg = false;
+    for (const c of row) {
+      const cleaned = cleanTickerName(c);
+      if (TICKER_RX.test(cleaned)) count++;
+      if (/^(IHSG|JKSE|COMPOSITE)$/i.test(cleaned)) hasIhsg = true;
+    }
+    // Bonus kalau row punya IHSG/JKSE/COMPOSITE
+    const score = count + (hasIhsg ? 5 : 0);
+    if (score > best.count) best = { idx: i, count: score };
+  }
+  return best.idx;
+}
+
+function parseHistory(csv, debug = {}) {
   const rows = parseCsv(csv);
   if (rows.length < 2) return [];
 
-  let headerIdx = rows.findIndex(r =>
-    r.some(c => (c || '').trim().toUpperCase() === 'IHSG')
-  );
+  let headerIdx = findHistoryHeaderRow(rows);
   if (headerIdx < 0) headerIdx = Math.min(2, rows.length - 1);
 
-  const header = rows[headerIdx].map(h => (h || '').trim());
-  const lc = header.map(h => h.toLowerCase());
+  const rawHeader = rows[headerIdx];
+  const header = rawHeader.map(cleanTickerName);
+  debug.history_header_idx = headerIdx;
+  debug.history_header_sample = rawHeader.slice(0, 10);
 
-  let idxDate  = lc.findIndex(h => h === 'date' || h === 'tanggal');
-  let idxLabel = lc.findIndex(h => h === 'label');
-
-  if (idxDate < 0 || idxLabel < 0) {
-    const first = rows[headerIdx + 1] || [];
-    if (idxDate < 0) {
-      for (let i = 0; i < first.length; i++) {
-        if (parseDate((first[i] || '').trim())) { idxDate = i; break; }
-      }
-    }
-    if (idxLabel < 0) {
-      for (let i = 0; i < first.length; i++) {
-        if (i === idxDate) continue;
-        if (/^[A-Za-z]{3}[\-\s]\d{2,4}$/.test((first[i] || '').trim())) { idxLabel = i; break; }
-      }
-    }
-    if (idxDate < 0)  idxDate  = 0;
-    if (idxLabel < 0) idxLabel = idxDate === 0 ? 1 : 0;
+  // Cari kolom date & label
+  let idxDate = -1, idxLabel = -1;
+  for (let i = 0; i < header.length; i++) {
+    const h = header[i].toLowerCase();
+    if (idxDate < 0 && (h === 'date' || h === 'tanggal' || h === 'tgl')) idxDate = i;
+    if (idxLabel < 0 && (h === 'label' || h === 'period' || h === 'periode' || h === 'bulanz' || h === 'month')) idxLabel = i;
   }
 
-  const tickerCols = header
-    .map((h, i) => ({ name: h.toUpperCase(), i }))
-    .filter(c => c.i !== idxDate && c.i !== idxLabel && c.name !== '');
+  // Content-based fallback: scan baris data pertama
+  let firstDataRow = null;
+  for (let r = headerIdx + 1; r < rows.length; r++) {
+    if (rows[r].some(c => c && c.trim())) { firstDataRow = rows[r]; break; }
+  }
+
+  if (idxDate < 0 && firstDataRow) {
+    for (let i = 0; i < firstDataRow.length; i++) {
+      if (parseDate((firstDataRow[i] || '').trim())) { idxDate = i; break; }
+    }
+  }
+  if (idxLabel < 0 && firstDataRow) {
+    for (let i = 0; i < firstDataRow.length; i++) {
+      if (i === idxDate) continue;
+      const v = (firstDataRow[i] || '').trim();
+      if (/^[A-Za-z]{3,9}[-\s\/]\d{2,4}$/.test(v) || /^\d{4}[-\/]\d{1,2}$/.test(v)) {
+        idxLabel = i; break;
+      }
+    }
+  }
+
+  if (idxDate < 0) idxDate = 0;
+  // idxLabel TIDAK di-fallback — kalau gak ketemu, biarkan -1.
+  // Kalau dipaksa ke posisi 0/1, bisa "menelan" kolom ticker (mis. JKSE).
+
+  debug.history_idx_date = idxDate;
+  debug.history_idx_label = idxLabel;
+
+  // Bangun ticker columns dengan denylist (lebih permissive, lebih robust).
+  // Apapun yang non-empty + non-numeric + bukan kolom metadata → ticker.
+  const META_NAMES = new Set([
+    'DATE','TANGGAL','TGL','LABEL','PERIOD','PERIODE',
+    'BULANZ','MONTH','BULAN','NO','#',
+  ]);
+  const tickerCols = [];
+  for (let i = 0; i < header.length; i++) {
+    if (i === idxDate || i === idxLabel) continue;
+    const name = header[i];
+    if (!name || /^\d+$/.test(name)) continue;
+    if (META_NAMES.has(name)) continue;
+    tickerCols.push({ name, i });
+  }
+
+  // Dedupe (kasus ada kolom identik akibat formula GoogleFinance)
+  const seen = new Set();
+  const dedupedCols = tickerCols.filter(c => {
+    if (seen.has(c.name)) return false;
+    seen.add(c.name);
+    return true;
+  });
+
+  debug.history_ticker_count = dedupedCols.length;
+  debug.history_ticker_sample = dedupedCols.slice(0, 10).map(c => c.name);
 
   const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const out = [];
@@ -146,67 +255,172 @@ function parseHistory(csv) {
         const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
         dateStr = `${yyyy}-${mm}-01`;
         if (!label) label = `${monthShort[d.getUTCMonth()]}-${String(yyyy).slice(2)}`;
+      } else {
+        dateStr = null;
+      }
+    } else {
+      dateStr = null;
+    }
+
+    // Kalau date masih null tapi label parseable, pakai label-nya
+    if (!dateStr && label) {
+      const d2 = parseDate(label);
+      if (d2) {
+        const yyyy = d2.getUTCFullYear();
+        const mm = String(d2.getUTCMonth() + 1).padStart(2, '0');
+        dateStr = `${yyyy}-${mm}-01`;
       }
     }
-    rec.label = (label || '').trim() || `Row ${r}`;
-    rec.date  = dateStr || null;
+
+    rec.label = (label || '').trim() || (dateStr ? dateStr.slice(0, 7) : `Row ${r}`);
+    rec.date  = dateStr;
 
     let hasNum = false;
-    for (const c of tickerCols) {
+    for (const c of dedupedCols) {
       const v = toNum(row[c.i]);
       rec[c.name] = v;
-      if (Number.isFinite(v)) hasNum = true;
+      if (Number.isFinite(v) && v !== 0) hasNum = true;
     }
-    if (hasNum) out.push(rec);
+    if (hasNum && rec.date) out.push(rec);
   }
   out.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   return out;
 }
 
-/** Consensus sheet. Decodes B/N/S codes; recomputes pct_d. */
-function parseConsensus(csv, latestPrices) {
+// ─────────────────────────────────────────────
+// Consensus sheet parser — robust
+// ─────────────────────────────────────────────
+
+const CONSENSUS_HEADER_HINTS = [
+  'symbol','ticker','code','kode','saham',
+  'date','tanggal','tgl',
+  'firmname','firm','sekuritas','broker','analyst','analis',
+  'tprice','target','tp','hargatarget','targetharga','pricetarget',
+  'rating','recommendation','rekomendasi','suggestion','call',
+  'pctd','pct','upside','disc',
+];
+
+function findConsensusHeaderRow(rows) {
+  let best = { idx: -1, score: 0 };
+  const limit = Math.min(rows.length, 15);
+  for (let i = 0; i < limit; i++) {
+    const r = rows[i].map(c => norm(c));
+    if (!r.some(x => x)) continue;
+    let score = 0;
+    for (const cand of CONSENSUS_HEADER_HINTS) {
+      if (r.some(x => x === cand)) score += 2;
+      else if (r.some(x => x && x.includes(cand))) score += 1;
+    }
+    if (score > best.score) best = { idx: i, score };
+  }
+  return best.idx;
+}
+
+/** Decode rekomendasi B/N/S, BUY/SELL/HOLD, OVERWEIGHT/UNDERWEIGHT, dll. */
+function decodeSuggestion(raw) {
+  const s = String(raw || '').trim().toUpperCase();
+  if (!s) return '';
+  if (s === 'B' || /BUY|OVERWEIGHT|OUTPERFORM|^ADD$|ACCUMULATE|STRONG.?BUY/.test(s)) return 'BUY';
+  if (s === 'S' || /SELL|UNDERWEIGHT|UNDERPERFORM|^REDUCE$/.test(s)) return 'SELL';
+  if (s === 'N' || /NEUTRAL|HOLD|MARKETPERFORM|MARKET.?WEIGHT|EQUAL.?WEIGHT/.test(s)) return 'NEUTRAL';
+  return s;
+}
+
+function parseConsensus(csv, latestPrices, debug = {}) {
   const rows = parseCsv(csv);
   if (rows.length < 2) return {};
 
-  let headerIdx = rows.findIndex(r => {
-    const u = r.map(c => (c || '').trim().toUpperCase());
-    return u.includes('SYMBOL') && (u.includes('DATE') || u.some(c => c.includes('FIRM')));
-  });
+  let headerIdx = findConsensusHeaderRow(rows);
   if (headerIdx < 0) headerIdx = Math.min(3, rows.length - 1);
 
-  const header = rows[headerIdx].map(h => (h || '').trim().toLowerCase());
+  const rawHeader = rows[headerIdx];
+  const header = rawHeader.map(c => norm(c));
+  debug.consensus_header_idx = headerIdx;
+  debug.consensus_header_sample = rawHeader;
 
-  const find = (...names) => {
+  // Fuzzy column finder. Coba exact, lalu substring.
+  const findFz = (...names) => {
     for (const n of names) {
-      const i = header.indexOf(n);
+      const nn = norm(n);
+      const i = header.indexOf(nn);
+      if (i >= 0) return i;
+    }
+    for (const n of names) {
+      const nn = norm(n);
+      if (!nn) continue;
+      const i = header.findIndex(h => h && h.includes(nn));
       if (i >= 0) return i;
     }
     return -1;
   };
 
-  const iTicker = find('symbol', 'ticker', 'code', 'kode', 'saham');
-  const iDate   = find('date', 'tanggal');
-  const iFirm   = find('firm name', 'firm', 'analyst', 'sekuritas', 'broker', 'firm_name');
-  const iSugg   = find('[]', 'suggestion', 'rec', 'recommendation', 'rating', 'b/n/s', 'rekomendasi');
-  const iTgt    = find('t.price', 't price', 'target_price', 'target', 'tp', 'price_target', 'target harga');
-  const iPct    = find('%d', 'pct_d', 'pct', 'upside', '%delta');
+  const iTicker = findFz('symbol', 'ticker', 'code', 'kode', 'saham');
+  let iDate    = findFz('date', 'tanggal', 'tgl', 'tanggalriset', 'tanggalreview', 'reviewdate', 'tanggalpublikasi');
+  const iFirm  = findFz('firmname', 'firm', 'analyst', 'sekuritas', 'broker', 'analis', 'penerbit', 'firmnamesekuritas');
+  const iSugg  = findFz('[]', 'suggestion', 'rec', 'recommendation', 'rating', 'bns', 'rekomendasi', 'call');
+  let iTgt     = findFz('tprice', 'tprice1', 'targetprice', 'pricetarget', 'targetharga', 'hargatarget', 'target', 'tp');
+  const iPct   = findFz('pctd', 'pct', 'upside', 'pctdelta', 'delta');
 
-  if (iTicker < 0) throw new Error('Consensus sheet must have a "Symbol"/"ticker" column.');
+  if (iTicker < 0) {
+    // Fallback ekstrim: kolom 0 mungkin ticker
+    debug.consensus_warning_no_symbol_col = true;
+  }
 
-  const decodeSuggestion = (raw) => {
-    const s = (raw || '').trim().toUpperCase();
-    if (!s) return '';
-    if (s === 'B' || s.includes('BUY') || s.includes('OVERWEIGHT') || s.includes('OUTPERFORM') || s === 'ADD') return 'BUY';
-    if (s === 'S' || s.includes('SELL') || s.includes('UNDERWEIGHT') || s.includes('UNDERPERFORM') || s === 'REDUCE') return 'SELL';
-    if (s === 'N' || s.includes('NEUTRAL') || s.includes('HOLD')) return 'NEUTRAL';
-    return s;
-  };
+  // Content-based fallback untuk T.PRICE: cari kolom numerik dengan median > 50
+  // (harga saham IDX biasanya 4-digit, paling kecil 50)
+  if (iTgt < 0 || iTgt === iPct) {
+    const candCols = {};
+    for (let r = headerIdx + 1; r < Math.min(rows.length, headerIdx + 200); r++) {
+      const row = rows[r];
+      for (let c = 0; c < (row || []).length; c++) {
+        if (c === iTicker || c === iDate || c === iFirm || c === iSugg || c === iPct) continue;
+        const v = toNum(row[c]);
+        if (Number.isFinite(v) && v > 50 && v < 1e7) {
+          (candCols[c] ||= []).push(v);
+        }
+      }
+    }
+    let bestCol = -1, bestCount = 0;
+    for (const [c, vals] of Object.entries(candCols)) {
+      if (vals.length > bestCount) { bestCount = vals.length; bestCol = parseInt(c, 10); }
+    }
+    if (bestCol >= 0 && bestCount >= 2) {
+      debug.consensus_target_inferred_col = bestCol;
+      iTgt = bestCol;
+    }
+  }
+
+  // Content-based fallback untuk DATE: cari kolom dengan paling banyak tanggal-parseable
+  if (iDate < 0) {
+    const dateCounts = {};
+    for (let r = headerIdx + 1; r < Math.min(rows.length, headerIdx + 200); r++) {
+      const row = rows[r];
+      for (let c = 0; c < (row || []).length; c++) {
+        if (c === iTicker || c === iFirm || c === iSugg || c === iTgt || c === iPct) continue;
+        const v = (row[c] || '').trim();
+        if (v && parseDate(v)) dateCounts[c] = (dateCounts[c] || 0) + 1;
+      }
+    }
+    let bestCol = -1, bestCount = 0;
+    for (const [c, count] of Object.entries(dateCounts)) {
+      if (count > bestCount) { bestCount = count; bestCol = parseInt(c, 10); }
+    }
+    if (bestCol >= 0 && bestCount >= 2) {
+      debug.consensus_date_inferred_col = bestCol;
+      iDate = bestCol;
+    }
+  }
+
+  debug.consensus_cols = { iTicker, iDate, iFirm, iSugg, iTgt, iPct };
 
   const grouped = {};
   for (let r = headerIdx + 1; r < rows.length; r++) {
     const row = rows[r];
+    if (!row) continue;
     const t = (row[iTicker] || '').trim().toUpperCase();
-    if (!t) continue;
+    if (!t || /^[\d.,\s]+$/.test(t)) continue;
+    // Buang baris yang isinya banner atau komentar (mengandung spasi banyak)
+    if (t.length > 10 || /\s/.test(t)) continue;
 
     const target = iTgt >= 0 ? toNum(row[iTgt]) : null;
     const last = latestPrices[t];
@@ -395,7 +609,8 @@ async function main() {
   ]);
 
   console.log('Parsing & computing…');
-  const price_history = parseHistory(historyCsv);
+  const debug = {};
+  const price_history = parseHistory(historyCsv, debug);
   const stats = computeStats(price_history);
   const correlations = computeCorrelations(price_history);
   const zcores = computeZcores(stats);
@@ -403,11 +618,21 @@ async function main() {
   const latest = {};
   for (const t of Object.keys(stats)) latest[t] = stats[t].current;
 
-  const consensus_slim = parseConsensus(consensusCsv, latest);
+  const consensus_slim = parseConsensus(consensusCsv, latest, debug);
   const consensus_summary = computeConsensusSummary(consensus_slim);
 
   const staticPath = path.join(__dirname, '..', 'lib', 'static.json');
   const stat = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
+
+  // Diagnostics: berapa target_price yang berhasil terbaca, tanggal, dll
+  let consensus_with_target = 0, consensus_with_date = 0, consensus_total_rows = 0;
+  for (const recs of Object.values(consensus_slim)) {
+    for (const r of recs) {
+      consensus_total_rows++;
+      if (Number.isFinite(r.target_price)) consensus_with_target++;
+      if (r.date) consensus_with_date++;
+    }
+  }
 
   const payload = {
     price_history,
@@ -423,7 +648,11 @@ async function main() {
       generated_at: new Date().toISOString(),
       history_rows: price_history.length,
       consensus_tickers: Object.keys(consensus_slim).length,
+      consensus_total_rows,
+      consensus_with_target,
+      consensus_with_date,
       tickers_in_history: Object.keys(price_history[0] || {}).filter(k => k !== 'label' && k !== 'date').length,
+      _debug: debug,
     },
   };
 
@@ -434,10 +663,24 @@ async function main() {
 
   const sizeKB = (fs.statSync(outPath).size / 1024).toFixed(1);
   console.log(`✓ Wrote ${outPath} (${sizeKB} KB)`);
-  console.log(`  ${payload._meta.history_rows} months · ${payload._meta.tickers_in_history} tickers · ${payload._meta.consensus_tickers} consensus tickers`);
+  console.log(`  History: ${payload._meta.history_rows} months · ${payload._meta.tickers_in_history} tickers`);
+  console.log(`  Consensus: ${payload._meta.consensus_tickers} tickers · ${consensus_total_rows} rows · ${consensus_with_target} with target · ${consensus_with_date} with date`);
+  if (price_history.length < 12) {
+    console.warn('  ⚠️  History rows < 12. Cek HISTORY_SHEET_ID/GID dan layout sheet.');
+    console.warn('     Header sample:', JSON.stringify(debug.history_header_sample));
+  }
+  if (consensus_with_target === 0 && consensus_total_rows > 0) {
+    console.warn('  ⚠️  Tidak ada target_price terbaca. Cek nama kolom T.PRICE / TARGET di sheet konsensus.');
+    console.warn('     Header sample:', JSON.stringify(debug.consensus_header_sample));
+  }
 }
 
-main().catch((err) => {
-  console.error('Build failed:', err);
-  process.exit(1);
-});
+// Export untuk testing
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Build failed:', err);
+    process.exit(1);
+  });
+} else {
+  module.exports = { parseHistory, parseConsensus, parseCsv, parseDate, toNum, decodeSuggestion, cleanTickerName };
+}
