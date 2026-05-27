@@ -879,8 +879,32 @@ async function main() {
     fetchCsv(HISTORY_SHEET_ID, HISTORY_GID),
     fetchCsv(CONSENSUS_SHEET_ID, CONSENSUS_GID),
   ];
-  if (LIVE_SHEET_ID) fetches.push(fetchCsv(LIVE_SHEET_ID, LIVE_GID));
-  else console.log('  (LIVE_SHEET_ID not set — skipping live overlay)');
+  let liveFetchError = null;
+  if (LIVE_SHEET_ID) {
+    // LIVE sheet failure is NON-FATAL. Kalau sheet belum di-publish to web
+    // (401 dari gviz endpoint), ID typo (404), atau temporary network issue,
+    // build tetap lanjut — dashboard nyala dengan harga bulan terakhir di
+    // history sheet. Jangan biarkan masalah sheet opsional bikin seluruh
+    // refresh gagal.
+    fetches.push(
+      fetchCsv(LIVE_SHEET_ID, LIVE_GID).catch((err) => {
+        liveFetchError = err.message || String(err);
+        console.warn(`  ⚠️  LIVE sheet fetch gagal: ${liveFetchError}`);
+        if (/401/.test(liveFetchError)) {
+          console.warn('     Penyebab umum 401: sheet LIVE belum di-Publish to web.');
+          console.warn('     Fix: buka sheet → File → Share → Publish to web → CSV → Publish.');
+          console.warn('     Pastikan juga sharing minimal "Anyone with the link – Viewer".');
+        } else if (/404/.test(liveFetchError)) {
+          console.warn('     Penyebab umum 404: LIVE_SHEET_ID atau LIVE_GID salah.');
+          console.warn('     Cek ulang nilainya di GitHub Secrets vs URL editor sheet.');
+        }
+        console.warn('     Build lanjut tanpa live overlay — dashboard tetap up.');
+        return null;
+      })
+    );
+  } else {
+    console.log('  (LIVE_SHEET_ID not set — skipping live overlay)');
+  }
 
   const [historyCsv, consensusCsv, liveCsv] = await Promise.all(fetches);
 
@@ -938,6 +962,7 @@ async function main() {
       tickers_in_history: Object.keys(price_history[0] || {}).filter(k => k !== 'label' && k !== 'date').length,
       live_tickers: Object.keys(live).length,
       live_enabled: !!LIVE_SHEET_ID,
+      live_fetch_error: liveFetchError,
       _debug: debug,
     },
   };
