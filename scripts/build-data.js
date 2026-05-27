@@ -132,15 +132,19 @@ const norm = (s) => String(s||'').trim().toLowerCase().replace(/[\s_./\-\\(){}\[
 
 const TICKER_RX = /^[A-Z]{2,5}\d?$/;
 
-/** Bersihkan nama kolom ticker: strip prefix IDX:, JK:, dll. */
+/** Bersihkan nama kolom ticker: strip prefix IDX:, JK:, alias index → IHSG. */
 function cleanTickerName(raw) {
-  return String(raw || '')
+  let s = String(raw || '')
     .trim()
     .toUpperCase()
     .replace(/^(IDX:|JK:|XIDX:|BEI:|JKSE:)/, '')
     .replace(/\s+CLOSE$/i, '')
     .replace(/\s+PRICE$/i, '')
     .trim();
+  // Alias: COMPOSITE / JKSE / JCI semuanya = IHSG (Indonesia Composite Index).
+  // Frontend pakai "IHSG" sebagai konvensi → unify di sini biar konsisten.
+  if (s === 'COMPOSITE' || s === 'JKSE' || s === 'JCI') s = 'IHSG';
+  return s;
 }
 
 /** Cari row yang paling mungkin header — punya banyak ticker-shaped string. */
