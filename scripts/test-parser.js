@@ -151,6 +151,29 @@ expect(c6.BBCA[0].target_price, 11000, 'target via content-fallback');
 // "WHEN" mungkin kena substring match dari nothing, tapi parseDate-nya works
 assert(c6.BBCA[0].date.startsWith('2026'), 'date via content-fallback');
 
+// ─── parseConsensus: header pakai literal "[]" untuk suggestion (Bulanz) ───
+console.log('\n[parseConsensus] header [] untuk suggestion column');
+const consBracketCsv = [
+  ',,,,,,,,',
+  '1,2,,3,header,,,,',
+  ',By,,Lynk.id,Hitung Nilai Wajar,,,,0',
+  'Symbol,#,DATE,FIRM NAME,[],T.PRICE,DISC,%D,T.PRICE',
+  'AALI,1,2026-04-27,RHB Sekuritas,N,8250,8250,0,8250',
+  'AALI,2,2026-03-05,PT Indo Premier,N,7850,7850,0,7850',
+  'ACES,1,2026-05-25,Maybank,B,500,500,0,500',
+  'ACES,2,2026-05-22,OCBC,N,380,380,0,380',
+  'ACES,3,2026-05-20,BRI Danareksa,B,450,450,0,450',
+  'TLKM,1,2026-01-15,DBS,S,4500,4500,0,4500',
+].join('\n');
+const debug7 = {};
+const c7 = parseConsensus(consBracketCsv, {}, debug7);
+expect(c7.AALI[0].suggestion, 'NEUTRAL', 'AALI N → NEUTRAL (bukan "1")');
+expect(c7.ACES[0].suggestion, 'BUY', 'ACES B → BUY');
+expect(c7.ACES[1].suggestion, 'NEUTRAL', 'ACES N → NEUTRAL');
+expect(c7.TLKM[0].suggestion, 'SELL', 'TLKM S → SELL');
+expect(c7.AALI[0].target_price, 8250, 'AALI target masih benar');
+expect(c7.ACES[0].date, '2026-05-25', 'ACES date masih benar');
+
 // ─── Summary ───
 console.log(`\n──────────────────────────────────────`);
 console.log(`Pass: ${pass}  Fail: ${fail}`);
