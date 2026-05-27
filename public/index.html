@@ -139,13 +139,13 @@ a{color:inherit;text-decoration:none}
 .search-drop.open{display:block}
 .search-item{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s}
 .search-item:hover{background:var(--bg2)}
-.search-item .code{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:var(--accent);width:56px;flex-shrink:0}
-.search-item .sname{font-size:12px;color:var(--text2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.search-item .sector{font-size:10px;color:var(--text3);margin-left:auto;flex-shrink:0;background:var(--bg2);padding:2px 8px;border-radius:var(--radius-pill)}
+.search-item .code{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;color:var(--accent);width:60px;flex-shrink:0}
+.search-item .sname{font-size:13px;color:var(--text);font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.search-item .sector{font-size:11px;color:var(--text2);margin-left:auto;flex-shrink:0;background:var(--bg2);padding:3px 10px;border-radius:var(--radius-pill);font-weight:600}
 
 .nav-tabs{display:flex;gap:6px;margin-left:auto;align-items:center}
 .nav-tab{
-  padding:8px 16px;font-size:13px;font-weight:600;border-radius:var(--radius-pill);
+  padding:9px 18px;font-size:14px;font-weight:700;border-radius:var(--radius-pill);
   cursor:pointer;color:var(--text2);transition:all .2s;white-space:nowrap;
   border:1px solid transparent;
 }
@@ -184,8 +184,8 @@ a{color:inherit;text-decoration:none}
 }
 [data-theme="dark"] .card{box-shadow:var(--shadow-card),0 0 0 1px var(--border) inset}
 .card-title{
-  font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
-  color:var(--text2);margin-bottom:12px;
+  font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--text);margin-bottom:14px;
 }
 
 /* ── STOCK HEADER ── */
@@ -196,59 +196,60 @@ a{color:inherit;text-decoration:none}
   background:var(--grad);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.stock-name-block .fullname{font-size:14px;color:var(--text);margin-top:4px;font-weight:600}
-.stock-name-block .meta{font-size:11px;color:var(--text2);margin-top:4px}
+.stock-name-block .fullname{font-size:15px;color:var(--text);margin-top:4px;font-weight:700}
+.stock-name-block .meta{font-size:12px;color:var(--text2);margin-top:4px;font-weight:500}
 .price-block{text-align:right}
-.price-block .price{font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
-.price-block .change{font-size:13px;font-weight:600;margin-top:2px}
+.price-block .price{font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.price-block .change{font-size:14px;font-weight:700;margin-top:3px}
 .up{color:var(--green)} .dn{color:var(--red)} .neu{color:var(--text2)}
 .zcore-badge{
-  display:inline-flex;align-items:center;gap:6px;
+  display:inline-flex;align-items:center;gap:7px;
   background:var(--bg2);border:1px solid var(--border);
-  border-radius:var(--radius-pill);padding:5px 12px;font-size:11px;
+  border-radius:var(--radius-pill);padding:6px 14px;font-size:12px;font-weight:600;
 }
-.zcore-val{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px}
+.zcore-val{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px}
 
 /* ── STATS TABLE ── */
 .stats-row{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;margin-top:10px;border-radius:var(--radius);overflow:hidden}
 @media(max-width:700px){.stats-row{grid-template-columns:repeat(4,1fr)}}
-.stat-cell{background:var(--bg2);padding:10px 8px;text-align:center}
-.stat-cell:first-child{text-align:left}
-.stat-label{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-weight:600}
-.stat-val{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
-.stat-sub{font-size:9px;color:var(--text3);margin-top:1px}
+.stat-cell{background:var(--bg2);padding:11px 9px;text-align:center}
+.stat-cell:first-child{text-align:left;display:flex;align-items:center;justify-content:flex-start}
+.stat-cell:first-child .stat-label{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:0}
+.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;font-weight:700}
+.stat-val{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.stat-sub{font-size:10px;color:var(--text2);margin-top:2px;font-weight:500}
 
 /* IHSG row */
 .stats-row-ihsg{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;margin-top:1px;border-radius:var(--radius);overflow:hidden}
 @media(max-width:700px){.stats-row-ihsg{grid-template-columns:repeat(4,1fr)}}
 .stats-row-ihsg .stat-cell{background:var(--bg3)}
 
-.correl-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;flex-wrap:wrap}
-.correl-label{color:var(--text2);font-size:11px;font-weight:500}
-.correl-val{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px}
+.correl-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;flex-wrap:wrap}
+.correl-label{color:var(--text2);font-size:12px;font-weight:600}
+.correl-val{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px}
 
 /* ── CHART ── */
-.chart-wrap{position:relative;height:300px}
-@media(max-width:700px){.chart-wrap{height:220px}}
-.chart-legend{display:flex;gap:16px;margin-bottom:8px;font-size:11px;flex-wrap:wrap}
-.legend-item{display:flex;align-items:center;gap:6px;color:var(--text2);font-weight:500}
-.legend-dot{width:20px;height:3px;border-radius:2px}
+.chart-wrap{position:relative;height:340px}
+@media(max-width:700px){.chart-wrap{height:260px}}
+.chart-legend{display:flex;gap:18px;margin-bottom:10px;font-size:13px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:8px;color:var(--text);font-weight:600}
+.legend-dot{width:24px;height:4px;border-radius:2px}
 
 /* ── YOY ANALYSIS ── */
 .yoy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:600px){.yoy-grid{grid-template-columns:1fr}}
-.yoy-table{width:100%;border-collapse:collapse;font-size:11px}
-.yoy-table th{color:var(--text2);font-weight:600;padding:6px 6px;text-align:center;border-bottom:1px solid var(--border)}
-.yoy-table td{padding:7px 6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;font-variant-numeric:tabular-nums}
+.yoy-table{width:100%;border-collapse:collapse;font-size:13px}
+.yoy-table th{color:var(--text2);font-weight:700;padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.yoy-table td{padding:9px 6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 .yoy-table tr:nth-child(even) td{background:var(--bg2)}
-.yoy-label{text-align:left!important;font-family:'Plus Jakarta Sans',sans-serif!important;color:var(--text2)!important}
+.yoy-label{text-align:left!important;font-family:'Plus Jakarta Sans',sans-serif!important;color:var(--text2)!important;font-weight:600!important;font-size:12px!important}
 
 /* ── PRICE TARGET BLUEPRINT ── */
 .pt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.pt-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;text-align:center}
-.pt-box .ptl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700}
-.pt-box .ptv{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
-.pt-box .ptp{font-size:11px;margin-top:2px;font-weight:600}
+.pt-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;text-align:center}
+.pt-box .ptl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:800}
+.pt-box .ptv{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.pt-box .ptp{font-size:12px;margin-top:3px;font-weight:700}
 .pt-sel{border:1px solid var(--red);background:var(--red-bg)}
 .pt-buy{border:1px solid var(--green);background:var(--green-bg)}
 
@@ -256,48 +257,48 @@ a{color:inherit;text-decoration:none}
 .consensus-grid{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:center}
 @media(max-width:400px){.consensus-grid{grid-template-columns:1fr}}
 .consensus-chart-wrap{position:relative;width:120px;height:120px}
-.consensus-stats{display:flex;flex-direction:column;gap:7px}
-.consensus-row{display:flex;align-items:center;gap:8px;font-size:12px}
-.consensus-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.consensus-name{color:var(--text2);width:60px;font-weight:600}
-.consensus-count{font-family:'IBM Plex Mono',monospace;font-weight:700;width:25px}
-.consensus-pct{font-family:'IBM Plex Mono',monospace;color:var(--text3);font-size:11px}
-.consensus-numbers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
-.cn-box{background:var(--bg2);padding:8px;text-align:center;border-radius:var(--radius)}
-.cn-label{font-size:9px;color:var(--text2);text-transform:uppercase;margin-bottom:2px;font-weight:700;letter-spacing:.5px}
-.cn-val{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.consensus-stats{display:flex;flex-direction:column;gap:9px}
+.consensus-row{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+.consensus-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.consensus-name{color:var(--text);width:70px;font-weight:700;font-size:12px;letter-spacing:.4px}
+.consensus-count{font-family:'IBM Plex Mono',monospace;font-weight:700;width:30px;font-size:14px}
+.consensus-pct{font-family:'IBM Plex Mono',monospace;color:var(--text2);font-size:12px;font-weight:600}
+.consensus-numbers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+.cn-box{background:var(--bg2);padding:10px;text-align:center;border-radius:var(--radius)}
+.cn-label{font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:3px;font-weight:800;letter-spacing:.6px}
+.cn-val{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
 
 /* ── ANALYST TABLE ── */
-.analyst-table{width:100%;border-collapse:collapse;font-size:12px}
+.analyst-table{width:100%;border-collapse:collapse;font-size:13px}
 .analyst-table th{
-  background:var(--bg2);color:var(--text2);font-weight:700;
-  padding:9px 10px;text-align:left;font-size:10px;letter-spacing:.5px;
+  background:var(--bg2);color:var(--text);font-weight:800;
+  padding:11px 12px;text-align:left;font-size:11px;letter-spacing:.6px;
   text-transform:uppercase;position:sticky;top:0;
 }
-.analyst-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.analyst-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);font-weight:500}
 .analyst-table tr:hover td{background:var(--bg2)}
-.analyst-table .badge{display:inline-block;padding:3px 10px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;letter-spacing:.5px}
+.analyst-table .badge{display:inline-block;padding:4px 12px;border-radius:var(--radius-pill);font-size:11px;font-weight:800;letter-spacing:.5px}
 .badge-buy{background:var(--green-bg);color:var(--green);border:1px solid rgba(5,150,105,.3)}
 .badge-neutral{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(217,119,6,.3)}
 .badge-sell{background:var(--red-bg);color:var(--red);border:1px solid rgba(225,29,72,.3)}
-.analyst-scroll{max-height:300px;overflow-y:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.analyst-scroll{max-height:340px;overflow-y:auto;border-radius:var(--radius);border:1px solid var(--border)}
 
 /* ── TICKER SIDE PANEL ── */
-.ticker-code{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);margin-bottom:2px}
-.ticker-name{font-size:11px;color:var(--text2);margin-bottom:8px}
-.ticker-price{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
-.ticker-chg{font-size:11px;margin-top:2px;font-weight:600}
+.ticker-code{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--accent);margin-bottom:3px}
+.ticker-name{font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:500}
+.ticker-price{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.ticker-chg{font-size:12px;margin-top:3px;font-weight:700}
 
 /* ── PAGE 2: MENABUNG ── */
 .saving-grid{display:grid;grid-template-columns:380px 1fr;gap:16px}
 @media(max-width:900px){.saving-grid{grid-template-columns:1fr}}
 
 .form-group{margin-bottom:14px}
-.form-label{font-size:11px;color:var(--text2);margin-bottom:6px;display:block;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.form-label{font-size:12px;color:var(--text);margin-bottom:7px;display:block;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
 .form-control{
   width:100%;background:var(--bg2);border:1px solid var(--border);
   border-radius:var(--radius);padding:11px 14px;color:var(--text);
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:500;outline:none;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;outline:none;
   transition:border-color .2s, box-shadow .2s;
   font-variant-numeric:tabular-nums;
 }
@@ -336,28 +337,28 @@ select.form-control option{background:var(--card);color:var(--text)}
 .result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 @media(max-width:600px){.result-grid{grid-template-columns:1fr 1fr}}
 .result-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;text-align:center}
-.result-box .rl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-weight:700}
-.result-box .rv{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
-.result-box .rs{font-size:10px;color:var(--text3);margin-top:2px}
+.result-box .rl{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;font-weight:800}
+.result-box .rv{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.result-box .rs{font-size:11px;color:var(--text2);margin-top:3px;font-weight:500}
 
 /* Portfolio table */
-.port-table{width:100%;border-collapse:collapse;font-size:11px}
-.port-table th{background:var(--bg2);color:var(--text2);padding:8px 10px;font-size:10px;font-weight:700;text-align:right;text-transform:uppercase;letter-spacing:.5px}
+.port-table{width:100%;border-collapse:collapse;font-size:13px}
+.port-table th{background:var(--bg2);color:var(--text);padding:10px 12px;font-size:11px;font-weight:800;text-align:right;text-transform:uppercase;letter-spacing:.5px}
 .port-table th:first-child{text-align:left}
-.port-table td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;color:var(--text)}
-.port-table td:first-child{text-align:left;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:var(--text2);font-weight:500}
+.port-table td{padding:9px 12px;border-bottom:1px solid var(--border);text-align:right;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;color:var(--text);font-size:13px;font-weight:600}
+.port-table td:first-child{text-align:left;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;color:var(--text2);font-weight:600}
 
 /* ── WATCHLIST SIDEBAR ── */
 .watchlist-item{
   display:flex;align-items:center;justify-content:space-between;
-  padding:9px 12px;cursor:pointer;border-radius:var(--radius);transition:background .15s;
+  padding:10px 12px;cursor:pointer;border-radius:var(--radius);transition:background .15s;
   gap:8px;border:1px solid transparent;
 }
 .watchlist-item:hover{background:var(--bg2)}
 .watchlist-item.active{background:var(--bg2);border-color:var(--accent)}
-.wi-code{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);width:48px}
-.wi-price{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;color:var(--text)}
-.wi-chg{font-size:11px;text-align:right;width:50px;font-weight:600}
+.wi-code{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);width:52px}
+.wi-price{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;color:var(--text)}
+.wi-chg{font-size:12px;text-align:right;width:54px;font-weight:700}
 
 /* ── PAGE 3: CONSENSUS ALL ── */
 .consensus-all-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
@@ -370,17 +371,17 @@ select.form-control option{background:var(--card);color:var(--text)}
 .cs-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-card-lg);border-color:var(--accent)}
 [data-theme="dark"] .cs-card{box-shadow:var(--shadow-card),0 0 0 1px var(--border) inset}
 .cs-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.cs-ticker{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--accent)}
-.cs-name{font-size:11px;color:var(--text2);margin-top:2px}
-.cs-bar{height:8px;border-radius:var(--radius-pill);background:var(--bg3);display:flex;overflow:hidden;margin:10px 0}
+.cs-ticker{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:800;color:var(--accent)}
+.cs-name{font-size:12px;color:var(--text2);margin-top:3px;font-weight:500}
+.cs-bar{height:10px;border-radius:var(--radius-pill);background:var(--bg3);display:flex;overflow:hidden;margin:10px 0}
 .cs-bar-buy{background:var(--green);height:100%}
 .cs-bar-neutral{background:var(--yellow);height:100%}
 .cs-bar-sell{background:var(--red);height:100%}
-.cs-nums{display:flex;justify-content:space-between;font-size:10px;font-weight:600}
-.cs-target{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.cs-nums{display:flex;justify-content:space-between;font-size:12px;font-weight:700}
+.cs-target{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
 
 /* ── FOOTER ── */
-.footer{padding:20px;text-align:center;font-size:11px;color:var(--text2);border-top:1px solid var(--border);margin-top:24px}
+.footer{padding:22px;text-align:center;font-size:13px;color:var(--text);border-top:1px solid var(--border);margin-top:24px;font-weight:500}
 .footer strong{color:var(--accent);font-weight:700}
 
 /* ── RESPONSIVE OVERRIDES ── */
@@ -412,18 +413,19 @@ select.form-control option{background:var(--card);color:var(--text)}
 .info-banner{
   background:var(--grad-soft);
   border:1px solid var(--border);border-radius:var(--radius);
-  padding:12px 16px;font-size:12px;color:var(--text);margin-bottom:14px;
-  display:flex;align-items:center;gap:10px;font-weight:500;
+  padding:14px 18px;font-size:14px;color:var(--text);margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;font-weight:600;
 }
-.info-banner strong{color:var(--accent);font-weight:700}
+.info-banner strong{color:var(--accent);font-weight:800}
 
 .period-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .period-tab{
-  padding:5px 14px;font-size:11px;font-weight:600;
+  padding:7px 18px;font-size:13px;font-weight:700;
   border:1px solid var(--border);border-radius:var(--radius-pill);
   cursor:pointer;color:var(--text2);transition:all .15s;
   font-family:'IBM Plex Mono',monospace;
   background:var(--card);
+  letter-spacing:.5px;
 }
 .period-tab:hover{border-color:var(--accent);color:var(--accent)}
 .period-tab.active{
@@ -470,9 +472,9 @@ select.form-control option{background:var(--card);color:var(--text)}
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
           <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:#e11d48"></div>IHSG</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#6d28d9"></div><span id="legendStock">TLKM</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:rgba(109,40,217,.35);border-top:1px dashed #6d28d9"></div>Linear Trend</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e11d48;height:4px"></div>IHSG</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#6d28d9;height:5px"></div><span id="legendStock">TLKM</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:repeating-linear-gradient(90deg,var(--accent3) 0,var(--accent3) 6px,transparent 6px,transparent 11px);height:4px"></div><strong style="color:var(--accent3)">Linear Trend</strong></div>
           </div>
           <div class="period-tabs">
             <div class="period-tab" onclick="setPeriod(12)">1T</div>
@@ -779,7 +781,7 @@ function buildWatchlist() {
     const sign = chg > 0 ? '+' : '';
     return `<div class="watchlist-item ${code === currentStock ? 'active' : ''}" data-code="${code}" onclick="selectStock('${code}')">
       <span class="wi-code">${code}</span>
-      <span style="font-size:9px;color:var(--text3);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${(DATA.stock_info[code] || {}).name || ''}</span>
+      <span style="font-size:11px;color:var(--text2);font-weight:500;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${(DATA.stock_info[code] || {}).name || ''}</span>
       <span class="wi-price">${cur.toLocaleString('id')}</span>
       <span class="wi-chg ${cls}">${sign}${(chg*100).toFixed(1)}%</span>
     </div>`;
@@ -930,14 +932,19 @@ function renderChart(code) {
     data: {
       labels,
       datasets: [
-        { label:'IHSG', data: ihsgNorm, borderColor:'#e11d48', borderWidth:1.6, pointRadius:0, tension:.3, fill:false },
-        { label: code, data: stockNorm, borderColor:'#6d28d9', borderWidth:2, pointRadius:0, tension:.3,
+        { label:'IHSG', data: ihsgNorm, borderColor:'#e11d48', borderWidth:2.2, pointRadius:0, tension:.3, fill:false },
+        { label: code, data: stockNorm, borderColor:'#6d28d9', borderWidth:2.8, pointRadius:0, tension:.3,
           fill: true, backgroundColor: (ctx) => {
             const g = ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
             g.addColorStop(0,'rgba(109,40,217,0.22)'); g.addColorStop(1,'rgba(109,40,217,0)'); return g;
           }
         },
-        { label:'Trend', data: trendFull, borderColor:'rgba(109,40,217,0.45)', borderWidth:1, borderDash:[4,4], pointRadius:0, fill:false }
+        { label:'Linear Trend', data: trendFull,
+          borderColor: (ctx) => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            return isDark ? 'rgba(244, 114, 182, 0.95)' : 'rgba(190, 24, 93, 0.85)';
+          },
+          borderWidth: 3, borderDash:[8,5], pointRadius:0, fill:false, tension:0 }
       ]
     },
     options: {
@@ -959,9 +966,9 @@ function renderChart(code) {
         }
       },
       scales:{
-        x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:10},maxTicksLimit:12}},
-        y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:10}},
-           title:{display:true,text:'Index (Base=100)',color:ct.ticks,font:{size:10,weight:'600'}}}
+        x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'},maxTicksLimit:12}},
+        y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'}},
+           title:{display:true,text:'Index (Base=100)',color:ct.ticks,font:{size:12,weight:'700'}}}
       }
     }
   });
@@ -1005,7 +1012,7 @@ function renderStats(code) {
     <div class="correl-row" style="padding:4px 0">
       <span class="correl-label">Korelasi ${code} vs IHSG (bulanan):</span>
       <span class="correl-val ${(DATA.correlations[code]||0)>0?'up':'dn'}">${((DATA.correlations[code]||0)*100).toFixed(2)}%</span>
-      <span style="margin-left:auto;font-size:10px;color:var(--text3)">Rata² Annual: 
+      <span style="margin-left:auto;font-size:12px;color:var(--text2);font-weight:600">Rata² Annual: 
         <span class="${st.avg_monthly>0?'up':'dn'}">${(st.avg_monthly*1200).toFixed(1)}%/thn</span>
       </span>
     </div>
@@ -1046,7 +1053,7 @@ function renderYoY(code) {
 
   el.innerHTML = `<div class="yoy-grid">
     <div>
-      <div style="font-size:10px;color:var(--text2);margin-bottom:6px;font-weight:500">📈 Kenaikan YoY Terbesar</div>
+      <div style="font-size:13px;color:var(--green);margin-bottom:8px;font-weight:800;letter-spacing:.3px">📈 Kenaikan YoY Terbesar</div>
       <table class="yoy-table">
         <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
         <tbody>
@@ -1062,7 +1069,7 @@ function renderYoY(code) {
       </table>
     </div>
     <div>
-      <div style="font-size:10px;color:var(--text2);margin-bottom:6px;font-weight:500">📉 Penurunan YoY Terbesar</div>
+      <div style="font-size:13px;color:var(--red);margin-bottom:8px;font-weight:800;letter-spacing:.3px">📉 Penurunan YoY Terbesar</div>
       <table class="yoy-table">
         <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
         <tbody>
@@ -1116,17 +1123,17 @@ function renderPriceTarget(code) {
       </div>
       <div style="text-align:right">
         <div class="ticker-price">${price.toLocaleString('id')}</div>
-        <div style="font-size:10px;color:var(--text3)">${lastDate.substring(0,7)}</div>
+        <div style="font-size:12px;color:var(--text2);font-weight:600">${lastDate.substring(0,7)}</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div style="text-align:center">
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">ACTUAL BUY</div>
-        <div style="font-size:9px;color:var(--text3)">Target Beli (Konsensus Low)</div>
+        <div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:800">ACTUAL BUY</div>
+        <div style="font-size:11px;color:var(--text2);font-weight:500">Target Beli (Konsensus Low)</div>
       </div>
       <div style="text-align:center">
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">ACTUAL SELL</div>
-        <div style="font-size:9px;color:var(--text3)">Target Jual (Konsensus High)</div>
+        <div style="font-size:11px;color:var(--red);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:800">ACTUAL SELL</div>
+        <div style="font-size:11px;color:var(--text2);font-weight:500">Target Jual (Konsensus High)</div>
       </div>
     </div>
     <div class="pt-grid" style="margin-top:6px">
@@ -1141,12 +1148,12 @@ function renderPriceTarget(code) {
         <div class="ptp ${pctSell>=0?'up':'dn'}">${(pctSell*100).toFixed(1)}%</div>
       </div>
     </div>
-    <div style="margin-top:8px;background:var(--bg3);border-radius:4px;padding:8px;text-align:center">
-      <div style="font-size:9px;color:var(--text3);margin-bottom:2px">TARGET KONSENSUS (Rata²)</div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--yellow)">${Math.round(avgTarget).toLocaleString('id')}</div>
-      <div style="font-size:11px;color:var(--accent)">${(pctAvg*100).toFixed(1)}% dari harga saat ini</div>
+    <div style="margin-top:10px;background:var(--bg3);border-radius:var(--radius);padding:12px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:800;text-transform:uppercase;letter-spacing:.6px">TARGET KONSENSUS (Rata²)</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--yellow)">${Math.round(avgTarget).toLocaleString('id')}</div>
+      <div style="font-size:13px;color:var(--accent);font-weight:700;margin-top:2px">${(pctAvg*100).toFixed(1)}% dari harga saat ini</div>
     </div>
-    <div style="margin-top:6px;font-size:9px;color:var(--text3);text-align:center">By Economstock · Lynk.id/economstock</div>
+    <div style="margin-top:8px;font-size:11px;color:var(--text2);text-align:center;font-weight:500">By Economstock · Lynk.id/economstock</div>
   `;
 }
 
@@ -1178,8 +1185,8 @@ function renderConsensus(code) {
       <div style="position:relative;width:120px;height:120px">
         <canvas id="donutCanvas" width="120" height="120"></canvas>
         <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--accent)">${code}</div>
-          <div style="font-size:9px;color:var(--text3)">${total} analis</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:var(--accent)">${code}</div>
+          <div style="font-size:11px;color:var(--text2);font-weight:600">${total} analis</div>
         </div>
       </div>
       <div class="consensus-stats">
@@ -1260,8 +1267,8 @@ function renderConsensus(code) {
         },
         annotation:price?{annotations:{line1:{type:'line',yMin:price,yMax:price,borderColor:ct.ticks,borderWidth:1,borderDash:[4,4]}}}:{}},
         scales:{
-          x:{grid:{display:false},ticks:{color:ct.ticks,font:{size:10,weight:'600'}}},
-          y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:9},callback:v=>v>=1000?Math.round(v/1000)+'k':v}}
+          x:{grid:{display:false},ticks:{color:ct.ticks,font:{size:12,weight:'700'}}},
+          y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11,weight:'600'},callback:v=>v>=1000?Math.round(v/1000)+'k':v}}
         }
       }
     });
