@@ -85,9 +85,9 @@ Untuk **masing-masing** sheet (Histori Harga & Konsensus):
 
 > **Tidak perlu edit isi sheet** — parser sudah handle layout Bulanz + banner "Pesan di dashboard" + kode B/N/S.
 
-### Fase 1B — Publish Sheet LIVE (Realtime, Opsional Tapi Recommended)
+### Fase 1B — Publish Sheet LIVE (Realtime, Recommended untuk Bulan Berjalan)
 
-Sheet ke-3 ini yang bikin angka harga di hero card / watchlist / price target jadi **realtime** (update tiap workflow run). Layout-nya jauh lebih sederhana — cukup 3 kolom:
+Sheet ke-3 ini yang bikin angka harga di hero card / watchlist / price target / chart-titik-terakhir jadi **realtime**, dan **menggantikan kebutuhan baris `sekarang` di sheet histori**. Layout-nya jauh lebih sederhana — cukup 3 kolom:
 
 | Ticker | Harga Live | % Live |
 |---|---:|---:|
@@ -271,14 +271,17 @@ Row 3: BBCA     | =GOOGLEFINANCE("IDX:BBCA","price")      | =GOOGLEFINANCE("IDX:
 - `IHSG` / `JKSE` / `COMPOSITE` saling di-alias ke `IHSG`.
 
 **Apa yang di-overwrite di dashboard:**
-- `price_history[bulan_terakhir][TICKER]` → harga live
+- `price_history[bulan_berjalan][TICKER]` → harga live  
+  (kalau row bulan berjalan **belum ada** di history sheet → builder otomatis **APPEND row baru** dengan label `Mmm-YY`. Row history bulan-bulan sebelumnya **tidak disentuh**.)
 - `stats[TICKER].current` → harga live
 - `stats[TICKER].mom` → `% Live` (kalau ada di sheet, kalau gak ada di-recompute dari harga bulan sebelumnya)
 - `stats[TICKER].max` / `min` → refresh kalau live break extreme historis
 - `zcores[TICKER]` → recompute pakai MoM live
 - `consensus_slim[TICKER][*].pct_d` → upside % analis di-recompute pakai harga live
 
-Hasilnya: hero card, watchlist sidebar, chart linechart (titik bulan terakhir), price target blueprint, donut consensus, dan tabel rekomendasi analis — **semua otomatis sinkron** ke harga live tanpa edit kode.
+Hasilnya: hero card, watchlist sidebar, chart linechart (titik bulan berjalan = live), price target blueprint, donut consensus, dan tabel rekomendasi analis — **semua otomatis sinkron** ke harga live tanpa edit kode.
+
+> **Tip:** Di sheet histori, **gak perlu** lagi maintain baris `sekarang` (atau row bulan berjalan dengan formula `=GOOGLEFINANCE`). Cukup isi sampai bulan kemarin, lalu biarkan sheet **Live** yang handle bulan berjalan. Builder akan auto-append. Kalau kamu tetap punya row `sekarang`, masih jalan juga — overlay akan overwrite row itu.
 
 ---
 

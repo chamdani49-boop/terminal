@@ -640,19 +640,46 @@ function parseLive(csv, debug = {}) {
  * Frontend baca `price_history[last][ticker]` & `stats[ticker].current` —
  * cukup overwrite di sini, semua kartu (hero, chart, watchlist, price target,
  * blueprint, analyst table) otomatis ikut update.
+ *
+ * Kalau row terakhir di history BUKAN bulan berjalan, function ini akan
+ * APPEND row baru untuk bulan berjalan dulu (label "Mmm-YY", date "YYYY-MM-01"),
+ * lalu overlay live ke situ. Ini handle kasus user yang gak masukkan baris
+ * "sekarang" di history sheet — live sheet jadi sumber tunggal untuk bulan
+ * berjalan.
  */
 function applyLiveOverlay(price_history, stats, live, debug = {}) {
   if (!price_history.length || !live || !Object.keys(live).length) return;
 
-  const lastRow = price_history[price_history.length - 1];
-  const prevRow = price_history[price_history.length - 2] || lastRow;
+  // Anchor "bulan berjalan" — UTC start-of-month sebagai key di price_history.
+  const now = new Date();
+  const yyyy = now.getUTCFullYear();
+  const mm = now.getUTCMonth();
+  const curMonthIso = `${yyyy}-${String(mm + 1).padStart(2,'0')}-01`;
+  const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const curLabel = `${monthShort[mm]}-${String(yyyy).slice(2)}`;
+
+  let lastRow = price_history[price_history.length - 1];
+  let prevRow = price_history[price_history.length - 2] || lastRow;
+
+  // Kalau history terakhir bukan bulan berjalan, append row baru. Skenario:
+  //   1) User gak punya baris "sekarang" di sheet histori (live sheet handle).
+  //   2) Pertama kali workflow jalan setelah ganti bulan (mis. 1 Juni jam 0:01).
+  // Setelah append: prevRow = row terakhir history, lastRow = row baru.
+  if (lastRow.date !== curMonthIso) {
+    prevRow = lastRow;
+    lastRow = { date: curMonthIso, label: curLabel };
+    price_history.push(lastRow);
+    debug.live_appended_current_month = true;
+  } else {
+    debug.live_appended_current_month = false;
+  }
 
   let touched = 0;
   for (const t of Object.keys(live)) {
     const lv = live[t];
     if (!Number.isFinite(lv.price) || lv.price <= 0) continue;
 
-    // 1) Overwrite harga bulan terakhir di history.
+    // 1) Set harga bulan berjalan di history.
     lastRow[t] = lv.price;
 
     // 2) Overwrite stats.current. Bikin entry baru kalau ticker belum ada

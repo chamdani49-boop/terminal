@@ -275,11 +275,13 @@ expect(Object.keys(parseLive('', {})), [], 'csv kosong');
 expect(Object.keys(parseLive('Ticker,Harga\n', {})), [], 'cuma header');
 
 // ─── applyLiveOverlay: integrasi dengan history + stats ───
-console.log('\n[applyLiveOverlay] overwrite price_history[last] + stats');
+console.log('\n[applyLiveOverlay] overwrite price_history[last] + stats (last row = bulan ini)');
+const _now = new Date();
+const _curIsoMonth = `${_now.getUTCFullYear()}-${String(_now.getUTCMonth()+1).padStart(2,'0')}-01`;
 const ph = [
   { date: '2026-03-01', label: 'Mar-26', TLKM: 3000, BBCA: 9000, IHSG: 7000 },
   { date: '2026-04-01', label: 'Apr-26', TLKM: 2810, BBCA: 9200, IHSG: 6957 },
-  { date: '2026-05-01', label: 'May-26', TLKM: 2750, BBCA: 9300, IHSG: 6130 },
+  { date: _curIsoMonth, label: 'Cur-XX', TLKM: 2750, BBCA: 9300, IHSG: 6130 },
 ];
 const stats = {
   TLKM: { current: 2750, mom: -0.0213, max: 3000, max_date:'2026-03-01', min: 2750, min_date:'2026-05-01', avg_monthly: -0.04, std_monthly: 0.05 },
@@ -300,29 +302,58 @@ expect(ph[ph.length-1].IHSG, 6130, 'price_history[last].IHSG = unchanged (no liv
 expect(stats.TLKM.current, 5775, 'stats.TLKM.current = 5775');
 expect(stats.TLKM.mom, -0.0335, 'stats.TLKM.mom = -0.0335 (dari %Live, override)');
 expect(stats.TLKM.max, 5775, 'stats.TLKM.max refreshed (5775 > 3000)');
-expect(stats.TLKM.max_date, '2026-05-01', 'max_date = bulan ini');
+expect(stats.TLKM.max_date, _curIsoMonth, 'max_date = bulan ini');
 
 expect(stats.BBCA.current, 9500, 'stats.BBCA.current = 9500');
 expect(stats.BBCA.mom, 0.0215, 'stats.BBCA.mom = 0.0215');
 
 expect(stats.IHSG.current, 6130, 'stats.IHSG.current = unchanged');
 assert(debugO.live_tickers_overlaid === 2, 'debug.live_tickers_overlaid = 2');
+expect(debugO.live_appended_current_month, false, 'gak append (last row sudah bulan ini)');
+
+// ─── applyLiveOverlay: APPEND row baru kalau last row bukan bulan ini ───
+console.log('\n[applyLiveOverlay] APPEND row baru (last row = April, sekarang Mei)');
+const phNoCurr = [
+  { date: '2026-02-01', label: 'Feb-26', TLKM: 3000, IHSG: 7000 },
+  { date: '2026-03-01', label: 'Mar-26', TLKM: 2900, IHSG: 6900 },
+  { date: '2026-04-01', label: 'Apr-26', TLKM: 2810, IHSG: 6800 },
+];
+const statsApp = {
+  TLKM: { current: 2810, mom: -0.031, ytd: -0.06, yoy: -0.1, max: 3000, max_date:'2026-02-01', min: 2810, min_date:'2026-04-01', avg_monthly: -0.04, std_monthly: 0.05, yoy_large: [] },
+  IHSG: { current: 6800, mom: -0.014, ytd: 0, yoy: 0, max: 7000, max_date:'2026-02-01', min: 6800, min_date:'2026-04-01', avg_monthly: -0.02, std_monthly: 0.03, yoy_large: [] },
+};
+const debugApp = {};
+applyLiveOverlay(phNoCurr, statsApp, { TLKM: { price: 5775, change_pct: -0.0335 } }, debugApp);
+
+expect(phNoCurr.length, 4, 'history sekarang punya 4 row (Feb/Mar/Apr/Cur)');
+expect(phNoCurr[3].date, _curIsoMonth, 'row baru date = bulan berjalan');
+const _curLabelExpected = (() => {
+  const ms = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${ms[_now.getUTCMonth()]}-${String(_now.getUTCFullYear()).slice(2)}`;
+})();
+expect(phNoCurr[3].label, _curLabelExpected, 'row baru label = "Mmm-YY" auto-generated');
+expect(phNoCurr[3].TLKM, 5775, 'TLKM di row baru = harga live');
+expect(phNoCurr[2].TLKM, 2810, 'April UNCHANGED (gak ke-overwrite)');
+expect(statsApp.TLKM.current, 5775, 'stats.TLKM.current = 5775 (live)');
+expect(statsApp.TLKM.mom, -0.0335, 'stats.TLKM.mom = -0.0335 (% Live override)');
+assert(debugApp.live_appended_current_month === true, 'debug flag: appended = true');
 
 // ─── applyLiveOverlay: kalau %Live missing, recompute MoM dari price_history ───
-console.log('\n[applyLiveOverlay] tanpa %Live → recompute MoM dari prevMonth');
+console.log('\n[applyLiveOverlay] tanpa %Live → recompute MoM dari prevMonth (last row = bulan ini)');
+// Last row = bulan ini, jadi overlay langsung di-overwrite (tanpa append).
 const ph2 = [
   { date: '2026-04-01', label: 'Apr-26', TLKM: 5000 },
-  { date: '2026-05-01', label: 'May-26', TLKM: 5100 },
+  { date: _curIsoMonth, label: 'Cur-XX', TLKM: 5100 },
 ];
 const stats2 = { TLKM: { current: 5100, mom: 0.02, max: 5100, min: 5000, avg_monthly: 0.01, std_monthly: 0.01 } };
 applyLiveOverlay(ph2, stats2, { TLKM: { price: 5500, change_pct: null } }, {});
 expect(stats2.TLKM.current, 5500, 'current update');
-// MoM = (5500 - 5000) / 5000 = 0.10
+// MoM = (5500 - 5000) / 5000 = 0.10 (vs prevRow yang sekarang = April)
 expect(Math.round(stats2.TLKM.mom * 10000) / 10000, 0.1, 'MoM recomputed = (5500-5000)/5000 = 0.10');
 
 // ─── applyLiveOverlay: ticker baru (belum ada di stats) ───
 console.log('\n[applyLiveOverlay] ticker live yang belum ada di stats');
-const ph3 = [{ date: '2026-05-01', label: 'May-26', TLKM: 5000 }];
+const ph3 = [{ date: _curIsoMonth, label: 'Cur-XX', TLKM: 5000 }];
 const stats3 = { TLKM: { current: 5000, mom: 0, max: 5000, min: 5000, avg_monthly: 0, std_monthly: 0.01 } };
 applyLiveOverlay(ph3, stats3, { GOTO: { price: 100, change_pct: 0.05 } }, {});
 assert(stats3.GOTO != null, 'stats.GOTO created');
@@ -331,7 +362,7 @@ expect(stats3.GOTO.mom, 0.05, 'GOTO.mom from %Live');
 
 // ─── applyLiveOverlay: empty live → no-op ───
 console.log('\n[applyLiveOverlay] live kosong → no-op');
-const ph4 = [{ date: '2026-05-01', label: 'May-26', TLKM: 5000 }];
+const ph4 = [{ date: _curIsoMonth, label: 'Cur-XX', TLKM: 5000 }];
 const stats4 = { TLKM: { current: 5000, mom: 0 } };
 applyLiveOverlay(ph4, stats4, {}, {});
 expect(ph4[0].TLKM, 5000, 'price_history unchanged');
