@@ -525,12 +525,43 @@ function parseConsensus(csv, latestPrices, debug = {}) {
 
 // ─────────────────────────────────────────────
 // Live realtime sheet parser
-// Layout sangat sederhana — 3 kolom:
-//   Ticker | Harga Live | % Live
-// (header bisa juga: Symbol/Kode/Saham, Price/Last, Change/Pct, dst.)
+// Layout fleksibel:
+//   (a) Berheader   → "Ticker | Harga Live | % Live" (atau alias-nya).
+//   (b) Headerless  → langsung data dari row 1: kolom A = ticker code,
+//                     kolom B = harga, kolom C = %change. Di-detect kalau
+//                     row 0 isinya cocok dengan TICKER_RX + numeric > 0.
+//                     Default konvensi %change: percent (0,77 = 0,77%).
 // ─────────────────────────────────────────────
 function parseLive(csv, debug = {}) {
   const rows = parseCsv(csv);
+  if (rows.length < 1) {
+    debug.live_warning = 'Live sheet kosong';
+    return {};
+  }
+
+  // ─ Headerless layout detection ─
+  // Kalau row 0 sudah berbentuk data (kolom A ticker-shaped, kolom B numerik
+  // > 0), treat seluruh sheet sebagai positional 3-kolom dari row 0.
+  // Reasoning: user banyak yang bikin sheet LIVE pake formula GoogleFinance
+  // tanpa header (langsung baris pertama = ticker pertama). Kalau ada header,
+  // row 0 isinya kata-kata (gak match TICKER_RX) → fallthrough ke logic
+  // berheader di bawah.
+  {
+    const r0 = rows[0] || [];
+    const t0 = cleanTickerName(r0[0]);
+    const p0 = toNum(r0[1]);
+    if (t0 && (TICKER_RX.test(t0) || t0 === 'IHSG') && Number.isFinite(p0) && p0 > 0) {
+      const iPctHl = r0.length > 2 ? 2 : -1;
+      debug.live_headerless = true;
+      debug.live_header_idx = -1;
+      debug.live_header_sample = r0;
+      debug.live_cols = { iTicker: 0, iPrice: 1, iPct: iPctHl };
+      // Default mode 'percent': nilai di kolom %change adalah angka percent
+      // (0,77 → 0,77%). Range realistis IDX bikin ini default yang aman.
+      return _parseLiveBody(rows, /*dataStart=*/0, /*iTicker=*/0, /*iPrice=*/1, iPctHl, 'percent');
+    }
+  }
+
   if (rows.length < 2) {
     debug.live_warning = 'Live sheet has < 2 rows';
     return {};
@@ -599,8 +630,22 @@ function parseLive(csv, debug = {}) {
     return {};
   }
 
+  // Headerful: pct mode 'auto' — preserve heuristic lama (per-row): kalau
+  // ada tanda % atau |n| > 1, treat percent (bagi 100); kalau kecil & tanpa
+  // %, treat fractional. Kompatibel dengan sheet versi sebelumnya.
+  return _parseLiveBody(rows, headerIdx + 1, iTicker, iPrice, iPct, 'auto');
+}
+
+/**
+ * Loop body untuk parseLive. Dipake oleh kedua jalur (headerless & headerful)
+ * supaya filter row + parsing %change konsisten.
+ *
+ * @param {string} pctMode - 'percent' (selalu bagi 100) atau 'auto' (per-row
+ *   heuristic: % atau |n|>1 → bagi 100; selain itu fractional).
+ */
+function _parseLiveBody(rows, dataStart, iTicker, iPrice, iPct, pctMode) {
   const out = {};
-  for (let r = headerIdx + 1; r < rows.length; r++) {
+  for (let r = dataStart; r < rows.length; r++) {
     const row = rows[r];
     if (!row) continue;
 
@@ -612,21 +657,19 @@ function parseLive(csv, debug = {}) {
     const price = toNum(row[iPrice]);
     if (!Number.isFinite(price) || price <= 0) continue;
 
-    // %change: "-3.35%" / "-3.35" / "-0.0335" semua valid input.
-    // Pakai parser inline (bukan toNum) supaya gak kena interpretasi
-    // Indo-thousand-sep: toNum("0.012") = 12, tapi untuk persen kita mau 0.012.
+    // %change: input bisa "-3.35%" / "-3.35" / "-0.0335".
+    // Pakai parser inline (bukan toNum) supaya gak kena Indo-thousand-sep
+    // (toNum("0.012") = 12; di sini kita mau 0.012).
     let pct = null;
     if (iPct >= 0) {
       let pctStr = String(row[iPct] || '').trim();
       const hasPctSign = pctStr.endsWith('%');
       if (hasPctSign) pctStr = pctStr.slice(0, -1).trim();
-      // Strip whitespace, ganti koma desimal Indo (",5" → ".5")
       pctStr = pctStr.replace(/\s/g, '').replace(',', '.');
       const n = pctStr ? Number(pctStr) : NaN;
       if (Number.isFinite(n)) {
-        // Kalau ada tanda "%", atau angkanya > 1 (mis. 3.35), anggap percent →
-        // bagi 100. Kalau kecil & tanpa "%" (mis. 0.0335), anggap fractional.
-        pct = (hasPctSign || Math.abs(n) > 1) ? n / 100 : n;
+        if (pctMode === 'percent' || hasPctSign || Math.abs(n) > 1) pct = n / 100;
+        else pct = n;
       }
     }
 
