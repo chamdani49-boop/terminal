@@ -339,9 +339,11 @@ function parseConsensus(csv, latestPrices, debug = {}) {
   debug.consensus_header_sample = rawHeader;
 
   // Fuzzy column finder. Coba exact, lalu substring.
+  // Skip names yang norm-nya kosong (mis. '[]' → '') supaya gak match cell kosong di header.
   const findFz = (...names) => {
     for (const n of names) {
       const nn = norm(n);
+      if (!nn) continue;
       const i = header.indexOf(nn);
       if (i >= 0) return i;
     }
@@ -357,13 +359,44 @@ function parseConsensus(csv, latestPrices, debug = {}) {
   const iTicker = findFz('symbol', 'ticker', 'code', 'kode', 'saham');
   let iDate    = findFz('date', 'tanggal', 'tgl', 'tanggalriset', 'tanggalreview', 'reviewdate', 'tanggalpublikasi');
   const iFirm  = findFz('firmname', 'firm', 'analyst', 'sekuritas', 'broker', 'analis', 'penerbit', 'firmnamesekuritas');
-  const iSugg  = findFz('[]', 'suggestion', 'rec', 'recommendation', 'rating', 'bns', 'rekomendasi', 'call');
+  let iSugg    = findFz('suggestion', 'rec', 'recommendation', 'rating', 'bns', 'rekomendasi', 'call');
   let iTgt     = findFz('tprice', 'tprice1', 'targetprice', 'pricetarget', 'targetharga', 'hargatarget', 'target', 'tp');
   const iPct   = findFz('pctd', 'pct', 'upside', 'pctdelta', 'delta');
+
+  // Special-case: header literal "[]" (bracket kosong) — sering dipakai sebagai
+  // marker kolom suggestion B/N/S. Cari di rawHeader sebelum di-normalize.
+  if (iSugg < 0) {
+    const i = rawHeader.findIndex(c => String(c || '').trim() === '[]');
+    if (i >= 0) iSugg = i;
+  }
 
   if (iTicker < 0) {
     // Fallback ekstrim: kolom 0 mungkin ticker
     debug.consensus_warning_no_symbol_col = true;
+  }
+
+  // Content-based fallback untuk SUGGESTION: cari kolom dengan mayoritas nilai
+  // berbentuk B/N/S atau BUY/SELL/HOLD/NEUTRAL. Robust kalau header pakai simbol
+  // aneh seperti "[]" atau "Rec." yang gak ke-detect oleh nama.
+  if (iSugg < 0) {
+    const RX_SUGG = /^(B|N|S|BUY|SELL|HOLD|NEUTRAL|OVERWEIGHT|UNDERWEIGHT|OUTPERFORM|UNDERPERFORM|ADD|REDUCE|ACCUMULATE)$/i;
+    const counts = {};
+    for (let r = headerIdx + 1; r < Math.min(rows.length, headerIdx + 200); r++) {
+      const row = rows[r];
+      for (let c = 0; c < (row || []).length; c++) {
+        if (c === iTicker || c === iDate || c === iFirm || c === iTgt || c === iPct) continue;
+        const v = String(row[c] || '').trim();
+        if (RX_SUGG.test(v)) counts[c] = (counts[c] || 0) + 1;
+      }
+    }
+    let bestCol = -1, bestCount = 0;
+    for (const [c, n] of Object.entries(counts)) {
+      if (n > bestCount) { bestCount = n; bestCol = parseInt(c, 10); }
+    }
+    if (bestCol >= 0 && bestCount >= 3) {
+      debug.consensus_suggestion_inferred_col = bestCol;
+      iSugg = bestCol;
+    }
   }
 
   // Content-based fallback untuk T.PRICE: cari kolom numerik dengan median > 50
