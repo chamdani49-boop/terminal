@@ -182,6 +182,7 @@ a{color:inherit;text-decoration:none}
   display:inline-flex;align-items:center;gap:0;
   padding:7px 0;white-space:nowrap;
   animation:ticker-scroll 60s linear infinite;
+  animation-play-state:paused;   /* mulai paused — dijalankan JS setelah render */
   animation-delay:0s;
   will-change:transform;
 }
@@ -352,7 +353,7 @@ a{color:inherit;text-decoration:none}
 */
 /* Konsensus — donut kiri, list NEUTRAL/BUY/SELL kanan, sejajar */
 .consensus-grid{display:flex;flex-direction:row;align-items:center;gap:16px}
-.consensus-chart-wrap{position:relative;width:120px;height:120px;flex-shrink:0}
+.consensus-chart-wrap{position:relative;width:120px;height:120px;flex-shrink:0;overflow:visible}
 .consensus-stats{display:flex;flex-direction:column;justify-content:center;gap:10px;flex:1;min-width:0}
 .consensus-row{
   display:grid;
@@ -565,38 +566,47 @@ select.form-control option{background:var(--card);color:var(--text)}
 }
 
 @media(max-width:640px){
-  .top-bar{flex-wrap:wrap;height:auto;padding:10px;gap:8px}
-  /* Header mobile: logo kiri, theme toggle kanan (baris 1), search baris 2 */
-  .top-bar .logo{order:1;flex-shrink:0}
-  .top-bar .nav-tabs{order:2;margin-left:auto;display:none}
-  .top-bar .theme-toggle{order:3;flex-shrink:0;display:inline-flex;margin-left:auto}
-  .search-wrap{order:4;max-width:100%;width:100%}
-  /* Kolom pencarian: tampilkan hanya icon di mobile, expand saat focus */
+  /* ── HEADER MOBILE ──
+     Baris 1: [Economstock SAHAM]  [🔍 icon]  [☀ toggle]
+     Baris 2 (saat search aktif): [kolom pencarian full width]
+  */
+  .top-bar{
+    flex-wrap:nowrap;height:auto;padding:10px 12px;gap:8px;
+    align-items:center;
+  }
+  .top-bar .logo{flex-shrink:0;margin-right:auto}
+  /* Nav tabs (Desktop) disembunyikan di mobile — diganti bottom bar */
+  .nav-tabs{display:none}
+  /* Search: jadi tombol icon, expand saat aktif */
   .search-wrap{
+    order:0;flex:0 0 auto;
     position:relative;
-    width:38px;max-width:38px;
-    transition:max-width .3s ease, width .3s ease;
+    width:44px;max-width:44px;
+    transition:max-width .25s ease, flex .25s ease;
     overflow:hidden;
   }
   .search-wrap input{
-    padding-left:38px;padding-right:10px;
+    padding-left:44px;padding-right:10px;
     background:var(--bg2);
-    opacity:0;width:100%;
+    opacity:0;width:100%;pointer-events:none;
   }
-  .search-wrap.expanded,
   .search-wrap:focus-within{
-    width:100%;max-width:100%;
+    flex:1 1 auto;max-width:100%;
   }
-  .search-wrap.expanded input,
   .search-wrap:focus-within input{
-    opacity:1;
+    opacity:1;pointer-events:auto;
   }
   .search-wrap .ico{
-    z-index:2;cursor:pointer;font-size:16px;
-    pointer-events:auto;
+    z-index:2;cursor:pointer;
+    font-size:22px;          /* lebih besar */
+    left:10px;               /* posisi dari kiri */
+    color:var(--text);
   }
-  /* Nav tabs disembunyikan dari header di mobile — diganti bottom bar */
-  .nav-tabs{display:none}
+  /* Theme toggle — selalu tampil di sebelah search */
+  .theme-toggle{
+    flex-shrink:0;display:inline-flex;
+    width:40px;height:40px;font-size:17px;
+  }
   .pt-grid{grid-template-columns:1fr 1fr}
   .page{padding:14px 10px;padding-bottom:80px}  /* ruang untuk bottom nav */
   .card{padding:14px}
@@ -1277,6 +1287,12 @@ function buildStockTicker() {
   // Render dua kali untuk seamless infinite loop (CSS animation -50%).
   const html = items.map(renderItem).join('');
   track.innerHTML = html + html;
+  // Start animasi setelah browser selesai paint (hindari stag/freeze awal)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      track.style.animationPlayState = 'running';
+    });
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -2036,6 +2052,22 @@ function renderConsensus(code) {
     if (!dCtx) return;
     if (consensusDonutInstance) consensusDonutInstance.destroy();
     const ct = chartColors();
+
+    // Custom positioner: tooltip selalu muncul di bawah chart, tidak terpotong
+    if (!Chart.registry.plugins.get('belowDonut')) {
+      Chart.registry.add({
+        id: 'belowDonut',
+      });
+    }
+    Chart.Tooltip.positioners.belowChart = function(elements, eventPos) {
+      const chart = this.chart;
+      return {
+        x: chart.width / 2,
+        y: chart.height + 8,
+        xAlign: 'center',
+        yAlign: 'top',
+      };
+    };
     consensusDonutInstance = new Chart(dCtx, {
       type: 'doughnut',
       data: {
@@ -2050,7 +2082,7 @@ function renderConsensus(code) {
           padding:8,cornerRadius:8,
           bodyFont:{size:12,weight:'600'},
           displayColors:true,boxWidth:10,boxHeight:10,
-          position:'nearest',
+          position:'belowChart',
           callbacks:{
             title: () => '',
             label: i => {
