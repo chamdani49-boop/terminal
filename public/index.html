@@ -586,6 +586,75 @@ select.form-control option{background:var(--card);color:var(--text)}
 .result-box .rv{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);word-break:break-word;line-height:1.25}
 .result-box .rs{font-size:11px;color:var(--text2);margin-top:3px;font-weight:500}
 
+/* ── RINGKASAN MENABUNG (qr-* classes) ──
+   Layout: hero card untuk untung/rugi + list rapi untuk metrik lainnya.
+   Hindari grid 6-box yang ukurannya tidak konsisten saat angka panjang. */
+#savingQuickContent .qr-hero{
+  text-align:center;
+  padding:16px 14px;
+  background:linear-gradient(135deg,var(--bg2),var(--card));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin-bottom:12px;
+}
+#savingQuickContent .qr-hero.profit{
+  background:linear-gradient(135deg,var(--green-bg),var(--card));
+  border-color:rgba(5,150,105,.35);
+}
+#savingQuickContent .qr-hero.loss{
+  background:linear-gradient(135deg,var(--red-bg),var(--card));
+  border-color:rgba(225,29,72,.35);
+}
+#savingQuickContent .qr-hero-label{
+  font-size:11px;font-weight:800;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--text2);
+  margin-bottom:6px;
+}
+#savingQuickContent .qr-hero-value{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:24px;font-weight:800;
+  font-variant-numeric:tabular-nums;
+  line-height:1.15;letter-spacing:-.3px;
+  word-break:break-word;
+}
+#savingQuickContent .qr-hero-pct{
+  font-size:13px;font-weight:700;margin-top:5px;
+  font-family:'IBM Plex Mono',monospace;
+  letter-spacing:.3px;
+}
+#savingQuickContent .qr-list{
+  display:flex;flex-direction:column;gap:0;
+  padding:2px 4px;
+}
+#savingQuickContent .qr-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:11px 4px;gap:12px;
+  border-bottom:1px dashed var(--border);
+}
+#savingQuickContent .qr-row:last-child{border-bottom:none}
+#savingQuickContent .qr-label{
+  font-size:12px;font-weight:600;color:var(--text2);
+  flex-shrink:0;
+}
+#savingQuickContent .qr-val{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;font-weight:700;
+  font-variant-numeric:tabular-nums;
+  color:var(--text);text-align:right;
+  word-break:break-all;letter-spacing:-.2px;
+  min-width:0;
+}
+
+/* Mobile tweak: sedikit lebih kompak */
+@media(max-width:640px){
+  #savingQuickContent .qr-hero{padding:14px 12px}
+  #savingQuickContent .qr-hero-value{font-size:21px}
+  #savingQuickContent .qr-hero-pct{font-size:12px}
+  #savingQuickContent .qr-row{padding:10px 2px;gap:8px}
+  #savingQuickContent .qr-label{font-size:11px}
+  #savingQuickContent .qr-val{font-size:12px}
+}
+
 /* Portfolio table — 8 kolom, paksa min-width supaya horizontal scroll
    di mobile alih-alih squish jadi unreadable. Container `.port-scroll`
    handle scroll dua arah. */
@@ -2563,14 +2632,37 @@ function showSavingResult(code, rows, last, mode) {
   const glSign = last.gl >= 0 ? '+' : '';
 
   document.getElementById('savingResultTitle').textContent = `Hasil Simulasi ${mode} · ${code}`;
+  // Layout Ringkasan baru — hero (untung/rugi) + list metrik.
+  // Angka panjang tetap rapi karena value text-align right + tabular-nums.
+  const heroCls = last.gl >= 0 ? 'profit' : 'loss';
+  const pctStr = `${glSign}${(last.pctGl*100).toFixed(2)}%`;
   document.getElementById('savingQuickContent').innerHTML = `
-    <div class="result-grid">
-      <div class="result-box"><div class="rl">Total Modal</div><div class="rv">${rp(last.modal)}</div></div>
-      <div class="result-box"><div class="rl">Nilai Saat Ini</div><div class="rv">${rp(last.nilai)}</div></div>
-      <div class="result-box"><div class="rl">Untung/Rugi</div><div class="rv ${glCls}">${glSign}${rp(last.gl)}</div><div style="font-size:10px" class="${glCls}">${glSign}${(last.pctGl*100).toFixed(1)}%</div></div>
-      <div class="result-box"><div class="rl">Total Unit</div><div class="rv">${last.totalUnit.toLocaleString('id')}</div></div>
-      <div class="result-box"><div class="rl">Harga Saat Ini</div><div class="rv">${rp(last.price)}</div></div>
-      <div class="result-box"><div class="rl">Periode</div><div class="rv" style="font-size:12px">${rows.length} bln</div></div>
+    <div class="qr-hero ${heroCls}">
+      <div class="qr-hero-label">${last.gl >= 0 ? 'Untung Total' : 'Rugi Total'}</div>
+      <div class="qr-hero-value ${glCls}">${glSign}${rp(last.gl)}</div>
+      <div class="qr-hero-pct ${glCls}">${pctStr} return</div>
+    </div>
+    <div class="qr-list">
+      <div class="qr-row">
+        <span class="qr-label">Total Modal</span>
+        <span class="qr-val">${rp(last.modal)}</span>
+      </div>
+      <div class="qr-row">
+        <span class="qr-label">Nilai Saat Ini</span>
+        <span class="qr-val">${rp(last.nilai)}</span>
+      </div>
+      <div class="qr-row">
+        <span class="qr-label">Total Unit</span>
+        <span class="qr-val">${last.totalUnit.toLocaleString('id')}</span>
+      </div>
+      <div class="qr-row">
+        <span class="qr-label">Harga Per Lembar</span>
+        <span class="qr-val">${rp(last.price)}</span>
+      </div>
+      <div class="qr-row">
+        <span class="qr-label">Periode</span>
+        <span class="qr-val">${rows.length} bulan</span>
+      </div>
     </div>
   `;
 
