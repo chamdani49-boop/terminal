@@ -86,9 +86,12 @@ html{scroll-behavior:smooth}
 body{
   font-family:'Plus Jakarta Sans',system-ui,sans-serif;
   background:var(--bg);color:var(--text);
-  min-height:100vh;overflow-x:hidden;
+  min-height:100vh;
   -webkit-font-smoothing:antialiased;
+  /* overflow-x:hidden di body merusak position:fixed di mobile browser —
+     pindah ke html agar fixed children (bottom-nav, top-bar) tetap nempel */
 }
+html{overflow-x:hidden}
 *, *::before, *::after {
   transition: background-color .25s ease, border-color .25s ease, color .25s ease;
 }
@@ -618,9 +621,9 @@ select.form-control option{background:var(--card);color:var(--text)}
   .stat-val{font-size:12px}
   .stat-label{font-size:10px;letter-spacing:.4px}
 
-  /* ── YOY TABLE MOBILE: scroll menyamping ── */
+  /* ── YOY TABLE MOBILE: satu scroll bersama ── */
   .yoy-inline-grid{
-    grid-template-columns:1fr; /* stack vertikal tapi masing2 tabel scroll */
+    display:block; /* matikan grid, biar scroll container yang atur layout */
   }
   .yoy-scroll-wrap{
     overflow-x:auto;
@@ -628,7 +631,12 @@ select.form-control option{background:var(--card);color:var(--text)}
     margin:0 -14px;
     padding:0 14px 4px;
   }
-  .yoy-scroll-inner{min-width:340px}
+  .yoy-scroll-inner{
+    display:grid;
+    grid-template-columns:1fr 1fr; /* dua kolom berdampingan di dalam scroller */
+    gap:12px;
+    min-width:560px; /* cukup untuk dua tabel side by side */
+  }
   .yoy-table th,.yoy-table td{padding:7px 10px;font-size:12px}
 
   /* ── BOTTOM NAV (mobile only) ── */
@@ -638,6 +646,9 @@ select.form-control option{background:var(--card);color:var(--text)}
     background:var(--card);border-top:1px solid var(--border);
     padding:8px 0 calc(8px + env(safe-area-inset-bottom));
     box-shadow:0 -4px 20px rgba(0,0,0,.12);
+    /* GPU layer — pastikan fixed tetap di viewport di semua mobile browser */
+    transform:translateZ(0);
+    -webkit-transform:translateZ(0);
   }
   .bottom-nav-item{
     flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -1671,23 +1682,19 @@ function renderYoY(code) {
   const makeTable = (items, cls, label) => `
     <div class="yoy-inline-col">
       <div class="yoy-inline-head ${cls === 'up' ? 'yoy-head-up' : 'yoy-head-dn'}">${label}</div>
-      <div class="yoy-scroll-wrap">
-        <div class="yoy-scroll-inner">
-          <table class="yoy-table">
-            <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="yoy-label" style="color:var(--text);font-weight:600">${code}</td>
-                ${items.map(r => `<td class="${cls}">${(r.ret*100).toFixed(2)}%</td>`).join('')}
-              </tr>
-              <tr>
-                <td class="yoy-label" style="color:var(--text3)">when</td>
-                ${items.map(r => `<td style="color:var(--text3);font-size:10px">${r.date.substring(0,7)}</td>`).join('')}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <table class="yoy-table">
+        <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="yoy-label" style="color:var(--text);font-weight:600">${code}</td>
+            ${items.map(r => `<td class="${cls}">${(r.ret*100).toFixed(2)}%</td>`).join('')}
+          </tr>
+          <tr>
+            <td class="yoy-label" style="color:var(--text3)">when</td>
+            ${items.map(r => `<td style="color:var(--text3);font-size:10px">${r.date.substring(0,7)}</td>`).join('')}
+          </tr>
+        </tbody>
+      </table>
     </div>`;
 
   el.innerHTML = `
@@ -1695,9 +1702,11 @@ function renderYoY(code) {
       <div class="yoy-inline-divider">
         <span>YoY Analysis</span>
       </div>
-      <div class="yoy-inline-grid">
-        ${makeTable(top4, 'up', '📈 Kenaikan Terbesar')}
-        ${makeTable(bot4, 'dn', '📉 Penurunan Terbesar')}
+      <div class="yoy-scroll-wrap">
+        <div class="yoy-scroll-inner yoy-inline-grid">
+          ${makeTable(top4, 'up', '📈 Kenaikan Terbesar')}
+          ${makeTable(bot4, 'dn', '📉 Penurunan Terbesar')}
+        </div>
       </div>
     </div>`;
 }
