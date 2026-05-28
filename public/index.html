@@ -1881,11 +1881,16 @@ function renderConsensus(code) {
         responsive:false,cutout:'65%',
         plugins:{legend:{display:false},tooltip:{
           backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,
-          bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:10,cornerRadius:10,
+          bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,
+          padding:8,cornerRadius:8,
+          bodyFont:{size:12,weight:'600'},
+          displayColors:true,boxWidth:10,boxHeight:10,
+          position:'nearest',
           callbacks:{
+            title: () => '',
             label: i => {
               const pct = total ? ((i.raw/total)*100).toFixed(1) : 0;
-              return ` ${i.label}: ${i.raw} (${pct}%)`;
+              return ` ${i.label}:  ${i.raw}  (${pct}%)`;
             }
           }
         }}
