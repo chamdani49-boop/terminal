@@ -607,20 +607,28 @@ select.form-control option{background:var(--card);color:var(--text)}
   .price-block .price{font-size:22px}
 }
 
-/* ── STATS+YOY TAB SWITCHER ── */
-.stats-tab-btn{
-  padding:6px 14px;font-size:12px;font-weight:700;
-  border:1px solid var(--border);border-radius:var(--radius-pill);
-  cursor:pointer;color:var(--text2);background:var(--card);
-  font-family:'Plus Jakarta Sans',sans-serif;
-  transition:all .15s;white-space:nowrap;letter-spacing:.3px;
-}
-.stats-tab-btn:hover{color:var(--accent);border-color:var(--accent)}
-.stats-tab-btn.active{
-  background:var(--grad);color:#fff;border-color:transparent;
-  box-shadow:0 4px 12px rgba(109,40,217,.22);
-}
 
+/* ── YOY INLINE DALAM STATS CARD ── */
+.yoy-inline-wrap{margin-top:4px}
+.yoy-inline-divider{
+  display:flex;align-items:center;gap:10px;
+  margin:14px 0 10px;font-size:11px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.7px;color:var(--text3);
+}
+.yoy-inline-divider::before,.yoy-inline-divider::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,var(--border) 30%,var(--border) 70%,transparent);
+}
+.yoy-inline-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+}
+@media(max-width:540px){.yoy-inline-grid{grid-template-columns:1fr}}
+.yoy-inline-col{}
+.yoy-inline-head{
+  font-size:12px;font-weight:800;letter-spacing:.3px;margin-bottom:6px;
+}
+.yoy-head-up{color:var(--green)}
+.yoy-head-dn{color:var(--red)}
 
 .loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text2);font-size:13px;gap:10px}
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
@@ -698,17 +706,11 @@ select.form-control option{background:var(--card);color:var(--text)}
         <div class="loading"><div class="spinner"></div> Memuat data...</div>
       </div>
 
-      <!-- Stats + YoY digabung dalam satu card dengan tab switcher -->
+      <!-- Stats + YoY digabung dalam satu card inline -->
       <div class="card card-stats" id="statsCard">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div class="card-title" style="margin-bottom:0" id="statsYoyTitle">Statistik Deskriptif</div>
-          <div style="display:flex;gap:4px">
-            <button class="stats-tab-btn active" id="tabBtnStats" onclick="switchStatsTab('stats')">📊 Statistik</button>
-            <button class="stats-tab-btn" id="tabBtnYoy" onclick="switchStatsTab('yoy')">📈 YoY Analysis</button>
-          </div>
-        </div>
+        <div class="card-title">Statistik Deskriptif</div>
         <div id="statsContent"><div class="loading"><div class="spinner"></div></div></div>
-        <div id="yoyContent" style="display:none"><div class="loading"><div class="spinner"></div></div></div>
+        <div id="yoyContent"></div>
       </div>
 
       <!-- Chart -->
@@ -1042,32 +1044,6 @@ function init() {
 }
 
 // ═══════════════════════════════════════════
-// STATS + YOY TAB SWITCHER
-// ═══════════════════════════════════════════
-function switchStatsTab(tab) {
-  const statsDiv = document.getElementById('statsContent');
-  const yoyDiv   = document.getElementById('yoyContent');
-  const btnStats = document.getElementById('tabBtnStats');
-  const btnYoy   = document.getElementById('tabBtnYoy');
-  const title    = document.getElementById('statsYoyTitle');
-  if (!statsDiv || !yoyDiv) return;
-
-  if (tab === 'stats') {
-    statsDiv.style.display = '';
-    yoyDiv.style.display   = 'none';
-    btnStats.classList.add('active');
-    btnYoy.classList.remove('active');
-    if (title) title.textContent = 'Statistik Deskriptif';
-  } else {
-    statsDiv.style.display = 'none';
-    yoyDiv.style.display   = '';
-    btnStats.classList.remove('active');
-    btnYoy.classList.add('active');
-    if (title) title.textContent = 'YoY Analysis';
-  }
-}
-
-// ═══════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════
 function showPage(name) {
@@ -1249,15 +1225,6 @@ function renderDashboard(code) {
   renderAnalystTable(code);
   document.getElementById('legendStock').textContent = code;
   document.getElementById('analystTitle').textContent = `Rekomendasi Analis · ${code}`;
-
-  // Preserve active tab state — jika tab YoY sedang aktif, pastikan
-  // yoyContent tetap tampil setelah re-render saham baru.
-  const yoyBtn = document.getElementById('tabBtnYoy');
-  if (yoyBtn && yoyBtn.classList.contains('active')) {
-    switchStatsTab('yoy');
-  } else {
-    switchStatsTab('stats');
-  }
 }
 
 function getStockData(code) {
@@ -1628,7 +1595,7 @@ function renderYoY(code) {
   const prices = ph.filter(e => e[code] > 0).map(e => ({ date: e.date, price: e[code] }));
 
   if (prices.length < 13) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:12px">Data tidak cukup untuk analisis YoY</div>';
+    el.innerHTML = '';
     return;
   }
 
@@ -1636,57 +1603,41 @@ function renderYoY(code) {
   let yoyReturns = [];
   for (let i = 12; i < prices.length; i++) {
     const ret = (prices[i].price - prices[i-12].price) / prices[i-12].price;
-    yoyReturns.push({ ret, date: prices[i].date, price: prices[i].price });
+    yoyReturns.push({ ret, date: prices[i].date });
   }
   yoyReturns.sort((a,b) => b.ret - a.ret);
 
   const top4 = yoyReturns.slice(0, 4);
   const bot4 = yoyReturns.slice(-4).reverse();
 
-  const fmtRow = (items, cls) => items.map((r,i) =>
-    `<tr>
-      <td class="yoy-label">${i===0?'Large':'when'}</td>
-      ${items.map((rr,j) => i===0
-        ? `<td class="${cls}">${(rr.ret*100).toFixed(2)}%</td>`
-        : `<td style="color:var(--text3)">${rr.date.substring(0,7)}</td>`
-      ).join('')}
-    </tr>`
-  );
+  const makeTable = (items, cls, label) => `
+    <div class="yoy-inline-col">
+      <div class="yoy-inline-head ${cls === 'up' ? 'yoy-head-up' : 'yoy-head-dn'}">${label}</div>
+      <table class="yoy-table">
+        <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="yoy-label" style="color:var(--text);font-weight:600">${code}</td>
+            ${items.map(r => `<td class="${cls}">${(r.ret*100).toFixed(2)}%</td>`).join('')}
+          </tr>
+          <tr>
+            <td class="yoy-label" style="color:var(--text3)">when</td>
+            ${items.map(r => `<td style="color:var(--text3);font-size:10px">${r.date.substring(0,7)}</td>`).join('')}
+          </tr>
+        </tbody>
+      </table>
+    </div>`;
 
-  el.innerHTML = `<div class="yoy-grid">
-    <div>
-      <div style="font-size:13px;color:var(--green);margin-bottom:8px;font-weight:800;letter-spacing:.3px">📈 Kenaikan YoY Terbesar</div>
-      <table class="yoy-table">
-        <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
-        <tbody>
-          <tr>
-            <td class="yoy-label" style="font-weight:500;color:var(--text)">${code}</td>
-            ${top4.map(r => `<td class="up">${(r.ret*100).toFixed(2)}%</td>`).join('')}
-          </tr>
-          <tr>
-            <td class="yoy-label" style="color:var(--text3)">when</td>
-            ${top4.map(r => `<td style="color:var(--text3)">${r.date.substring(0,7)}</td>`).join('')}
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div>
-      <div style="font-size:13px;color:var(--red);margin-bottom:8px;font-weight:800;letter-spacing:.3px">📉 Penurunan YoY Terbesar</div>
-      <table class="yoy-table">
-        <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
-        <tbody>
-          <tr>
-            <td class="yoy-label" style="font-weight:500;color:var(--text)">${code}</td>
-            ${bot4.map(r => `<td class="dn">${(r.ret*100).toFixed(2)}%</td>`).join('')}
-          </tr>
-          <tr>
-            <td class="yoy-label" style="color:var(--text3)">when</td>
-            ${bot4.map(r => `<td style="color:var(--text3)">${r.date.substring(0,7)}</td>`).join('')}
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>`;
+  el.innerHTML = `
+    <div class="yoy-inline-wrap">
+      <div class="yoy-inline-divider">
+        <span>YoY Analysis</span>
+      </div>
+      <div class="yoy-inline-grid">
+        ${makeTable(top4, 'up', '📈 Kenaikan Terbesar')}
+        ${makeTable(bot4, 'dn', '📉 Penurunan Terbesar')}
+      </div>
+    </div>`;
 }
 
 // ─ Price Target Blueprint ─
