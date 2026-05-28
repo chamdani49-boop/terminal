@@ -543,31 +543,64 @@ select.form-control option{background:var(--card);color:var(--text)}
 @media(max-width:1180px){
   .dash-grid{display:flex;flex-direction:column;gap:14px}
   .left-col,.right-col{display:contents}
+  /* Stats & YoY di atas chart supaya user langsung lihat angka tanpa scroll */
   .card-hero{order:1}
-  .card-chart{order:2}
-  .card-stats{order:3}
-  .card-yoy{order:4}
+  .card-stats{order:2}
+  .card-yoy{order:3}
+  .card-chart{order:4}
   .card-pt{order:5}
   .card-consensus{order:6}
-  .card-analyst{order:7}     /* ← rekomendasi analis di bawah konsensus analis */
+  .card-analyst{order:7}
   .card-watchlist{order:8}
 }
 
 @media(max-width:640px){
   .top-bar{flex-wrap:wrap;height:auto;padding:10px;gap:8px}
   .search-wrap{max-width:100%;order:-1;width:100%}
-  .nav-tabs{width:100%;justify-content:center;flex-wrap:wrap}
-  .nav-tab{padding:6px 12px;font-size:12px}
+  /* Nav tabs disembunyikan dari header di mobile — diganti bottom bar */
+  .nav-tabs{display:none}
   .stats-row,.stats-row-ihsg{grid-template-columns:repeat(5,1fr)}
   .pt-grid{grid-template-columns:1fr 1fr}
-  .page{padding:14px 10px}
+  .page{padding:14px 10px;padding-bottom:80px}  /* ruang untuk bottom nav */
   .card{padding:14px}
-  /* Kecilin hero biar muat di iPhone SE-ish (≤375px). */
   .stock-name-block .ticker{font-size:28px}
   .price-block .price{font-size:26px}
   .pt-box .ptv{font-size:18px}
   .cn-val{font-size:13px}
   .card-title{font-size:12px;letter-spacing:1px}
+
+  /* ── BOTTOM NAV (mobile only) ── */
+  .bottom-nav{
+    display:flex;
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:var(--card);border-top:1px solid var(--border);
+    padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 20px rgba(0,0,0,.12);
+  }
+  .bottom-nav-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 4px;cursor:pointer;color:var(--text2);
+    font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    transition:color .15s;border:none;background:none;font-family:inherit;
+  }
+  .bottom-nav-item .bn-icon{font-size:18px;line-height:1}
+  .bottom-nav-item.active{color:var(--accent)}
+  .bottom-nav-item.active .bn-icon{filter:drop-shadow(0 0 4px var(--accent))}
+
+  /* Saving grid mobile: lebih compact */
+  .saving-grid{gap:10px}
+  .info-banner{font-size:12px;padding:10px 14px}
+  .result-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .result-box{padding:10px 8px}
+  .result-box .rv{font-size:15px}
+  .btn{padding:12px;font-size:13px}
+  .form-control{padding:9px 12px;font-size:13px}
+  .form-label{font-size:11px}
+}
+
+@media(min-width:641px){
+  /* Bottom nav tidak tampil di layar lebar */
+  .bottom-nav{display:none}
 }
 @media(max-width:380px){
   .pt-grid{grid-template-columns:1fr}
@@ -1002,6 +1035,24 @@ function showPage(name) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   event.currentTarget.classList.add('active');
+  // Sync bottom nav
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  const bn = document.getElementById('bn-' + name);
+  if (bn) bn.classList.add('active');
+}
+
+// showPageMobile — dipanggil dari bottom nav (mobile)
+function showPageMobile(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  // Sync top nav
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    const names = ['dashboard','menabung','consensus'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  // Sync bottom nav
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
 }
 
 // ═══════════════════════════════════════════
@@ -2232,6 +2283,18 @@ document.addEventListener('DOMContentLoaded', () => {
 // INIT
 // ═══════════════════════════════════════════
 loadData();
-</script>
+</script><!-- BOTTOM NAV (mobile only — hidden di desktop via CSS) -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="bottom-nav-item active" id="bn-dashboard" onclick="showPageMobile('dashboard',this)">
+    <span class="bn-icon">📊</span>Dashboard
+  </button>
+  <button class="bottom-nav-item" id="bn-menabung" onclick="showPageMobile('menabung',this)">
+    <span class="bn-icon">💰</span>Menabung
+  </button>
+  <button class="bottom-nav-item" id="bn-consensus" onclick="showPageMobile('consensus',this)">
+    <span class="bn-icon">🔍</span>Consensus
+  </button>
+</nav>
+
 </body>
 </html>
