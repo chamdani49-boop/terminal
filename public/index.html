@@ -701,36 +701,25 @@ select.form-control option{background:var(--card);color:var(--text)}
 .cs-nums{display:flex;justify-content:space-between;font-size:12px;font-weight:700}
 .cs-target{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
 
-/* ── OVERVIEW VIEW di Consensus ── */
-/* Wrapper page dengan max-width yang lebih ketat — tampil padat di PC,
-   full width di mobile/tablet. */
-.ov-page-wrap{max-width:1200px;margin:0 auto}
+/* ══════════════════════════════════════════════
+   OVERVIEW DASHBOARD (redesigned)
+   ══════════════════════════════════════════════ */
+.ov-page-wrap{max-width:1280px;margin:0 auto}
+.ov-view{display:flex;flex-direction:column;gap:16px}
 
-.ov-view{display:flex;flex-direction:column;gap:14px}
-.ov-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
-.ov-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:start}
-@media(max-width:1024px){
-  .ov-row-3{grid-template-columns:1fr 1fr}
-}
-@media(max-width:760px){
-  .ov-row{grid-template-columns:1fr}
-  .ov-row-3{grid-template-columns:1fr}
-}
-.ov-row > .card,.ov-row-3 > .card{min-width:0}
-
-/* Date filter chips */
+/* ── Period filter bar ── */
 .ov-date-filter{
   display:flex;flex-wrap:wrap;align-items:center;gap:6px;
-  padding:10px 14px;background:var(--card);
+  padding:10px 16px;background:var(--card);
   border:1px solid var(--border);border-radius:var(--radius-lg);
   box-shadow:var(--shadow-card);
 }
 .ov-date-label{
   font-size:11px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.7px;color:var(--text2);margin-right:6px;
+  letter-spacing:.8px;color:var(--text2);margin-right:4px;
 }
 .ov-date-chip{
-  padding:6px 14px;font-size:12px;font-weight:700;
+  padding:6px 16px;font-size:12px;font-weight:700;
   border:1px solid var(--border);border-radius:var(--radius-pill);
   cursor:pointer;color:var(--text2);background:var(--bg2);
   font-family:'Plus Jakarta Sans',sans-serif;
@@ -742,19 +731,127 @@ select.form-control option{background:var(--card);color:var(--text)}
   box-shadow:0 4px 12px rgba(109,40,217,.22);
 }
 
-/* Konsensus Terbaru — list */
+/* ── KPI strip (5 tiles) ── */
+.ov-kpi-strip{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:12px;
+}
+.ov-kpi{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:16px 18px;
+  box-shadow:var(--shadow-card);min-width:0;
+  position:relative;overflow:hidden;
+  transition:transform .15s,box-shadow .15s;
+}
+.ov-kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-card-lg)}
+.ov-kpi::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--grad);
+}
+.ov-kpi-icon{font-size:20px;line-height:1;margin-bottom:8px;display:block}
+.ov-kpi-label{
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--text2);margin-bottom:5px;
+}
+.ov-kpi-value{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;
+  color:var(--text);line-height:1.1;letter-spacing:-.4px;
+}
+.ov-kpi-sub{font-size:11px;color:var(--text2);font-weight:600;margin-top:4px}
+.ov-kpi-delta{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:11px;font-weight:800;margin-top:5px;
+  font-family:'IBM Plex Mono',monospace;
+}
+
+/* ── Card header helper ── */
+.ov-card-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:6px;margin-bottom:14px;
+}
+.ov-card-sub{
+  font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.ov-card-badge{
+  display:inline-flex;align-items:center;
+  padding:4px 10px;border-radius:var(--radius-pill);
+  font-size:12px;font-weight:800;
+  font-family:'IBM Plex Mono',monospace;
+}
+.ov-card-badge.buy {background:var(--green-bg);color:var(--green)}
+.ov-card-badge.neu {background:var(--yellow-bg);color:#b45309}
+.ov-card-badge.sell{background:var(--red-bg);color:var(--red)}
+
+/* ── 3-column grid for chart rows ── */
+.ov-grid-3{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;align-items:start;
+}
+
+/* ── Chart wrapper heights ── */
+.ov-donut-wrap{
+  position:relative;
+  width:180px;height:180px;
+  margin:0 auto 12px;
+}
+.ov-donut-center{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  pointer-events:none;
+  gap:2px;
+}
+.ov-donut-center-label{
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--text2);
+}
+.ov-donut-center-value{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:26px;font-weight:800;line-height:1;
+  color:var(--text);
+}
+.ov-donut-center-sub{
+  font-size:11px;font-weight:700;color:var(--text2);
+}
+.ov-sent-legend{
+  display:flex;flex-direction:column;gap:7px;
+}
+.ov-sent-row2{
+  display:grid;
+  grid-template-columns:10px 1fr auto auto;
+  gap:8px;align-items:center;font-size:12px;
+}
+.ov-sent-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ov-sent-name{font-weight:700;color:var(--text)}
+.ov-sent-cnt{
+  font-family:'IBM Plex Mono',monospace;font-weight:800;
+  font-variant-numeric:tabular-nums;color:var(--text);min-width:32px;text-align:right;
+}
+.ov-sent-pct{
+  font-size:11px;color:var(--text2);font-weight:700;
+  font-family:'IBM Plex Mono',monospace;min-width:44px;text-align:right;
+}
+
+.ov-hbar-wrap{position:relative;width:100%}
+.ov-trend-wrap{position:relative;width:100%;height:200px}
+.ov-card-sentiment{display:flex;flex-direction:column}
+
+/* ── Latest feed ── */
 .ov-latest-list{
   display:flex;flex-direction:column;
-  max-height:420px;overflow-y:auto;
-  margin:0 -4px;
+  max-height:440px;overflow-y:auto;
 }
 .ov-latest-row{
   display:grid;
-  grid-template-columns:80px 56px minmax(0,1fr) 70px 80px 60px;
+  grid-template-columns:90px 58px minmax(0,1fr) 74px 88px 64px;
   align-items:center;gap:10px;
-  padding:10px 8px;border-bottom:1px dashed var(--border);
-  cursor:pointer;transition:background .15s;
-  font-size:12px;
+  padding:10px 8px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .12s;
+  font-size:12px;border-radius:6px;
 }
 .ov-latest-row:hover{background:var(--bg2)}
 .ov-latest-row:last-child{border-bottom:none}
@@ -764,12 +861,12 @@ select.form-control option{background:var(--card);color:var(--text)}
 }
 .ov-latest-stock{
   font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;
-  color:var(--accent);
+  color:var(--accent);cursor:pointer;
 }
+.ov-latest-stock:hover{text-decoration:underline}
 .ov-latest-firm{
   font-size:12px;color:var(--text);font-weight:600;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  cursor:pointer;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;
 }
 .ov-latest-firm:hover{color:var(--accent);text-decoration:underline}
 .ov-latest-target{
@@ -781,146 +878,37 @@ select.form-control option{background:var(--card);color:var(--text)}
   font-variant-numeric:tabular-nums;text-align:right;
 }
 
-/* Mobile: latest list jadi 2-baris compact */
+/* ── Responsive breakpoints ── */
+@media(max-width:1100px){
+  .ov-kpi-strip{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:960px){
+  .ov-grid-3{grid-template-columns:1fr 1fr}
+}
 @media(max-width:640px){
-  .ov-latest-row{
-    grid-template-columns:auto 1fr auto;
-    grid-template-rows:auto auto;
-    column-gap:10px;row-gap:3px;padding:10px 6px;
-  }
-  .ov-latest-stock{grid-row:1;grid-column:1}
-  .ov-latest-firm{grid-row:1;grid-column:2;font-size:11px}
-  .ov-latest-pct{grid-row:1;grid-column:3;font-size:12px}
-  .ov-latest-date{grid-row:2;grid-column:1;font-size:10px}
-  .ov-latest-row .ov-latest-target{grid-row:2;grid-column:2 / span 2;text-align:left;font-size:11px;color:var(--text2)}
-  .ov-latest-row > .badge{grid-row:2;grid-column:1;display:none}
-  /* Hide separate badge column on mobile, badge embedded in text */
-}
-
-/* KPI strip */
-.ov-kpi-strip{
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;
-}
-@media(max-width:900px){.ov-kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.ov-kpi{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);padding:16px 18px;
-  box-shadow:var(--shadow-card);min-width:0;
-  position:relative;overflow:hidden;
-}
-.ov-kpi::before{
-  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:var(--grad);
-}
-.ov-kpi-label{
-  font-size:10px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.7px;color:var(--text2);margin-bottom:6px;
-}
-.ov-kpi-value{
-  font-family:'IBM Plex Mono',monospace;
-  font-size:26px;font-weight:800;
-  font-variant-numeric:tabular-nums;
-  color:var(--text);line-height:1.1;letter-spacing:-.4px;
-}
-.ov-kpi-sub{
-  font-size:11px;color:var(--text2);font-weight:600;margin-top:4px;
-}
-
-/* Sentiment meter (gauge bar) */
-.ov-sent-meter{
-  position:relative;height:14px;border-radius:var(--radius-pill);
-  background:var(--bg3);overflow:hidden;margin:18px 0 10px;
-}
-.ov-sent-meter > div{height:100%}
-.ov-sent-meter .sb{background:var(--green)}
-.ov-sent-meter .sn{background:var(--yellow)}
-.ov-sent-meter .ss{background:var(--red)}
-.ov-sent-stats{display:flex;flex-direction:column;gap:8px;margin-top:14px}
-.ov-sent-row{
-  display:grid;grid-template-columns:14px 1fr auto auto;
-  align-items:center;gap:10px;font-size:13px;
-}
-.ov-sent-row .dot{width:10px;height:10px;border-radius:50%}
-.ov-sent-row .name{font-weight:700;color:var(--text)}
-.ov-sent-row .cnt{
-  font-family:'IBM Plex Mono',monospace;font-weight:800;
-  font-variant-numeric:tabular-nums;color:var(--text);
-}
-.ov-sent-row .pct{
-  font-size:11px;color:var(--text2);font-weight:600;
-  font-family:'IBM Plex Mono',monospace;min-width:50px;text-align:right;
-}
-
-/* Top list rows */
-.ov-list{display:flex;flex-direction:column;gap:0}
-.ov-item{
-  display:grid;grid-template-columns:24px minmax(0,1fr) auto;
-  align-items:center;gap:10px;
-  padding:10px 6px;border-bottom:1px dashed var(--border);
-  cursor:pointer;transition:background .15s;border-radius:6px;
-}
-.ov-item:last-child{border-bottom:none}
-.ov-item:hover{background:var(--bg2)}
-.ov-rank{
-  font-family:'IBM Plex Mono',monospace;font-weight:800;
-  color:var(--text3);font-size:12px;text-align:center;
-}
-.ov-item.top-1 .ov-rank{color:var(--accent);font-size:14px}
-.ov-name{
-  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;
-  color:var(--accent);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.ov-fullname{
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;
-  color:var(--text2);margin-top:1px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.ov-meta{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
-.ov-meta-val{
-  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;
-  font-variant-numeric:tabular-nums;
-}
-.ov-meta-sub{font-size:10px;color:var(--text2);font-weight:600}
-
-/* Sector heatmap rows */
-.ov-sector{
-  display:grid;grid-template-columns:minmax(0,1.4fr) minmax(180px,2fr) auto;
-  align-items:center;gap:14px;padding:11px 4px;
-  border-bottom:1px dashed var(--border);
-}
-.ov-sector:last-child{border-bottom:none}
-.ov-sector-name{font-size:13px;font-weight:700;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ov-sector-bar{
-  display:flex;height:8px;border-radius:var(--radius-pill);
-  overflow:hidden;background:var(--bg3);
-}
-.ov-sector-bar > div{height:100%}
-.ov-sector-bar .b{background:var(--green)}
-.ov-sector-bar .n{background:var(--yellow)}
-.ov-sector-bar .s{background:var(--red)}
-.ov-sector-meta{
-  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
-  font-variant-numeric:tabular-nums;text-align:right;
-  display:flex;flex-direction:column;gap:1px;align-items:flex-end;
-}
-.ov-sector-meta .stk{font-size:10px;color:var(--text2);font-weight:600;font-family:'Plus Jakarta Sans',sans-serif}
-
-@media(max-width:640px){
+  .ov-kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
   .ov-kpi{padding:12px 14px}
   .ov-kpi-value{font-size:20px}
   .ov-kpi-label{font-size:9px}
-  .ov-sector{grid-template-columns:minmax(0,1fr) auto;gap:8px}
-  .ov-sector-bar{grid-column:1 / -1;margin-top:4px}
+  .ov-kpi-icon{font-size:16px;margin-bottom:5px}
+  .ov-grid-3{grid-template-columns:1fr}
+  .ov-donut-wrap{width:150px;height:150px}
+  .ov-donut-center-value{font-size:20px}
+  .ov-trend-wrap{height:160px}
   .ov-date-filter{padding:8px 10px;gap:5px}
-  .ov-date-label{font-size:10px;margin-right:2px;width:100%;margin-bottom:2px}
-  .ov-date-chip{padding:5px 10px;font-size:11px}
-  .ov-item{grid-template-columns:22px minmax(0,1fr) auto;gap:8px;padding:9px 4px}
-  .ov-name{font-size:12px}
-  .ov-fullname{font-size:10px}
-  .ov-meta-val{font-size:12px}
-  .ov-meta-sub{font-size:9px}
-  .ov-rank{font-size:11px}
-  /* Page consensus mobile padding */
+  .ov-date-label{font-size:10px;width:100%;margin-bottom:2px}
+  .ov-date-chip{padding:5px 12px;font-size:11px}
+  .ov-latest-row{
+    grid-template-columns:auto 1fr auto;
+    grid-template-rows:auto auto;
+    column-gap:8px;row-gap:2px;padding:9px 6px;
+  }
+  .ov-latest-stock{grid-row:1;grid-column:1}
+  .ov-latest-firm {grid-row:1;grid-column:2;font-size:11px}
+  .ov-latest-pct  {grid-row:1;grid-column:3}
+  .ov-latest-date {grid-row:2;grid-column:1;font-size:10px}
+  .ov-latest-target{grid-row:2;grid-column:2/span 2;text-align:left;font-size:11px;color:var(--text2)}
+  .ov-latest-row > .badge{display:none}
   #page-consensus{padding:12px 10px;padding-bottom:90px}
   #page-consensus > div{max-width:100%}
 }
@@ -2001,46 +1989,102 @@ select.form-control option{background:var(--card);color:var(--text)}
       </div>
     </div>
 
-    <!-- Overview view (NEW DEFAULT) -->
+    <!-- ═══ OVERVIEW DASHBOARD (redesigned) ═══ -->
     <div class="ov-view" id="ovView">
+
+      <!-- Period filter -->
       <div class="ov-date-filter" id="ovDateFilter">
         <span class="ov-date-label">Periode:</span>
-        <button class="ov-date-chip" data-days="7" onclick="setOverviewPeriod(7)">7 Hari</button>
-        <button class="ov-date-chip" data-days="30" onclick="setOverviewPeriod(30)">30 Hari</button>
-        <button class="ov-date-chip active" data-days="90" onclick="setOverviewPeriod(90)">90 Hari</button>
+        <button class="ov-date-chip" data-days="7"   onclick="setOverviewPeriod(7)">7 Hari</button>
+        <button class="ov-date-chip" data-days="30"  onclick="setOverviewPeriod(30)">30 Hari</button>
+        <button class="ov-date-chip active" data-days="90"  onclick="setOverviewPeriod(90)">90 Hari</button>
         <button class="ov-date-chip" data-days="365" onclick="setOverviewPeriod(365)">1 Tahun</button>
-        <button class="ov-date-chip" data-days="0" onclick="setOverviewPeriod(0)">Semua</button>
+        <button class="ov-date-chip" data-days="0"   onclick="setOverviewPeriod(0)">Semua</button>
       </div>
+
+      <!-- ROW 1: KPI strip (5 tiles) -->
       <div class="ov-kpi-strip" id="ovKpiStrip"></div>
-      <div class="ov-row ov-row-3">
-        <div class="card">
-          <div class="card-title">Market Sentiment</div>
-          <div id="ovSentiment"></div>
+
+      <!-- ROW 2: Sentiment donut + Upside bar chart + Recs/hari trend -->
+      <div class="ov-grid-3" id="ovRow2">
+        <!-- Sentiment donut -->
+        <div class="card ov-card-sentiment">
+          <div class="ov-card-hd">
+            <span class="card-title" style="margin:0">Market Sentiment</span>
+            <span class="ov-card-badge" id="ovSentBadge"></span>
+          </div>
+          <div class="ov-donut-wrap">
+            <canvas id="ovSentDonut"></canvas>
+            <div class="ov-donut-center" id="ovDonutCenter"></div>
+          </div>
+          <div id="ovSentLegend"></div>
         </div>
+        <!-- Top Upside horizontal bar -->
         <div class="card">
-          <div class="card-title">Saham · Upside Tertinggi</div>
-          <div id="ovTopUpside"></div>
+          <div class="ov-card-hd">
+            <span class="card-title" style="margin:0">Upside Tertinggi</span>
+            <span class="ov-card-sub">avg target vs harga live</span>
+          </div>
+          <div class="ov-hbar-wrap">
+            <canvas id="ovUpsideBar"></canvas>
+          </div>
         </div>
+        <!-- Rec activity trend (line) -->
         <div class="card">
-          <div class="card-title">Saham · Paling Direkomendasikan</div>
-          <div id="ovTopStocks"></div>
+          <div class="ov-card-hd">
+            <span class="card-title" style="margin:0">Aktivitas Rekomendasi</span>
+            <span class="ov-card-sub">jumlah rec per bulan (12 bln)</span>
+          </div>
+          <div class="ov-trend-wrap">
+            <canvas id="ovTrendLine"></canvas>
+          </div>
         </div>
       </div>
-      <div class="ov-row">
+
+      <!-- ROW 3: Sektor radar + Top firms bar + Risk-Return bubble -->
+      <div class="ov-grid-3" id="ovRow3">
+        <!-- Sector BUY% bar chart -->
         <div class="card">
-          <div class="card-title">Top Firms · Aktivitas Terbanyak</div>
-          <div id="ovTopFirms"></div>
+          <div class="ov-card-hd">
+            <span class="card-title" style="margin:0">Sektor · Komposisi</span>
+            <span class="ov-card-sub">BUY / NEU / SELL per sektor</span>
+          </div>
+          <div class="ov-hbar-wrap" id="ovSectorWrap">
+            <canvas id="ovSectorBar"></canvas>
+          </div>
         </div>
-        <div class="card" style="overflow:visible">
-          <div class="card-title">Konsensus Terbaru</div>
-          <div id="ovLatest"></div>
+        <!-- Top Firms stacked bar -->
+        <div class="card">
+          <div class="ov-card-hd">
+            <span class="card-title" style="margin:0">Top 10 Firm Aktif</span>
+            <span class="ov-card-sub">jumlah rekomendasi</span>
+          </div>
+          <div class="ov-hbar-wrap">
+            <canvas id="ovFirmsBar"></canvas>
+          </div>
+        </div>
+        <!-- Most Recommended stocks (horizontal bar) -->
+        <div class="card">
+          <div class="ov-card-hd">
+            <span class="card-title" style="margin:0">Saham Paling Direkomendasikan</span>
+            <span class="ov-card-sub">BUY count tertinggi</span>
+          </div>
+          <div class="ov-hbar-wrap">
+            <canvas id="ovMostRecBar"></canvas>
+          </div>
         </div>
       </div>
+
+      <!-- ROW 4: Latest recs feed (full width) -->
       <div class="card">
-        <div class="card-title">Distribusi per Sektor</div>
-        <div id="ovSectorList"></div>
+        <div class="ov-card-hd" style="margin-bottom:12px">
+          <span class="card-title" style="margin:0">Konsensus Terbaru</span>
+          <span class="ov-card-sub" id="ovLatestCount"></span>
+        </div>
+        <div id="ovLatest"></div>
       </div>
-    </div>
+
+    </div><!-- /ov-view -->
 
     <!-- Grid saham (existing) -->
     <div class="consensus-all-grid" id="consensusAllGrid" style="display:none">
@@ -4193,259 +4237,238 @@ function isWithinPeriod(dateStr, days) {
   return diffDays >= 0 && diffDays <= days;
 }
 
+// ── Overview chart instances — destroy before re-render ──
+const _ovCharts = {};
+function _ovDestroy(id) {
+  if (_ovCharts[id]) { try { _ovCharts[id].destroy(); } catch(_){} delete _ovCharts[id]; }
+}
+function _ovMkChart(id, cfg) {
+  _ovDestroy(id);
+  const el = document.getElementById(id);
+  if (!el) return;
+  _ovCharts[id] = new Chart(el.getContext('2d'), cfg);
+}
+
 function buildOverview() {
   if (!DATA) return;
 
-  const ph = DATA.price_history || [];
-  const last = ph[ph.length - 1] || {};
+  const ph         = DATA.price_history || [];
+  const last       = ph[ph.length - 1] || {};
   const periodDays = overviewPeriodDays;
+  const ct         = chartColors();
 
-  let totalRec = 0, buyAll = 0, neuAll = 0, sellAll = 0;
-  let upsideSumAll = 0, upsideCntAll = 0;
-  const firmAgg = new Map();   // firm -> {buy,neu,sell,total,stocks,upS,upC}
-  const stockAgg = new Map();  // code -> {buy,neu,sell,total,upS,upC,sector}
-  const sectorAgg = new Map(); // sector -> {buy,neu,sell,total,stocks,upS,upC}
-  const allFilteredRecs = [];  // untuk latest list
+  // ── AGGREGATION ──────────────────────────────────────────────────────
+  let totalRec=0,buyAll=0,neuAll=0,sellAll=0,upsideSumAll=0,upsideCntAll=0;
+  const firmAgg=new Map(), stockAgg=new Map(), sectorAgg=new Map();
+  const allFilteredRecs=[], monthlyCount={};
 
-  for (const [code, recs] of Object.entries(DATA.consensus_slim || {})) {
+  for (const [code,recs] of Object.entries(DATA.consensus_slim||{})) {
     if (!recs.length) continue;
-    const sector = (DATA.stock_info[code] || {}).sector || 'Lainnya';
-    let sBuy = 0, sNeu = 0, sSell = 0, sUpS = 0, sUpC = 0;
+    const sector=(DATA.stock_info[code]||{}).sector||'Lainnya';
+    let sBuy=0,sNeu=0,sSell=0,sUpS=0,sUpC=0;
 
     for (const r of recs) {
-      // Apply date filter
-      if (!isWithinPeriod(r.date, periodDays)) continue;
+      const ym=String(r.date||'').slice(0,7);
+      if (ym) monthlyCount[ym]=(monthlyCount[ym]||0)+1;
+      if (!isWithinPeriod(r.date,periodDays)) continue;
 
       totalRec++;
-      const isBuy = r.suggestion === 'BUY';
-      const isSell = r.suggestion === 'SELL';
-      if (isBuy) { buyAll++; sBuy++; }
-      else if (isSell) { sellAll++; sSell++; }
-      else { neuAll++; sNeu++; }
+      const isBuy=r.suggestion==='BUY', isSell=r.suggestion==='SELL';
+      if (isBuy){buyAll++;sBuy++;} else if(isSell){sellAll++;sSell++;} else{neuAll++;sNeu++;}
 
       if (r.firm) {
-        let f = firmAgg.get(r.firm);
-        if (!f) { f = { buy:0, neu:0, sell:0, total:0, stocks:new Set(), upS:0, upC:0 }; firmAgg.set(r.firm, f); }
-        if (isBuy) f.buy++; else if (isSell) f.sell++; else f.neu++;
-        f.total++; f.stocks.add(code);
+        let f=firmAgg.get(r.firm);
+        if (!f){f={buy:0,neu:0,sell:0,total:0,stocks:new Set(),upS:0,upC:0};firmAgg.set(r.firm,f);}
+        if(isBuy)f.buy++;else if(isSell)f.sell++;else f.neu++;
+        f.total++;f.stocks.add(code);
       }
-
-      const cur = last[code];
-      let upPct = null;
-      if (cur && r.target_price) {
-        const up = (r.target_price - cur) / cur;
-        upPct = up;
-        sUpS += up; sUpC++;
-        upsideSumAll += up; upsideCntAll++;
-        if (r.firm) {
-          const f = firmAgg.get(r.firm);
-          if (f) { f.upS += up; f.upC++; }
-        }
+      const cur=last[code]; let upPct=null;
+      if (cur&&r.target_price){
+        const up=(r.target_price-cur)/cur;
+        upPct=up;sUpS+=up;sUpC++;upsideSumAll+=up;upsideCntAll++;
+        if(r.firm){const f=firmAgg.get(r.firm);if(f){f.upS+=up;f.upC++;}}
       }
-
-      allFilteredRecs.push({ ...r, code, cur, upPct });
+      allFilteredRecs.push({...r,code,cur,upPct});
     }
 
-    // Track stock only if it has at least 1 rec in this period
-    if (sBuy + sNeu + sSell > 0) {
-      stockAgg.set(code, {
-        sector, buy:sBuy, neu:sNeu, sell:sSell, total: sBuy+sNeu+sSell,
-        avgUp: sUpC ? (sUpS/sUpC)*100 : 0
-      });
-
-      let sec = sectorAgg.get(sector);
-      if (!sec) { sec = { buy:0, neu:0, sell:0, total:0, stocks:new Set(), upS:0, upC:0 }; sectorAgg.set(sector, sec); }
-      sec.buy += sBuy; sec.neu += sNeu; sec.sell += sSell; sec.total += sBuy+sNeu+sSell;
-      sec.stocks.add(code); sec.upS += sUpS; sec.upC += sUpC;
+    if (sBuy+sNeu+sSell>0) {
+      stockAgg.set(code,{sector,buy:sBuy,neu:sNeu,sell:sSell,total:sBuy+sNeu+sSell,avgUp:sUpC?(sUpS/sUpC)*100:0});
+      let sec=sectorAgg.get(sector);
+      if(!sec){sec={buy:0,neu:0,sell:0,total:0,stocks:new Set(),upS:0,upC:0};sectorAgg.set(sector,sec);}
+      sec.buy+=sBuy;sec.neu+=sNeu;sec.sell+=sSell;sec.total+=sBuy+sNeu+sSell;
+      sec.stocks.add(code);sec.upS+=sUpS;sec.upC+=sUpC;
     }
   }
 
-  const totalStocks = stockAgg.size;
-  const totalFirms = firmAgg.size;
-  const overallAvgUp = upsideCntAll ? (upsideSumAll/upsideCntAll)*100 : 0;
-  const overallAvgUpCls = overallAvgUp > 0 ? 'up' : overallAvgUp < 0 ? 'dn' : 'neu';
-  const periodLabel = periodDays ? `${periodDays} hari terakhir` : 'sepanjang waktu';
+  const totalStocks=stockAgg.size, totalFirms=firmAgg.size;
+  const overallAvgUp=upsideCntAll?(upsideSumAll/upsideCntAll)*100:0;
+  const buyPct=totalRec?buyAll/totalRec*100:0;
+  const neuPct=totalRec?neuAll/totalRec*100:0;
+  const sellPct=totalRec?sellAll/totalRec*100:0;
+  const domLabel=buyPct>=neuPct&&buyPct>=sellPct?'BUY':sellPct>buyPct&&sellPct>=neuPct?'SELL':'NEUTRAL';
+  const domCls=domLabel==='BUY'?'buy':domLabel==='SELL'?'sell':'neu';
+  const periodLabel=periodDays?`${periodDays} hari terakhir`:'sepanjang waktu';
+  const upCls=overallAvgUp>=0?'up':'dn';
 
-  // ── KPI Strip ──
-  document.getElementById('ovKpiStrip').innerHTML = `
-    <div class="ov-kpi">
-      <div class="ov-kpi-label">Total Saham Tercover</div>
-      <div class="ov-kpi-value">${totalStocks}</div>
-      <div class="ov-kpi-sub">${periodLabel}</div>
-    </div>
-    <div class="ov-kpi">
-      <div class="ov-kpi-label">Total Firm Aktif</div>
-      <div class="ov-kpi-value">${totalFirms}</div>
-      <div class="ov-kpi-sub">analyst houses</div>
-    </div>
-    <div class="ov-kpi">
-      <div class="ov-kpi-label">Total Rekomendasi</div>
-      <div class="ov-kpi-value">${totalRec.toLocaleString('id')}</div>
-      <div class="ov-kpi-sub">${periodLabel}</div>
-    </div>
-    <div class="ov-kpi">
-      <div class="ov-kpi-label">Avg Target Upside</div>
-      <div class="ov-kpi-value ${overallAvgUpCls}">${overallAvgUp >= 0 ? '+' : ''}${overallAvgUp.toFixed(1)}%</div>
-      <div class="ov-kpi-sub">vs harga live (rata-rata)</div>
-    </div>
-  `;
+  // ── 1. KPI STRIP ────────────────────────────────────────────────────
+  document.getElementById('ovKpiStrip').innerHTML=[
+    {icon:'📊',label:'Total Rekomendasi',value:totalRec.toLocaleString('id'),sub:periodLabel},
+    {icon:'🏢',label:'Firm Aktif',value:totalFirms,sub:'analyst houses'},
+    {icon:'📈',label:'Saham Tercover',value:totalStocks,sub:periodLabel},
+    {icon:'🎯',label:'Avg Target Upside',
+     value:`<span class="${upCls}">${overallAvgUp>=0?'+':''}${overallAvgUp.toFixed(1)}%</span>`,
+     sub:'vs harga live'},
+    {icon:'🟢',label:'BUY Dominance',
+     value:`<span class="${domCls==='buy'?'up':domCls==='sell'?'dn':'neu'}">${buyPct.toFixed(1)}%</span>`,
+     sub:`${buyAll} dari ${totalRec} rec`},
+  ].map(k=>`<div class="ov-kpi"><span class="ov-kpi-icon">${k.icon}</span><div class="ov-kpi-label">${k.label}</div><div class="ov-kpi-value">${k.value}</div><div class="ov-kpi-sub">${k.sub}</div></div>`).join('');
 
-  // ── Sentiment meter ──
-  const buyPct = totalRec ? (buyAll/totalRec*100) : 0;
-  const neuPct = totalRec ? (neuAll/totalRec*100) : 0;
-  const sellPct = totalRec ? (sellAll/totalRec*100) : 0;
-  document.getElementById('ovSentiment').innerHTML = `
-    <div class="ov-sent-meter">
-      ${buyAll ? `<div class="sb" style="width:${buyPct}%"></div>` : ''}
-      ${neuAll ? `<div class="sn" style="width:${neuPct}%"></div>` : ''}
-      ${sellAll ? `<div class="ss" style="width:${sellPct}%"></div>` : ''}
-    </div>
-    <div class="ov-sent-stats">
-      <div class="ov-sent-row">
-        <span class="dot" style="background:var(--green)"></span>
-        <span class="name">BUY</span>
-        <span class="cnt">${buyAll}</span>
-        <span class="pct">${buyPct.toFixed(1)}%</span>
-      </div>
-      <div class="ov-sent-row">
-        <span class="dot" style="background:var(--yellow)"></span>
-        <span class="name">NEUTRAL</span>
-        <span class="cnt">${neuAll}</span>
-        <span class="pct">${neuPct.toFixed(1)}%</span>
-      </div>
-      <div class="ov-sent-row">
-        <span class="dot" style="background:var(--red)"></span>
-        <span class="name">SELL</span>
-        <span class="cnt">${sellAll}</span>
-        <span class="pct">${sellPct.toFixed(1)}%</span>
-      </div>
-    </div>
-  `;
-
-  // ── Top Upside (saham dengan avg target upside tertinggi, min 2 recs) ──
-  const topUpsideList = [...stockAgg.entries()]
-    .filter(([_, s]) => s.total >= 2 && s.avgUp > 0)
-    .map(([code, s]) => ({ code, ...s }))
-    .sort((a, b) => b.avgUp - a.avgUp)
-    .slice(0, 8);
-  document.getElementById('ovTopUpside').innerHTML = `<div class="ov-list">
-    ${topUpsideList.map((s, i) => {
-      const name = (DATA.stock_info[s.code] || {}).name || '';
-      return `<div class="ov-item ${i === 0 ? 'top-1' : ''}" onclick="selectStock('${s.code}')">
-        <div class="ov-rank">#${i+1}</div>
-        <div>
-          <div class="ov-name">${s.code}</div>
-          <div class="ov-fullname">${escapeHtml(name)}</div>
-        </div>
-        <div class="ov-meta">
-          <span class="ov-meta-val up">+${s.avgUp.toFixed(1)}%</span>
-          <span class="ov-meta-sub">${s.total} rekom</span>
-        </div>
-      </div>`;
-    }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data.</div>'}
+  // ── 2. SENTIMENT DONUT ───────────────────────────────────────────────
+  const sentBadge=document.getElementById('ovSentBadge');
+  if(sentBadge){sentBadge.className=`ov-card-badge ${domCls}`;sentBadge.textContent=domLabel;}
+  const donutCenter=document.getElementById('ovDonutCenter');
+  if(donutCenter) donutCenter.innerHTML=`<span class="ov-donut-center-label">Dominan</span><span class="ov-donut-center-value ${domCls==='buy'?'up':domCls==='sell'?'dn':'neu'}">${domLabel}</span><span class="ov-donut-center-sub">${(domLabel==='BUY'?buyPct:domLabel==='SELL'?sellPct:neuPct).toFixed(1)}%</span>`;
+  const sentLeg=document.getElementById('ovSentLegend');
+  if(sentLeg) sentLeg.innerHTML=`<div class="ov-sent-legend">
+    <div class="ov-sent-row2"><span class="ov-sent-dot" style="background:#059669"></span><span class="ov-sent-name">BUY</span><span class="ov-sent-cnt">${buyAll}</span><span class="ov-sent-pct">${buyPct.toFixed(1)}%</span></div>
+    <div class="ov-sent-row2"><span class="ov-sent-dot" style="background:#d97706"></span><span class="ov-sent-name">NEUTRAL</span><span class="ov-sent-cnt">${neuAll}</span><span class="ov-sent-pct">${neuPct.toFixed(1)}%</span></div>
+    <div class="ov-sent-row2"><span class="ov-sent-dot" style="background:#e11d48"></span><span class="ov-sent-name">SELL</span><span class="ov-sent-cnt">${sellAll}</span><span class="ov-sent-pct">${sellPct.toFixed(1)}%</span></div>
   </div>`;
+  _ovMkChart('ovSentDonut',{type:'doughnut',
+    data:{labels:['BUY','NEUTRAL','SELL'],datasets:[{data:[buyAll,neuAll,sellAll],
+      backgroundColor:['#059669','#d97706','#e11d48'],borderWidth:0,hoverOffset:6}]},
+    options:{cutout:'72%',responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:ct.tooltipBg,titleColor:ct.tooltipTitle,
+        bodyColor:ct.tooltipText,borderColor:ct.tooltipBorder,borderWidth:1,padding:10,cornerRadius:10,
+        callbacks:{label:i=>` ${i.label}: ${i.raw} (${totalRec?(i.raw/totalRec*100).toFixed(1):0}%)`}}}}
+  });
 
-  // ── Top Stocks by BUY count ──
-  const topByBuyList = [...stockAgg.entries()]
-    .filter(([_, s]) => s.buy > 0)
-    .map(([code, s]) => ({ code, ...s, buyPct: s.total ? s.buy/s.total : 0 }))
-    .sort((a, b) => b.buy - a.buy || b.buyPct - a.buyPct)
-    .slice(0, 8);
-  document.getElementById('ovTopStocks').innerHTML = `<div class="ov-list">
-    ${topByBuyList.map((s, i) => {
-      const name = (DATA.stock_info[s.code] || {}).name || '';
-      return `<div class="ov-item ${i === 0 ? 'top-1' : ''}" onclick="selectStock('${s.code}')">
-        <div class="ov-rank">#${i+1}</div>
-        <div>
-          <div class="ov-name">${s.code}</div>
-          <div class="ov-fullname">${escapeHtml(name)}</div>
-        </div>
-        <div class="ov-meta">
-          <span class="ov-meta-val up">${s.buy} BUY</span>
-          <span class="ov-meta-sub">${(s.buyPct*100).toFixed(0)}% dari ${s.total}</span>
-        </div>
-      </div>`;
-    }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data.</div>'}
-  </div>`;
+  // ── 3. TOP UPSIDE HORIZONTAL BAR ────────────────────────────────────
+  const topUpside=[...stockAgg.entries()].filter(([,s])=>s.total>=2&&s.avgUp>0)
+    .map(([code,s])=>({code,...s})).sort((a,b)=>b.avgUp-a.avgUp).slice(0,10);
+  document.getElementById('ovUpsideBar').parentElement.style.height=Math.max(200,topUpside.length*34)+'px';
+  _ovMkChart('ovUpsideBar',{type:'bar',
+    data:{labels:topUpside.map(s=>s.code),datasets:[{label:'Avg Upside %',
+      data:topUpside.map(s=>+s.avgUp.toFixed(2)),
+      backgroundColor:topUpside.map(s=>s.avgUp>=30?'rgba(5,150,105,.85)':s.avgUp>=15?'rgba(5,150,105,.6)':'rgba(5,150,105,.4)'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:ct.tooltipBg,titleColor:ct.tooltipTitle,
+        bodyColor:ct.tooltipText,borderColor:ct.tooltipBorder,borderWidth:1,padding:10,cornerRadius:10,
+        callbacks:{label:i=>` +${i.raw}% upside`,afterLabel:i=>{const s=topUpside[i.dataIndex];return` ${s.total} rec · ${s.buy} BUY`;}}}},
+      scales:{x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11},callback:v=>v+'%'}},
+        y:{grid:{display:false},ticks:{color:ct.ticks,font:{size:12,weight:'700'}}}},
+      onClick:(_,els)=>{if(els[0])selectStock(topUpside[els[0].index].code);}
+    }
+  });
 
-  // ── Top Firms by activity ──
-  const topFirms = [...firmAgg.entries()]
-    .map(([name, f]) => ({ name, ...f, avgUp: f.upC ? (f.upS/f.upC)*100 : 0 }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 8);
-  document.getElementById('ovTopFirms').innerHTML = `<div class="ov-list">
-    ${topFirms.map((f, i) => {
-      const upCls = f.avgUp > 0 ? 'up' : f.avgUp < 0 ? 'dn' : 'neu';
-      const nameEsc = escapeHtml(f.name);
-      return `<div class="ov-item ${i === 0 ? 'top-1' : ''}" data-firm="${nameEsc}" onclick="showFirmDetail(this.dataset.firm)">
-        <div class="ov-rank">#${i+1}</div>
-        <div>
-          <div class="ov-name" style="color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px">${nameEsc}</div>
-          <div class="ov-fullname">${f.total} rekom · ${f.stocks.size} saham</div>
-        </div>
-        <div class="ov-meta">
-          <span class="ov-meta-val ${upCls}">${f.avgUp >= 0 ? '+' : ''}${f.avgUp.toFixed(1)}%</span>
-          <span class="ov-meta-sub">avg upside</span>
-        </div>
-      </div>`;
-    }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data.</div>'}
-  </div>`;
+  // ── 4. ACTIVITY TREND LINE (last 12 months) ─────────────────────────
+  const sortedMonths=Object.keys(monthlyCount).sort().slice(-12);
+  const trendLabels=sortedMonths.map(ym=>{const[y,m]=ym.split('-');return`${MONTH_ID_SHORT[+m-1]} ${String(+y).slice(-2)}`;});
+  const trendData=sortedMonths.map(ym=>monthlyCount[ym]||0);
+  const trendAvg=trendData.reduce((a,b)=>a+b,0)/(trendData.length||1);
+  _ovMkChart('ovTrendLine',{type:'line',
+    data:{labels:trendLabels,datasets:[
+      {label:'Rec/Bulan',data:trendData,borderColor:'#6d28d9',borderWidth:2.5,
+       pointRadius:4,pointBackgroundColor:'#6d28d9',pointBorderColor:'#fff',pointBorderWidth:2,
+       tension:.35,fill:true,backgroundColor:ctx=>{
+         const g=ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
+         g.addColorStop(0,'rgba(109,40,217,.22)');g.addColorStop(1,'rgba(109,40,217,0)');return g;}},
+      {label:'Rata-rata',data:trendData.map(()=>+trendAvg.toFixed(1)),
+       borderColor:'rgba(109,40,217,.4)',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:ct.tooltipBg,titleColor:ct.tooltipTitle,
+        bodyColor:ct.tooltipText,borderColor:ct.tooltipBorder,borderWidth:1,padding:10,cornerRadius:10,
+        callbacks:{label:i=>i.datasetIndex===1?` Rata-rata: ${i.raw}`:` ${i.raw} rekomendasi`}}},
+      scales:{x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11},maxRotation:0}},
+        y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11}},min:0,
+          suggestedMax:Math.max(...trendData,1)+Math.ceil(Math.max(...trendData,1)*.15)}}
+    }
+  });
 
-  // ── Konsensus Terbaru — sorted by date desc, top 15 ──
-  allFilteredRecs.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
-  const latestList = allFilteredRecs.slice(0, 15);
-  document.getElementById('ovLatest').innerHTML = latestList.length
-    ? `<div class="ov-latest-list">${latestList.map(r => {
-        const badgeCls = r.suggestion === 'BUY' ? 'badge-buy' : r.suggestion === 'SELL' ? 'badge-sell' : 'badge-neutral';
-        const pctCls = r.upPct == null ? 'neu' : r.upPct > 0 ? 'up' : r.upPct < 0 ? 'dn' : 'neu';
-        const pctStr = r.upPct != null ? `${r.upPct >= 0 ? '+' : ''}${(r.upPct * 100).toFixed(1)}%` : '—';
-        const targetStr = r.target_price ? Math.round(r.target_price).toLocaleString('id') : '—';
-        const firmEsc = escapeHtml(r.firm || '—');
-        return `<div class="ov-latest-row">
-          <span class="ov-latest-date">${r.date || '-'}</span>
-          <span class="ov-latest-stock" onclick="event.stopPropagation();selectStock('${r.code}')" title="Buka detail saham ${r.code}">${r.code}</span>
-          <span class="ov-latest-firm" data-firm="${firmEsc}" onclick="event.stopPropagation();showFirmDetail(this.dataset.firm)" title="Lihat semua rekomendasi ${firmEsc}">${firmEsc}</span>
-          <span class="badge ${badgeCls}">${r.suggestion}</span>
-          <span class="ov-latest-target">${targetStr}</span>
-          <span class="ov-latest-pct ${pctCls}">${pctStr}</span>
-        </div>`;
-      }).join('')}</div>`
-    : '<div style="color:var(--text3);padding:20px;text-align:center;font-size:12px">Tidak ada konsensus dalam periode ini.</div>';
+  // ── 5. SECTOR STACKED HORIZONTAL BAR ────────────────────────────────
+  const sectorList=[...sectorAgg.entries()].map(([name,s])=>({name,total:s.total,buy:s.buy,neu:s.neu,sell:s.sell,stocks:s.stocks.size,avgUp:s.upC?(s.upS/s.upC)*100:0})).sort((a,b)=>b.total-a.total).slice(0,10);
+  document.getElementById('ovSectorBar').parentElement.style.height=Math.max(220,sectorList.length*36)+'px';
+  _ovMkChart('ovSectorBar',{type:'bar',
+    data:{labels:sectorList.map(s=>s.name),datasets:[
+      {label:'BUY',    data:sectorList.map(s=>s.buy), backgroundColor:'rgba(5,150,105,.8)'},
+      {label:'NEUTRAL',data:sectorList.map(s=>s.neu), backgroundColor:'rgba(217,119,6,.7)'},
+      {label:'SELL',   data:sectorList.map(s=>s.sell),backgroundColor:'rgba(225,29,72,.75)'},
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{color:ct.ticks,font:{size:11,weight:'600'},boxWidth:12,padding:12}},
+        tooltip:{backgroundColor:ct.tooltipBg,titleColor:ct.tooltipTitle,bodyColor:ct.tooltipText,borderColor:ct.tooltipBorder,borderWidth:1,padding:10,cornerRadius:10,
+          callbacks:{title:i=>sectorList[i[0].dataIndex]?.name||'',
+            afterBody:i=>{const s=sectorList[i[0].dataIndex];if(!s)return'';return[`Total: ${s.total} rec · ${s.stocks} saham`,`Avg Upside: ${s.avgUp>=0?'+':''}${s.avgUp.toFixed(1)}%`];}}}},
+      scales:{x:{stacked:true,grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11}}},
+        y:{stacked:true,grid:{display:false},ticks:{color:ct.ticks,font:{size:11,weight:'600'}}}}
+    }
+  });
 
-  // ── Sector heatmap ──
-  const sectorList = [...sectorAgg.entries()]
-    .map(([name, s]) => {
-      const total = s.total;
-      const bp = total ? (s.buy/total*100) : 0;
-      const np = total ? (s.neu/total*100) : 0;
-      const sp = total ? (s.sell/total*100) : 0;
-      const avgUp = s.upC ? (s.upS/s.upC)*100 : 0;
-      return { name, total, stocks: s.stocks.size, bp, np, sp, avgUp,
-               buy:s.buy, neu:s.neu, sell:s.sell };
-    })
-    .sort((a, b) => b.total - a.total);
-  document.getElementById('ovSectorList').innerHTML = sectorList.map(s => {
-    const upCls = s.avgUp > 0 ? 'up' : s.avgUp < 0 ? 'dn' : 'neu';
-    return `<div class="ov-sector">
-      <div>
-        <div class="ov-sector-name">${escapeHtml(s.name)}</div>
-        <div class="ov-fullname" style="margin-top:2px">${s.stocks} saham · ${s.total} rekom</div>
-      </div>
-      <div class="ov-sector-bar" title="BUY ${s.buy} · NEU ${s.neu} · SELL ${s.sell}">
-        ${s.buy ? `<div class="b" style="width:${s.bp}%"></div>` : ''}
-        ${s.neu ? `<div class="n" style="width:${s.np}%"></div>` : ''}
-        ${s.sell ? `<div class="s" style="width:${s.sp}%"></div>` : ''}
-      </div>
-      <div class="ov-sector-meta">
-        <span class="${upCls}">${s.avgUp >= 0 ? '+' : ''}${s.avgUp.toFixed(1)}%</span>
-        <span class="stk">avg upside</span>
-      </div>
-    </div>`;
-  }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data sektor.</div>';
+  // ── 6. TOP 10 FIRMS STACKED BAR ──────────────────────────────────────
+  const topFirms=[...firmAgg.entries()].map(([name,f])=>({name,...f,avgUp:f.upC?(f.upS/f.upC)*100:0})).sort((a,b)=>b.total-a.total).slice(0,10);
+  document.getElementById('ovFirmsBar').parentElement.style.height=Math.max(220,topFirms.length*36)+'px';
+  _ovMkChart('ovFirmsBar',{type:'bar',
+    data:{labels:topFirms.map(f=>f.name.length>28?f.name.slice(0,26)+'…':f.name),datasets:[
+      {label:'BUY',    data:topFirms.map(f=>f.buy), backgroundColor:'rgba(5,150,105,.8)'},
+      {label:'NEUTRAL',data:topFirms.map(f=>f.neu), backgroundColor:'rgba(217,119,6,.7)'},
+      {label:'SELL',   data:topFirms.map(f=>f.sell),backgroundColor:'rgba(225,29,72,.75)'},
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{color:ct.ticks,font:{size:11,weight:'600'},boxWidth:12,padding:12}},
+        tooltip:{backgroundColor:ct.tooltipBg,titleColor:ct.tooltipTitle,bodyColor:ct.tooltipText,borderColor:ct.tooltipBorder,borderWidth:1,padding:10,cornerRadius:10,
+          callbacks:{title:i=>topFirms[i[0].dataIndex]?.name||'',
+            afterBody:i=>{const f=topFirms[i[0].dataIndex];if(!f)return'';return[`Total: ${f.total} rec · ${f.stocks.size} saham`,`Avg Upside: ${f.avgUp>=0?'+':''}${f.avgUp.toFixed(1)}%`];}}}},
+      scales:{x:{stacked:true,grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11}}},
+        y:{stacked:true,grid:{display:false},ticks:{color:ct.ticks,font:{size:10,weight:'600'}}}},
+      onClick:(_,els)=>{if(els[0])showFirmDetail(topFirms[els[0].index].name);}
+    }
+  });
+
+  // ── 7. MOST RECOMMENDED STOCKS ────────────────────────────────────────
+  const topStocks=[...stockAgg.entries()].filter(([,s])=>s.buy>0).map(([code,s])=>({code,...s,buyRatio:s.total?s.buy/s.total:0})).sort((a,b)=>b.buy-a.buy||b.buyRatio-a.buyRatio).slice(0,10);
+  document.getElementById('ovMostRecBar').parentElement.style.height=Math.max(200,topStocks.length*34)+'px';
+  _ovMkChart('ovMostRecBar',{type:'bar',
+    data:{labels:topStocks.map(s=>s.code),datasets:[
+      {label:'BUY',    data:topStocks.map(s=>s.buy), backgroundColor:'rgba(5,150,105,.85)'},
+      {label:'NEUTRAL',data:topStocks.map(s=>s.neu), backgroundColor:'rgba(217,119,6,.65)'},
+      {label:'SELL',   data:topStocks.map(s=>s.sell),backgroundColor:'rgba(225,29,72,.7)'},
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{color:ct.ticks,font:{size:11,weight:'600'},boxWidth:12,padding:12}},
+        tooltip:{backgroundColor:ct.tooltipBg,titleColor:ct.tooltipTitle,bodyColor:ct.tooltipText,borderColor:ct.tooltipBorder,borderWidth:1,padding:10,cornerRadius:10,
+          callbacks:{title:i=>{const s=topStocks[i[0].dataIndex];return`${s.code} · ${(DATA.stock_info[s.code]||{}).name||''}`;},
+            afterBody:i=>{const s=topStocks[i[0].dataIndex];return[`Total: ${s.total} rec`,`BUY: ${(s.buyRatio*100).toFixed(0)}%`,`Avg Upside: ${s.avgUp>=0?'+':''}${s.avgUp.toFixed(1)}%`];}}}},
+      scales:{x:{stacked:true,grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11}}},
+        y:{stacked:true,grid:{display:false},ticks:{color:ct.ticks,font:{size:12,weight:'700'}}}},
+      onClick:(_,els)=>{if(els[0])selectStock(topStocks[els[0].index].code);}
+    }
+  });
+
+  // ── 8. LATEST RECS FEED (top 20) ─────────────────────────────────────
+  allFilteredRecs.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const latestList=allFilteredRecs.slice(0,20);
+  const lcEl=document.getElementById('ovLatestCount');
+  if(lcEl) lcEl.textContent=`${allFilteredRecs.length} rekomendasi · ${periodLabel}`;
+  document.getElementById('ovLatest').innerHTML=latestList.length
+    ?`<div class="ov-latest-list">${latestList.map(r=>{
+        const bc=r.suggestion==='BUY'?'badge-buy':r.suggestion==='SELL'?'badge-sell':'badge-neutral';
+        const pc=r.upPct==null?'neu':r.upPct>0?'up':r.upPct<0?'dn':'neu';
+        const ps=r.upPct!=null?`${r.upPct>=0?'+':''}${(r.upPct*100).toFixed(1)}%`:'—';
+        const fe=escapeHtml(r.firm||'—');
+        return`<div class="ov-latest-row">
+          <span class="ov-latest-date">${r.date||'-'}</span>
+          <span class="ov-latest-stock" onclick="selectStock('${r.code}')">${r.code}</span>
+          <span class="ov-latest-firm" data-firm="${fe}" onclick="showFirmDetail(this.dataset.firm)">${fe}</span>
+          <span class="badge ${bc}">${r.suggestion}</span>
+          <span class="ov-latest-target">${r.target_price?Math.round(r.target_price).toLocaleString('id'):'—'}</span>
+          <span class="ov-latest-pct ${pc}">${ps}</span>
+        </div>`;}).join('')}</div>`
+    :'<div style="color:var(--text3);padding:24px;text-align:center;font-size:13px">Tidak ada konsensus dalam periode ini.</div>';
 }
 
-// ═══════════════════════════════════════════
-// FIRM-LEVEL RATING ENGINE
+
 // Agregat Returns+Risk dari semua rec milik satu firm.
 // Filter: ageMonths 1–24 (cukup data, masih relevan).
 // Metode: simple average → bulatkan ke integer terdekat.
