@@ -546,12 +546,11 @@ select.form-control option{background:var(--card);color:var(--text)}
   /* Stats & YoY di atas chart supaya user langsung lihat angka tanpa scroll */
   .card-hero{order:1}
   .card-stats{order:2}
-  .card-yoy{order:3}
-  .card-chart{order:4}
-  .card-pt{order:5}
-  .card-consensus{order:6}
-  .card-analyst{order:7}
-  .card-watchlist{order:8}
+  .card-chart{order:3}
+  .card-pt{order:4}
+  .card-consensus{order:5}
+  .card-analyst{order:6}
+  .card-watchlist{order:7}
 }
 
 @media(max-width:640px){
@@ -608,7 +607,21 @@ select.form-control option{background:var(--card);color:var(--text)}
   .price-block .price{font-size:22px}
 }
 
-/* ── LOADING ── */
+/* ── STATS+YOY TAB SWITCHER ── */
+.stats-tab-btn{
+  padding:6px 14px;font-size:12px;font-weight:700;
+  border:1px solid var(--border);border-radius:var(--radius-pill);
+  cursor:pointer;color:var(--text2);background:var(--card);
+  font-family:'Plus Jakarta Sans',sans-serif;
+  transition:all .15s;white-space:nowrap;letter-spacing:.3px;
+}
+.stats-tab-btn:hover{color:var(--accent);border-color:var(--accent)}
+.stats-tab-btn.active{
+  background:var(--grad);color:#fff;border-color:transparent;
+  box-shadow:0 4px 12px rgba(109,40,217,.22);
+}
+
+
 .loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text2);font-size:13px;gap:10px}
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -685,16 +698,17 @@ select.form-control option{background:var(--card);color:var(--text)}
         <div class="loading"><div class="spinner"></div> Memuat data...</div>
       </div>
 
-      <!-- Stats Table — di atas chart di semua layar -->
+      <!-- Stats + YoY digabung dalam satu card dengan tab switcher -->
       <div class="card card-stats" id="statsCard">
-        <div class="card-title">Statistik Deskriptif</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="card-title" style="margin-bottom:0" id="statsYoyTitle">Statistik Deskriptif</div>
+          <div style="display:flex;gap:4px">
+            <button class="stats-tab-btn active" id="tabBtnStats" onclick="switchStatsTab('stats')">📊 Statistik</button>
+            <button class="stats-tab-btn" id="tabBtnYoy" onclick="switchStatsTab('yoy')">📈 YoY Analysis</button>
+          </div>
+        </div>
         <div id="statsContent"><div class="loading"><div class="spinner"></div></div></div>
-      </div>
-
-      <!-- YoY Analysis — di atas chart di semua layar -->
-      <div class="card card-yoy" id="yoyCard">
-        <div class="card-title">YoY Analysis</div>
-        <div id="yoyContent"><div class="loading"><div class="spinner"></div></div></div>
+        <div id="yoyContent" style="display:none"><div class="loading"><div class="spinner"></div></div></div>
       </div>
 
       <!-- Chart -->
@@ -1028,6 +1042,32 @@ function init() {
 }
 
 // ═══════════════════════════════════════════
+// STATS + YOY TAB SWITCHER
+// ═══════════════════════════════════════════
+function switchStatsTab(tab) {
+  const statsDiv = document.getElementById('statsContent');
+  const yoyDiv   = document.getElementById('yoyContent');
+  const btnStats = document.getElementById('tabBtnStats');
+  const btnYoy   = document.getElementById('tabBtnYoy');
+  const title    = document.getElementById('statsYoyTitle');
+  if (!statsDiv || !yoyDiv) return;
+
+  if (tab === 'stats') {
+    statsDiv.style.display = '';
+    yoyDiv.style.display   = 'none';
+    btnStats.classList.add('active');
+    btnYoy.classList.remove('active');
+    if (title) title.textContent = 'Statistik Deskriptif';
+  } else {
+    statsDiv.style.display = 'none';
+    yoyDiv.style.display   = '';
+    btnStats.classList.remove('active');
+    btnYoy.classList.add('active');
+    if (title) title.textContent = 'YoY Analysis';
+  }
+}
+
+// ═══════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════
 function showPage(name) {
@@ -1209,6 +1249,15 @@ function renderDashboard(code) {
   renderAnalystTable(code);
   document.getElementById('legendStock').textContent = code;
   document.getElementById('analystTitle').textContent = `Rekomendasi Analis · ${code}`;
+
+  // Preserve active tab state — jika tab YoY sedang aktif, pastikan
+  // yoyContent tetap tampil setelah re-render saham baru.
+  const yoyBtn = document.getElementById('tabBtnYoy');
+  if (yoyBtn && yoyBtn.classList.contains('active')) {
+    switchStatsTab('yoy');
+  } else {
+    switchStatsTab('stats');
+  }
 }
 
 function getStockData(code) {
