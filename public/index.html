@@ -702,10 +702,21 @@ select.form-control option{background:var(--card);color:var(--text)}
 .cs-target{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
 
 /* ── OVERVIEW VIEW di Consensus ── */
+/* Wrapper page dengan max-width yang lebih ketat — tampil padat di PC,
+   full width di mobile/tablet. */
+.ov-page-wrap{max-width:1200px;margin:0 auto}
+
 .ov-view{display:flex;flex-direction:column;gap:14px}
-.ov-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:900px){.ov-row{grid-template-columns:1fr}}
-.ov-row > .card{min-width:0}
+.ov-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.ov-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:start}
+@media(max-width:1024px){
+  .ov-row-3{grid-template-columns:1fr 1fr}
+}
+@media(max-width:760px){
+  .ov-row{grid-template-columns:1fr}
+  .ov-row-3{grid-template-columns:1fr}
+}
+.ov-row > .card,.ov-row-3 > .card{min-width:0}
 
 /* Date filter chips */
 .ov-date-filter{
@@ -1298,11 +1309,12 @@ select.form-control option{background:var(--card);color:var(--text)}
 
   /* ── BOTTOM NAV (mobile only) ── */
   .bottom-nav{
-    display:flex;
+    display:flex !important;
     position:fixed;bottom:0;left:0;right:0;z-index:9999;
     background:var(--card);border-top:1px solid var(--border);
     padding:8px 0 calc(8px + env(safe-area-inset-bottom));
     box-shadow:0 -4px 20px rgba(0,0,0,.12);
+    visibility:visible !important;
   }
   .bottom-nav-item{
     flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -1726,7 +1738,7 @@ select.form-control option{background:var(--card);color:var(--text)}
      PAGE 3: CONSENSUS SEMUA SAHAM
 ═══════════════════════════════════════════ -->
 <div class="page" id="page-consensus">
-  <div style="max-width:1400px;margin:0 auto">
+  <div class="ov-page-wrap">
     <div class="info-banner">
       🔍 <strong>Consensus Analyst</strong> — Rangkuman rekomendasi analis untuk 115 saham IDX. Klik kartu untuk lihat detail.
     </div>
@@ -1766,7 +1778,7 @@ select.form-control option{background:var(--card);color:var(--text)}
         <button class="ov-date-chip" data-days="0" onclick="setOverviewPeriod(0)">Semua</button>
       </div>
       <div class="ov-kpi-strip" id="ovKpiStrip"></div>
-      <div class="ov-row">
+      <div class="ov-row ov-row-3">
         <div class="card">
           <div class="card-title">Market Sentiment</div>
           <div id="ovSentiment"></div>
@@ -1775,20 +1787,20 @@ select.form-control option{background:var(--card);color:var(--text)}
           <div class="card-title">Saham · Upside Tertinggi</div>
           <div id="ovTopUpside"></div>
         </div>
-      </div>
-      <div class="ov-row">
         <div class="card">
           <div class="card-title">Saham · Paling Direkomendasikan</div>
           <div id="ovTopStocks"></div>
         </div>
+      </div>
+      <div class="ov-row">
         <div class="card">
           <div class="card-title">Top Firms · Aktivitas Terbanyak</div>
           <div id="ovTopFirms"></div>
         </div>
-      </div>
-      <div class="card" style="overflow:visible">
-        <div class="card-title">Konsensus Terbaru</div>
-        <div id="ovLatest"></div>
+        <div class="card" style="overflow:visible">
+          <div class="card-title">Konsensus Terbaru</div>
+          <div id="ovLatest"></div>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">Distribusi per Sektor</div>
