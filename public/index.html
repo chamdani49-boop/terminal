@@ -181,7 +181,7 @@ a{color:inherit;text-decoration:none}
 .stock-ticker-track{
   display:inline-flex;align-items:center;gap:0;
   padding:7px 0;white-space:nowrap;
-  animation:ticker-scroll 600s linear infinite;
+  animation:ticker-scroll 3000s linear infinite;
   animation-play-state:paused;   /* mulai paused — dijalankan JS setelah render */
   animation-delay:0s;
   will-change:transform;
@@ -296,6 +296,18 @@ a{color:inherit;text-decoration:none}
   border-radius:var(--radius-pill);padding:6px 14px;font-size:12px;font-weight:600;
 }
 .zcore-val{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px}
+
+/* ── HERO MIDDLE COLUMN (z-core + korelasi) ──
+   Universal default: stack vertical, right-align (kompatibel dgn current
+   mobile yg menampilkan zcore + korelasi di bawah price block). */
+.hero-middle{
+  display:flex;flex-direction:column;gap:6px;align-items:flex-end;
+}
+.hero-corr{font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+.price-live{
+  font-size:14px;font-weight:800;
+  font-family:'IBM Plex Mono',monospace;margin-left:6px;
+}
 
 /* ── STATS TABLE ── */
 /* Stats row: 10 kolom (8 deskriptif + 2 annualized di kanan).
@@ -612,13 +624,24 @@ select.form-control option{background:var(--card);color:var(--text)}
   .cn-val{font-size:13px}
   .card-title{font-size:12px;letter-spacing:1px}
 
-  /* ── HERO MOBILE: rapi 2 baris, tidak berantakan ── */
+  /* ── HERO MOBILE: preserve current 2-col visual ──
+     Pakai grid-template-areas — dengan HTML 3 children (name, hero-middle,
+     price-block), kita layout sebagai:
+       [name | price ]
+       [name | middle]
+     supaya visual sama persis seperti sebelum hero direstructure. */
   .stock-hero{
     display:grid;
     grid-template-columns:1fr auto;
+    grid-template-areas:
+      "name price"
+      "name middle";
     align-items:start;
     gap:8px;
   }
+  .stock-name-block{grid-area:name}
+  .price-block{grid-area:price}
+  .hero-middle{grid-area:middle;align-items:flex-end}
   .stock-name-block .ticker{font-size:26px;letter-spacing:1px}
   .stock-name-block .fullname{font-size:13px;margin-top:2px}
   .stock-name-block .meta{
@@ -707,7 +730,25 @@ select.form-control option{background:var(--card);color:var(--text)}
      Semua selector di-scope ke #page-menabung supaya tidak bocor ke
      halaman lain. Inside @media(max-width:640px) — desktop aman. */
   #page-menabung{padding:12px 10px;padding-bottom:90px}
-  #page-menabung > div{max-width:100%}
+
+  /* Lock down — TIDAK ADA child yang boleh melebar dari viewport.
+     min-width:0 penting di grid items agar bisa shrink saat child wider. */
+  #page-menabung,
+  #page-menabung > div,
+  #page-menabung .saving-grid,
+  #page-menabung .saving-col-form,
+  #page-menabung .saving-col-result,
+  #page-menabung .saving-col-form > .card,
+  #page-menabung .saving-col-result > .card{
+    min-width:0;
+    max-width:100%;
+    width:100%;
+    box-sizing:border-box;
+  }
+  #page-menabung .saving-col-form > .card,
+  #page-menabung .saving-col-result > .card{
+    overflow:hidden;
+  }
 
   /* Banner info — lebih ringkas */
   #page-menabung .info-banner{
@@ -720,7 +761,7 @@ select.form-control option{background:var(--card);color:var(--text)}
   .saving-col-form{order:1}
   .saving-col-result{order:2}
 
-  /* Card padding lebih compact tapi tetap nyaman */
+  /* Card padding compact */
   #page-menabung .card{padding:14px;border-radius:var(--radius)}
   #page-menabung .card-title{font-size:12px;letter-spacing:.8px;margin-bottom:10px}
 
@@ -742,43 +783,83 @@ select.form-control option{background:var(--card);color:var(--text)}
     display:flex;align-items:center;justify-content:center;
   }
 
-  /* Tombol simulasi — full width, prominent */
+  /* Tombol simulasi */
   #page-menabung .btn{
     padding:14px;font-size:14px;min-height:48px;
     border-radius:10px;letter-spacing:.3px;
   }
 
-  /* Result grid: tetap 2 kolom agar comparison enak dibaca */
-  #page-menabung .result-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-  #page-menabung .result-box{padding:11px 8px;border-radius:10px}
+  /* Result grid: 2 kolom dengan minmax(0,1fr) agar value panjang tidak push lebar */
+  #page-menabung .result-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;margin-bottom:12px;
+  }
+  #page-menabung .result-box{
+    padding:11px 8px;border-radius:10px;min-width:0;overflow:hidden;
+  }
   #page-menabung .result-box .rl{font-size:10px;letter-spacing:.5px;margin-bottom:3px}
-  #page-menabung .result-box .rv{font-size:14px;line-height:1.2}
+  #page-menabung .result-box .rv{
+    font-size:14px;line-height:1.2;word-break:break-word;
+  }
   #page-menabung .result-box .rs{font-size:10px;margin-top:2px}
 
-  /* Chart container — height proporsional di mobile */
-  #page-menabung .chart-wrap{height:200px !important}
+  /* Chart container & canvas — TIDAK BOLEH lebih lebar dari card */
+  #page-menabung .chart-wrap{
+    height:200px !important;
+    width:100%;max-width:100%;overflow:hidden;
+  }
+  #page-menabung canvas{
+    max-width:100% !important;
+    width:100% !important;
+  }
 
-  /* Tabel detail per periode — scroll horizontal di dalam container */
+  /* Tabel detail — scroll horizontal di dalam container */
   #page-menabung .port-scroll{
-    max-width:100%;overflow-x:auto;overflow-y:auto;
+    width:100%;max-width:100%;
+    overflow-x:auto;overflow-y:auto;
     max-height:300px;
     -webkit-overflow-scrolling:touch;
-    /* visual hint: shadow tipis di kanan menandakan ada scroll */
     background:
       linear-gradient(to left,var(--card),transparent 24px) right/24px 100% no-repeat;
   }
-  #page-menabung .port-table{font-size:11px;min-width:560px}
-  #page-menabung .port-table th{padding:8px 9px;font-size:10px}
-  #page-menabung .port-table td{padding:7px 9px;font-size:11px}
+  #page-menabung .port-table{
+    min-width:540px;font-size:11px;
+  }
+  #page-menabung .port-table th{padding:7px 8px;font-size:10px;white-space:nowrap}
+  #page-menabung .port-table td{padding:7px 8px;font-size:11px;white-space:nowrap}
   #page-menabung .port-table td:first-child{font-size:10px}
 
-  /* Quick result text rapi */
+  /* Quick result text */
   #page-menabung #savingQuickContent{font-size:13px;line-height:1.6}
 }
 
 @media(min-width:641px){
   /* Bottom nav tidak tampil di layar lebar */
   .bottom-nav{display:none}
+
+  /* ── HERO DESKTOP: 3 kolom ──
+     [name] [zcore+korelasi center] [price stacked vertical] */
+  .stock-hero{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto;
+    align-items:center;
+    gap:24px;
+  }
+  .hero-middle{
+    align-items:center;
+    text-align:center;
+    gap:8px;
+  }
+  .price-block{
+    text-align:right;
+    display:flex;flex-direction:column;align-items:flex-end;
+  }
+  /* Price BIG di atas — live% di-block (tidak inline lagi) */
+  .price-block .price-live{
+    display:block;
+    margin-left:0;
+    margin-top:2px;
+  }
 }
 @media(max-width:380px){
   .pt-grid{grid-template-columns:1fr}
@@ -856,14 +937,14 @@ select.form-control option{background:var(--card);color:var(--text)}
     <input type="text" id="searchInput" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off">
     <div class="search-drop" id="searchDrop"></div>
   </div>
-  <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
-    <span id="themeIcon">☀</span>
-  </button>
   <nav class="nav-tabs">
     <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
     <div class="nav-tab" onclick="showPage('menabung')">Menabung</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
   </nav>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+    <span id="themeIcon">☀</span>
+  </button>
 </header>
 
 <!-- STOCK TICKER (running sideways — click an item to load its detail) -->
@@ -1574,28 +1655,22 @@ function renderHero(code) {
 
   el.innerHTML = `
     <div class="stock-hero">
-      <div>
-        <div class="stock-name-block">
-          <div class="ticker">${code}</div>
-          <div class="fullname">${info.name || code}</div>
-          <div class="meta">${info.sector || 'Indonesia Stock Exchange'} · ${info.board || 'IDX'}</div>
-          <div class="meta" style="margin-top:3px;color:var(--text2);font-size:11px">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'} · Data Bulanan IDX</div>
-        </div>
+      <div class="stock-name-block">
+        <div class="ticker">${code}</div>
+        <div class="fullname">${info.name || code}</div>
+        <div class="meta">${info.sector || 'Indonesia Stock Exchange'} · ${info.board || 'IDX'}</div>
+        <div class="meta" style="margin-top:3px;color:var(--text2);font-size:11px">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'} · Data Bulanan IDX</div>
       </div>
-      <div>
-        <div class="price-block">
-          <div class="price">${priceStr}${liveChg != null ? ` <span class="${liveCls}" style="font-size:14px;font-weight:800;font-family:'IBM Plex Mono',monospace;margin-left:6px">${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}% live</span>` : ''}</div>
-          <div class="change ${momCls}">${mom >= 0 ? '+' : ''}${(mom*100).toFixed(2)}% MoM</div>
+      <div class="hero-middle">
+        <div class="zcore-badge">
+          <span style="color:var(--text3);font-size:10px">Z Core</span>
+          <span class="zcore-val ${zcCls}">${zc.toFixed(2)}</span>
         </div>
-        <div style="margin-top:6px;text-align:right">
-          <div class="zcore-badge">
-            <span style="color:var(--text3);font-size:10px">Z Core</span>
-            <span class="zcore-val ${zcCls}">${zc.toFixed(2)}</span>
-          </div>
-          <div style="margin-top:5px;text-align:right;font-size:11px;font-weight:600;color:var(--text2)">
-            Korelasi IHSG: <span class="correl-val ${corr > 0 ? 'up' : 'dn'}">${(corr * 100).toFixed(1)}%</span>
-          </div>
-        </div>
+        <div class="hero-corr">Korelasi IHSG: <span class="correl-val ${corr > 0 ? 'up' : 'dn'}">${(corr * 100).toFixed(1)}%</span></div>
+      </div>
+      <div class="price-block">
+        <div class="price">${priceStr}${liveChg != null ? ` <span class="price-live ${liveCls}">${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}% live</span>` : ''}</div>
+        <div class="change ${momCls}">${mom >= 0 ? '+' : ''}${(mom*100).toFixed(2)}% MoM</div>
       </div>
     </div>
   `;
