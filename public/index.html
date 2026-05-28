@@ -338,19 +338,21 @@ a{color:inherit;text-decoration:none}
    Stats pake grid 4-kolom (dot · name · count · pct) supaya alignment
    konsisten dan gak ada text overflow yg ke-truncate.
 */
-.consensus-grid{display:flex;flex-direction:column;align-items:center;gap:14px}
-.consensus-chart-wrap{position:relative;width:120px;height:120px;align-self:center}
-.consensus-stats{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0}
+/* Konsensus — donut kiri, list NEUTRAL/BUY/SELL kanan, sejajar */
+.consensus-grid{display:flex;flex-direction:row;align-items:center;gap:16px}
+.consensus-chart-wrap{position:relative;width:120px;height:120px;flex-shrink:0}
+.consensus-stats{display:flex;flex-direction:column;justify-content:center;gap:10px;flex:1;min-width:0}
 .consensus-row{
   display:grid;
-  grid-template-columns:14px minmax(0,1fr) auto auto;
+  grid-template-columns:12px minmax(0,1fr) auto;
   align-items:center;column-gap:10px;
   font-size:13px;font-weight:600;
 }
-.consensus-dot{width:12px;height:12px;border-radius:50%}
+.consensus-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
 .consensus-name{color:var(--text);font-weight:700;font-size:12px;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.consensus-count{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;text-align:right;min-width:24px}
-.consensus-pct{font-family:'IBM Plex Mono',monospace;color:var(--text2);font-size:12px;font-weight:600;text-align:right;min-width:48px}
+.consensus-count{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:15px;text-align:right;min-width:28px;color:var(--text)}
+/* pct masuk tooltip saja — hidden dari layout row */
+.consensus-pct{display:none}
 .consensus-numbers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
 .cn-box{background:var(--bg2);padding:10px 6px;text-align:center;border-radius:var(--radius);min-width:0}
 .cn-label{font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:3px;font-weight:800;letter-spacing:.6px}
@@ -1619,16 +1621,18 @@ function renderPriceTarget(code) {
       <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Trigger Buy/Sell (Standar Deviasi)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <label style="font-size:11px;color:var(--text2);font-weight:700">
-          BELI saat μ &minus;
+          BELI (μ &minus; N·σ)
           <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">N =</span>
             <input type="number" step="0.1" min="0" id="ptBuySigma" value="${buySigma}" oninput="updatePtSigSignal('${code}')"
                    style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
             <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text)">σ</span>
           </div>
         </label>
         <label style="font-size:11px;color:var(--text2);font-weight:700">
-          JUAL saat μ &plus;
+          JUAL (μ &plus; N·σ)
           <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">N =</span>
             <input type="number" step="0.1" min="0" id="ptSellSigma" value="${sellSigma}" oninput="updatePtSigSignal('${code}')"
                    style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
             <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text)">σ</span>
@@ -1710,7 +1714,9 @@ function updatePtSigSignal(code) {
     desc = `Harga ${fmt(price)} ≥ μ+${sellSig}σ (${fmt(sellPrice)}) — masuk zona ambil profit statistik`;
   } else {
     label = 'HOLD'; cls = 'neu'; bg = 'var(--yellow-bg)';
-    desc = `Harga ${fmt(price)} di range μ±σ — wait for trigger`;
+    const bStr = Number.isFinite(buySig) ? `${fmt(buyPrice)} (μ−${buySig}σ)` : '—';
+    const sStr = Number.isFinite(sellSig) ? `${fmt(sellPrice)} (μ+${sellSig}σ)` : '—';
+    desc = `Harga ${fmt(price)} di antara BELI ${bStr} & JUAL ${sStr}`;
   }
   sigEl.innerHTML = `
     <div style="background:${bg};border-radius:10px;padding:8px 10px;text-align:center">
@@ -1761,13 +1767,22 @@ function renderConsensus(code) {
 
   document.getElementById('consensusTotal').textContent = total;
 
+  // Hitung persen tiap kategori untuk ditampilkan di tengah donut
+  const pctN = total ? ((neutral/total)*100).toFixed(1)+'%' : '-';
+  const pctB = total ? ((buy/total)*100).toFixed(1)+'%' : '-';
+  const pctS = total ? ((sell/total)*100).toFixed(1)+'%' : '-';
+  // Kategori dominan — tampil menonjol di tengah donut di bawah kode ticker
+  const domCat = buy >= neutral && buy >= sell ? {label:'BUY', pct:pctB, cls:'up'}
+    : sell >= neutral && sell >= buy ? {label:'SELL', pct:pctS, cls:'dn'}
+    : {label:'NEUTRAL', pct:pctN, cls:'neu'};
+
   el.innerHTML = `
     <div class="consensus-grid">
-      <div style="position:relative;width:120px;height:120px">
+      <div class="consensus-chart-wrap" style="position:relative;width:120px;height:120px">
         <canvas id="donutCanvas" width="120" height="120"></canvas>
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:var(--accent)">${code}</div>
-          <div style="font-size:11px;color:var(--text2);font-weight:600">${total} analis</div>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;gap:2px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--accent)">${code}</div>
+          <div style="font-size:10px;color:var(--text2);font-weight:600">${total} analis</div>
         </div>
       </div>
       <div class="consensus-stats">
@@ -1775,52 +1790,48 @@ function renderConsensus(code) {
           <div class="consensus-dot" style="background:var(--yellow)"></div>
           <span class="consensus-name">NEUTRAL</span>
           <span class="consensus-count">${neutral}</span>
-          <span class="consensus-pct">${total?((neutral/total)*100).toFixed(1)+'%':'-'}</span>
         </div>
         <div class="consensus-row">
           <div class="consensus-dot" style="background:var(--green)"></div>
           <span class="consensus-name">BUY</span>
           <span class="consensus-count">${buy}</span>
-          <span class="consensus-pct up">${total?((buy/total)*100).toFixed(1)+'%':'-'}</span>
         </div>
         <div class="consensus-row">
           <div class="consensus-dot" style="background:var(--red)"></div>
           <span class="consensus-name">SELL</span>
           <span class="consensus-count">${sell}</span>
-          <span class="consensus-pct dn">${total?((sell/total)*100).toFixed(1)+'%':'-'}</span>
         </div>
-        <div class="divider"></div>
+      </div>
+    </div>
 
-        <!-- Sumbu horizontal: Low ── current(dot) ── High dengan label harga sekarang di atas dot -->
-        <div class="cs-axis">
-          <div class="cs-axis-track"></div>
-          ${dotPct != null ? `
-            <div class="cs-axis-cur" style="left:${dotPct}%">${fmt(curPrice)}</div>
-            <div class="cs-axis-tick" style="left:${dotPct}%"></div>
-            <div class="cs-axis-dot" style="left:${dotPct}%"></div>
-          ` : ''}
-          <div class="cs-axis-end lo">Low<span class="v">${fmt(low)}</span></div>
-          <div class="cs-axis-end hi">High<span class="v">${fmt(high)}</span></div>
-        </div>
+    <!-- Sumbu horizontal: Low ── current(dot) ── High -->
+    <div class="cs-axis" style="margin-top:16px">
+      <div class="cs-axis-track"></div>
+      ${dotPct != null ? `
+        <div class="cs-axis-cur" style="left:${dotPct}%">${fmt(curPrice)}</div>
+        <div class="cs-axis-tick" style="left:${dotPct}%"></div>
+        <div class="cs-axis-dot" style="left:${dotPct}%"></div>
+      ` : ''}
+      <div class="cs-axis-end lo">Low<span class="v">${fmt(low)}</span></div>
+      <div class="cs-axis-end hi">High<span class="v">${fmt(high)}</span></div>
+    </div>
 
-        <!-- Versi lama: 3 kotak HIGH / TARGET / LOW + % gap dari harga sekarang -->
-        <div class="consensus-numbers">
-          <div class="cn-box">
-            <div class="cn-label">High</div>
-            <div class="cn-val up">${fmt(high)}</div>
-            <div class="cn-gap ${gapCls(gHigh)}">${fmtGap(gHigh)}</div>
-          </div>
-          <div class="cn-box">
-            <div class="cn-label">Target</div>
-            <div class="cn-val">${fmt(target)}</div>
-            <div class="cn-gap ${gapCls(gTgt)}">${fmtGap(gTgt)}</div>
-          </div>
-          <div class="cn-box">
-            <div class="cn-label">Low</div>
-            <div class="cn-val dn">${fmt(low)}</div>
-            <div class="cn-gap ${gapCls(gLow)}">${fmtGap(gLow)}</div>
-          </div>
-        </div>
+    <!-- 3 kotak HIGH / TARGET / LOW + % gap dari harga sekarang -->
+    <div class="consensus-numbers" style="margin-top:8px">
+      <div class="cn-box">
+        <div class="cn-label">High</div>
+        <div class="cn-val up">${fmt(high)}</div>
+        <div class="cn-gap ${gapCls(gHigh)}">${fmtGap(gHigh)}</div>
+      </div>
+      <div class="cn-box">
+        <div class="cn-label">Target</div>
+        <div class="cn-val">${fmt(target)}</div>
+        <div class="cn-gap ${gapCls(gTgt)}">${fmtGap(gTgt)}</div>
+      </div>
+      <div class="cn-box">
+        <div class="cn-label">Low</div>
+        <div class="cn-val dn">${fmt(low)}</div>
+        <div class="cn-gap ${gapCls(gLow)}">${fmtGap(gLow)}</div>
       </div>
     </div>
     <div style="margin-top:10px">
@@ -1844,7 +1855,13 @@ function renderConsensus(code) {
         responsive:false,cutout:'65%',
         plugins:{legend:{display:false},tooltip:{
           backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,
-          bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:10,cornerRadius:10
+          bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:10,cornerRadius:10,
+          callbacks:{
+            label: i => {
+              const pct = total ? ((i.raw/total)*100).toFixed(1) : 0;
+              return ` ${i.label}: ${i.raw} (${pct}%)`;
+            }
+          }
         }}
       }
     });
