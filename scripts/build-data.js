@@ -690,7 +690,21 @@ function _parseLiveBody(rows, dataStart, iTicker, iPrice, iPct, pctMode) {
  * "sekarang" di history sheet — live sheet jadi sumber tunggal untuk bulan
  * berjalan.
  */
-function applyLiveOverlay(price_history, stats, live, debug = {}) {
+/**
+ * Append/update row "bulan berjalan" di price_history dari data live.
+ *
+ * IMPORTANT: function ini SEKARANG cuma modify price_history. Stats di-compute
+ * fresh oleh caller (computeStats) SETELAH overlay applied. Dulu function ini
+ * juga mutate stats secara tumpang-tindih → bug: `mom` di-tumpuk dengan
+ * `change_pct` dari sheet (yg biasanya DAILY change) padahal `std_monthly`
+ * di-bandingkan asumsi monthly. Z-score jadi apple-vs-orange. Sekarang
+ * pipeline: parse history → overlay → computeStats(history+overlay) → all
+ * metrics konsisten monthly basis.
+ *
+ * Live's daily %change disimpan terpisah di stats[t].change_pct_live oleh
+ * main() setelah computeStats jalan.
+ */
+function applyLiveOverlay(price_history, live, debug = {}) {
   if (!price_history.length || !live || !Object.keys(live).length) return;
 
   // Anchor "bulan berjalan" — UTC start-of-month sebagai key di price_history.
@@ -705,14 +719,11 @@ function applyLiveOverlay(price_history, stats, live, debug = {}) {
   const curLabel = `${mm + 1}/${lastDayUtc}/${yyyy}`;
 
   let lastRow = price_history[price_history.length - 1];
-  let prevRow = price_history[price_history.length - 2] || lastRow;
 
   // Kalau history terakhir bukan bulan berjalan, append row baru. Skenario:
   //   1) User gak punya baris "sekarang" di sheet histori (live sheet handle).
   //   2) Pertama kali workflow jalan setelah ganti bulan (mis. 1 Juni jam 0:01).
-  // Setelah append: prevRow = row terakhir history, lastRow = row baru.
   if (lastRow.date !== curMonthIso) {
-    prevRow = lastRow;
     lastRow = { date: curMonthIso, label: curLabel };
     price_history.push(lastRow);
     debug.live_appended_current_month = true;
@@ -724,44 +735,7 @@ function applyLiveOverlay(price_history, stats, live, debug = {}) {
   for (const t of Object.keys(live)) {
     const lv = live[t];
     if (!Number.isFinite(lv.price) || lv.price <= 0) continue;
-
-    // 1) Set harga bulan berjalan di history.
     lastRow[t] = lv.price;
-
-    // 2) Overwrite stats.current. Bikin entry baru kalau ticker belum ada
-    //    di stats (mis. ticker baru di sheet live tapi belum ada history).
-    if (!stats[t]) {
-      stats[t] = {
-        current: lv.price,
-        mom: null, ytd: null, yoy: null,
-        max: lv.price, max_date: lastRow.date,
-        min: lv.price, min_date: lastRow.date,
-        avg_monthly: 0, std_monthly: 0,
-        yoy_large: [],
-      };
-    } else {
-      stats[t].current = lv.price;
-    }
-
-    // 3) MoM: kalau sheet kasih %Live, pakai itu (single source of truth
-    //    untuk angka di hero card). Kalau gak ada, recompute vs bulan
-    //    sebelumnya.
-    if (Number.isFinite(lv.change_pct)) {
-      stats[t].mom = lv.change_pct;
-    } else if (Number.isFinite(prevRow[t]) && prevRow[t] !== 0) {
-      stats[t].mom = (lv.price - prevRow[t]) / prevRow[t];
-    }
-
-    // 4) Refresh max/min kalau live break extreme historis.
-    if (lv.price > (stats[t].max ?? -Infinity)) {
-      stats[t].max = lv.price;
-      stats[t].max_date = lastRow.date;
-    }
-    if (lv.price < (stats[t].min ?? Infinity)) {
-      stats[t].min = lv.price;
-      stats[t].min_date = lastRow.date;
-    }
-
     touched++;
   }
 
@@ -807,6 +781,7 @@ function computeStats(history) {
     }
     const mean = monthlyReturns.length ? monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length : 0;
     const variance = monthlyReturns.length ? monthlyReturns.reduce((a, b) => a + (b - mean) ** 2, 0) / monthlyReturns.length : 0;
+    const stdMonthly = Math.sqrt(variance);
 
     const yoy_large = [];
     for (let i = 12; i < series.length; i++) {
@@ -823,7 +798,17 @@ function computeStats(history) {
       max, max_date: maxDate,
       min, min_date: minDate,
       avg_monthly: mean,
-      std_monthly: Math.sqrt(variance),
+      std_monthly: stdMonthly,
+      // Annualized — simple scaling (avg*12, std*sqrt(12)) asumsi i.i.d.
+      // monthly returns. Berguna untuk hero card / risk display tanpa
+      // user perlu hitung manual di sheet.
+      avg_annual: mean * 12,
+      std_annual: stdMonthly * Math.sqrt(12),
+      // Live %change (raw dari sheet kolom "% Live", biasanya DAILY change
+      // dari GoogleFinance — beda dengan `mom` yang monthly). Di-attach
+      // post-overlay oleh main() supaya frontend punya source-of-truth
+      // untuk display "live tick" terpisah dari MoM.
+      change_pct_live: null,
       yoy_large: yoy_large.slice(0, 5),
     };
   }
@@ -957,13 +942,29 @@ async function main() {
   console.log('Parsing & computing…');
   const debug = {};
   const price_history = parseHistory(historyCsv, debug);
+
+  // Live overlay JALAN DULU sebelum computeStats. Alasan: overlay append
+  // baris bulan berjalan (mis. Mei 2026) ke price_history. Kalau
+  // computeStats jalan duluan, monthly returns gak include data point
+  // bulan berjalan → avg/std/zcore stale 1 bulan, dan MoM nggak ke-hitung
+  // karena cur === prev (sama-sama April).
+  const live = liveCsv ? parseLive(liveCsv, debug) : {};
+  applyLiveOverlay(price_history, live, debug);
+
+  // Sekarang compute stats — avg/std/MoM include bulan berjalan dengan benar.
   const stats = computeStats(price_history);
 
-  // Overlay live realtime data (kalau LIVE_SHEET_ID di-set). Ini akan
-  // overwrite price_history[last] + stats[*].current/mom/max/min, lalu
-  // semua kartu di frontend otomatis nyala dengan angka live.
-  const live = liveCsv ? parseLive(liveCsv, debug) : {};
-  applyLiveOverlay(price_history, stats, live, debug);
+  // Attach live %change (raw daily change dari GoogleFinance) ke stats
+  // sebagai field terpisah `change_pct_live`. CATATAN: jangan tumpuk ke
+  // `mom` — sebelumnya overlay menumpuk ini ke mom dan bikin z-score
+  // hitung pakai daily change dibandingkan dengan std monthly returns
+  // (apple-vs-orange). Sekarang mom selalu monthly proper.
+  for (const t of Object.keys(live)) {
+    if (stats[t]) {
+      stats[t].change_pct_live = Number.isFinite(live[t].change_pct)
+        ? live[t].change_pct : null;
+    }
+  }
 
   const correlations = computeCorrelations(price_history);
   const zcores = computeZcores(stats);

@@ -178,7 +178,7 @@ a{color:inherit;text-decoration:none}
 .stock-ticker-track{
   display:inline-flex;align-items:center;gap:0;
   padding:7px 0;white-space:nowrap;
-  animation:ticker-scroll 600s linear infinite;
+  animation:ticker-scroll 3000s linear infinite;
   will-change:transform;
 }
 .stock-ticker:hover .stock-ticker-track{animation-play-state:paused}
@@ -213,7 +213,7 @@ a{color:inherit;text-decoration:none}
   font-size:11px;font-weight:700;
 }
 @media(max-width:600px){
-  .stock-ticker-track{animation-duration:480s}
+  .stock-ticker-track{animation-duration:2400s}
   .st-item{padding:4px 12px;gap:6px}
   .st-code,.st-price{font-size:12px}
   .st-chg{font-size:10px}
@@ -1307,12 +1307,29 @@ function renderStats(code) {
       <div class="stats-row">${makeRow(code, st)}</div>
       ${stIHSG ? `<div class="stats-row-ihsg">${makeRow('IHSG', stIHSG)}</div>` : ''}
     </div>
+
+    <!-- ANNUALIZED METRICS — average & std deviation, scaled monthly→yearly
+         (avg×12 untuk return, std×√12 untuk risk). Membantu user banding
+         expected return vs risiko di skala tahunan tanpa hitung manual. -->
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 12px;margin:8px 0;padding:10px 12px;background:var(--bg2);border-radius:var(--radius);font-size:12px;border:1px solid var(--border2)">
+      <div></div>
+      <div style="text-align:center;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-size:10px">Avg Return / Thn</div>
+      <div style="text-align:center;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-size:10px">Std Dev / Thn (Risk)</div>
+
+      <div style="font-weight:800;color:var(--accent);font-family:'IBM Plex Mono',monospace">${code}</div>
+      <div class="${st.avg_annual>0?'up':'dn'}" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px">${st.avg_annual!=null?(st.avg_annual*100).toFixed(2)+'%':'-'}</div>
+      <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--text);font-size:13px">${st.std_annual!=null?(st.std_annual*100).toFixed(2)+'%':'-'}</div>
+
+      ${stIHSG ? `
+      <div style="font-weight:800;color:var(--accent2);font-family:'IBM Plex Mono',monospace">IHSG</div>
+      <div class="${stIHSG.avg_annual>0?'up':'dn'}" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px">${stIHSG.avg_annual!=null?(stIHSG.avg_annual*100).toFixed(2)+'%':'-'}</div>
+      <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--text);font-size:13px">${stIHSG.std_annual!=null?(stIHSG.std_annual*100).toFixed(2)+'%':'-'}</div>
+      ` : ''}
+    </div>
+
     <div class="correl-row" style="padding:4px 0">
       <span class="correl-label">Korelasi ${code} vs IHSG (bulanan):</span>
       <span class="correl-val ${(DATA.correlations[code]||0)>0?'up':'dn'}">${((DATA.correlations[code]||0)*100).toFixed(2)}%</span>
-      <span style="margin-left:auto;font-size:12px;color:var(--text2);font-weight:600">Rata² Annual: 
-        <span class="${st.avg_monthly>0?'up':'dn'}">${(st.avg_monthly*1200).toFixed(1)}%/thn</span>
-      </span>
     </div>
   `;
 }
@@ -1400,6 +1417,13 @@ function renderPriceTarget(code) {
     return;
   }
 
+  // Live %change — biasanya DAILY change dari GoogleFinance "%Live" column
+  // (build script simpan di stats[t].change_pct_live, terpisah dari `mom`
+  // yang monthly). Display sebagai green/red badge di header card.
+  const liveChg = (st && Number.isFinite(st.change_pct_live)) ? st.change_pct_live : null;
+  const liveCls = liveChg == null ? 'neu' : liveChg > 0 ? 'up' : liveChg < 0 ? 'dn' : 'neu';
+  const liveSym = liveChg == null ? '' : liveChg > 0 ? '▲ ' : liveChg < 0 ? '▼ ' : '';
+
   // Price Target based on consensus
   let sellTarget = cs ? cs.high : Math.round(price * 1.2);
   let buyTarget = cs ? cs.low : Math.round(price * 0.85);
@@ -1409,10 +1433,14 @@ function renderPriceTarget(code) {
   const pctBuy = (buyTarget - price) / price;
   const pctAvg = (avgTarget - price) / price;
 
-  // Tampilin label "Mei 2026" — bulan + tahun (style id locale). Robust ke
-  // semua format input: kalau row pakai label "May-26" diparsed; kalau row
-  // "sekarang" yang label-nya kosong, fallback ke last.date ("2026-05-01").
-  // Lihat formatMonthYear() di atas.
+  // Z-score buy/sell trigger — preserve user's input across re-renders
+  // dengan baca dari DOM dulu (kalau ada), lalu fallback ke localStorage,
+  // lalu ke default. User kemungkinan udah edit threshold sebelumnya.
+  const lsBuy = localStorage.getItem('econ-trig-buy');
+  const lsSell = localStorage.getItem('econ-trig-sell');
+  const trigBuy = lsBuy != null ? parseFloat(lsBuy) : -1;
+  const trigSell = lsSell != null ? parseFloat(lsSell) : 2;
+
   const lastLabel = formatMonthYear(last.label, last.date, 'long');
 
   el.innerHTML = `
@@ -1423,7 +1451,8 @@ function renderPriceTarget(code) {
       </div>
       <div style="text-align:right">
         <div class="ticker-price">${price.toLocaleString('id')}</div>
-        <div style="font-size:12px;color:var(--text2);font-weight:600">${lastLabel}</div>
+        ${liveChg != null ? `<div class="${liveCls}" style="font-size:13px;font-weight:800;font-family:'IBM Plex Mono',monospace;margin-top:1px">${liveSym}${(Math.abs(liveChg)*100).toFixed(2)}% live</div>` : ''}
+        <div style="font-size:11px;color:var(--text2);font-weight:600">${lastLabel}</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -1453,7 +1482,70 @@ function renderPriceTarget(code) {
       <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--yellow)">${Math.round(avgTarget).toLocaleString('id')}</div>
       <div style="font-size:13px;color:var(--accent);font-weight:700;margin-top:2px">${(pctAvg*100).toFixed(1)}% dari harga saat ini</div>
     </div>
+
+    <!-- BUY/SELL TRIGGER (z-score based) — user editable. Default buy=-1
+         (saham tertekan, di bawah mean 1σ → potensi reversal), sell=+2
+         (saham euphoric, di atas mean 2σ → potensi koreksi). Threshold
+         disimpan di localStorage supaya konsisten antar saham & sesi. -->
+    <div style="margin-top:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border2)">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Trigger Buy/Sell (Z-Score)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <label style="font-size:11px;color:var(--text2);font-weight:700">
+          BUY when z &le;
+          <input type="number" step="0.1" id="ptTrigBuy" value="${trigBuy}" oninput="updatePtSignal('${code}')"
+                 style="width:100%;margin-top:3px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
+        </label>
+        <label style="font-size:11px;color:var(--text2);font-weight:700">
+          SELL when z &ge;
+          <input type="number" step="0.1" id="ptTrigSell" value="${trigSell}" oninput="updatePtSignal('${code}')"
+                 style="width:100%;margin-top:3px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
+        </label>
+      </div>
+      <div id="ptSignal"></div>
+    </div>
+
     <div style="margin-top:8px;font-size:11px;color:var(--text2);text-align:center;font-weight:500">By Economstock</div>
+  `;
+
+  updatePtSignal(code);
+}
+
+// Update buy/sell signal — dipanggil saat render & saat user ubah threshold.
+// Persist threshold ke localStorage supaya tetap setelah pindah saham/refresh.
+function updatePtSignal(code) {
+  const z = DATA.zcores[code];
+  const buyEl = document.getElementById('ptTrigBuy');
+  const sellEl = document.getElementById('ptTrigSell');
+  const sigEl = document.getElementById('ptSignal');
+  if (!buyEl || !sellEl || !sigEl) return;
+
+  const buy = parseFloat(buyEl.value);
+  const sell = parseFloat(sellEl.value);
+  if (Number.isFinite(buy)) localStorage.setItem('econ-trig-buy', buy);
+  if (Number.isFinite(sell)) localStorage.setItem('econ-trig-sell', sell);
+
+  if (z == null || !Number.isFinite(z)) {
+    sigEl.innerHTML = `<div style="font-size:11px;color:var(--text3);text-align:center;font-style:italic">Z-score tidak tersedia</div>`;
+    return;
+  }
+
+  let label, cls, bg, desc;
+  if (Number.isFinite(buy) && z <= buy) {
+    label = 'BUY SIGNAL'; cls = 'up'; bg = 'var(--green-bg)';
+    desc = `Z=${z.toFixed(2)} ≤ ${buy} → harga tertekan, potensi reversal`;
+  } else if (Number.isFinite(sell) && z >= sell) {
+    label = 'SELL SIGNAL'; cls = 'dn'; bg = 'var(--red-bg)';
+    desc = `Z=${z.toFixed(2)} ≥ ${sell} → harga euphoric, potensi koreksi`;
+  } else {
+    label = 'HOLD'; cls = 'neu'; bg = 'var(--yellow-bg)';
+    desc = `Z=${z.toFixed(2)} masih dalam range normal (${buy} … ${sell})`;
+  }
+
+  sigEl.innerHTML = `
+    <div style="background:${bg};border-radius:10px;padding:8px 10px;text-align:center">
+      <div class="${cls}" style="font-size:13px;font-weight:800;letter-spacing:.8px">${label}</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:2px;font-weight:600">${desc}</div>
+    </div>
   `;
 }
 
