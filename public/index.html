@@ -451,7 +451,6 @@ a{color:inherit;text-decoration:none}
 .saving-grid{display:grid;grid-template-columns:380px minmax(0,1fr);gap:16px}
 @media(max-width:1024px){.saving-grid{grid-template-columns:320px minmax(0,1fr);gap:12px}}
 @media(max-width:900px){.saving-grid{grid-template-columns:1fr;gap:14px}}
-
 .form-group{margin-bottom:14px}
 .form-label{font-size:12px;color:var(--text);margin-bottom:7px;display:block;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
 .form-control{
@@ -580,22 +579,27 @@ select.form-control option{background:var(--card);color:var(--text)}
   .top-bar .logo{flex:1 1 auto}
   /* Nav tabs disembunyikan di mobile — diganti bottom bar */
   .nav-tabs{display:none}
-  /* Search desktop disembunyikan, search mobile tampil di bawah header */
+  /* Search desktop disembunyikan, search mobile tampil di atas hero */
   .search-wrap-desktop{display:none}
   .search-wrap-mobile{
     display:block;
     width:100%;
     background:var(--card);
-    border-bottom:1px solid var(--border);
-    padding:8px 12px;
-    position:sticky;top:var(--header-h);z-index:89;
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:6px 12px;
+    box-shadow:var(--shadow-card);
+    margin-bottom:0;
   }
   .search-wrap-mobile input{
-    width:100%;background:var(--bg2);border:1px solid var(--border);
-    border-radius:var(--radius-pill);padding:10px 14px 10px 38px;
-    font-size:14px;color:var(--text);
+    width:100%;background:transparent;border:none;
+    padding:8px 14px 8px 34px;
+    font-size:14px;color:var(--text);outline:none;
   }
-  .search-wrap-mobile .ico{position:absolute;left:25px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3)}
+  .search-wrap-mobile .ico{
+    position:absolute;left:13px;top:50%;transform:translateY(-50%);
+    font-size:17px;color:var(--text3);
+  }
   /* Theme toggle */
   .theme-toggle{
     flex-shrink:0;display:inline-flex;
@@ -699,8 +703,10 @@ select.form-control option{background:var(--card);color:var(--text)}
   .bottom-nav-item.active{color:var(--accent)}
   .bottom-nav-item.active .bn-icon{filter:drop-shadow(0 0 4px var(--accent))}
 
-  /* Saving grid mobile: lebih compact */
-  .saving-grid{gap:10px}
+  /* Saving grid mobile: stack 1 kolom, result di bawah form */
+  .saving-grid{gap:10px;grid-template-columns:1fr}
+  .saving-col-form{order:1}
+  .saving-col-result{order:2}
   .info-banner{font-size:12px;padding:10px 14px}
   .result-grid{grid-template-columns:1fr 1fr;gap:8px}
   .result-box{padding:10px 8px}
@@ -800,13 +806,6 @@ select.form-control option{background:var(--card);color:var(--text)}
   </nav>
 </header>
 
-<!-- SEARCH BAR MOBILE (di bawah header, di atas ticker) -->
-<div class="search-wrap search-wrap-mobile">
-  <span class="ico">⌕</span>
-  <input type="text" id="searchInputMobile" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off">
-  <div class="search-drop" id="searchDropMobile"></div>
-</div>
-
 <!-- STOCK TICKER (running sideways — click an item to load its detail) -->
 <div class="stock-ticker" id="stockTicker" role="region" aria-label="Harga saham berjalan, klik untuk lihat detail">
   <div class="stock-ticker-track" id="stockTickerTrack"></div>
@@ -820,6 +819,13 @@ select.form-control option{background:var(--card);color:var(--text)}
 
     <!-- LEFT COLUMN -->
     <div class="left-col">
+
+      <!-- SEARCH BAR MOBILE — tampil di atas hero, hanya di mobile -->
+      <div class="search-wrap search-wrap-mobile">
+        <span class="ico">⌕</span>
+        <input type="text" id="searchInputMobile" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off">
+        <div class="search-drop" id="searchDropMobile"></div>
+      </div>
 
       <!-- Hero + Stats + YoY dalam satu card -->
       <div class="card card-stats" id="statsCard">
@@ -911,7 +917,7 @@ select.form-control option{background:var(--card);color:var(--text)}
     </div>
     <div class="saving-grid">
       <!-- Form -->
-      <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="saving-col-form" style="display:flex;flex-direction:column;gap:10px">
         <div class="card">
           <div class="card-title">Pengaturan Portofolio</div>
 
@@ -963,7 +969,7 @@ select.form-control option{background:var(--card);color:var(--text)}
       </div>
 
       <!-- Results Chart + Table -->
-      <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="saving-col-result" style="display:flex;flex-direction:column;gap:10px">
         <div class="card" id="savingResultCard" style="display:none">
           <div class="card-title" id="savingResultTitle">Hasil Simulasi</div>
           <div class="result-grid" id="savingResultGrid"></div>
@@ -1512,12 +1518,8 @@ function renderHero(code) {
         <div class="stock-name-block">
           <div class="ticker">${code}</div>
           <div class="fullname">${info.name || code}</div>
-          <div class="meta">${info.sector || 'Indonesia Stock Exchange'} · ${info.board || 'IDX'}
-            <span class="meta-sep">·</span>
-            <span>Korelasi IHSG: <span class="correl-val ${corr > 0 ? 'up' : 'dn'}" style="font-size:12px">${(corr * 100).toFixed(1)}%</span></span>
-            <span class="meta-sep">·</span>
-            <span style="color:var(--text2);font-size:11px">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'} · Data Bulanan IDX</span>
-          </div>
+          <div class="meta">${info.sector || 'Indonesia Stock Exchange'} · ${info.board || 'IDX'}</div>
+          <div class="meta" style="margin-top:3px;color:var(--text2);font-size:11px">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'} · Data Bulanan IDX</div>
         </div>
       </div>
       <div>
@@ -1529,6 +1531,9 @@ function renderHero(code) {
           <div class="zcore-badge">
             <span style="color:var(--text3);font-size:10px">Z Core</span>
             <span class="zcore-val ${zcCls}">${zc.toFixed(2)}</span>
+          </div>
+          <div style="margin-top:5px;text-align:right;font-size:11px;font-weight:600;color:var(--text2)">
+            Korelasi IHSG: <span class="correl-val ${corr > 0 ? 'up' : 'dn'}">${(corr * 100).toFixed(1)}%</span>
           </div>
         </div>
       </div>
@@ -2281,7 +2286,8 @@ function calculateSaving() {
 }
 
 function showSavingResult(code, rows, last, mode) {
-  // Quick result
+  // Tampilkan semua card dulu sebelum render chart
+  // (Chart.js butuh canvas visible untuk hitung dimensi)
   document.getElementById('savingQuickResult').style.display = 'block';
   document.getElementById('savingResultCard').style.display = 'block';
   document.getElementById('savingTableCard').style.display = 'block';
@@ -2301,8 +2307,9 @@ function showSavingResult(code, rows, last, mode) {
     </div>
   `;
 
-  // Chart
-  if (savingChartInstance) savingChartInstance.destroy();
+  // Chart — render dalam requestAnimationFrame agar canvas sudah visible & punya dimensi
+  if (savingChartInstance) { savingChartInstance.destroy(); savingChartInstance = null; }
+  requestAnimationFrame(() => {
   const ctx = document.getElementById('savingChart').getContext('2d');
   const ct = chartColors();
   savingChartInstance = new Chart(ctx, {
@@ -2329,6 +2336,7 @@ function showSavingResult(code, rows, last, mode) {
       }
     }
   });
+  }); // end requestAnimationFrame
 
   // Table (show every 3 months to keep compact)
   const tbody = document.getElementById('savingTableBody');
