@@ -630,10 +630,24 @@ function parseLive(csv, debug = {}) {
     return {};
   }
 
-  // Headerful: pct mode 'auto' — preserve heuristic lama (per-row): kalau
-  // ada tanda % atau |n| > 1, treat percent (bagi 100); kalau kecil & tanpa
-  // %, treat fractional. Kompatibel dengan sheet versi sebelumnya.
-  return _parseLiveBody(rows, headerIdx + 1, iTicker, iPrice, iPct, 'auto');
+  // Headerful: pct mode default `auto` — preserve heuristic lama (per-row):
+  // kalau ada tanda % atau |n| > 1, treat percent (bagi 100); kalau kecil &
+  // tanpa %, treat fractional. Kompatibel dengan sheet versi sebelumnya.
+  //
+  // KECUALI: kalau nama header-nya literal mengandung karakter "%" (mis.
+  // "% Live", "%Change", "% Δ"), itu sinyal eksplisit dari user bahwa
+  // SEMUA nilai di kolom ini sudah dalam unit persen. Pakai mode 'percent'
+  // (selalu bagi 100) untuk konsistensi — hindari kasus "0.77" disangka
+  // 77% padahal yg dimaksud 0.77%.
+  let pctMode = 'auto';
+  if (iPct >= 0) {
+    const pctHeaderRaw = String(rawHeader[iPct] || '');
+    if (pctHeaderRaw.includes('%')) {
+      pctMode = 'percent';
+      debug.live_pct_mode_inferred = 'percent (header contains %)';
+    }
+  }
+  return _parseLiveBody(rows, headerIdx + 1, iTicker, iPrice, iPct, pctMode);
 }
 
 /**
