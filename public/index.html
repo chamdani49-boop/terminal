@@ -707,6 +707,85 @@ select.form-control option{background:var(--card);color:var(--text)}
 @media(max-width:900px){.ov-row{grid-template-columns:1fr}}
 .ov-row > .card{min-width:0}
 
+/* Date filter chips */
+.ov-date-filter{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  padding:10px 14px;background:var(--card);
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-card);
+}
+.ov-date-label{
+  font-size:11px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--text2);margin-right:6px;
+}
+.ov-date-chip{
+  padding:6px 14px;font-size:12px;font-weight:700;
+  border:1px solid var(--border);border-radius:var(--radius-pill);
+  cursor:pointer;color:var(--text2);background:var(--bg2);
+  font-family:'Plus Jakarta Sans',sans-serif;
+  transition:all .15s;letter-spacing:.3px;white-space:nowrap;
+}
+.ov-date-chip:hover{color:var(--accent);border-color:var(--accent)}
+.ov-date-chip.active{
+  background:var(--grad);color:#fff;border-color:transparent;
+  box-shadow:0 4px 12px rgba(109,40,217,.22);
+}
+
+/* Konsensus Terbaru — list */
+.ov-latest-list{
+  display:flex;flex-direction:column;
+  max-height:420px;overflow-y:auto;
+  margin:0 -4px;
+}
+.ov-latest-row{
+  display:grid;
+  grid-template-columns:80px 56px minmax(0,1fr) 70px 80px 60px;
+  align-items:center;gap:10px;
+  padding:10px 8px;border-bottom:1px dashed var(--border);
+  cursor:pointer;transition:background .15s;
+  font-size:12px;
+}
+.ov-latest-row:hover{background:var(--bg2)}
+.ov-latest-row:last-child{border-bottom:none}
+.ov-latest-date{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  color:var(--text3);font-weight:600;
+}
+.ov-latest-stock{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;
+  color:var(--accent);
+}
+.ov-latest-firm{
+  font-size:12px;color:var(--text);font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  cursor:pointer;
+}
+.ov-latest-firm:hover{color:var(--accent);text-decoration:underline}
+.ov-latest-target{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
+  font-variant-numeric:tabular-nums;text-align:right;color:var(--text);
+}
+.ov-latest-pct{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:800;
+  font-variant-numeric:tabular-nums;text-align:right;
+}
+
+/* Mobile: latest list jadi 2-baris compact */
+@media(max-width:640px){
+  .ov-latest-row{
+    grid-template-columns:auto 1fr auto;
+    grid-template-rows:auto auto;
+    column-gap:10px;row-gap:3px;padding:10px 6px;
+  }
+  .ov-latest-stock{grid-row:1;grid-column:1}
+  .ov-latest-firm{grid-row:1;grid-column:2;font-size:11px}
+  .ov-latest-pct{grid-row:1;grid-column:3;font-size:12px}
+  .ov-latest-date{grid-row:2;grid-column:1;font-size:10px}
+  .ov-latest-row .ov-latest-target{grid-row:2;grid-column:2 / span 2;text-align:left;font-size:11px;color:var(--text2)}
+  .ov-latest-row > .badge{grid-row:2;grid-column:1;display:none}
+  /* Hide separate badge column on mobile, badge embedded in text */
+}
+
 /* KPI strip */
 .ov-kpi-strip{
   display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;
@@ -821,6 +900,18 @@ select.form-control option{background:var(--card);color:var(--text)}
   .ov-kpi-label{font-size:9px}
   .ov-sector{grid-template-columns:minmax(0,1fr) auto;gap:8px}
   .ov-sector-bar{grid-column:1 / -1;margin-top:4px}
+  .ov-date-filter{padding:8px 10px;gap:5px}
+  .ov-date-label{font-size:10px;margin-right:2px;width:100%;margin-bottom:2px}
+  .ov-date-chip{padding:5px 10px;font-size:11px}
+  .ov-item{grid-template-columns:22px minmax(0,1fr) auto;gap:8px;padding:9px 4px}
+  .ov-name{font-size:12px}
+  .ov-fullname{font-size:10px}
+  .ov-meta-val{font-size:12px}
+  .ov-meta-sub{font-size:9px}
+  .ov-rank{font-size:11px}
+  /* Page consensus mobile padding */
+  #page-consensus{padding:12px 10px;padding-bottom:90px}
+  #page-consensus > div{max-width:100%}
 }
 
 /* ── FIRM DETAIL (di dalam page-consensus) ──
@@ -1666,6 +1757,14 @@ select.form-control option{background:var(--card);color:var(--text)}
 
     <!-- Overview view (NEW DEFAULT) -->
     <div class="ov-view" id="ovView">
+      <div class="ov-date-filter" id="ovDateFilter">
+        <span class="ov-date-label">Periode:</span>
+        <button class="ov-date-chip" data-days="7" onclick="setOverviewPeriod(7)">7 Hari</button>
+        <button class="ov-date-chip" data-days="30" onclick="setOverviewPeriod(30)">30 Hari</button>
+        <button class="ov-date-chip active" data-days="90" onclick="setOverviewPeriod(90)">90 Hari</button>
+        <button class="ov-date-chip" data-days="365" onclick="setOverviewPeriod(365)">1 Tahun</button>
+        <button class="ov-date-chip" data-days="0" onclick="setOverviewPeriod(0)">Semua</button>
+      </div>
       <div class="ov-kpi-strip" id="ovKpiStrip"></div>
       <div class="ov-row">
         <div class="card">
@@ -1686,6 +1785,10 @@ select.form-control option{background:var(--card);color:var(--text)}
           <div class="card-title">Top Firms · Aktivitas Terbanyak</div>
           <div id="ovTopFirms"></div>
         </div>
+      </div>
+      <div class="card" style="overflow:visible">
+        <div class="card-title">Konsensus Terbaru</div>
+        <div id="ovLatest"></div>
       </div>
       <div class="card">
         <div class="card-title">Distribusi per Sektor</div>
@@ -3102,19 +3205,42 @@ function switchConsensusView(view, opts) {
 // ═══════════════════════════════════════════
 // OVERVIEW DASHBOARD — Market Pulse view di Konsensus
 // Aggregate stats keseluruhan: KPI strip, sentiment, top picks,
-// top firms, sektor heatmap. Default tab di page-consensus.
+// top firms, sektor heatmap, konsensus terbaru. Default tab.
 // ═══════════════════════════════════════════
+let overviewPeriodDays = 90;  // default: 90 hari
+
+function setOverviewPeriod(days) {
+  overviewPeriodDays = days;
+  document.querySelectorAll('.ov-date-chip').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.days, 10) === days);
+  });
+  buildOverview();
+}
+
+// Helper: cek apakah rec date dalam N hari terakhir.
+// days=0 berarti "semua waktu" (no filter).
+function isWithinPeriod(dateStr, days) {
+  if (!days) return true;
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return false;
+  const diffDays = (Date.now() - d.getTime()) / 86400000;
+  return diffDays >= 0 && diffDays <= days;
+}
+
 function buildOverview() {
   if (!DATA) return;
 
   const ph = DATA.price_history || [];
   const last = ph[ph.length - 1] || {};
+  const periodDays = overviewPeriodDays;
 
   let totalRec = 0, buyAll = 0, neuAll = 0, sellAll = 0;
   let upsideSumAll = 0, upsideCntAll = 0;
   const firmAgg = new Map();   // firm -> {buy,neu,sell,total,stocks,upS,upC}
   const stockAgg = new Map();  // code -> {buy,neu,sell,total,upS,upC,sector}
   const sectorAgg = new Map(); // sector -> {buy,neu,sell,total,stocks,upS,upC}
+  const allFilteredRecs = [];  // untuk latest list
 
   for (const [code, recs] of Object.entries(DATA.consensus_slim || {})) {
     if (!recs.length) continue;
@@ -3122,6 +3248,9 @@ function buildOverview() {
     let sBuy = 0, sNeu = 0, sSell = 0, sUpS = 0, sUpC = 0;
 
     for (const r of recs) {
+      // Apply date filter
+      if (!isWithinPeriod(r.date, periodDays)) continue;
+
       totalRec++;
       const isBuy = r.suggestion === 'BUY';
       const isSell = r.suggestion === 'SELL';
@@ -3137,8 +3266,10 @@ function buildOverview() {
       }
 
       const cur = last[code];
+      let upPct = null;
       if (cur && r.target_price) {
         const up = (r.target_price - cur) / cur;
+        upPct = up;
         sUpS += up; sUpC++;
         upsideSumAll += up; upsideCntAll++;
         if (r.firm) {
@@ -3146,30 +3277,36 @@ function buildOverview() {
           if (f) { f.upS += up; f.upC++; }
         }
       }
+
+      allFilteredRecs.push({ ...r, code, cur, upPct });
     }
 
-    stockAgg.set(code, {
-      sector, buy:sBuy, neu:sNeu, sell:sSell, total:recs.length,
-      avgUp: sUpC ? (sUpS/sUpC)*100 : 0
-    });
+    // Track stock only if it has at least 1 rec in this period
+    if (sBuy + sNeu + sSell > 0) {
+      stockAgg.set(code, {
+        sector, buy:sBuy, neu:sNeu, sell:sSell, total: sBuy+sNeu+sSell,
+        avgUp: sUpC ? (sUpS/sUpC)*100 : 0
+      });
 
-    let sec = sectorAgg.get(sector);
-    if (!sec) { sec = { buy:0, neu:0, sell:0, total:0, stocks:new Set(), upS:0, upC:0 }; sectorAgg.set(sector, sec); }
-    sec.buy += sBuy; sec.neu += sNeu; sec.sell += sSell; sec.total += recs.length;
-    sec.stocks.add(code); sec.upS += sUpS; sec.upC += sUpC;
+      let sec = sectorAgg.get(sector);
+      if (!sec) { sec = { buy:0, neu:0, sell:0, total:0, stocks:new Set(), upS:0, upC:0 }; sectorAgg.set(sector, sec); }
+      sec.buy += sBuy; sec.neu += sNeu; sec.sell += sSell; sec.total += sBuy+sNeu+sSell;
+      sec.stocks.add(code); sec.upS += sUpS; sec.upC += sUpC;
+    }
   }
 
   const totalStocks = stockAgg.size;
   const totalFirms = firmAgg.size;
   const overallAvgUp = upsideCntAll ? (upsideSumAll/upsideCntAll)*100 : 0;
   const overallAvgUpCls = overallAvgUp > 0 ? 'up' : overallAvgUp < 0 ? 'dn' : 'neu';
+  const periodLabel = periodDays ? `${periodDays} hari terakhir` : 'sepanjang waktu';
 
   // ── KPI Strip ──
   document.getElementById('ovKpiStrip').innerHTML = `
     <div class="ov-kpi">
       <div class="ov-kpi-label">Total Saham Tercover</div>
       <div class="ov-kpi-value">${totalStocks}</div>
-      <div class="ov-kpi-sub">dengan rekomendasi analis</div>
+      <div class="ov-kpi-sub">${periodLabel}</div>
     </div>
     <div class="ov-kpi">
       <div class="ov-kpi-label">Total Firm Aktif</div>
@@ -3179,7 +3316,7 @@ function buildOverview() {
     <div class="ov-kpi">
       <div class="ov-kpi-label">Total Rekomendasi</div>
       <div class="ov-kpi-value">${totalRec.toLocaleString('id')}</div>
-      <div class="ov-kpi-sub">data points</div>
+      <div class="ov-kpi-sub">${periodLabel}</div>
     </div>
     <div class="ov-kpi">
       <div class="ov-kpi-label">Avg Target Upside</div>
@@ -3288,6 +3425,27 @@ function buildOverview() {
       </div>`;
     }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data.</div>'}
   </div>`;
+
+  // ── Konsensus Terbaru — sorted by date desc, top 15 ──
+  allFilteredRecs.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  const latestList = allFilteredRecs.slice(0, 15);
+  document.getElementById('ovLatest').innerHTML = latestList.length
+    ? `<div class="ov-latest-list">${latestList.map(r => {
+        const badgeCls = r.suggestion === 'BUY' ? 'badge-buy' : r.suggestion === 'SELL' ? 'badge-sell' : 'badge-neutral';
+        const pctCls = r.upPct == null ? 'neu' : r.upPct > 0 ? 'up' : r.upPct < 0 ? 'dn' : 'neu';
+        const pctStr = r.upPct != null ? `${r.upPct >= 0 ? '+' : ''}${(r.upPct * 100).toFixed(1)}%` : '—';
+        const targetStr = r.target_price ? Math.round(r.target_price).toLocaleString('id') : '—';
+        const firmEsc = escapeHtml(r.firm || '—');
+        return `<div class="ov-latest-row">
+          <span class="ov-latest-date">${r.date || '-'}</span>
+          <span class="ov-latest-stock" onclick="event.stopPropagation();selectStock('${r.code}')" title="Buka detail saham ${r.code}">${r.code}</span>
+          <span class="ov-latest-firm" data-firm="${firmEsc}" onclick="event.stopPropagation();showFirmDetail(this.dataset.firm)" title="Lihat semua rekomendasi ${firmEsc}">${firmEsc}</span>
+          <span class="badge ${badgeCls}">${r.suggestion}</span>
+          <span class="ov-latest-target">${targetStr}</span>
+          <span class="ov-latest-pct ${pctCls}">${pctStr}</span>
+        </div>`;
+      }).join('')}</div>`
+    : '<div style="color:var(--text3);padding:20px;text-align:center;font-size:12px">Tidak ada konsensus dalam periode ini.</div>';
 
   // ── Sector heatmap ──
   const sectorList = [...sectorAgg.entries()]
