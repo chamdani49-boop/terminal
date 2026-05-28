@@ -712,8 +712,11 @@ function applyLiveOverlay(price_history, stats, live, debug = {}) {
   const yyyy = now.getUTCFullYear();
   const mm = now.getUTCMonth();
   const curMonthIso = `${yyyy}-${String(mm + 1).padStart(2,'0')}-01`;
-  const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const curLabel = `${monthShort[mm]}-${String(yyyy).slice(2)}`;
+  // Label format harus MATCH history sheet (mis. "5/31/2026" — end-of-month
+  // M/D/YYYY). Kalau pakai format lain (mis. "May-26"), x-axis chart jadi
+  // mismatch & user kira datanya hilang. Hitung end-of-month UTC.
+  const lastDayUtc = new Date(Date.UTC(yyyy, mm + 1, 0)).getUTCDate();
+  const curLabel = `${mm + 1}/${lastDayUtc}/${yyyy}`;
 
   let lastRow = price_history[price_history.length - 1];
   let prevRow = price_history[price_history.length - 2] || lastRow;

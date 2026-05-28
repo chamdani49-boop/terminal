@@ -64,11 +64,19 @@ jobs:
       # bulan di CF Pages free tier dengan cron tiap 15 menit). CF Pages
       # respect [skip ci] → skip deploy → data.json di production stale.
       # jsDelivr fetch langsung dari git, gak peduli deploy state.
+      # NOTE: jsDelivr migrasi purge API ke GET (bukan POST). Sebelumnya
+      # workflow ini pakai POST → selalu balik 405 MethodNotAllowed → cache
+      # nyangkut sampai natural expiry (~12 jam). Akibatnya frontend serve
+      # data stale meski commit baru sudah masuk main. Pakai GET sekarang.
       - name: Purge jsDelivr CDN cache
         if: steps.commit.outputs.changed == 'true'
         continue-on-error: true
         run: |
-          curl -fsS -X POST \
-            "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/public/data.json" \
-            && echo "✓ jsDelivr cache purged" \
-            || echo "⚠️  Purge gagal (non-fatal — cache akan expire natural ~12 jam)"
+          response=$(curl -fsS \
+            "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/public/data.json")
+          echo "Purge response: $response"
+          if echo "$response" | grep -q '"status":"finished"'; then
+            echo "✓ jsDelivr cache purged"
+          else
+            echo "⚠️  Purge response unexpected (non-fatal — cache will expire ~12h)"
+          fi

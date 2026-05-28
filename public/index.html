@@ -178,7 +178,7 @@ a{color:inherit;text-decoration:none}
 .stock-ticker-track{
   display:inline-flex;align-items:center;gap:0;
   padding:7px 0;white-space:nowrap;
-  animation:ticker-scroll 360s linear infinite;
+  animation:ticker-scroll 600s linear infinite;
   will-change:transform;
 }
 .stock-ticker:hover .stock-ticker-track{animation-play-state:paused}
@@ -213,7 +213,7 @@ a{color:inherit;text-decoration:none}
   font-size:11px;font-weight:700;
 }
 @media(max-width:600px){
-  .stock-ticker-track{animation-duration:280s}
+  .stock-ticker-track{animation-duration:480s}
   .st-item{padding:4px 12px;gap:6px}
   .st-code,.st-price{font-size:12px}
   .st-chg{font-size:10px}
@@ -884,9 +884,13 @@ const DATA_CDN_URL = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/
 const DATA_LOCAL_URL = 'data.json';
 
 async function loadData() {
-  // Cache-bust per menit. jsDelivr respect query string sebagai cache key,
-  // jadi user gak akan kena versi stale ≥ 1 menit setelah commit baru.
-  const v = Math.floor(Date.now() / 60000);
+  // Cache-bust per 30 detik. jsDelivr respect query string sebagai cache
+  // key — beda value, beda cache entry. 30s window cukup smooth (tidak
+  // hammer CDN per-fetch) tapi cukup ketat supaya user dapet data fresh
+  // dalam 30 detik setelah workflow refresh push commit & purge cache.
+  // Kalau jsDelivr cache server-side stuck (purge step gagal, dll),
+  // query string baru bypass cache CF/Fastly downstream.
+  const v = Math.floor(Date.now() / 30000);
   const sources = [
     { url: DATA_CDN_URL + '?v=' + v, label: 'jsDelivr CDN' },
     { url: DATA_LOCAL_URL + '?v=' + v, label: 'same-origin' },
