@@ -1118,8 +1118,22 @@ function buildWatchlist() {
 
   container.innerHTML = wl.filter(c => lastMonth[c]).map(code => {
     const cur = lastMonth[code] || 0;
-    const prev = prevMonth[code] || cur;
-    const chg = prev ? (cur - prev) / prev : 0;
+
+    // Prioritas % live:
+    // 1. stats[code].change_pct_live  — daily % dari sheet "% Live" (post PR #17)
+    // 2. DATA.live[code].change_pct   — fallback kalau field baru belum di-build
+    // 3. MoM monthly dari history     — last resort kalau live data belum ada
+    const st = DATA.stats[code] || {};
+    let chg;
+    if (Number.isFinite(st.change_pct_live)) {
+      chg = st.change_pct_live;
+    } else if (DATA.live && DATA.live[code] && Number.isFinite(DATA.live[code].change_pct)) {
+      chg = DATA.live[code].change_pct;
+    } else {
+      const prev = prevMonth[code] || cur;
+      chg = prev ? (cur - prev) / prev : 0;
+    }
+
     const cls = chg > 0 ? 'up' : chg < 0 ? 'dn' : 'neu';
     const sign = chg > 0 ? '+' : '';
     return `<div class="watchlist-item ${code === currentStock ? 'active' : ''}" data-code="${code}" onclick="selectStock('${code}')">
