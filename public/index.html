@@ -1022,6 +1022,51 @@ select.form-control option{background:var(--card);color:var(--text)}
 .firm-stat-rating .rec-modal-bar.filled-green{ background:#059669 }
 .firm-stat-rating .rec-modal-bar.filled-red  { background:#e11d48 }
 
+/* ── FIRM PERFORMANCE CHART ── */
+.firm-chart-wrap{
+  position:relative;
+  height:260px;
+  width:100%;
+}
+.firm-chart-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:var(--radius-pill);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;font-weight:800;
+  font-variant-numeric:tabular-nums;
+  border:1.5px solid;
+}
+.firm-chart-badge.up{
+  color:var(--green);border-color:var(--green);
+  background:var(--green-bg);
+}
+.firm-chart-badge.dn{
+  color:var(--red);border-color:var(--red);
+  background:var(--red-bg);
+}
+.firm-chart-badge.neu{
+  color:var(--text2);border-color:var(--border);
+  background:var(--bg2);
+}
+.firm-chart-sample{
+  font-size:11px;color:var(--text3);font-weight:600;
+  padding:4px 10px;border-radius:var(--radius-pill);
+  background:var(--bg2);border:1px solid var(--border);
+}
+.firm-chart-legend-row{
+  display:flex;flex-wrap:wrap;gap:8px;
+  font-size:11px;color:var(--text2);font-weight:600;
+}
+.firm-chart-legend-item{
+  display:inline-flex;align-items:center;gap:5px;
+}
+.firm-chart-legend-dot{
+  width:10px;height:3px;border-radius:2px;flex-shrink:0;
+}
+@media(max-width:640px){
+  .firm-chart-wrap{height:200px}
+}
+
 /* Mobile firm tabs */
 @media(max-width:640px){
   .cv-tabs{padding:3px}
@@ -2016,6 +2061,17 @@ select.form-control option{background:var(--card);color:var(--text)}
         <div class="firm-meta" id="firmMeta">—</div>
       </div>
       <div class="firm-stats" id="firmStats"></div>
+      <!-- Firm Performance Chart -->
+      <div class="card" id="firmChartCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+          <div class="card-title" style="margin-bottom:0">Avg Performance Rekomendasi Aktif</div>
+          <div id="firmChartBadge" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></div>
+        </div>
+        <div class="firm-chart-wrap">
+          <canvas id="firmPerfChart"></canvas>
+        </div>
+        <div id="firmChartLegend" style="margin-top:10px"></div>
+      </div>
       <div class="card" style="overflow:visible">
         <div class="card-title">Daftar Rekomendasi</div>
         <div class="firm-recs-scroll">
@@ -3641,6 +3697,269 @@ function escapeHtml(s) {
   }[c]));
 }
 
+// ═══════════════════════════════════════════
+// FIRM PERFORMANCE CHART
+// Normalized index base=100 dari tanggal rilis masing-masing rec.
+// Algoritma:
+//   1. Kumpulkan semua rec aktif firm (ageMonths 1–24, ada releasePrice)
+//   2. Tiap rec → series normalized: bulan 0 = 100, bulan N = price/releasePrice × 100
+//   3. Per bulan (offset 0,1,2,...,maxAge), rata-rata semua rec yang punya data
+//   4. Plot 1 garis avg + annotate titik akhir (total return %)
+//   5. Warna fill: hijau jika akhir ≥ 100, merah jika < 100
+// ═══════════════════════════════════════════
+let firmPerfChartInstance = null;
+
+function buildFirmChart(firm, allRecs) {
+  const ph   = DATA.price_history || [];
+  const ct   = chartColors();
+
+  // ── Kumpulkan series per rec ──────────────────────────────────────────
+  // series[i] = array panjang (ageMonths+1) nilai normalized [100, ..., curVal]
+  const seriesList = [];
+
+  for (const r of allRecs) {
+    if (!r.date || !r.code) continue;
+
+    // Cari releaseIdx di price_history
+    const recYM = String(r.date).slice(0, 7);
+    let releaseIdx = -1;
+    for (let i = 0; i < ph.length; i++) {
+      const rowYM = String(ph[i].date || '').slice(0, 7);
+      if (rowYM === recYM)       { releaseIdx = i; break; }
+      if (rowYM > recYM)         { releaseIdx = Math.max(0, i - 1); break; }
+    }
+    if (releaseIdx < 0) releaseIdx = ph.length - 1;
+
+    const releasePrice = ph[releaseIdx][r.code];
+    if (!releasePrice || releasePrice <= 0) continue;
+
+    const ageMonths = ph.length - 1 - releaseIdx;
+    if (ageMonths < 1 || ageMonths > 24) continue; // filter aktif 1–24 bln
+
+    // Build normalized array: index 0 = 100 (rilis), index k = bulan ke-k
+    const norm = [];
+    for (let k = 0; k <= ageMonths; k++) {
+      const price = ph[releaseIdx + k][r.code];
+      norm.push(price > 0 ? (price / releasePrice) * 100 : null);
+    }
+    seriesList.push({ norm, ageMonths, code: r.code, suggestion: r.suggestion });
+  }
+
+  if (!seriesList.length) {
+    // Tidak ada rec aktif — sembunyikan card
+    const card = document.getElementById('firmChartCard');
+    if (card) card.style.display = 'none';
+    return;
+  }
+
+  const card = document.getElementById('firmChartCard');
+  if (card) card.style.display = '';
+
+  // ── Hitung maxAge & avg per bulan ────────────────────────────────────
+  const maxAge = Math.max(...seriesList.map(s => s.ageMonths));
+
+  // avgNorm[k] = rata-rata nilai normalized di offset bulan ke-k
+  // Hanya rata-rata dari rec yang punya data di bulan tersebut (yang ageMonths >= k)
+  const avgNorm = [];
+  const countPerMonth = [];
+  for (let k = 0; k <= maxAge; k++) {
+    let sum = 0, cnt = 0;
+    for (const s of seriesList) {
+      if (k <= s.ageMonths && s.norm[k] != null) {
+        sum += s.norm[k]; cnt++;
+      }
+    }
+    avgNorm.push(cnt > 0 ? sum / cnt : null);
+    countPerMonth.push(cnt);
+  }
+
+  // ── Labels: "Rilis", "+1 Bln", ..., "+N Bln" ─────────────────────────
+  const labels = avgNorm.map((_, k) =>
+    k === 0 ? 'Rilis' : `+${k} Bln`
+  );
+
+  // ── Warna berdasarkan titik akhir ─────────────────────────────────────
+  const lastVal = avgNorm[avgNorm.length - 1] ?? 100;
+  const totalReturn = lastVal - 100; // mis. +12.5 atau -8.3
+  const isUp  = totalReturn >= 0;
+  const lineColor  = isUp ? '#059669' : '#e11d48';
+  const fillColorA = isUp ? 'rgba(5,150,105,0.18)' : 'rgba(225,29,72,0.15)';
+  const fillColorB = isUp ? 'rgba(5,150,105,0)'    : 'rgba(225,29,72,0)';
+
+  // ── Badge: total return + sample size ────────────────────────────────
+  const badgeEl = document.getElementById('firmChartBadge');
+  if (badgeEl) {
+    const cls = isUp ? 'up' : totalReturn < 0 ? 'dn' : 'neu';
+    const sign = totalReturn >= 0 ? '+' : '';
+    badgeEl.innerHTML = `
+      <span class="firm-chart-badge ${cls}">
+        ${sign}${totalReturn.toFixed(2)}% avg return
+      </span>
+      <span class="firm-chart-sample">${seriesList.length} rec aktif</span>
+    `;
+  }
+
+  // ── Baseline (index 100) ──────────────────────────────────────────────
+  const baselineData = avgNorm.map(() => 100);
+
+  // ── Render chart ──────────────────────────────────────────────────────
+  if (firmPerfChartInstance) { firmPerfChartInstance.destroy(); firmPerfChartInstance = null; }
+
+  const ctx = document.getElementById('firmPerfChart');
+  if (!ctx) return;
+
+  firmPerfChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Avg Normalized Performance',
+          data: avgNorm,
+          borderColor: lineColor,
+          borderWidth: 2.8,
+          pointRadius: avgNorm.map((_, i) => (i === 0 || i === avgNorm.length - 1) ? 5 : 0),
+          pointBackgroundColor: lineColor,
+          tension: 0.35,
+          fill: true,
+          backgroundColor: (ctx) => {
+            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+            g.addColorStop(0, fillColorA);
+            g.addColorStop(1, fillColorB);
+            return g;
+          },
+        },
+        {
+          label: 'Baseline (100)',
+          data: baselineData,
+          borderColor: ct.grid,
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: ct.tooltipBg,
+          borderColor: ct.tooltipBorder,
+          borderWidth: 1,
+          titleColor: ct.tooltipTitle,
+          bodyColor: ct.tooltipText,
+          padding: 10,
+          cornerRadius: 10,
+          callbacks: {
+            title: items => labels[items[0].dataIndex],
+            label: item => {
+              if (item.datasetIndex === 1) return null; // sembunyikan baseline di tooltip
+              const v = item.raw;
+              if (v == null) return null;
+              const ret = v - 100;
+              const sign = ret >= 0 ? '+' : '';
+              const n = countPerMonth[item.dataIndex] || 0;
+              return [
+                ` Index: ${v.toFixed(2)}`,
+                ` Return: ${sign}${ret.toFixed(2)}%`,
+                ` Sample: ${n} rec`,
+              ];
+            },
+          },
+        },
+        // Annotasi titik akhir — pakai afterDraw plugin inline
+        afterDraw: null,
+      },
+      scales: {
+        x: {
+          grid: { color: ct.grid },
+          ticks: {
+            color: ct.ticks,
+            font: { size: 11, weight: '600' },
+            maxTicksLimit: 13,
+            maxRotation: 0,
+          },
+        },
+        y: {
+          grid: { color: ct.grid },
+          ticks: {
+            color: ct.ticks,
+            font: { size: 11, weight: '600' },
+            callback: v => v.toFixed(0),
+          },
+          title: {
+            display: true,
+            text: 'Index (Rilis = 100)',
+            color: ct.ticks,
+            font: { size: 11, weight: '700' },
+          },
+        },
+      },
+    },
+    plugins: [{
+      // Inline plugin: annotasi nilai di titik akhir (current)
+      id: 'firmPerfEndLabel',
+      afterDraw(chart) {
+        const ds = chart.data.datasets[0];
+        const meta = chart.getDatasetMeta(0);
+        if (!meta.data.length) return;
+        const lastPt = meta.data[meta.data.length - 1];
+        const lastV  = ds.data[ds.data.length - 1];
+        if (lastV == null) return;
+
+        const ret  = lastV - 100;
+        const sign = ret >= 0 ? '+' : '';
+        const color = ret >= 0 ? '#059669' : '#e11d48';
+        const { ctx: c } = chart;
+
+        c.save();
+        c.font = 'bold 12px "IBM Plex Mono", monospace';
+        c.fillStyle = color;
+        c.textAlign = lastPt.x > chart.width * 0.75 ? 'right' : 'left';
+        c.textBaseline = 'bottom';
+        const offsetX = c.textAlign === 'right' ? -8 : 8;
+        c.fillText(`${sign}${ret.toFixed(2)}%`, lastPt.x + offsetX, lastPt.y - 4);
+        c.restore();
+      },
+    }],
+  });
+
+  // ── Legend manual ─────────────────────────────────────────────────────
+  const legendEl = document.getElementById('firmChartLegend');
+  if (legendEl) {
+    // Hitung berapa rec BUY / NEU / SELL yang masuk sample
+    const buyN  = seriesList.filter(s => s.suggestion === 'BUY').length;
+    const neuN  = seriesList.filter(s => s.suggestion === 'NEUTRAL' || s.suggestion === 'HOLD').length;
+    const sellN = seriesList.filter(s => s.suggestion === 'SELL').length;
+    const parts = [];
+    if (buyN)  parts.push(`<span style="color:var(--green);font-weight:700">${buyN} BUY</span>`);
+    if (neuN)  parts.push(`<span style="color:var(--yellow);font-weight:700">${neuN} NEUTRAL</span>`);
+    if (sellN) parts.push(`<span style="color:var(--red);font-weight:700">${sellN} SELL</span>`);
+
+    legendEl.innerHTML = `
+      <div class="firm-chart-legend-row">
+        <span class="firm-chart-legend-item">
+          <span class="firm-chart-legend-dot" style="background:${lineColor}"></span>
+          Avg normalized index
+        </span>
+        <span class="firm-chart-legend-item">
+          <span class="firm-chart-legend-dot" style="background:${ct.grid};border:1px dashed"></span>
+          Baseline (rilis = 100)
+        </span>
+        <span style="color:var(--text3)">·</span>
+        Komposisi: ${parts.join(' · ')}
+        <span style="color:var(--text3)">·</span>
+        <span style="color:var(--text3)">window 1–24 bln</span>
+      </div>
+    `;
+  }
+}
+
 function showFirmDetail(firm) {
   if (!firm || !DATA) return;
 
@@ -3754,6 +4073,10 @@ function showFirmDetail(firm) {
     </div>
   `;
 
+  // Chart — render setelah firmStats (allRecs sudah tersedia)
+  // Pakai requestAnimationFrame supaya canvas sudah visible & punya dimensi
+  requestAnimationFrame(() => buildFirmChart(firm, allRecs));
+
   // Recs table
   document.getElementById('firmRecsTable').innerHTML = `
     <thead>
@@ -3814,6 +4137,8 @@ function showFirmDetail(firm) {
 
 // Tutup firm detail — kembali ke firm grid (di dalam page-consensus)
 function closeFirmDetail() {
+  // Destroy chart instance supaya tidak memory leak
+  if (firmPerfChartInstance) { firmPerfChartInstance.destroy(); firmPerfChartInstance = null; }
   document.getElementById('firmDetailPanel').style.display = 'none';
   document.getElementById('consensusFirmGrid').style.display = '';
   document.getElementById('cvFilterFirm').style.display = 'flex';
