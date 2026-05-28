@@ -1299,16 +1299,51 @@ function renderStats(code) {
   const fmt = (v, isPrice=false) => isPrice ? Math.round(v).toLocaleString('id') : (v*100).toFixed(2)+'%';
   const fmtDate = d => d ? d.substring(0,7).replace('-','/') : '-';
 
+  // Helper: format tanggal pendek "Mei 26", "Apr 25" dari ISO string "2026-05-01"
+  const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  function shortMon(isoDate) {
+    if (!isoDate) return '';
+    const [yr, mo] = isoDate.split('-');
+    return `${BULAN[parseInt(mo)-1]} ${String(parseInt(yr)).slice(2)}`;
+  }
+
+  // Hitung sub-label tanggal untuk tiap kolom statistik
+  // last = baris terakhir di price_history (bulan berjalan, mis. Mei 2026)
+  // prev = baris sebelumnya (bulan lalu, mis. Apr 2026)
+  function dateSub(code) {
+    const lastDate  = last.date  || '';
+    const prevDate  = prev.date  || '';
+    const [lYr, lMo] = lastDate.split('-').map(Number);
+
+    // MoM: "Apr – Mei"
+    const momSub = prevDate
+      ? `${shortMon(prevDate)} – ${shortMon(lastDate)}`
+      : shortMon(lastDate);
+
+    // YTD: "Des 25 – Mei 26" (dari akhir tahun lalu ke bulan berjalan)
+    const prevYrDec = `${lYr - 1}-12-01`;
+    const ytdSub = `Des ${String(lYr-1).slice(2)} – ${shortMon(lastDate)}`;
+
+    // YoY: "Mei 25 – Mei 26"
+    const yoyStartDate = `${lYr - 1}-${String(lMo).padStart(2,'0')}-01`;
+    const yoySub = `${shortMon(yoyStartDate)} – ${shortMon(lastDate)}`;
+
+    return { momSub, ytdSub, yoySub };
+  }
+
+  const { momSub, ytdSub, yoySub } = dateSub(code);
+  const SUB = `font-size:9px;color:var(--text3);font-weight:500;margin-top:1px;letter-spacing:.2px`;
+
   function makeRow(label, s, cls='') {
     const av = s.avg_annual, sv = s.std_annual;
     return `
       <div class="stat-cell ${cls}" style="text-align:left"><div class="stat-label">${label}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">${last.label || 'Bulan'}</div><div class="stat-val">${Math.round(s.current).toLocaleString('id')}</div></div>
-      <div class="stat-cell ${cls}"><div class="stat-label">MoM</div><div class="stat-val ${s.mom>0?'up':'dn'}">${fmt(s.mom)}</div></div>
-      <div class="stat-cell ${cls}"><div class="stat-label">YTD</div><div class="stat-val ${s.ytd>0?'up':'dn'}">${fmt(s.ytd)}</div></div>
-      <div class="stat-cell ${cls}"><div class="stat-label">YoY</div><div class="stat-val ${s.yoy>0?'up':'dn'}">${fmt(s.yoy)}</div></div>
-      <div class="stat-cell ${cls}"><div class="stat-label">Max</div><div class="stat-val">${Math.round(s.max).toLocaleString('id')}</div><div class="stat-sub">${fmtDate(s.max_date)}</div></div>
-      <div class="stat-cell ${cls}"><div class="stat-label">Min</div><div class="stat-val">${Math.round(s.min).toLocaleString('id')}</div><div class="stat-sub">${fmtDate(s.min_date)}</div></div>
+      <div class="stat-cell ${cls}"><div class="stat-label">MoM</div><div class="stat-val ${s.mom>0?'up':'dn'}">${fmt(s.mom)}</div><div style="${SUB}">${momSub}</div></div>
+      <div class="stat-cell ${cls}"><div class="stat-label">YTD</div><div class="stat-val ${s.ytd>0?'up':'dn'}">${fmt(s.ytd)}</div><div style="${SUB}">${ytdSub}</div></div>
+      <div class="stat-cell ${cls}"><div class="stat-label">YoY</div><div class="stat-val ${s.yoy>0?'up':'dn'}">${fmt(s.yoy)}</div><div style="${SUB}">${yoySub}</div></div>
+      <div class="stat-cell ${cls}"><div class="stat-label">Max</div><div class="stat-val">${Math.round(s.max).toLocaleString('id')}</div><div style="${SUB}">${shortMon(s.max_date)}</div></div>
+      <div class="stat-cell ${cls}"><div class="stat-label">Min</div><div class="stat-val">${Math.round(s.min).toLocaleString('id')}</div><div style="${SUB}">${shortMon(s.min_date)}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">Std Dev</div><div class="stat-val">${fmt(s.std_monthly)}</div></div>
       <div class="stat-cell ${cls} stat-annual"><div class="stat-label">Avg / Thn</div><div class="stat-val ${av>0?'up':'dn'}">${av!=null?fmt(av):'-'}</div></div>
       <div class="stat-cell ${cls} stat-annual"><div class="stat-label">Std / Thn</div><div class="stat-val">${sv!=null?fmt(sv):'-'}</div></div>
@@ -1319,14 +1354,6 @@ function renderStats(code) {
     <div style="margin-bottom:6px">
       <div class="stats-row">${makeRow(code, st)}</div>
       ${stIHSG ? `<div class="stats-row-ihsg">${makeRow('IHSG', stIHSG)}</div>` : ''}
-    </div>
-    <div class="correl-row" style="padding:4px 0;flex-wrap:wrap;gap:14px">
-      <span class="correl-label">Korelasi ${code} vs IHSG (Pearson):</span>
-      <span class="correl-val ${(DATA.correlations[code]||0)>0?'up':'dn'}">${((DATA.correlations[code]||0)*100).toFixed(2)}%</span>
-      ${st.beta != null ? `<span class="correl-label" style="margin-left:8px">Beta:</span>
-        <span class="correl-val" style="color:var(--accent2)">${st.beta.toFixed(2)}</span>` : ''}
-      ${st.rel_vol != null ? `<span class="correl-label" style="margin-left:8px">Rel Volatilitas:</span>
-        <span class="correl-val" style="color:var(--accent3)">${st.rel_vol.toFixed(2)}×</span>` : ''}
     </div>
   `;
 }
