@@ -1091,7 +1091,6 @@ select.form-control option{background:var(--card);color:var(--text)}
           <div class="loading"><div class="spinner"></div></div>
         </div>
         <canvas id="consensusDonut" width="110" height="110" style="display:none"></canvas>
-        <canvas id="consensusBar" width="0" height="0" style="display:none"></canvas>
       </div>
 
       <!-- Watchlist -->
@@ -1298,7 +1297,6 @@ let currentPeriod = 60;
 let savingMode = 'dca';
 let mainChartInstance = null;
 let consensusDonutInstance = null;
-let consensusBarInstance = null;
 let savingChartInstance = null;
 
 // Strategi loading data.json:
@@ -1450,6 +1448,15 @@ function selectStock(code) {
   // Update running ticker active
   document.querySelectorAll('.st-item').forEach(el => {
     el.classList.toggle('active', el.dataset.code === code);
+  });
+  // Bersihkan input pencarian (desktop & mobile) + tutup dropdown
+  ['searchInput','searchInputMobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['searchDrop','searchDropMobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('open');
   });
 }
 
@@ -2199,9 +2206,22 @@ function renderConsensus(code) {
   const gapCls = (g) => g == null ? 'neu' : g >= 0 ? 'up' : 'dn';
   const gHigh = gapPct(high), gTgt = gapPct(target), gLow = gapPct(low);
 
+  // Sumbu axis logic: kalau current price di luar range konsensus, axis-nya
+  // di-adjust supaya dot tetap di dalam range. Use case Cleo: cuma 1 rekom
+  // di 890 (low===high), dan harga live mungkin lebih rendah/tinggi.
+  //   • curPrice < low_konsensus  → axisLow = curPrice (axis: live ─ konsensus)
+  //   • curPrice > high_konsensus → axisHigh = curPrice (axis: konsensus ─ live)
+  //   • dalam range                → axis pakai konsensus low/high apa adanya
+  // Note: cn-box Low/High tetap menampilkan angka konsensus aktual (tidak diubah).
+  let axisLow = low, axisHigh = high;
+  if (Number.isFinite(curPrice) && curPrice > 0) {
+    if (Number.isFinite(low) && curPrice < low) axisLow = curPrice;
+    if (Number.isFinite(high) && curPrice > high) axisHigh = curPrice;
+  }
+
   let dotPct = null;
-  if (Number.isFinite(low) && Number.isFinite(high) && high > low && curPrice) {
-    dotPct = Math.max(0, Math.min(100, ((curPrice - low) / (high - low)) * 100));
+  if (Number.isFinite(axisLow) && Number.isFinite(axisHigh) && axisHigh > axisLow && curPrice) {
+    dotPct = Math.max(0, Math.min(100, ((curPrice - axisLow) / (axisHigh - axisLow)) * 100));
   }
   const fmt = (n) => Number.isFinite(n) ? Math.round(n).toLocaleString('id') : '—';
 
@@ -2252,8 +2272,8 @@ function renderConsensus(code) {
         <div class="cs-axis-tick" style="left:${dotPct}%"></div>
         <div class="cs-axis-dot" style="left:${dotPct}%"></div>
       ` : ''}
-      <div class="cs-axis-end lo">Low<span class="v">${fmt(low)}</span></div>
-      <div class="cs-axis-end hi">High<span class="v">${fmt(high)}</span></div>
+      <div class="cs-axis-end lo">Low<span class="v">${fmt(axisLow)}</span></div>
+      <div class="cs-axis-end hi">High<span class="v">${fmt(axisHigh)}</span></div>
     </div>
 
     <!-- 3 kotak LOW / TARGET / HIGH + % gap dari harga sekarang -->
@@ -2273,9 +2293,6 @@ function renderConsensus(code) {
         <div class="cn-val up">${fmt(high)}</div>
         <div class="cn-gap ${gapCls(gHigh)}">${fmtGap(gHigh)}</div>
       </div>
-    </div>
-    <div style="margin-top:10px">
-      <canvas id="barCanvas" height="60"></canvas>
     </div>
   `;
 
@@ -2343,37 +2360,6 @@ function renderConsensus(code) {
             tipEl.style.opacity = '1';
           }
         }}
-      }
-    });
-
-    // Bar chart
-    const bCtx = document.getElementById('barCanvas');
-    if (consensusBarInstance) consensusBarInstance.destroy();
-    const ph = DATA.price_history.filter(e=>e[code]>0);
-    const last = ph[ph.length-1];
-    const price = last ? last[code] : 0;
-    consensusBarInstance = new Chart(bCtx, {
-      type: 'bar',
-      data: {
-        labels: ['High','Target','Low'],
-        datasets:[{
-          data:[high,target,low],
-          backgroundColor:['rgba(5,150,105,.7)','rgba(37,99,235,.7)','rgba(225,29,72,.7)'],
-          borderWidth:0,borderRadius:4
-        }]
-      },
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{
-          backgroundColor:ct.tooltipBg,borderWidth:1,borderColor:ct.tooltipBorder,
-          bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:10,cornerRadius:10,
-          callbacks:{label: i => ` ${Math.round(i.raw).toLocaleString('id')}`}
-        },
-        annotation:price?{annotations:{line1:{type:'line',yMin:price,yMax:price,borderColor:ct.ticks,borderWidth:1,borderDash:[4,4]}}}:{}},
-        scales:{
-          x:{grid:{display:false},ticks:{color:ct.ticks,font:{size:12,weight:'700'}}},
-          y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11,weight:'600'},callback:v=>v>=1000?Math.round(v/1000)+'k':v}}
-        }
       }
     });
   }, 50);
