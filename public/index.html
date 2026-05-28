@@ -1231,6 +1231,53 @@ select.form-control option{background:var(--card);color:var(--text)}
 
   /* Latest feed compact */
   .ov-latest-list{max-height:360px}
+
+  /* ── cs-axis mobile: garis rata-rata tebal, angka, anti-overlap ── */
+
+  /* Sumbu lebih tinggi agar ada ruang untuk label di atas DAN bawah */
+  .cs-axis{height:72px;margin:10px 4px 4px}
+
+  /* Garis rata-rata: tebal dan jelas */
+  .cs-axis-avg-line{
+    border-left-width:2.5px;
+    border-left-style:solid;
+    border-left-color:var(--accent);
+    opacity:1;
+    height:36px;
+    top:calc(50% - 18px);
+  }
+
+  /* Label rata-rata: di bawah track, tampilkan angka */
+  .cs-axis-avg-label{
+    font-size:10px;
+    font-weight:800;
+    color:var(--accent);
+    top:calc(50% + 18px);
+    line-height:1.3;
+    text-align:center;
+  }
+  /* Nilai angka di dalam label rata-rata */
+  .cs-avg-val{
+    display:block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:800;
+    color:var(--accent);
+  }
+
+  /* Harga sekarang (.cs-axis-cur): default di atas track */
+  .cs-axis-cur{
+    font-size:10px;
+    padding:1px 5px;
+    top:2px;          /* atas track secara default */
+  }
+  /* Low/High label: lebih kecil agar tidak tumpang tindih */
+  .cs-axis-end{
+    font-size:9px;
+  }
+  .cs-axis-end .v{
+    font-size:10px;
+  }
 }
 
 /* ── BOTTOM NAV — visible by default di mobile, hidden di desktop ──
@@ -3760,10 +3807,10 @@ function renderConsensus(code) {
       <div class="cs-axis-track"></div>
       ${avgPct != null ? `
         <div class="cs-axis-avg-line" style="left:${avgPct}%"></div>
-        <div class="cs-axis-avg-label" style="left:${avgPct}%">rata-rata</div>
+        <div class="cs-axis-avg-label" style="left:${avgPct}%" data-avgpct="${avgPct}">rata-rata<br><span class="cs-avg-val">${fmt(target)}</span></div>
       ` : ''}
       ${dotPct != null ? `
-        <div class="cs-axis-cur" style="left:${dotPct}%">${fmt(curPrice)}</div>
+        <div class="cs-axis-cur" style="left:${dotPct}%" data-dotpct="${dotPct}">${fmt(curPrice)}</div>
         <div class="cs-axis-tick" style="left:${dotPct}%"></div>
         <div class="cs-axis-dot" style="left:${dotPct}%"></div>
       ` : ''}
@@ -3857,6 +3904,22 @@ function renderConsensus(code) {
         }}
       }
     });
+
+    // ── Anti-overlap mobile: posisikan .cs-axis-cur atas/bawah ──────────
+    // Kalau posisi harga (dotPct) dan rata-rata (avgPct) berdekatan (< 18%),
+    // geser harga ke bawah track supaya tidak saling nutup.
+    if (window.innerWidth <= 640 && dotPct != null && avgPct != null) {
+      const curEl = el.querySelector('.cs-axis-cur');
+      if (curEl) {
+        const diff = Math.abs(dotPct - avgPct);
+        if (diff < 18) {
+          // Harga dan rata-rata terlalu berdekatan — taruh harga di bawah
+          curEl.style.top = '';
+          curEl.style.bottom = '2px';  // bawah track
+          curEl.style.transform = 'translateX(-50%)';
+        }
+      }
+    }
   }, 50);
 }
 
@@ -4527,7 +4590,8 @@ function buildOverview() {
         callbacks:{label:i=>` +${i.raw}% upside`,afterLabel:i=>{const s=topUpside[i.dataIndex];return` ${s.total} rec · ${s.buy} BUY`;}}}},
       scales:{x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11},callback:v=>v+'%'}},
         y:{grid:{display:false},ticks:{color:ct.ticks,font:{size:12,weight:'700'}}}},
-      onClick:(_,els)=>{ if(els[0]&&window.innerWidth>640) selectStock(topUpside[els[0].index].code); }
+      onClick:(_,els)=>{ if(els[0]&&window.innerWidth>640) selectStock(topUpside[els[0].index].code); },
+      onDblClick: undefined
     }
   });
 
@@ -4615,8 +4679,34 @@ function buildOverview() {
     }
   });
 
-  // ── 8. LATEST RECS FEED (top 20) ─────────────────────────────────────
-  allFilteredRecs.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  // ── dblclick navigate (mobile & desktop) ────────────────────────────
+  // Chart.js onClick sudah handle desktop. Untuk mobile (touch), pakai
+  // dblclick pada canvas — Chart.js expose getElementsAtEventForMode.
+  function _attachDbl(canvasId, dataArr, navFn) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    let lastTap = 0;
+    canvas.addEventListener('click', function(e) {
+      // Mobile double-tap: dua klik dalam 300ms
+      const now = Date.now();
+      const chart = _ovCharts[canvasId];
+      if (!chart) return;
+      const els = chart.getElementsAtEventForMode(e, 'nearest', {intersect:true}, false);
+      if (!els.length) return;
+      if (window.innerWidth > 640) return; // desktop sudah handle via onClick
+      if (now - lastTap < 300) {
+        navFn(dataArr[els[0].index]);
+        lastTap = 0;
+      } else {
+        lastTap = now;
+      }
+    });
+  }
+  _attachDbl('ovUpsideBar',  topUpside, s => selectStock(s.code));
+  _attachDbl('ovFirmsBar',   topFirms,  f => showFirmDetail(f.name));
+  _attachDbl('ovMostRecBar', topStocks, s => selectStock(s.code));
+
+  // ── 8. LATEST RECS FEED (top 20) ─────────────────────────────────────  allFilteredRecs.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
   const latestList=allFilteredRecs.slice(0,20);
   const lcEl=document.getElementById('ovLatestCount');
   if(lcEl) lcEl.textContent=`${allFilteredRecs.length} rekomendasi · ${periodLabel}`;
