@@ -606,7 +606,7 @@ select.form-control option{background:var(--card);color:var(--text)}
     width:40px;height:40px;font-size:17px;
   }
   .pt-grid{grid-template-columns:1fr 1fr}
-  .page{padding:14px 10px;padding-bottom:80px}  /* ruang untuk bottom nav */
+  .page{padding:14px 10px;padding-bottom:80px;max-width:100%;overflow-x:hidden}  /* ruang untuk bottom nav */
   .card{padding:14px}
   .pt-box .ptv{font-size:18px}
   .cn-val{font-size:13px}
@@ -707,6 +707,8 @@ select.form-control option{background:var(--card);color:var(--text)}
   .saving-grid{gap:10px;grid-template-columns:1fr}
   .saving-col-form{order:1}
   .saving-col-result{order:2}
+  /* Paksa table tidak melebar ke luar viewport */
+  .port-scroll{max-width:100%;overflow-x:auto}
   .info-banner{font-size:12px;padding:10px 14px}
   .result-grid{grid-template-columns:1fr 1fr;gap:8px}
   .result-box{padding:10px 8px}
@@ -1768,9 +1770,25 @@ function renderYoY(code) {
       </table>
     </div>`;
 
-  // statsEl: ambil rows HTML yang disimpan renderStats (hindari duplikat judul)
+  // statsEl: ambil rows HTML yang disimpan renderStats
   const statsEl = document.getElementById('statsContent');
   const statsRowsHtml = (statsEl && statsEl.dataset.rowsHtml) ? statsEl.dataset.rowsHtml : '';
+
+  // Desktop: YoY saja — stats sudah tampil dari #statsContent (tidak dobel)
+  // Mobile : combined scroll stats + YoY dalam satu paket geser
+  const isMobile = window.innerWidth <= 640;
+
+  if (!isMobile) {
+    el.innerHTML = `
+      <div class="yoy-inline-wrap">
+        <div class="yoy-inline-divider"><span>YoY Analysis</span></div>
+        <div class="yoy-inline-grid">
+          ${makeTable(top4, 'up', '📈 Kenaikan Terbesar')}
+          ${makeTable(bot4, 'dn', '📉 Penurunan Terbesar')}
+        </div>
+      </div>`;
+    return;
+  }
 
   el.innerHTML = `
     <div class="yoy-inline-wrap">
