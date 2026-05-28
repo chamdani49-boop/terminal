@@ -218,6 +218,7 @@ a{color:inherit;text-decoration:none}
   font-size:11px;font-weight:700;
 }
 @media(max-width:600px){
+  .stock-ticker-track{animation-duration:4200s}
   .st-item{padding:4px 12px;gap:6px}
   .st-code,.st-price{font-size:12px}
   .st-chg{font-size:10px}
@@ -270,6 +271,9 @@ a{color:inherit;text-decoration:none}
   background:linear-gradient(90deg,transparent,var(--border) 20%,var(--border) 80%,transparent);
   margin:14px -20px 14px;
 }
+
+/* search-wrap-mobile disembunyikan di desktop */
+.search-wrap-mobile{display:none}
 
 /* ── STOCK HEADER ── */
 .stock-hero{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
@@ -568,30 +572,35 @@ select.form-control option{background:var(--card);color:var(--text)}
 }
 
 @media(max-width:640px){
-  /* ── HEADER MOBILE ──
-     Baris 1: [Economstock SAHAM]  [☀ toggle]
-     Baris 2: [kolom pencarian full width]
-  */
+  /* ── HEADER MOBILE: logo kiri, theme toggle kanan — satu baris bersih ── */
   .top-bar{
-    flex-wrap:wrap;height:auto;padding:10px 12px;gap:8px;
+    flex-wrap:nowrap;height:auto;padding:10px 12px;gap:8px;
     align-items:center;
   }
   .top-bar .logo{flex:1 1 auto}
   /* Nav tabs disembunyikan di mobile — diganti bottom bar */
   .nav-tabs{display:none}
-  /* Theme toggle — baris 1, kanan logo */
+  /* Search desktop disembunyikan, search mobile tampil di bawah header */
+  .search-wrap-desktop{display:none}
+  .search-wrap-mobile{
+    display:block;
+    width:100%;
+    background:var(--card);
+    border-bottom:1px solid var(--border);
+    padding:8px 12px;
+    position:sticky;top:var(--header-h);z-index:89;
+  }
+  .search-wrap-mobile input{
+    width:100%;background:var(--bg2);border:1px solid var(--border);
+    border-radius:var(--radius-pill);padding:10px 14px 10px 38px;
+    font-size:14px;color:var(--text);
+  }
+  .search-wrap-mobile .ico{position:absolute;left:25px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3)}
+  /* Theme toggle */
   .theme-toggle{
     flex-shrink:0;display:inline-flex;
     width:40px;height:40px;font-size:17px;
   }
-  /* Search — baris 2, full width */
-  .search-wrap{
-    order:99;flex:0 0 100%;width:100%;max-width:100%;
-  }
-  .search-wrap input{
-    opacity:1;pointer-events:auto;width:100%;
-  }
-  .search-wrap .ico{font-size:16px}
   .pt-grid{grid-template-columns:1fr 1fr}
   .page{padding:14px 10px;padding-bottom:80px}  /* ruang untuk bottom nav */
   .card{padding:14px}
@@ -776,7 +785,7 @@ select.form-control option{background:var(--card);color:var(--text)}
 <!-- TOP BAR -->
 <header class="top-bar">
   <div class="logo">Economstock<span>SAHAM</span></div>
-  <div class="search-wrap">
+  <div class="search-wrap search-wrap-desktop">
     <span class="ico">⌕</span>
     <input type="text" id="searchInput" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off">
     <div class="search-drop" id="searchDrop"></div>
@@ -790,6 +799,13 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
   </nav>
 </header>
+
+<!-- SEARCH BAR MOBILE (di bawah header, di atas ticker) -->
+<div class="search-wrap search-wrap-mobile">
+  <span class="ico">⌕</span>
+  <input type="text" id="searchInputMobile" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off">
+  <div class="search-drop" id="searchDropMobile"></div>
+</div>
 
 <!-- STOCK TICKER (running sideways — click an item to load its detail) -->
 <div class="stock-ticker" id="stockTicker" role="region" aria-label="Harga saham berjalan, klik untuk lihat detail">
@@ -1179,25 +1195,39 @@ function buildSearchIndex() {
   const input = document.getElementById('searchInput');
   const drop = document.getElementById('searchDrop');
 
-  input.addEventListener('input', () => {
-    const q = input.value.trim().toUpperCase();
-    if (q.length < 1) { drop.classList.remove('open'); return; }
+  // Fungsi attach search ke satu input+drop pair
+  function attachSearch(input, drop) {
+    if (!input || !drop) return;
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toUpperCase();
+      if (q.length < 1) { drop.classList.remove('open'); return; }
+      const results = DATA.stock_list.filter(s =>
+        s.code.includes(q) || s.name.toUpperCase().includes(q)
+      ).slice(0, 12);
+      drop.innerHTML = results.map(s => `
+        <div class="search-item" onclick="selectStock('${s.code}');input.value='';drop.classList.remove('open')">
+          <span class="code">${s.code}</span>
+          <span class="sname">${s.name}</span>
+          <span class="sector">${s.sector || ''}</span>
+        </div>`).join('');
+      drop.classList.toggle('open', results.length > 0);
+    });
+  }
 
-    const results = DATA.stock_list.filter(s =>
-      s.code.includes(q) || s.name.toUpperCase().includes(q)
-    ).slice(0, 12);
-
-    drop.innerHTML = results.map(s => `
-      <div class="search-item" onclick="selectStock('${s.code}');document.getElementById('searchInput').value='';document.getElementById('searchDrop').classList.remove('open')">
-        <span class="code">${s.code}</span>
-        <span class="sname">${s.name}</span>
-        <span class="sector">${s.sector || ''}</span>
-      </div>`).join('');
-    drop.classList.toggle('open', results.length > 0);
-  });
+  attachSearch(
+    document.getElementById('searchInput'),
+    document.getElementById('searchDrop')
+  );
+  attachSearch(
+    document.getElementById('searchInputMobile'),
+    document.getElementById('searchDropMobile')
+  );
 
   document.addEventListener('click', e => {
-    if (!e.target.closest('.search-wrap')) drop.classList.remove('open');
+    if (!e.target.closest('.search-wrap')) {
+      document.getElementById('searchDrop').classList.remove('open');
+      document.getElementById('searchDropMobile').classList.remove('open');
+    }
   });
 }
 
