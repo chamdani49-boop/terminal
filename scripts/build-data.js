@@ -908,11 +908,14 @@ function computeCorrelations(history) {
 }
 
 function computeZcores(stats) {
+  // Rumus Excel: Z Core = (YTD - Avg/th) / Std/th
+  // Avg/th = avg_annual = avg_monthly * 12
+  // Std/th = std_annual  = std_monthly * sqrt(12)
   const out = {};
   for (const t of Object.keys(stats)) {
     const s = stats[t];
-    if (s.std_monthly && s.std_monthly !== 0 && s.mom != null) {
-      out[t] = Math.round(((s.mom - s.avg_monthly) / s.std_monthly) * 100) / 100;
+    if (s.std_annual && s.std_annual !== 0 && s.ytd != null) {
+      out[t] = Math.round(((s.ytd - s.avg_annual) / s.std_annual) * 100) / 100;
     }
   }
   return out;
