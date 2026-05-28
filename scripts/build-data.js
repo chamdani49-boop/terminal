@@ -526,7 +526,8 @@ function parseConsensus(csv, latestPrices, debug = {}) {
 // ─────────────────────────────────────────────
 // Live realtime sheet parser
 // Layout fleksibel:
-//   (a) Berheader   → "Ticker | Harga Live | % Live" (atau alias-nya).
+//   (a) Berheader   → "Ticker | Harga Live | % Live | Max 1 Tahun | when max | LOW 1 Tahun | when low"
+//                     (atau alias-nya). Kolom E-H opsional.
 //   (b) Headerless  → langsung data dari row 1: kolom A = ticker code,
 //                     kolom B = harga, kolom C = %change. Di-detect kalau
 //                     row 0 isinya cocok dengan TICKER_RX + numeric > 0.
@@ -555,10 +556,11 @@ function parseLive(csv, debug = {}) {
       debug.live_headerless = true;
       debug.live_header_idx = -1;
       debug.live_header_sample = r0;
-      debug.live_cols = { iTicker: 0, iPrice: 1, iPct: iPctHl };
+      debug.live_cols = { iTicker: 0, iPrice: 1, iPct: iPctHl, iMaxPrice: -1, iMaxDate: -1, iLowPrice: -1, iLowDate: -1 };
       // Default mode 'percent': nilai di kolom %change adalah angka percent
       // (0,77 → 0,77%). Range realistis IDX bikin ini default yang aman.
-      return _parseLiveBody(rows, /*dataStart=*/0, /*iTicker=*/0, /*iPrice=*/1, iPctHl, 'percent');
+      return _parseLiveBody(rows, /*dataStart=*/0, /*iTicker=*/0, /*iPrice=*/1, iPctHl,
+        /*iMaxPrice=*/-1, /*iMaxDate=*/-1, /*iLowPrice=*/-1, /*iLowDate=*/-1, 'percent');
     }
   }
 
@@ -623,7 +625,18 @@ function parseLive(csv, debug = {}) {
     }
   }
 
-  debug.live_cols = { iTicker, iPrice, iPct };
+  // ── Kolom High/Low 1 Tahun (opsional, kolom E–H di sheet) ──
+  // Nama header yang diterima (case-insensitive, spasi/tanda baca di-strip oleh norm()):
+  //   Max 1 Tahun / max1tahun / high1y / max1y / highest / tertinggi / highs
+  //   when max / whenmax / tanggalmax / tglmax / datemax / datehigh
+  //   LOW 1 Tahun / low1tahun / low1y / terendah / lows / lowest
+  //   when low / whenlow / tanggallow / tgllow / datelow / datelowest
+  const iMaxPrice = findFz('max1tahun','max1y','high1y','highest','tertinggi','highs','max','high');
+  const iMaxDate  = findFz('whenmax','tanggalmax','tglmax','datemax','datehigh','wmax','tanggaltertinggi');
+  const iLowPrice = findFz('low1tahun','low1y','lowest','terendah','lows','low');
+  const iLowDate  = findFz('whenlow','tanggallow','tgllow','datelow','datelowest','wlow','tanggalterendah');
+
+  debug.live_cols = { iTicker, iPrice, iPct, iMaxPrice, iMaxDate, iLowPrice, iLowDate };
 
   if (iTicker < 0 || iPrice < 0) {
     debug.live_warning = 'Could not locate ticker or price column in live sheet';
@@ -647,7 +660,8 @@ function parseLive(csv, debug = {}) {
       debug.live_pct_mode_inferred = 'percent (header contains %)';
     }
   }
-  return _parseLiveBody(rows, headerIdx + 1, iTicker, iPrice, iPct, pctMode);
+  return _parseLiveBody(rows, headerIdx + 1, iTicker, iPrice, iPct,
+    iMaxPrice, iMaxDate, iLowPrice, iLowDate, pctMode);
 }
 
 /**
@@ -656,8 +670,13 @@ function parseLive(csv, debug = {}) {
  *
  * @param {string} pctMode - 'percent' (selalu bagi 100) atau 'auto' (per-row
  *   heuristic: % atau |n|>1 → bagi 100; selain itu fractional).
+ * @param {number} iMaxPrice - kolom indeks "Max 1 Tahun" (-1 jika tidak ada)
+ * @param {number} iMaxDate  - kolom indeks "when max"   (-1 jika tidak ada)
+ * @param {number} iLowPrice - kolom indeks "LOW 1 Tahun" (-1 jika tidak ada)
+ * @param {number} iLowDate  - kolom indeks "when low"   (-1 jika tidak ada)
  */
-function _parseLiveBody(rows, dataStart, iTicker, iPrice, iPct, pctMode) {
+function _parseLiveBody(rows, dataStart, iTicker, iPrice, iPct,
+    iMaxPrice, iMaxDate, iLowPrice, iLowDate, pctMode) {
   const out = {};
   for (let r = dataStart; r < rows.length; r++) {
     const row = rows[r];
@@ -687,7 +706,31 @@ function _parseLiveBody(rows, dataStart, iTicker, iPrice, iPct, pctMode) {
       }
     }
 
-    out[t] = { price, change_pct: pct };
+    // ── High/Low 1 Tahun ──
+    // Parse harga & tanggal. Tanggal di-normalize ke ISO "YYYY-MM-DD".
+    // Kalau parse gagal → null (frontend akan fallback ke price_history).
+    const maxPrice = iMaxPrice >= 0 ? toNum(row[iMaxPrice]) : null;
+    const lowPrice = iLowPrice >= 0 ? toNum(row[iLowPrice]) : null;
+
+    let maxDate = null;
+    if (iMaxDate >= 0) {
+      const d = parseDate(String(row[iMaxDate] || '').trim());
+      if (d) maxDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+    }
+    let lowDate = null;
+    if (iLowDate >= 0) {
+      const d = parseDate(String(row[iLowDate] || '').trim());
+      if (d) lowDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+    }
+
+    out[t] = {
+      price,
+      change_pct: pct,
+      max_price: (Number.isFinite(maxPrice) && maxPrice > 0) ? maxPrice : null,
+      max_date:  maxDate,
+      low_price: (Number.isFinite(lowPrice) && lowPrice > 0) ? lowPrice : null,
+      low_date:  lowDate,
+    };
   }
   return out;
 }

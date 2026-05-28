@@ -2046,113 +2046,159 @@ function getRiskRating(maxDrawdown) {
 
 /**
  * Hitung lengkap rating untuk satu rec entry.
- * @param {object} r   - rec object: { date, suggestion, target_price, firm, ... }
+ *
+ * Sumber data High/Low (prioritas):
+ *   1. DATA.live[code].{max_price, max_date, low_price, low_date}
+ *      → HANYA dipakai jika tanggal kejadian SETELAH tanggal rilis rec.
+ *        Jika tanggal high/low sebelum rilis, data tersebut tidak relevan
+ *        (terjadi sebelum rec ini ada) → fallback ke price_history.
+ *   2. price_history sejak releaseIdx (monthly OHLC-approximation) — fallback
+ *      kalau live data tidak ada / tanggalnya sebelum rilis.
+ *
+ * @param {object} r    - rec object: { date, suggestion, target_price, ... }
  * @param {string} code - kode saham
- * @returns {object|null} { returns, risk, achievement, maxDrawdown,
- *                          releasePrice, currentPrice, currentReturn,
- *                          perf1m, perf3m, perf6m, perf12m, perfInception,
- *                          highest, highestPct, lowest, lowestPct, ageMonths }
- *         null  = data tidak cukup (rec bulan ini, atau price_history kosong)
+ * @returns {object|null}
+ *   null = data tidak cukup (rec bulan ini, atau price_history kosong)
  */
 function getRecRating(r, code) {
   const ph = DATA.price_history || [];
   if (!ph.length || !r.date) return null;
 
-  // Temukan release price: harga pada bulan rilis rec
+  // ── Release price: harga pada bulan rilis rec ──────────────────────────
   // r.date format "YYYY-MM-DD" atau "YYYY-MM"
-  const recYM = String(r.date).slice(0, 7); // "2026-01"
+  const recDateStr = String(r.date); // mis. "2026-01-29"
+  const recYM      = recDateStr.slice(0, 7); // "2026-01"
 
-  // Cari indeks bulan rilis di price_history
   let releaseIdx = -1;
   for (let i = 0; i < ph.length; i++) {
     const rowYM = String(ph[i].date || '').slice(0, 7);
     if (rowYM === recYM) { releaseIdx = i; break; }
-    // Kalau tidak exact match, ambil bulan terdekat sebelumnya
-    if (rowYM > recYM) {
-      releaseIdx = Math.max(0, i - 1);
-      break;
-    }
+    if (rowYM > recYM)  { releaseIdx = Math.max(0, i - 1); break; }
   }
-  if (releaseIdx < 0) releaseIdx = ph.length - 1; // fallback ke bulan terbaru
+  if (releaseIdx < 0) releaseIdx = ph.length - 1;
 
   const releasePrice = ph[releaseIdx][code];
   if (!releasePrice || releasePrice <= 0) return null;
 
-  // Current price = harga bulan terakhir
-  const lastRow = ph[ph.length - 1];
+  // ── Current price ───────────────────────────────────────────────────────
+  const lastRow     = ph[ph.length - 1];
   const currentPrice = lastRow[code];
   if (!currentPrice || currentPrice <= 0) return null;
 
-  // Rec harus minimal 1 bulan lalu agar ada data berikutnya
+  // Rec harus minimal 1 bulan lalu
   const ageMonths = ph.length - 1 - releaseIdx;
   if (ageMonths < 1) return null;
 
-  // Slice price history sejak rilis sampai sekarang
+  // ── Price slice sejak rilis (monthly, untuk performance + fallback) ─────
   const slice = ph.slice(releaseIdx).map(row => row[code]).filter(v => v > 0);
   if (!slice.length) return null;
 
-  // currentReturn = (currentPrice - releasePrice) / releasePrice
-  const currentReturn = (currentPrice - releasePrice) / releasePrice;
+  // ── Helper: apakah sebuah tanggal ISO "YYYY-MM-DD" > tanggal rilis? ─────
+  // Bandingkan string langsung — format ISO sortable secara lexicographic.
+  // Toleransi: jika only YM tersedia ("2026-01"), anggap "2026-01-01" → bisa
+  // saja bulan yang sama dengan rilis, jadi kita pakai > bukan >=  sehingga
+  // "sama bulan" tetap dihitung (relevan jika high/low di bulan rilis).
+  function isAfterRelease(isoDateStr) {
+    if (!isoDateStr) return false;
+    // Normalisasi ke minimal "YYYY-MM-DD" untuk compare apples-to-apples
+    const normalized = isoDateStr.length === 7 ? isoDateStr + '-01' : isoDateStr;
+    const relNorm    = recDateStr.length  === 7 ? recDateStr  + '-01' : recDateStr;
+    return normalized >= relNorm; // >= bukan > : same-day rilis tetap valid
+  }
 
-  // Upside target (dari rilis)
+  // ── High/Low: coba live data dulu, fallback ke price_history ───────────
+  const lv = (DATA.live && DATA.live[code]) ? DATA.live[code] : null;
+
+  // Highest since release
+  let highestSince, highestDate, highFromLive = false;
+  if (lv && Number.isFinite(lv.max_price) && lv.max_price > 0 && isAfterRelease(lv.max_date)) {
+    // Live max valid — tapi mungkin price_history punya nilai lebih tinggi
+    // di bulan-bulan awal pasca rilis (monthly granularity bisa lebih tinggi
+    // dari "max 1 tahun" yang hanya cover 365 hari terakhir).
+    // Ambil yang lebih besar antara live.max_price dan max dari slice.
+    const sliceMax = Math.max(...slice);
+    if (lv.max_price >= sliceMax) {
+      highestSince = lv.max_price;
+      highestDate  = lv.max_date || null;
+      highFromLive = true;
+    } else {
+      highestSince = sliceMax;
+      highestDate  = null; // tidak tahu tanggal pasti dari monthly slice
+    }
+  } else {
+    // Fallback: iterasi slice price_history
+    highestSince = Math.max(...slice);
+    highestDate  = null;
+  }
+
+  // Lowest since release (untuk max drawdown)
+  let lowestSince, lowestDate, lowFromLive = false;
+  if (lv && Number.isFinite(lv.low_price) && lv.low_price > 0 && isAfterRelease(lv.low_date)) {
+    // Live low valid — ambil yang lebih kecil (lebih buruk) antara live dan slice
+    const sliceMin = Math.min(...slice);
+    if (lv.low_price <= sliceMin) {
+      lowestSince = lv.low_price;
+      lowestDate  = lv.low_date || null;
+      lowFromLive = true;
+    } else {
+      lowestSince = sliceMin;
+      lowestDate  = null;
+    }
+  } else {
+    lowestSince = Math.min(...slice);
+    lowestDate  = null;
+  }
+
+  // ── Derived metrics ─────────────────────────────────────────────────────
+  const currentReturn = (currentPrice - releasePrice) / releasePrice;
+  const maxDrawdown   = (lowestSince  - releasePrice) / releasePrice;
+
   const targetUpside = r.target_price
     ? (r.target_price - releasePrice) / releasePrice
     : null;
 
   // Achievement — sign-aware untuk BUY dan SELL
+  // BUY:  achievement positif = saham naik mendekati/melampaui target
+  // SELL: achievement positif = saham turun mendekati/melampaui target
+  //       (currentReturn negatif / targetUpside negatif → keduanya negatif → rasio positif)
   let achievement = null;
   if (targetUpside != null && targetUpside !== 0) {
-    if (r.suggestion === 'SELL') {
-      // SELL: target di bawah rilis. Achievement positif kalau saham turun.
-      // Normalkan: achievement = currentReturn / targetUpside (keduanya negatif
-      // untuk call yang benar → hasil positif)
-      achievement = currentReturn / targetUpside;
-    } else {
-      // BUY / NEUTRAL: biasa
-      achievement = currentReturn / targetUpside;
-    }
+    achievement = currentReturn / targetUpside;
   } else if (targetUpside === 0) {
     achievement = 0;
   }
 
-  // Max drawdown sejak rilis (dari release price ke titik terendah)
-  const lowestSince = Math.min(...slice);
-  const maxDrawdown = (lowestSince - releasePrice) / releasePrice;
-
-  // Highest sejak rilis
-  const highestSince = Math.max(...slice);
-
-  // Performance multi-period (rolling dari hari ini ke belakang)
-  // 1 Bln = indeks -1 vs -2 (sekarang vs 1 bulan lalu)
-  // 3 Bln = indeks terakhir vs 3 bulan lalu di slice, dst.
+  // ── Performance multi-period (rolling dari sekarang ke belakang) ────────
   function perfPeriod(months) {
-    // Berapa bulan tersedia sejak rilis?
     if (ageMonths < months) return null;
-    // Ambil dari slice (sudah di-filter dari releaseIdx)
-    const a = slice[slice.length - 1]; // harga sekarang
+    const a = slice[slice.length - 1];
     const b = slice[slice.length - 1 - months];
     if (!b || b <= 0) return null;
     return (a - b) / b;
   }
 
   return {
-    returns: achievement != null ? getReturnsRating(achievement) : null,
-    risk: getRiskRating(maxDrawdown),
+    returns:  achievement != null ? getReturnsRating(achievement) : null,
+    risk:     getRiskRating(maxDrawdown),
     achievement,
     maxDrawdown,
     releasePrice,
     currentPrice,
     currentReturn,
     targetUpside,
-    perf1m:  perfPeriod(1),
-    perf3m:  perfPeriod(3),
-    perf6m:  perfPeriod(6),
-    perf12m: perfPeriod(12),
+    perf1m:       perfPeriod(1),
+    perf3m:       perfPeriod(3),
+    perf6m:       perfPeriod(6),
+    perf12m:      perfPeriod(12),
     perfInception: currentReturn,
-    highest: highestSince,
-    highestPct: (highestSince - releasePrice) / releasePrice,
-    lowest: lowestSince,
-    lowestPct: maxDrawdown,
+    highest:      highestSince,
+    highestPct:   (highestSince - releasePrice) / releasePrice,
+    highestDate:  highestDate,
+    highFromLive: highFromLive,
+    lowest:       lowestSince,
+    lowestPct:    maxDrawdown,
+    lowestDate:   lowestDate,
+    lowFromLive:  lowFromLive,
     ageMonths,
   };
 }
@@ -2327,7 +2373,7 @@ function showRecDetail(code, recIdx) {
         <span class="rec-modal-detail-label">Tertinggi Sejak Rilis</span>
         <span class="rec-modal-detail-val">
           ${rating
-            ? `Rp${Math.round(rating.highest).toLocaleString('id')} <span class="up" style="font-size:11px">(+${(rating.highestPct*100).toFixed(2)}%)</span>`
+            ? `Rp${Math.round(rating.highest).toLocaleString('id')} <span class="up" style="font-size:11px">(+${(rating.highestPct*100).toFixed(2)}%)</span>${rating.highestDate ? `<span style="color:var(--text3);font-size:10px;font-weight:600;margin-left:5px">${rating.highestDate}</span>` : ''}${rating.highFromLive ? `<span style="color:var(--text3);font-size:10px;margin-left:3px" title="Data dari Live Sheet">📊</span>` : ''}`
             : '—'}
         </span>
       </div>
@@ -2335,7 +2381,7 @@ function showRecDetail(code, recIdx) {
         <span class="rec-modal-detail-label">Terendah Sejak Rilis</span>
         <span class="rec-modal-detail-val">
           ${rating
-            ? `Rp${Math.round(rating.lowest).toLocaleString('id')} <span class="dn" style="font-size:11px">(${(rating.lowestPct*100).toFixed(2)}%)</span>`
+            ? `Rp${Math.round(rating.lowest).toLocaleString('id')} <span class="dn" style="font-size:11px">(${(rating.lowestPct*100).toFixed(2)}%)</span>${rating.lowestDate ? `<span style="color:var(--text3);font-size:10px;font-weight:600;margin-left:5px">${rating.lowestDate}</span>` : ''}${rating.lowFromLive ? `<span style="color:var(--text3);font-size:10px;margin-left:3px" title="Data dari Live Sheet">📊</span>` : ''}`
             : '—'}
         </span>
       </div>
