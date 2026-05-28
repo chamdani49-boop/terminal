@@ -297,6 +297,65 @@ a{color:inherit;text-decoration:none}
 }
 .zcore-val{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px}
 
+/* ── INFO BUTTON & MODAL ──
+   Modal pakai position:fixed agar tidak pernah terpotong oleh card overflow,
+   z-index tinggi supaya selalu di atas semua konten. */
+.info-btn{
+  width:18px;height:18px;border-radius:50%;
+  border:1px solid var(--border);background:var(--card);
+  color:var(--text2);font-size:11px;font-weight:800;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  font-family:'Plus Jakarta Sans',sans-serif;line-height:1;padding:0;
+  transition:all .15s;flex-shrink:0;
+}
+.info-btn:hover{
+  background:var(--accent);color:#fff;border-color:transparent;
+  transform:scale(1.1);
+}
+.info-modal-overlay{
+  display:none;
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,.55);
+  align-items:center;justify-content:center;
+  padding:20px;
+  -webkit-tap-highlight-color:transparent;
+}
+.info-modal-overlay.open{display:flex}
+.info-modal{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:0 20px 60px rgba(0,0,0,.4);
+  max-width:420px;width:100%;
+  max-height:calc(100vh - 40px);
+  overflow-y:auto;
+  padding:20px 22px;
+  position:relative;
+  animation:info-modal-in .2s ease-out;
+}
+@keyframes info-modal-in{
+  from{opacity:0;transform:translateY(8px) scale(.97)}
+  to  {opacity:1;transform:translateY(0) scale(1)}
+}
+.info-modal-title{
+  font-size:13px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--accent);
+  margin-bottom:12px;padding-right:30px;
+}
+.info-modal-body{
+  font-size:14px;line-height:1.6;color:var(--text);
+  font-weight:500;
+}
+.info-modal-close{
+  position:absolute;top:12px;right:12px;
+  width:30px;height:30px;border-radius:50%;
+  border:none;background:var(--bg2);color:var(--text2);
+  font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;line-height:1;
+}
+.info-modal-close:hover{background:var(--red);color:#fff}
+
 /* ── HERO MIDDLE COLUMN (z-core + korelasi) ──
    Universal default: stack vertical, right-align (kompatibel dgn current
    mobile yg menampilkan zcore + korelasi di bawah price block). */
@@ -2004,7 +2063,10 @@ function renderPriceTarget(code) {
          SELL price = μ + N_sell × σ
          Saat current price ≤ BUY trigger atau ≥ SELL trigger → signal nyala. -->
     <div style="padding:12px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border2)">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Standar Deviasi Buy / Sell</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2)">Standar Deviasi Buy / Sell</span>
+        <button type="button" class="info-btn" aria-label="Info" onclick="showInfoModal('Panduan Batas Beli &amp; Jual','Batas beli dan batas jual sesuaikan dengan <strong>YoY Analysis</strong>:<br><br>• <strong>Batas beli</strong> baiknya tidak melebihi angka % <span style=&quot;color:var(--red);font-weight:700&quot;>penurunan terbesar</span>.<br>• <strong>Batas jual</strong> baiknya tidak melebihi angka % <span style=&quot;color:var(--green);font-weight:700&quot;>kenaikan terbesar</span>.')">?</button>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <label style="font-size:11px;color:var(--text2);font-weight:700;display:flex;flex-direction:column;gap:4px">
           Batas Beli
@@ -2194,12 +2256,12 @@ function renderConsensus(code) {
       <div class="cs-axis-end hi">High<span class="v">${fmt(high)}</span></div>
     </div>
 
-    <!-- 3 kotak HIGH / TARGET / LOW + % gap dari harga sekarang -->
+    <!-- 3 kotak LOW / TARGET / HIGH + % gap dari harga sekarang -->
     <div class="consensus-numbers" style="margin-top:8px">
       <div class="cn-box">
-        <div class="cn-label">High</div>
-        <div class="cn-val up">${fmt(high)}</div>
-        <div class="cn-gap ${gapCls(gHigh)}">${fmtGap(gHigh)}</div>
+        <div class="cn-label">Low</div>
+        <div class="cn-val dn">${fmt(low)}</div>
+        <div class="cn-gap ${gapCls(gLow)}">${fmtGap(gLow)}</div>
       </div>
       <div class="cn-box">
         <div class="cn-label">Target</div>
@@ -2207,9 +2269,9 @@ function renderConsensus(code) {
         <div class="cn-gap ${gapCls(gTgt)}">${fmtGap(gTgt)}</div>
       </div>
       <div class="cn-box">
-        <div class="cn-label">Low</div>
-        <div class="cn-val dn">${fmt(low)}</div>
-        <div class="cn-gap ${gapCls(gLow)}">${fmtGap(gLow)}</div>
+        <div class="cn-label">High</div>
+        <div class="cn-val up">${fmt(high)}</div>
+        <div class="cn-gap ${gapCls(gHigh)}">${fmtGap(gHigh)}</div>
       </div>
     </div>
     <div style="margin-top:10px">
@@ -2643,6 +2705,47 @@ loadData();
     <span class="bn-icon">🔍</span>Consensus
   </button>
 </nav>
+
+<!-- INFO MODAL (universal, position:fixed agar tidak terpotong) -->
+<div class="info-modal-overlay" id="infoModalOverlay" onclick="closeInfoModalOnBackdrop(event)">
+  <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+    <button type="button" class="info-modal-close" aria-label="Tutup" onclick="closeInfoModal()">×</button>
+    <div class="info-modal-title" id="infoModalTitle">Info</div>
+    <div class="info-modal-body" id="infoModalBody"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// INFO MODAL — universal popup yang tidak akan terpotong
+// karena pakai position:fixed di body level (z-index 9999).
+// ═══════════════════════════════════════════
+function showInfoModal(title, html) {
+  const overlay = document.getElementById('infoModalOverlay');
+  const t = document.getElementById('infoModalTitle');
+  const b = document.getElementById('infoModalBody');
+  if (!overlay || !t || !b) return;
+  t.textContent = title || 'Info';
+  b.innerHTML = html || '';
+  overlay.classList.add('open');
+  // Prevent body scroll while modal is open
+  document.body.style.overflow = 'hidden';
+}
+function closeInfoModal() {
+  const overlay = document.getElementById('infoModalOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeInfoModalOnBackdrop(e) {
+  // Hanya tutup kalau klik backdrop (overlay), bukan konten modal
+  if (e.target === e.currentTarget) closeInfoModal();
+}
+// ESC untuk tutup modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeInfoModal();
+});
+</script>
 
 </body>
 </html>
