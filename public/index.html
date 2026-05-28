@@ -217,7 +217,6 @@ a{color:inherit;text-decoration:none}
   font-size:11px;font-weight:700;
 }
 @media(max-width:600px){
-  .stock-ticker-track{animation-duration:45s}
   .st-item{padding:4px 12px;gap:6px}
   .st-code,.st-price{font-size:12px}
   .st-chg{font-size:10px}
@@ -567,10 +566,35 @@ select.form-control option{background:var(--card);color:var(--text)}
 
 @media(max-width:640px){
   .top-bar{flex-wrap:wrap;height:auto;padding:10px;gap:8px}
-  /* Header mobile: logo kiri, theme kanan, search full width baris ke-2 */
+  /* Header mobile: logo kiri, theme toggle kanan (baris 1), search baris 2 */
   .top-bar .logo{order:1;flex-shrink:0}
-  .top-bar .nav-tabs{order:2;margin-left:auto}
-  .search-wrap{order:3;max-width:100%;width:100%}
+  .top-bar .nav-tabs{order:2;margin-left:auto;display:none}
+  .top-bar .theme-toggle{order:3;flex-shrink:0;display:inline-flex;margin-left:auto}
+  .search-wrap{order:4;max-width:100%;width:100%}
+  /* Kolom pencarian: tampilkan hanya icon di mobile, expand saat focus */
+  .search-wrap{
+    position:relative;
+    width:38px;max-width:38px;
+    transition:max-width .3s ease, width .3s ease;
+    overflow:hidden;
+  }
+  .search-wrap input{
+    padding-left:38px;padding-right:10px;
+    background:var(--bg2);
+    opacity:0;width:100%;
+  }
+  .search-wrap.expanded,
+  .search-wrap:focus-within{
+    width:100%;max-width:100%;
+  }
+  .search-wrap.expanded input,
+  .search-wrap:focus-within input{
+    opacity:1;
+  }
+  .search-wrap .ico{
+    z-index:2;cursor:pointer;font-size:16px;
+    pointer-events:auto;
+  }
   /* Nav tabs disembunyikan dari header di mobile — diganti bottom bar */
   .nav-tabs{display:none}
   .pt-grid{grid-template-columns:1fr 1fr}
@@ -602,8 +626,10 @@ select.form-control option{background:var(--card);color:var(--text)}
   .hero-stats-divider{margin:12px -14px 10px}
 
   /* ── STATS + YOY: SATU PAKET SCROLL MENYAMPING ── */
-  /* statsContent hanya holder rows, tidak scroll sendiri */
-  #statsContent{overflow:visible}
+  /* statsContent disembunyikan di mobile — rows-nya sudah ada di combined-scroll */
+  #statsContent{display:none}
+  /* card-title "Statistik Deskriptif" disembunyikan di mobile — sudah ada di combined-scroll */
+  #statsCardTitle{display:none}
   .stats-rows-only{margin-bottom:0}
 
   /* Combined scroll: stats rows + YoY jadi satu paket */
@@ -615,6 +641,10 @@ select.form-control option{background:var(--card);color:var(--text)}
   }
   .combined-scroll-inner{
     min-width:680px;
+  }
+  .stats-mobile-title{
+    font-size:11px;font-weight:800;text-transform:uppercase;
+    letter-spacing:1.2px;color:var(--text2);margin-bottom:8px;
   }
   /* Stats rows di dalam combined scroll — full 10 kolom */
   .combined-scroll-inner .stats-row,
@@ -650,13 +680,10 @@ select.form-control option{background:var(--card);color:var(--text)}
   /* ── BOTTOM NAV (mobile only) ── */
   .bottom-nav{
     display:flex;
-    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    position:fixed;bottom:0;left:0;right:0;z-index:9999;
     background:var(--card);border-top:1px solid var(--border);
     padding:8px 0 calc(8px + env(safe-area-inset-bottom));
     box-shadow:0 -4px 20px rgba(0,0,0,.12);
-    /* GPU layer — pastikan fixed tetap di viewport di semua mobile browser */
-    transform:translateZ(0);
-    -webkit-transform:translateZ(0);
   }
   .bottom-nav-item{
     flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -759,13 +786,13 @@ select.form-control option{background:var(--card);color:var(--text)}
     <input type="text" id="searchInput" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off">
     <div class="search-drop" id="searchDrop"></div>
   </div>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+    <span id="themeIcon">☀</span>
+  </button>
   <nav class="nav-tabs">
     <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
     <div class="nav-tab" onclick="showPage('menabung')">Menabung</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
-    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
-      <span id="themeIcon">☀</span>
-    </button>
   </nav>
 </header>
 
@@ -787,7 +814,7 @@ select.form-control option{background:var(--card);color:var(--text)}
       <div class="card card-stats" id="statsCard">
         <div id="stockHero"><div class="loading"><div class="spinner"></div> Memuat data...</div></div>
         <div class="hero-stats-divider"></div>
-        <div class="card-title" style="margin-bottom:10px">Statistik Deskriptif</div>
+        <div class="card-title" id="statsCardTitle" style="margin-bottom:10px">Statistik Deskriptif</div>
         <div id="statsContent"><div class="loading"><div class="spinner"></div></div></div>
         <div id="yoyContent"></div>
       </div>
@@ -1661,6 +1688,8 @@ function renderStats(code) {
       ${stIHSG ? `<div class="stats-row-ihsg">${makeRow('IHSG', stIHSG)}</div>` : ''}
     </div>
   `;
+  // Simpan rows HTML untuk dipakai renderYoY di combined scroll (mobile)
+  el.dataset.rowsHtml = el.querySelector('.stats-rows-only').outerHTML;
 }
 
 // ─ YoY Analysis ─
@@ -1703,14 +1732,15 @@ function renderYoY(code) {
       </table>
     </div>`;
 
-  // statsEl: ambil konten stats yang sudah di-render (rows only, tanpa scroll wrapper)
+  // statsEl: ambil rows HTML yang disimpan renderStats (hindari duplikat judul)
   const statsEl = document.getElementById('statsContent');
-  const statsRowsHtml = statsEl ? statsEl.innerHTML : '';
+  const statsRowsHtml = (statsEl && statsEl.dataset.rowsHtml) ? statsEl.dataset.rowsHtml : '';
 
   el.innerHTML = `
     <div class="yoy-inline-wrap">
       <div class="combined-scroll-wrap">
         <div class="combined-scroll-inner">
+          <div class="stats-mobile-title">Statistik Deskriptif</div>
           <div class="stats-rows-block">
             ${statsRowsHtml}
           </div>
