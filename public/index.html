@@ -181,7 +181,7 @@ a{color:inherit;text-decoration:none}
 .stock-ticker-track{
   display:inline-flex;align-items:center;gap:0;
   padding:7px 0;white-space:nowrap;
-  animation:ticker-scroll 60s linear infinite;
+  animation:ticker-scroll 600s linear infinite;
   animation-play-state:paused;   /* mulai paused — dijalankan JS setelah render */
   animation-delay:0s;
   will-change:transform;
@@ -252,6 +252,8 @@ a{color:inherit;text-decoration:none}
   overflow:hidden;
 }
 [data-theme="dark"] .card{box-shadow:var(--shadow-card),0 0 0 1px var(--border) inset}
+/* card-consensus boleh overflow agar HTML tooltip donut tidak terpotong */
+.card-consensus{overflow:visible}
 .card-title{
   font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
   color:var(--text);margin-bottom:14px;
@@ -352,7 +354,7 @@ a{color:inherit;text-decoration:none}
    konsisten dan gak ada text overflow yg ke-truncate.
 */
 /* Konsensus — donut kiri, list NEUTRAL/BUY/SELL kanan, sejajar */
-.consensus-grid{display:flex;flex-direction:row;align-items:center;gap:16px}
+.consensus-grid{display:flex;flex-direction:row;align-items:center;gap:16px;overflow:visible}
 .consensus-chart-wrap{position:relative;width:120px;height:120px;flex-shrink:0;overflow:visible}
 .consensus-stats{display:flex;flex-direction:column;justify-content:center;gap:10px;flex:1;min-width:0}
 .consensus-row{
@@ -567,46 +569,29 @@ select.form-control option{background:var(--card);color:var(--text)}
 
 @media(max-width:640px){
   /* ── HEADER MOBILE ──
-     Baris 1: [Economstock SAHAM]  [🔍 icon]  [☀ toggle]
-     Baris 2 (saat search aktif): [kolom pencarian full width]
+     Baris 1: [Economstock SAHAM]  [☀ toggle]
+     Baris 2: [kolom pencarian full width]
   */
   .top-bar{
-    flex-wrap:nowrap;height:auto;padding:10px 12px;gap:8px;
+    flex-wrap:wrap;height:auto;padding:10px 12px;gap:8px;
     align-items:center;
   }
-  .top-bar .logo{flex-shrink:0;margin-right:auto}
-  /* Nav tabs (Desktop) disembunyikan di mobile — diganti bottom bar */
+  .top-bar .logo{flex:1 1 auto}
+  /* Nav tabs disembunyikan di mobile — diganti bottom bar */
   .nav-tabs{display:none}
-  /* Search: jadi tombol icon, expand saat aktif */
-  .search-wrap{
-    order:0;flex:0 0 auto;
-    position:relative;
-    width:44px;max-width:44px;
-    transition:max-width .25s ease, flex .25s ease;
-    overflow:hidden;
-  }
-  .search-wrap input{
-    padding-left:44px;padding-right:10px;
-    background:var(--bg2);
-    opacity:0;width:100%;pointer-events:none;
-  }
-  .search-wrap:focus-within{
-    flex:1 1 auto;max-width:100%;
-  }
-  .search-wrap:focus-within input{
-    opacity:1;pointer-events:auto;
-  }
-  .search-wrap .ico{
-    z-index:2;cursor:pointer;
-    font-size:22px;          /* lebih besar */
-    left:10px;               /* posisi dari kiri */
-    color:var(--text);
-  }
-  /* Theme toggle — selalu tampil di sebelah search */
+  /* Theme toggle — baris 1, kanan logo */
   .theme-toggle{
     flex-shrink:0;display:inline-flex;
     width:40px;height:40px;font-size:17px;
   }
+  /* Search — baris 2, full width */
+  .search-wrap{
+    order:99;flex:0 0 100%;width:100%;max-width:100%;
+  }
+  .search-wrap input{
+    opacity:1;pointer-events:auto;width:100%;
+  }
+  .search-wrap .ico{font-size:16px}
   .pt-grid{grid-template-columns:1fr 1fr}
   .page{padding:14px 10px;padding-bottom:80px}  /* ruang untuk bottom nav */
   .card{padding:14px}
@@ -2054,19 +2039,10 @@ function renderConsensus(code) {
     const ct = chartColors();
 
     // Custom positioner: tooltip selalu muncul di bawah chart, tidak terpotong
-    if (!Chart.registry.plugins.get('belowDonut')) {
-      Chart.registry.add({
-        id: 'belowDonut',
-      });
-    }
-    Chart.Tooltip.positioners.belowChart = function(elements, eventPos) {
+    Chart.Tooltip.positioners.belowChart = function(elements) {
+      if (!elements.length) return false;
       const chart = this.chart;
-      return {
-        x: chart.width / 2,
-        y: chart.height + 8,
-        xAlign: 'center',
-        yAlign: 'top',
-      };
+      return { x: chart.width / 2, y: chart.height + 8 };
     };
     consensusDonutInstance = new Chart(dCtx, {
       type: 'doughnut',
@@ -2077,18 +2053,46 @@ function renderConsensus(code) {
       options:{
         responsive:false,cutout:'65%',
         plugins:{legend:{display:false},tooltip:{
-          backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,
-          bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,
-          padding:8,cornerRadius:8,
-          bodyFont:{size:12,weight:'600'},
-          displayColors:true,boxWidth:10,boxHeight:10,
-          position:'belowChart',
-          callbacks:{
-            title: () => '',
-            label: i => {
-              const pct = total ? ((i.raw/total)*100).toFixed(1) : 0;
-              return ` ${i.label}:  ${i.raw}  (${pct}%)`;
+          enabled:false,   /* matikan tooltip bawaan Chart.js */
+          external: function(context) {
+            // Gunakan HTML tooltip di luar canvas agar tidak terpotong
+            let tipEl = document.getElementById('donutHtmlTip');
+            if (!tipEl) {
+              tipEl = document.createElement('div');
+              tipEl.id = 'donutHtmlTip';
+              tipEl.style.cssText = [
+                'position:absolute',
+                'background:var(--card)',
+                'border:1px solid var(--border)',
+                'border-radius:10px',
+                'padding:8px 12px',
+                'font-size:12px',
+                'font-weight:600',
+                'color:var(--text)',
+                'pointer-events:none',
+                'z-index:999',
+                'white-space:nowrap',
+                'box-shadow:0 4px 16px rgba(0,0,0,.18)',
+                'transition:opacity .1s',
+              ].join(';');
+              // Sisipkan setelah wrapper consensus-chart-wrap agar tetap dalam card
+              dCtx.closest('.consensus-chart-wrap').appendChild(tipEl);
             }
+            const tooltip = context.tooltip;
+            if (tooltip.opacity === 0) { tipEl.style.opacity = '0'; return; }
+            if (!tooltip.dataPoints || !tooltip.dataPoints.length) return;
+            const dp = tooltip.dataPoints[0];
+            const pct = total ? ((dp.raw / total) * 100).toFixed(1) : 0;
+            const colors = ['#d97706','#059669','#e11d48'];
+            const color = colors[dp.dataIndex] || 'var(--accent)';
+            tipEl.innerHTML = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>${dp.label}: <strong>${dp.raw}</strong> (${pct}%)`;
+            // Posisi: tepat di bawah tengah canvas
+            const canvasRect = dCtx.getBoundingClientRect();
+            const wrapRect = dCtx.closest('.consensus-chart-wrap').getBoundingClientRect();
+            tipEl.style.left = '50%';
+            tipEl.style.transform = 'translateX(-50%)';
+            tipEl.style.top = (dCtx.offsetHeight + 6) + 'px';
+            tipEl.style.opacity = '1';
           }
         }}
       }
