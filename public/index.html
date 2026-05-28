@@ -701,6 +701,128 @@ select.form-control option{background:var(--card);color:var(--text)}
 .cs-nums{display:flex;justify-content:space-between;font-size:12px;font-weight:700}
 .cs-target{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
 
+/* ── OVERVIEW VIEW di Consensus ── */
+.ov-view{display:flex;flex-direction:column;gap:14px}
+.ov-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.ov-row{grid-template-columns:1fr}}
+.ov-row > .card{min-width:0}
+
+/* KPI strip */
+.ov-kpi-strip{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;
+}
+@media(max-width:900px){.ov-kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ov-kpi{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:16px 18px;
+  box-shadow:var(--shadow-card);min-width:0;
+  position:relative;overflow:hidden;
+}
+.ov-kpi::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--grad);
+}
+.ov-kpi-label{
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--text2);margin-bottom:6px;
+}
+.ov-kpi-value{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:26px;font-weight:800;
+  font-variant-numeric:tabular-nums;
+  color:var(--text);line-height:1.1;letter-spacing:-.4px;
+}
+.ov-kpi-sub{
+  font-size:11px;color:var(--text2);font-weight:600;margin-top:4px;
+}
+
+/* Sentiment meter (gauge bar) */
+.ov-sent-meter{
+  position:relative;height:14px;border-radius:var(--radius-pill);
+  background:var(--bg3);overflow:hidden;margin:18px 0 10px;
+}
+.ov-sent-meter > div{height:100%}
+.ov-sent-meter .sb{background:var(--green)}
+.ov-sent-meter .sn{background:var(--yellow)}
+.ov-sent-meter .ss{background:var(--red)}
+.ov-sent-stats{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.ov-sent-row{
+  display:grid;grid-template-columns:14px 1fr auto auto;
+  align-items:center;gap:10px;font-size:13px;
+}
+.ov-sent-row .dot{width:10px;height:10px;border-radius:50%}
+.ov-sent-row .name{font-weight:700;color:var(--text)}
+.ov-sent-row .cnt{
+  font-family:'IBM Plex Mono',monospace;font-weight:800;
+  font-variant-numeric:tabular-nums;color:var(--text);
+}
+.ov-sent-row .pct{
+  font-size:11px;color:var(--text2);font-weight:600;
+  font-family:'IBM Plex Mono',monospace;min-width:50px;text-align:right;
+}
+
+/* Top list rows */
+.ov-list{display:flex;flex-direction:column;gap:0}
+.ov-item{
+  display:grid;grid-template-columns:24px minmax(0,1fr) auto;
+  align-items:center;gap:10px;
+  padding:10px 6px;border-bottom:1px dashed var(--border);
+  cursor:pointer;transition:background .15s;border-radius:6px;
+}
+.ov-item:last-child{border-bottom:none}
+.ov-item:hover{background:var(--bg2)}
+.ov-rank{
+  font-family:'IBM Plex Mono',monospace;font-weight:800;
+  color:var(--text3);font-size:12px;text-align:center;
+}
+.ov-item.top-1 .ov-rank{color:var(--accent);font-size:14px}
+.ov-name{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;
+  color:var(--accent);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.ov-fullname{
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;
+  color:var(--text2);margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.ov-meta{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.ov-meta-val{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;
+  font-variant-numeric:tabular-nums;
+}
+.ov-meta-sub{font-size:10px;color:var(--text2);font-weight:600}
+
+/* Sector heatmap rows */
+.ov-sector{
+  display:grid;grid-template-columns:minmax(0,1.4fr) minmax(180px,2fr) auto;
+  align-items:center;gap:14px;padding:11px 4px;
+  border-bottom:1px dashed var(--border);
+}
+.ov-sector:last-child{border-bottom:none}
+.ov-sector-name{font-size:13px;font-weight:700;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ov-sector-bar{
+  display:flex;height:8px;border-radius:var(--radius-pill);
+  overflow:hidden;background:var(--bg3);
+}
+.ov-sector-bar > div{height:100%}
+.ov-sector-bar .b{background:var(--green)}
+.ov-sector-bar .n{background:var(--yellow)}
+.ov-sector-bar .s{background:var(--red)}
+.ov-sector-meta{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
+  font-variant-numeric:tabular-nums;text-align:right;
+  display:flex;flex-direction:column;gap:1px;align-items:flex-end;
+}
+.ov-sector-meta .stk{font-size:10px;color:var(--text2);font-weight:600;font-family:'Plus Jakarta Sans',sans-serif}
+
+@media(max-width:640px){
+  .ov-kpi{padding:12px 14px}
+  .ov-kpi-value{font-size:20px}
+  .ov-kpi-label{font-size:9px}
+  .ov-sector{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .ov-sector-bar{grid-column:1 / -1;margin-top:4px}
+}
+
 /* ── FIRM DETAIL (di dalam page-consensus) ──
    View tabs untuk switch antara "Per Saham" dan "Per Firm". */
 .cv-tabs{
@@ -1519,13 +1641,14 @@ select.form-control option{background:var(--card);color:var(--text)}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
     <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
-      <!-- View toggle: Per Saham / Per Firm -->
+      <!-- View toggle: Overview / Per Saham / Per Firm -->
       <div class="cv-tabs">
-        <button class="cv-tab active" id="cvTabStock" onclick="switchConsensusView('stock')">Per Saham</button>
+        <button class="cv-tab active" id="cvTabOverview" onclick="switchConsensusView('overview')">Overview</button>
+        <button class="cv-tab" id="cvTabStock" onclick="switchConsensusView('stock')">Per Saham</button>
         <button class="cv-tab" id="cvTabFirm" onclick="switchConsensusView('firm')">Per Firm</button>
       </div>
       <!-- Filter bar untuk view "Per Saham" -->
-      <div class="cv-filter cv-filter-stock" id="cvFilterStock" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div class="cv-filter cv-filter-stock" id="cvFilterStock" style="display:none;gap:8px;flex-wrap:wrap;align-items:center">
         <input type="text" id="consensusSearch" class="form-control" style="max-width:200px;font-family:'IBM Plex Sans',sans-serif" placeholder="Filter saham...">
         <div class="radio-btn active" style="padding:6px 14px" onclick="filterConsensus('all',this)">Semua</div>
         <div class="radio-btn" style="padding:6px 14px" onclick="filterConsensus('BUY',this)">BUY</div>
@@ -1541,8 +1664,37 @@ select.form-control option{background:var(--card);color:var(--text)}
       </div>
     </div>
 
+    <!-- Overview view (NEW DEFAULT) -->
+    <div class="ov-view" id="ovView">
+      <div class="ov-kpi-strip" id="ovKpiStrip"></div>
+      <div class="ov-row">
+        <div class="card">
+          <div class="card-title">Market Sentiment</div>
+          <div id="ovSentiment"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Saham · Upside Tertinggi</div>
+          <div id="ovTopUpside"></div>
+        </div>
+      </div>
+      <div class="ov-row">
+        <div class="card">
+          <div class="card-title">Saham · Paling Direkomendasikan</div>
+          <div id="ovTopStocks"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top Firms · Aktivitas Terbanyak</div>
+          <div id="ovTopFirms"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Distribusi per Sektor</div>
+        <div id="ovSectorList"></div>
+      </div>
+    </div>
+
     <!-- Grid saham (existing) -->
-    <div class="consensus-all-grid" id="consensusAllGrid">
+    <div class="consensus-all-grid" id="consensusAllGrid" style="display:none">
       <div class="loading"><div class="spinner"></div> Memuat data konsensus...</div>
     </div>
 
@@ -1719,6 +1871,7 @@ function init() {
   attachMoneyInputFormatters();
   renderDashboard(currentStock);
   buildConsensusAll();
+  buildOverview();
 }
 
 // ═══════════════════════════════════════════
@@ -2906,7 +3059,7 @@ function showFirmDetail(firm) {
   document.getElementById('consensusFirmGrid').style.display = 'none';
   document.getElementById('cvFilterFirm').style.display = 'none';
   document.getElementById('firmDetailPanel').style.display = 'block';
-  // Sync nav ke tab Consensus
+  // Sync nav
   document.querySelectorAll('.nav-tab').forEach((t, i) => {
     t.classList.toggle('active', i === 2);
   });
@@ -2924,23 +3077,248 @@ function closeFirmDetail() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Switch view di page-consensus: "Per Saham" ↔ "Per Firm"
-let consensusView = 'stock';
+// Switch view di page-consensus: "Overview" / "Per Saham" / "Per Firm"
+let consensusView = 'overview';
 function switchConsensusView(view, opts) {
   consensusView = view;
-  const isStock = view === 'stock';
-  document.getElementById('cvTabStock').classList.toggle('active', isStock);
-  document.getElementById('cvTabFirm').classList.toggle('active', !isStock);
-  document.getElementById('cvFilterStock').style.display = isStock ? 'flex' : 'none';
-  document.getElementById('cvFilterFirm').style.display = isStock ? 'none' : 'flex';
-  document.getElementById('consensusAllGrid').style.display = isStock ? '' : 'none';
-  document.getElementById('consensusFirmGrid').style.display = isStock ? 'none' : '';
+  document.getElementById('cvTabOverview').classList.toggle('active', view === 'overview');
+  document.getElementById('cvTabStock').classList.toggle('active', view === 'stock');
+  document.getElementById('cvTabFirm').classList.toggle('active', view === 'firm');
+  document.getElementById('ovView').style.display = view === 'overview' ? '' : 'none';
+  document.getElementById('cvFilterStock').style.display = view === 'stock' ? 'flex' : 'none';
+  document.getElementById('cvFilterFirm').style.display = view === 'firm' ? 'flex' : 'none';
+  document.getElementById('consensusAllGrid').style.display = view === 'stock' ? '' : 'none';
+  document.getElementById('consensusFirmGrid').style.display = view === 'firm' ? '' : 'none';
   // Selalu tutup firm detail panel saat ganti view
   document.getElementById('firmDetailPanel').style.display = 'none';
 
-  if (!isStock && !(opts && opts.skipBuild)) {
+  if (view === 'overview') {
+    buildOverview();
+  } else if (view === 'firm' && !(opts && opts.skipBuild)) {
     buildFirmGrid();
   }
+}
+
+// ═══════════════════════════════════════════
+// OVERVIEW DASHBOARD — Market Pulse view di Konsensus
+// Aggregate stats keseluruhan: KPI strip, sentiment, top picks,
+// top firms, sektor heatmap. Default tab di page-consensus.
+// ═══════════════════════════════════════════
+function buildOverview() {
+  if (!DATA) return;
+
+  const ph = DATA.price_history || [];
+  const last = ph[ph.length - 1] || {};
+
+  let totalRec = 0, buyAll = 0, neuAll = 0, sellAll = 0;
+  let upsideSumAll = 0, upsideCntAll = 0;
+  const firmAgg = new Map();   // firm -> {buy,neu,sell,total,stocks,upS,upC}
+  const stockAgg = new Map();  // code -> {buy,neu,sell,total,upS,upC,sector}
+  const sectorAgg = new Map(); // sector -> {buy,neu,sell,total,stocks,upS,upC}
+
+  for (const [code, recs] of Object.entries(DATA.consensus_slim || {})) {
+    if (!recs.length) continue;
+    const sector = (DATA.stock_info[code] || {}).sector || 'Lainnya';
+    let sBuy = 0, sNeu = 0, sSell = 0, sUpS = 0, sUpC = 0;
+
+    for (const r of recs) {
+      totalRec++;
+      const isBuy = r.suggestion === 'BUY';
+      const isSell = r.suggestion === 'SELL';
+      if (isBuy) { buyAll++; sBuy++; }
+      else if (isSell) { sellAll++; sSell++; }
+      else { neuAll++; sNeu++; }
+
+      if (r.firm) {
+        let f = firmAgg.get(r.firm);
+        if (!f) { f = { buy:0, neu:0, sell:0, total:0, stocks:new Set(), upS:0, upC:0 }; firmAgg.set(r.firm, f); }
+        if (isBuy) f.buy++; else if (isSell) f.sell++; else f.neu++;
+        f.total++; f.stocks.add(code);
+      }
+
+      const cur = last[code];
+      if (cur && r.target_price) {
+        const up = (r.target_price - cur) / cur;
+        sUpS += up; sUpC++;
+        upsideSumAll += up; upsideCntAll++;
+        if (r.firm) {
+          const f = firmAgg.get(r.firm);
+          if (f) { f.upS += up; f.upC++; }
+        }
+      }
+    }
+
+    stockAgg.set(code, {
+      sector, buy:sBuy, neu:sNeu, sell:sSell, total:recs.length,
+      avgUp: sUpC ? (sUpS/sUpC)*100 : 0
+    });
+
+    let sec = sectorAgg.get(sector);
+    if (!sec) { sec = { buy:0, neu:0, sell:0, total:0, stocks:new Set(), upS:0, upC:0 }; sectorAgg.set(sector, sec); }
+    sec.buy += sBuy; sec.neu += sNeu; sec.sell += sSell; sec.total += recs.length;
+    sec.stocks.add(code); sec.upS += sUpS; sec.upC += sUpC;
+  }
+
+  const totalStocks = stockAgg.size;
+  const totalFirms = firmAgg.size;
+  const overallAvgUp = upsideCntAll ? (upsideSumAll/upsideCntAll)*100 : 0;
+  const overallAvgUpCls = overallAvgUp > 0 ? 'up' : overallAvgUp < 0 ? 'dn' : 'neu';
+
+  // ── KPI Strip ──
+  document.getElementById('ovKpiStrip').innerHTML = `
+    <div class="ov-kpi">
+      <div class="ov-kpi-label">Total Saham Tercover</div>
+      <div class="ov-kpi-value">${totalStocks}</div>
+      <div class="ov-kpi-sub">dengan rekomendasi analis</div>
+    </div>
+    <div class="ov-kpi">
+      <div class="ov-kpi-label">Total Firm Aktif</div>
+      <div class="ov-kpi-value">${totalFirms}</div>
+      <div class="ov-kpi-sub">analyst houses</div>
+    </div>
+    <div class="ov-kpi">
+      <div class="ov-kpi-label">Total Rekomendasi</div>
+      <div class="ov-kpi-value">${totalRec.toLocaleString('id')}</div>
+      <div class="ov-kpi-sub">data points</div>
+    </div>
+    <div class="ov-kpi">
+      <div class="ov-kpi-label">Avg Target Upside</div>
+      <div class="ov-kpi-value ${overallAvgUpCls}">${overallAvgUp >= 0 ? '+' : ''}${overallAvgUp.toFixed(1)}%</div>
+      <div class="ov-kpi-sub">vs harga live (rata-rata)</div>
+    </div>
+  `;
+
+  // ── Sentiment meter ──
+  const buyPct = totalRec ? (buyAll/totalRec*100) : 0;
+  const neuPct = totalRec ? (neuAll/totalRec*100) : 0;
+  const sellPct = totalRec ? (sellAll/totalRec*100) : 0;
+  document.getElementById('ovSentiment').innerHTML = `
+    <div class="ov-sent-meter">
+      ${buyAll ? `<div class="sb" style="width:${buyPct}%"></div>` : ''}
+      ${neuAll ? `<div class="sn" style="width:${neuPct}%"></div>` : ''}
+      ${sellAll ? `<div class="ss" style="width:${sellPct}%"></div>` : ''}
+    </div>
+    <div class="ov-sent-stats">
+      <div class="ov-sent-row">
+        <span class="dot" style="background:var(--green)"></span>
+        <span class="name">BUY</span>
+        <span class="cnt">${buyAll}</span>
+        <span class="pct">${buyPct.toFixed(1)}%</span>
+      </div>
+      <div class="ov-sent-row">
+        <span class="dot" style="background:var(--yellow)"></span>
+        <span class="name">NEUTRAL</span>
+        <span class="cnt">${neuAll}</span>
+        <span class="pct">${neuPct.toFixed(1)}%</span>
+      </div>
+      <div class="ov-sent-row">
+        <span class="dot" style="background:var(--red)"></span>
+        <span class="name">SELL</span>
+        <span class="cnt">${sellAll}</span>
+        <span class="pct">${sellPct.toFixed(1)}%</span>
+      </div>
+    </div>
+  `;
+
+  // ── Top Upside (saham dengan avg target upside tertinggi, min 2 recs) ──
+  const topUpsideList = [...stockAgg.entries()]
+    .filter(([_, s]) => s.total >= 2 && s.avgUp > 0)
+    .map(([code, s]) => ({ code, ...s }))
+    .sort((a, b) => b.avgUp - a.avgUp)
+    .slice(0, 8);
+  document.getElementById('ovTopUpside').innerHTML = `<div class="ov-list">
+    ${topUpsideList.map((s, i) => {
+      const name = (DATA.stock_info[s.code] || {}).name || '';
+      return `<div class="ov-item ${i === 0 ? 'top-1' : ''}" onclick="selectStock('${s.code}')">
+        <div class="ov-rank">#${i+1}</div>
+        <div>
+          <div class="ov-name">${s.code}</div>
+          <div class="ov-fullname">${escapeHtml(name)}</div>
+        </div>
+        <div class="ov-meta">
+          <span class="ov-meta-val up">+${s.avgUp.toFixed(1)}%</span>
+          <span class="ov-meta-sub">${s.total} rekom</span>
+        </div>
+      </div>`;
+    }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data.</div>'}
+  </div>`;
+
+  // ── Top Stocks by BUY count ──
+  const topByBuyList = [...stockAgg.entries()]
+    .filter(([_, s]) => s.buy > 0)
+    .map(([code, s]) => ({ code, ...s, buyPct: s.total ? s.buy/s.total : 0 }))
+    .sort((a, b) => b.buy - a.buy || b.buyPct - a.buyPct)
+    .slice(0, 8);
+  document.getElementById('ovTopStocks').innerHTML = `<div class="ov-list">
+    ${topByBuyList.map((s, i) => {
+      const name = (DATA.stock_info[s.code] || {}).name || '';
+      return `<div class="ov-item ${i === 0 ? 'top-1' : ''}" onclick="selectStock('${s.code}')">
+        <div class="ov-rank">#${i+1}</div>
+        <div>
+          <div class="ov-name">${s.code}</div>
+          <div class="ov-fullname">${escapeHtml(name)}</div>
+        </div>
+        <div class="ov-meta">
+          <span class="ov-meta-val up">${s.buy} BUY</span>
+          <span class="ov-meta-sub">${(s.buyPct*100).toFixed(0)}% dari ${s.total}</span>
+        </div>
+      </div>`;
+    }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data.</div>'}
+  </div>`;
+
+  // ── Top Firms by activity ──
+  const topFirms = [...firmAgg.entries()]
+    .map(([name, f]) => ({ name, ...f, avgUp: f.upC ? (f.upS/f.upC)*100 : 0 }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 8);
+  document.getElementById('ovTopFirms').innerHTML = `<div class="ov-list">
+    ${topFirms.map((f, i) => {
+      const upCls = f.avgUp > 0 ? 'up' : f.avgUp < 0 ? 'dn' : 'neu';
+      const nameEsc = escapeHtml(f.name);
+      return `<div class="ov-item ${i === 0 ? 'top-1' : ''}" data-firm="${nameEsc}" onclick="showFirmDetail(this.dataset.firm)">
+        <div class="ov-rank">#${i+1}</div>
+        <div>
+          <div class="ov-name" style="color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px">${nameEsc}</div>
+          <div class="ov-fullname">${f.total} rekom · ${f.stocks.size} saham</div>
+        </div>
+        <div class="ov-meta">
+          <span class="ov-meta-val ${upCls}">${f.avgUp >= 0 ? '+' : ''}${f.avgUp.toFixed(1)}%</span>
+          <span class="ov-meta-sub">avg upside</span>
+        </div>
+      </div>`;
+    }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data.</div>'}
+  </div>`;
+
+  // ── Sector heatmap ──
+  const sectorList = [...sectorAgg.entries()]
+    .map(([name, s]) => {
+      const total = s.total;
+      const bp = total ? (s.buy/total*100) : 0;
+      const np = total ? (s.neu/total*100) : 0;
+      const sp = total ? (s.sell/total*100) : 0;
+      const avgUp = s.upC ? (s.upS/s.upC)*100 : 0;
+      return { name, total, stocks: s.stocks.size, bp, np, sp, avgUp,
+               buy:s.buy, neu:s.neu, sell:s.sell };
+    })
+    .sort((a, b) => b.total - a.total);
+  document.getElementById('ovSectorList').innerHTML = sectorList.map(s => {
+    const upCls = s.avgUp > 0 ? 'up' : s.avgUp < 0 ? 'dn' : 'neu';
+    return `<div class="ov-sector">
+      <div>
+        <div class="ov-sector-name">${escapeHtml(s.name)}</div>
+        <div class="ov-fullname" style="margin-top:2px">${s.stocks} saham · ${s.total} rekom</div>
+      </div>
+      <div class="ov-sector-bar" title="BUY ${s.buy} · NEU ${s.neu} · SELL ${s.sell}">
+        ${s.buy ? `<div class="b" style="width:${s.bp}%"></div>` : ''}
+        ${s.neu ? `<div class="n" style="width:${s.np}%"></div>` : ''}
+        ${s.sell ? `<div class="s" style="width:${s.sp}%"></div>` : ''}
+      </div>
+      <div class="ov-sector-meta">
+        <span class="${upCls}">${s.avgUp >= 0 ? '+' : ''}${s.avgUp.toFixed(1)}%</span>
+        <span class="stk">avg upside</span>
+      </div>
+    </div>`;
+  }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data sektor.</div>';
 }
 
 // Build firm grid — agregat per firm dari semua consensus_slim entries
