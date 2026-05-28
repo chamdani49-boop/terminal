@@ -685,6 +685,18 @@ select.form-control option{background:var(--card);color:var(--text)}
         <div class="loading"><div class="spinner"></div> Memuat data...</div>
       </div>
 
+      <!-- Stats Table — di atas chart di semua layar -->
+      <div class="card card-stats" id="statsCard">
+        <div class="card-title">Statistik Deskriptif</div>
+        <div id="statsContent"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+
+      <!-- YoY Analysis — di atas chart di semua layar -->
+      <div class="card card-yoy" id="yoyCard">
+        <div class="card-title">YoY Analysis</div>
+        <div id="yoyContent"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+
       <!-- Chart -->
       <div class="card card-chart">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
@@ -701,18 +713,6 @@ select.form-control option{background:var(--card);color:var(--text)}
           </div>
         </div>
         <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
-      </div>
-
-      <!-- Stats Table -->
-      <div class="card card-stats" id="statsCard">
-        <div class="card-title">Statistik Deskriptif</div>
-        <div id="statsContent"><div class="loading"><div class="spinner"></div></div></div>
-      </div>
-
-      <!-- YoY Analysis -->
-      <div class="card card-yoy" id="yoyCard">
-        <div class="card-title">YoY Analysis</div>
-        <div id="yoyContent"><div class="loading"><div class="spinner"></div></div></div>
       </div>
 
       <!-- Analyst Recommendations Table -->
