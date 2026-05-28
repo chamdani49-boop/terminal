@@ -1743,7 +1743,6 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="info-banner">
       🔍 <strong>Consensus Analyst</strong> — Rangkuman rekomendasi analis untuk 115 saham IDX. Klik kartu untuk lihat detail.
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
     <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
       <!-- View toggle: Overview / Per Saham / Per Firm -->
       <div class="cv-tabs">
@@ -1992,30 +1991,30 @@ function init() {
 
 // ═══════════════════════════════════════════
 // NAVIGATION
+// Unified, aman dipanggil dari onclick atau dari JS langsung.
+// Tidak bergantung pada global `event` (yang error di strict mode).
 // ═══════════════════════════════════════════
 function showPage(name) {
+  // Switch page
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
-  // Sync bottom nav
+  const target = document.getElementById('page-' + name);
+  if (target) target.classList.add('active');
+
+  // Sync top nav (desktop)
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    const onclick = t.getAttribute('onclick') || '';
+    t.classList.toggle('active', onclick.includes(`'${name}'`));
+  });
+
+  // Sync bottom nav (mobile)
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
   const bn = document.getElementById('bn-' + name);
   if (bn) bn.classList.add('active');
 }
 
-// showPageMobile — dipanggil dari bottom nav (mobile)
-function showPageMobile(name, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  // Sync top nav
-  document.querySelectorAll('.nav-tab').forEach((t, i) => {
-    const names = ['dashboard','menabung','consensus'];
-    t.classList.toggle('active', names[i] === name);
-  });
-  // Sync bottom nav
-  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+// Alias untuk bottom nav — biar tidak break onclick lama.
+function showPageMobile(name) {
+  showPage(name);
 }
 
 // ═══════════════════════════════════════════
@@ -3168,20 +3167,12 @@ function showFirmDetail(firm) {
   `;
 
   // Buka di page-consensus dengan firm panel
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-consensus').classList.add('active');
+  showPage('consensus');
   switchConsensusView('firm', { skipBuild: true });
   // Sembunyikan grid firm + filter, tampilkan panel detail
   document.getElementById('consensusFirmGrid').style.display = 'none';
   document.getElementById('cvFilterFirm').style.display = 'none';
   document.getElementById('firmDetailPanel').style.display = 'block';
-  // Sync nav
-  document.querySelectorAll('.nav-tab').forEach((t, i) => {
-    t.classList.toggle('active', i === 2);
-  });
-  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-  const bn = document.getElementById('bn-consensus');
-  if (bn) bn.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
