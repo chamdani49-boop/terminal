@@ -915,6 +915,74 @@ select.form-control option{background:var(--card);color:var(--text)}
 
 /* ── FIRM DETAIL (di dalam page-consensus) ──
    View tabs untuk switch antara "Per Saham" dan "Per Firm". */
+
+/* ── Nav bar: tabs + filter dalam satu baris rapat ── */
+.cv-nav-bar{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:14px;flex-wrap:wrap;
+}
+.cv-filter{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.cv-search-input{
+  max-width:200px;
+  font-family:'IBM Plex Sans',sans-serif;
+}
+.cv-filter-btns{
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.cv-filter-btns .radio-btn{
+  padding:6px 14px;
+}
+.cv-filter-hint{
+  font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.3px;
+}
+
+/* Desktop: semua dalam satu baris tidak wrap, filter rata kiri setelah tabs */
+@media(min-width:641px){
+  .cv-nav-bar{
+    flex-wrap:nowrap;
+    align-items:center;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:10px 14px;
+    gap:16px;
+    box-shadow:var(--shadow-card);
+  }
+  .cv-filter{
+    flex-wrap:nowrap;
+    align-items:center;
+  }
+  .cv-search-input{
+    max-width:220px;
+    min-width:160px;
+  }
+  .cv-filter-btns{
+    flex-wrap:nowrap;
+    gap:6px;
+  }
+  /* Semua card di ov-grid-3 sama tinggi di desktop — pakai stretch bukan start */
+  .ov-grid-3{
+    align-items:stretch;
+  }
+  /* Card sentiment flex column agar konten tersebar merata secara vertikal */
+  .ov-card-sentiment{
+    justify-content:space-between;
+  }
+  /* Donut wrap: biarkan auto agar pas dengan tinggi card */
+  .ov-donut-wrap{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:160px;
+  }
+  .ov-donut-wrap canvas{
+    max-width:180px;max-height:180px;
+  }
+}
+
 .cv-tabs{
   display:inline-flex;gap:4px;padding:4px;
   background:var(--bg2);border:1px solid var(--border);
@@ -1965,27 +2033,27 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="info-banner">
       🔍 <strong>Consensus Analyst</strong> — Rangkuman rekomendasi analis untuk 115 saham IDX. Klik kartu untuk lihat detail.
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
-      <!-- View toggle: Overview / Per Saham / Per Firm -->
+    <!-- ── Nav bar: tabs kiri, filter kanan — satu baris rapat ── -->
+    <div class="cv-nav-bar">
       <div class="cv-tabs">
         <button class="cv-tab active" id="cvTabOverview" onclick="switchConsensusView('overview')">Overview</button>
         <button class="cv-tab" id="cvTabStock" onclick="switchConsensusView('stock')">Per Saham</button>
         <button class="cv-tab" id="cvTabFirm" onclick="switchConsensusView('firm')">Per Firm</button>
       </div>
-      <!-- Filter bar untuk view "Per Saham" -->
-      <div class="cv-filter cv-filter-stock" id="cvFilterStock" style="display:none;gap:8px;flex-wrap:wrap;align-items:center">
-        <input type="text" id="consensusSearch" class="form-control" style="max-width:200px;font-family:'IBM Plex Sans',sans-serif" placeholder="Filter saham...">
-        <div class="radio-btn active" style="padding:6px 14px" onclick="filterConsensus('all',this)">Semua</div>
-        <div class="radio-btn" style="padding:6px 14px" onclick="filterConsensus('BUY',this)">BUY</div>
-        <div class="radio-btn" style="padding:6px 14px" onclick="filterConsensus('NEUTRAL',this)">NEUTRAL</div>
-        <div class="radio-btn" style="padding:6px 14px" onclick="filterConsensus('SELL',this)">SELL</div>
+      <!-- Filter Per Saham -->
+      <div class="cv-filter cv-filter-stock" id="cvFilterStock" style="display:none">
+        <input type="text" id="consensusSearch" class="form-control cv-search-input" placeholder="Filter saham...">
+        <div class="cv-filter-btns">
+          <div class="radio-btn active" onclick="filterConsensus('all',this)">Semua</div>
+          <div class="radio-btn" onclick="filterConsensus('BUY',this)">BUY</div>
+          <div class="radio-btn" onclick="filterConsensus('NEUTRAL',this)">NEUTRAL</div>
+          <div class="radio-btn" onclick="filterConsensus('SELL',this)">SELL</div>
+        </div>
       </div>
-      <!-- Filter bar untuk view "Per Firm" -->
-      <div class="cv-filter cv-filter-firm" id="cvFilterFirm" style="display:none;gap:8px;flex-wrap:wrap;align-items:center">
-        <input type="text" id="firmSearch" class="form-control" style="max-width:240px;font-family:'IBM Plex Sans',sans-serif" placeholder="Cari firm...">
-        <span style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.3px">
-          Klik kartu firm untuk lihat detail
-        </span>
+      <!-- Filter Per Firm -->
+      <div class="cv-filter cv-filter-firm" id="cvFilterFirm" style="display:none">
+        <input type="text" id="firmSearch" class="form-control cv-search-input" placeholder="Cari nama firm...">
+        <span class="cv-filter-hint">Klik kartu untuk lihat detail</span>
       </div>
     </div>
 
