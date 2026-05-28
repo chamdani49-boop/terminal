@@ -1615,7 +1615,7 @@ function renderPriceTarget(code) {
   // di saham low-vol vs high-vol.
   const lsBuySig = localStorage.getItem(`econ-pt-bsig-${code}`);
   const lsSellSig = localStorage.getItem(`econ-pt-ssig-${code}`);
-  const buySigma = lsBuySig != null ? parseFloat(lsBuySig) : 1;
+  const buySigma = lsBuySig != null ? parseFloat(lsBuySig) : 2;
   const sellSigma = lsSellSig != null ? parseFloat(lsSellSig) : 1;
 
   const lastLabel = formatMonthYear(last.label, last.date, 'long');
@@ -1638,7 +1638,7 @@ function renderPriceTarget(code) {
          SELL price = μ + N_sell × σ
          Saat current price ≤ BUY trigger atau ≥ SELL trigger → signal nyala. -->
     <div style="padding:12px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border2)">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Trigger Buy / Sell</div>
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Standar Deviasi Buy / Sell</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <label style="font-size:11px;color:var(--text2);font-weight:700;display:flex;flex-direction:column;gap:4px">
           Batas Beli
