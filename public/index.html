@@ -355,6 +355,49 @@ a{color:inherit;text-decoration:none}
 .cn-box{background:var(--bg2);padding:10px 6px;text-align:center;border-radius:var(--radius);min-width:0}
 .cn-label{font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:3px;font-weight:800;letter-spacing:.6px}
 .cn-val{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.cn-gap{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+
+/* Sumbu horizontal "tidur" — visual range Low..High dengan dot harga sekarang.
+   Track gradient hijau (murah, dekat Low) → gelap (target zone) → merah
+   (mahal, dekat High). Dot + tick vertical di posisi harga real-time,
+   label angka di atas tick supaya user langsung baca tanpa hover. */
+.cs-axis{position:relative;height:54px;margin:12px 4px 4px;padding:0}
+.cs-axis-track{
+  position:absolute;left:8px;right:8px;top:50%;transform:translateY(-50%);
+  height:10px;border-radius:var(--radius-pill);
+  background:linear-gradient(90deg,
+    var(--green) 0%,
+    rgba(5,150,105,.55) 28%,
+    var(--bg3) 50%,
+    rgba(225,29,72,.55) 72%,
+    var(--red) 100%);
+  border:1px solid var(--border);
+}
+.cs-axis-dot{
+  position:absolute;top:50%;width:14px;height:14px;border-radius:50%;
+  background:var(--green);border:2px solid var(--card);
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 0 1px var(--text2),0 0 10px rgba(5,150,105,.45);
+  z-index:2;pointer-events:none;
+}
+.cs-axis-tick{
+  position:absolute;top:calc(50% - 22px);width:2px;height:18px;
+  background:var(--green);transform:translateX(-50%);z-index:1;
+}
+.cs-axis-cur{
+  position:absolute;top:0;transform:translateX(-50%);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:800;
+  color:var(--text);white-space:nowrap;background:var(--card);
+  padding:1px 6px;border-radius:6px;border:1px solid var(--border);
+}
+.cs-axis-end{
+  position:absolute;top:calc(50% + 14px);
+  font-size:10px;font-weight:700;color:var(--text2);
+  font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.4px;
+}
+.cs-axis-end.lo{left:0}
+.cs-axis-end.hi{right:0;text-align:right}
+.cs-axis-end .v{display:block;color:var(--text);font-size:11px;margin-top:1px}
 
 /* ── ANALYST TABLE ── */
 .analyst-table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
@@ -1405,7 +1448,6 @@ function renderPriceTarget(code) {
   const ph = DATA.price_history;
   const last = ph[ph.length-1];
   const st = DATA.stats[code];
-  const cs = DATA.consensus_summary[code];
   const info = DATA.stock_info[code] || {};
 
   const price = last[code] || (st ? st.current : 0);
@@ -1421,24 +1463,23 @@ function renderPriceTarget(code) {
   const liveCls = liveChg == null ? 'neu' : liveChg > 0 ? 'up' : liveChg < 0 ? 'dn' : 'neu';
   const liveSym = liveChg == null ? '' : liveChg > 0 ? '▲ ' : liveChg < 0 ? '▼ ' : '';
 
-  // Price Target based on consensus
-  let sellTarget = cs ? cs.high : Math.round(price * 1.2);
-  let buyTarget = cs ? cs.low : Math.round(price * 0.85);
-  let avgTarget = cs ? cs.target : Math.round(price * 1.1);
+  // Hitung mean & std PRICE dari history (level, bukan return). Ini dipakai
+  // untuk trigger buy/sell standar deviasi: BUY = mean - N×σ, SELL = mean + N×σ.
+  // Dengan begitu user bisa input "berapa σ" sebagai magnitude, system
+  // translate ke angka harga rupiah konkret.
+  const priceSeries = ph.map(h => h[code]).filter(Number.isFinite);
+  const meanPrice = priceSeries.length
+    ? priceSeries.reduce((a,b)=>a+b,0) / priceSeries.length : price;
+  const stdPrice = priceSeries.length > 1
+    ? Math.sqrt(priceSeries.reduce((a,b)=>a+(b-meanPrice)**2,0) / priceSeries.length) : 0;
 
-  const pctSell = (sellTarget - price) / price;
-  const pctBuy = (buyTarget - price) / price;
-  const pctAvg = (avgTarget - price) / price;
-
-  // Buy/Sell trigger — berbasis HARGA (bukan z-score). Default-nya
-  // ngikutin konsensus low/high dari analis (sama dengan kotak BELI/JUAL
-  // di atas), tapi user bisa override per-ticker. Threshold disimpan
-  // per-saham di localStorage karena harga TLKM (3rb) ≠ BBCA (5rb) ≠
-  // BREN (8rb), gak bisa pakai threshold global.
-  const lsBuy = localStorage.getItem(`econ-pt-buy-${code}`);
-  const lsSell = localStorage.getItem(`econ-pt-sell-${code}`);
-  const trigBuyPrice = lsBuy != null ? parseFloat(lsBuy) : Math.round(buyTarget);
-  const trigSellPrice = lsSell != null ? parseFloat(lsSell) : Math.round(sellTarget);
+  // User input = sigma multiplier (default 1σ). Persist per-ticker karena
+  // tiap saham punya volatility berbeda, mungkin user mau lebih aggressive
+  // di saham low-vol vs high-vol.
+  const lsBuySig = localStorage.getItem(`econ-pt-bsig-${code}`);
+  const lsSellSig = localStorage.getItem(`econ-pt-ssig-${code}`);
+  const buySigma = lsBuySig != null ? parseFloat(lsBuySig) : 1;
+  const sellSigma = lsSellSig != null ? parseFloat(lsSellSig) : 1;
 
   const lastLabel = formatMonthYear(last.label, last.date, 'long');
 
@@ -1454,103 +1495,120 @@ function renderPriceTarget(code) {
         <div style="font-size:11px;color:var(--text2);font-weight:600">${lastLabel}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div style="text-align:center">
-        <div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:800">ACTUAL BUY</div>
-        <div style="font-size:11px;color:var(--text2);font-weight:500">Target Beli (Konsensus Low)</div>
+
+    <!-- STATISTIC SUMMARY — landasan trigger σ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:800;margin-bottom:3px">Mean (μ)</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700">${Math.round(meanPrice).toLocaleString('id')}</div>
       </div>
-      <div style="text-align:center">
-        <div style="font-size:11px;color:var(--red);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:800">ACTUAL SELL</div>
-        <div style="font-size:11px;color:var(--text2);font-weight:500">Target Jual (Konsensus High)</div>
+      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:800;margin-bottom:3px">Std Dev (σ)</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700">${Math.round(stdPrice).toLocaleString('id')}</div>
       </div>
-    </div>
-    <div class="pt-grid" style="margin-top:6px">
-      <div class="pt-box pt-buy">
-        <div class="ptl">BELI</div>
-        <div class="ptv up">${Math.round(buyTarget).toLocaleString('id')}</div>
-        <div class="ptp ${pctBuy>=0?'up':'dn'}">${(pctBuy*100).toFixed(1)}%</div>
-      </div>
-      <div class="pt-box pt-sel">
-        <div class="ptl">JUAL</div>
-        <div class="ptv dn">${Math.round(sellTarget).toLocaleString('id')}</div>
-        <div class="ptp ${pctSell>=0?'up':'dn'}">${(pctSell*100).toFixed(1)}%</div>
-      </div>
-    </div>
-    <div style="margin-top:10px;background:var(--bg3);border-radius:var(--radius);padding:12px;text-align:center;border:1px solid var(--border)">
-      <div style="font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:800;text-transform:uppercase;letter-spacing:.6px">TARGET KONSENSUS (Rata²)</div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--yellow)">${Math.round(avgTarget).toLocaleString('id')}</div>
-      <div style="font-size:13px;color:var(--accent);font-weight:700;margin-top:2px">${(pctAvg*100).toFixed(1)}% dari harga saat ini</div>
     </div>
 
-    <!-- BUY/SELL TRIGGER (price-based) — user editable. Default-nya pakai
-         konsensus low (BELI) & high (JUAL). User bisa override sesuai
-         strategi sendiri (contoh: trail stop di harga tertentu, support/
-         resistance teknikal, dll). Per-ticker storage karena harga tiap
-         saham beda. Saat current price melewati threshold → signal nyala. -->
-    <div style="margin-top:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border2)">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Trigger Buy/Sell (Harga)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+    <!-- TRIGGER BUY/SELL (sigma-based). User input = jumlah σ.
+         BUY price  = μ - N_buy  × σ
+         SELL price = μ + N_sell × σ
+         Saat current price ≤ BUY trigger atau ≥ SELL trigger → signal nyala. -->
+    <div style="padding:12px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border2)">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Trigger Buy/Sell (Standar Deviasi)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <label style="font-size:11px;color:var(--text2);font-weight:700">
-          BELI saat harga &le;
-          <input type="number" step="1" min="0" id="ptTrigBuy" value="${trigBuyPrice}" oninput="updatePtSignal('${code}')"
-                 style="width:100%;margin-top:3px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
+          BELI saat μ &minus;
+          <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+            <input type="number" step="0.1" min="0" id="ptBuySigma" value="${buySigma}" oninput="updatePtSigSignal('${code}')"
+                   style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text)">σ</span>
+          </div>
         </label>
         <label style="font-size:11px;color:var(--text2);font-weight:700">
-          JUAL saat harga &ge;
-          <input type="number" step="1" min="0" id="ptTrigSell" value="${trigSellPrice}" oninput="updatePtSignal('${code}')"
-                 style="width:100%;margin-top:3px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
+          JUAL saat μ &plus;
+          <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+            <input type="number" step="0.1" min="0" id="ptSellSigma" value="${sellSigma}" oninput="updatePtSigSignal('${code}')"
+                   style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text)">σ</span>
+          </div>
         </label>
       </div>
-      <div id="ptSignal"></div>
+
+      <!-- Display dua kotak harga trigger hasil hitung -->
+      <div class="pt-grid">
+        <div class="pt-box pt-buy">
+          <div class="ptl">BELI &le;</div>
+          <div class="ptv up" id="ptBuyPrice">—</div>
+          <div class="ptp" id="ptBuyPct">—</div>
+        </div>
+        <div class="pt-box pt-sel">
+          <div class="ptl">JUAL &ge;</div>
+          <div class="ptv dn" id="ptSellPrice">—</div>
+          <div class="ptp" id="ptSellPct">—</div>
+        </div>
+      </div>
+
+      <div id="ptSignal" style="margin-top:10px"></div>
     </div>
 
     <div style="margin-top:8px;font-size:11px;color:var(--text2);text-align:center;font-weight:500">By Economstock</div>
   `;
 
-  updatePtSignal(code);
+  // Stash mean & std di element data attrs supaya updatePtSigSignal bisa
+  // baca tanpa re-compute (price_history bisa berubah saat live overlay).
+  el.dataset.meanPrice = meanPrice;
+  el.dataset.stdPrice = stdPrice;
+  el.dataset.curPrice = price;
+
+  updatePtSigSignal(code);
 }
 
-// Update buy/sell signal — dipanggil saat render & saat user ubah threshold.
-// Logic: bandingkan CURRENT PRICE vs threshold harga buy/sell.
-// Threshold di-persist per-ticker karena harga tiap saham beda scale-nya.
-function updatePtSignal(code) {
-  const buyEl = document.getElementById('ptTrigBuy');
-  const sellEl = document.getElementById('ptTrigSell');
-  const sigEl = document.getElementById('ptSignal');
-  if (!buyEl || !sellEl || !sigEl) return;
+// Update trigger signal — sigma-based. Hitung BUY/SELL trigger price dari
+// μ ± N×σ, lalu compare dengan current price untuk signal BUY/HOLD/SELL.
+function updatePtSigSignal(code) {
+  const root = document.getElementById('ptContent');
+  if (!root) return;
+  const buyEl = document.getElementById('ptBuySigma');
+  const sellEl = document.getElementById('ptSellSigma');
+  if (!buyEl || !sellEl) return;
 
-  const ph = DATA.price_history;
-  const last = ph[ph.length-1];
-  const st = DATA.stats[code];
-  const price = (last && last[code]) || (st ? st.current : 0);
+  const meanPrice = parseFloat(root.dataset.meanPrice);
+  const stdPrice = parseFloat(root.dataset.stdPrice);
+  const price = parseFloat(root.dataset.curPrice);
 
-  const buy = parseFloat(buyEl.value);
-  const sell = parseFloat(sellEl.value);
-  if (Number.isFinite(buy)) localStorage.setItem(`econ-pt-buy-${code}`, buy);
-  if (Number.isFinite(sell)) localStorage.setItem(`econ-pt-sell-${code}`, sell);
+  const buySig = parseFloat(buyEl.value);
+  const sellSig = parseFloat(sellEl.value);
+  if (Number.isFinite(buySig)) localStorage.setItem(`econ-pt-bsig-${code}`, buySig);
+  if (Number.isFinite(sellSig)) localStorage.setItem(`econ-pt-ssig-${code}`, sellSig);
 
-  if (!price || !Number.isFinite(price)) {
-    sigEl.innerHTML = `<div style="font-size:11px;color:var(--text3);text-align:center;font-style:italic">Harga tidak tersedia</div>`;
-    return;
-  }
-
+  const buyPrice = meanPrice - (Number.isFinite(buySig) ? buySig : 1) * stdPrice;
+  const sellPrice = meanPrice + (Number.isFinite(sellSig) ? sellSig : 1) * stdPrice;
   const fmt = (n) => Math.round(n).toLocaleString('id');
+  const pctBuy = price ? ((buyPrice - price) / price) * 100 : 0;
+  const pctSell = price ? ((sellPrice - price) / price) * 100 : 0;
+
+  const bp = document.getElementById('ptBuyPrice');
+  const bpc = document.getElementById('ptBuyPct');
+  const sp = document.getElementById('ptSellPrice');
+  const spc = document.getElementById('ptSellPct');
+  if (bp) bp.textContent = fmt(buyPrice);
+  if (sp) sp.textContent = fmt(sellPrice);
+  if (bpc) { bpc.textContent = `${pctBuy>=0?'+':''}${pctBuy.toFixed(1)}%`; bpc.className = `ptp ${pctBuy>=0?'up':'dn'}`; }
+  if (spc) { spc.textContent = `${pctSell>=0?'+':''}${pctSell.toFixed(1)}%`; spc.className = `ptp ${pctSell>=0?'up':'dn'}`; }
+
+  const sigEl = document.getElementById('ptSignal');
+  if (!sigEl || !Number.isFinite(price)) return;
+
   let label, cls, bg, desc;
-  if (Number.isFinite(buy) && price <= buy) {
-    const gap = ((buy - price) / price) * 100;
+  if (price <= buyPrice) {
     label = 'BUY SIGNAL'; cls = 'up'; bg = 'var(--green-bg)';
-    desc = `Harga ${fmt(price)} ≤ ${fmt(buy)} (target beli) — masuk zona akumulasi`;
-  } else if (Number.isFinite(sell) && price >= sell) {
-    const gap = ((price - sell) / sell) * 100;
+    desc = `Harga ${fmt(price)} ≤ μ−${buySig}σ (${fmt(buyPrice)}) — masuk zona akumulasi statistik`;
+  } else if (price >= sellPrice) {
     label = 'SELL SIGNAL'; cls = 'dn'; bg = 'var(--red-bg)';
-    desc = `Harga ${fmt(price)} ≥ ${fmt(sell)} (target jual) — masuk zona ambil profit`;
+    desc = `Harga ${fmt(price)} ≥ μ+${sellSig}σ (${fmt(sellPrice)}) — masuk zona ambil profit statistik`;
   } else {
     label = 'HOLD'; cls = 'neu'; bg = 'var(--yellow-bg)';
-    const toBuy = Number.isFinite(buy) ? `${fmt(price - buy)} di atas BELI` : '—';
-    const toSell = Number.isFinite(sell) ? `${fmt(sell - price)} di bawah JUAL` : '—';
-    desc = `Harga ${fmt(price)} masih di range normal (${toBuy} · ${toSell})`;
+    desc = `Harga ${fmt(price)} di range μ±σ — wait for trigger`;
   }
-
   sigEl.innerHTML = `
     <div style="background:${bg};border-radius:10px;padding:8px 10px;text-align:center">
       <div class="${cls}" style="font-size:13px;font-weight:800;letter-spacing:.8px">${label}</div>
@@ -1579,6 +1637,24 @@ function renderConsensus(code) {
   let high = cs ? cs.high : Math.max(...recs.map(r=>r.target_price||0));
   let low = cs ? cs.low : Math.min(...recs.filter(r=>r.target_price>0).map(r=>r.target_price));
   let target = cs ? cs.target : (recs.reduce((s,r)=>s+(r.target_price||0),0)/total);
+
+  // Harga sekarang + % gap ke high/target/low. Positif (hijau) = upside,
+  // negatif (merah) = downside. Posisi dot di sumbu = (price - low) / (high - low),
+  // di-clamp [0..100] kalau price di luar range konsensus (mis. udah break ATH analis).
+  const ph = DATA.price_history;
+  const last = ph[ph.length-1];
+  const st = DATA.stats[code];
+  const curPrice = (last && last[code]) || (st ? st.current : 0);
+  const gapPct = (t) => (Number.isFinite(t) && curPrice) ? ((t - curPrice) / curPrice) * 100 : null;
+  const fmtGap = (g) => g == null ? '—' : `${g >= 0 ? '+' : ''}${g.toFixed(1)}%`;
+  const gapCls = (g) => g == null ? 'neu' : g >= 0 ? 'up' : 'dn';
+  const gHigh = gapPct(high), gTgt = gapPct(target), gLow = gapPct(low);
+
+  let dotPct = null;
+  if (Number.isFinite(low) && Number.isFinite(high) && high > low && curPrice) {
+    dotPct = Math.max(0, Math.min(100, ((curPrice - low) / (high - low)) * 100));
+  }
+  const fmt = (n) => Number.isFinite(n) ? Math.round(n).toLocaleString('id') : '—';
 
   document.getElementById('consensusTotal').textContent = total;
 
@@ -1611,10 +1687,36 @@ function renderConsensus(code) {
           <span class="consensus-pct dn">${total?((sell/total)*100).toFixed(1)+'%':'-'}</span>
         </div>
         <div class="divider"></div>
+
+        <!-- Sumbu horizontal: Low ── current(dot) ── High dengan label harga sekarang di atas dot -->
+        <div class="cs-axis">
+          <div class="cs-axis-track"></div>
+          ${dotPct != null ? `
+            <div class="cs-axis-cur" style="left:${dotPct}%">${fmt(curPrice)}</div>
+            <div class="cs-axis-tick" style="left:${dotPct}%"></div>
+            <div class="cs-axis-dot" style="left:${dotPct}%"></div>
+          ` : ''}
+          <div class="cs-axis-end lo">Low<span class="v">${fmt(low)}</span></div>
+          <div class="cs-axis-end hi">High<span class="v">${fmt(high)}</span></div>
+        </div>
+
+        <!-- Versi lama: 3 kotak HIGH / TARGET / LOW + % gap dari harga sekarang -->
         <div class="consensus-numbers">
-          <div class="cn-box"><div class="cn-label">High</div><div class="cn-val up">${Math.round(high).toLocaleString('id')}</div></div>
-          <div class="cn-box"><div class="cn-label">Target</div><div class="cn-val">${Math.round(target).toLocaleString('id')}</div></div>
-          <div class="cn-box"><div class="cn-label">Low</div><div class="cn-val dn">${Math.round(low).toLocaleString('id')}</div></div>
+          <div class="cn-box">
+            <div class="cn-label">High</div>
+            <div class="cn-val up">${fmt(high)}</div>
+            <div class="cn-gap ${gapCls(gHigh)}">${fmtGap(gHigh)}</div>
+          </div>
+          <div class="cn-box">
+            <div class="cn-label">Target</div>
+            <div class="cn-val">${fmt(target)}</div>
+            <div class="cn-gap ${gapCls(gTgt)}">${fmtGap(gTgt)}</div>
+          </div>
+          <div class="cn-box">
+            <div class="cn-label">Low</div>
+            <div class="cn-val dn">${fmt(low)}</div>
+            <div class="cn-gap ${gapCls(gLow)}">${fmtGap(gLow)}</div>
+          </div>
         </div>
       </div>
     </div>
