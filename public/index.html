@@ -880,6 +880,11 @@ function formatMonthYear(label, date, style = 'long') {
     }
   }
   if (m < 0 && label) {
+    // Format M/D/YYYY dari build-data.js (e.g. "6/30/2021", "5/31/2026")
+    const mdmy = String(label).match(/^(\d{1,2})\/\d{1,2}\/(\d{4})$/);
+    if (mdmy) { m = parseInt(mdmy[1], 10) - 1; y = parseInt(mdmy[2], 10); }
+  }
+  if (m < 0 && label) {
     const mt = String(label).match(/^([A-Za-z]{3,9})[-\s\/](\d{2,4})$/);
     if (mt) {
       const mi = MONTH_NAME_TO_INDEX[mt[1].slice(0,3).toLowerCase()];
@@ -1344,7 +1349,7 @@ function renderChart(code) {
   let months = currentPeriod > 0 ? currentPeriod : ph.length;
   const slice = ph.slice(-months);
 
-  const labels = slice.map(e => e.label || e.date.substring(0,7));
+  const labels = slice.map(e => formatMonthYear(e.label, e.date, 'short'));
   const ihsgVals = slice.map(e => e.IHSG || null);
   const stockVals = slice.map(e => e[code] || null);
 
@@ -1610,7 +1615,7 @@ function renderPriceTarget(code) {
   // di saham low-vol vs high-vol.
   const lsBuySig = localStorage.getItem(`econ-pt-bsig-${code}`);
   const lsSellSig = localStorage.getItem(`econ-pt-ssig-${code}`);
-  const buySigma = lsBuySig != null ? parseFloat(lsBuySig) : 1;
+  const buySigma = lsBuySig != null ? parseFloat(lsBuySig) : 2;
   const sellSigma = lsSellSig != null ? parseFloat(lsSellSig) : 1;
 
   const lastLabel = formatMonthYear(last.label, last.date, 'long');
@@ -1628,42 +1633,22 @@ function renderPriceTarget(code) {
       </div>
     </div>
 
-    <!-- STATISTIC SUMMARY — landasan trigger σ -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;text-align:center;min-width:0;overflow:hidden">
-        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:800;margin-bottom:3px">Mean (μ)</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;letter-spacing:-.3px">${Math.round(meanPrice).toLocaleString('id')}</div>
-      </div>
-      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;text-align:center;min-width:0;overflow:hidden">
-        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:800;margin-bottom:3px">Std Dev (σ)</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;letter-spacing:-.3px">${Math.round(stdPrice).toLocaleString('id')}</div>
-      </div>
-    </div>
-
     <!-- TRIGGER BUY/SELL (sigma-based). User input = jumlah σ.
          BUY price  = μ - N_buy  × σ
          SELL price = μ + N_sell × σ
          Saat current price ≤ BUY trigger atau ≥ SELL trigger → signal nyala. -->
     <div style="padding:12px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border2)">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Trigger Buy/Sell (Standar Deviasi)</div>
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Standar Deviasi Buy / Sell</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <label style="font-size:11px;color:var(--text2);font-weight:700">
-          BELI (μ &minus; N·σ)
-          <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">N =</span>
-            <input type="number" step="0.1" min="0" id="ptBuySigma" value="${buySigma}" oninput="updatePtSigSignal('${code}')"
-                   style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text)">σ</span>
-          </div>
+        <label style="font-size:11px;color:var(--text2);font-weight:700;display:flex;flex-direction:column;gap:4px">
+          Batas Beli
+          <input type="number" step="0.1" min="0" id="ptBuySigma" value="${buySigma}" oninput="updatePtSigSignal('${code}')"
+                 style="width:112px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;text-align:center">
         </label>
-        <label style="font-size:11px;color:var(--text2);font-weight:700">
-          JUAL (μ &plus; N·σ)
-          <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">N =</span>
-            <input type="number" step="0.1" min="0" id="ptSellSigma" value="${sellSigma}" oninput="updatePtSigSignal('${code}')"
-                   style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
-            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text)">σ</span>
-          </div>
+        <label style="font-size:11px;color:var(--text2);font-weight:700;display:flex;flex-direction:column;gap:4px">
+          Batas Jual
+          <input type="number" step="0.1" min="0" id="ptSellSigma" value="${sellSigma}" oninput="updatePtSigSignal('${code}')"
+                 style="width:112px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;text-align:center">
         </label>
       </div>
 
@@ -1735,14 +1720,14 @@ function updatePtSigSignal(code) {
   let label, cls, bg, desc;
   if (price <= buyPrice) {
     label = 'BUY SIGNAL'; cls = 'up'; bg = 'var(--green-bg)';
-    desc = `Harga ${fmt(price)} ≤ μ−${buySig}σ (${fmt(buyPrice)}) — masuk zona akumulasi statistik`;
+    desc = `Harga ${fmt(price)} di bawah batas beli ${fmt(buyPrice)} — masuk zona akumulasi`;
   } else if (price >= sellPrice) {
     label = 'SELL SIGNAL'; cls = 'dn'; bg = 'var(--red-bg)';
-    desc = `Harga ${fmt(price)} ≥ μ+${sellSig}σ (${fmt(sellPrice)}) — masuk zona ambil profit statistik`;
+    desc = `Harga ${fmt(price)} di atas batas jual ${fmt(sellPrice)} — masuk zona ambil profit`;
   } else {
     label = 'HOLD'; cls = 'neu'; bg = 'var(--yellow-bg)';
-    const bStr = Number.isFinite(buySig) ? `${fmt(buyPrice)} (μ−${buySig}σ)` : '—';
-    const sStr = Number.isFinite(sellSig) ? `${fmt(sellPrice)} (μ+${sellSig}σ)` : '—';
+    const bStr = Number.isFinite(buySig) ? `${fmt(buyPrice)}` : '—';
+    const sStr = Number.isFinite(sellSig) ? `${fmt(sellPrice)}` : '—';
     desc = `Harga ${fmt(price)} di antara BELI ${bStr} & JUAL ${sStr}`;
   }
   sigEl.innerHTML = `
