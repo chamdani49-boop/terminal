@@ -705,6 +705,157 @@ select.form-control option{background:var(--card);color:var(--text)}
 .footer{padding:22px;text-align:center;font-size:13px;color:var(--text);border-top:1px solid var(--border);margin-top:24px;font-weight:500}
 .footer strong{color:var(--accent);font-weight:700}
 
+/* ── FIRM DETAIL PAGE ──
+   Halaman dashboard profesional untuk satu firm analyst. */
+.firm-back{
+  display:inline-flex;align-items:center;gap:8px;
+  color:var(--text2);font-weight:700;font-size:13px;
+  cursor:pointer;padding:8px 14px;margin-bottom:14px;
+  border:1px solid var(--border);border-radius:var(--radius-pill);
+  background:var(--card);transition:all .15s;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+.firm-back:hover{color:var(--accent);border-color:var(--accent);transform:translateX(-2px)}
+.firm-back span{font-size:16px;line-height:1}
+
+.firm-hero{
+  background:var(--grad-soft);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:24px 28px;margin-bottom:16px;
+  box-shadow:var(--shadow-card);
+  position:relative;overflow:hidden;
+}
+.firm-hero::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:160px;height:160px;border-radius:50%;
+  background:var(--grad);opacity:.08;
+  pointer-events:none;
+}
+.firm-hero-tag{
+  font-size:10px;font-weight:800;letter-spacing:1.2px;
+  color:var(--accent);text-transform:uppercase;
+  margin-bottom:8px;
+}
+.firm-name{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-size:34px;font-weight:400;
+  background:var(--grad);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  letter-spacing:.3px;line-height:1.1;
+  margin-bottom:8px;word-break:break-word;
+}
+.firm-meta{
+  font-size:13px;color:var(--text2);font-weight:600;
+}
+
+.firm-stats{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;margin-bottom:16px;
+}
+@media(max-width:900px){.firm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.firm-stat{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:16px 18px;
+  box-shadow:var(--shadow-card);min-width:0;
+  transition:transform .15s,box-shadow .15s;
+}
+.firm-stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-card-lg)}
+.firm-stat-label{
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--text2);margin-bottom:8px;
+}
+.firm-stat-value{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:24px;font-weight:800;
+  font-variant-numeric:tabular-nums;
+  color:var(--text);line-height:1.1;letter-spacing:-.3px;
+}
+.firm-stat-sub{
+  font-size:11px;color:var(--text2);font-weight:600;margin-top:5px;
+}
+
+/* Distribusi bar dalam stat card */
+.firm-dist-bar{
+  display:flex;height:10px;border-radius:var(--radius-pill);
+  overflow:hidden;margin-top:10px;background:var(--bg3);
+}
+.firm-dist-buy{background:var(--green);height:100%}
+.firm-dist-neu{background:var(--yellow);height:100%}
+.firm-dist-sell{background:var(--red);height:100%}
+.firm-dist-legend{
+  display:flex;gap:10px;margin-top:7px;font-size:10px;font-weight:700;
+  flex-wrap:wrap;
+}
+.firm-dist-legend .dt{display:inline-flex;align-items:center;gap:4px;color:var(--text2)}
+.firm-dist-legend .dt::before{content:'';width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.firm-dist-legend .dt.b::before{background:var(--green)}
+.firm-dist-legend .dt.n::before{background:var(--yellow)}
+.firm-dist-legend .dt.s::before{background:var(--red)}
+
+/* Recs table */
+.firm-recs-scroll{
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  margin:0 -4px;border-radius:var(--radius);
+}
+.firm-recs-table{
+  width:100%;border-collapse:collapse;font-size:13px;min-width:680px;
+}
+.firm-recs-table th{
+  background:var(--bg2);color:var(--text);
+  padding:11px 12px;font-size:11px;font-weight:800;
+  text-align:left;text-transform:uppercase;letter-spacing:.5px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:1;
+}
+.firm-recs-table th.right{text-align:right}
+.firm-recs-table td{
+  padding:11px 12px;border-bottom:1px solid var(--border);
+  font-size:13px;vertical-align:middle;
+}
+.firm-recs-table td.mono{
+  font-family:'IBM Plex Mono',monospace;
+  font-variant-numeric:tabular-nums;text-align:right;
+  font-weight:600;
+}
+.firm-recs-table tr:hover td{background:var(--bg2)}
+.firm-recs-stock{
+  display:inline-block;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;font-weight:800;color:var(--accent);
+  cursor:pointer;
+  padding:4px 12px;border-radius:var(--radius-pill);
+  background:var(--bg2);border:1px solid var(--border);
+  transition:all .15s;
+}
+.firm-recs-stock:hover{
+  background:var(--accent);color:#fff;border-color:transparent;
+}
+
+/* Firm name link in analyst table */
+.firm-link{
+  cursor:pointer;color:var(--accent);font-weight:700;
+  text-decoration:underline;text-decoration-style:dotted;
+  text-underline-offset:3px;
+}
+.firm-link:hover{color:var(--accent2);text-decoration-style:solid}
+
+/* Mobile firm-detail */
+@media(max-width:640px){
+  #page-firm-detail{padding:12px 10px;padding-bottom:90px}
+  .firm-hero{padding:18px 16px}
+  .firm-name{font-size:24px}
+  .firm-hero-tag{font-size:9px}
+  .firm-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .firm-stat{padding:12px 14px}
+  .firm-stat-label{font-size:9px}
+  .firm-stat-value{font-size:18px}
+  .firm-stat-sub{font-size:10px}
+  .firm-recs-table th,.firm-recs-table td{padding:9px 10px;font-size:12px}
+  .firm-recs-stock{font-size:12px;padding:3px 9px}
+}
+
 /* ── RESPONSIVE OVERRIDES ──
    Layout reorder di layar sempit:
    urutan natural DOM (left-col dulu, lalu right-col) mau diubah ke:
@@ -1294,6 +1445,32 @@ select.form-control option{background:var(--card);color:var(--text)}
     </div>
     <div class="consensus-all-grid" id="consensusAllGrid">
       <div class="loading"><div class="spinner"></div> Memuat data konsensus...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE 4: FIRM DETAIL — semua rekomendasi dari satu firm
+═══════════════════════════════════════════ -->
+<div class="page" id="page-firm-detail">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="firm-back" onclick="backFromFirmDetail()">
+      <span aria-hidden="true">←</span> Kembali ke Dashboard
+    </div>
+
+    <div class="firm-hero">
+      <div class="firm-hero-tag">FIRM ANALYST</div>
+      <div class="firm-name" id="firmName">—</div>
+      <div class="firm-meta" id="firmMeta">—</div>
+    </div>
+
+    <div class="firm-stats" id="firmStats"></div>
+
+    <div class="card" style="overflow:visible">
+      <div class="card-title">Daftar Rekomendasi</div>
+      <div class="firm-recs-scroll">
+        <table class="firm-recs-table" id="firmRecsTable"></table>
+      </div>
     </div>
   </div>
 </div>
@@ -2480,15 +2657,168 @@ function renderAnalystTable(code) {
     const pct = price && r.target_price ? (r.target_price - price) / price : r.pct_d;
     const badgeCls = r.suggestion === 'BUY' ? 'badge-buy' : r.suggestion === 'SELL' ? 'badge-sell' : 'badge-neutral';
     const pctCls = pct > 0 ? 'up' : pct < 0 ? 'dn' : 'neu';
+    const firmEsc = escapeHtml(r.firm || '');
     return `<tr>
       <td style="font-family:'IBM Plex Mono',monospace;color:var(--text3)">${r.no}</td>
       <td style="color:var(--text2)">${r.date}</td>
-      <td>${r.firm}</td>
+      <td><span class="firm-link" data-firm="${firmEsc}" onclick="showFirmDetail(this.dataset.firm)" title="Klik untuk lihat semua rekomendasi ${firmEsc}">${firmEsc}</span></td>
       <td><span class="badge ${badgeCls}">${r.suggestion}</span></td>
       <td style="font-family:'IBM Plex Mono',monospace">${r.target_price ? Math.round(r.target_price).toLocaleString('id') : '-'}</td>
       <td class="${pctCls}" style="font-family:'IBM Plex Mono',monospace">${pct !== 0 ? (pct>=0?'+':'')+(pct*100).toFixed(1)+'%' : '-'}</td>
     </tr>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════
+// FIRM DETAIL PAGE
+// Halaman dashboard profesional menampilkan SEMUA rekomendasi dari satu
+// firm analyst lintas saham. Diakses dari klik nama firm di tabel
+// "Rekomendasi Analis" pada dashboard.
+// ═══════════════════════════════════════════
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function showFirmDetail(firm) {
+  if (!firm || !DATA) return;
+
+  // Kumpulkan semua rec dari firm ini lintas saham
+  const allRecs = [];
+  const stockSet = new Set();
+  let buyCount = 0, neuCount = 0, sellCount = 0;
+  let totalUpside = 0, upsideCount = 0;
+
+  const ph = DATA.price_history || [];
+  const last = ph[ph.length - 1] || {};
+
+  for (const [code, recs] of Object.entries(DATA.consensus_slim || {})) {
+    for (const r of recs) {
+      if (r.firm === firm) {
+        allRecs.push({ ...r, code });
+        stockSet.add(code);
+        if (r.suggestion === 'BUY') buyCount++;
+        else if (r.suggestion === 'SELL') sellCount++;
+        else neuCount++;
+
+        const cur = last[code];
+        if (cur && r.target_price) {
+          totalUpside += (r.target_price - cur) / cur;
+          upsideCount++;
+        }
+      }
+    }
+  }
+
+  if (!allRecs.length) {
+    alert('Tidak ada data rekomendasi untuk firm: ' + firm);
+    return;
+  }
+
+  // Sort terbaru di atas
+  allRecs.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+  const totalRec = allRecs.length;
+  const stockCount = stockSet.size;
+  const avgUpside = upsideCount ? (totalUpside / upsideCount) * 100 : 0;
+  const avgUpsideCls = avgUpside > 0 ? 'up' : avgUpside < 0 ? 'dn' : 'neu';
+  const buyPct = totalRec ? (buyCount / totalRec * 100) : 0;
+  const neuPct = totalRec ? (neuCount / totalRec * 100) : 0;
+  const sellPct = totalRec ? (sellCount / totalRec * 100) : 0;
+
+  // Stance dominan
+  let domStance = 'NEUTRAL', domCount = neuCount;
+  if (buyCount >= neuCount && buyCount >= sellCount) { domStance = 'BUY'; domCount = buyCount; }
+  else if (sellCount > neuCount && sellCount >= buyCount) { domStance = 'SELL'; domCount = sellCount; }
+  const domCls = domStance === 'BUY' ? 'up' : domStance === 'SELL' ? 'dn' : 'neu';
+
+  // Hero
+  document.getElementById('firmName').textContent = firm;
+  document.getElementById('firmMeta').textContent =
+    `${totalRec} rekomendasi · ${stockCount} saham di-cover`;
+
+  // Stats cards
+  document.getElementById('firmStats').innerHTML = `
+    <div class="firm-stat">
+      <div class="firm-stat-label">Total Rekomendasi</div>
+      <div class="firm-stat-value">${totalRec}</div>
+      <div class="firm-stat-sub">dari ${stockCount} saham</div>
+    </div>
+    <div class="firm-stat">
+      <div class="firm-stat-label">Avg Target Upside</div>
+      <div class="firm-stat-value ${avgUpsideCls}">${avgUpside >= 0 ? '+' : ''}${avgUpside.toFixed(1)}%</div>
+      <div class="firm-stat-sub">vs harga saat ini</div>
+    </div>
+    <div class="firm-stat">
+      <div class="firm-stat-label">Stance Dominan</div>
+      <div class="firm-stat-value ${domCls}">${domStance}</div>
+      <div class="firm-stat-sub">${domCount} dari ${totalRec} rekomendasi</div>
+    </div>
+    <div class="firm-stat">
+      <div class="firm-stat-label">Distribusi Rating</div>
+      <div class="firm-dist-bar">
+        ${buyCount ? `<div class="firm-dist-buy" style="width:${buyPct}%"></div>` : ''}
+        ${neuCount ? `<div class="firm-dist-neu" style="width:${neuPct}%"></div>` : ''}
+        ${sellCount ? `<div class="firm-dist-sell" style="width:${sellPct}%"></div>` : ''}
+      </div>
+      <div class="firm-dist-legend">
+        <span class="dt b">${buyCount} BUY</span>
+        <span class="dt n">${neuCount} NEUTRAL</span>
+        <span class="dt s">${sellCount} SELL</span>
+      </div>
+    </div>
+  `;
+
+  // Recs table
+  document.getElementById('firmRecsTable').innerHTML = `
+    <thead>
+      <tr>
+        <th>Saham</th>
+        <th>Tanggal</th>
+        <th>Rekomendasi</th>
+        <th class="right">Target</th>
+        <th class="right">Harga Sekarang</th>
+        <th class="right">%∆</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${allRecs.map(r => {
+        const cur = last[r.code] || 0;
+        const pct = cur && r.target_price ? (r.target_price - cur) / cur : null;
+        const badgeCls = r.suggestion === 'BUY' ? 'badge-buy' : r.suggestion === 'SELL' ? 'badge-sell' : 'badge-neutral';
+        const pctCls = pct == null ? 'neu' : pct > 0 ? 'up' : pct < 0 ? 'dn' : 'neu';
+        const stockName = (DATA.stock_info[r.code] || {}).name || r.code;
+        return `<tr>
+          <td>
+            <span class="firm-recs-stock" onclick="selectStock('${r.code}')" title="${escapeHtml(stockName)} — klik untuk lihat detail saham">${r.code}</span>
+          </td>
+          <td style="color:var(--text2)">${r.date || '-'}</td>
+          <td><span class="badge ${badgeCls}">${r.suggestion}</span></td>
+          <td class="mono">${r.target_price ? Math.round(r.target_price).toLocaleString('id') : '-'}</td>
+          <td class="mono" style="color:var(--text2)">${cur ? Math.round(cur).toLocaleString('id') : '-'}</td>
+          <td class="mono ${pctCls}">${pct != null ? (pct >= 0 ? '+' : '') + (pct * 100).toFixed(1) + '%' : '-'}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  `;
+
+  // Tampilkan halaman & scroll ke atas
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-firm-detail').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function backFromFirmDetail() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-dashboard').classList.add('active');
+  // Sync nav ke Dashboard
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === 0);
+  });
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  const bn = document.getElementById('bn-dashboard');
+  if (bn) bn.classList.add('active');
 }
 
 // ═══════════════════════════════════════════
