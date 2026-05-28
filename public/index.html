@@ -338,19 +338,21 @@ a{color:inherit;text-decoration:none}
    Stats pake grid 4-kolom (dot · name · count · pct) supaya alignment
    konsisten dan gak ada text overflow yg ke-truncate.
 */
-.consensus-grid{display:flex;flex-direction:column;align-items:center;gap:14px}
-.consensus-chart-wrap{position:relative;width:120px;height:120px;align-self:center}
-.consensus-stats{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0}
+/* Konsensus — donut kiri, list NEUTRAL/BUY/SELL kanan, sejajar */
+.consensus-grid{display:flex;flex-direction:row;align-items:center;gap:16px}
+.consensus-chart-wrap{position:relative;width:120px;height:120px;flex-shrink:0}
+.consensus-stats{display:flex;flex-direction:column;justify-content:center;gap:10px;flex:1;min-width:0}
 .consensus-row{
   display:grid;
-  grid-template-columns:14px minmax(0,1fr) auto auto;
+  grid-template-columns:12px minmax(0,1fr) auto;
   align-items:center;column-gap:10px;
   font-size:13px;font-weight:600;
 }
-.consensus-dot{width:12px;height:12px;border-radius:50%}
+.consensus-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
 .consensus-name{color:var(--text);font-weight:700;font-size:12px;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.consensus-count{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;text-align:right;min-width:24px}
-.consensus-pct{font-family:'IBM Plex Mono',monospace;color:var(--text2);font-size:12px;font-weight:600;text-align:right;min-width:48px}
+.consensus-count{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:15px;text-align:right;min-width:28px;color:var(--text)}
+/* pct masuk tooltip saja — hidden dari layout row */
+.consensus-pct{display:none}
 .consensus-numbers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
 .cn-box{background:var(--bg2);padding:10px 6px;text-align:center;border-radius:var(--radius);min-width:0}
 .cn-label{font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:3px;font-weight:800;letter-spacing:.6px}
@@ -1776,13 +1778,11 @@ function renderConsensus(code) {
 
   el.innerHTML = `
     <div class="consensus-grid">
-      <div style="position:relative;width:120px;height:120px">
+      <div class="consensus-chart-wrap" style="position:relative;width:120px;height:120px">
         <canvas id="donutCanvas" width="120" height="120"></canvas>
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;gap:1px">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;gap:2px">
           <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--accent)">${code}</div>
           <div style="font-size:10px;color:var(--text2);font-weight:600">${total} analis</div>
-          <div style="font-size:11px;font-weight:800;margin-top:2px" class="${domCat.cls}">${domCat.pct}</div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--text2)">${domCat.label}</div>
         </div>
       </div>
       <div class="consensus-stats">
@@ -1790,52 +1790,48 @@ function renderConsensus(code) {
           <div class="consensus-dot" style="background:var(--yellow)"></div>
           <span class="consensus-name">NEUTRAL</span>
           <span class="consensus-count">${neutral}</span>
-          <span class="consensus-pct">${pctN}</span>
         </div>
         <div class="consensus-row">
           <div class="consensus-dot" style="background:var(--green)"></div>
           <span class="consensus-name">BUY</span>
           <span class="consensus-count">${buy}</span>
-          <span class="consensus-pct up">${pctB}</span>
         </div>
         <div class="consensus-row">
           <div class="consensus-dot" style="background:var(--red)"></div>
           <span class="consensus-name">SELL</span>
           <span class="consensus-count">${sell}</span>
-          <span class="consensus-pct dn">${pctS}</span>
         </div>
-        <div class="divider"></div>
+      </div>
+    </div>
 
-        <!-- Sumbu horizontal: Low ── current(dot) ── High dengan label harga sekarang di atas dot -->
-        <div class="cs-axis">
-          <div class="cs-axis-track"></div>
-          ${dotPct != null ? `
-            <div class="cs-axis-cur" style="left:${dotPct}%">${fmt(curPrice)}</div>
-            <div class="cs-axis-tick" style="left:${dotPct}%"></div>
-            <div class="cs-axis-dot" style="left:${dotPct}%"></div>
-          ` : ''}
-          <div class="cs-axis-end lo">Low<span class="v">${fmt(low)}</span></div>
-          <div class="cs-axis-end hi">High<span class="v">${fmt(high)}</span></div>
-        </div>
+    <!-- Sumbu horizontal: Low ── current(dot) ── High -->
+    <div class="cs-axis" style="margin-top:16px">
+      <div class="cs-axis-track"></div>
+      ${dotPct != null ? `
+        <div class="cs-axis-cur" style="left:${dotPct}%">${fmt(curPrice)}</div>
+        <div class="cs-axis-tick" style="left:${dotPct}%"></div>
+        <div class="cs-axis-dot" style="left:${dotPct}%"></div>
+      ` : ''}
+      <div class="cs-axis-end lo">Low<span class="v">${fmt(low)}</span></div>
+      <div class="cs-axis-end hi">High<span class="v">${fmt(high)}</span></div>
+    </div>
 
-        <!-- Versi lama: 3 kotak HIGH / TARGET / LOW + % gap dari harga sekarang -->
-        <div class="consensus-numbers">
-          <div class="cn-box">
-            <div class="cn-label">High</div>
-            <div class="cn-val up">${fmt(high)}</div>
-            <div class="cn-gap ${gapCls(gHigh)}">${fmtGap(gHigh)}</div>
-          </div>
-          <div class="cn-box">
-            <div class="cn-label">Target</div>
-            <div class="cn-val">${fmt(target)}</div>
-            <div class="cn-gap ${gapCls(gTgt)}">${fmtGap(gTgt)}</div>
-          </div>
-          <div class="cn-box">
-            <div class="cn-label">Low</div>
-            <div class="cn-val dn">${fmt(low)}</div>
-            <div class="cn-gap ${gapCls(gLow)}">${fmtGap(gLow)}</div>
-          </div>
-        </div>
+    <!-- 3 kotak HIGH / TARGET / LOW + % gap dari harga sekarang -->
+    <div class="consensus-numbers" style="margin-top:8px">
+      <div class="cn-box">
+        <div class="cn-label">High</div>
+        <div class="cn-val up">${fmt(high)}</div>
+        <div class="cn-gap ${gapCls(gHigh)}">${fmtGap(gHigh)}</div>
+      </div>
+      <div class="cn-box">
+        <div class="cn-label">Target</div>
+        <div class="cn-val">${fmt(target)}</div>
+        <div class="cn-gap ${gapCls(gTgt)}">${fmtGap(gTgt)}</div>
+      </div>
+      <div class="cn-box">
+        <div class="cn-label">Low</div>
+        <div class="cn-val dn">${fmt(low)}</div>
+        <div class="cn-gap ${gapCls(gLow)}">${fmtGap(gLow)}</div>
       </div>
     </div>
     <div style="margin-top:10px">
@@ -1859,7 +1855,13 @@ function renderConsensus(code) {
         responsive:false,cutout:'65%',
         plugins:{legend:{display:false},tooltip:{
           backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,
-          bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:10,cornerRadius:10
+          bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:10,cornerRadius:10,
+          callbacks:{
+            label: i => {
+              const pct = total ? ((i.raw/total)*100).toFixed(1) : 0;
+              return ` ${i.label}: ${i.raw} (${pct}%)`;
+            }
+          }
         }}
       }
     });
