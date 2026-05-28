@@ -181,13 +181,14 @@ a{color:inherit;text-decoration:none}
 .stock-ticker-track{
   display:inline-flex;align-items:center;gap:0;
   padding:7px 0;white-space:nowrap;
-  animation:ticker-scroll 3000s linear infinite;
+  animation:ticker-scroll 60s linear infinite;
+  animation-delay:0s;
   will-change:transform;
 }
 .stock-ticker:hover .stock-ticker-track{animation-play-state:paused}
 @keyframes ticker-scroll{
-  from{transform:translate3d(0,0,0)}
-  to  {transform:translate3d(-50%,0,0)}
+  0%  {transform:translate3d(0,0,0)}
+  100%{transform:translate3d(-50%,0,0)}
 }
 .st-item{
   display:inline-flex;align-items:center;gap:8px;
@@ -216,7 +217,7 @@ a{color:inherit;text-decoration:none}
   font-size:11px;font-weight:700;
 }
 @media(max-width:600px){
-  .stock-ticker-track{animation-duration:2400s}
+  .stock-ticker-track{animation-duration:45s}
   .st-item{padding:4px 12px;gap:6px}
   .st-code,.st-price{font-size:12px}
   .st-chg{font-size:10px}
@@ -566,7 +567,10 @@ select.form-control option{background:var(--card);color:var(--text)}
 
 @media(max-width:640px){
   .top-bar{flex-wrap:wrap;height:auto;padding:10px;gap:8px}
-  .search-wrap{max-width:100%;order:-1;width:100%}
+  /* Header mobile: logo kiri, theme kanan, search full width baris ke-2 */
+  .top-bar .logo{order:1;flex-shrink:0}
+  .top-bar .nav-tabs{order:2;margin-left:auto}
+  .search-wrap{order:3;max-width:100%;width:100%}
   /* Nav tabs disembunyikan dari header di mobile — diganti bottom bar */
   .nav-tabs{display:none}
   .pt-grid{grid-template-columns:1fr 1fr}
@@ -597,46 +601,50 @@ select.form-control option{background:var(--card);color:var(--text)}
   .zcore-val{font-size:13px}
   .hero-stats-divider{margin:12px -14px 10px}
 
-  /* ── STATS TABLE MOBILE: scroll menyamping ── */
-  /* Matikan grid wrap, biarkan kolom tetap lebar minimal dan scroll horizontal */
-  .stats-scroll-wrap{
+  /* ── STATS + YOY: SATU PAKET SCROLL MENYAMPING ── */
+  /* statsContent hanya holder rows, tidak scroll sendiri */
+  #statsContent{overflow:visible}
+  .stats-rows-only{margin-bottom:0}
+
+  /* Combined scroll: stats rows + YoY jadi satu paket */
+  .combined-scroll-wrap{
     overflow-x:auto;
     -webkit-overflow-scrolling:touch;
     margin:0 -14px;
     padding:0 14px 6px;
-    /* scroll hint: shadow kanan */
-    background:
-      linear-gradient(to right,var(--card) 0%,transparent 40px) left / 40px 100% no-repeat,
-      linear-gradient(to left, var(--card) 0%,transparent 40px) right/ 40px 100% no-repeat;
-    background-attachment:local,local;
   }
-  .stats-scroll-inner{
-    min-width:680px; /* cukup untuk semua 10 kolom tanpa wrap */
+  .combined-scroll-inner{
+    min-width:680px;
   }
-  .stats-row,.stats-row-ihsg{
+  /* Stats rows di dalam combined scroll — full 10 kolom */
+  .combined-scroll-inner .stats-row,
+  .combined-scroll-inner .stats-row-ihsg{
     grid-template-columns:56px repeat(9,minmax(62px,1fr));
-    /* kembali ke full 10-kolom — di dalam scroll wrapper jadi tidak wrap */
   }
-  .stat-cell{padding:9px 6px}
-  .stat-val{font-size:12px}
-  .stat-label{font-size:10px;letter-spacing:.4px}
+  .combined-scroll-inner .stat-cell{padding:9px 6px}
+  .combined-scroll-inner .stat-val{font-size:12px}
+  .combined-scroll-inner .stat-label{font-size:10px;letter-spacing:.4px}
 
-  /* ── YOY TABLE MOBILE: satu scroll bersama ── */
-  .yoy-inline-grid{
-    display:block; /* matikan grid, biar scroll container yang atur layout */
-  }
-  .yoy-scroll-wrap{
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    margin:0 -14px;
-    padding:0 14px 4px;
-  }
-  .yoy-scroll-inner{
+  /* YoY di dalam combined scroll — dua kolom sejajar, lebar sama */
+  .combined-scroll-inner .yoy-inline-grid{
     display:grid;
-    grid-template-columns:1fr 1fr; /* dua kolom berdampingan di dalam scroller */
+    grid-template-columns:1fr 1fr;
     gap:12px;
-    min-width:560px; /* cukup untuk dua tabel side by side */
+    min-width:0; /* sudah diatur parent */
   }
+  .combined-scroll-inner .yoy-inline-col{
+    min-width:0;
+  }
+  /* Divider YoY di dalam scroll */
+  .combined-scroll-inner .yoy-inline-divider{
+    margin:12px 0 8px;
+  }
+
+  /* Matikan scroll wrapper lama yang sudah tidak dipakai */
+  .stats-scroll-wrap{overflow:visible;margin:0;padding:0;background:none}
+  .yoy-scroll-wrap{overflow:visible;margin:0;padding:0}
+  .yoy-inline-grid{display:grid} /* reset display:block dari PR sebelumnya */
+
   .yoy-table th,.yoy-table td{padding:7px 10px;font-size:12px}
 
   /* ── BOTTOM NAV (mobile only) ── */
@@ -1648,11 +1656,9 @@ function renderStats(code) {
   }
 
   el.innerHTML = `
-    <div class="stats-scroll-wrap">
-      <div class="stats-scroll-inner">
-        <div class="stats-row">${makeRow(code, st)}</div>
-        ${stIHSG ? `<div class="stats-row-ihsg">${makeRow('IHSG', stIHSG)}</div>` : ''}
-      </div>
+    <div class="stats-rows-only">
+      <div class="stats-row">${makeRow(code, st)}</div>
+      ${stIHSG ? `<div class="stats-row-ihsg">${makeRow('IHSG', stIHSG)}</div>` : ''}
     </div>
   `;
 }
@@ -1697,15 +1703,22 @@ function renderYoY(code) {
       </table>
     </div>`;
 
+  // statsEl: ambil konten stats yang sudah di-render (rows only, tanpa scroll wrapper)
+  const statsEl = document.getElementById('statsContent');
+  const statsRowsHtml = statsEl ? statsEl.innerHTML : '';
+
   el.innerHTML = `
     <div class="yoy-inline-wrap">
-      <div class="yoy-inline-divider">
-        <span>YoY Analysis</span>
-      </div>
-      <div class="yoy-scroll-wrap">
-        <div class="yoy-scroll-inner yoy-inline-grid">
-          ${makeTable(top4, 'up', '📈 Kenaikan Terbesar')}
-          ${makeTable(bot4, 'dn', '📉 Penurunan Terbesar')}
+      <div class="combined-scroll-wrap">
+        <div class="combined-scroll-inner">
+          <div class="stats-rows-block">
+            ${statsRowsHtml}
+          </div>
+          <div class="yoy-inline-divider"><span>YoY Analysis</span></div>
+          <div class="yoy-inline-grid">
+            ${makeTable(top4, 'up', '📈 Kenaikan Terbesar')}
+            ${makeTable(bot4, 'dn', '📉 Penurunan Terbesar')}
+          </div>
         </div>
       </div>
     </div>`;
