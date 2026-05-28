@@ -8,6 +8,11 @@
   },
   "scripts": {
     "refresh": "node scripts/build-data.js",
-    "dev": "npx serve public"
+    "dev": "npx serve public",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.95.0"
   }
 }
