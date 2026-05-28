@@ -3167,6 +3167,8 @@ function recomputeStats(code) {
   }
 
   const pct = (a, b) => (a != null && b != null && b !== 0) ? (a - b) / b : null;
+  const avg_annual = mean * 12;
+  const std_annual = stdM * Math.sqrt(12);
   return {
     current: last.price,
     mom: pct(last.price, prev ? prev.price : null),
@@ -3174,8 +3176,12 @@ function recomputeStats(code) {
     yoy: pct(last.price, yoyPrev ? yoyPrev.price : null),
     max, max_date: maxDate, min, min_date: minDate,
     avg_monthly: mean, std_monthly: stdM,
-    avg_annual: mean * 12,
-    std_annual: stdM * Math.sqrt(12),
+    avg_annual,
+    std_annual,
+    // Z-score: (YTD - Avg/th) / Std/th — konsisten dengan build-data.js
+    zcore_fresh: (std_annual && std_annual !== 0 && pct(last.price, ytdStart) != null)
+      ? (pct(last.price, ytdStart) - avg_annual) / std_annual
+      : null,
   };
 }
 
@@ -3223,7 +3229,12 @@ function renderHero(code) {
   let price = last[code] || st.current || 0;
   let prevP = prev[code] || price;
   let mom = prevP ? (price - prevP) / prevP : (st.mom || 0);
-  let zc = DATA.zcores[code] || 0;
+  let zc = DATA.zcores[code];
+  // Fallback: recompute dari fresh stats kalau backend stale
+  if (!Number.isFinite(zc)) {
+    const fresh = recomputeStats(code);
+    zc = (fresh && Number.isFinite(fresh.zcore_fresh)) ? fresh.zcore_fresh : 0;
+  }
 
   // Live %change (DAILY change dari sheet "% Live", terpisah dari MoM monthly).
   // Source priority: stats[t].change_pct_live (post PR #17), lalu DATA.live[t].change_pct
@@ -3247,7 +3258,10 @@ function renderHero(code) {
   const liveCls = liveChg == null ? 'neu' : liveChg > 0 ? 'up' : liveChg < 0 ? 'dn' : 'neu';
   const liveSym = liveChg == null ? '' : liveChg > 0 ? '▲' : liveChg < 0 ? '▼' : '';
   const zcCls = zc > 1 ? 'dn' : zc < -1 ? 'up' : 'neu';
-  const corr = DATA.correlations[code] || 0;
+  const corr    = DATA.correlations[code] || 0;   // Pearson (return-based)
+  const relVol  = DATA.stats[code] && Number.isFinite(DATA.stats[code].rel_vol)
+    ? DATA.stats[code].rel_vol
+    : null;
 
   el.innerHTML = `
     <div class="stock-hero">
@@ -3263,6 +3277,7 @@ function renderHero(code) {
           <span class="zcore-val ${zcCls}">${zc.toFixed(2)}</span>
         </div>
         <div class="hero-corr">Korelasi IHSG: <span class="correl-val ${corr > 0 ? 'up' : 'dn'}">${(corr * 100).toFixed(1)}%</span></div>
+        ${relVol != null ? `<div class="hero-corr" title="std saham / std IHSG — volatilitas relatif">Vol Rel: <span class="correl-val ${relVol > 1 ? 'dn' : 'up'}">${relVol.toFixed(2)}×</span></div>` : ''}
       </div>
       <div class="price-block">
         <div class="price">${priceStr}${liveChg != null ? ` <span class="price-live ${liveCls}">${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}% live</span>` : ''}</div>
@@ -3562,15 +3577,16 @@ function renderPriceTarget(code) {
   const liveCls = liveChg == null ? 'neu' : liveChg > 0 ? 'up' : liveChg < 0 ? 'dn' : 'neu';
   const liveSym = liveChg == null ? '' : liveChg > 0 ? '▲ ' : liveChg < 0 ? '▼ ' : '';
 
-  // Hitung mean & std PRICE dari history (level, bukan return). Ini dipakai
-  // untuk trigger buy/sell standar deviasi: BUY = mean - N×σ, SELL = mean + N×σ.
-  // Dengan begitu user bisa input "berapa σ" sebagai magnitude, system
-  // translate ke angka harga rupiah konkret.
-  const priceSeries = ph.map(h => h[code]).filter(Number.isFinite);
-  const meanPrice = priceSeries.length
-    ? priceSeries.reduce((a,b)=>a+b,0) / priceSeries.length : price;
-  const stdPrice = priceSeries.length > 1
-    ? Math.sqrt(priceSeries.reduce((a,b)=>a+(b-meanPrice)**2,0) / priceSeries.length) : 0;
+  // Hitung mean & std RETURN annualized dari history (return-based, bukan price level).
+  // Rumus Excel:
+  //   Avg/th  = 12 × AVERAGE(MoM returns)
+  //   Std/th  = SQRT(12) × STDEV(MoM returns)
+  //   Beli    = harga × (1 + Avg/th − buySig  × Std/th)
+  //   Jual    = harga × (1 + Avg/th + sellSig × Std/th)
+  // Input user tetap positif (buySig=2 → dikurangi, sellSig=1 → ditambah).
+  const stPT    = getStatsMerged(code);
+  const avgAnnual = Number.isFinite(stPT.avg_annual) ? stPT.avg_annual : 0;
+  const stdAnnual = Number.isFinite(stPT.std_annual) && stPT.std_annual > 0 ? stPT.std_annual : 0;
 
   // User input = sigma multiplier (default 1σ). Persist per-ticker karena
   // tiap saham punya volatility berbeda, mungkin user mau lebih aggressive
@@ -3637,37 +3653,44 @@ function renderPriceTarget(code) {
     <div style="margin-top:8px;font-size:11px;color:var(--text2);text-align:center;font-weight:500">By Economstock</div>
   `;
 
-  // Stash mean & std di element data attrs supaya updatePtSigSignal bisa
-  // baca tanpa re-compute (price_history bisa berubah saat live overlay).
-  el.dataset.meanPrice = meanPrice;
-  el.dataset.stdPrice = stdPrice;
-  el.dataset.curPrice = price;
+  // Stash avg/std annual ke element data attrs supaya updatePtSigSignal bisa
+  // baca tanpa re-compute.
+  el.dataset.avgAnnual = avgAnnual;
+  el.dataset.stdAnnual = stdAnnual;
+  el.dataset.curPrice  = price;
 
   updatePtSigSignal(code);
 }
 
-// Update trigger signal — sigma-based. Hitung BUY/SELL trigger price dari
-// μ ± N×σ, lalu compare dengan current price untuk signal BUY/HOLD/SELL.
+// Update trigger signal — return-based (konsisten dengan rumus Excel).
+// Rumus:
+//   Beli  = curPrice × (1 + avg_annual − buySig  × std_annual)
+//   Jual  = curPrice × (1 + avg_annual + sellSig × std_annual)
+// Input user tetap POSITIF (buySig=2 → dikurangi internally).
 function updatePtSigSignal(code) {
   const root = document.getElementById('ptContent');
   if (!root) return;
-  const buyEl = document.getElementById('ptBuySigma');
+  const buyEl  = document.getElementById('ptBuySigma');
   const sellEl = document.getElementById('ptSellSigma');
   if (!buyEl || !sellEl) return;
 
-  const meanPrice = parseFloat(root.dataset.meanPrice);
-  const stdPrice = parseFloat(root.dataset.stdPrice);
-  const price = parseFloat(root.dataset.curPrice);
+  const avgAnnual = parseFloat(root.dataset.avgAnnual);
+  const stdAnnual = parseFloat(root.dataset.stdAnnual);
+  const price     = parseFloat(root.dataset.curPrice);
 
-  const buySig = parseFloat(buyEl.value);
+  const buySig  = parseFloat(buyEl.value);
   const sellSig = parseFloat(sellEl.value);
-  if (Number.isFinite(buySig)) localStorage.setItem(`econ-pt-bsig-${code}`, buySig);
+  if (Number.isFinite(buySig))  localStorage.setItem(`econ-pt-bsig-${code}`, buySig);
   if (Number.isFinite(sellSig)) localStorage.setItem(`econ-pt-ssig-${code}`, sellSig);
 
-  const buyPrice = meanPrice - (Number.isFinite(buySig) ? buySig : 1) * stdPrice;
-  const sellPrice = meanPrice + (Number.isFinite(sellSig) ? sellSig : 1) * stdPrice;
+  // Return trigger dihitung dari avg ± (sig × std), lalu di-apply ke harga sekarang
+  const buyReturn  = avgAnnual - (Number.isFinite(buySig)  ? buySig  : 2) * stdAnnual;
+  const sellReturn = avgAnnual + (Number.isFinite(sellSig) ? sellSig : 1) * stdAnnual;
+  const buyPrice   = price * (1 + buyReturn);
+  const sellPrice  = price * (1 + sellReturn);
+
   const fmt = (n) => Math.round(n).toLocaleString('id');
-  const pctBuy = price ? ((buyPrice - price) / price) * 100 : 0;
+  const pctBuy  = price ? ((buyPrice  - price) / price) * 100 : 0;
   const pctSell = price ? ((sellPrice - price) / price) * 100 : 0;
 
   const bp = document.getElementById('ptBuyPrice');
