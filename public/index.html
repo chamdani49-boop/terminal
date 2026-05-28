@@ -1006,6 +1006,26 @@ select.form-control option{background:var(--card);color:var(--text)}
   .firm-card-name{font-size:14px}
 }
 
+/* ── BOTTOM NAV — visible by default di mobile, hidden di desktop ──
+   Diletakkan di LUAR media query agar konsisten muncul di SEMUA halaman
+   (Dashboard, Menabung, Consensus). Hanya di-hide pada layar lebar ≥641px. */
+.bottom-nav{
+  display:flex;
+  position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  background:var(--card);border-top:1px solid var(--border);
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+  box-shadow:0 -4px 20px rgba(0,0,0,.12);
+}
+.bottom-nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 4px;cursor:pointer;color:var(--text2);
+  font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  transition:color .15s;border:none;background:none;font-family:inherit;
+}
+.bottom-nav-item .bn-icon{font-size:18px;line-height:1}
+.bottom-nav-item.active{color:var(--accent)}
+.bottom-nav-item.active .bn-icon{filter:drop-shadow(0 0 4px var(--accent))}
+
 /* ── FOOTER ── */
 .footer{padding:22px;text-align:center;font-size:13px;color:var(--text);border-top:1px solid var(--border);margin-top:24px;font-weight:500}
 .footer strong{color:var(--accent);font-weight:700}
@@ -1306,25 +1326,6 @@ select.form-control option{background:var(--card);color:var(--text)}
   .yoy-inline-grid{display:grid} /* reset display:block dari PR sebelumnya */
 
   .yoy-table th,.yoy-table td{padding:7px 10px;font-size:12px}
-
-  /* ── BOTTOM NAV (mobile only) ── */
-  .bottom-nav{
-    display:flex !important;
-    position:fixed;bottom:0;left:0;right:0;z-index:9999;
-    background:var(--card);border-top:1px solid var(--border);
-    padding:8px 0 calc(8px + env(safe-area-inset-bottom));
-    box-shadow:0 -4px 20px rgba(0,0,0,.12);
-    visibility:visible !important;
-  }
-  .bottom-nav-item{
-    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-    padding:6px 4px;cursor:pointer;color:var(--text2);
-    font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
-    transition:color .15s;border:none;background:none;font-family:inherit;
-  }
-  .bottom-nav-item .bn-icon{font-size:18px;line-height:1}
-  .bottom-nav-item.active{color:var(--accent)}
-  .bottom-nav-item.active .bn-icon{filter:drop-shadow(0 0 4px var(--accent))}
 
   /* ── MENABUNG MOBILE-FRIENDLY ──
      Semua selector di-scope ke #page-menabung supaya tidak bocor ke
