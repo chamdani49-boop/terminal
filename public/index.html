@@ -1123,13 +1123,114 @@ select.form-control option{background:var(--card);color:var(--text)}
   .firm-chart-wrap{height:200px}
 }
 
-/* Mobile firm tabs */
+/* ── Mobile: consensus semua sub-menu — khusus max-width 640px ── */
 @media(max-width:640px){
-  .cv-tabs{padding:3px}
-  .cv-tab{padding:6px 14px;font-size:12px}
-  .consensus-firm-grid{grid-template-columns:1fr;gap:10px}
-  .firm-card{padding:14px}
-  .firm-card-name{font-size:14px}
+
+  /* 1. Nav bar: stacked rapi — tabs baris 1, filter baris 2 */
+  .cv-nav-bar{
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  /* Tabs: full width, rata tengah */
+  .cv-nav-bar .cv-tabs{
+    width:100%;
+    justify-content:center;
+  }
+  .cv-nav-bar .cv-tab{
+    flex:1;text-align:center;
+    padding:8px 6px;font-size:12px;
+  }
+  /* Filter bar: full width, input + tombol-tombol dalam satu baris wrap */
+  .cv-filter{
+    width:100%;
+    flex-direction:row;
+    flex-wrap:wrap;
+    gap:6px;
+    align-items:center;
+  }
+  .cv-search-input{
+    flex:1 1 120px;
+    max-width:100%;
+    min-width:0;
+    font-size:13px;
+  }
+  .cv-filter-btns{
+    display:flex;
+    flex-wrap:nowrap;    /* tombol filter 1 baris */
+    gap:4px;
+  }
+  .cv-filter-btns .radio-btn{
+    padding:5px 10px;
+    font-size:11px;
+    white-space:nowrap;
+  }
+  .cv-filter-hint{
+    width:100%;
+    font-size:10px;
+    text-align:center;
+  }
+
+  /* 2. Per Saham grid: 2 kolom compact */
+  .consensus-all-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .cs-card{
+    padding:10px 10px 12px;
+  }
+  .cs-ticker{font-size:14px}
+  .cs-name{font-size:10px;margin-top:2px}
+  .cs-card-header{margin-bottom:6px}
+  .cs-bar{height:7px;margin:7px 0}
+  .cs-nums{font-size:10px}
+  .cs-target{font-size:13px}
+
+  /* 3. Per Firm grid: 2 kolom compact */
+  .consensus-firm-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .firm-card{
+    padding:10px;
+  }
+  .firm-card-name{
+    font-size:12px;
+    -webkit-line-clamp:2;
+    margin-bottom:4px;
+  }
+  .firm-card-meta{font-size:10px;margin-bottom:8px}
+  .firm-card-bar{height:5px;margin:6px 0 4px}
+  .firm-card-counts{font-size:9px}
+  .firm-card-stat{font-size:11px;padding:5px 0}
+  .firm-card-stat .lbl{font-size:10px}
+  .firm-card-stat .val{font-size:11px}
+  /* Rating bars compact */
+  .firm-card-rating{margin-top:6px;padding-top:6px;gap:10px}
+  .firm-card-rating-lbl{font-size:9px}
+  .firm-card-arrow{width:18px;height:18px;font-size:11px;top:8px;right:8px}
+
+  /* 4. Overview: KPI gap lebih rapat */
+  .ov-view{gap:10px}
+  .ov-kpi-strip{gap:8px}
+  .ov-kpi{padding:10px 10px 10px 14px}
+  .ov-kpi-icon{font-size:14px;margin-bottom:3px}
+  .ov-kpi-value{font-size:18px}
+  .ov-kpi-label{font-size:9px;letter-spacing:.4px}
+  .ov-kpi-sub{font-size:9px;margin-top:2px}
+
+  /* chart cards gap rapat */
+  .ov-grid-3 .card{padding:12px 10px}
+  .ov-card-hd{margin-bottom:8px}
+  .card-title{font-size:11px;letter-spacing:.8px}
+
+  /* date filter lebih compact */
+  .ov-date-filter{gap:4px;padding:8px 8px}
+  .ov-date-chip{padding:5px 10px;font-size:11px}
+
+  /* Latest feed compact */
+  .ov-latest-list{max-height:360px}
 }
 
 /* ── BOTTOM NAV — visible by default di mobile, hidden di desktop ──
@@ -4426,7 +4527,7 @@ function buildOverview() {
         callbacks:{label:i=>` +${i.raw}% upside`,afterLabel:i=>{const s=topUpside[i.dataIndex];return` ${s.total} rec · ${s.buy} BUY`;}}}},
       scales:{x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11},callback:v=>v+'%'}},
         y:{grid:{display:false},ticks:{color:ct.ticks,font:{size:12,weight:'700'}}}},
-      onClick:(_,els)=>{if(els[0])selectStock(topUpside[els[0].index].code);}
+      onClick:(_,els)=>{ if(els[0]&&window.innerWidth>640) selectStock(topUpside[els[0].index].code); }
     }
   });
 
@@ -4490,7 +4591,7 @@ function buildOverview() {
             afterBody:i=>{const f=topFirms[i[0].dataIndex];if(!f)return'';return[`Total: ${f.total} rec · ${f.stocks.size} saham`,`Avg Upside: ${f.avgUp>=0?'+':''}${f.avgUp.toFixed(1)}%`];}}}},
       scales:{x:{stacked:true,grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11}}},
         y:{stacked:true,grid:{display:false},ticks:{color:ct.ticks,font:{size:10,weight:'600'}}}},
-      onClick:(_,els)=>{if(els[0])showFirmDetail(topFirms[els[0].index].name);}
+      onClick:(_,els)=>{ if(els[0]&&window.innerWidth>640) showFirmDetail(topFirms[els[0].index].name); }
     }
   });
 
@@ -4510,7 +4611,7 @@ function buildOverview() {
             afterBody:i=>{const s=topStocks[i[0].dataIndex];return[`Total: ${s.total} rec`,`BUY: ${(s.buyRatio*100).toFixed(0)}%`,`Avg Upside: ${s.avgUp>=0?'+':''}${s.avgUp.toFixed(1)}%`];}}}},
       scales:{x:{stacked:true,grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:11}}},
         y:{stacked:true,grid:{display:false},ticks:{color:ct.ticks,font:{size:12,weight:'700'}}}},
-      onClick:(_,els)=>{if(els[0])selectStock(topStocks[els[0].index].code);}
+      onClick:(_,els)=>{ if(els[0]&&window.innerWidth>640) selectStock(topStocks[els[0].index].code); }
     }
   });
 
