@@ -256,6 +256,8 @@ a{color:inherit;text-decoration:none}
   word-break:break-word;line-height:1.35;
 }
 
+.meta-sep{color:var(--text3);margin:0 4px}
+
 /* ── HERO STATS DIVIDER (inside merged card) ── */
 .hero-stats-divider{
   height:1px;
@@ -564,15 +566,70 @@ select.form-control option{background:var(--card);color:var(--text)}
   .search-wrap{max-width:100%;order:-1;width:100%}
   /* Nav tabs disembunyikan dari header di mobile — diganti bottom bar */
   .nav-tabs{display:none}
-  .stats-row,.stats-row-ihsg{grid-template-columns:repeat(5,1fr)}
   .pt-grid{grid-template-columns:1fr 1fr}
   .page{padding:14px 10px;padding-bottom:80px}  /* ruang untuk bottom nav */
   .card{padding:14px}
-  .stock-name-block .ticker{font-size:28px}
-  .price-block .price{font-size:26px}
   .pt-box .ptv{font-size:18px}
   .cn-val{font-size:13px}
   .card-title{font-size:12px;letter-spacing:1px}
+
+  /* ── HERO MOBILE: rapi 2 baris, tidak berantakan ── */
+  .stock-hero{
+    display:grid;
+    grid-template-columns:1fr auto;
+    align-items:start;
+    gap:8px;
+  }
+  .stock-name-block .ticker{font-size:26px;letter-spacing:1px}
+  .stock-name-block .fullname{font-size:13px;margin-top:2px}
+  .stock-name-block .meta{
+    font-size:11px;margin-top:3px;
+    display:flex;flex-wrap:wrap;align-items:center;gap:4px;
+    line-height:1.5;
+  }
+  .stock-name-block .meta .meta-sep{color:var(--text3)}
+  .price-block .price{font-size:22px;white-space:nowrap}
+  .price-block .change{font-size:12px;margin-top:2px;text-align:right}
+  .zcore-badge{padding:4px 10px;font-size:11px;gap:5px}
+  .zcore-val{font-size:13px}
+  .hero-stats-divider{margin:12px -14px 10px}
+
+  /* ── STATS TABLE MOBILE: scroll menyamping ── */
+  /* Matikan grid wrap, biarkan kolom tetap lebar minimal dan scroll horizontal */
+  .stats-scroll-wrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    margin:0 -14px;
+    padding:0 14px 6px;
+    /* scroll hint: shadow kanan */
+    background:
+      linear-gradient(to right,var(--card) 0%,transparent 40px) left / 40px 100% no-repeat,
+      linear-gradient(to left, var(--card) 0%,transparent 40px) right/ 40px 100% no-repeat;
+    background-attachment:local,local;
+  }
+  .stats-scroll-inner{
+    min-width:680px; /* cukup untuk semua 10 kolom tanpa wrap */
+  }
+  .stats-row,.stats-row-ihsg{
+    grid-template-columns:56px repeat(9,minmax(62px,1fr));
+    /* kembali ke full 10-kolom — di dalam scroll wrapper jadi tidak wrap */
+  }
+  .stat-cell{padding:9px 6px}
+  .stat-val{font-size:12px}
+  .stat-label{font-size:10px;letter-spacing:.4px}
+
+  /* ── YOY TABLE MOBILE: scroll menyamping ── */
+  .yoy-inline-grid{
+    grid-template-columns:1fr; /* stack vertikal tapi masing2 tabel scroll */
+  }
+  .yoy-scroll-wrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    margin:0 -14px;
+    padding:0 14px 4px;
+  }
+  .yoy-scroll-inner{min-width:340px}
+  .yoy-table th,.yoy-table td{padding:7px 10px;font-size:12px}
 
   /* ── BOTTOM NAV (mobile only) ── */
   .bottom-nav{
@@ -1379,10 +1436,10 @@ function renderHero(code) {
           <div class="ticker">${code}</div>
           <div class="fullname">${info.name || code}</div>
           <div class="meta">${info.sector || 'Indonesia Stock Exchange'} · ${info.board || 'IDX'}
-            <span style="margin-left:10px;color:var(--text3)">·</span>
-            <span style="margin-left:10px">Korelasi IHSG: <span class="correl-val ${corr > 0 ? 'up' : 'dn'}" style="font-size:12px">${(corr * 100).toFixed(1)}%</span></span>
-            <span style="margin-left:8px;color:var(--text3)">·</span>
-            <span style="margin-left:8px;color:var(--text2);font-size:11px">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'} · Data Bulanan IDX</span>
+            <span class="meta-sep">·</span>
+            <span>Korelasi IHSG: <span class="correl-val ${corr > 0 ? 'up' : 'dn'}" style="font-size:12px">${(corr * 100).toFixed(1)}%</span></span>
+            <span class="meta-sep">·</span>
+            <span style="color:var(--text2);font-size:11px">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'} · Data Bulanan IDX</span>
           </div>
         </div>
       </div>
@@ -1580,9 +1637,11 @@ function renderStats(code) {
   }
 
   el.innerHTML = `
-    <div style="margin-bottom:6px">
-      <div class="stats-row">${makeRow(code, st)}</div>
-      ${stIHSG ? `<div class="stats-row-ihsg">${makeRow('IHSG', stIHSG)}</div>` : ''}
+    <div class="stats-scroll-wrap">
+      <div class="stats-scroll-inner">
+        <div class="stats-row">${makeRow(code, st)}</div>
+        ${stIHSG ? `<div class="stats-row-ihsg">${makeRow('IHSG', stIHSG)}</div>` : ''}
+      </div>
     </div>
   `;
 }
@@ -1612,19 +1671,23 @@ function renderYoY(code) {
   const makeTable = (items, cls, label) => `
     <div class="yoy-inline-col">
       <div class="yoy-inline-head ${cls === 'up' ? 'yoy-head-up' : 'yoy-head-dn'}">${label}</div>
-      <table class="yoy-table">
-        <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
-        <tbody>
-          <tr>
-            <td class="yoy-label" style="color:var(--text);font-weight:600">${code}</td>
-            ${items.map(r => `<td class="${cls}">${(r.ret*100).toFixed(2)}%</td>`).join('')}
-          </tr>
-          <tr>
-            <td class="yoy-label" style="color:var(--text3)">when</td>
-            ${items.map(r => `<td style="color:var(--text3);font-size:10px">${r.date.substring(0,7)}</td>`).join('')}
-          </tr>
-        </tbody>
-      </table>
+      <div class="yoy-scroll-wrap">
+        <div class="yoy-scroll-inner">
+          <table class="yoy-table">
+            <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="yoy-label" style="color:var(--text);font-weight:600">${code}</td>
+                ${items.map(r => `<td class="${cls}">${(r.ret*100).toFixed(2)}%</td>`).join('')}
+              </tr>
+              <tr>
+                <td class="yoy-label" style="color:var(--text3)">when</td>
+                ${items.map(r => `<td style="color:var(--text3);font-size:10px">${r.date.substring(0,7)}</td>`).join('')}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>`;
 
   el.innerHTML = `
