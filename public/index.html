@@ -1633,18 +1633,6 @@ function renderPriceTarget(code) {
       </div>
     </div>
 
-    <!-- STATISTIC SUMMARY — landasan trigger σ -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;text-align:center;min-width:0;overflow:hidden">
-        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:800;margin-bottom:3px">Rata-rata Harga</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;letter-spacing:-.3px">${Math.round(meanPrice).toLocaleString('id')}</div>
-      </div>
-      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;text-align:center;min-width:0;overflow:hidden">
-        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:800;margin-bottom:3px">Volatilitas Harga</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;letter-spacing:-.3px">${Math.round(stdPrice).toLocaleString('id')}</div>
-      </div>
-    </div>
-
     <!-- TRIGGER BUY/SELL (sigma-based). User input = jumlah σ.
          BUY price  = μ - N_buy  × σ
          SELL price = μ + N_sell × σ
@@ -1655,12 +1643,12 @@ function renderPriceTarget(code) {
         <label style="font-size:11px;color:var(--text2);font-weight:700;display:flex;flex-direction:column;gap:4px">
           Batas Beli
           <input type="number" step="0.1" min="0" id="ptBuySigma" value="${buySigma}" oninput="updatePtSigSignal('${code}')"
-                 style="width:56px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;text-align:center">
+                 style="width:112px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;text-align:center">
         </label>
         <label style="font-size:11px;color:var(--text2);font-weight:700;display:flex;flex-direction:column;gap:4px">
           Batas Jual
           <input type="number" step="0.1" min="0" id="ptSellSigma" value="${sellSigma}" oninput="updatePtSigSignal('${code}')"
-                 style="width:56px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;text-align:center">
+                 style="width:112px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;text-align:center">
         </label>
       </div>
 
