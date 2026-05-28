@@ -1430,13 +1430,15 @@ function renderPriceTarget(code) {
   const pctBuy = (buyTarget - price) / price;
   const pctAvg = (avgTarget - price) / price;
 
-  // Z-score buy/sell trigger — preserve user's input across re-renders
-  // dengan baca dari DOM dulu (kalau ada), lalu fallback ke localStorage,
-  // lalu ke default. User kemungkinan udah edit threshold sebelumnya.
-  const lsBuy = localStorage.getItem('econ-trig-buy');
-  const lsSell = localStorage.getItem('econ-trig-sell');
-  const trigBuy = lsBuy != null ? parseFloat(lsBuy) : -1;
-  const trigSell = lsSell != null ? parseFloat(lsSell) : 2;
+  // Buy/Sell trigger — berbasis HARGA (bukan z-score). Default-nya
+  // ngikutin konsensus low/high dari analis (sama dengan kotak BELI/JUAL
+  // di atas), tapi user bisa override per-ticker. Threshold disimpan
+  // per-saham di localStorage karena harga TLKM (3rb) ≠ BBCA (5rb) ≠
+  // BREN (8rb), gak bisa pakai threshold global.
+  const lsBuy = localStorage.getItem(`econ-pt-buy-${code}`);
+  const lsSell = localStorage.getItem(`econ-pt-sell-${code}`);
+  const trigBuyPrice = lsBuy != null ? parseFloat(lsBuy) : Math.round(buyTarget);
+  const trigSellPrice = lsSell != null ? parseFloat(lsSell) : Math.round(sellTarget);
 
   const lastLabel = formatMonthYear(last.label, last.date, 'long');
 
@@ -1480,21 +1482,22 @@ function renderPriceTarget(code) {
       <div style="font-size:13px;color:var(--accent);font-weight:700;margin-top:2px">${(pctAvg*100).toFixed(1)}% dari harga saat ini</div>
     </div>
 
-    <!-- BUY/SELL TRIGGER (z-score based) — user editable. Default buy=-1
-         (saham tertekan, di bawah mean 1σ → potensi reversal), sell=+2
-         (saham euphoric, di atas mean 2σ → potensi koreksi). Threshold
-         disimpan di localStorage supaya konsisten antar saham & sesi. -->
+    <!-- BUY/SELL TRIGGER (price-based) — user editable. Default-nya pakai
+         konsensus low (BELI) & high (JUAL). User bisa override sesuai
+         strategi sendiri (contoh: trail stop di harga tertentu, support/
+         resistance teknikal, dll). Per-ticker storage karena harga tiap
+         saham beda. Saat current price melewati threshold → signal nyala. -->
     <div style="margin-top:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border2)">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Trigger Buy/Sell (Z-Score)</div>
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Trigger Buy/Sell (Harga)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <label style="font-size:11px;color:var(--text2);font-weight:700">
-          BUY when z &le;
-          <input type="number" step="0.1" id="ptTrigBuy" value="${trigBuy}" oninput="updatePtSignal('${code}')"
+          BELI saat harga &le;
+          <input type="number" step="1" min="0" id="ptTrigBuy" value="${trigBuyPrice}" oninput="updatePtSignal('${code}')"
                  style="width:100%;margin-top:3px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
         </label>
         <label style="font-size:11px;color:var(--text2);font-weight:700">
-          SELL when z &ge;
-          <input type="number" step="0.1" id="ptTrigSell" value="${trigSell}" oninput="updatePtSignal('${code}')"
+          JUAL saat harga &ge;
+          <input type="number" step="1" min="0" id="ptTrigSell" value="${trigSellPrice}" oninput="updatePtSignal('${code}')"
                  style="width:100%;margin-top:3px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700">
         </label>
       </div>
@@ -1508,34 +1511,44 @@ function renderPriceTarget(code) {
 }
 
 // Update buy/sell signal — dipanggil saat render & saat user ubah threshold.
-// Persist threshold ke localStorage supaya tetap setelah pindah saham/refresh.
+// Logic: bandingkan CURRENT PRICE vs threshold harga buy/sell.
+// Threshold di-persist per-ticker karena harga tiap saham beda scale-nya.
 function updatePtSignal(code) {
-  const z = DATA.zcores[code];
   const buyEl = document.getElementById('ptTrigBuy');
   const sellEl = document.getElementById('ptTrigSell');
   const sigEl = document.getElementById('ptSignal');
   if (!buyEl || !sellEl || !sigEl) return;
 
+  const ph = DATA.price_history;
+  const last = ph[ph.length-1];
+  const st = DATA.stats[code];
+  const price = (last && last[code]) || (st ? st.current : 0);
+
   const buy = parseFloat(buyEl.value);
   const sell = parseFloat(sellEl.value);
-  if (Number.isFinite(buy)) localStorage.setItem('econ-trig-buy', buy);
-  if (Number.isFinite(sell)) localStorage.setItem('econ-trig-sell', sell);
+  if (Number.isFinite(buy)) localStorage.setItem(`econ-pt-buy-${code}`, buy);
+  if (Number.isFinite(sell)) localStorage.setItem(`econ-pt-sell-${code}`, sell);
 
-  if (z == null || !Number.isFinite(z)) {
-    sigEl.innerHTML = `<div style="font-size:11px;color:var(--text3);text-align:center;font-style:italic">Z-score tidak tersedia</div>`;
+  if (!price || !Number.isFinite(price)) {
+    sigEl.innerHTML = `<div style="font-size:11px;color:var(--text3);text-align:center;font-style:italic">Harga tidak tersedia</div>`;
     return;
   }
 
+  const fmt = (n) => Math.round(n).toLocaleString('id');
   let label, cls, bg, desc;
-  if (Number.isFinite(buy) && z <= buy) {
+  if (Number.isFinite(buy) && price <= buy) {
+    const gap = ((buy - price) / price) * 100;
     label = 'BUY SIGNAL'; cls = 'up'; bg = 'var(--green-bg)';
-    desc = `Z=${z.toFixed(2)} ≤ ${buy} → harga tertekan, potensi reversal`;
-  } else if (Number.isFinite(sell) && z >= sell) {
+    desc = `Harga ${fmt(price)} ≤ ${fmt(buy)} (target beli) — masuk zona akumulasi`;
+  } else if (Number.isFinite(sell) && price >= sell) {
+    const gap = ((price - sell) / sell) * 100;
     label = 'SELL SIGNAL'; cls = 'dn'; bg = 'var(--red-bg)';
-    desc = `Z=${z.toFixed(2)} ≥ ${sell} → harga euphoric, potensi koreksi`;
+    desc = `Harga ${fmt(price)} ≥ ${fmt(sell)} (target jual) — masuk zona ambil profit`;
   } else {
     label = 'HOLD'; cls = 'neu'; bg = 'var(--yellow-bg)';
-    desc = `Z=${z.toFixed(2)} masih dalam range normal (${buy} … ${sell})`;
+    const toBuy = Number.isFinite(buy) ? `${fmt(price - buy)} di atas BELI` : '—';
+    const toSell = Number.isFinite(sell) ? `${fmt(sell - price)} di bawah JUAL` : '—';
+    desc = `Harga ${fmt(price)} masih di range normal (${toBuy} · ${toSell})`;
   }
 
   sigEl.innerHTML = `
