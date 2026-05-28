@@ -476,6 +476,21 @@ a{color:inherit;text-decoration:none}
   position:absolute;top:calc(50% - 22px);width:2px;height:18px;
   background:var(--green);transform:translateX(-50%);z-index:1;
 }
+/* Garis & label "rata-rata" — di posisi TARGET. Subtle dashed line. */
+.cs-axis-avg-line{
+  position:absolute;top:calc(50% - 14px);height:28px;width:0;
+  border-left:1.5px dashed var(--text2);
+  transform:translateX(-50%);z-index:1;opacity:.55;
+  pointer-events:none;
+}
+.cs-axis-avg-label{
+  position:absolute;top:calc(50% + 22px);
+  font-size:9px;font-weight:700;color:var(--text2);
+  letter-spacing:.4px;text-transform:uppercase;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  transform:translateX(-50%);white-space:nowrap;
+  pointer-events:none;
+}
 .cs-axis-cur{
   position:absolute;top:0;transform:translateX(-50%);
   font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:800;
@@ -568,7 +583,7 @@ select.form-control option{background:var(--card);color:var(--text)}
 @media(max-width:380px){.result-grid{grid-template-columns:1fr}}
 .result-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;text-align:center}
 .result-box .rl{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;font-weight:800}
-.result-box .rv{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);word-break:break-word}
+.result-box .rv{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);word-break:break-word;line-height:1.25}
 .result-box .rs{font-size:11px;color:var(--text2);margin-top:3px;font-weight:500}
 
 /* Portfolio table — 8 kolom, paksa min-width supaya horizontal scroll
@@ -1138,7 +1153,7 @@ select.form-control option{background:var(--card);color:var(--text)}
           <div id="dcaFields">
             <div class="form-group">
               <label class="form-label">Nabung Per Bulan (Rp)</label>
-              <input type="number" class="form-control" id="dcaAmount" value="1000000" min="100000" step="100000">
+              <input type="text" inputmode="numeric" class="form-control money-input" id="dcaAmount" value="1.000.000">
             </div>
             <div class="form-group">
               <label class="form-label">Mulai Nabung</label>
@@ -1149,7 +1164,7 @@ select.form-control option{background:var(--card);color:var(--text)}
           <div id="lumpFields" style="display:none">
             <div class="form-group">
               <label class="form-label">Investasi Awal (Rp)</label>
-              <input type="number" class="form-control" id="lumpAmount" value="20000000" min="100000" step="1000000">
+              <input type="text" inputmode="numeric" class="form-control money-input" id="lumpAmount" value="20.000.000">
             </div>
             <div class="form-group">
               <label class="form-label">Tanggal Beli</label>
@@ -1360,6 +1375,7 @@ function init() {
   buildSearchIndex();
   buildSavingStockList();
   buildDateOptions();
+  attachMoneyInputFormatters();
   renderDashboard(currentStock);
   buildConsensusAll();
 }
@@ -2223,6 +2239,14 @@ function renderConsensus(code) {
   if (Number.isFinite(axisLow) && Number.isFinite(axisHigh) && axisHigh > axisLow && curPrice) {
     dotPct = Math.max(0, Math.min(100, ((curPrice - axisLow) / (axisHigh - axisLow)) * 100));
   }
+
+  // Garis "rata-rata" di posisi target. Hanya tampil kalau ada >= 2 analis
+  // (kalau cuma 1 rekom, target = low = high = 1 angka tunggal — tidak ada
+  // konsep "rata-rata" yang meaningful).
+  let avgPct = null;
+  if (total > 1 && Number.isFinite(target) && Number.isFinite(axisLow) && Number.isFinite(axisHigh) && axisHigh > axisLow) {
+    avgPct = Math.max(0, Math.min(100, ((target - axisLow) / (axisHigh - axisLow)) * 100));
+  }
   const fmt = (n) => Number.isFinite(n) ? Math.round(n).toLocaleString('id') : '—';
 
   document.getElementById('consensusTotal').textContent = total;
@@ -2264,9 +2288,13 @@ function renderConsensus(code) {
       </div>
     </div>
 
-    <!-- Sumbu horizontal: Low ── current(dot) ── High -->
+    <!-- Sumbu horizontal: Low ── current(dot) ── High + garis rata-rata -->
     <div class="cs-axis" style="margin-top:16px">
       <div class="cs-axis-track"></div>
+      ${avgPct != null ? `
+        <div class="cs-axis-avg-line" style="left:${avgPct}%"></div>
+        <div class="cs-axis-avg-label" style="left:${avgPct}%">rata-rata</div>
+      ` : ''}
       ${dotPct != null ? `
         <div class="cs-axis-cur" style="left:${dotPct}%">${fmt(curPrice)}</div>
         <div class="cs-axis-tick" style="left:${dotPct}%"></div>
@@ -2429,6 +2457,36 @@ function buildDateOptions() {
   lumpSel.value = fiveYearsAgo.date;
 }
 
+// Auto-format input nominal — pakai titik sebagai separator ribuan
+// (locale Indonesia). User ketik "1500000" → tampil "1.500.000" otomatis.
+// Cursor position dijaga supaya pengetikan tidak loncat ke akhir.
+function attachMoneyInputFormatters() {
+  const formatThousand = (val) => {
+    const num = String(val).replace(/[^\d]/g, '');
+    if (!num) return '';
+    return Number(num).toLocaleString('id');
+  };
+  const attach = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Format nilai awal
+    el.value = formatThousand(el.value);
+    el.addEventListener('input', () => {
+      const oldLen = el.value.length;
+      const cursor = el.selectionStart || 0;
+      el.value = formatThousand(el.value);
+      const newLen = el.value.length;
+      // Jaga posisi cursor relatif terhadap akhir string
+      const newPos = Math.max(0, cursor + (newLen - oldLen));
+      try { el.setSelectionRange(newPos, newPos); } catch (_) {}
+    });
+    // Saat blur, pastikan format final konsisten
+    el.addEventListener('blur', () => { el.value = formatThousand(el.value); });
+  };
+  attach('dcaAmount');
+  attach('lumpAmount');
+}
+
 function calculateSaving() {
   const code = document.getElementById('savingStock').value;
   if (!code) { alert('Pilih saham terlebih dahulu!'); return; }
@@ -2437,7 +2495,8 @@ function calculateSaving() {
   const info = DATA.stock_info[code] || {};
 
   if (savingMode === 'dca') {
-    const monthly = parseFloat(document.getElementById('dcaAmount').value) || 1000000;
+    // Strip non-digit (titik separator ribuan) sebelum parse
+    const monthly = parseInt(String(document.getElementById('dcaAmount').value).replace(/[^\d]/g, ''), 10) || 1000000;
     const startDate = document.getElementById('dcaStart').value;
 
     const slice = ph.filter(e => e.date >= startDate && e[code] > 0);
@@ -2462,7 +2521,7 @@ function calculateSaving() {
     showSavingResult(code, rows, last, 'DCA');
 
   } else {
-    const lumpAmt = parseFloat(document.getElementById('lumpAmount').value) || 20000000;
+    const lumpAmt = parseInt(String(document.getElementById('lumpAmount').value).replace(/[^\d]/g, ''), 10) || 20000000;
     const buyDate = document.getElementById('lumpDate').value;
 
     const sliceAll = ph.filter(e => e.date >= buyDate && e[code] > 0);
@@ -2567,11 +2626,12 @@ function showSavingResult(code, rows, last, mode) {
 }
 
 function rp(n) {
-  const abs = Math.abs(n);
+  // Format Rupiah Indonesia: titik sebagai pemisah ribuan, tanpa singkatan
+  // (rb/jt/M). Contoh: 1500000 → "Rp1.500.000". Lebih panjang tapi konsisten
+  // dan langsung jelas tanpa harus mental-convert "rb"/"jt".
+  if (!Number.isFinite(n)) return 'Rp0';
   const sign = n < 0 ? '-' : '';
-  if (abs >= 1e9) return sign + 'Rp' + (abs/1e9).toFixed(2) + 'M';
-  if (abs >= 1e6) return sign + 'Rp' + Math.round(abs/1e3) + 'rb';
-  return sign + 'Rp' + Math.round(abs).toLocaleString('id');
+  return sign + 'Rp' + Math.round(Math.abs(n)).toLocaleString('id');
 }
 
 // ═══════════════════════════════════════════
