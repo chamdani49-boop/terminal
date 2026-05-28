@@ -703,19 +703,77 @@ select.form-control option{background:var(--card);color:var(--text)}
   .bottom-nav-item.active{color:var(--accent)}
   .bottom-nav-item.active .bn-icon{filter:drop-shadow(0 0 4px var(--accent))}
 
-  /* Saving grid mobile: stack 1 kolom, result di bawah form */
-  .saving-grid{gap:10px;grid-template-columns:1fr}
+  /* ── MENABUNG MOBILE-FRIENDLY ──
+     Semua selector di-scope ke #page-menabung supaya tidak bocor ke
+     halaman lain. Inside @media(max-width:640px) — desktop aman. */
+  #page-menabung{padding:12px 10px;padding-bottom:90px}
+  #page-menabung > div{max-width:100%}
+
+  /* Banner info — lebih ringkas */
+  #page-menabung .info-banner{
+    font-size:12px;padding:10px 12px;line-height:1.5;
+    border-radius:var(--radius);margin-bottom:10px;
+  }
+
+  /* Stack: form lalu result */
+  .saving-grid{gap:12px;grid-template-columns:1fr}
   .saving-col-form{order:1}
   .saving-col-result{order:2}
-  /* Paksa table tidak melebar ke luar viewport */
-  .port-scroll{max-width:100%;overflow-x:auto}
-  .info-banner{font-size:12px;padding:10px 14px}
-  .result-grid{grid-template-columns:1fr 1fr;gap:8px}
-  .result-box{padding:10px 8px}
-  .result-box .rv{font-size:15px}
-  .btn{padding:12px;font-size:13px}
-  .form-control{padding:9px 12px;font-size:13px}
-  .form-label{font-size:11px}
+
+  /* Card padding lebih compact tapi tetap nyaman */
+  #page-menabung .card{padding:14px;border-radius:var(--radius)}
+  #page-menabung .card-title{font-size:12px;letter-spacing:.8px;margin-bottom:10px}
+
+  /* Form fields — touch target 44px (Apple HIG) */
+  #page-menabung .form-group{margin-bottom:12px}
+  #page-menabung .form-label{
+    font-size:11px;letter-spacing:.4px;margin-bottom:6px;font-weight:700;
+  }
+  #page-menabung .form-control{
+    padding:12px 14px;font-size:14px;
+    min-height:44px;border-radius:10px;
+  }
+  #page-menabung select.form-control{padding-right:36px}
+
+  /* Radio buttons — touch friendly */
+  #page-menabung .radio-group{gap:6px}
+  #page-menabung .radio-btn{
+    padding:11px 10px;font-size:12px;min-height:42px;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* Tombol simulasi — full width, prominent */
+  #page-menabung .btn{
+    padding:14px;font-size:14px;min-height:48px;
+    border-radius:10px;letter-spacing:.3px;
+  }
+
+  /* Result grid: tetap 2 kolom agar comparison enak dibaca */
+  #page-menabung .result-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  #page-menabung .result-box{padding:11px 8px;border-radius:10px}
+  #page-menabung .result-box .rl{font-size:10px;letter-spacing:.5px;margin-bottom:3px}
+  #page-menabung .result-box .rv{font-size:14px;line-height:1.2}
+  #page-menabung .result-box .rs{font-size:10px;margin-top:2px}
+
+  /* Chart container — height proporsional di mobile */
+  #page-menabung .chart-wrap{height:200px !important}
+
+  /* Tabel detail per periode — scroll horizontal di dalam container */
+  #page-menabung .port-scroll{
+    max-width:100%;overflow-x:auto;overflow-y:auto;
+    max-height:300px;
+    -webkit-overflow-scrolling:touch;
+    /* visual hint: shadow tipis di kanan menandakan ada scroll */
+    background:
+      linear-gradient(to left,var(--card),transparent 24px) right/24px 100% no-repeat;
+  }
+  #page-menabung .port-table{font-size:11px;min-width:560px}
+  #page-menabung .port-table th{padding:8px 9px;font-size:10px}
+  #page-menabung .port-table td{padding:7px 9px;font-size:11px}
+  #page-menabung .port-table td:first-child{font-size:10px}
+
+  /* Quick result text rapi */
+  #page-menabung #savingQuickContent{font-size:13px;line-height:1.6}
 }
 
 @media(min-width:641px){
@@ -2309,6 +2367,15 @@ function showSavingResult(code, rows, last, mode) {
   document.getElementById('savingQuickResult').style.display = 'block';
   document.getElementById('savingResultCard').style.display = 'block';
   document.getElementById('savingTableCard').style.display = 'block';
+
+  // Mobile UX: setelah hitung, scroll halus ke ringkasan supaya user
+  // langsung lihat hasilnya tanpa harus scroll manual
+  if (window.innerWidth <= 640) {
+    setTimeout(() => {
+      const t = document.getElementById('savingQuickResult');
+      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  }
 
   const glCls = last.gl >= 0 ? 'up' : 'dn';
   const glSign = last.gl >= 0 ? '+' : '';
