@@ -882,10 +882,7 @@ function formatMonthYear(label, date, style = 'long') {
   if (m < 0 && label) {
     // Format M/D/YYYY dari build-data.js (e.g. "6/30/2021", "5/31/2026")
     const mdmy = String(label).match(/^(\d{1,2})\/\d{1,2}\/(\d{4})$/);
-    if (mdmy) {
-      m = parseInt(mdmy[1], 10) - 1;
-      y = parseInt(mdmy[2], 10);
-    }
+    if (mdmy) { m = parseInt(mdmy[1], 10) - 1; y = parseInt(mdmy[2], 10); }
   }
   if (m < 0 && label) {
     const mt = String(label).match(/^([A-Za-z]{3,9})[-\s\/](\d{2,4})$/);
@@ -1449,23 +1446,41 @@ function renderStats(code) {
   }
 
   const fmt = (v, isPrice=false) => isPrice ? Math.round(v).toLocaleString('id') : (v*100).toFixed(2)+'%';
+  const fmtDate = d => d ? d.substring(0,7).replace('-','/') : '-';
 
-  // Format tanggal pendek "Mei 26", "Jun 17" dari ISO date "2021-06-01"
+  // Helper: format tanggal pendek "Mei 26", "Apr 25" dari ISO string "2026-05-01"
   const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   function shortMon(isoDate) {
     if (!isoDate) return '';
-    const parts = isoDate.split('-');
-    return `${BULAN[parseInt(parts[1])-1]} ${String(parseInt(parts[0])).slice(2)}`;
+    const [yr, mo] = isoDate.split('-');
+    return `${BULAN[parseInt(mo)-1]} ${String(parseInt(yr)).slice(2)}`;
   }
 
-  // Sub-label periode untuk MoM/YTD/YoY — otomatis dari last row history
-  const lastDate  = last.date  || '';
-  const prevDate  = prev.date  || '';
-  const [lYr, lMo] = lastDate.split('-').map(Number);
-  const momSub  = prevDate ? `${shortMon(prevDate)} – ${shortMon(lastDate)}` : shortMon(lastDate);
-  const ytdSub  = `Des ${String(lYr-1).slice(2)} – ${shortMon(lastDate)}`;
-  const yoyStart = `${lYr-1}-${String(lMo).padStart(2,'0')}-01`;
-  const yoySub  = `${shortMon(yoyStart)} – ${shortMon(lastDate)}`;
+  // Hitung sub-label tanggal untuk tiap kolom statistik
+  // last = baris terakhir di price_history (bulan berjalan, mis. Mei 2026)
+  // prev = baris sebelumnya (bulan lalu, mis. Apr 2026)
+  function dateSub(code) {
+    const lastDate  = last.date  || '';
+    const prevDate  = prev.date  || '';
+    const [lYr, lMo] = lastDate.split('-').map(Number);
+
+    // MoM: "Apr – Mei"
+    const momSub = prevDate
+      ? `${shortMon(prevDate)} – ${shortMon(lastDate)}`
+      : shortMon(lastDate);
+
+    // YTD: "Des 25 – Mei 26" (dari akhir tahun lalu ke bulan berjalan)
+    const prevYrDec = `${lYr - 1}-12-01`;
+    const ytdSub = `Des ${String(lYr-1).slice(2)} – ${shortMon(lastDate)}`;
+
+    // YoY: "Mei 25 – Mei 26"
+    const yoyStartDate = `${lYr - 1}-${String(lMo).padStart(2,'0')}-01`;
+    const yoySub = `${shortMon(yoyStartDate)} – ${shortMon(lastDate)}`;
+
+    return { momSub, ytdSub, yoySub };
+  }
+
+  const { momSub, ytdSub, yoySub } = dateSub(code);
   const SUB = `font-size:9px;color:var(--text3);font-weight:500;margin-top:1px;letter-spacing:.2px`;
 
   function makeRow(label, s, cls='') {
@@ -1723,7 +1738,9 @@ function updatePtSigSignal(code) {
     desc = `Harga ${fmt(price)} di atas batas jual ${fmt(sellPrice)} — masuk zona ambil profit`;
   } else {
     label = 'HOLD'; cls = 'neu'; bg = 'var(--yellow-bg)';
-    desc = `Harga ${fmt(price)} di antara BELI ${fmt(buyPrice)} & JUAL ${fmt(sellPrice)}`;
+    const bStr = Number.isFinite(buySig) ? `${fmt(buyPrice)}` : '—';
+    const sStr = Number.isFinite(sellSig) ? `${fmt(sellPrice)}` : '—';
+    desc = `Harga ${fmt(price)} di antara BELI ${bStr} & JUAL ${sStr}`;
   }
   sigEl.innerHTML = `
     <div style="background:${bg};border-radius:10px;padding:8px 10px;text-align:center">
