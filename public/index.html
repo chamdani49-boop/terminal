@@ -279,19 +279,29 @@ a{color:inherit;text-decoration:none}
 .zcore-val{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px}
 
 /* ── STATS TABLE ── */
-.stats-row{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;margin-top:10px;border-radius:var(--radius);overflow:hidden}
-@media(max-width:700px){.stats-row{grid-template-columns:repeat(4,1fr)}}
+/* Stats row: 10 kolom (8 deskriptif + 2 annualized di kanan).
+   Annualized di-set apart visually dengan border kiri & background tweak,
+   biar match request "annualized di SAMPING statistic deskriptif". */
+.stats-row{display:grid;grid-template-columns:repeat(10,1fr);gap:1px;margin-top:10px;border-radius:var(--radius);overflow:hidden}
+@media(max-width:900px){.stats-row{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:540px){.stats-row{grid-template-columns:repeat(3,1fr)}}
 .stat-cell{background:var(--bg2);padding:11px 9px;text-align:center}
 .stat-cell:first-child{text-align:left;display:flex;align-items:center;justify-content:flex-start}
 .stat-cell:first-child .stat-label{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:0}
+/* Annualized cells — visually distinct dari descriptive cells. */
+.stat-cell.stat-annual{background:var(--bg3);position:relative}
+.stat-cell.stat-annual:first-of-type{box-shadow:inset 2px 0 0 var(--accent3)}
+@media(max-width:900px){.stat-cell.stat-annual:first-of-type{box-shadow:none}}
 .stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;font-weight:700}
 .stat-val{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
 .stat-sub{font-size:10px;color:var(--text2);margin-top:2px;font-weight:500}
 
 /* IHSG row */
-.stats-row-ihsg{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;margin-top:1px;border-radius:var(--radius);overflow:hidden}
-@media(max-width:700px){.stats-row-ihsg{grid-template-columns:repeat(4,1fr)}}
+.stats-row-ihsg{display:grid;grid-template-columns:repeat(10,1fr);gap:1px;margin-top:1px;border-radius:var(--radius);overflow:hidden}
+@media(max-width:900px){.stats-row-ihsg{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:540px){.stats-row-ihsg{grid-template-columns:repeat(3,1fr)}}
 .stats-row-ihsg .stat-cell{background:var(--bg3)}
+.stats-row-ihsg .stat-cell.stat-annual{background:var(--bg4)}
 
 .correl-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;flex-wrap:wrap}
 .correl-label{color:var(--text2);font-size:12px;font-weight:600}
@@ -503,7 +513,7 @@ select.form-control option{background:var(--card);color:var(--text)}
   .search-wrap{max-width:100%;order:-1;width:100%}
   .nav-tabs{width:100%;justify-content:center;flex-wrap:wrap}
   .nav-tab{padding:6px 12px;font-size:12px}
-  .stats-row,.stats-row-ihsg{grid-template-columns:repeat(4,1fr)}
+  .stats-row,.stats-row-ihsg{grid-template-columns:repeat(5,1fr)}
   .pt-grid{grid-template-columns:1fr 1fr}
   .page{padding:14px 10px}
   .card{padding:14px}
@@ -1290,6 +1300,7 @@ function renderStats(code) {
   const fmtDate = d => d ? d.substring(0,7).replace('-','/') : '-';
 
   function makeRow(label, s, cls='') {
+    const av = s.avg_annual, sv = s.std_annual;
     return `
       <div class="stat-cell ${cls}" style="text-align:left"><div class="stat-label">${label}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">${last.label || 'Bulan'}</div><div class="stat-val">${Math.round(s.current).toLocaleString('id')}</div></div>
@@ -1299,6 +1310,8 @@ function renderStats(code) {
       <div class="stat-cell ${cls}"><div class="stat-label">Max</div><div class="stat-val">${Math.round(s.max).toLocaleString('id')}</div><div class="stat-sub">${fmtDate(s.max_date)}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">Min</div><div class="stat-val">${Math.round(s.min).toLocaleString('id')}</div><div class="stat-sub">${fmtDate(s.min_date)}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">Std Dev</div><div class="stat-val">${fmt(s.std_monthly)}</div></div>
+      <div class="stat-cell ${cls} stat-annual"><div class="stat-label">Avg / Thn</div><div class="stat-val ${av>0?'up':'dn'}">${av!=null?fmt(av):'-'}</div></div>
+      <div class="stat-cell ${cls} stat-annual"><div class="stat-label">Std / Thn</div><div class="stat-val">${sv!=null?fmt(sv):'-'}</div></div>
     `;
   }
 
@@ -1307,29 +1320,13 @@ function renderStats(code) {
       <div class="stats-row">${makeRow(code, st)}</div>
       ${stIHSG ? `<div class="stats-row-ihsg">${makeRow('IHSG', stIHSG)}</div>` : ''}
     </div>
-
-    <!-- ANNUALIZED METRICS — average & std deviation, scaled monthly→yearly
-         (avg×12 untuk return, std×√12 untuk risk). Membantu user banding
-         expected return vs risiko di skala tahunan tanpa hitung manual. -->
-    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 12px;margin:8px 0;padding:10px 12px;background:var(--bg2);border-radius:var(--radius);font-size:12px;border:1px solid var(--border2)">
-      <div></div>
-      <div style="text-align:center;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-size:10px">Avg Return / Thn</div>
-      <div style="text-align:center;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-size:10px">Std Dev / Thn (Risk)</div>
-
-      <div style="font-weight:800;color:var(--accent);font-family:'IBM Plex Mono',monospace">${code}</div>
-      <div class="${st.avg_annual>0?'up':'dn'}" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px">${st.avg_annual!=null?(st.avg_annual*100).toFixed(2)+'%':'-'}</div>
-      <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--text);font-size:13px">${st.std_annual!=null?(st.std_annual*100).toFixed(2)+'%':'-'}</div>
-
-      ${stIHSG ? `
-      <div style="font-weight:800;color:var(--accent2);font-family:'IBM Plex Mono',monospace">IHSG</div>
-      <div class="${stIHSG.avg_annual>0?'up':'dn'}" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px">${stIHSG.avg_annual!=null?(stIHSG.avg_annual*100).toFixed(2)+'%':'-'}</div>
-      <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--text);font-size:13px">${stIHSG.std_annual!=null?(stIHSG.std_annual*100).toFixed(2)+'%':'-'}</div>
-      ` : ''}
-    </div>
-
-    <div class="correl-row" style="padding:4px 0">
-      <span class="correl-label">Korelasi ${code} vs IHSG (bulanan):</span>
+    <div class="correl-row" style="padding:4px 0;flex-wrap:wrap;gap:14px">
+      <span class="correl-label">Korelasi ${code} vs IHSG (Pearson):</span>
       <span class="correl-val ${(DATA.correlations[code]||0)>0?'up':'dn'}">${((DATA.correlations[code]||0)*100).toFixed(2)}%</span>
+      ${st.beta != null ? `<span class="correl-label" style="margin-left:8px">Beta:</span>
+        <span class="correl-val" style="color:var(--accent2)">${st.beta.toFixed(2)}</span>` : ''}
+      ${st.rel_vol != null ? `<span class="correl-label" style="margin-left:8px">Rel Volatilitas:</span>
+        <span class="correl-val" style="color:var(--accent3)">${st.rel_vol.toFixed(2)}×</span>` : ''}
     </div>
   `;
 }

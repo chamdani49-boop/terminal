@@ -875,6 +875,65 @@ function computeZcores(stats) {
   return out;
 }
 
+/**
+ * Compute beta dan relative volatility per-ticker vs IHSG.
+ * - beta = cov(stock, IHSG) / var(IHSG)            (sensitivity terhadap market)
+ * - rel_vol = std(stock) / std(IHSG)               (rasio risiko absolute)
+ *
+ * Mutates stats: tambah stats[t].beta dan stats[t].rel_vol untuk semua ticker
+ * (kecuali IHSG sendiri). Dipanggil setelah computeStats.
+ *
+ * Catatan: rel_vol untuk TLKM ≈ 1.57 cocok dengan angka yang user sebut
+ * "korelasi 1.57". Sebenernya itu rasio std (TLKM_std / IHSG_std), bukan
+ * Pearson correlation. Karena annualization × √12 sama buat kedua-duanya,
+ * rel_vol monthly === rel_vol annualized.
+ */
+function computeBetaAndRelVol(history, stats) {
+  if (!history.length || !stats.IHSG) return;
+
+  function returns(t) {
+    const out = [];
+    for (let i = 1; i < history.length; i++) {
+      const a = history[i][t], b = history[i - 1][t];
+      if (Number.isFinite(a) && Number.isFinite(b) && b !== 0) out.push((a - b) / b);
+      else out.push(null);
+    }
+    return out;
+  }
+
+  const ihsgRet = returns('IHSG');
+  const ihsgStd = stats.IHSG.std_monthly;
+
+  // var(IHSG) over valid entries (matches Pearson denominator method).
+  const validI = ihsgRet.filter(x => Number.isFinite(x));
+  const meanI = validI.reduce((a, b) => a + b, 0) / validI.length;
+  const varI = validI.reduce((a, b) => a + (b - meanI) ** 2, 0) / validI.length;
+
+  for (const t of Object.keys(stats)) {
+    if (t === 'IHSG') continue;
+    const ret = returns(t);
+    let n = 0, sumS = 0, sumI = 0;
+    for (let i = 0; i < ret.length; i++) {
+      if (Number.isFinite(ret[i]) && Number.isFinite(ihsgRet[i])) {
+        n++; sumS += ret[i]; sumI += ihsgRet[i];
+      }
+    }
+    if (n < 2 || varI === 0) continue;
+    const mS = sumS / n, mI = sumI / n;
+    let cov = 0;
+    for (let i = 0; i < ret.length; i++) {
+      if (Number.isFinite(ret[i]) && Number.isFinite(ihsgRet[i])) {
+        cov += (ret[i] - mS) * (ihsgRet[i] - mI);
+      }
+    }
+    cov /= n;
+    stats[t].beta = Math.round((cov / varI) * 100) / 100;
+    if (ihsgStd && stats[t].std_monthly) {
+      stats[t].rel_vol = Math.round((stats[t].std_monthly / ihsgStd) * 100) / 100;
+    }
+  }
+}
+
 function computeConsensusSummary(consensus) {
   const out = {};
   for (const t of Object.keys(consensus)) {
@@ -981,6 +1040,7 @@ async function main() {
   }
 
   const correlations = computeCorrelations(price_history);
+  computeBetaAndRelVol(price_history, stats);
   const zcores = computeZcores(stats);
 
   const latest = {};
