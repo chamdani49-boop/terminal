@@ -997,6 +997,31 @@ select.form-control option{background:var(--card);color:var(--text)}
 }
 .firm-card:hover .firm-card-arrow{background:var(--accent);color:#fff;transform:translateX(2px)}
 
+/* Rating bars row di bawah firm card */
+.firm-card-rating{
+  display:flex;gap:16px;
+  border-top:1px dashed var(--border);
+  margin-top:10px;padding-top:10px;
+}
+.firm-card-rating-col{
+  display:flex;flex-direction:column;gap:4px;flex:1;
+}
+.firm-card-rating-lbl{
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--text2);
+}
+
+/* firm-stat card untuk Returns/Risk di hero panel — bar lebih besar */
+.firm-stat-rating .rec-modal-rating-bars{
+  display:flex;gap:4px;
+}
+.firm-stat-rating .rec-modal-bar{
+  width:22px;height:14px;border-radius:3px;
+  background:var(--bg3);
+}
+.firm-stat-rating .rec-modal-bar.filled-green{ background:#059669 }
+.firm-stat-rating .rec-modal-bar.filled-red  { background:#e11d48 }
+
 /* Mobile firm tabs */
 @media(max-width:640px){
   .cv-tabs{padding:3px}
@@ -1079,6 +1104,10 @@ select.form-control option{background:var(--card);color:var(--text)}
   gap:12px;margin-bottom:16px;
 }
 @media(max-width:900px){.firm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Saat ada 6 stat cards (tambah Returns+Risk), auto-fill tetap 4 kolom
+   di desktop, 2 kolom di tablet — firm-stat-rating tidak dapat treatment
+   khusus, cukup ikut grid existing. */
 
 .firm-stat{
   background:var(--card);border:1px solid var(--border);
@@ -3670,6 +3699,18 @@ function showFirmDetail(firm) {
     `${totalRec} rekomendasi · ${stockCount} saham di-cover`;
 
   // Stats cards
+  const firmRating = getFirmRating(firm);
+  const fr = firmRating;
+  const frRetBars  = renderRatingBars(fr ? fr.returns : null, 'green', 'lg');
+  const frRiskBars = renderRatingBars(fr ? fr.risk    : null, 'red',   'lg');
+  const frSample   = fr && fr.sampleSize > 0 ? `${fr.sampleSize} rec aktif (1–24 bln)` : 'Belum ada rec aktif';
+  const frAchTxt   = fr && fr.avgAchievement != null
+    ? (fr.avgAchievement >= 0 ? '+' : '') + (fr.avgAchievement * 100).toFixed(1) + '% rata-rata pencapaian'
+    : '—';
+  const frDdTxt    = fr && fr.avgDrawdown != null
+    ? (fr.avgDrawdown * 100).toFixed(2) + '% avg drawdown'
+    : '—';
+
   document.getElementById('firmStats').innerHTML = `
     <div class="firm-stat">
       <div class="firm-stat-label">Total Rekomendasi</div>
@@ -3698,6 +3739,18 @@ function showFirmDetail(firm) {
         <span class="dt n">${neuCount} NEUTRAL</span>
         <span class="dt s">${sellCount} SELL</span>
       </div>
+    </div>
+    <div class="firm-stat firm-stat-rating" title="${frSample}">
+      <div class="firm-stat-label">Returns Rating</div>
+      <div style="margin:8px 0 4px">${frRetBars}</div>
+      <div class="firm-stat-sub">${frAchTxt}</div>
+      <div class="firm-stat-sub" style="margin-top:2px;color:var(--text3);font-size:10px">${frSample}</div>
+    </div>
+    <div class="firm-stat firm-stat-rating" title="${frSample}">
+      <div class="firm-stat-label">Risk Rating</div>
+      <div style="margin:8px 0 4px">${frRiskBars}</div>
+      <div class="firm-stat-sub">${frDdTxt}</div>
+      <div class="firm-stat-sub" style="margin-top:2px;color:var(--text3);font-size:10px">${frSample}</div>
     </div>
   `;
 
@@ -4066,6 +4119,53 @@ function buildOverview() {
   }).join('') || '<div style="color:var(--text3);padding:14px;font-size:12px">Belum ada data sektor.</div>';
 }
 
+// ═══════════════════════════════════════════
+// FIRM-LEVEL RATING ENGINE
+// Agregat Returns+Risk dari semua rec milik satu firm.
+// Filter: ageMonths 1–24 (cukup data, masih relevan).
+// Metode: simple average → bulatkan ke integer terdekat.
+// ═══════════════════════════════════════════
+
+/**
+ * Hitung agregat Returns+Risk rating untuk satu firm.
+ * @param {string} firm - nama firm (exact match vs consensus_slim r.firm)
+ * @returns {{ returns: number|null, risk: number|null, sampleSize: number,
+ *             avgAchievement: number|null, avgDrawdown: number|null }}
+ *   returns/risk = null jika tidak ada rec yang memenuhi syarat.
+ */
+function getFirmRating(firm) {
+  const slim = DATA.consensus_slim || {};
+  let retSum = 0, retCnt = 0;
+  let riskSum = 0, riskCnt = 0;
+  let achSum = 0, achCnt = 0;
+  let ddSum  = 0, ddCnt  = 0;
+
+  for (const [code, recs] of Object.entries(slim)) {
+    for (const r of recs) {
+      if (r.firm !== firm) continue;
+      const rating = getRecRating(r, code);
+      if (!rating) continue; // null = N/A (terlalu baru atau data kurang)
+
+      // Filter: hanya rec usia 1–24 bulan
+      if (rating.ageMonths < 1 || rating.ageMonths > 24) continue;
+
+      if (rating.returns != null) { retSum  += rating.returns;    retCnt++;  }
+      riskSum  += rating.risk;    riskCnt++;
+
+      if (rating.achievement != null) { achSum += rating.achievement; achCnt++; }
+      ddSum += rating.maxDrawdown; ddCnt++;
+    }
+  }
+
+  return {
+    returns:        retCnt  > 0 ? Math.round(retSum  / retCnt)  : null,
+    risk:           riskCnt > 0 ? Math.round(riskSum / riskCnt) : null,
+    sampleSize:     riskCnt,   // jumlah rec yang masuk kalkulasi
+    avgAchievement: achCnt  > 0 ? achSum / achCnt : null,
+    avgDrawdown:    ddCnt   > 0 ? ddSum  / ddCnt  : null,
+  };
+}
+
 // Build firm grid — agregat per firm dari semua consensus_slim entries
 function buildFirmGrid() {
   const grid = document.getElementById('consensusFirmGrid');
@@ -4100,7 +4200,8 @@ function buildFirmGrid() {
   const firmsList = [...firmMap.entries()].map(([name, f]) => {
     const total = f.buy + f.neu + f.sell;
     const avgUp = f.upsideCnt ? (f.upsideSum / f.upsideCnt) * 100 : 0;
-    return { name, total, buy:f.buy, neu:f.neu, sell:f.sell, stockCount:f.stocks.size, avgUp };
+    const rating = getFirmRating(name);
+    return { name, total, buy:f.buy, neu:f.neu, sell:f.sell, stockCount:f.stocks.size, avgUp, rating };
   }).sort((a, b) => b.total - a.total);
 
   const renderCards = (list) => list.map(f => {
@@ -4110,6 +4211,15 @@ function buildFirmGrid() {
     const sellPct = total ? (f.sell/total*100) : 0;
     const upCls = f.avgUp > 0 ? 'up' : f.avgUp < 0 ? 'dn' : 'neu';
     const nameEsc = escapeHtml(f.name);
+
+    // Rating bars
+    const fr = f.rating;
+    const retBars  = renderRatingBars(fr ? fr.returns : null, 'green', 'sm');
+    const riskBars = renderRatingBars(fr ? fr.risk    : null, 'red',   'sm');
+    const sampleTip = fr && fr.sampleSize > 0
+      ? `${fr.sampleSize} rec aktif (1–24 bln)`
+      : 'Belum ada rec aktif';
+
     return `<div class="firm-card" data-firm="${nameEsc}" onclick="showFirmDetail(this.dataset.firm)">
       <div class="firm-card-arrow">→</div>
       <div class="firm-card-name" title="${nameEsc}">${nameEsc}</div>
@@ -4127,6 +4237,16 @@ function buildFirmGrid() {
       <div class="firm-card-stat" style="border-top:1px dashed var(--border);margin-top:10px;padding-top:10px">
         <span class="lbl">Avg Target Upside</span>
         <span class="val ${upCls}">${f.avgUp >= 0 ? '+' : ''}${f.avgUp.toFixed(1)}%</span>
+      </div>
+      <div class="firm-card-rating" title="${sampleTip}">
+        <div class="firm-card-rating-col">
+          <span class="firm-card-rating-lbl">Returns</span>
+          ${retBars}
+        </div>
+        <div class="firm-card-rating-col">
+          <span class="firm-card-rating-lbl">Risk</span>
+          ${riskBars}
+        </div>
       </div>
     </div>`;
   }).join('');
