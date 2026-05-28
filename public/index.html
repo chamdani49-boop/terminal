@@ -178,7 +178,7 @@ a{color:inherit;text-decoration:none}
 .stock-ticker-track{
   display:inline-flex;align-items:center;gap:0;
   padding:7px 0;white-space:nowrap;
-  animation:ticker-scroll 180s linear infinite;
+  animation:ticker-scroll 360s linear infinite;
   will-change:transform;
 }
 .stock-ticker:hover .stock-ticker-track{animation-play-state:paused}
@@ -213,7 +213,7 @@ a{color:inherit;text-decoration:none}
   font-size:11px;font-weight:700;
 }
 @media(max-width:600px){
-  .stock-ticker-track{animation-duration:140s}
+  .stock-ticker-track{animation-duration:280s}
   .st-item{padding:4px 12px;gap:6px}
   .st-code,.st-price{font-size:12px}
   .st-chg{font-size:10px}
@@ -789,7 +789,7 @@ select.form-control option{background:var(--card);color:var(--text)}
 </div>
 
 <div class="footer">
-  Economstock Dashboard Premium · Data dari IDX · Hitung Nilai Wajar Saham Incaranmu di <strong style="color:var(--accent)">ECONOMSTOCK.COM</strong> · Lynk.id/economstock
+  Economstock Dashboard Premium · Data dari IDX · Hitung Nilai Wajar Saham Incaranmu di <strong style="color:var(--accent)">ECONOMSTOCK.COM</strong>
 </div>
 
 <script>
@@ -1190,6 +1190,21 @@ function renderChart(code) {
   const ihsgVals = slice.map(e => e.IHSG || null);
   const stockVals = slice.map(e => e[code] || null);
 
+  // Defensive overlay: kalau bulan terakhir di history kosong (mis. baris
+  // bulan berjalan belum di-append/overlay oleh build script — bisa terjadi
+  // saat workflow refresh-data lagi delay atau cache jsDelivr ke-stuck),
+  // tambal langsung dari DATA.live[*].price. Ini bikin chart selalu nampilin
+  // data live terbaru, gak peduli sequencing build.
+  const lastIdx = labels.length - 1;
+  if (lastIdx >= 0 && DATA.live) {
+    if (ihsgVals[lastIdx] == null && DATA.live.IHSG && DATA.live.IHSG.price > 0) {
+      ihsgVals[lastIdx] = DATA.live.IHSG.price;
+    }
+    if (stockVals[lastIdx] == null && DATA.live[code] && DATA.live[code].price > 0) {
+      stockVals[lastIdx] = DATA.live[code].price;
+    }
+  }
+
   // Normalize to index 100
   const ihsgBase = ihsgVals.find(v => v);
   const stockBase = stockVals.find(v => v);
@@ -1434,7 +1449,7 @@ function renderPriceTarget(code) {
       <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--yellow)">${Math.round(avgTarget).toLocaleString('id')}</div>
       <div style="font-size:13px;color:var(--accent);font-weight:700;margin-top:2px">${(pctAvg*100).toFixed(1)}% dari harga saat ini</div>
     </div>
-    <div style="margin-top:8px;font-size:11px;color:var(--text2);text-align:center;font-weight:500">By Economstock · Lynk.id/economstock</div>
+    <div style="margin-top:8px;font-size:11px;color:var(--text2);text-align:center;font-weight:500">By Economstock</div>
   `;
 }
 
