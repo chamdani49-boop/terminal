@@ -355,6 +355,49 @@ a{color:inherit;text-decoration:none}
 .cn-box{background:var(--bg2);padding:10px 6px;text-align:center;border-radius:var(--radius);min-width:0}
 .cn-label{font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:3px;font-weight:800;letter-spacing:.6px}
 .cn-val{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.cn-gap{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+
+/* Sumbu horizontal "tidur" — visual range Low..High dengan dot harga sekarang.
+   Track gradient hijau (murah, dekat Low) → gelap (target zone) → merah
+   (mahal, dekat High). Dot + tick vertical di posisi harga real-time,
+   label angka di atas tick supaya user langsung baca tanpa hover. */
+.cs-axis{position:relative;height:54px;margin:12px 4px 4px;padding:0}
+.cs-axis-track{
+  position:absolute;left:8px;right:8px;top:50%;transform:translateY(-50%);
+  height:10px;border-radius:var(--radius-pill);
+  background:linear-gradient(90deg,
+    var(--green) 0%,
+    rgba(5,150,105,.55) 28%,
+    var(--bg3) 50%,
+    rgba(225,29,72,.55) 72%,
+    var(--red) 100%);
+  border:1px solid var(--border);
+}
+.cs-axis-dot{
+  position:absolute;top:50%;width:14px;height:14px;border-radius:50%;
+  background:var(--green);border:2px solid var(--card);
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 0 1px var(--text2),0 0 10px rgba(5,150,105,.45);
+  z-index:2;pointer-events:none;
+}
+.cs-axis-tick{
+  position:absolute;top:calc(50% - 22px);width:2px;height:18px;
+  background:var(--green);transform:translateX(-50%);z-index:1;
+}
+.cs-axis-cur{
+  position:absolute;top:0;transform:translateX(-50%);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:800;
+  color:var(--text);white-space:nowrap;background:var(--card);
+  padding:1px 6px;border-radius:6px;border:1px solid var(--border);
+}
+.cs-axis-end{
+  position:absolute;top:calc(50% + 14px);
+  font-size:10px;font-weight:700;color:var(--text2);
+  font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.4px;
+}
+.cs-axis-end.lo{left:0}
+.cs-axis-end.hi{right:0;text-align:right}
+.cs-axis-end .v{display:block;color:var(--text);font-size:11px;margin-top:1px}
 
 /* ── ANALYST TABLE ── */
 .analyst-table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
@@ -1595,17 +1638,23 @@ function renderConsensus(code) {
   let low = cs ? cs.low : Math.min(...recs.filter(r=>r.target_price>0).map(r=>r.target_price));
   let target = cs ? cs.target : (recs.reduce((s,r)=>s+(r.target_price||0),0)/total);
 
-  // Harga sekarang & % gap dari high/target/low — supaya user bisa langsung
-  // lihat seberapa jauh konsensus analis dari harga real-time. Positif (hijau)
-  // = upside (target di atas harga), negatif (merah) = downside.
+  // Harga sekarang + % gap ke high/target/low. Positif (hijau) = upside,
+  // negatif (merah) = downside. Posisi dot di sumbu = (price - low) / (high - low),
+  // di-clamp [0..100] kalau price di luar range konsensus (mis. udah break ATH analis).
   const ph = DATA.price_history;
   const last = ph[ph.length-1];
   const st = DATA.stats[code];
   const curPrice = (last && last[code]) || (st ? st.current : 0);
-  const gapPct = (target_) => (Number.isFinite(target_) && curPrice) ? ((target_ - curPrice) / curPrice) * 100 : null;
+  const gapPct = (t) => (Number.isFinite(t) && curPrice) ? ((t - curPrice) / curPrice) * 100 : null;
   const fmtGap = (g) => g == null ? '—' : `${g >= 0 ? '+' : ''}${g.toFixed(1)}%`;
   const gapCls = (g) => g == null ? 'neu' : g >= 0 ? 'up' : 'dn';
   const gHigh = gapPct(high), gTgt = gapPct(target), gLow = gapPct(low);
+
+  let dotPct = null;
+  if (Number.isFinite(low) && Number.isFinite(high) && high > low && curPrice) {
+    dotPct = Math.max(0, Math.min(100, ((curPrice - low) / (high - low)) * 100));
+  }
+  const fmt = (n) => Number.isFinite(n) ? Math.round(n).toLocaleString('id') : '—';
 
   document.getElementById('consensusTotal').textContent = total;
 
@@ -1639,28 +1688,34 @@ function renderConsensus(code) {
         </div>
         <div class="divider"></div>
 
-        <!-- Harga sekarang sebagai anchor — analyst targets dibandingin ke ini -->
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;text-align:center">
-          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:800;margin-bottom:3px">Harga Sekarang</div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:var(--accent)">${curPrice ? Math.round(curPrice).toLocaleString('id') : '—'}</div>
+        <!-- Sumbu horizontal: Low ── current(dot) ── High dengan label harga sekarang di atas dot -->
+        <div class="cs-axis">
+          <div class="cs-axis-track"></div>
+          ${dotPct != null ? `
+            <div class="cs-axis-cur" style="left:${dotPct}%">${fmt(curPrice)}</div>
+            <div class="cs-axis-tick" style="left:${dotPct}%"></div>
+            <div class="cs-axis-dot" style="left:${dotPct}%"></div>
+          ` : ''}
+          <div class="cs-axis-end lo">Low<span class="v">${fmt(low)}</span></div>
+          <div class="cs-axis-end hi">High<span class="v">${fmt(high)}</span></div>
         </div>
 
-        <!-- HIGH / TARGET / LOW dengan % gap dari harga sekarang di bawah tiap nilai -->
+        <!-- Versi lama: 3 kotak HIGH / TARGET / LOW + % gap dari harga sekarang -->
         <div class="consensus-numbers">
           <div class="cn-box">
             <div class="cn-label">High</div>
-            <div class="cn-val up">${Math.round(high).toLocaleString('id')}</div>
-            <div class="cn-gap ${gapCls(gHigh)}" style="font-size:11px;font-weight:700;margin-top:3px;font-family:'IBM Plex Mono',monospace">${fmtGap(gHigh)}</div>
+            <div class="cn-val up">${fmt(high)}</div>
+            <div class="cn-gap ${gapCls(gHigh)}">${fmtGap(gHigh)}</div>
           </div>
           <div class="cn-box">
             <div class="cn-label">Target</div>
-            <div class="cn-val">${Math.round(target).toLocaleString('id')}</div>
-            <div class="cn-gap ${gapCls(gTgt)}" style="font-size:11px;font-weight:700;margin-top:3px;font-family:'IBM Plex Mono',monospace">${fmtGap(gTgt)}</div>
+            <div class="cn-val">${fmt(target)}</div>
+            <div class="cn-gap ${gapCls(gTgt)}">${fmtGap(gTgt)}</div>
           </div>
           <div class="cn-box">
             <div class="cn-label">Low</div>
-            <div class="cn-val dn">${Math.round(low).toLocaleString('id')}</div>
-            <div class="cn-gap ${gapCls(gLow)}" style="font-size:11px;font-weight:700;margin-top:3px;font-family:'IBM Plex Mono',monospace">${fmtGap(gLow)}</div>
+            <div class="cn-val dn">${fmt(low)}</div>
+            <div class="cn-gap ${gapCls(gLow)}">${fmtGap(gLow)}</div>
           </div>
         </div>
       </div>
