@@ -1462,24 +1462,49 @@ select.form-control option{background:var(--card);color:var(--text)}
 }
 .ovl-btn:hover{border-color:var(--accent);color:var(--accent)}
 .ovl-btn.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(109,40,217,.2)}
-.ovl-firm-list{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow-y:auto;padding-right:2px}
+/* ── Per Firm: tabel selaras — panah header tepat di atas tiap kolom ── */
+.ovl-firm-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px}
+.ovl-firm-table{
+  min-width:720px;
+  /* satu sumber kebenaran untuk header & baris → kolom selalu sejajar */
+  --firm-cols:minmax(150px,1.5fr) 70px 70px repeat(6,minmax(46px,1fr));
+}
+.ovl-firm-head{
+  display:grid;grid-template-columns:var(--firm-cols);align-items:end;
+  padding:2px 12px 8px;margin-bottom:8px;border-bottom:1px solid var(--border);
+}
+.ovl-fh-name{display:flex;align-items:center}
+.ovl-default-btn{
+  padding:5px 13px;font-size:11px;font-weight:700;
+  border:1px solid var(--border);border-radius:var(--radius-pill);
+  background:var(--card);color:var(--text2);cursor:pointer;transition:all .15s;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:.3px;
+}
+.ovl-default-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ovl-fh-col{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;min-width:0}
+.ovl-fh-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.2px;color:var(--text2);white-space:nowrap}
+.ovl-fh-arrows{display:inline-flex;gap:2px}
+.ovl-sort-arrow{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:17px;height:15px;border:none;border-radius:4px;cursor:pointer;
+  background:var(--bg3);color:var(--text2);font-size:8px;line-height:1;
+  transition:all .12s;padding:0;
+}
+.ovl-sort-arrow:hover{background:var(--bg4);color:var(--accent)}
+.ovl-sort-arrow.active{background:var(--grad);color:#fff;box-shadow:0 2px 6px rgba(109,40,217,.25)}
+.ovl-firm-list{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow-y:auto;padding-right:2px}
 .ovl-firm-row{
-  display:grid;grid-template-columns:minmax(0,1.3fr) auto minmax(0,1.7fr);
-  gap:14px;align-items:center;
-  padding:11px 12px;border:1px solid var(--border);border-radius:var(--radius);
+  display:grid;grid-template-columns:var(--firm-cols);align-items:center;
+  padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);
   background:var(--card);cursor:pointer;transition:all .15s;
 }
 .ovl-firm-row:hover{border-color:var(--accent);background:var(--bg2)}
+.ovl-fc-name{min-width:0;text-align:left}
 .ovl-firm-name{font-weight:800;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ovl-firm-meta{font-size:11px;color:var(--text2);font-weight:600;margin-top:3px}
-.ovl-firm-ratings{display:flex;flex-direction:column;gap:5px}
-.ovl-rate{display:flex;align-items:center;gap:6px}
-.ovl-rate-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);width:46px}
+.ovl-firm-meta{font-size:11px;color:var(--text2);font-weight:600;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ovl-fc{display:flex;align-items:center;justify-content:center;min-width:0}
+.ovl-fc-num{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
 .ovl-empty{color:var(--text3);padding:24px;text-align:center;font-size:13px}
-@media(max-width:760px){
-  .ovl-firm-row{grid-template-columns:1fr;gap:10px}
-  .ovl-firm-ratings{flex-direction:row;gap:16px;flex-wrap:wrap}
-}
 
 /* Firm rating mini di feed "Terbaru" (berdasarkan track record firm) */
 .ov-latest-firmwrap{display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -1489,31 +1514,6 @@ select.form-control option{background:var(--card);color:var(--text)}
   font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--text3);
 }
 @media(max-width:640px){ .ov-latest-firmrate{display:none} }
-
-/* Toolbar sort "Per Firm" — panah naik/turun per pencapaian */
-.ovl-sortbar{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  padding:9px 11px;margin-bottom:10px;
-  border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);
-}
-.ovl-sort-lbl{
-  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;
-  color:var(--text2);margin-right:2px;
-}
-.ovl-sort-grp{
-  display:inline-flex;align-items:center;gap:3px;
-  padding:3px 5px 3px 8px;border:1px solid var(--border);border-radius:var(--radius-pill);
-  background:var(--card);
-}
-.ovl-sort-grp-lbl{font-size:11px;font-weight:700;color:var(--text2);font-family:'IBM Plex Mono',monospace}
-.ovl-sort-arrow{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:18px;height:18px;border:none;border-radius:5px;cursor:pointer;
-  background:var(--bg3);color:var(--text2);font-size:9px;line-height:1;
-  transition:all .12s;padding:0;
-}
-.ovl-sort-arrow:hover{background:var(--bg4);color:var(--accent)}
-.ovl-sort-arrow.active{background:var(--grad);color:#fff;box-shadow:0 2px 6px rgba(109,40,217,.25)}
 
 /* Recs table */
 .firm-recs-scroll{
@@ -5381,7 +5381,7 @@ function renderLatestPanel() {
   if (latestView === 'firms') {
     if (lcEl) lcEl.textContent = `${_firmRowsCache.length} firm analis · klik baris untuk lihat detail`;
     el.innerHTML = _firmRowsCache.length
-      ? `${_firmSortBarHTML()}<div class="ovl-firm-list" id="ovlFirmList"></div>`
+      ? `<div class="ovl-firm-scroll"><div class="ovl-firm-table">${_firmHeadHTML()}<div class="ovl-firm-list" id="ovlFirmList"></div></div></div>`
       : '<div class="ovl-empty">Belum ada data firm.</div>';
     renderFirmList();
   } else {
@@ -5421,26 +5421,32 @@ function _recentRowHTML(r, rmap) {
   </div>`;
 }
 
-// ── Per Firm: toolbar sort (panah naik/turun per pencapaian) + list ──────
+// ── Per Firm: header tabel selaras (panah sort per kolom) ───────────────
+// Kolom pencapaian yang bisa di-sort. "Rec" TIDAK di-sort (pakai tombol
+// Default untuk kembali ke urutan awal = jumlah rec terbanyak).
 const _FIRM_SORT_COLS = [
-  { key:'total',   lbl:'Rec'   },
   { key:'returns', lbl:'Return' },
   { key:'risk',    lbl:'Risk'  },
-  { key:'m1', lbl:'1Bln' }, { key:'m2', lbl:'2Bln' }, { key:'m3', lbl:'3Bln' },
-  { key:'m4', lbl:'4Bln' }, { key:'m5', lbl:'5Bln' }, { key:'m6', lbl:'6Bln' },
+  { key:'m1', lbl:'1 Bln' }, { key:'m2', lbl:'2 Bln' }, { key:'m3', lbl:'3 Bln' },
+  { key:'m4', lbl:'4 Bln' }, { key:'m5', lbl:'5 Bln' }, { key:'m6', lbl:'6 Bln' },
 ];
 
-function _firmSortBarHTML() {
-  const grp = c => {
+function _firmHeadHTML() {
+  const col = c => {
     const upA = (firmSortKey===c.key && firmSortDir==='asc')  ? ' active' : '';
     const dnA = (firmSortKey===c.key && firmSortDir==='desc') ? ' active' : '';
-    return `<span class="ovl-sort-grp">
-      <span class="ovl-sort-grp-lbl">${c.lbl}</span>
-      <button type="button" class="ovl-sort-arrow${upA}" data-key="${c.key}" data-dir="asc" title="${c.lbl}: terendah → tertinggi" onclick="setFirmSort('${c.key}','asc')">▲</button>
-      <button type="button" class="ovl-sort-arrow${dnA}" data-key="${c.key}" data-dir="desc" title="${c.lbl}: tertinggi → terendah" onclick="setFirmSort('${c.key}','desc')">▼</button>
-    </span>`;
+    return `<div class="ovl-fh-col">
+      <span class="ovl-fh-lbl">${c.lbl}</span>
+      <span class="ovl-fh-arrows">
+        <button type="button" class="ovl-sort-arrow${upA}" data-key="${c.key}" data-dir="asc" title="${c.lbl}: terendah → tertinggi" onclick="setFirmSort('${c.key}','asc')">▲</button>
+        <button type="button" class="ovl-sort-arrow${dnA}" data-key="${c.key}" data-dir="desc" title="${c.lbl}: tertinggi → terendah" onclick="setFirmSort('${c.key}','desc')">▼</button>
+      </span>
+    </div>`;
   };
-  return `<div class="ovl-sortbar"><span class="ovl-sort-lbl">Urutkan</span>${_FIRM_SORT_COLS.map(grp).join('')}</div>`;
+  return `<div class="ovl-firm-head">
+    <div class="ovl-fh-name"><button type="button" class="ovl-default-btn${firmSortKey==='total'?' active':''}" onclick="resetFirmSort()" title="Kembali ke urutan awal (rekomendasi terbanyak)">↺ Default</button></div>
+    ${_FIRM_SORT_COLS.map(col).join('')}
+  </div>`;
 }
 
 // Nilai metrik firm untuk sorting (m1..m6 = performa sejak rilis di bulan ke-k).
@@ -5476,8 +5482,19 @@ function renderFirmList() {
 
 function setFirmSort(key, dir) {
   firmSortKey = key; firmSortDir = dir;
-  document.querySelectorAll('.ovl-sortbar .ovl-sort-arrow').forEach(a =>
+  document.querySelectorAll('.ovl-firm-head .ovl-sort-arrow').forEach(a =>
     a.classList.toggle('active', a.dataset.key === key && a.dataset.dir === dir));
+  const defBtn = document.querySelector('.ovl-default-btn');
+  if (defBtn) defBtn.classList.remove('active');
+  renderFirmList();
+}
+
+// Kembali ke urutan awal: jumlah rekomendasi terbanyak (Rec desc).
+function resetFirmSort() {
+  firmSortKey = 'total'; firmSortDir = 'desc';
+  document.querySelectorAll('.ovl-firm-head .ovl-sort-arrow').forEach(a => a.classList.remove('active'));
+  const defBtn = document.querySelector('.ovl-default-btn');
+  if (defBtn) defBtn.classList.add('active');
   renderFirmList();
 }
 
@@ -5527,16 +5544,22 @@ function _firmRowHTML(f) {
   const fe = escapeHtml(f.name);
   const upCls = f.avgUp==null?'neu':f.avgUp>0?'up':f.avgUp<0?'dn':'neu';
   const upTxt = f.avgUp==null?'—':`${f.avgUp>=0?'+':''}${f.avgUp.toFixed(1)}%`;
+  let periodCells = '';
+  for (let k = 1; k <= 6; k++) {
+    const idx = (f.avgNorm && f.avgNorm[k] != null) ? f.avgNorm[k] : null;
+    const v   = idx != null ? (idx - 100) / 100 : null;
+    const cls = v == null ? 'neu' : v > 0 ? 'up' : v < 0 ? 'dn' : 'neu';
+    const txt = v == null ? '—' : `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
+    periodCells += `<div class="ovl-fc ovl-fc-num ${cls}">${txt}</div>`;
+  }
   return `<div class="ovl-firm-row" data-firm="${fe}" onclick="showFirmDetail(this.dataset.firm)" title="Klik untuk lihat detail ${fe}">
-    <div>
+    <div class="ovl-fc-name">
       <div class="ovl-firm-name">${fe}</div>
       <div class="ovl-firm-meta">${f.total} rec · ${f.stocks} saham · <span class="${upCls}">${upTxt}</span> upside</div>
     </div>
-    <div class="ovl-firm-ratings">
-      <div class="ovl-rate"><span class="ovl-rate-lbl">Return</span>${renderRatingBars(f.returns, 'green', 'sm')}</div>
-      <div class="ovl-rate"><span class="ovl-rate-lbl">Risk</span>${renderRatingBars(f.risk, 'red', 'sm')}</div>
-    </div>
-    ${renderPeriodCells(f.avgNorm, 6)}
+    <div class="ovl-fc">${renderRatingBars(f.returns, 'green', 'sm')}</div>
+    <div class="ovl-fc">${renderRatingBars(f.risk, 'red', 'sm')}</div>
+    ${periodCells}
   </div>`;
 }
 
