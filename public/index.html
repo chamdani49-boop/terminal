@@ -2892,7 +2892,9 @@ function _startLivePolling() {
 }
 
 async function _pollLiveData() {
-  const v = Math.floor(Date.now() / CACHE_BUST_MS);
+  // Pakai timestamp unik per-request (bukan window 30 detik)
+  // agar CDN tidak serve cached response dari initial load.
+  const v = Date.now();
   const sources = [
     { url: DATA_CDN_URL   + '?v=' + v },
     { url: DATA_LOCAL_URL + '?v=' + v },
@@ -3567,7 +3569,7 @@ function renderStats(code) {
     const av = s.avg_annual, sv = s.std_annual;
     return `
       <div class="stat-cell ${cls}" style="text-align:left"><div class="stat-label">${label}</div></div>
-      <div class="stat-cell ${cls}"><div class="stat-label">${last.label || 'Bulan'}</div><div class="stat-val">${Math.round(s.current).toLocaleString('id')}</div></div>
+      <div class="stat-cell ${cls}"><div class="stat-label">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'}</div><div class="stat-val">${Math.round(s.current).toLocaleString('id')}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">MoM</div><div class="stat-val ${s.mom>0?'up':'dn'}">${fmt(s.mom)}</div><div style="${SUB}">${momSub}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">YTD</div><div class="stat-val ${s.ytd>0?'up':'dn'}">${fmt(s.ytd)}</div><div style="${SUB}">${ytdSub}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">YoY</div><div class="stat-val ${s.yoy>0?'up':'dn'}">${fmt(s.yoy)}</div><div style="${SUB}">${yoySub}</div></div>
