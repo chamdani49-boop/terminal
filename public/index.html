@@ -2847,10 +2847,15 @@ let   _pollTimer       = null;           // handle setInterval
 // Ganti URL ini kalau nama Worker / subdomain akun kamu berbeda.
 // Set ke null untuk MATIKAN live feed (balik ke perilaku lama: poll data.json).
 const LIVE_FEED_URL     = 'https://terminal-live.chamdani49.workers.dev/live.json';
-const LIVE_FEED_POLL_MS = 2 * 60 * 1000;  // 2 menit — biar update sheet cepat ke-pickup
+// Interval 3 menit: sheet update ~5 mnt + cache edge Worker 60 dtk, jadi 3 mnt
+// sudah lebih dari cukup & hemat request. URL TIDAK di-cache-bust (lihat
+// _pollLiveFeed) supaya CDN Cloudflare melayani dari cache 60 dtk → Worker
+// nyaris tidak ke-invoke walau ribuan user → hemat kuota + lindungi sheet.
+const LIVE_FEED_POLL_MS = 3 * 60 * 1000;  // 3 menit
 let   _liveFeedTimer    = null;           // handle setInterval feed
 let   _lastLiveFeed     = null;           // payload live terakhir (re-apply setelah swap data.json)
 let   _liveFeedOk       = false;          // pernah sukses fetch feed?
+let   _visibilityHooked = false;          // listener visibilitychange sudah dipasang?
 
 async function loadData() {
   const v = Math.floor(Date.now() / CACHE_BUST_MS);
@@ -3061,9 +3066,15 @@ function applyLiveFeed(live) {
 // Fetch /live.json dari Worker, lalu overlay ke UI.
 async function _pollLiveFeed() {
   if (!LIVE_FEED_URL) return;
+  // Tab tidak terlihat (background) → skip. Hemat request: user yang nge-tab
+  // di latar tidak ikut nge-poll. Saat kembali aktif, listener visibilitychange
+  // memicu _pollLiveFeed() lagi.
+  if (typeof document !== 'undefined' && document.hidden) return;
   try {
-    const url = LIVE_FEED_URL + (LIVE_FEED_URL.includes('?') ? '&' : '?') + 'v=' + Date.now();
-    const res = await fetch(url, { cache: 'no-store' });
+    // URL stabil (TANPA cache-bust) → Cloudflare CDN melayani dari edge cache
+    // (max-age=60) tanpa meng-invoke Worker untuk mayoritas request. Data maks
+    // ~60 dtk lebih lama — tidak terasa (sheet update ~5 mnt).
+    const res = await fetch(LIVE_FEED_URL, { cache: 'default' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if (!json || json.ok !== true || !json.live) throw new Error('payload live tidak valid');
@@ -3088,7 +3099,16 @@ function _startLiveFeedPolling() {
   _pollLiveFeed(); // fetch pertama langsung → user dapat harga live segera
   if (_liveFeedTimer) clearInterval(_liveFeedTimer);
   _liveFeedTimer = setInterval(_pollLiveFeed, LIVE_FEED_POLL_MS);
-  console.info(`[live-feed] polling aktif — interval ${LIVE_FEED_POLL_MS / 1000}s`);
+
+  // Saat user kembali ke tab (dari background) → langsung refresh sekali biar
+  // tidak nunggu interval. Listener dipasang sekali saja.
+  if (typeof document !== 'undefined' && !_visibilityHooked) {
+    _visibilityHooked = true;
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) _pollLiveFeed();
+    });
+  }
+  console.info(`[live-feed] polling aktif — interval ${LIVE_FEED_POLL_MS / 1000}s (pause saat tab background)`);
 }
 
 function init() {
