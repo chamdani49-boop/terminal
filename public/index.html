@@ -1385,6 +1385,71 @@ select.form-control option{background:var(--card);color:var(--text)}
 .firm-dist-legend .dt.n::before{background:var(--yellow)}
 .firm-dist-legend .dt.s::before{background:var(--red)}
 
+/* Distribusi rating sebagai donat (di dalam stat card) */
+.firm-dist-donut-wrap{
+  position:relative;width:104px;height:104px;margin:8px auto 4px;
+  display:flex;align-items:center;justify-content:center;
+}
+.firm-dist-donut-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;pointer-events:none;
+}
+.firm-dist-donut-center .dc-val{
+  font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:800;line-height:1;
+}
+.firm-dist-donut-center .dc-lbl{
+  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+  color:var(--text3);margin-top:2px;
+}
+
+/* ── PERIODE 1–6 BLN (keterangan performa, gaya tabel) ── */
+.perf-periods{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:1px;
+  border:1px solid var(--border);border-radius:8px;overflow:hidden;
+  background:var(--border);
+}
+.perf-period-cell{background:var(--card);padding:6px 3px;text-align:center;min-width:0}
+.perf-period-lbl{
+  font-size:9px;color:var(--text2);font-weight:700;letter-spacing:.2px;
+  margin-bottom:2px;white-space:nowrap;
+}
+.perf-period-val{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.perf-periods-cap{
+  font-size:10px;color:var(--text3);font-weight:600;margin:8px 0 5px;
+}
+
+/* ── KONSENSUS TERBARU — filter + list per firm ── */
+.ovl-filter{display:inline-flex;gap:4px;flex-wrap:wrap}
+.ovl-btn{
+  padding:4px 12px;font-size:11px;font-weight:700;
+  border:1px solid var(--border);border-radius:var(--radius-pill);
+  cursor:pointer;color:var(--text2);background:var(--card);
+  transition:all .15s;font-family:'IBM Plex Mono',monospace;letter-spacing:.3px;
+}
+.ovl-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ovl-btn.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(109,40,217,.2)}
+.ovl-firm-list{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow-y:auto;padding-right:2px}
+.ovl-firm-row{
+  display:grid;grid-template-columns:minmax(0,1.3fr) auto minmax(0,1.7fr);
+  gap:14px;align-items:center;
+  padding:11px 12px;border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--card);cursor:pointer;transition:all .15s;
+}
+.ovl-firm-row:hover{border-color:var(--accent);background:var(--bg2)}
+.ovl-firm-name{font-weight:800;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ovl-firm-meta{font-size:11px;color:var(--text2);font-weight:600;margin-top:3px}
+.ovl-firm-ratings{display:flex;flex-direction:column;gap:5px}
+.ovl-rate{display:flex;align-items:center;gap:6px}
+.ovl-rate-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);width:46px}
+.ovl-empty{color:var(--text3);padding:24px;text-align:center;font-size:13px}
+@media(max-width:760px){
+  .ovl-firm-row{grid-template-columns:1fr;gap:10px}
+  .ovl-firm-ratings{flex-direction:row;gap:16px;flex-wrap:wrap}
+}
+
 /* Recs table */
 .firm-recs-scroll{
   overflow-x:auto;-webkit-overflow-scrolling:touch;
@@ -2281,10 +2346,14 @@ select.form-control option{background:var(--card);color:var(--text)}
 
       <!-- ROW 4: Latest recs feed (full width) -->
       <div class="card">
-        <div class="ov-card-hd" style="margin-bottom:12px">
+        <div class="ov-card-hd" style="margin-bottom:6px">
           <span class="card-title" style="margin:0">Konsensus Terbaru</span>
-          <span class="ov-card-sub" id="ovLatestCount"></span>
+          <div class="ovl-filter" role="group" aria-label="Filter konsensus terbaru">
+            <button type="button" class="ovl-btn active" data-view="recent" onclick="setLatestView('recent', this)">Terbaru</button>
+            <button type="button" class="ovl-btn" data-view="firms" onclick="setLatestView('firms', this)">Per Firm</button>
+          </div>
         </div>
+        <div class="ov-card-sub" id="ovLatestCount" style="margin-bottom:12px"></div>
         <div id="ovLatest"></div>
       </div>
 
@@ -2319,6 +2388,8 @@ select.form-control option{background:var(--card);color:var(--text)}
           <canvas id="firmPerfChart"></canvas>
         </div>
         <div id="firmChartLegend" style="margin-top:10px"></div>
+        <div class="perf-periods-cap">Rata-rata performa sejak rilis (mengikuti chart)</div>
+        <div id="firmChartPeriods"></div>
       </div>
       <div class="card" style="overflow:visible">
         <div class="card-title">Daftar Rekomendasi</div>
@@ -4289,12 +4360,45 @@ function escapeHtml(s) {
 //   5. Warna fill: hijau jika akhir ≥ 100, merah jika < 100
 // ═══════════════════════════════════════════
 let firmPerfChartInstance = null;
+let firmDistDonutInstance = null;
 
-function buildFirmChart(firm, allRecs) {
-  const ph   = DATA.price_history || [];
-  const ct   = chartColors();
+// Donat distribusi rating (BUY/NEUTRAL/SELL) di stat card firm detail.
+function renderFirmDistDonut(buyCount, neuCount, sellCount) {
+  const ctx = document.getElementById('firmDistDonut');
+  if (!ctx) return;
+  const ct = chartColors();
+  if (firmDistDonutInstance) { firmDistDonutInstance.destroy(); firmDistDonutInstance = null; }
+  const total = buyCount + neuCount + sellCount;
+  firmDistDonutInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['BUY', 'NEUTRAL', 'SELL'],
+      datasets: [{
+        data: [buyCount, neuCount, sellCount],
+        backgroundColor: ['#059669', '#d97706', '#e11d48'],
+        borderWidth: 0,
+        hoverOffset: 5,
+      }],
+    },
+    options: {
+      cutout: '68%',
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: ct.tooltipBg, titleColor: ct.tooltipTitle,
+          bodyColor: ct.tooltipText, borderColor: ct.tooltipBorder, borderWidth: 1,
+          padding: 10, cornerRadius: 10,
+          callbacks: { label: i => ` ${i.label}: ${i.raw} (${total ? (i.raw / total * 100).toFixed(1) : 0}%)` },
+        },
+      },
+    },
+  });
+}
 
-  // ── Kumpulkan series per rec ──────────────────────────────────────────
+function getFirmSeriesAvg(allRecs) {
+  const ph = DATA.price_history || [];
   // series[i] = array panjang (ageMonths+1) nilai normalized [100, ..., curVal]
   const seriesList = [];
 
@@ -4326,6 +4430,46 @@ function buildFirmChart(firm, allRecs) {
     seriesList.push({ norm, ageMonths, code: r.code, suggestion: r.suggestion });
   }
 
+  if (!seriesList.length) return { avgNorm: [], countPerMonth: [], maxAge: 0, seriesList: [] };
+
+  // avgNorm[k] = rata-rata nilai normalized di offset bulan ke-k
+  // Hanya rata-rata dari rec yang punya data di bulan tersebut (ageMonths >= k)
+  const maxAge = Math.max(...seriesList.map(s => s.ageMonths));
+  const avgNorm = [];
+  const countPerMonth = [];
+  for (let k = 0; k <= maxAge; k++) {
+    let sum = 0, cnt = 0;
+    for (const s of seriesList) {
+      if (k <= s.ageMonths && s.norm[k] != null) { sum += s.norm[k]; cnt++; }
+    }
+    avgNorm.push(cnt > 0 ? sum / cnt : null);
+    countPerMonth.push(cnt);
+  }
+  return { avgNorm, countPerMonth, maxAge, seriesList };
+}
+
+// Render keterangan performa per periode 1..maxMonths bln (gaya tabel di foto).
+// avgNorm = index 100-based per offset bulan (0=rilis). Return fraksi = avgNorm[k]/100-1.
+function renderPeriodCells(avgNorm, maxMonths) {
+  maxMonths = maxMonths || 6;
+  let cells = '';
+  for (let k = 1; k <= maxMonths; k++) {
+    const idx = (avgNorm && avgNorm[k] != null) ? avgNorm[k] : null;
+    const v   = idx != null ? (idx - 100) / 100 : null;
+    const cls = v == null ? 'neu' : v > 0 ? 'up' : v < 0 ? 'dn' : 'neu';
+    const txt = v == null ? '—' : `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
+    cells += `<div class="perf-period-cell"><div class="perf-period-lbl">${k} Bln</div><div class="perf-period-val ${cls}">${txt}</div></div>`;
+  }
+  return `<div class="perf-periods">${cells}</div>`;
+}
+
+function buildFirmChart(firm, allRecs) {
+  const ph   = DATA.price_history || [];
+  const ct   = chartColors();
+
+  // ── Kumpulkan series per rec + avg per bulan (helper bersama) ─────────
+  const { avgNorm, countPerMonth, maxAge, seriesList } = getFirmSeriesAvg(allRecs);
+
   if (!seriesList.length) {
     // Tidak ada rec aktif — sembunyikan card
     const card = document.getElementById('firmChartCard');
@@ -4336,23 +4480,6 @@ function buildFirmChart(firm, allRecs) {
   const card = document.getElementById('firmChartCard');
   if (card) card.style.display = '';
 
-  // ── Hitung maxAge & avg per bulan ────────────────────────────────────
-  const maxAge = Math.max(...seriesList.map(s => s.ageMonths));
-
-  // avgNorm[k] = rata-rata nilai normalized di offset bulan ke-k
-  // Hanya rata-rata dari rec yang punya data di bulan tersebut (yang ageMonths >= k)
-  const avgNorm = [];
-  const countPerMonth = [];
-  for (let k = 0; k <= maxAge; k++) {
-    let sum = 0, cnt = 0;
-    for (const s of seriesList) {
-      if (k <= s.ageMonths && s.norm[k] != null) {
-        sum += s.norm[k]; cnt++;
-      }
-    }
-    avgNorm.push(cnt > 0 ? sum / cnt : null);
-    countPerMonth.push(cnt);
-  }
 
   // ── Labels: "Rilis", "+1 Bln", ..., "+N Bln" ─────────────────────────
   const labels = avgNorm.map((_, k) =>
@@ -4539,6 +4666,10 @@ function buildFirmChart(firm, allRecs) {
       </div>
     `;
   }
+
+  // ── Keterangan performa per periode 1–6 bln (mengikuti chart) ─────────
+  const periodsEl = document.getElementById('firmChartPeriods');
+  if (periodsEl) periodsEl.innerHTML = renderPeriodCells(avgNorm, 6);
 }
 
 function showFirmDetail(firm) {
@@ -4629,10 +4760,12 @@ function showFirmDetail(firm) {
     </div>
     <div class="firm-stat">
       <div class="firm-stat-label">Distribusi Rating</div>
-      <div class="firm-dist-bar">
-        ${buyCount ? `<div class="firm-dist-buy" style="width:${buyPct}%"></div>` : ''}
-        ${neuCount ? `<div class="firm-dist-neu" style="width:${neuPct}%"></div>` : ''}
-        ${sellCount ? `<div class="firm-dist-sell" style="width:${sellPct}%"></div>` : ''}
+      <div class="firm-dist-donut-wrap">
+        <canvas id="firmDistDonut" width="120" height="120"></canvas>
+        <div class="firm-dist-donut-center">
+          <span class="dc-val ${domCls}">${domStance}</span>
+          <span class="dc-lbl">dominan</span>
+        </div>
       </div>
       <div class="firm-dist-legend">
         <span class="dt b">${buyCount} BUY</span>
@@ -4656,7 +4789,10 @@ function showFirmDetail(firm) {
 
   // Chart — render setelah firmStats (allRecs sudah tersedia)
   // Pakai requestAnimationFrame supaya canvas sudah visible & punya dimensi
-  requestAnimationFrame(() => buildFirmChart(firm, allRecs));
+  requestAnimationFrame(() => {
+    buildFirmChart(firm, allRecs);
+    renderFirmDistDonut(buyCount, neuCount, sellCount);
+  });
 
   // Recs table
   document.getElementById('firmRecsTable').innerHTML = `
@@ -4720,6 +4856,7 @@ function showFirmDetail(firm) {
 function closeFirmDetail() {
   // Destroy chart instance supaya tidak memory leak
   if (firmPerfChartInstance) { firmPerfChartInstance.destroy(); firmPerfChartInstance = null; }
+  if (firmDistDonutInstance) { firmDistDonutInstance.destroy(); firmDistDonutInstance = null; }
   document.getElementById('firmDetailPanel').style.display = 'none';
   document.getElementById('consensusFirmGrid').style.display = '';
   document.getElementById('cvFilterFirm').style.display = 'flex';
@@ -5011,25 +5148,120 @@ function buildOverview() {
   _attachDbl('ovFirmsBar',   topFirms,  f => showFirmDetail(f.name));
   _attachDbl('ovMostRecBar', topStocks, s => selectStock(s.code));
 
-  // ── 8. LATEST RECS FEED (top 20) ─────────────────────────────────────  allFilteredRecs.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-  const latestList=allFilteredRecs.slice(0,20);
-  const lcEl=document.getElementById('ovLatestCount');
-  if(lcEl) lcEl.textContent=`${allFilteredRecs.length} rekomendasi · ${periodLabel}`;
-  document.getElementById('ovLatest').innerHTML=latestList.length
-    ?`<div class="ov-latest-list">${latestList.map(r=>{
-        const bc=r.suggestion==='BUY'?'badge-buy':r.suggestion==='SELL'?'badge-sell':'badge-neutral';
-        const pc=r.upPct==null?'neu':r.upPct>0?'up':r.upPct<0?'dn':'neu';
-        const ps=r.upPct!=null?`${r.upPct>=0?'+':''}${(r.upPct*100).toFixed(1)}%`:'—';
-        const fe=escapeHtml(r.firm||'—');
-        return`<div class="ov-latest-row">
-          <span class="ov-latest-date">${r.date||'-'}</span>
-          <span class="ov-latest-stock" onclick="selectStock('${r.code}')">${r.code}</span>
-          <span class="ov-latest-firm" data-firm="${fe}" onclick="showFirmDetail(this.dataset.firm)">${fe}</span>
-          <span class="badge ${bc}">${r.suggestion}</span>
-          <span class="ov-latest-target">${r.target_price?Math.round(r.target_price).toLocaleString('id'):'—'}</span>
-          <span class="ov-latest-pct ${pc}">${ps}</span>
-        </div>`;}).join('')}</div>`
-    :'<div style="color:var(--text3);padding:24px;text-align:center;font-size:13px">Tidak ada konsensus dalam periode ini.</div>';
+  // ── 8. LATEST RECS FEED — simpan recs, render via renderLatestPanel ──
+  allFilteredRecs.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  _ovLatestRecs = allFilteredRecs;
+  _ovLatestPeriodLabel = periodLabel;
+  renderLatestPanel();
+}
+
+// ═══════════════════════════════════════════
+// KONSENSUS TERBARU — filter "Terbaru" vs "Per Firm"
+// ═══════════════════════════════════════════
+let latestView = 'recent';      // 'recent' | 'firms'
+let _ovLatestRecs = [];         // recs ter-filter periode (view 'recent')
+let _ovLatestPeriodLabel = '';
+
+function setLatestView(view, btn) {
+  latestView = view;
+  document.querySelectorAll('.ovl-btn').forEach(b =>
+    b.classList.toggle('active', btn ? b === btn : b.dataset.view === view));
+  renderLatestPanel();
+}
+
+function renderLatestPanel() {
+  const el = document.getElementById('ovLatest');
+  if (!el) return;
+  const lcEl = document.getElementById('ovLatestCount');
+
+  if (latestView === 'firms') {
+    const rows = _buildFirmRows();
+    if (lcEl) lcEl.textContent = `${rows.length} firm analis · klik baris untuk lihat detail`;
+    el.innerHTML = rows.length
+      ? `<div class="ovl-firm-list">${rows.map(_firmRowHTML).join('')}</div>`
+      : '<div class="ovl-empty">Belum ada data firm.</div>';
+  } else {
+    const recs = _ovLatestRecs || [];
+    const latestList = recs.slice(0, 20);
+    if (lcEl) lcEl.textContent = `${recs.length} rekomendasi · ${_ovLatestPeriodLabel || ''}`;
+    el.innerHTML = latestList.length
+      ? `<div class="ov-latest-list">${latestList.map(_recentRowHTML).join('')}</div>`
+      : '<div class="ovl-empty">Tidak ada konsensus dalam periode ini.</div>';
+  }
+}
+
+function _recentRowHTML(r) {
+  const bc = r.suggestion==='BUY'?'badge-buy':r.suggestion==='SELL'?'badge-sell':'badge-neutral';
+  const pc = r.upPct==null?'neu':r.upPct>0?'up':r.upPct<0?'dn':'neu';
+  const ps = r.upPct!=null?`${r.upPct>=0?'+':''}${(r.upPct*100).toFixed(1)}%`:'—';
+  const fe = escapeHtml(r.firm||'—');
+  return `<div class="ov-latest-row">
+    <span class="ov-latest-date">${r.date||'-'}</span>
+    <span class="ov-latest-stock" onclick="selectStock('${r.code}')">${r.code}</span>
+    <span class="ov-latest-firm" data-firm="${fe}" onclick="showFirmDetail(this.dataset.firm)">${fe}</span>
+    <span class="badge ${bc}">${r.suggestion}</span>
+    <span class="ov-latest-target">${r.target_price?Math.round(r.target_price).toLocaleString('id'):'—'}</span>
+    <span class="ov-latest-pct ${pc}">${ps}</span>
+  </div>`;
+}
+
+// Agregat semua firm: counts, avg upside, rating Returns/Risk, status 1–6 bln.
+function _buildFirmRows() {
+  const ph = DATA.price_history || [];
+  const last = ph[ph.length - 1] || {};
+  const map = new Map();
+  for (const [code, recs] of Object.entries(DATA.consensus_slim || {})) {
+    for (const r of recs) {
+      if (!r.firm) continue;
+      // Skip marker placeholder (mis. "X" garis pembatas dari Consensus Sheet)
+      if (r.firm === 'X' || r.suggestion === 'X') continue;
+      let f = map.get(r.firm);
+      if (!f) { f = { name:r.firm, recs:[], buy:0, neu:0, sell:0, stocks:new Set(), upS:0, upC:0, lastDate:'' }; map.set(r.firm, f); }
+      f.recs.push({ ...r, code });
+      if (r.suggestion==='BUY') f.buy++; else if (r.suggestion==='SELL') f.sell++; else f.neu++;
+      f.stocks.add(code);
+      if (r.date && String(r.date) > f.lastDate) f.lastDate = String(r.date);
+      const cur = last[code];
+      if (cur && r.target_price) { f.upS += (r.target_price - cur) / cur; f.upC++; }
+    }
+  }
+  const rows = [];
+  for (const f of map.values()) {
+    let retSum=0, retCnt=0, riskSum=0, riskCnt=0;
+    for (const r of f.recs) {
+      const rt = getRecRating(r, r.code);
+      if (!rt || rt.ageMonths < 1 || rt.ageMonths > 24) continue;
+      if (rt.returns != null) { retSum += rt.returns; retCnt++; }
+      riskSum += rt.risk; riskCnt++;
+    }
+    const series = getFirmSeriesAvg(f.recs);
+    rows.push({
+      name: f.name, total: f.recs.length, buy: f.buy, neu: f.neu, sell: f.sell,
+      stocks: f.stocks.size, avgUp: f.upC ? (f.upS / f.upC) * 100 : null,
+      returns: retCnt ? Math.round(retSum / retCnt) : null,
+      risk: riskCnt ? Math.round(riskSum / riskCnt) : null,
+      avgNorm: series.avgNorm, lastDate: f.lastDate,
+    });
+  }
+  rows.sort((a, b) => b.total - a.total || String(b.lastDate).localeCompare(String(a.lastDate)));
+  return rows;
+}
+
+function _firmRowHTML(f) {
+  const fe = escapeHtml(f.name);
+  const upCls = f.avgUp==null?'neu':f.avgUp>0?'up':f.avgUp<0?'dn':'neu';
+  const upTxt = f.avgUp==null?'—':`${f.avgUp>=0?'+':''}${f.avgUp.toFixed(1)}%`;
+  return `<div class="ovl-firm-row" data-firm="${fe}" onclick="showFirmDetail(this.dataset.firm)" title="Klik untuk lihat detail ${fe}">
+    <div>
+      <div class="ovl-firm-name">${fe}</div>
+      <div class="ovl-firm-meta">${f.total} rec · ${f.stocks} saham · <span class="${upCls}">${upTxt}</span> upside</div>
+    </div>
+    <div class="ovl-firm-ratings">
+      <div class="ovl-rate"><span class="ovl-rate-lbl">Return</span>${renderRatingBars(f.returns, 'green', 'sm')}</div>
+      <div class="ovl-rate"><span class="ovl-rate-lbl">Risk</span>${renderRatingBars(f.risk, 'red', 'sm')}</div>
+    </div>
+    ${renderPeriodCells(f.avgNorm, 6)}
+  </div>`;
 }
 
 
