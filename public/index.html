@@ -2838,6 +2838,20 @@ const CACHE_BUST_MS  = 30 * 1000;        // 30 detik window
 let   _lastGeneratedAt = null;           // timestamp data.json yang sedang tampil
 let   _pollTimer       = null;           // handle setInterval
 
+// ── Live FEED real-time (via Cloudflare Worker `terminal-live`) ─────────
+// Worker fetch Live Sheet LANGSUNG dari Google tiap request (bypass cron
+// GitHub Actions yang sering delay 30–60 mnt). Frontend overlay hasilnya ke
+// DATA → harga live + SEMUA kalkulasi turunan (MoM/YTD/YoY/upside/target/
+// z-score) ikut fresh, tanpa nunggu data.json di-rebuild GitHub Actions.
+//
+// Ganti URL ini kalau nama Worker / subdomain akun kamu berbeda.
+// Set ke null untuk MATIKAN live feed (balik ke perilaku lama: poll data.json).
+const LIVE_FEED_URL     = 'https://terminal-live.chamdani49.workers.dev/live.json';
+const LIVE_FEED_POLL_MS = 2 * 60 * 1000;  // 2 menit — biar update sheet cepat ke-pickup
+let   _liveFeedTimer    = null;           // handle setInterval feed
+let   _lastLiveFeed     = null;           // payload live terakhir (re-apply setelah swap data.json)
+let   _liveFeedOk       = false;          // pernah sukses fetch feed?
+
 async function loadData() {
   const v = Math.floor(Date.now() / CACHE_BUST_MS);
   const sources = [
@@ -2862,6 +2876,7 @@ async function loadData() {
       } catch (_) {}
       init();
       _startLivePolling();  // mulai polling setelah initial load berhasil
+      _startLiveFeedPolling();  // mulai live feed real-time (Worker)
       return;
     } catch (e) {
       console.warn(`[data] ${src.label} fetch gagal:`, e.message || e);
@@ -2927,15 +2942,12 @@ async function _pollLiveData() {
   const prevStock = currentStock;
   DATA = json;
 
+  // data.json baru me-reset DATA → re-apply overlay live terakhir supaya
+  // harga live tidak balik ke nilai lama (stale) sampai feed poll berikutnya.
+  if (_lastLiveFeed) { try { _overlayLiveInto(DATA, _lastLiveFeed); } catch (_) {} }
+
   // Re-render komponen ringan langsung (tidak blokir UI thread)
-  requestAnimationFrame(() => {
-    try { renderHero(prevStock);        } catch (_) {}
-    try { buildWatchlist();            } catch (_) {}
-    try { buildStockTicker();          } catch (_) {}
-    try { renderPriceTarget(prevStock);} catch (_) {}
-    try { renderConsensus(prevStock);  } catch (_) {}
-    try { renderStats(prevStock);      } catch (_) {}
-  });
+  requestAnimationFrame(() => { _rerenderLive(prevStock); });
 
   // Re-render komponen berat saat browser idle (tidak blokir animasi/scroll)
   const idleFn = () => {
@@ -2966,6 +2978,117 @@ function _flashLiveUpdate() {
     priceEl.style.background = '';
     priceEl.style.transition = '';
   }, 800);
+}
+
+// ═══════════════════════════════════════════
+// LIVE FEED real-time — overlay dari Worker `terminal-live`
+// ═══════════════════════════════════════════
+// Re-render semua komponen yang bergantung harga live. Dipakai oleh
+// _pollLiveData (refresh data.json) DAN applyLiveFeed (feed Worker).
+function _rerenderLive(stock) {
+  try { renderHero(stock);         } catch (_) {}
+  try { buildWatchlist();          } catch (_) {}
+  try { buildStockTicker();        } catch (_) {}
+  try { renderPriceTarget(stock);  } catch (_) {}
+  try { renderConsensus(stock);    } catch (_) {}
+  try { renderStats(stock);        } catch (_) {}
+}
+
+// Overlay payload live ({CODE:{price,change_pct,max_price,...}}) ke objek DATA.
+// Gate: hanya ticker yang sudah punya harga di baris terakhir price_history
+// (= universe yang memang tampil sekarang) → tidak menambah ticker baru yang
+// tak dikenal. Update: DATA.live[code], price_history baris terakhir (drive
+// recompute MoM/YTD/YoY/z-score), dan stats[code].current + change_pct_live.
+function _overlayLiveInto(data, live) {
+  if (!data || !live || typeof live !== 'object') return 0;
+  const ph = data.price_history;
+  if (!Array.isArray(ph) || !ph.length) return 0;
+  const lastRow = ph[ph.length - 1];
+  const stats = data.stats || {};
+  let n = 0;
+  for (const code in live) {
+    const lv = live[code];
+    if (!lv || !Number.isFinite(lv.price) || lv.price <= 0) continue;
+    // Gate: hanya ticker yang SUDAH dilacak history (punya harga di baris
+    // terakhir price_history). Ini persis "universe" yang tampil sekarang →
+    // tidak menambah ticker asing yang tak ada di data.json.
+    if (!Number.isFinite(lastRow[code]) || lastRow[code] <= 0) continue;
+
+    // 1) DATA.live — merge, pertahankan field lama kalau feed null.
+    const prevLv = (data.live && data.live[code]) || {};
+    data.live = data.live || {};
+    data.live[code] = {
+      price: lv.price,
+      change_pct: Number.isFinite(lv.change_pct) ? lv.change_pct : (prevLv.change_pct ?? null),
+      max_price: (Number.isFinite(lv.max_price) && lv.max_price > 0) ? lv.max_price : (prevLv.max_price ?? null),
+      max_date:  lv.max_date || prevLv.max_date || null,
+      low_price: (Number.isFinite(lv.low_price) && lv.low_price > 0) ? lv.low_price : (prevLv.low_price ?? null),
+      low_date:  lv.low_date || prevLv.low_date || null,
+    };
+
+    // 2) price_history baris terakhir (bulan berjalan) → drive semua recompute.
+    lastRow[code] = lv.price;
+
+    // 3) stats.current + change_pct_live (daily % dari sheet "% Live").
+    if (stats[code]) {
+      stats[code].current = lv.price;
+      if (Number.isFinite(lv.change_pct)) stats[code].change_pct_live = lv.change_pct;
+    }
+    n++;
+  }
+  return n;
+}
+
+// Terapkan feed live ke DATA yang sedang tampil + re-render.
+function applyLiveFeed(live) {
+  _lastLiveFeed = live;
+  const n = _overlayLiveInto(DATA, live);
+  if (n > 0) {
+    requestAnimationFrame(() => { _rerenderLive(currentStock); });
+    // Overview "Upside Tertinggi" pakai harga live → refresh kalau tampil.
+    const idleFn = () => {
+      const ovView = document.getElementById('ovView');
+      if (ovView && ovView.style.display !== 'none') {
+        try { buildOverview(); } catch (_) {}
+      }
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(idleFn, { timeout: 3000 });
+    else setTimeout(idleFn, 500);
+  }
+  return n;
+}
+
+// Fetch /live.json dari Worker, lalu overlay ke UI.
+async function _pollLiveFeed() {
+  if (!LIVE_FEED_URL) return;
+  try {
+    const url = LIVE_FEED_URL + (LIVE_FEED_URL.includes('?') ? '&' : '?') + 'v=' + Date.now();
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json || json.ok !== true || !json.live) throw new Error('payload live tidak valid');
+    const n = applyLiveFeed(json.live);
+    if (!_liveFeedOk) {
+      _liveFeedOk = true;
+      console.info(`[live-feed] aktif — ${n} ticker ter-overlay (generated_at=${json.generated_at})`);
+    } else {
+      console.info(`[live-feed] refresh — ${n} ticker (generated_at=${json.generated_at})`);
+    }
+    _flashLiveUpdate();
+  } catch (e) {
+    console.warn('[live-feed] gagal:', e.message || e, '— fallback ke polling data.json.');
+  }
+}
+
+function _startLiveFeedPolling() {
+  if (!LIVE_FEED_URL) {
+    console.info('[live-feed] dimatikan (LIVE_FEED_URL = null) — pakai polling data.json saja.');
+    return;
+  }
+  _pollLiveFeed(); // fetch pertama langsung → user dapat harga live segera
+  if (_liveFeedTimer) clearInterval(_liveFeedTimer);
+  _liveFeedTimer = setInterval(_pollLiveFeed, LIVE_FEED_POLL_MS);
+  console.info(`[live-feed] polling aktif — interval ${LIVE_FEED_POLL_MS / 1000}s`);
 }
 
 function init() {
