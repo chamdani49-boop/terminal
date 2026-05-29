@@ -1164,6 +1164,90 @@ async function main() {
     }
   }
 
+  // ── MODE: consensus — fetch Consensus Sheet + Live, tidak fetch History ─
+  // Tujuan: update rekomendasi analis tiap 3 hari tanpa re-fetch history
+  // bulanan yang besar. History diambil dari data.json existing (base).
+  if (mode === 'consensus') {
+    if (!CONSENSUS_SHEET_ID) {
+      console.error('FATAL: CONSENSUS_SHEET_ID must be set.');
+      process.exit(1);
+    }
+
+    let baseData;
+    try {
+      baseData = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+    } catch (e) {
+      console.warn('  ⚠️  data.json belum ada, fallback ke mode full.');
+    }
+
+    if (!baseData) {
+      console.log('  ↪ No existing data.json, switching to full mode...');
+      // Fallthrough ke mode full di bawah
+    } else {
+      console.log('Fetching Consensus + Live sheets…');
+      const debug = {};
+      const fetches = [fetchCsv(CONSENSUS_SHEET_ID, CONSENSUS_GID)];
+      let liveCsv = null;
+      if (LIVE_SHEET_ID) {
+        fetches.push(
+          fetchCsv(LIVE_SHEET_ID, LIVE_GID).catch(err => {
+            console.warn(`  ⚠️  Live fetch gagal: ${err.message}`);
+            return null;
+          })
+        );
+      }
+      const [consensusCsv, liveCsvResult] = await Promise.all(fetches);
+      liveCsv = liveCsvResult || null;
+
+      // Pakai price_history dari base, overlay live kalau ada
+      const price_history = baseData.price_history;
+      const newLive = liveCsv ? parseLive(liveCsv, debug) : (baseData.live || {});
+      if (liveCsv) applyLiveOverlay(price_history, newLive, debug);
+
+      const stats = computeStats(price_history);
+      for (const t of Object.keys(newLive)) {
+        if (stats[t]) {
+          stats[t].change_pct_live = Number.isFinite(newLive[t].change_pct)
+            ? newLive[t].change_pct : null;
+        }
+      }
+      const correlations = computeCorrelations(price_history);
+      computeBetaAndRelVol(price_history, stats);
+      const zcores = computeZcores(stats);
+
+      const latest = {};
+      for (const t of Object.keys(stats)) latest[t] = stats[t].current;
+
+      const consensus_slim    = parseConsensus(consensusCsv, latest, debug);
+      const consensus_summary = computeConsensusSummary(consensus_slim);
+
+      const payload = {
+        ...baseData,
+        price_history,
+        stats,
+        correlations,
+        zcores,
+        live: liveCsv ? newLive : baseData.live,
+        consensus_slim,
+        consensus_summary,
+        _meta: {
+          ...baseData._meta,
+          generated_at: new Date().toISOString(),
+          refresh_mode: 'consensus',
+          consensus_tickers: Object.keys(consensus_slim).length,
+          live_tickers: Object.keys(newLive).length,
+          _debug: debug,
+        },
+      };
+
+      fs.mkdirSync(outDir, { recursive: true });
+      fs.writeFileSync(outPath, JSON.stringify(payload));
+      const sizeKB = (fs.statSync(outPath).size / 1024).toFixed(1);
+      console.log(`✓ Consensus update done (${sizeKB} KB) — ${Object.keys(consensus_slim).length} tickers`);
+      return;
+    }
+  }
+
   // ── MODE: history — full fetch semua sheet, rolling window aktif ──────
   // ── MODE: full    — full fetch semua sheet (default) ──────────────────
   console.log(`Fetching all sheets (mode: ${mode})…`);
