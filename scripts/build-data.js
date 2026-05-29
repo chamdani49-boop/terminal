@@ -747,6 +747,106 @@ function _parseLiveBody(rows, dataStart, iTicker, iPrice, iPct,
  * "sekarang" di history sheet — live sheet jadi sumber tunggal untuk bulan
  * berjalan.
  */
+// ─────────────────────────────────────────────
+// Auto meta: stock_info / stock_list / watchlist dari universe sheet
+// ─────────────────────────────────────────────
+// Universe ticker = semua kolom di price_history (History Sheet) + key di live.
+// Nama/sektor/papan prioritas: kolom opsional di Live Sheet > lib/static.json
+// > kode (fallback). Efek: saham baru yang ditambah ke History Sheet otomatis
+// muncul, bisa dicari, punya chart/stats/live — tanpa edit lib/static.json.
+function collectUniverse(price_history, live) {
+  const set = new Set();
+  for (const row of (price_history || [])) {
+    for (const k of Object.keys(row)) {
+      if (k === 'date' || k === 'label') continue;
+      set.add(k);
+    }
+  }
+  if (live) for (const k of Object.keys(live)) set.add(k);
+  set.delete('IHSG'); // index, bukan emiten yang masuk daftar saham
+  return set;
+}
+
+// Ekstrak {code:{name,sector,board}} dari Live Sheet KALAU ada kolom opsional
+// Nama/Sektor/Papan. Return {} kalau kolom-kolom itu tidak ada (graceful).
+function parseLiveMeta(csv) {
+  try {
+    const rows = parseCsv(csv);
+    if (rows.length < 2) return {};
+    let headerIdx = -1;
+    const limit = Math.min(rows.length, 10);
+    for (let i = 0; i < limit; i++) {
+      const r = rows[i].map(c => norm(c));
+      if (r.some(x => x === 'ticker' || x === 'symbol' || x === 'kode' ||
+                      x === 'saham' || x === 'code' || x.includes('ticker'))) { headerIdx = i; break; }
+    }
+    if (headerIdx < 0) return {};
+    const header = rows[headerIdx].map(c => norm(c));
+    const find = (...names) => {
+      for (const n of names) { const i = header.indexOf(norm(n)); if (i >= 0) return i; }
+      for (const n of names) { const nn = norm(n); const i = header.findIndex(h => h && h.includes(nn)); if (i >= 0) return i; }
+      return -1;
+    };
+    const iTicker = find('ticker', 'symbol', 'kode', 'kodesaham', 'saham', 'code');
+    const iName   = find('nama', 'name', 'namaperusahaan', 'namaemiten', 'company', 'emiten', 'namasaham');
+    const iSector = find('sektor', 'sector', 'industri', 'industry');
+    const iBoard  = find('papan', 'board', 'papanpencatatan');
+    if (iTicker < 0 || (iName < 0 && iSector < 0 && iBoard < 0)) return {};
+    const out = {};
+    for (let r = headerIdx + 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      const t = cleanTickerName(row[iTicker]);
+      if (!t || (!TICKER_RX.test(t) && t !== 'IHSG')) continue;
+      const meta = {};
+      if (iName   >= 0 && row[iName]   && String(row[iName]).trim())   meta.name   = String(row[iName]).trim();
+      if (iSector >= 0 && row[iSector] && String(row[iSector]).trim()) meta.sector = String(row[iSector]).trim();
+      if (iBoard  >= 0 && row[iBoard]  && String(row[iBoard]).trim())  meta.board  = String(row[iBoard]).trim();
+      if (Object.keys(meta).length) out[t] = meta;
+    }
+    return out;
+  } catch (_) { return {}; }
+}
+
+// Bentuk { stock_info, stock_list, watchlist } otomatis dari universe.
+// staticData = isi lib/static.json (atau base data lama). liveMeta = hasil
+// parseLiveMeta (boleh kosong).
+function buildAutoMeta(price_history, live, staticData, liveMeta) {
+  const universe   = collectUniverse(price_history, live);
+  const staticInfo = (staticData && staticData.stock_info) || {};
+  liveMeta = liveMeta || {};
+
+  const stock_info = {};
+  for (const code of universe) {
+    const s = staticInfo[code] || {};
+    const m = liveMeta[code] || {};
+    stock_info[code] = {
+      name:   (m.name   && m.name.trim())   || s.name   || code,
+      sector: (m.sector && m.sector.trim()) || s.sector || 'Lainnya',
+      board:  (m.board  && m.board.trim())  || s.board  || '-',
+    };
+  }
+
+  const stock_list = Array.from(universe).sort().map(code => ({
+    code,
+    name:   stock_info[code].name,
+    sector: stock_info[code].sector,
+    board:  stock_info[code].board,
+  }));
+
+  // Watchlist tetap kurasi dari static, tapi buang ticker yang sudah tidak ada
+  // di universe (delisting otomatis hilang dari sidebar).
+  const baseWl = (staticData && staticData.watchlist) || [];
+  const seen = new Set();
+  const watchlist = baseWl.filter(c => {
+    if (seen.has(c) || !universe.has(c)) return false;
+    seen.add(c);
+    return true;
+  });
+
+  return { stock_info, stock_list, watchlist };
+}
+
 /**
  * Append/update row "bulan berjalan" di price_history dari data live.
  *
@@ -1377,6 +1477,12 @@ async function main() {
   const staticPath = path.join(__dirname, '..', 'lib', 'static.json');
   const stat = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
 
+  // Auto-meta: stock_info/stock_list/watchlist dari universe sheet (History +
+  // Live), bukan murni dari static.json. Saham baru di History Sheet otomatis
+  // ikut; nama/sektor opsional dari kolom Live Sheet, fallback ke static → kode.
+  const liveMeta = liveCsv ? parseLiveMeta(liveCsv) : {};
+  const autoMeta = buildAutoMeta(price_history, live, stat, liveMeta);
+
   // Diagnostics: berapa target_price yang berhasil terbaca, tanggal, dll
   let consensus_with_target = 0, consensus_with_date = 0, consensus_total_rows = 0;
   for (const recs of Object.values(consensus_slim)) {
@@ -1395,9 +1501,9 @@ async function main() {
     correlations,
     zcores,
     live,                 // ← raw live overlay map (juga di-overlay ke price_history & stats)
-    stock_info: stat.stock_info,
-    stock_list: stat.stock_list,
-    watchlist:  stat.watchlist,
+    stock_info: autoMeta.stock_info,
+    stock_list: autoMeta.stock_list,
+    watchlist:  autoMeta.watchlist,
     _meta: {
       generated_at: new Date().toISOString(),
       refresh_mode: mode,
@@ -1451,5 +1557,5 @@ if (require.main === module) {
     process.exit(1);
   });
 } else {
-  module.exports = { parseHistory, parseConsensus, parseLive, applyLiveOverlay, parseCsv, parseDate, toNum, decodeSuggestion, cleanTickerName };
+  module.exports = { parseHistory, parseConsensus, parseLive, applyLiveOverlay, parseCsv, parseDate, toNum, decodeSuggestion, cleanTickerName, collectUniverse, parseLiveMeta, buildAutoMeta };
 }
