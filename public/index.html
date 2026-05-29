@@ -2879,6 +2879,71 @@ function _isMarketOpen(d = new Date()) {
   }
 }
 
+// ── Sanitasi data.json di client ────────────────────────────────────────
+// Sheet Consensus memakai marker non-ticker (mis. "X" sebagai garis pembatas)
+// yang seharusnya difilter backend (parseConsensus guard, PR #81). Tapi kalau
+// data.json di CDN masih stale (cron belum rebuild), entri "X" itu masih
+// muncul sebagai "saham X" + "firm X" di menu Consensus. Guard ini membuang
+// semua key/kode yang bukan ticker IDX valid (sama regex dengan backend), plus
+// entri rekomendasi dengan firm/suggestion placeholder — supaya UI selalu bersih
+// tanpa menunggu rebuild backend.
+const _TICKER_RX = /^[A-Z]{2,5}\d?$/;
+function _sanitizeData(data) {
+  if (!data || typeof data !== 'object') return data;
+  try {
+    // 1) Hapus key non-ticker dari objek yang di-key per kode saham.
+    for (const field of ['consensus_slim', 'consensus_summary', 'stats', 'zcores', 'correlations', 'stock_info', 'live']) {
+      const obj = data[field];
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        for (const code of Object.keys(obj)) {
+          if (!_TICKER_RX.test(code)) delete obj[code];
+        }
+      }
+    }
+    // 2) consensus_slim: buang entri rekomendasi placeholder (firm/suggestion = "X"
+    //    atau firm kosong) yang mungkin nyempil di stock valid.
+    if (data.consensus_slim && typeof data.consensus_slim === 'object') {
+      for (const code of Object.keys(data.consensus_slim)) {
+        const arr = data.consensus_slim[code];
+        if (!Array.isArray(arr)) continue;
+        const cleaned = arr.filter(r => {
+          const firm = (r && r.firm != null ? String(r.firm) : '').trim();
+          const sug  = (r && r.suggestion != null ? String(r.suggestion) : '').trim();
+          if (!firm || firm === 'X' || sug === 'X') return false; // marker → buang
+          return true;
+        });
+        if (cleaned.length === 0) delete data.consensus_slim[code];
+        else data.consensus_slim[code] = cleaned;
+      }
+    }
+    // 3) stock_list: array of {code,...} → buang kode non-ticker.
+    if (Array.isArray(data.stock_list)) {
+      data.stock_list = data.stock_list.filter(s => {
+        const c = s && (s.code || s.c || s);
+        return typeof c === 'string' && _TICKER_RX.test(c);
+      });
+    }
+    // 4) watchlist: array of string kode.
+    if (Array.isArray(data.watchlist)) {
+      data.watchlist = data.watchlist.filter(c => typeof c === 'string' && _TICKER_RX.test(c));
+    }
+    // 5) price_history: buang kolom non-ticker (selain field meta date/label/IHSG).
+    if (Array.isArray(data.price_history)) {
+      const META = new Set(['date', 'label']);
+      for (const row of data.price_history) {
+        if (!row || typeof row !== 'object') continue;
+        for (const k of Object.keys(row)) {
+          if (META.has(k)) continue;
+          if (!_TICKER_RX.test(k)) delete row[k];
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[sanitize] gagal membersihkan data:', e && e.message);
+  }
+  return data;
+}
+
 async function loadData() {
   const v = Math.floor(Date.now() / CACHE_BUST_MS);
   const sources = [
@@ -2892,7 +2957,7 @@ async function loadData() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (!json || !json.price_history || !json.stats) throw new Error('payload tidak valid');
-      DATA = json;
+      DATA = _sanitizeData(json);
       _lastGeneratedAt = (json._meta || {}).generated_at || null;
       try {
         const meta = json._meta || {};
@@ -2967,7 +3032,7 @@ async function _pollLiveData() {
   //   • YoY analysis
   //   • overview consensus (heavy, bisa diupdate via requestIdleCallback)
   const prevStock = currentStock;
-  DATA = json;
+  DATA = _sanitizeData(json);
 
   // data.json baru me-reset DATA → re-apply overlay live terakhir supaya
   // harga live tidak balik ke nilai lama (stale) sampai feed poll berikutnya.
