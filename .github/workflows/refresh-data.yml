@@ -1,39 +1,43 @@
 name: Refresh data from Google Sheets
 
 # ═══════════════════════════════════════════════════════════════════════
-# 3 MODE REFRESH:
+# 4 MODE REFRESH:
 #
-#  live     — setiap 5 menit, hanya tarik Live Sheet.
-#             Kalau harga tidak berubah dari data.json terakhir (market
-#             tutup / libur / closing sama) → SKIP commit (cache hit).
-#             Aktif setiap hari (termasuk weekend — Google Sheet bisa
-#             tetap update walaupun market tutup, nilainya closing).
+#  live      — tiap 5 menit, HANYA Live Sheet (harga + % + high/low).
+#              Cache check: kalau ≥98% harga identik → skip commit.
+#              Aktif 7 hari seminggu (termasuk weekend — closing tetap
+#              valid sebagai cache kalau market tutup).
 #
-#  history  — setiap hari tanggal 1–5 jam 01:00 UTC.
-#             Tarik History Sheet + Live Sheet + Consensus.
-#             Ini "jaga-jaga" kalau kamu lupa update Google Sheet
-#             manual — cron akan paksa re-fetch histori terbaru.
-#             Rolling window: kalau bulan bertambah, baris terlama
-#             (121 bulan ke belakang) otomatis terpotong.
+#  consensus — tiap 3 hari sekali jam 06:00 UTC, Senin–Jumat saja.
+#              Jadwal cron: tgl 1,4,7,10,13,16,19,22,25,28 jam 06:00.
+#              Di bash: cek hari (MON-FRI), kalau Sabtu/Minggu → skip.
+#              Fetch: Consensus Sheet + Live Sheet (tidak fetch History).
 #
-#  full     — setiap 15 menit (selain mode history), tarik semua sheet.
-#             Ini mode default sebelumnya, dipertahankan untuk update
-#             konsensus & history reguler di luar tgl 1-5.
+#  history   — tgl 1–5 setiap bulan jam 01:00 UTC.
+#              Fetch semua sheet. Rolling window 121 bulan aktif.
+#              Jaga-jaga kalau update Google Sheet terlambat/lupa.
+#
+#  full      — tiap 15 menit, semua sheet.
+#              Untuk update reguler History + Consensus + Live.
+#              Note: mode full overlap dengan cron live (*/5) dan cron
+#              consensus, tapi mode detection memastikan tidak double.
 # ═══════════════════════════════════════════════════════════════════════
 
 on:
   schedule:
-    # MODE LIVE: tiap 5 menit — hanya live sheet
+    # MODE LIVE: tiap 5 menit — hanya Live Sheet
     - cron: '*/5 * * * *'
-    # MODE HISTORY: tgl 1-5 setiap bulan jam 01:00 UTC — full re-fetch
+    # MODE CONSENSUS: tgl 1,4,7,10,13,16,19,22,25,28 jam 06:00 UTC (≈3 harian)
+    - cron: '0 6 1,4,7,10,13,16,19,22,25,28 * *'
+    # MODE HISTORY: tgl 1–5 jam 01:00 UTC — full re-fetch + rolling window
     - cron: '0 1 1-5 * *'
-    # MODE FULL: tiap 15 menit — semua sheet (konsensus + histori + live)
+    # MODE FULL: tiap 15 menit — semua sheet
     - cron: '*/15 * * * *'
 
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Mode refresh: live | history | full'
+        description: 'Mode: live | consensus | history | full'
         required: false
         default: 'full'
 
@@ -47,6 +51,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,38 +61,70 @@ jobs:
         with:
           node-version: '20'
 
-      # ── Tentukan mode berdasarkan trigger ──────────────────────────────
-      # GitHub tidak expose cron mana yang trigger (semua masuk event
-      # "schedule"). Kita deteksi dari waktu: kalau menit bisa dibagi 15
-      # tapi tidak bisa dibagi 5 → sebenarnya mode full. Tapi karena semua
-      # cron overlap (*/5 include */15), kita pakai logika sederhana:
-      #   - Kalau tanggal 1-5 jam 01:xx UTC → history
-      #   - Kalau menit tidak habis dibagi 15 → live (cron */5 murni)
-      #   - Lainnya → full
-      # workflow_dispatch bisa override langsung via input.
+      # ── Deteksi mode dari waktu eksekusi ────────────────────────────────
+      # Prioritas (tinggi ke rendah):
+      #   1. workflow_dispatch input  → pakai langsung
+      #   2. Tanggal 1-5 jam 01:xx   → history
+      #   3. Tanggal di set consensus (1,4,7,...,28) jam 06:xx → consensus
+      #      KECUALI hari Sabtu (6) atau Minggu (0) → skip (exit 0)
+      #   4. Menit tidak habis dibagi 15 → live  (cron */5 non-quarter)
+      #   5. Lainnya → full (cron */15)
+      #
+      # Overlap handling:
+      #   - Tgl 1 jam 01:xx → history (priority lebih tinggi dari consensus)
+      #   - Tgl 1 jam 06:xx → consensus (bukan jam 01, bukan history)
+      #   - Tgl 1,4,... menit non-quarter → live (cron */5, bukan jam 06)
       - name: Determine refresh mode
         id: mode
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             MODE="${{ github.event.inputs.mode }}"
             MODE="${MODE:-full}"
-          else
-            DAY=$(date -u +%-d)
-            HOUR=$(date -u +%-H)
-            MIN=$(date -u +%-M)
-            if [ "$DAY" -le 5 ] && [ "$HOUR" -eq 1 ]; then
-              MODE="history"
-            elif [ $(( MIN % 15 )) -ne 0 ]; then
-              MODE="live"
-            else
-              MODE="full"
-            fi
+            echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+            echo "🔧 Manual dispatch — mode: $MODE"
+            exit 0
           fi
+
+          DAY=$(date -u +%-d)
+          HOUR=$(date -u +%-H)
+          MIN=$(date -u +%-M)
+          DOW=$(date -u +%u)   # 1=Mon ... 6=Sat, 7=Sun
+
+          echo "📅 UTC: day=$DAY hour=$HOUR min=$MIN dow=$DOW"
+
+          # 1. History: tgl 1-5 jam 01:xx
+          if [ "$DAY" -le 5 ] && [ "$HOUR" -eq 1 ]; then
+            MODE="history"
+
+          # 2. Consensus: tgl 1,4,7,10,13,16,19,22,25,28 jam 06:xx, Senin-Jumat
+          elif [ "$HOUR" -eq 6 ] && [ $(( (DAY - 1) % 3 )) -eq 0 ]; then
+            if [ "$DOW" -ge 6 ]; then
+              echo "⏭  Hari Sabtu/Minggu — consensus skip."
+              echo "mode=skip" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            MODE="consensus"
+
+          # 3. Live: menit tidak habis dibagi 15 (cron */5 murni)
+          elif [ $(( MIN % 15 )) -ne 0 ]; then
+            MODE="live"
+
+          # 4. Full: quarter-hour (cron */15)
+          else
+            MODE="full"
+          fi
+
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "🔧 Refresh mode: $MODE"
 
-      # ── Jalankan build-data.js dengan mode yang tepat ─────────────────
+      # ── Skip kalau mode=skip (Sabtu/Minggu consensus) ──────────────────
+      - name: Skip if weekend consensus
+        if: steps.mode.outputs.mode == 'skip'
+        run: echo "Weekend skip — no action needed."
+
+      # ── Build data.json ─────────────────────────────────────────────────
       - name: Build data.json
+        if: steps.mode.outputs.mode != 'skip'
         env:
           HISTORY_SHEET_ID:   ${{ secrets.HISTORY_SHEET_ID }}
           HISTORY_GID:        ${{ secrets.HISTORY_GID }}
@@ -98,12 +135,13 @@ jobs:
           REFRESH_MODE:       ${{ steps.mode.outputs.mode }}
         run: node scripts/build-data.js --mode=${{ steps.mode.outputs.mode }}
 
-      # ── Commit hanya kalau data benar-benar berubah ───────────────────
+      # ── Commit hanya kalau data berubah ─────────────────────────────────
       - name: Commit & push if data changed
+        if: steps.mode.outputs.mode != 'skip'
         id: commit
         run: |
           if git diff --quiet -- public/data.json; then
-            echo "⏭  No data changes — skipping commit (cache hit)."
+            echo "⏭  No data changes — cache hit, skipping commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -114,7 +152,7 @@ jobs:
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      # ── Purge CDN hanya kalau ada commit ─────────────────────────────
+      # ── Purge jsDelivr CDN hanya kalau ada commit ───────────────────────
       - name: Purge jsDelivr CDN cache
         if: steps.commit.outputs.changed == 'true'
         continue-on-error: true
