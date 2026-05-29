@@ -269,6 +269,7 @@ Row 3: BBCA     | =GOOGLEFINANCE("IDX:BBCA","price")      | =GOOGLEFINANCE("IDX:
 - Format `% Live` fleksibel: `-3.35%`, `-3.35`, atau `-0.0335` semua jalan.
 - Ticker boleh pakai prefix `IDX:` / `JK:` (di-strip otomatis).
 - `IHSG` / `JKSE` / `COMPOSITE` saling di-alias ke `IHSG`.
+- **(Opsional) kolom `Nama` & `Sektor` (dan `Papan`)**: kalau ditambah di Live Sheet, dipakai untuk nama/sektor saham di dashboard (search, ticker, overview). Berguna untuk saham baru yang belum ada di `lib/static.json`. Header yang dikenali: `Nama`/`Name`/`Emiten`, `Sektor`/`Sector`/`Industry`, `Papan`/`Board`.
 
 **Apa yang di-overwrite di dashboard:**
 - `price_history[bulan_berjalan][TICKER]` → harga live  
@@ -282,6 +283,25 @@ Row 3: BBCA     | =GOOGLEFINANCE("IDX:BBCA","price")      | =GOOGLEFINANCE("IDX:
 Hasilnya: hero card, watchlist sidebar, chart linechart (titik bulan berjalan = live), price target blueprint, donut consensus, dan tabel rekomendasi analis — **semua otomatis sinkron** ke harga live tanpa edit kode.
 
 > **Tip:** Di sheet histori, **gak perlu** lagi maintain baris `sekarang` (atau row bulan berjalan dengan formula `=GOOGLEFINANCE`). Cukup isi sampai bulan kemarin, lalu biarkan sheet **Live** yang handle bulan berjalan. Builder akan auto-append. Kalau kamu tetap punya row `sekarang`, masih jalan juga — overlay akan overwrite row itu.
+
+---
+
+## Menambah / Menghapus Saham (otomatis dari Sheet)
+
+Daftar saham (`stock_info`, `stock_list`, `watchlist`) **di-generate otomatis dari universe sheet** — bukan hardcode. Cukup edit Google Sheet, dashboard ikut menyesuaikan saat `data.json` di-rebuild (mode `full` ~15 menit / `history`).
+
+**Menambah saham baru (mis. WBSA, SUPA):**
+1. Tambahkan ke **Histori Sheet** (kolom baru ticker + harga bulanannya) → saham langsung dapat chart, stats, dan **bisa dicari**.
+2. (Opsional) tambahkan juga di **Live Sheet** → harga real-time + `% Live`.
+3. (Opsional) isi kolom `Nama` & `Sektor` di **Live Sheet** → nama & sektor tampil rapi. Kalau tidak diisi, fallback ke `lib/static.json`, lalu ke kode ticker.
+
+> Saham yang **cuma** ada di Live Sheet (belum di Histori) **tidak** muncul — sengaja, supaya tidak ada ticker tanpa riwayat/stats. Masukkan ke Histori dulu.
+
+**Menghapus saham (delisting):**
+- Hapus kolomnya dari **Histori Sheet** → otomatis hilang dari chart/stats/search/watchlist saat rebuild berikutnya.
+- Kalau hanya berhenti di Live Sheet (kolom histori tetap ada) → harga berhenti update, tapi saham tetap tampil dengan harga terakhir.
+
+**Prioritas sumber nama/sektor:** kolom Live Sheet → `lib/static.json` → kode ticker (fallback). Jadi nama 956 saham lama tetap utuh, saham baru cukup diisi via sheet.
 
 ---
 
