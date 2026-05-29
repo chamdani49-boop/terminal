@@ -27,8 +27,8 @@ on:
   schedule:
     # MODE LIVE: tiap 5 menit — hanya Live Sheet
     - cron: '*/5 * * * *'
-    # MODE CONSENSUS: tgl 1,4,7,10,13,16,19,22,25,28 jam 06:00 UTC (≈3 harian)
-    - cron: '0 6 1,4,7,10,13,16,19,22,25,28 * *'
+    # MODE CONSENSUS: tgl 1,4,7,10,13,16,19,22,25,28 jam 23:00 UTC = 06:00 WIB (≈3 harian)
+    - cron: '0 23 1,4,7,10,13,16,19,22,25,28 * *'
     # MODE HISTORY: tgl 1–5 jam 01:00 UTC — full re-fetch + rolling window
     - cron: '0 1 1-5 * *'
     # MODE FULL: tiap 15 menit — semua sheet
@@ -96,10 +96,16 @@ jobs:
           if [ "$DAY" -le 5 ] && [ "$HOUR" -eq 1 ]; then
             MODE="history"
 
-          # 2. Consensus: tgl 1,4,7,10,13,16,19,22,25,28 jam 06:xx, Senin-Jumat
-          elif [ "$HOUR" -eq 6 ] && [ $(( (DAY - 1) % 3 )) -eq 0 ]; then
-            if [ "$DOW" -ge 6 ]; then
-              echo "⏭  Hari Sabtu/Minggu — consensus skip."
+          # 2. Consensus: tgl 1,4,7,10,13,16,19,22,25,28 jam 23:xx UTC = 06:00 WIB, Senin-Jumat
+          # Catatan: jam 23 UTC = dini hari UTC tapi besok pagi WIB.
+          # DOW di sini adalah hari UTC saat cron jalan (bukan hari WIB).
+          # Contoh: Minggu 23:00 UTC = Senin 06:00 WIB → boleh jalan.
+          # Sabtu 23:00 UTC = Minggu 06:00 WIB → skip.
+          # Jadi: skip kalau DOW=6 (Sabtu UTC = Minggu WIB).
+          elif [ "$HOUR" -eq 23 ] && [ $(( (DAY - 1) % 3 )) -eq 0 ]; then
+            if [ "$DOW" -eq 6 ]; then
+              # Sabtu UTC jam 23:00 = Minggu WIB jam 06:00 → skip
+              echo "⏭  Sabtu UTC (= Minggu WIB pagi) — consensus skip."
               echo "mode=skip" >> "$GITHUB_OUTPUT"
               exit 0
             fi
