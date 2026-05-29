@@ -965,7 +965,8 @@ select.form-control option{background:var(--card);color:var(--text)}
     column-gap:8px;row-gap:2px;padding:9px 6px;
   }
   .ov-latest-stock{grid-row:1;grid-column:1}
-  .ov-latest-firm {grid-row:1;grid-column:2;font-size:11px}
+  .ov-latest-firmwrap{grid-row:1;grid-column:2;min-width:0}
+  .ov-latest-firm {font-size:11px}
   .ov-latest-pct  {grid-row:1;grid-column:3}
   .ov-latest-date {grid-row:2;grid-column:1;font-size:10px}
   .ov-latest-target{grid-row:2;grid-column:2/span 2;text-align:left;font-size:11px;color:var(--text2)}
@@ -1366,34 +1367,35 @@ select.form-control option{background:var(--card);color:var(--text)}
 }
 
 .firm-stats{
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:12px;margin-bottom:16px;
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;margin-bottom:14px;align-items:stretch;
 }
 @media(max-width:900px){.firm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.firm-stats{grid-template-columns:1fr}}
 
-/* Saat ada 6 stat cards (tambah Returns+Risk), auto-fill tetap 4 kolom
-   di desktop, 2 kolom di tablet — firm-stat-rating tidak dapat treatment
-   khusus, cukup ikut grid existing. */
+/* 6 stat cards → grid 3 kolom (2 baris penuh, tanpa sel kosong). Card padat,
+   konten rata-atas supaya tidak ada ruang kosong di bawah. */
 
 .firm-stat{
   background:var(--card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);padding:16px 18px;
+  border-radius:var(--radius-lg);padding:12px 14px;
   box-shadow:var(--shadow-card);min-width:0;
+  display:flex;flex-direction:column;
   transition:transform .15s,box-shadow .15s;
 }
 .firm-stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-card-lg)}
 .firm-stat-label{
   font-size:10px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.7px;color:var(--text2);margin-bottom:8px;
+  letter-spacing:.6px;color:var(--text2);margin-bottom:5px;
 }
 .firm-stat-value{
   font-family:'IBM Plex Mono',monospace;
-  font-size:24px;font-weight:800;
+  font-size:21px;font-weight:800;
   font-variant-numeric:tabular-nums;
   color:var(--text);line-height:1.1;letter-spacing:-.3px;
 }
 .firm-stat-sub{
-  font-size:11px;color:var(--text2);font-weight:600;margin-top:5px;
+  font-size:11px;color:var(--text2);font-weight:600;margin-top:4px;
 }
 
 /* Distribusi bar dalam stat card */
@@ -1416,7 +1418,7 @@ select.form-control option{background:var(--card);color:var(--text)}
 
 /* Distribusi rating sebagai donat (di dalam stat card) */
 .firm-dist-donut-wrap{
-  position:relative;width:104px;height:104px;margin:8px auto 4px;
+  position:relative;width:84px;height:84px;margin:4px auto 2px;
   display:flex;align-items:center;justify-content:center;
 }
 .firm-dist-donut-center{
@@ -1424,10 +1426,10 @@ select.form-control option{background:var(--card);color:var(--text)}
   align-items:center;justify-content:center;pointer-events:none;
 }
 .firm-dist-donut-center .dc-val{
-  font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:800;line-height:1;
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;line-height:1;
 }
 .firm-dist-donut-center .dc-lbl{
-  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+  font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
   color:var(--text3);margin-top:2px;
 }
 
@@ -1478,6 +1480,40 @@ select.form-control option{background:var(--card);color:var(--text)}
   .ovl-firm-row{grid-template-columns:1fr;gap:10px}
   .ovl-firm-ratings{flex-direction:row;gap:16px;flex-wrap:wrap}
 }
+
+/* Firm rating mini di feed "Terbaru" (berdasarkan track record firm) */
+.ov-latest-firmwrap{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ov-latest-firmrate{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ov-latest-rate-grp{display:inline-flex;align-items:center;gap:4px}
+.ov-latest-rate-grp .lbl{
+  font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--text3);
+}
+@media(max-width:640px){ .ov-latest-firmrate{display:none} }
+
+/* Toolbar sort "Per Firm" — panah naik/turun per pencapaian */
+.ovl-sortbar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:9px 11px;margin-bottom:10px;
+  border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);
+}
+.ovl-sort-lbl{
+  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--text2);margin-right:2px;
+}
+.ovl-sort-grp{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 5px 3px 8px;border:1px solid var(--border);border-radius:var(--radius-pill);
+  background:var(--card);
+}
+.ovl-sort-grp-lbl{font-size:11px;font-weight:700;color:var(--text2);font-family:'IBM Plex Mono',monospace}
+.ovl-sort-arrow{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;border:none;border-radius:5px;cursor:pointer;
+  background:var(--bg3);color:var(--text2);font-size:9px;line-height:1;
+  transition:all .12s;padding:0;
+}
+.ovl-sort-arrow:hover{background:var(--bg4);color:var(--accent)}
+.ovl-sort-arrow.active{background:var(--grad);color:#fff;box-shadow:0 2px 6px rgba(109,40,217,.25)}
 
 /* Recs table */
 .firm-recs-scroll{
@@ -5315,6 +5351,7 @@ function buildOverview() {
   allFilteredRecs.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
   _ovLatestRecs = allFilteredRecs;
   _ovLatestPeriodLabel = periodLabel;
+  _firmRowsCache = null;            // data refresh → recompute agregat firm
   renderLatestPanel();
 }
 
@@ -5324,6 +5361,9 @@ function buildOverview() {
 let latestView = 'recent';      // 'recent' | 'firms'
 let _ovLatestRecs = [];         // recs ter-filter periode (view 'recent')
 let _ovLatestPeriodLabel = '';
+let _firmRowsCache = null;       // hasil _buildFirmRows (di-cache antar interaksi)
+let firmSortKey = 'total';       // 'total'|'returns'|'risk'|'m1'..'m6'
+let firmSortDir = 'desc';        // 'asc'|'desc'
 
 function setLatestView(view, btn) {
   latestView = view;
@@ -5336,36 +5376,109 @@ function renderLatestPanel() {
   const el = document.getElementById('ovLatest');
   if (!el) return;
   const lcEl = document.getElementById('ovLatestCount');
+  if (!_firmRowsCache) _firmRowsCache = _buildFirmRows();
 
   if (latestView === 'firms') {
-    const rows = _buildFirmRows();
-    if (lcEl) lcEl.textContent = `${rows.length} firm analis · klik baris untuk lihat detail`;
-    el.innerHTML = rows.length
-      ? `<div class="ovl-firm-list">${rows.map(_firmRowHTML).join('')}</div>`
+    if (lcEl) lcEl.textContent = `${_firmRowsCache.length} firm analis · klik baris untuk lihat detail`;
+    el.innerHTML = _firmRowsCache.length
+      ? `${_firmSortBarHTML()}<div class="ovl-firm-list" id="ovlFirmList"></div>`
       : '<div class="ovl-empty">Belum ada data firm.</div>';
+    renderFirmList();
   } else {
     const recs = _ovLatestRecs || [];
     const latestList = recs.slice(0, 20);
+    const rmap = new Map(_firmRowsCache.map(f => [f.name, f]));
     if (lcEl) lcEl.textContent = `${recs.length} rekomendasi · ${_ovLatestPeriodLabel || ''}`;
     el.innerHTML = latestList.length
-      ? `<div class="ov-latest-list">${latestList.map(_recentRowHTML).join('')}</div>`
+      ? `<div class="ov-latest-list">${latestList.map(r => _recentRowHTML(r, rmap)).join('')}</div>`
       : '<div class="ovl-empty">Tidak ada konsensus dalam periode ini.</div>';
   }
 }
 
-function _recentRowHTML(r) {
+// Mini rating bars (Return + Risk) — berdasarkan track record firm.
+function _firmRateMini(firmObj) {
+  if (!firmObj) return '';
+  return `<span class="ov-latest-rate-grp"><span class="lbl">Ret</span>${renderRatingBars(firmObj.returns, 'green', 'sm')}</span>
+    <span class="ov-latest-rate-grp"><span class="lbl">Risk</span>${renderRatingBars(firmObj.risk, 'red', 'sm')}</span>`;
+}
+
+function _recentRowHTML(r, rmap) {
   const bc = r.suggestion==='BUY'?'badge-buy':r.suggestion==='SELL'?'badge-sell':'badge-neutral';
   const pc = r.upPct==null?'neu':r.upPct>0?'up':r.upPct<0?'dn':'neu';
   const ps = r.upPct!=null?`${r.upPct>=0?'+':''}${(r.upPct*100).toFixed(1)}%`:'—';
   const fe = escapeHtml(r.firm||'—');
+  const fobj = rmap ? rmap.get(r.firm) : null;
   return `<div class="ov-latest-row">
     <span class="ov-latest-date">${r.date||'-'}</span>
     <span class="ov-latest-stock" onclick="selectStock('${r.code}')">${r.code}</span>
-    <span class="ov-latest-firm" data-firm="${fe}" onclick="showFirmDetail(this.dataset.firm)">${fe}</span>
+    <div class="ov-latest-firmwrap">
+      <span class="ov-latest-firm" data-firm="${fe}" onclick="showFirmDetail(this.dataset.firm)">${fe}</span>
+      <span class="ov-latest-firmrate" title="Risk/Return rating berdasarkan track record firm">${_firmRateMini(fobj)}</span>
+    </div>
     <span class="badge ${bc}">${r.suggestion}</span>
     <span class="ov-latest-target">${r.target_price?Math.round(r.target_price).toLocaleString('id'):'—'}</span>
     <span class="ov-latest-pct ${pc}">${ps}</span>
   </div>`;
+}
+
+// ── Per Firm: toolbar sort (panah naik/turun per pencapaian) + list ──────
+const _FIRM_SORT_COLS = [
+  { key:'total',   lbl:'Rec'   },
+  { key:'returns', lbl:'Return' },
+  { key:'risk',    lbl:'Risk'  },
+  { key:'m1', lbl:'1Bln' }, { key:'m2', lbl:'2Bln' }, { key:'m3', lbl:'3Bln' },
+  { key:'m4', lbl:'4Bln' }, { key:'m5', lbl:'5Bln' }, { key:'m6', lbl:'6Bln' },
+];
+
+function _firmSortBarHTML() {
+  const grp = c => {
+    const upA = (firmSortKey===c.key && firmSortDir==='asc')  ? ' active' : '';
+    const dnA = (firmSortKey===c.key && firmSortDir==='desc') ? ' active' : '';
+    return `<span class="ovl-sort-grp">
+      <span class="ovl-sort-grp-lbl">${c.lbl}</span>
+      <button type="button" class="ovl-sort-arrow${upA}" data-key="${c.key}" data-dir="asc" title="${c.lbl}: terendah → tertinggi" onclick="setFirmSort('${c.key}','asc')">▲</button>
+      <button type="button" class="ovl-sort-arrow${dnA}" data-key="${c.key}" data-dir="desc" title="${c.lbl}: tertinggi → terendah" onclick="setFirmSort('${c.key}','desc')">▼</button>
+    </span>`;
+  };
+  return `<div class="ovl-sortbar"><span class="ovl-sort-lbl">Urutkan</span>${_FIRM_SORT_COLS.map(grp).join('')}</div>`;
+}
+
+// Nilai metrik firm untuk sorting (m1..m6 = performa sejak rilis di bulan ke-k).
+function _firmSortVal(f, key) {
+  if (key === 'total')   return f.total;
+  if (key === 'returns') return f.returns;
+  if (key === 'risk')    return f.risk;
+  const m = /^m([1-6])$/.exec(key);
+  if (m) {
+    const k = +m[1];
+    const idx = (f.avgNorm && f.avgNorm[k] != null) ? f.avgNorm[k] : null;
+    return idx != null ? idx - 100 : null;
+  }
+  return null;
+}
+
+function _sortFirmRows(rows) {
+  const dir = firmSortDir === 'asc' ? 1 : -1;
+  return rows.slice().sort((a, b) => {
+    const av = _firmSortVal(a, firmSortKey), bv = _firmSortVal(b, firmSortKey);
+    if (av == null && bv == null) return a.name.localeCompare(b.name);
+    if (av == null) return 1;    // nilai kosong selalu di bawah
+    if (bv == null) return -1;
+    return (av - bv) * dir || a.name.localeCompare(b.name);
+  });
+}
+
+function renderFirmList() {
+  const list = document.getElementById('ovlFirmList');
+  if (!list) return;
+  list.innerHTML = _sortFirmRows(_firmRowsCache || []).map(_firmRowHTML).join('');
+}
+
+function setFirmSort(key, dir) {
+  firmSortKey = key; firmSortDir = dir;
+  document.querySelectorAll('.ovl-sortbar .ovl-sort-arrow').forEach(a =>
+    a.classList.toggle('active', a.dataset.key === key && a.dataset.dir === dir));
+  renderFirmList();
 }
 
 // Agregat semua firm: counts, avg upside, rating Returns/Risk, status 1–6 bln.
