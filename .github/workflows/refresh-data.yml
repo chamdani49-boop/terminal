@@ -1,18 +1,45 @@
 name: Refresh data from Google Sheets
 
+# ═══════════════════════════════════════════════════════════════════════
+# 3 MODE REFRESH:
+#
+#  live     — setiap 5 menit, hanya tarik Live Sheet.
+#             Kalau harga tidak berubah dari data.json terakhir (market
+#             tutup / libur / closing sama) → SKIP commit (cache hit).
+#             Aktif setiap hari (termasuk weekend — Google Sheet bisa
+#             tetap update walaupun market tutup, nilainya closing).
+#
+#  history  — setiap hari tanggal 1–5 jam 01:00 UTC.
+#             Tarik History Sheet + Live Sheet + Consensus.
+#             Ini "jaga-jaga" kalau kamu lupa update Google Sheet
+#             manual — cron akan paksa re-fetch histori terbaru.
+#             Rolling window: kalau bulan bertambah, baris terlama
+#             (121 bulan ke belakang) otomatis terpotong.
+#
+#  full     — setiap 15 menit (selain mode history), tarik semua sheet.
+#             Ini mode default sebelumnya, dipertahankan untuk update
+#             konsensus & history reguler di luar tgl 1-5.
+# ═══════════════════════════════════════════════════════════════════════
+
 on:
   schedule:
-    # Every 15 minutes. Adjust if you want faster/slower refreshes.
-    # GitHub Actions cron minimum is 5 minutes (and they may queue under load).
+    # MODE LIVE: tiap 5 menit — hanya live sheet
+    - cron: '*/5 * * * *'
+    # MODE HISTORY: tgl 1-5 setiap bulan jam 01:00 UTC — full re-fetch
+    - cron: '0 1 1-5 * *'
+    # MODE FULL: tiap 15 menit — semua sheet (konsensus + histori + live)
     - cron: '*/15 * * * *'
-  workflow_dispatch:
-    # Allows manual "Run workflow" button in the Actions tab.
 
-# Grant the GITHUB_TOKEN write permission so the workflow can push commits.
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Mode refresh: live | history | full'
+        required: false
+        default: 'full'
+
 permissions:
   contents: write
 
-# Prevent overlapping runs (slow runs would otherwise pile up).
 concurrency:
   group: refresh-data
   cancel-in-progress: false
@@ -29,7 +56,38 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build data.json from Google Sheets
+      # ── Tentukan mode berdasarkan trigger ──────────────────────────────
+      # GitHub tidak expose cron mana yang trigger (semua masuk event
+      # "schedule"). Kita deteksi dari waktu: kalau menit bisa dibagi 15
+      # tapi tidak bisa dibagi 5 → sebenarnya mode full. Tapi karena semua
+      # cron overlap (*/5 include */15), kita pakai logika sederhana:
+      #   - Kalau tanggal 1-5 jam 01:xx UTC → history
+      #   - Kalau menit tidak habis dibagi 15 → live (cron */5 murni)
+      #   - Lainnya → full
+      # workflow_dispatch bisa override langsung via input.
+      - name: Determine refresh mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="${{ github.event.inputs.mode }}"
+            MODE="${MODE:-full}"
+          else
+            DAY=$(date -u +%-d)
+            HOUR=$(date -u +%-H)
+            MIN=$(date -u +%-M)
+            if [ "$DAY" -le 5 ] && [ "$HOUR" -eq 1 ]; then
+              MODE="history"
+            elif [ $(( MIN % 15 )) -ne 0 ]; then
+              MODE="live"
+            else
+              MODE="full"
+            fi
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "🔧 Refresh mode: $MODE"
+
+      # ── Jalankan build-data.js dengan mode yang tepat ─────────────────
+      - name: Build data.json
         env:
           HISTORY_SHEET_ID:   ${{ secrets.HISTORY_SHEET_ID }}
           HISTORY_GID:        ${{ secrets.HISTORY_GID }}
@@ -37,37 +95,26 @@ jobs:
           CONSENSUS_GID:      ${{ secrets.CONSENSUS_GID }}
           LIVE_SHEET_ID:      ${{ secrets.LIVE_SHEET_ID }}
           LIVE_GID:           ${{ secrets.LIVE_GID }}
-        run: node scripts/build-data.js
+          REFRESH_MODE:       ${{ steps.mode.outputs.mode }}
+        run: node scripts/build-data.js --mode=${{ steps.mode.outputs.mode }}
 
+      # ── Commit hanya kalau data benar-benar berubah ───────────────────
       - name: Commit & push if data changed
         id: commit
         run: |
           if git diff --quiet -- public/data.json; then
-            echo "No data changes detected — skipping commit."
+            echo "⏭  No data changes — skipping commit (cache hit)."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name  "data-refresh[bot]"
           git config user.email "data-refresh@economstock.local"
           git add public/data.json
-          git commit -m "data: refresh $(date -u +%FT%TZ) [skip ci]"
+          git commit -m "data: refresh $(date -u +%FT%TZ) [mode=${{ steps.mode.outputs.mode }}] [skip ci]"
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      # Frontend fetches data.json langsung dari jsDelivr CDN (lihat
-      # public/index.html). jsDelivr cache `@main` ~12 jam by default,
-      # tapi kita purge eksplisit di sini supaya update kelihatan dalam
-      # ~1 menit di browser user.
-      #
-      # Kenapa pakai jsDelivr & gak Cloudflare Pages: commit message
-      # punya tag `[skip ci]` (perlu untuk hindari hit limit 500 builds/
-      # bulan di CF Pages free tier dengan cron tiap 15 menit). CF Pages
-      # respect [skip ci] → skip deploy → data.json di production stale.
-      # jsDelivr fetch langsung dari git, gak peduli deploy state.
-      # NOTE: jsDelivr migrasi purge API ke GET (bukan POST). Sebelumnya
-      # workflow ini pakai POST → selalu balik 405 MethodNotAllowed → cache
-      # nyangkut sampai natural expiry (~12 jam). Akibatnya frontend serve
-      # data stale meski commit baru sudah masuk main. Pakai GET sekarang.
+      # ── Purge CDN hanya kalau ada commit ─────────────────────────────
       - name: Purge jsDelivr CDN cache
         if: steps.commit.outputs.changed == 'true'
         continue-on-error: true
@@ -78,5 +125,5 @@ jobs:
           if echo "$response" | grep -q '"status":"finished"'; then
             echo "✓ jsDelivr cache purged"
           else
-            echo "⚠️  Purge response unexpected (non-fatal — cache will expire ~12h)"
+            echo "⚠️  Purge response unexpected (non-fatal)"
           fi

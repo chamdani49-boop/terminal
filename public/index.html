@@ -2841,17 +2841,20 @@ let savingChartInstance = null;
 const DATA_CDN_URL = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/data.json';
 const DATA_LOCAL_URL = 'data.json';
 
+// ── Live polling state ──────────────────────────────────────────────────
+// Interval: 5 menit (300 000 ms) — sesuai cron GitHub Actions.
+// Cache-bust: per 30 detik (beda query string → CDN tidak serve stale).
+// Smart diff: kalau generated_at sama → skip re-render (tidak buang CPU).
+const LIVE_POLL_MS   = 5 * 60 * 1000;   // 5 menit
+const CACHE_BUST_MS  = 30 * 1000;        // 30 detik window
+let   _lastGeneratedAt = null;           // timestamp data.json yang sedang tampil
+let   _pollTimer       = null;           // handle setInterval
+
 async function loadData() {
-  // Cache-bust per 30 detik. jsDelivr respect query string sebagai cache
-  // key — beda value, beda cache entry. 30s window cukup smooth (tidak
-  // hammer CDN per-fetch) tapi cukup ketat supaya user dapet data fresh
-  // dalam 30 detik setelah workflow refresh push commit & purge cache.
-  // Kalau jsDelivr cache server-side stuck (purge step gagal, dll),
-  // query string baru bypass cache CF/Fastly downstream.
-  const v = Math.floor(Date.now() / 30000);
+  const v = Math.floor(Date.now() / CACHE_BUST_MS);
   const sources = [
-    { url: DATA_CDN_URL + '?v=' + v, label: 'jsDelivr CDN' },
-    { url: DATA_LOCAL_URL + '?v=' + v, label: 'same-origin' },
+    { url: DATA_CDN_URL   + '?v=' + v, label: 'jsDelivr CDN' },
+    { url: DATA_LOCAL_URL + '?v=' + v, label: 'same-origin'  },
   ];
 
   for (const src of sources) {
@@ -2859,19 +2862,18 @@ async function loadData() {
       const res = await fetch(src.url, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      // Sanity check: harus punya price_history dan stats.
-      if (!json || !json.price_history || !json.stats) {
-        throw new Error('payload tidak valid');
-      }
+      if (!json || !json.price_history || !json.stats) throw new Error('payload tidak valid');
       DATA = json;
+      _lastGeneratedAt = (json._meta || {}).generated_at || null;
       try {
         const meta = json._meta || {};
         console.info(
           `[data] loaded from ${src.label} · generated_at=${meta.generated_at} · ` +
-          `live_tickers=${meta.live_tickers ?? '-'}`
+          `mode=${meta.refresh_mode ?? '-'} · live_tickers=${meta.live_tickers ?? '-'}`
         );
       } catch (_) {}
       init();
+      _startLivePolling();  // mulai polling setelah initial load berhasil
       return;
     } catch (e) {
       console.warn(`[data] ${src.label} fetch gagal:`, e.message || e);
@@ -2880,6 +2882,100 @@ async function loadData() {
   document.querySelector('.loading').innerHTML =
     '⚠️ Gagal memuat data dari CDN dan same-origin. Cek koneksi internet, ' +
     'atau apakah workflow "Refresh data" sudah pernah jalan.';
+}
+
+// ── Polling engine ─────────────────────────────────────────────────────
+function _startLivePolling() {
+  if (_pollTimer) clearInterval(_pollTimer);
+  _pollTimer = setInterval(_pollLiveData, LIVE_POLL_MS);
+  console.info(`[poll] Live polling aktif — interval ${LIVE_POLL_MS / 1000}s`);
+}
+
+async function _pollLiveData() {
+  const v = Math.floor(Date.now() / CACHE_BUST_MS);
+  const sources = [
+    { url: DATA_CDN_URL   + '?v=' + v },
+    { url: DATA_LOCAL_URL + '?v=' + v },
+  ];
+
+  let json = null;
+  for (const src of sources) {
+    try {
+      const res = await fetch(src.url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const j = await res.json();
+      if (j && j.price_history && j.stats) { json = j; break; }
+    } catch (_) {}
+  }
+  if (!json) return; // fetch gagal, coba lagi di interval berikutnya
+
+  const newGenAt = (json._meta || {}).generated_at || null;
+
+  // Smart diff: kalau generated_at sama persis → data belum berubah → skip
+  if (newGenAt && newGenAt === _lastGeneratedAt) {
+    console.info(`[poll] No change (generated_at=${newGenAt}) — skip re-render`);
+    return;
+  }
+
+  console.info(`[poll] Data updated: ${_lastGeneratedAt} → ${newGenAt}`);
+  _lastGeneratedAt = newGenAt;
+
+  // ── Smooth patch: update DATA dan hanya re-render komponen live ──────
+  // TIDAK re-render seluruh halaman → tidak ada flicker/scroll jump.
+  // Komponen yang berubah karena live price:
+  //   • hero (harga, %, live badge)
+  //   • watchlist sidebar
+  //   • stock ticker running
+  //   • price target blueprint (batas beli/jual)
+  //   • consensus axis (dot posisi harga)
+  //   • stats card (MoM, YTD berubah kalau harga berubah)
+  // Komponen yang TIDAK perlu re-render:
+  //   • chart (hanya update saat user ganti periode)
+  //   • consensus analis table (data tidak berubah saat live update)
+  //   • YoY analysis
+  //   • overview consensus (heavy, bisa diupdate via requestIdleCallback)
+  const prevStock = currentStock;
+  DATA = json;
+
+  // Re-render komponen ringan langsung (tidak blokir UI thread)
+  requestAnimationFrame(() => {
+    try { renderHero(prevStock);        } catch (_) {}
+    try { buildWatchlist();            } catch (_) {}
+    try { buildStockTicker();          } catch (_) {}
+    try { renderPriceTarget(prevStock);} catch (_) {}
+    try { renderConsensus(prevStock);  } catch (_) {}
+    try { renderStats(prevStock);      } catch (_) {}
+  });
+
+  // Re-render komponen berat saat browser idle (tidak blokir animasi/scroll)
+  const idleFn = () => {
+    try { buildConsensusAll(); } catch (_) {}
+    // Overview hanya re-render kalau sedang tampil — cek visibility
+    const ovView = document.getElementById('ovView');
+    if (ovView && ovView.style.display !== 'none') {
+      try { buildOverview(); } catch (_) {}
+    }
+  };
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(idleFn, { timeout: 3000 });
+  } else {
+    setTimeout(idleFn, 500); // fallback Safari
+  }
+
+  // Indikator visual: flash subtle di hero price saat data fresh
+  _flashLiveUpdate();
+}
+
+// ── Flash indicator — subtle highlight di harga saat update ────────────
+function _flashLiveUpdate() {
+  const priceEl = document.querySelector('.price-block .price');
+  if (!priceEl) return;
+  priceEl.style.transition = 'background .1s';
+  priceEl.style.background = 'var(--green-bg)';
+  setTimeout(() => {
+    priceEl.style.background = '';
+    priceEl.style.transition = '';
+  }, 800);
 }
 
 function init() {
