@@ -1012,7 +1012,60 @@ function computeConsensusSummary(consensus) {
 // ─────────────────────────────────────────────
 // Main
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Rolling window — buang baris terlama agar history selalu 121 bulan.
+// Dipanggil setelah parseHistory + applyLiveOverlay.
+// 121 = 10 tahun × 12 bulan + 1 (termasuk bulan berjalan).
+// Saat Juni 2026 masuk, baris Mei 2016 otomatis terpotong.
+// ─────────────────────────────────────────────
+const HISTORY_MAX_MONTHS = 121;
+
+function applyRollingWindow(price_history) {
+  if (price_history.length <= HISTORY_MAX_MONTHS) return 0;
+  const removed = price_history.length - HISTORY_MAX_MONTHS;
+  price_history.splice(0, removed);
+  console.log(`  🗑  Rolling window: removed ${removed} oldest row(s), kept ${price_history.length} months`);
+  return removed;
+}
+
+// ─────────────────────────────────────────────
+// Cache check — bandingkan harga live di data.json lama vs baru.
+// Kalau identik (market tutup / libur / closing sama) → return true = skip.
+// ─────────────────────────────────────────────
+function isLiveCacheHit(outPath, newLive) {
+  try {
+    const old = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+    const oldLive = old.live || {};
+    const tickers = Object.keys(newLive);
+    if (!tickers.length) return false;
+    // Cek apakah SEMUA harga live identik dengan sebelumnya
+    let matched = 0;
+    for (const t of tickers) {
+      const nv = newLive[t] && newLive[t].price;
+      const ov = oldLive[t] && oldLive[t].price;
+      if (Number.isFinite(nv) && nv === ov) matched++;
+    }
+    const hitRatio = matched / tickers.length;
+    const isHit = hitRatio >= 0.98; // 98% ticker sama → anggap cache hit
+    if (isHit) {
+      console.log(`  ✓  Cache hit: ${matched}/${tickers.length} harga live identik → skip commit`);
+    }
+    return isHit;
+  } catch (_) {
+    return false; // file belum ada / corrupt → selalu update
+  }
+}
+
 async function main() {
+  // ── Parse mode dari CLI arg atau env ──────────────────────────────────
+  // Prioritas: --mode=xxx arg > REFRESH_MODE env > default 'full'
+  const modeArg = process.argv.find(a => a.startsWith('--mode='));
+  const mode = (modeArg ? modeArg.split('=')[1] : null)
+    || process.env.REFRESH_MODE
+    || 'full';
+  console.log(`\n🔧 build-data.js — mode: ${mode.toUpperCase()}`);
+  console.log(`   ${new Date().toISOString()}\n`);
+
   const {
     HISTORY_SHEET_ID, HISTORY_GID = '0',
     CONSENSUS_SHEET_ID, CONSENSUS_GID = '0',
@@ -1025,7 +1078,95 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('Fetching sheets…');
+  const outDir  = path.join(__dirname, '..', 'public');
+  const outPath = path.join(outDir, 'data.json');
+
+  // ── MODE: live — hanya fetch Live Sheet, overlay ke data.json existing ──
+  // Tujuan: super cepat, tidak fetch History & Consensus (besar & lambat).
+  // Kalau harga tidak berubah (cache hit) → exit tanpa tulis file.
+  if (mode === 'live') {
+    if (!LIVE_SHEET_ID) {
+      console.log('  LIVE_SHEET_ID not set — nothing to do in live mode.');
+      process.exit(0);
+    }
+
+    // Baca data.json existing sebagai base
+    let baseData;
+    try {
+      baseData = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+    } catch (e) {
+      console.warn('  ⚠️  data.json belum ada, fallback ke mode full.');
+      // Fallback ke full kalau belum ada base
+    }
+
+    if (!baseData) {
+      // Tidak ada base → jalankan full mode sekali
+      console.log('  ↪ No existing data.json, switching to full mode...');
+      process.env.REFRESH_MODE = 'full';
+      process.argv = process.argv.map(a => a.startsWith('--mode=') ? '--mode=full' : a);
+      // Re-run sebagai full — simple approach: ganti mode dan lanjut ke blok full di bawah
+    } else {
+      console.log('Fetching Live Sheet only…');
+      const debug = {};
+      let liveCsv = null;
+      try {
+        liveCsv = await fetchCsv(LIVE_SHEET_ID, LIVE_GID);
+      } catch (err) {
+        console.warn(`  ⚠️  Live fetch gagal: ${err.message} — tidak ada perubahan.`);
+        process.exit(0);
+      }
+
+      const newLive = parseLive(liveCsv, debug);
+
+      // Cache check — harga identik? Skip.
+      if (isLiveCacheHit(outPath, newLive)) {
+        process.exit(0);
+      }
+
+      // Overlay ke price_history existing
+      const price_history = baseData.price_history;
+      applyLiveOverlay(price_history, newLive, debug);
+
+      // Recompute stats yang terpengaruh live
+      const stats = computeStats(price_history);
+      for (const t of Object.keys(newLive)) {
+        if (stats[t]) {
+          stats[t].change_pct_live = Number.isFinite(newLive[t].change_pct)
+            ? newLive[t].change_pct : null;
+        }
+      }
+      const correlations = computeCorrelations(price_history);
+      computeBetaAndRelVol(price_history, stats);
+      const zcores = computeZcores(stats);
+
+      const payload = {
+        ...baseData,          // pertahankan consensus, stock_info, dll
+        price_history,
+        stats,
+        correlations,
+        zcores,
+        live: newLive,
+        _meta: {
+          ...baseData._meta,
+          generated_at: new Date().toISOString(),
+          refresh_mode: 'live',
+          live_tickers: Object.keys(newLive).length,
+          live_fetch_error: null,
+          _debug: debug,
+        },
+      };
+
+      fs.mkdirSync(outDir, { recursive: true });
+      fs.writeFileSync(outPath, JSON.stringify(payload));
+      const sizeKB = (fs.statSync(outPath).size / 1024).toFixed(1);
+      console.log(`✓ Live update done (${sizeKB} KB) — ${Object.keys(newLive).length} tickers overlaid`);
+      return;
+    }
+  }
+
+  // ── MODE: history — full fetch semua sheet, rolling window aktif ──────
+  // ── MODE: full    — full fetch semua sheet (default) ──────────────────
+  console.log(`Fetching all sheets (mode: ${mode})…`);
   const fetches = [
     fetchCsv(HISTORY_SHEET_ID, HISTORY_GID),
     fetchCsv(CONSENSUS_SHEET_ID, CONSENSUS_GID),
@@ -1070,6 +1211,11 @@ async function main() {
   // karena cur === prev (sama-sama April).
   const live = liveCsv ? parseLive(liveCsv, debug) : {};
   applyLiveOverlay(price_history, live, debug);
+
+  // Rolling window: buang baris terlama agar history selalu max 121 bulan.
+  // Mode history: aktif selalu (tgl 1-5, jaga-jaga histori bertambah).
+  // Mode full   : aktif selalu (update reguler).
+  applyRollingWindow(price_history);
 
   // Sekarang compute stats — avg/std/MoM include bulan berjalan dengan benar.
   const stats = computeStats(price_history);
@@ -1122,6 +1268,7 @@ async function main() {
     watchlist:  stat.watchlist,
     _meta: {
       generated_at: new Date().toISOString(),
+      refresh_mode: mode,
       history_rows: price_history.length,
       consensus_tickers: Object.keys(consensus_slim).length,
       consensus_total_rows,
@@ -1135,9 +1282,7 @@ async function main() {
     },
   };
 
-  const outDir = path.join(__dirname, '..', 'public');
   fs.mkdirSync(outDir, { recursive: true });
-  const outPath = path.join(outDir, 'data.json');
   fs.writeFileSync(outPath, JSON.stringify(payload));
 
   const sizeKB = (fs.statSync(outPath).size / 1024).toFixed(1);
