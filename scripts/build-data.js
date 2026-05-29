@@ -1013,6 +1013,40 @@ function computeConsensusSummary(consensus) {
 // Main
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
+// safeLoadBase — baca data.json existing sebagai fallback.
+// ─────────────────────────────────────────────
+function safeLoadBase(outPath) {
+  try {
+    const raw = fs.readFileSync(outPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.price_history && parsed.stats) {
+      console.log(`  📦 Base data loaded (${(raw.length/1024).toFixed(1)} KB, ` +
+        `generated_at=${(parsed._meta||{}).generated_at || '?'})`);
+      return parsed;
+    }
+  } catch (_) {}
+  return null;
+}
+
+// ─────────────────────────────────────────────
+// safeFetch — wrapper fetchCsv yang tidak pernah throw.
+// Kalau gagal → log warn → return null → caller pakai base data.
+// ─────────────────────────────────────────────
+async function safeFetch(sheetId, gid, label) {
+  if (!sheetId) return null;
+  try {
+    const csv = await fetchCsv(sheetId, gid);
+    if (!csv || csv.trim().length < 10) throw new Error('CSV kosong / terlalu pendek');
+    console.log(`  ✓ Fetched ${label}`);
+    return csv;
+  } catch (err) {
+    console.warn(`  ⚠️  ${label} gagal: ${err.message || err}`);
+    console.warn(`     → Pakai cache terakhir untuk ${label}.`);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────
 // Rolling window — buang baris terlama agar history selalu 121 bulan.
 // Dipanggil setelah parseHistory + applyLiveOverlay.
 // 121 = 10 tahun × 12 bulan + 1 (termasuk bulan berjalan).
@@ -1108,12 +1142,24 @@ async function main() {
     } else {
       console.log('Fetching Live Sheet only…');
       const debug = {};
-      let liveCsv = null;
-      try {
-        liveCsv = await fetchCsv(LIVE_SHEET_ID, LIVE_GID);
-      } catch (err) {
-        console.warn(`  ⚠️  Live fetch gagal: ${err.message} — tidak ada perubahan.`);
-        process.exit(0);
+      const liveCsv = await safeFetch(LIVE_SHEET_ID, LIVE_GID, 'Live Sheet');
+
+      // Kalau live fetch gagal → pakai live data dari base (harga terakhir)
+      if (!liveCsv) {
+        console.warn('  ↪ Live fetch gagal — menulis ulang dengan data cache terakhir.');
+        const payload = {
+          ...baseData,
+          _meta: {
+            ...baseData._meta,
+            generated_at: new Date().toISOString(),
+            refresh_mode: 'live',
+            fallback_reason: 'Live Sheet tidak bisa diakses — pakai harga cache terakhir',
+          },
+        };
+        fs.mkdirSync(outDir, { recursive: true });
+        fs.writeFileSync(outPath, JSON.stringify(payload));
+        console.log('✓ Cache fallback written (live data unchanged)');
+        return;
       }
 
       const newLive = parseLive(liveCsv, debug);
@@ -1186,23 +1232,33 @@ async function main() {
     } else {
       console.log('Fetching Consensus + Live sheets…');
       const debug = {};
-      const fetches = [fetchCsv(CONSENSUS_SHEET_ID, CONSENSUS_GID)];
-      let liveCsv = null;
-      if (LIVE_SHEET_ID) {
-        fetches.push(
-          fetchCsv(LIVE_SHEET_ID, LIVE_GID).catch(err => {
-            console.warn(`  ⚠️  Live fetch gagal: ${err.message}`);
-            return null;
-          })
-        );
-      }
-      const [consensusCsv, liveCsvResult] = await Promise.all(fetches);
-      liveCsv = liveCsvResult || null;
+      const [consensusCsv, liveCsvResult] = await Promise.all([
+        safeFetch(CONSENSUS_SHEET_ID, CONSENSUS_GID, 'Consensus Sheet'),
+        LIVE_SHEET_ID ? safeFetch(LIVE_SHEET_ID, LIVE_GID, 'Live Sheet') : Promise.resolve(null),
+      ]);
+      const liveCsv = liveCsvResult;
 
-      // Pakai price_history dari base, overlay live kalau ada
+      // Pakai price_history dari base
       const price_history = baseData.price_history;
+
+      // Live: pakai fresh kalau ada, fallback ke base.live
       const newLive = liveCsv ? parseLive(liveCsv, debug) : (baseData.live || {});
       if (liveCsv) applyLiveOverlay(price_history, newLive, debug);
+
+      // Consensus: pakai fresh kalau ada, fallback ke base consensus
+      let consensus_slim, consensus_summary;
+      if (consensusCsv) {
+        const stats_tmp = computeStats(price_history);
+        const latest = {};
+        for (const t of Object.keys(stats_tmp)) latest[t] = stats_tmp[t].current;
+        consensus_slim    = parseConsensus(consensusCsv, latest, debug);
+        consensus_summary = computeConsensusSummary(consensus_slim);
+        console.log(`  ✓ Consensus parsed: ${Object.keys(consensus_slim).length} tickers`);
+      } else {
+        console.warn('  ↪ Consensus gagal — pakai data consensus cache terakhir.');
+        consensus_slim    = baseData.consensus_slim    || {};
+        consensus_summary = baseData.consensus_summary || {};
+      }
 
       const stats = computeStats(price_history);
       for (const t of Object.keys(newLive)) {
@@ -1214,12 +1270,6 @@ async function main() {
       const correlations = computeCorrelations(price_history);
       computeBetaAndRelVol(price_history, stats);
       const zcores = computeZcores(stats);
-
-      const latest = {};
-      for (const t of Object.keys(stats)) latest[t] = stats[t].current;
-
-      const consensus_slim    = parseConsensus(consensusCsv, latest, debug);
-      const consensus_summary = computeConsensusSummary(consensus_slim);
 
       const payload = {
         ...baseData,
@@ -1236,6 +1286,9 @@ async function main() {
           refresh_mode: 'consensus',
           consensus_tickers: Object.keys(consensus_slim).length,
           live_tickers: Object.keys(newLive).length,
+          fallback_used: !consensusCsv || !liveCsv
+            ? `${!consensusCsv?'consensus ':''} ${!liveCsv?'live':''}`.trim()
+            : null,
           _debug: debug,
         },
       };
@@ -1251,64 +1304,46 @@ async function main() {
   // ── MODE: history — full fetch semua sheet, rolling window aktif ──────
   // ── MODE: full    — full fetch semua sheet (default) ──────────────────
   console.log(`Fetching all sheets (mode: ${mode})…`);
-  const fetches = [
-    fetchCsv(HISTORY_SHEET_ID, HISTORY_GID),
-    fetchCsv(CONSENSUS_SHEET_ID, CONSENSUS_GID),
-  ];
-  let liveFetchError = null;
-  if (LIVE_SHEET_ID) {
-    // LIVE sheet failure is NON-FATAL. Kalau sheet belum di-publish to web
-    // (401 dari gviz endpoint), ID typo (404), atau temporary network issue,
-    // build tetap lanjut — dashboard nyala dengan harga bulan terakhir di
-    // history sheet. Jangan biarkan masalah sheet opsional bikin seluruh
-    // refresh gagal.
-    fetches.push(
-      fetchCsv(LIVE_SHEET_ID, LIVE_GID).catch((err) => {
-        liveFetchError = err.message || String(err);
-        console.warn(`  ⚠️  LIVE sheet fetch gagal: ${liveFetchError}`);
-        if (/401/.test(liveFetchError)) {
-          console.warn('     Penyebab umum 401: sheet LIVE belum di-Publish to web.');
-          console.warn('     Fix: buka sheet → File → Share → Publish to web → CSV → Publish.');
-          console.warn('     Pastikan juga sharing minimal "Anyone with the link – Viewer".');
-        } else if (/404/.test(liveFetchError)) {
-          console.warn('     Penyebab umum 404: LIVE_SHEET_ID atau LIVE_GID salah.');
-          console.warn('     Cek ulang nilainya di GitHub Secrets vs URL editor sheet.');
-        }
-        console.warn('     Build lanjut tanpa live overlay — dashboard tetap up.');
-        return null;
-      })
-    );
+
+  // Load base data sebagai fallback kalau salah satu sheet gagal
+  const baseData = safeLoadBase(outPath);
+
+  // Fetch semua 3 sheet secara paralel, masing-masing non-fatal
+  const [historyCsv, consensusCsv, liveCsv] = await Promise.all([
+    safeFetch(HISTORY_SHEET_ID, HISTORY_GID,   'History Sheet'),
+    safeFetch(CONSENSUS_SHEET_ID, CONSENSUS_GID, 'Consensus Sheet'),
+    LIVE_SHEET_ID
+      ? safeFetch(LIVE_SHEET_ID, LIVE_GID, 'Live Sheet')
+      : Promise.resolve(null),
+  ]);
+
+  // Kalau History gagal → FATAL kalau belum ada base, fallback ke base kalau ada
+  let price_history;
+  let historyFallback = false;
+  if (historyCsv) {
+    const debug2 = {};
+    price_history = parseHistory(historyCsv, debug2);
+    Object.assign(debug, debug2);
+  } else if (baseData && baseData.price_history && baseData.price_history.length > 0) {
+    console.warn('  ↪ History gagal — pakai price_history cache terakhir.');
+    price_history = baseData.price_history;
+    historyFallback = true;
   } else {
-    console.log('  (LIVE_SHEET_ID not set — skipping live overlay)');
+    console.error('FATAL: History Sheet gagal dan tidak ada cache data.json.');
+    process.exit(1);
   }
 
-  const [historyCsv, consensusCsv, liveCsv] = await Promise.all(fetches);
+  console.log('Parsing & computing…');
 
   console.log('Parsing & computing…');
   const debug = {};
-  const price_history = parseHistory(historyCsv, debug);
 
-  // Live overlay JALAN DULU sebelum computeStats. Alasan: overlay append
-  // baris bulan berjalan (mis. Mei 2026) ke price_history. Kalau
-  // computeStats jalan duluan, monthly returns gak include data point
-  // bulan berjalan → avg/std/zcore stale 1 bulan, dan MoM nggak ke-hitung
-  // karena cur === prev (sama-sama April).
-  const live = liveCsv ? parseLive(liveCsv, debug) : {};
+  // Live overlay
+  const live = liveCsv ? parseLive(liveCsv, debug) : (baseData ? baseData.live || {} : {});
   applyLiveOverlay(price_history, live, debug);
-
-  // Rolling window: buang baris terlama agar history selalu max 121 bulan.
-  // Mode history: aktif selalu (tgl 1-5, jaga-jaga histori bertambah).
-  // Mode full   : aktif selalu (update reguler).
   applyRollingWindow(price_history);
 
-  // Sekarang compute stats — avg/std/MoM include bulan berjalan dengan benar.
   const stats = computeStats(price_history);
-
-  // Attach live %change (raw daily change dari GoogleFinance) ke stats
-  // sebagai field terpisah `change_pct_live`. CATATAN: jangan tumpuk ke
-  // `mom` — sebelumnya overlay menumpuk ini ke mom dan bikin z-score
-  // hitung pakai daily change dibandingkan dengan std monthly returns
-  // (apple-vs-orange). Sekarang mom selalu monthly proper.
   for (const t of Object.keys(live)) {
     if (stats[t]) {
       stats[t].change_pct_live = Number.isFinite(live[t].change_pct)
@@ -1323,8 +1358,21 @@ async function main() {
   const latest = {};
   for (const t of Object.keys(stats)) latest[t] = stats[t].current;
 
-  const consensus_slim = parseConsensus(consensusCsv, latest, debug);
-  const consensus_summary = computeConsensusSummary(consensus_slim);
+  // Consensus: pakai fresh kalau ada, fallback ke base kalau gagal
+  let consensus_slim, consensus_summary;
+  let consensusFallback = false;
+  if (consensusCsv) {
+    consensus_slim    = parseConsensus(consensusCsv, latest, debug);
+    consensus_summary = computeConsensusSummary(consensus_slim);
+  } else if (baseData && baseData.consensus_slim) {
+    console.warn('  ↪ Consensus gagal — pakai data consensus cache terakhir.');
+    consensus_slim    = baseData.consensus_slim;
+    consensus_summary = baseData.consensus_summary || computeConsensusSummary(consensus_slim);
+    consensusFallback = true;
+  } else {
+    consensus_slim    = {};
+    consensus_summary = {};
+  }
 
   const staticPath = path.join(__dirname, '..', 'lib', 'static.json');
   const stat = JSON.parse(fs.readFileSync(staticPath, 'utf8'));
@@ -1354,6 +1402,11 @@ async function main() {
       generated_at: new Date().toISOString(),
       refresh_mode: mode,
       history_rows: price_history.length,
+      fallback_used: [
+        historyFallback   ? 'history'   : null,
+        consensusFallback ? 'consensus' : null,
+        !liveCsv && LIVE_SHEET_ID ? 'live' : null,
+      ].filter(Boolean).join(', ') || null,
       consensus_tickers: Object.keys(consensus_slim).length,
       consensus_total_rows,
       consensus_with_target,
