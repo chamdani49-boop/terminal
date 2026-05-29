@@ -342,6 +342,9 @@ async function handleLive(request, env, ctx) {
   const sheetId = env.LIVE_SHEET_ID;
   const gid = env.LIVE_GID;
   const cacheSeconds = Number(env.CACHE_SECONDS) > 0 ? Number(env.CACHE_SECONDS) : 60;
+  // Lama "data terakhir yang baik" disimpan sebagai cadangan saat sheet error.
+  // Default 12 jam (cukup untuk satu sesi bursa penuh). Bisa di-override via env.
+  const staleSeconds = Number(env.STALE_TTL_SECONDS) > 0 ? Number(env.STALE_TTL_SECONDS) : 12 * 3600;
 
   if (!sheetId || gid === undefined || gid === null || gid === '') {
     return jsonResponse(
@@ -352,56 +355,73 @@ async function handleLive(request, env, ctx) {
 
   const url = new URL(request.url);
   const noCache = url.searchParams.get('nocache') === '1';
+  const origin = url.origin;
 
-  // ── Edge cache (caches.default) ──
-  const cacheKey = new Request(new URL('/live.json', url.origin).toString(), { method: 'GET' });
   const cache = caches.default;
+  const freshKey  = new Request(new URL('/live.json', origin).toString(), { method: 'GET' });
+  // Cadangan disimpan di key terpisah dengan TTL panjang → tidak ikut kebuang
+  // saat cache 'fresh' (60s) expire. Tidak pernah dilayani langsung ke klien.
+  const backupKey = new Request(new URL('/live.json?__backup=1', origin).toString(), { method: 'GET' });
+
+  // Fast path: cache fresh (≤60s) → langsung balikin.
   if (!noCache) {
-    const cached = await cache.match(cacheKey);
+    const cached = await cache.match(freshKey);
     if (cached) return cached;
   }
 
-  // ── Fetch + parse ──
-  let csv;
+  // Layani "data terakhir yang baik" (stale) bila sheet error. cacheSeconds
+  // pendek (30s) supaya klien cepat coba lagi begitu sheet pulih.
+  const serveStale = async (reason) => {
+    const backup = await cache.match(backupKey);
+    if (!backup) return null;
+    let data;
+    try { data = await backup.json(); } catch (_) { return null; }
+    data.ok = true;
+    data.stale = true;
+    data.stale_reason = reason;
+    return jsonResponse(data, env, { status: 200, cacheSeconds: 30 });
+  };
+
+  // ── Fetch + parse Live Sheet ──
+  let live = null;
+  let failReason = null;
   try {
     const res = await fetch(gvizCsvUrl(sheetId, gid), {
       redirect: 'follow',
       cf: { cacheTtl: Math.min(cacheSeconds, 60), cacheEverything: true },
     });
     if (!res.ok) throw new Error(`gviz HTTP ${res.status}`);
-    csv = await res.text();
+    const csv = await res.text();
+    live = parseLive(csv, {});
   } catch (e) {
-    return jsonResponse(
-      { ok: false, error: 'Gagal fetch Live Sheet: ' + (e && e.message ? e.message : String(e)) },
-      env, { status: 502 }
-    );
+    failReason = (e && e.message) ? e.message : String(e);
   }
 
-  const debug = {};
-  let live = {};
-  try {
-    live = parseLive(csv, debug);
-  } catch (e) {
-    return jsonResponse(
-      { ok: false, error: 'Gagal parse Live Sheet: ' + (e && e.message ? e.message : String(e)) },
-      env, { status: 500 }
-    );
+  const count = live ? Object.keys(live).length : 0;
+
+  // Sukses & ada data → simpan fresh + backup, lalu kembalikan.
+  if (live && count > 0) {
+    const payload = { ok: true, generated_at: new Date().toISOString(), count, live };
+    const fresh  = jsonResponse(payload, env, { status: 200, cacheSeconds });
+    const backup = jsonResponse(payload, env, { status: 200, cacheSeconds: staleSeconds });
+    if (!noCache) {
+      ctx.waitUntil(cache.put(freshKey, fresh.clone()));
+      ctx.waitUntil(cache.put(backupKey, backup.clone()));
+    }
+    return fresh;
   }
 
-  const count = Object.keys(live).length;
-  const payload = {
-    ok: true,
-    generated_at: new Date().toISOString(),
-    count,
-    live,
-  };
+  // Gagal / kosong → sajikan data cadangan terakhir (kalau ada).
+  const reason = failReason || 'Live Sheet mengembalikan 0 ticker (kemungkinan error/empty).';
+  const stale = await serveStale(reason);
+  if (stale) return stale;
 
-  const response = jsonResponse(payload, env, { status: 200, cacheSeconds });
-  // Simpan ke edge cache (non-blocking)
-  if (!noCache && count > 0) {
-    ctx.waitUntil(cache.put(cacheKey, response.clone()));
-  }
-  return response;
+  // Tidak ada cadangan sama sekali → error jujur (klien tetap aman: pakai
+  // harga terakhir di memori + data.json).
+  return jsonResponse(
+    { ok: false, error: 'Live Sheet error & belum ada data cadangan: ' + reason },
+    env, { status: 502 }
+  );
 }
 
 // ─────────────────────────────────────────────
