@@ -3019,6 +3019,10 @@ function _rerenderLive(stock) {
   try { renderPriceTarget(stock);  } catch (_) {}
   try { renderConsensus(stock);    } catch (_) {}
   try { renderStats(stock);        } catch (_) {}
+  // renderYoY HARUS setelah renderStats: di mobile, statistik deskriptif
+  // dirender ulang di sini (combined-scroll) dari rowsHtml yang baru disimpan
+  // renderStats. Tanpa ini, statistik deskriptif mobile tidak ikut update live.
+  try { renderYoY(stock);          } catch (_) {}
 }
 
 // Overlay payload live ({CODE:{price,change_pct,max_price,...}}) ke objek DATA.
@@ -3067,11 +3071,19 @@ function _overlayLiveInto(data, live) {
 }
 
 // Terapkan feed live ke DATA yang sedang tampil + re-render.
-function applyLiveFeed(live) {
+// fullRender=true → render penuh (renderDashboard) supaya SEMUA kalkulasi
+// turunan (chart, statistik deskriptif, YoY, price target, consensus, analyst
+// table) ikut live. Dipakai saat overlay PERTAMA (awal buka web) biar parity
+// dengan saat ganti saham. Refresh berikutnya cukup _rerenderLive (ringan).
+function applyLiveFeed(live, fullRender) {
   _lastLiveFeed = live;
   const n = _overlayLiveInto(DATA, live);
   if (n > 0) {
-    requestAnimationFrame(() => { _rerenderLive(currentStock); });
+    if (fullRender) {
+      requestAnimationFrame(() => { try { renderDashboard(currentStock); } catch (_) {} });
+    } else {
+      requestAnimationFrame(() => { _rerenderLive(currentStock); });
+    }
     // Overview "Upside Tertinggi" pakai harga live → refresh kalau tampil.
     const idleFn = () => {
       const ovView = document.getElementById('ovView');
@@ -3112,7 +3124,8 @@ async function _pollLiveFeed(force = false) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if (!json || json.ok !== true || !json.live) throw new Error('payload live tidak valid');
-    const n = applyLiveFeed(json.live);
+    const firstTime = !_liveFeedOk;              // overlay live pertama sejak halaman dibuka
+    const n = applyLiveFeed(json.live, firstTime); // first → full render (semua kalkulasi turunan ikut)
     const tag = json.stale ? ' (STALE — sumber sheet error, pakai data terakhir)' : '';
     if (!_liveFeedOk) {
       _liveFeedOk = true;

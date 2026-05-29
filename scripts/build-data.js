@@ -492,6 +492,9 @@ function parseConsensus(csv, latestPrices, debug = {}) {
     if (!t || /^[\d.,\s]+$/.test(t)) continue;
     // Buang baris yang isinya banner atau komentar (mengandung spasi banyak)
     if (t.length > 10 || /\s/.test(t)) continue;
+    // Buang marker pembatas / non-ticker (mis. "X" sebagai garis batas di sheet).
+    // Ticker IDX valid = 2–5 huruf + opsional 1 digit. "X" (1 huruf) ditolak.
+    if (!TICKER_RX.test(t) && t !== 'IHSG') continue;
 
     const target = iTgt >= 0 ? toNum(row[iTgt]) : null;
     const last = latestPrices[t];
