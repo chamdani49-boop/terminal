@@ -873,18 +873,19 @@ function computeStats(history) {
 }
 
 function computeCorrelations(history) {
+  // Rumus Excel: =CORREL(IHSG, saham) — Pearson dari HARGA LEVEL,
+  // bukan dari return bulanan. Hasil identik dengan Excel.
   if (!history.length) return {};
   const tickers = Object.keys(history[0]).filter(k => k !== 'label' && k !== 'date');
   if (!tickers.includes('IHSG')) return {};
 
-  function returns(t) {
-    const out = [];
-    for (let i = 1; i < history.length; i++) {
-      const a = history[i][t], b = history[i - 1][t];
-      out.push(Number.isFinite(a) && Number.isFinite(b) && b !== 0 ? (a - b) / b : null);
-    }
-    return out;
+  function prices(t) {
+    return history.map(row => {
+      const v = row[t];
+      return Number.isFinite(v) && v > 0 ? v : null;
+    });
   }
+
   function pearson(x, y) {
     let n = 0, sx = 0, sy = 0, sxy = 0, sxx = 0, syy = 0;
     for (let i = 0; i < x.length; i++) {
@@ -897,11 +898,11 @@ function computeCorrelations(history) {
     return den === 0 ? null : num / den;
   }
 
-  const ihsgRet = returns('IHSG');
+  const ihsgPrices = prices('IHSG');
   const out = {};
   for (const t of tickers) {
     if (t === 'IHSG') continue;
-    const r = pearson(ihsgRet, returns(t));
+    const r = pearson(ihsgPrices, prices(t));
     if (r != null) out[t] = Math.round(r * 10000) / 10000;
   }
   return out;

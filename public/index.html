@@ -3259,7 +3259,25 @@ function renderHero(code) {
   const liveCls = liveChg == null ? 'neu' : liveChg > 0 ? 'up' : liveChg < 0 ? 'dn' : 'neu';
   const liveSym = liveChg == null ? '' : liveChg > 0 ? '▲' : liveChg < 0 ? '▼' : '';
   const zcCls = zc > 1 ? 'dn' : zc < -1 ? 'up' : 'neu';
-  const corr    = DATA.correlations[code] || 0;   // Pearson (return-based)
+
+  // Korelasi IHSG: hitung client-side dari harga level (=CORREL Excel)
+  // agar tidak bergantung backend stale
+  function _pearsonPrices(t1, t2) {
+    const ph2 = DATA.price_history;
+    let n=0,sx=0,sy=0,sxy=0,sxx=0,syy=0;
+    for (const row of ph2) {
+      const x=row[t1], y=row[t2];
+      if (!Number.isFinite(x)||!Number.isFinite(y)||x<=0||y<=0) continue;
+      n++;sx+=x;sy+=y;sxy+=x*y;sxx+=x*x;syy+=y*y;
+    }
+    if (n<2) return null;
+    const num=sxy-(sx*sy)/n;
+    const den=Math.sqrt((sxx-(sx*sx)/n)*(syy-(sy*sy)/n));
+    return den===0?null:num/den;
+  }
+  const corrFresh = _pearsonPrices(code, 'IHSG');
+  const corr = Number.isFinite(corrFresh) ? corrFresh : (DATA.correlations[code] || 0);
+
   const relVol  = DATA.stats[code] && Number.isFinite(DATA.stats[code].rel_vol)
     ? DATA.stats[code].rel_vol
     : null;
