@@ -3229,12 +3229,13 @@ function renderHero(code) {
   let price = last[code] || st.current || 0;
   let prevP = prev[code] || price;
   let mom = prevP ? (price - prevP) / prevP : (st.mom || 0);
-  let zc = DATA.zcores[code];
-  // Fallback: recompute dari fresh stats kalau backend stale
-  if (!Number.isFinite(zc)) {
-    const fresh = recomputeStats(code);
-    zc = (fresh && Number.isFinite(fresh.zcore_fresh)) ? fresh.zcore_fresh : 0;
-  }
+  // Selalu recompute Z-score di client agar pakai YTD live terbaru.
+  // Backend zcores[code] bisa stale (dihitung saat build, belum include
+  // live overlay harga hari ini). Rumus: (YTD_fresh - avg_annual) / std_annual
+  const _zcFresh = recomputeStats(code);
+  let zc = (_zcFresh && Number.isFinite(_zcFresh.zcore_fresh))
+    ? _zcFresh.zcore_fresh
+    : (Number.isFinite(DATA.zcores[code]) ? DATA.zcores[code] : 0);
 
   // Live %change (DAILY change dari sheet "% Live", terpisah dari MoM monthly).
   // Source priority: stats[t].change_pct_live (post PR #17), lalu DATA.live[t].change_pct
