@@ -1,0 +1,35 @@
+#:schema node_modules/wrangler/config-schema.json
+# ════════════════════════════════════════════════════════════════════════
+# terminal-live — Worker feed harga live real-time
+# ════════════════════════════════════════════════════════════════════════
+# Worker ini TERPISAH dari site statis utama (terminal.chamdani49.workers.dev)
+# supaya deploy site yang sudah jalan TIDAK terganggu.
+#
+# Setelah deploy, URL-nya jadi:
+#   https://terminal-live.<SUBDOMAIN-AKUN-KAMU>.workers.dev/live.json
+# Untuk akun "chamdani49" → https://terminal-live.chamdani49.workers.dev/live.json
+#
+# Cara deploy lengkap ada di worker/README.md
+# ════════════════════════════════════════════════════════════════════════
+
+name = "terminal-live"
+main = "src/index.js"
+compatibility_date = "2025-05-01"
+
+# Worker dapat subdomain *.workers.dev otomatis.
+workers_dev = true
+
+# ── Variabel non-rahasia (opsional) ──
+# CACHE_SECONDS: lama cache hasil di edge (detik). Default 60 kalau kosong.
+# ALLOW_ORIGIN : batasi CORS ke origin tertentu. Default "*" (semua).
+[vars]
+CACHE_SECONDS = "60"
+ALLOW_ORIGIN = "*"
+
+# ── Rahasia (JANGAN ditaruh di file ini) ──
+# Set lewat CLI sekali saja:
+#   wrangler secret put LIVE_SHEET_ID
+#   wrangler secret put LIVE_GID
+#
+# Atau, kalau kamu nggak keberatan ID-nya ada di repo (data sheet sudah publik),
+# bisa juga pindahkan keduanya ke blok [vars] di atas. Tapi pakai secret lebih rapi.

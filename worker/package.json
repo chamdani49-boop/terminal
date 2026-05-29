@@ -1,0 +1,17 @@
+{
+  "name": "terminal-live",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker — feed harga live real-time untuk dashboard terminal",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node test/parse.test.mjs",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
