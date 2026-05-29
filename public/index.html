@@ -710,8 +710,37 @@ select.form-control option{background:var(--card);color:var(--text)}
 .watchlist-item:hover{background:var(--bg2)}
 .watchlist-item.active{background:var(--bg2);border-color:var(--accent)}
 .wi-code{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);width:52px}
+.wi-name{font-size:11px;color:var(--text2);font-weight:500;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .wi-price{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;color:var(--text)}
-.wi-chg{font-size:12px;text-align:right;width:54px;font-weight:700}
+.wi-chg{font-size:12px;text-align:right;width:54px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ── WATCHLIST FILTER BAR (metric + sort) ── */
+.wl-filter{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.wl-seg{display:inline-flex;gap:4px;flex-wrap:wrap;flex:1 1 auto}
+.wl-seg-btn{
+  padding:4px 10px;font-size:11px;font-weight:700;
+  border:1px solid var(--border);border-radius:var(--radius-pill);
+  cursor:pointer;color:var(--text2);transition:all .15s;
+  background:var(--card);font-family:'IBM Plex Mono',monospace;
+  letter-spacing:.3px;
+}
+.wl-seg-btn:hover{border-color:var(--accent);color:var(--accent)}
+.wl-seg-btn.active{
+  background:var(--grad);color:#fff;border-color:transparent;
+  box-shadow:0 3px 10px rgba(109,40,217,.2);
+}
+.wl-sort-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;font-size:11px;font-weight:700;
+  border:1px solid var(--border);border-radius:var(--radius-pill);
+  cursor:pointer;color:var(--text2);background:var(--card);
+  transition:all .15s;white-space:nowrap;
+}
+.wl-sort-btn:hover{border-color:var(--accent);color:var(--accent)}
+.wl-sort-ico{font-size:9px;line-height:1}
 
 /* ── PAGE 3: CONSENSUS ALL ── */
 .consensus-all-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
@@ -2064,6 +2093,17 @@ select.form-control option{background:var(--card);color:var(--text)}
       <!-- Watchlist -->
       <div class="card card-watchlist">
         <div class="card-title">Watchlist IDX Terpilih</div>
+        <div class="wl-filter">
+          <div class="wl-seg" role="group" aria-label="Pilih metrik perubahan">
+            <button type="button" class="wl-seg-btn active" data-metric="live" onclick="setWatchlistMetric('live', this)" title="Perubahan harian (live)">Terbaru</button>
+            <button type="button" class="wl-seg-btn" data-metric="mom" onclick="setWatchlistMetric('mom', this)" title="Month-over-Month">MoM</button>
+            <button type="button" class="wl-seg-btn" data-metric="ytd" onclick="setWatchlistMetric('ytd', this)" title="Year-to-Date">YTD</button>
+            <button type="button" class="wl-seg-btn" data-metric="yoy" onclick="setWatchlistMetric('yoy', this)" title="Year-over-Year">YoY</button>
+          </div>
+          <button type="button" class="wl-sort-btn" id="wlSortBtn" onclick="toggleWatchlistSort()" title="Klik untuk membalik urutan">
+            <span class="wl-sort-ico" id="wlSortIco">▼</span><span id="wlSortLabel">Tertinggi</span>
+          </button>
+        </div>
         <div id="watchlistContent" style="max-height:400px;overflow-y:auto">
           <div class="loading"><div class="spinner"></div></div>
         </div>
@@ -2812,6 +2852,11 @@ let currentStock = 'TLKM';
 let currentPeriod = 60;
 let savingMode = 'dca';
 let mainChartInstance = null;
+// Watchlist filter state:
+//   wlMetric: 'live' (Terbaru/harian) | 'mom' | 'ytd' | 'yoy'
+//   wlSort:   'desc' (Tertinggi) | 'asc' (Terendah)
+let wlMetric = 'live';
+let wlSort = 'desc';
 let consensusDonutInstance = null;
 let savingChartInstance = null;
 
@@ -3296,9 +3341,17 @@ function buildStockTicker() {
   const items = codes.map(code => {
     const cur = lastMonth[code];
     const st = (DATA.stats && DATA.stats[code]) || {};
-    // Prefer stats.mom (sudah include %Live overlay kalau ada).
-    let pct = Number.isFinite(st.mom) ? st.mom : null;
-    if (pct == null) {
+    // Persentase mengikuti perubahan harian LIVE supaya konsisten dengan badge
+    // live di hero (harga ticker = lastMonth[code] yang sudah di-overlay live).
+    // Prioritas: stats.change_pct_live → DATA.live.change_pct → MoM → MoM hitung.
+    let pct = null;
+    if (Number.isFinite(st.change_pct_live)) {
+      pct = st.change_pct_live;
+    } else if (DATA.live && DATA.live[code] && Number.isFinite(DATA.live[code].change_pct)) {
+      pct = DATA.live[code].change_pct;
+    } else if (Number.isFinite(st.mom)) {
+      pct = st.mom;
+    } else {
       const prev = prevMonth[code];
       if (Number.isFinite(prev) && prev !== 0) pct = (cur - prev) / prev;
     }
@@ -3333,38 +3386,83 @@ function buildStockTicker() {
 // ═══════════════════════════════════════════
 // WATCHLIST SIDEBAR
 // ═══════════════════════════════════════════
+
+// Nilai metrik perubahan untuk satu kode, sesuai pilihan filter (wlMetric).
+// Semua nilai dikembalikan dalam bentuk fraksi (0.013 = 1.3%). null kalau
+// data tidak tersedia (mis. YoY/YTD untuk saham yang riwayatnya < 1 tahun).
+function _wlMetricValue(code) {
+  const st = getStatsMerged(code);
+  switch (wlMetric) {
+    case 'mom': return Number.isFinite(st.mom) ? st.mom : null;
+    case 'ytd': return Number.isFinite(st.ytd) ? st.ytd : null;
+    case 'yoy': return Number.isFinite(st.yoy) ? st.yoy : null;
+    case 'live':
+    default: {
+      // "Terbaru" = perubahan harian live (sama prioritas dengan badge live
+      // di hero): stats.change_pct_live → DATA.live.change_pct → fallback MoM.
+      if (DATA.stats[code] && Number.isFinite(DATA.stats[code].change_pct_live))
+        return DATA.stats[code].change_pct_live;
+      if (DATA.live && DATA.live[code] && Number.isFinite(DATA.live[code].change_pct))
+        return DATA.live[code].change_pct;
+      return Number.isFinite(st.mom) ? st.mom : null;
+    }
+  }
+}
+
+// Pindah metrik perubahan (Terbaru/MoM/YTD/YoY) lalu re-render watchlist.
+function setWatchlistMetric(metric, btn) {
+  wlMetric = metric;
+  document.querySelectorAll('.card-watchlist .wl-seg-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  buildWatchlist();
+}
+
+// Balik arah urutan (Tertinggi ⇄ Terendah) lalu re-render watchlist.
+function toggleWatchlistSort() {
+  wlSort = wlSort === 'desc' ? 'asc' : 'desc';
+  const lab = document.getElementById('wlSortLabel');
+  const ico = document.getElementById('wlSortIco');
+  if (lab) lab.textContent = wlSort === 'desc' ? 'Tertinggi' : 'Terendah';
+  if (ico) ico.textContent = wlSort === 'desc' ? '▼' : '▲';
+  buildWatchlist();
+}
+
 function buildWatchlist() {
   const container = document.getElementById('watchlistContent');
-  const wl = DATA.watchlist;
-  const ph = DATA.price_history;
-  const lastMonth = ph[ph.length - 1];
-  const prevMonth = ph[ph.length - 2] || lastMonth;
+  if (!container) return;
+  const wl = DATA.watchlist || [];
+  const ph = DATA.price_history || [];
+  const lastMonth = ph[ph.length - 1] || {};
 
-  container.innerHTML = wl.filter(c => lastMonth[c]).map(code => {
-    const cur = lastMonth[code] || 0;
+  // Bangun daftar item: harga live (= getStatsMerged.current, identik dgn
+  // baris terakhir price_history yang sudah di-overlay live) + nilai metrik.
+  const items = wl
+    .filter(code => Number.isFinite(lastMonth[code]) && lastMonth[code] > 0)
+    .map(code => {
+      const st = getStatsMerged(code);
+      const cur = Number.isFinite(st.current) ? st.current : (lastMonth[code] || 0);
+      return { code, cur, val: _wlMetricValue(code) };
+    });
 
-    // Prioritas % live:
-    // 1. stats[code].change_pct_live  — daily % dari sheet "% Live" (post PR #17)
-    // 2. DATA.live[code].change_pct   — fallback kalau field baru belum di-build
-    // 3. MoM monthly dari history     — last resort kalau live data belum ada
-    const st = DATA.stats[code] || {};
-    let chg;
-    if (Number.isFinite(st.change_pct_live)) {
-      chg = st.change_pct_live;
-    } else if (DATA.live && DATA.live[code] && Number.isFinite(DATA.live[code].change_pct)) {
-      chg = DATA.live[code].change_pct;
-    } else {
-      const prev = prevMonth[code] || cur;
-      chg = prev ? (cur - prev) / prev : 0;
-    }
+  // Urutkan berdasarkan metrik terpilih. Item tanpa nilai (null) selalu di
+  // bawah, apa pun arah sortir-nya.
+  const dir = wlSort === 'asc' ? 1 : -1;
+  items.sort((a, b) => {
+    if (a.val == null && b.val == null) return a.code.localeCompare(b.code);
+    if (a.val == null) return 1;
+    if (b.val == null) return -1;
+    return (a.val - b.val) * dir;
+  });
 
-    const cls = chg > 0 ? 'up' : chg < 0 ? 'dn' : 'neu';
-    const sign = chg > 0 ? '+' : '';
+  container.innerHTML = items.map(({ code, cur, val }) => {
+    const cls  = val == null ? 'neu' : val > 0 ? 'up' : val < 0 ? 'dn' : 'neu';
+    const sign = val == null ? ''    : val > 0 ? '+'  : '';
+    const chgStr = val == null ? '—' : `${sign}${(val * 100).toFixed(1)}%`;
     return `<div class="watchlist-item ${code === currentStock ? 'active' : ''}" data-code="${code}" onclick="selectStock('${code}')">
       <span class="wi-code">${code}</span>
-      <span style="font-size:11px;color:var(--text2);font-weight:500;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${(DATA.stock_info[code] || {}).name || ''}</span>
+      <span class="wi-name">${(DATA.stock_info[code] || {}).name || ''}</span>
       <span class="wi-price">${cur.toLocaleString('id')}</span>
-      <span class="wi-chg ${cls}">${sign}${(chg*100).toFixed(1)}%</span>
+      <span class="wi-chg ${cls}">${chgStr}</span>
     </div>`;
   }).join('');
 }
