@@ -116,8 +116,23 @@ Di `public/index.html`:
 |-----|---------|--------|
 | `CACHE_SECONDS` | `60` | Lama hasil di-cache di edge. Naikkan kalau mau hemat request ke Google; turunkan kalau mau lebih sering refresh. |
 | `ALLOW_ORIGIN` | `*` | Batasi CORS. Mau aman: set ke `https://terminal.chamdani49.workers.dev`. |
+| `STALE_TTL_SECONDS` | `43200` (12 jam) | Lama "data terakhir yang baik" disimpan sebagai cadangan. Saat Google Sheet error, Worker menyajikan data ini (ditandai `stale:true`) sampai sheet pulih. |
 
 Setelah ubah, `npm run deploy` lagi.
+
+---
+
+## Ketahanan saat Google Sheet error (stale-on-error)
+Worker menyimpan **2 salinan** di cache edge:
+- **fresh** (`/live.json`, TTL `CACHE_SECONDS` = 60s) — dipakai untuk melayani request normal.
+- **backup** (TTL `STALE_TTL_SECONDS` = 12 jam) — "data terakhir yang baik".
+
+Alur saat sheet tiba-tiba error / kosong:
+1. Worker coba fetch + parse sheet.
+2. Kalau **gagal atau 0 ticker** → Worker menyajikan **backup** terakhir dengan flag `"stale": true` + `"stale_reason"`, dan cache pendek (30 dtk) supaya cepat coba lagi.
+3. Kalau backup belum ada sama sekali → balas `502` (frontend tetap aman: pakai harga terakhir di memori + `data.json`).
+
+Jadi situs **tetap menampilkan harga terakhir sampai sheet pulih**, tidak blank/rusak.
 
 ---
 

@@ -25,6 +25,10 @@ workers_dev = true
 [vars]
 CACHE_SECONDS = "60"
 ALLOW_ORIGIN = "*"
+# STALE_TTL_SECONDS: lama "data terakhir yang baik" disimpan sebagai cadangan
+# saat Google Sheet error → Worker tetap menyajikan harga terakhir sampai sheet
+# pulih. Default 43200 (12 jam) kalau kosong.
+STALE_TTL_SECONDS = "43200"
 
 # ── Rahasia (JANGAN ditaruh di file ini) ──
 # Set lewat CLI sekali saja:

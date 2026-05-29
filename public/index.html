@@ -2856,6 +2856,28 @@ let   _liveFeedTimer    = null;           // handle setInterval feed
 let   _lastLiveFeed     = null;           // payload live terakhir (re-apply setelah swap data.json)
 let   _liveFeedOk       = false;          // pernah sukses fetch feed?
 let   _visibilityHooked = false;          // listener visibilitychange sudah dipasang?
+let   _marketClosedLogged = false;        // sudah log "di luar jam market"?
+
+// ── Jam bursa IDX (WIB / Asia/Jakarta) ──────────────────────────────────
+// Senin–Jumat, 08:50–16:30 WIB. Di luar itu (malam/weekend) harga tidak
+// berubah → polling dijeda biar hemat request. Libur nasional tidak dideteksi
+// (harga = closing, paling banter 1 fetch mubazir saat buka halaman).
+const MARKET_OPEN_MIN  = 8 * 60 + 50;     // 08:50
+const MARKET_CLOSE_MIN = 16 * 60 + 30;    // 16:30
+function _isMarketOpen(d = new Date()) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Jakarta', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(d);
+    const p = {};
+    for (const x of parts) p[x.type] = x.value;
+    if (p.weekday === 'Sat' || p.weekday === 'Sun') return false;
+    const mins = (parseInt(p.hour, 10) % 24) * 60 + parseInt(p.minute, 10);
+    return mins >= MARKET_OPEN_MIN && mins <= MARKET_CLOSE_MIN;
+  } catch (_) {
+    return true; // gagal deteksi timezone → aman: tetap poll
+  }
+}
 
 async function loadData() {
   const v = Math.floor(Date.now() / CACHE_BUST_MS);
@@ -3064,12 +3086,24 @@ function applyLiveFeed(live) {
 }
 
 // Fetch /live.json dari Worker, lalu overlay ke UI.
-async function _pollLiveFeed() {
+// force=true → abaikan gating jam market (dipakai untuk fetch pertama saat
+// buka halaman, supaya user selalu lihat data terakhir walau bursa tutup).
+async function _pollLiveFeed(force = false) {
   if (!LIVE_FEED_URL) return;
   // Tab tidak terlihat (background) → skip. Hemat request: user yang nge-tab
   // di latar tidak ikut nge-poll. Saat kembali aktif, listener visibilitychange
   // memicu _pollLiveFeed() lagi.
   if (typeof document !== 'undefined' && document.hidden) return;
+  // Gating jam bursa (WIB): di luar 08:50–16:30 Sen–Jum, harga tidak berubah →
+  // jeda polling. Fetch pertama (force) tetap jalan biar dapat closing terakhir.
+  if (!force && !_isMarketOpen()) {
+    if (!_marketClosedLogged) {
+      _marketClosedLogged = true;
+      console.info('[live-feed] di luar jam bursa (WIB) — polling dijeda sampai bursa buka.');
+    }
+    return;
+  }
+  _marketClosedLogged = false;
   try {
     // URL stabil (TANPA cache-bust) → Cloudflare CDN melayani dari edge cache
     // (max-age=60) tanpa meng-invoke Worker untuk mayoritas request. Data maks
@@ -3079,15 +3113,16 @@ async function _pollLiveFeed() {
     const json = await res.json();
     if (!json || json.ok !== true || !json.live) throw new Error('payload live tidak valid');
     const n = applyLiveFeed(json.live);
+    const tag = json.stale ? ' (STALE — sumber sheet error, pakai data terakhir)' : '';
     if (!_liveFeedOk) {
       _liveFeedOk = true;
-      console.info(`[live-feed] aktif — ${n} ticker ter-overlay (generated_at=${json.generated_at})`);
+      console.info(`[live-feed] aktif — ${n} ticker ter-overlay (generated_at=${json.generated_at})${tag}`);
     } else {
-      console.info(`[live-feed] refresh — ${n} ticker (generated_at=${json.generated_at})`);
+      console.info(`[live-feed] refresh — ${n} ticker (generated_at=${json.generated_at})${tag}`);
     }
     _flashLiveUpdate();
   } catch (e) {
-    console.warn('[live-feed] gagal:', e.message || e, '— fallback ke polling data.json.');
+    console.warn('[live-feed] gagal:', e.message || e, '— tetap pakai harga terakhir + data.json.');
   }
 }
 
@@ -3096,19 +3131,19 @@ function _startLiveFeedPolling() {
     console.info('[live-feed] dimatikan (LIVE_FEED_URL = null) — pakai polling data.json saja.');
     return;
   }
-  _pollLiveFeed(); // fetch pertama langsung → user dapat harga live segera
+  _pollLiveFeed(true); // fetch pertama dipaksa → user dapat harga terakhir segera (walau bursa tutup)
   if (_liveFeedTimer) clearInterval(_liveFeedTimer);
-  _liveFeedTimer = setInterval(_pollLiveFeed, LIVE_FEED_POLL_MS);
+  _liveFeedTimer = setInterval(() => _pollLiveFeed(false), LIVE_FEED_POLL_MS);
 
-  // Saat user kembali ke tab (dari background) → langsung refresh sekali biar
-  // tidak nunggu interval. Listener dipasang sekali saja.
+  // Saat user kembali ke tab (dari background) → refresh sekali (tetap dibatasi
+  // gating jam bursa). Listener dipasang sekali saja.
   if (typeof document !== 'undefined' && !_visibilityHooked) {
     _visibilityHooked = true;
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) _pollLiveFeed();
+      if (!document.hidden) _pollLiveFeed(false);
     });
   }
-  console.info(`[live-feed] polling aktif — interval ${LIVE_FEED_POLL_MS / 1000}s (pause saat tab background)`);
+  console.info(`[live-feed] polling aktif — interval ${LIVE_FEED_POLL_MS / 1000}s (jam bursa WIB, pause saat tab background)`);
 }
 
 function init() {
