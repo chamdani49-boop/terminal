@@ -2098,6 +2098,7 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
     <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
+    <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
   </nav>
   <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
     <span id="themeIcon">☀</span>
@@ -6052,7 +6053,650 @@ document.addEventListener('DOMContentLoaded', () => {
 // INIT
 // ═══════════════════════════════════════════
 loadData();
-</script><!-- BOTTOM NAV (mobile only — hidden di desktop via CSS) -->
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     VALUASI MODULE (additive) — halaman valuasi saham.
+     Selaras dengan tema utama (memakai CSS variables yang sama).
+     Data masih contoh/hardcoded (DMAS) — backend menyusul.
+     Semua kelas di-prefix .vl-, JS di-namespace IIFE + window.vl*.
+     Tidak mengubah kode 3 menu inti.
+═══════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── VALUASI: layout & komponen (mengonsumsi token tema utama) ── */
+#page-valuasi .vl-wrap{max-width:1080px;margin:0 auto}
+@media(max-width:640px){#page-valuasi{padding-bottom:90px}}
+
+/* Header emiten */
+.vl-head{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow-card);
+  display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;
+}
+[data-theme="dark"] .vl-head{box-shadow:var(--shadow-card),0 0 0 1px var(--border) inset}
+.vl-tic{display:flex;align-items:center;gap:12px}
+.vl-logo{
+  width:52px;height:52px;border-radius:14px;background:var(--grad);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  font-weight:800;font-size:13px;letter-spacing:.5px;flex-shrink:0;
+}
+.vl-name{font-size:20px;font-weight:800;color:var(--text)}
+.vl-tag{
+  display:inline-block;font-size:10px;font-weight:700;background:var(--bg2);
+  color:var(--accent);padding:3px 10px;border-radius:var(--radius-pill);
+  margin-left:6px;vertical-align:middle;
+}
+.vl-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.vl-head-right{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.vl-price{
+  font-size:28px;font-weight:800;color:var(--text);
+  font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
+}
+.vl-price-meta{font-size:10px;color:var(--text3);margin-top:3px}
+.vl-mktcap{text-align:right}
+.vl-mktcap .l{font-size:10px;color:var(--text3)}
+.vl-mktcap .v{font-size:15px;font-weight:700;color:var(--text)}
+.vl-mos{
+  background:var(--yellow-bg);border:1px solid rgba(217,119,6,.3);
+  border-radius:var(--radius);padding:10px 16px;text-align:center;min-width:122px;
+}
+.vl-mos .l{font-size:10px;color:var(--yellow);font-weight:700}
+.vl-mos .v{font-size:22px;font-weight:800;color:var(--yellow);line-height:1.1;font-family:'IBM Plex Mono',monospace}
+.vl-mos .d{font-size:10px;color:var(--yellow);margin-top:2px}
+
+/* Badge naik/turun */
+.vl-badge{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:var(--radius-pill)}
+.vl-up{background:var(--green-bg);color:var(--green)}
+.vl-dn{background:var(--red-bg);color:var(--red)}
+.vl-neu{background:var(--bg2);color:var(--text2)}
+
+/* Metric cards */
+.vl-mcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.vl-mc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow-card)}
+.vl-mc .i{font-size:17px;margin-bottom:5px}
+.vl-mc .l{font-size:10px;color:var(--text3);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.vl-mc .v{font-size:20px;font-weight:800;font-family:'IBM Plex Mono',monospace}
+.vl-mc .s{font-size:9px;color:var(--text3);margin-top:3px}
+
+/* Strip harga kuartal */
+.vl-qstrip{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-card)}
+.vl-qstrip-hd{font-size:10px;font-weight:800;color:var(--text3);margin-bottom:12px;letter-spacing:.6px;text-transform:uppercase}
+.vl-qstrip-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.vl-qi{text-align:center;padding:8px;border-radius:var(--radius);border:1px solid var(--border2)}
+.vl-qi .c{font-size:10px;color:var(--text2);font-weight:700}
+.vl-qi .dt{font-size:9px;color:var(--text3)}
+.vl-qi .p{font-size:17px;font-weight:800;margin:4px 0;font-family:'IBM Plex Mono',monospace;color:var(--text)}
+
+/* Tabs */
+.vl-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-pill);padding:5px;box-shadow:var(--shadow-card);overflow-x:auto}
+.vl-tab{flex:0 0 auto;padding:8px 16px;border-radius:var(--radius-pill);border:none;cursor:pointer;font-size:13px;font-weight:700;background:transparent;color:var(--text2);font-family:inherit;transition:all .18s;white-space:nowrap}
+.vl-tab:hover{color:var(--accent)}
+.vl-tab.active{background:var(--grad);color:#fff;box-shadow:0 6px 18px rgba(109,40,217,.22)}
+.vl-tc{display:none}
+.vl-tc.active{display:block;animation:vl-fade .25s ease}
+@keyframes vl-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* Grid + chart wrap */
+.vl-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:14px}
+.vl-chart{position:relative;width:100%;height:210px}
+.vl-chart-tall{position:relative;width:100%;height:230px}
+.vl-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
+.vl-leg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);font-weight:600}
+.vl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* Tabel */
+.vl-tw{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.vl-table{width:100%;border-collapse:collapse;font-size:12px;min-width:480px}
+.vl-table thead th{padding:10px;text-align:right;font-weight:800;color:var(--text2);border-bottom:2px solid var(--border);font-size:11px;white-space:nowrap;background:var(--bg2);text-transform:uppercase;letter-spacing:.4px}
+.vl-table thead th:first-child{text-align:left}
+.vl-table tbody td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;color:var(--text)}
+.vl-table tbody td:first-child{text-align:left;color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-weight:600}
+.vl-table tbody tr:nth-child(even){background:var(--bg2)}
+.vl-table tbody tr:hover{background:var(--bg3)}
+.vl-chg-up{font-size:9px;color:var(--green);display:block;margin-top:1px}
+.vl-chg-dn{font-size:9px;color:var(--red);display:block;margin-top:1px}
+
+/* Basis buttons + KPI proyeksi */
+.vl-basis{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.vl-basis-btn{padding:6px 14px;border-radius:var(--radius-pill);border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:700;background:var(--card);color:var(--text2);font-family:inherit;transition:all .15s}
+.vl-basis-btn:hover{border-color:var(--accent);color:var(--accent)}
+.vl-basis-btn.active{border-color:transparent;background:var(--grad);color:#fff}
+.vl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.vl-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;text-align:center}
+.vl-kpi .l{font-size:9px;color:var(--text3);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.vl-kpi .v{font-size:20px;font-weight:800;font-family:'IBM Plex Mono',monospace}
+.vl-kpi .d{font-size:9px;margin-top:2px}
+
+/* Info box */
+.vl-info{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;margin-top:12px}
+.vl-info strong{color:var(--text)}
+
+/* Input kalkulator */
+.vl-input{width:100%;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius);font-size:15px;font-weight:700;color:var(--text);background:var(--bg2);outline:none;font-family:'IBM Plex Mono',monospace}
+.vl-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
+.vl-label{font-size:11px;color:var(--text2);display:block;margin-bottom:6px;font-weight:600}
+.vl-note{font-size:10px;color:var(--text3);margin-top:10px}
+
+@media(max-width:480px){
+  .vl-head{flex-direction:column}
+  .vl-price{font-size:22px}
+  .vl-mos .v{font-size:18px}
+}
+</style>
+
+<!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
+<div class="page" id="page-valuasi">
+  <div class="vl-wrap">
+
+    <div class="info-banner">
+      🧮 <strong>Valuasi Saham</strong> — Analisa fundamental, proyeksi harga &amp; margin of safety.
+      Data contoh (DMAS) · sumber data dinamis menyusul.
+    </div>
+
+    <!-- HEADER EMITEN -->
+    <div class="vl-head">
+      <div class="vl-tic">
+        <div class="vl-logo">DMAS</div>
+        <div>
+          <div><span class="vl-name">DMAS</span><span class="vl-tag">Kawasan Industri</span></div>
+          <div class="vl-sub">Puradelta Lestari Tbk. &nbsp;·&nbsp; IDX Indonesia</div>
+          <div class="vl-sub" style="margin-top:2px">48.200 juta lembar saham beredar</div>
+        </div>
+      </div>
+      <div class="vl-head-right">
+        <div>
+          <div class="vl-price">Rp 152</div>
+          <div class="vl-price-meta">Harga sekarang</div>
+          <div class="vl-price-meta" style="margin-top:2px">High: Rp 159 &nbsp;<span class="vl-badge vl-up">+4.61%</span></div>
+        </div>
+        <div class="vl-mktcap">
+          <div class="l">Market Cap</div>
+          <div class="v">Rp 7.326 M</div>
+          <div class="l" style="margin-top:4px">Basis Analisa</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Q3 2025</div>
+        </div>
+        <div class="vl-mos">
+          <div class="l">Margin of Safety</div>
+          <div class="v">18.91%</div>
+          <div class="d">🟡 Cukup Aman</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- METRIC CARDS -->
+    <div class="vl-mcs">
+      <div class="vl-mc"><div class="i">📈</div><div class="l">CAGR 5 Tahun</div><div class="v" style="color:var(--accent2)">13.82%</div><div class="s">Return tahunan proyeksi</div></div>
+      <div class="vl-mc"><div class="i">💰</div><div class="l">Dividen Yield</div><div class="v" style="color:var(--accent)">11.77%</div><div class="s">Estimasi basis Q3</div></div>
+      <div class="vl-mc"><div class="i">🎯</div><div class="l">Combine Return</div><div class="v" style="color:var(--green)">8.19%</div><div class="s">Capital gain + dividen</div></div>
+      <div class="vl-mc"><div class="i">📊</div><div class="l">ROE 5 Tahun (TV)</div><div class="v" style="color:var(--yellow)">19.86%</div><div class="s">Return on equity TV</div></div>
+      <div class="vl-mc"><div class="i">📤</div><div class="l">DPR</div><div class="v">112.06%</div><div class="s">Dividen payout ratio</div></div>
+      <div class="vl-mc"><div class="i">⏱️</div><div class="l">Th. Balik Modal</div><div class="v">9.52×</div><div class="s">Dari dividen saja</div></div>
+    </div>
+
+    <!-- STRIP HARGA KUARTAL -->
+    <div class="vl-qstrip">
+      <div class="vl-qstrip-hd">Harga per Kuartal — dibanding Annual 2024 (Rp 150)</div>
+      <div class="vl-qstrip-row">
+        <div class="vl-qi"><div class="c">Q1</div><div class="dt">30 Apr 2025</div><div class="p">Rp 174</div><span class="vl-badge vl-up">+16.00%</span></div>
+        <div class="vl-qi"><div class="c">Q2</div><div class="dt">31 Jul 2025</div><div class="p">Rp 138</div><span class="vl-badge vl-dn">-8.00%</span></div>
+        <div class="vl-qi"><div class="c">Q3</div><div class="dt">31 Okt 2025</div><div class="p">Rp 133</div><span class="vl-badge vl-dn">-11.33%</span></div>
+        <div class="vl-qi"><div class="c">Annual 2025</div><div class="dt">31 Mar 2026</div><div class="p">Rp 152</div><span class="vl-badge vl-up">+14.29%</span></div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="vl-tabs" role="tablist">
+      <button class="vl-tab active" role="tab" onclick="vlSwitchTab('overview',this)">📊 Ringkasan</button>
+      <button class="vl-tab" role="tab" onclick="vlSwitchTab('fundamental',this)">📋 Fundamental</button>
+      <button class="vl-tab" role="tab" onclick="vlSwitchTab('proyeksi',this)">🎯 Proyeksi Harga</button>
+      <button class="vl-tab" role="tab" onclick="vlSwitchTab('dividen',this)">💸 Dividen</button>
+      <button class="vl-tab" role="tab" onclick="vlSwitchTab('ttm',this)">🔁 TTM Valuasi</button>
+    </div>
+
+    <!-- ===== TAB: RINGKASAN ===== -->
+    <div id="vl-tab-overview" class="vl-tc active">
+      <div class="vl-grid2">
+        <div class="card">
+          <div class="card-title">Pendapatan &amp; Laba Bersih (Miliar Rp)</div>
+          <div class="vl-chart"><canvas id="vlRev"></canvas></div>
+          <div class="vl-legend">
+            <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Pendapatan</div>
+            <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Laba Bersih</div>
+            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga Saham</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">ROE Tahunan &amp; Margin Laba (%)</div>
+          <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
+          <div class="vl-legend">
+            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>ROE Tahunan</div>
+            <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin Laba %</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">Rasio Valuasi per Kuartal — PBV · PER · PSR</div>
+        <div style="position:relative;width:100%;height:200px"><canvas id="vlRatio"></canvas></div>
+        <div class="vl-legend" style="margin-top:10px">
+          <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV (Price/Book)</div>
+          <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>PER (Price/Earnings)</div>
+          <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>PSR (Price/Sales)</div>
+        </div>
+      </div>
+      <div class="vl-grid2">
+        <div class="card">
+          <div class="card-title">EPS &amp; SPS per Kuartal (Rp)</div>
+          <div class="vl-chart"><canvas id="vlEps"></canvas></div>
+          <div class="vl-legend">
+            <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS (Laba/Saham)</div>
+            <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>SPS (Penjualan/Saham)</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Ekuitas &amp; Book Value</div>
+          <div class="vl-chart"><canvas id="vlEquity"></canvas></div>
+          <div class="vl-legend">
+            <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas (Miliar Rp)</div>
+            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Book Value</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: FUNDAMENTAL ===== -->
+    <div id="vl-tab-fundamental" class="vl-tc">
+      <div class="card">
+        <div class="card-title">Data Fundamental Lengkap per Kuartal</div>
+        <div class="vl-tw">
+          <table class="vl-table" id="vlFundTable">
+            <thead><tr><th>Metrik</th><th>Annual 2024</th><th>Q1</th><th>Q2</th><th>Q3</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="vl-note">⚠️ Perubahan (▲▼) dihitung relatif terhadap Annual 2024 · Data TTM sudah disetahunkan</p>
+      </div>
+    </div>
+
+    <!-- ===== TAB: PROYEKSI ===== -->
+    <div id="vl-tab-proyeksi" class="vl-tc">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">Pilih Basis Harga Analisa</div>
+        <div class="vl-basis">
+          <button class="vl-basis-btn active" onclick="vlSetBasis('now',this)">Harga Sekarang — Rp 152</button>
+          <button class="vl-basis-btn" onclick="vlSetBasis('q3',this)">Basis Q3 — Rp 133</button>
+          <button class="vl-basis-btn" onclick="vlSetBasis('q2',this)">Basis Q2 — Rp 138</button>
+          <button class="vl-basis-btn" onclick="vlSetBasis('q1',this)">Basis Q1 — Rp 174</button>
+        </div>
+        <div class="vl-kpis">
+          <div class="vl-kpi"><div class="l">Margin of Safety</div><div class="v" id="vlKpiMos" style="color:var(--yellow)">18.91%</div><div class="d" id="vlKpiMosDesc" style="color:var(--yellow)">🟡 Cukup Aman</div></div>
+          <div class="vl-kpi"><div class="l">CAGR 5 Tahun</div><div class="v" style="color:var(--accent2)">13.82%</div></div>
+          <div class="vl-kpi"><div class="l">Dividen Yield</div><div class="v" style="color:var(--accent)">11.77%</div></div>
+          <div class="vl-kpi"><div class="l">Combine Return</div><div class="v" style="color:var(--green)">8.19%</div></div>
+          <div class="vl-kpi"><div class="l">Future Value</div><div class="v">2.55%</div></div>
+        </div>
+      </div>
+      <div class="vl-grid2">
+        <div class="card">
+          <div class="card-title">Proyeksi Harga Potensial 2025–2029</div>
+          <div class="vl-chart-tall"><canvas id="vlProj"></canvas></div>
+          <div class="vl-info">Garis kuning = harga beli basis terpilih. Area ungu = potensi harga tiap tahun. Makin lebar jaraknya, makin besar potensi keuntungan.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
+          <div class="vl-tw">
+            <table class="vl-table"><thead><tr><th>Tahun</th><th>Harga Potensi</th><th>G&amp;L</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
+          </div>
+          <div class="vl-info" style="margin-top:10px"><strong>G&amp;L</strong> = Gain &amp; Loss. Persentase untung/rugi jika beli sekarang &amp; jual di tahun tersebut, <em>belum termasuk dividen</em>.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: DIVIDEN ===== -->
+    <div id="vl-tab-dividen" class="vl-tc">
+      <div class="vl-kpis" style="margin-bottom:14px">
+        <div class="vl-kpi"><div class="l">Dividen / Share (Q3)</div><div class="v" style="color:var(--accent)">Rp 15.66</div></div>
+        <div class="vl-kpi"><div class="l">Yield Estimasi (Q3)</div><div class="v" style="color:var(--accent)">11.77%</div></div>
+        <div class="vl-kpi"><div class="l">DPR (Payout Ratio)</div><div class="v" style="color:var(--yellow)">112.06%</div></div>
+        <div class="vl-kpi"><div class="l">Tahun Balik Modal</div><div class="v">9.52×</div><div class="d" style="color:var(--text3)">dari dividen</div></div>
+      </div>
+      <div class="vl-grid2">
+        <div class="card">
+          <div class="card-title">Estimasi Dividen per Kuartal</div>
+          <div class="vl-chart-tall"><canvas id="vlDiv"></canvas></div>
+          <div class="vl-legend" style="margin-top:10px">
+            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Dividen / Share (Rp)</div>
+            <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Yield (%)</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Kalkulator Yield Dividen</div>
+          <div style="margin-bottom:14px">
+            <label class="vl-label">Masukkan Harga Beli (Rp)</label>
+            <input id="vlCalcPrice" type="number" value="152" min="1" class="vl-input" oninput="vlCalcYield()">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div class="vl-kpi"><div class="l">Yield Q1</div><div class="v" id="vlcy1" style="font-size:18px;color:var(--accent)">-</div></div>
+            <div class="vl-kpi"><div class="l">Yield Q2</div><div class="v" id="vlcy2" style="font-size:18px;color:var(--accent)">-</div></div>
+            <div class="vl-kpi"><div class="l">Yield Q3</div><div class="v" id="vlcy3" style="font-size:18px;color:var(--accent)">-</div></div>
+            <div class="vl-kpi"><div class="l">Th. Balik Modal</div><div class="v" id="vlcyTBM" style="font-size:18px">-</div></div>
+          </div>
+          <div class="vl-info"><strong>💡 Cara baca DPR 112%:</strong> Perusahaan membagikan lebih dari total laba bersihnya sebagai dividen — mengambil dari cadangan laba tahun sebelumnya. Menarik untuk investor dividen, namun perlu dipantau keberlanjutannya.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: TTM VALUASI ===== -->
+    <div id="vl-tab-ttm" class="vl-tc">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">Perbandingan MoS antar Basis Kuartal (TTM Disetahunkan)</div>
+        <div style="position:relative;width:100%;height:210px"><canvas id="vlMos"></canvas></div>
+        <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajarnya. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Tabel Valuasi Lengkap Semua Basis</div>
+        <div class="vl-tw">
+          <table class="vl-table">
+            <thead><tr><th>Tahun</th><th>Q1 (Rp174)</th><th>G&amp;L Q1</th><th>Q2 (Rp138)</th><th>G&amp;L Q2</th><th>Q3 (Rp133)</th><th>G&amp;L Q3</th><th>Now (Rp152)</th><th>G&amp;L Now</th></tr></thead>
+            <tbody id="vlTtmBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="vl-note" style="margin-top:18px;text-align:center">
+      ⚠️ Data analisis per Q3 2025 · Proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>
+    </div>
+
+  </div><!-- /vl-wrap -->
+</div><!-- /page-valuasi -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   VALUASI MODULE JS — namespaced (IIFE). Data hardcoded (DMAS).
+   Globals dipakai inline onclick: vlSwitchTab, vlSetBasis, vlCalcYield,
+   vlEnsureCharts (lazy build charts saat halaman pertama dibuka).
+═══════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  const LABELS = ['Annual 2024','Q1','Q2','Q3'];
+  const PROJ_YEARS = ['2025','2026','2027','2028','2029'];
+
+  const FUND_ROWS = [
+    { label:'Harga Terakhir (Rp)',   vals:[150,174,138,133],                  type:'p'  },
+    { label:'Pendapatan (Juta Rp)',  vals:[2030000,2031560,1226720,1039453],  type:'c'  },
+    { label:'Laba Bersih (Juta Rp)', vals:[1330000,1341800,826020,673520],    type:'c'  },
+    { label:'Margin Laba',           vals:[65.52,66.05,67.34,64.80],          type:'pct'},
+    { label:'EPS (Laba/Saham)',      vals:[27.59,27.84,17.14,13.97],          type:'d2' },
+    { label:'SPS (Penjualan/Saham)', vals:[42.12,42.15,25.45,21.57],          type:'d2' },
+    { label:'Ekuitas (Juta Rp)',     vals:[1040000,997180,408980,406020],     type:'c'  },
+    { label:'ROE Tahunan',           vals:[127.88,134.56,201.97,165.88],      type:'pct'},
+    { label:'Book Value (Rp)',       vals:[21.58,20.69,8.49,8.42],            type:'d2' },
+    { label:'PBV (Price/Book)',      vals:[6.95,8.41,16.26,15.79],            type:'d2' },
+    { label:'PER (Price/Earnings)',  vals:[5.44,6.25,8.05,9.52],              type:'d2' },
+    { label:'PSR (Price/Sales)',     vals:[3.56,4.13,5.42,6.17],              type:'d2' },
+  ];
+
+  const PROJ = {
+    now: { mos:18.91, price:152, label:'Rp 152', prices:[144,155,166,177,187], gls:[-5.33,1.83,9.00,16.16,23.33] },
+    q3:  { mos:30.30, price:133, label:'Rp 133', prices:[145,156,168,179,191], gls:[8.69,17.39,26.08,34.78,43.47] },
+    q2:  { mos:39.36, price:138, label:'Rp 138', prices:[156,174,192,210,228], gls:[12.98,25.97,38.95,51.93,64.92] },
+    q1:  { mos:46.77, price:174, label:'Rp 174', prices:[205,235,266,296,327], gls:[17.57,35.15,52.72,70.30,87.87] },
+  };
+
+  // Tabel TTM semua basis (baris per tahun + baris MoS)
+  const TTM_ROWS = [
+    ['2025', 205,17.57, 156,12.98, 145,8.69,  144,-5.33],
+    ['2026', 235,35.15, 174,25.97, 156,17.39, 155,1.83],
+    ['2027', 266,52.72, 192,38.95, 168,26.08, 166,9.00],
+    ['2028', 296,70.30, 210,51.93, 179,34.78, 177,16.16],
+    ['2029', 327,87.87, 228,64.92, 191,43.47, 187,23.33],
+  ];
+  const TTM_MOS = [46.77, 39.36, 30.30, 20.34];
+
+  const DIV_VALS = [31.19, 19.20, 15.66];   // Q1, Q2, Q3
+  const DIV_YLD  = [17.93, 13.92, 11.77];
+
+  /* ── Helpers ── */
+  const fmtC   = v => 'Rp '+(v/1000).toLocaleString('id-ID',{maximumFractionDigits:0})+' M';
+  const fmtD2  = v => v!=null ? v.toFixed(2) : '-';
+  const fmtPct = v => v!=null ? v.toFixed(2)+'%' : '-';
+  const fmtGl  = v => (v>=0?'+':'')+v.toFixed(2)+'%';
+  const pct    = (a,b) => ((b-a)/a)*100;
+  const badgeCls = v => v>0 ? 'vl-badge vl-up' : v<0 ? 'vl-badge vl-dn' : 'vl-badge vl-neu';
+  const fmtCell = (v,t) => t==='c'?fmtC(v) : t==='pct'?fmtPct(v) : t==='d2'?fmtD2(v) : v;
+
+  function themeColors(){
+    const cs = getComputedStyle(document.documentElement);
+    const g = (n,f) => (cs.getPropertyValue(n).trim() || f);
+    return {
+      tick:   g('--text2', '#6e6490'),
+      grid:   'rgba(128,128,128,.12)',
+      gridY:  g('--border', '#d4ccf0'),
+    };
+  }
+
+  /* ── Tabel Fundamental ── */
+  function buildFund(){
+    const tbody = document.querySelector('#vlFundTable tbody');
+    if(!tbody) return;
+    tbody.innerHTML = FUND_ROWS.map(row => {
+      const cells = row.vals.map((v,ci) => {
+        const ch = ci>0 && row.vals[0] ? pct(row.vals[0], v) : null;
+        return `<td><span style="font-weight:700">${fmtCell(v,row.type)}</span>${
+          ch!==null ? `<span class="${ch>=0?'vl-chg-up':'vl-chg-dn'}">${ch>=0?'▲':'▼'} ${Math.abs(ch).toFixed(1)}%</span>` : ''
+        }</td>`;
+      }).join('');
+      return `<tr><td>${row.label}</td>${cells}</tr>`;
+    }).join('');
+  }
+
+  /* ── Tabel Proyeksi ── */
+  function buildProjTable(basis){
+    const d = PROJ[basis];
+    const tbody = document.getElementById('vlProjTableBody');
+    if(!tbody) return;
+    tbody.innerHTML = PROJ_YEARS.map((y,i) =>
+      `<tr><td style="font-weight:700;color:var(--text)">${y}</td><td><strong>Rp ${d.prices[i]}</strong></td><td><span class="${badgeCls(d.gls[i])}">${fmtGl(d.gls[i])}</span></td></tr>`
+    ).join('');
+  }
+
+  /* ── Tabel TTM ── */
+  function buildTtmTable(){
+    const tbody = document.getElementById('vlTtmBody');
+    if(!tbody) return;
+    let html = TTM_ROWS.map(r =>
+      `<tr><td style="font-weight:700;color:var(--text)">${r[0]}</td>`+
+      `<td><strong>Rp ${r[1]}</strong></td><td><span class="${badgeCls(r[2])}">${fmtGl(r[2])}</span></td>`+
+      `<td><strong>Rp ${r[3]}</strong></td><td><span class="${badgeCls(r[4])}">${fmtGl(r[4])}</span></td>`+
+      `<td><strong>Rp ${r[5]}</strong></td><td><span class="${badgeCls(r[6])}">${fmtGl(r[6])}</span></td>`+
+      `<td><strong>Rp ${r[7]}</strong></td><td><span class="${badgeCls(r[8])}">${fmtGl(r[8])}</span></td></tr>`
+    ).join('');
+    html += `<tr style="background:var(--yellow-bg);font-weight:700">
+      <td style="color:var(--yellow)">MoS</td>
+      <td colspan="2" style="text-align:center;color:var(--green)">${TTM_MOS[0].toFixed(2)}%</td>
+      <td colspan="2" style="text-align:center;color:var(--green)">${TTM_MOS[1].toFixed(2)}%</td>
+      <td colspan="2" style="text-align:center;color:var(--yellow)">${TTM_MOS[2].toFixed(2)}%</td>
+      <td colspan="2" style="text-align:center;color:var(--yellow)">${TTM_MOS[3].toFixed(2)}%</td>
+    </tr>`;
+    tbody.innerHTML = html;
+  }
+
+  /* ── Kalkulator yield ── */
+  window.vlCalcYield = function(){
+    const el = document.getElementById('vlCalcPrice');
+    const hp = parseFloat(el && el.value) || 152;
+    ['vlcy1','vlcy2','vlcy3'].forEach((id,i) => {
+      const t = document.getElementById(id);
+      if(t) t.textContent = ((DIV_VALS[i]/hp)*100).toFixed(2)+'%';
+    });
+    const tbm = document.getElementById('vlcyTBM');
+    if(tbm) tbm.textContent = (hp/DIV_VALS[2]).toFixed(1)+'×';
+  };
+
+  /* ── Ganti basis proyeksi ── */
+  window.vlSetBasis = function(basis, el){
+    document.querySelectorAll('#page-valuasi .vl-basis-btn').forEach(b => b.classList.remove('active'));
+    if(el) el.classList.add('active');
+    const d = PROJ[basis];
+    const mosEl = document.getElementById('vlKpiMos');
+    const mosDesc = document.getElementById('vlKpiMosDesc');
+    if(mosEl){
+      mosEl.textContent = d.mos.toFixed(2)+'%';
+      let col, txt;
+      if(d.mos>=30){ col='var(--green)'; txt='🟢 Sangat Aman'; }
+      else if(d.mos>=20){ col='var(--yellow)'; txt='🟡 Cukup Aman'; }
+      else { col='var(--red)'; txt='🔴 Berisiko Tinggi'; }
+      mosEl.style.color = col;
+      if(mosDesc){ mosDesc.textContent = txt; mosDesc.style.color = col; }
+    }
+    buildProjTable(basis);
+    if(projChart){
+      projChart.data.datasets[0].data = d.prices;
+      projChart.data.datasets[1].data = PROJ_YEARS.map(() => d.price);
+      projChart.update();
+    }
+  };
+
+  /* ── Switch tab ── */
+  window.vlSwitchTab = function(id, el){
+    document.querySelectorAll('#page-valuasi .vl-tc').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#page-valuasi .vl-tab').forEach(b => b.classList.remove('active'));
+    const tc = document.getElementById('vl-tab-'+id);
+    if(tc) tc.classList.add('active');
+    if(el) el.classList.add('active');
+    // Nudge charts agar resize benar setelah container tampil
+    charts.forEach(c => { try { c.resize(); } catch(e){} });
+  };
+
+  /* ── Charts ── */
+  let projChart = null, built = false;
+  const charts = [];
+
+  function buildCharts(){
+    if(typeof Chart === 'undefined') return;
+    const T = themeColors();
+    const TICK = { font:{ size:10 }, color:T.tick };
+    const GRID = { color:T.grid };
+    const base = {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(26,15,60,.94)', titleFont:{size:11}, bodyFont:{size:11}, padding:10, cornerRadius:8 } }
+    };
+
+    // 1. Pendapatan & Laba
+    charts.push(new Chart(document.getElementById('vlRev'), {
+      type:'bar',
+      data:{ labels:LABELS, datasets:[
+        { label:'Pendapatan (M)', data:[2030,2032,1227,1039], backgroundColor:'#2563eb', borderRadius:4, yAxisID:'y' },
+        { label:'Laba Bersih (M)', data:[1330,1342,826,674], backgroundColor:'#059669', borderRadius:4, yAxisID:'y' },
+        { label:'Harga (Rp)', data:[150,174,138,133], type:'line', borderColor:'#6d28d9', backgroundColor:'#6d28d9', pointRadius:5, pointHoverRadius:7, borderWidth:2.5, yAxisID:'y2', tension:.4 }
+      ]},
+      options:{...base, scales:{
+        y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
+        y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
+        x:{ ticks:TICK, grid:{display:false} }
+      }}
+    }));
+
+    // 2. ROE & Margin
+    charts.push(new Chart(document.getElementById('vlRoe'), {
+      type:'line',
+      data:{ labels:LABELS, datasets:[
+        { label:'ROE (%)', data:[127.88,134.56,201.97,165.88], borderColor:'#6d28d9', backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:5, borderWidth:2.5, tension:.4 },
+        { label:'Margin %', data:[65.52,66.05,67.34,64.80], borderColor:'#2563eb', backgroundColor:'transparent', pointRadius:4, borderWidth:2, borderDash:[5,3], tension:.4 }
+      ]},
+      options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }}
+    }));
+
+    // 3. Rasio
+    charts.push(new Chart(document.getElementById('vlRatio'), {
+      type:'bar',
+      data:{ labels:LABELS, datasets:[
+        { label:'PBV', data:[6.95,8.41,16.26,15.79], backgroundColor:'#6d28d9', borderRadius:3 },
+        { label:'PER', data:[5.44,6.25,8.05,9.52],   backgroundColor:'#2563eb', borderRadius:3 },
+        { label:'PSR', data:[3.56,4.13,5.42,6.17],   backgroundColor:'#db2777', borderRadius:3 }
+      ]},
+      options:{...base, scales:{ y:{ ticks:TICK, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }}
+    }));
+
+    // 4. EPS / SPS
+    charts.push(new Chart(document.getElementById('vlEps'), {
+      type:'line',
+      data:{ labels:LABELS, datasets:[
+        { label:'EPS', data:[27.59,27.84,17.14,13.97], borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:5, borderWidth:2.5, tension:.4 },
+        { label:'SPS', data:[42.12,42.15,25.45,21.57], borderColor:'#db2777', backgroundColor:'transparent', pointRadius:4, borderWidth:2, borderDash:[5,3], tension:.4 }
+      ]},
+      options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }}
+    }));
+
+    // 5. Ekuitas & Book Value
+    charts.push(new Chart(document.getElementById('vlEquity'), {
+      type:'bar',
+      data:{ labels:LABELS, datasets:[
+        { label:'Ekuitas (M)', data:[1040,997,409,406], backgroundColor:'#8b7eb8', borderRadius:4, yAxisID:'y' },
+        { label:'Book Value', data:[21.58,20.69,8.49,8.42], type:'line', borderColor:'#6d28d9', backgroundColor:'#6d28d9', pointRadius:5, borderWidth:2.5, yAxisID:'y2', tension:.4 }
+      ]},
+      options:{...base, scales:{
+        y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
+        y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:{display:false} },
+        x:{ ticks:TICK, grid:{display:false} }
+      }}
+    }));
+
+    // 6. Proyeksi
+    projChart = new Chart(document.getElementById('vlProj'), {
+      type:'line',
+      data:{ labels:PROJ_YEARS, datasets:[
+        { label:'Harga Potensi', data:PROJ.now.prices.slice(), borderColor:'#6d28d9', backgroundColor:'rgba(109,40,217,.12)', fill:true, pointRadius:6, pointHoverRadius:8, borderWidth:2.5, tension:.4, pointBackgroundColor:'#6d28d9', pointBorderColor:'#fff', pointBorderWidth:2 },
+        { label:'Harga Beli', data:PROJ_YEARS.map(()=>152), borderColor:'#d97706', backgroundColor:'transparent', borderWidth:1.5, borderDash:[6,3], pointRadius:0, fill:false }
+      ]},
+      options:{...base, scales:{ y:{ min:100, ticks:{...TICK, callback:v=>'Rp'+v}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }}
+    });
+    charts.push(projChart);
+
+    // 7. Dividen
+    charts.push(new Chart(document.getElementById('vlDiv'), {
+      type:'bar',
+      data:{ labels:['Q1','Q2','Q3'], datasets:[
+        { label:'Dividen/Share (Rp)', data:DIV_VALS, backgroundColor:'#6d28d9', borderRadius:4, yAxisID:'y' },
+        { label:'Yield (%)', data:DIV_YLD, type:'line', borderColor:'#d97706', backgroundColor:'#d97706', pointRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.4, pointHoverRadius:8 }
+      ]},
+      options:{...base, scales:{
+        y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID },
+        y2:{ position:'right', ticks:{...TICK, callback:v=>v+'%'}, grid:{display:false} },
+        x:{ ticks:{...TICK, font:{size:12}}, grid:{display:false} }
+      }}
+    }));
+
+    // 8. MoS comparison
+    charts.push(new Chart(document.getElementById('vlMos'), {
+      type:'bar',
+      data:{ labels:['Basis Q1 (Rp174)','Basis Q2 (Rp138)','Basis Q3 (Rp133)','Harga Sekarang (Rp152)'], datasets:[
+        { label:'Margin of Safety (%)', data:TTM_MOS, backgroundColor:['#059669','#059669','#d97706','#d97706'], borderRadius:5 }
+      ]},
+      options:{...base, indexAxis:'y',
+        scales:{ x:{ ticks:{...TICK, callback:v=>v+'%'}, grid:GRID, max:60 }, y:{ ticks:{...TICK, font:{size:11}}, grid:{display:false} } },
+        plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{ label:ctx=>' MoS: '+ctx.parsed.x.toFixed(2)+'%' }}}
+      }
+    }));
+  }
+
+  // Lazy build: dipanggil saat halaman valuasi pertama dibuka.
+  window.vlEnsureCharts = function(){
+    if(built) return;
+    built = true;
+    buildCharts();
+  };
+
+  // Build tabel di awal (DOM sudah siap — script setelah markup).
+  buildFund();
+  buildProjTable('now');
+  buildTtmTable();
+  window.vlCalcYield();
+})();
+</script>
+
+<!-- BOTTOM NAV (mobile only — hidden di desktop via CSS) -->
 <nav class="bottom-nav" id="bottomNav">
   <button class="bottom-nav-item active" id="bn-dashboard" onclick="showPageMobile('dashboard',this)">
     <span class="bn-icon">📊</span>Dashboard
@@ -6062,6 +6706,9 @@ loadData();
   </button>
   <button class="bottom-nav-item" id="bn-consensus" onclick="showPageMobile('consensus',this)">
     <span class="bn-icon">🔍</span>Consensus
+  </button>
+  <button class="bottom-nav-item" id="bn-valuasi" onclick="showPageMobile('valuasi',this);vlEnsureCharts()">
+    <span class="bn-icon">🧮</span>Valuasi
   </button>
 </nav>
 
