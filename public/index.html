@@ -6850,14 +6850,14 @@ loadData();
      Tidak mengubah kode 3 menu inti.
 ═══════════════════════════════════════════════════════════════════ -->
 <style>
-/* ── VALUASI: layout & komponen — sinkron dgn dashboard ── */
-#page-valuasi .vl-wrap{max-width:1400px;margin:0 auto}
+/* ── VALUASI: layout & komponen (mengonsumsi token tema utama) ── */
+#page-valuasi .vl-wrap{max-width:1080px;margin:0 auto}
 @media(max-width:640px){#page-valuasi{padding-bottom:90px}}
 
-/* Header emiten — pakai padding & radius sama dgn .card */
+/* Header emiten */
 .vl-head{
   background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
-  padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow-card);
+  padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow-card);
   display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;
 }
 [data-theme="dark"] .vl-head{box-shadow:var(--shadow-card),0 0 0 1px var(--border) inset}
@@ -6867,114 +6867,107 @@ loadData();
   display:flex;align-items:center;justify-content:center;color:#fff;
   font-weight:800;font-size:13px;letter-spacing:.5px;flex-shrink:0;
 }
-/* font sinkron dgn .stock-name-block .ticker di dashboard */
-.vl-name{font-size:22px;font-weight:800;color:var(--text);font-family:'IBM Plex Mono',monospace;letter-spacing:1px}
+.vl-name{font-size:20px;font-weight:800;color:var(--text)}
 .vl-tag{
-  display:inline-block;font-size:11px;font-weight:700;background:var(--bg2);
+  display:inline-block;font-size:10px;font-weight:700;background:var(--bg2);
   color:var(--accent);padding:3px 10px;border-radius:var(--radius-pill);
-  margin-left:8px;vertical-align:middle;
+  margin-left:6px;vertical-align:middle;
 }
-.vl-sub{font-size:12px;color:var(--text3);margin-top:3px;font-weight:500}
+.vl-sub{font-size:11px;color:var(--text3);margin-top:3px}
 .vl-head-right{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-/* font sinkron dgn .price-block .price di dashboard */
-.vl-price{font-size:32px;font-weight:700;color:var(--text);font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;line-height:1.05}
-.vl-price-meta{font-size:12px;color:var(--text2);margin-top:3px;font-weight:500}
+.vl-price{
+  font-size:28px;font-weight:800;color:var(--text);
+  font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
+}
+.vl-price-meta{font-size:10px;color:var(--text3);margin-top:3px}
 .vl-mktcap{text-align:right}
-.vl-mktcap .l{font-size:11px;color:var(--text3);font-weight:600}
+.vl-mktcap .l{font-size:10px;color:var(--text3)}
 .vl-mktcap .v{font-size:15px;font-weight:700;color:var(--text)}
 .vl-mos{
   background:var(--yellow-bg);border:1px solid rgba(217,119,6,.3);
   border-radius:var(--radius);padding:10px 16px;text-align:center;min-width:122px;
 }
-.vl-mos .l{font-size:11px;color:var(--yellow);font-weight:700;letter-spacing:.4px}
+.vl-mos .l{font-size:10px;color:var(--yellow);font-weight:700}
 .vl-mos .v{font-size:22px;font-weight:800;color:var(--yellow);line-height:1.1;font-family:'IBM Plex Mono',monospace}
-.vl-mos .d{font-size:11px;color:var(--yellow);margin-top:2px}
+.vl-mos .d{font-size:10px;color:var(--yellow);margin-top:2px}
 
-/* Badge — pakai font/padding sama dgn .badge-buy/.badge-sell di dashboard */
-.vl-badge{display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;border-radius:var(--radius-pill)}
-.vl-up{background:var(--green-bg);color:var(--green);border:1px solid rgba(5,150,105,.2)}
-.vl-dn{background:var(--red-bg);color:var(--red);border:1px solid rgba(225,29,72,.2)}
+/* Badge naik/turun */
+.vl-badge{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:var(--radius-pill)}
+.vl-up{background:var(--green-bg);color:var(--green)}
+.vl-dn{background:var(--red-bg);color:var(--red)}
 .vl-neu{background:var(--bg2);color:var(--text2)}
 
-/* Metric cards — pakai gap & radius sama dgn .stats-row di dashboard */
-.vl-mcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
-.vl-mc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow-card)}
-[data-theme="dark"] .vl-mc{box-shadow:var(--shadow-card),0 0 0 1px var(--border) inset}
-.vl-mc .i{font-size:18px;margin-bottom:6px}
-/* sinkron dgn .stat-label */
-.vl-mc .l{font-size:11px;color:var(--text2);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.7px}
-/* sinkron dgn .stat-val — 14px IBM Plex Mono → naik sedikit ke 16px agar tidak terlalu kecil */
-.vl-mc .v{font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;color:var(--text)}
-.vl-mc .s{font-size:11px;color:var(--text3);margin-top:3px;font-weight:500}
+/* Metric cards */
+.vl-mcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.vl-mc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow-card)}
+.vl-mc .i{font-size:17px;margin-bottom:5px}
+.vl-mc .l{font-size:10px;color:var(--text3);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.vl-mc .v{font-size:20px;font-weight:800;font-family:'IBM Plex Mono',monospace}
+.vl-mc .s{font-size:9px;color:var(--text3);margin-top:3px}
 
 /* Strip harga kuartal */
-.vl-qstrip{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:16px;box-shadow:var(--shadow-card)}
-[data-theme="dark"] .vl-qstrip{box-shadow:var(--shadow-card),0 0 0 1px var(--border) inset}
-.vl-qstrip-hd{font-size:11px;font-weight:800;color:var(--text3);margin-bottom:12px;letter-spacing:.7px;text-transform:uppercase}
+.vl-qstrip{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-card)}
+.vl-qstrip-hd{font-size:10px;font-weight:800;color:var(--text3);margin-bottom:12px;letter-spacing:.6px;text-transform:uppercase}
 .vl-qstrip-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-.vl-qi{text-align:center;padding:10px 8px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg2)}
-.vl-qi .c{font-size:11px;color:var(--text2);font-weight:800;letter-spacing:.5px}
-.vl-qi .dt{font-size:10px;color:var(--text3);margin-top:2px}
-.vl-qi .p{font-size:16px;font-weight:700;margin:5px 0;font-family:'IBM Plex Mono',monospace;color:var(--text);font-variant-numeric:tabular-nums}
+.vl-qi{text-align:center;padding:8px;border-radius:var(--radius);border:1px solid var(--border2)}
+.vl-qi .c{font-size:10px;color:var(--text2);font-weight:700}
+.vl-qi .dt{font-size:9px;color:var(--text3)}
+.vl-qi .p{font-size:17px;font-weight:800;margin:4px 0;font-family:'IBM Plex Mono',monospace;color:var(--text)}
 
-/* Tabs — sinkron dgn .nav-tab */
+/* Tabs */
 .vl-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-pill);padding:5px;box-shadow:var(--shadow-card);overflow-x:auto}
-.vl-tab{flex:0 0 auto;padding:9px 18px;border-radius:var(--radius-pill);border:none;cursor:pointer;font-size:14px;font-weight:700;background:transparent;color:var(--text2);font-family:inherit;transition:all .2s;white-space:nowrap;border:1px solid transparent}
-.vl-tab:hover{color:var(--accent);border-color:var(--border)}
-.vl-tab.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 6px 20px rgba(109,40,217,.25)}
+.vl-tab{flex:0 0 auto;padding:8px 16px;border-radius:var(--radius-pill);border:none;cursor:pointer;font-size:13px;font-weight:700;background:transparent;color:var(--text2);font-family:inherit;transition:all .18s;white-space:nowrap}
+.vl-tab:hover{color:var(--accent)}
+.vl-tab.active{background:var(--grad);color:#fff;box-shadow:0 6px 18px rgba(109,40,217,.22)}
 .vl-tc{display:none}
 .vl-tc.active{display:block;animation:vl-fade .25s ease}
 @keyframes vl-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-/* Grid + chart — sinkron dgn .dash-grid gap */
-.vl-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
-.vl-chart{position:relative;width:100%;height:220px}
-.vl-chart-tall{position:relative;width:100%;height:240px}
+/* Grid + chart wrap */
+.vl-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:14px}
+.vl-chart{position:relative;width:100%;height:210px}
+.vl-chart-tall{position:relative;width:100%;height:230px}
 .vl-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
-.vl-leg{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);font-weight:600}
-.vl-dot{width:12px;height:4px;border-radius:2px;flex-shrink:0}
+.vl-leg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);font-weight:600}
+.vl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 
-/* Tabel — font sinkron dgn .analyst-table */
+/* Tabel */
 .vl-tw{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
-.vl-table{width:100%;border-collapse:collapse;font-size:13px;min-width:480px}
-.vl-table thead th{padding:11px 12px;text-align:right;font-weight:800;color:var(--text);border-bottom:2px solid var(--border);font-size:11px;white-space:nowrap;background:var(--bg2);text-transform:uppercase;letter-spacing:.6px}
+.vl-table{width:100%;border-collapse:collapse;font-size:12px;min-width:480px}
+.vl-table thead th{padding:10px;text-align:right;font-weight:800;color:var(--text2);border-bottom:2px solid var(--border);font-size:11px;white-space:nowrap;background:var(--bg2);text-transform:uppercase;letter-spacing:.4px}
 .vl-table thead th:first-child{text-align:left}
-.vl-table tbody td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:13px;color:var(--text);font-weight:500}
-.vl-table tbody td:first-child{text-align:left;color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:12px}
+.vl-table tbody td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;color:var(--text)}
+.vl-table tbody td:first-child{text-align:left;color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-weight:600}
 .vl-table tbody tr:nth-child(even){background:var(--bg2)}
-.vl-table tbody tr:hover td{background:var(--bg3)}
-.vl-chg-up{font-size:10px;color:var(--green);display:block;margin-top:2px;font-family:'Plus Jakarta Sans',sans-serif}
-.vl-chg-dn{font-size:10px;color:var(--red);display:block;margin-top:2px;font-family:'Plus Jakarta Sans',sans-serif}
+.vl-table tbody tr:hover{background:var(--bg3)}
+.vl-chg-up{font-size:9px;color:var(--green);display:block;margin-top:1px}
+.vl-chg-dn{font-size:9px;color:var(--red);display:block;margin-top:1px}
 
-/* Basis buttons + KPI */
+/* Basis buttons + KPI proyeksi */
 .vl-basis{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.vl-basis-btn{padding:9px 18px;border-radius:var(--radius-pill);border:1px solid var(--border);cursor:pointer;font-size:14px;font-weight:700;background:var(--card);color:var(--text2);font-family:inherit;transition:all .2s}
-.vl-basis-btn:hover{color:var(--accent);border-color:var(--accent)}
-.vl-basis-btn.active{border-color:transparent;background:var(--grad);color:#fff;box-shadow:0 6px 20px rgba(109,40,217,.25)}
-.vl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
-.vl-kpi{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 14px;text-align:center}
-.vl-kpi .l{font-size:11px;color:var(--text2);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
-.vl-kpi .v{font-size:18px;font-weight:700;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;color:var(--text)}
-.vl-kpi .d{font-size:11px;margin-top:3px;font-weight:600}
+.vl-basis-btn{padding:6px 14px;border-radius:var(--radius-pill);border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:700;background:var(--card);color:var(--text2);font-family:inherit;transition:all .15s}
+.vl-basis-btn:hover{border-color:var(--accent);color:var(--accent)}
+.vl-basis-btn.active{border-color:transparent;background:var(--grad);color:#fff}
+.vl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.vl-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;text-align:center}
+.vl-kpi .l{font-size:9px;color:var(--text3);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.vl-kpi .v{font-size:20px;font-weight:800;font-family:'IBM Plex Mono',monospace}
+.vl-kpi .d{font-size:9px;margin-top:2px}
 
 /* Info box */
-.vl-info{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0;padding:13px 15px;font-size:13px;color:var(--text2);line-height:1.7;margin-top:12px}
+.vl-info{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;margin-top:12px}
 .vl-info strong{color:var(--text)}
 
-/* Input kalkulator — sinkron dgn .form-control */
-.vl-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;outline:none;transition:border-color .2s,box-shadow .2s}
+/* Input kalkulator */
+.vl-input{width:100%;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius);font-size:15px;font-weight:700;color:var(--text);background:var(--bg2);outline:none;font-family:'IBM Plex Mono',monospace}
 .vl-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
-.vl-label{font-size:12px;color:var(--text);margin-bottom:7px;display:block;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
-.vl-note{font-size:11px;color:var(--text3);margin-top:10px}
+.vl-label{font-size:11px;color:var(--text2);display:block;margin-bottom:6px;font-weight:600}
+.vl-note{font-size:10px;color:var(--text3);margin-top:10px}
 
-@media(max-width:700px){
-  .vl-grid2{grid-template-columns:1fr}
-}
 @media(max-width:480px){
   .vl-head{flex-direction:column}
-  .vl-price{font-size:26px}
+  .vl-price{font-size:22px}
   .vl-mos .v{font-size:18px}
-  .vl-tab{padding:8px 14px;font-size:13px}
 }
 </style>
 
