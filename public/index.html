@@ -2965,8 +2965,10 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
   candleSeries.setData(lwData);
 
   // ── Garis harga rilis ──────────────────────────────────────────────────
+  // PENTING: price line dibuat via SERIES (candleSeries.createPriceLine),
+  // BUKAN chart.addPriceLine (method itu tidak ada → TypeError → chart gagal).
   if (releasePrice && releasePrice > 0) {
-    const releaseLine = chart.addPriceLine({
+    candleSeries.createPriceLine({
       price:      releasePrice,
       color:      isDark ? '#c4b8e8' : '#6e6490',
       lineWidth:  1,
@@ -2974,7 +2976,6 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
       axisLabelVisible: true,
       title:      'Rilis',
     });
-    void releaseLine; // dipakai via addPriceLine — no ref needed
   }
 
   // ── Garis target harga ─────────────────────────────────────────────────
@@ -2982,7 +2983,7 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
     const tColor = suggestion === 'SELL'
       ? (isDark ? '#fb7185' : '#e11d48')   // merah untuk SELL
       : (isDark ? '#fbbf24' : '#d97706');  // kuning/oranye untuk BUY/NEUTRAL
-    chart.addPriceLine({
+    candleSeries.createPriceLine({
       price:      targetPrice,
       color:      tColor,
       lineWidth:  1,
