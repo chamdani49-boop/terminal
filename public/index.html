@@ -2023,6 +2023,36 @@ select.form-control option{background:var(--card);color:var(--text)}
   padding:14px 20px;
   border-bottom:1px solid var(--border);
 }
+/* Layout dual-return saat target sudah tercapai: Live (kiri) | Hit (kanan) */
+.rec-modal-return-dual{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:0;align-items:center;
+  flex:1;
+}
+.rec-modal-return-divider{
+  width:1px;height:52px;
+  background:var(--border);
+  margin:0 16px;
+}
+.rec-modal-return-hit{
+  padding-left:4px;
+}
+.rec-modal-return-hit-val{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:22px;font-weight:800;
+  font-variant-numeric:tabular-nums;
+  line-height:1;color:var(--green);
+}
+.rec-modal-return-hit-sub{
+  font-size:10px;font-weight:800;letter-spacing:.3px;
+  color:var(--green);margin-top:3px;
+  text-transform:uppercase;
+}
+.rec-modal-return-hit-date{
+  font-size:10px;color:var(--text3);font-weight:600;
+  margin-top:2px;font-family:'IBM Plex Mono',monospace;
+}
 .rec-modal-return-val{
   font-family:'IBM Plex Mono',monospace;
   font-size:28px;font-weight:800;
@@ -3248,8 +3278,34 @@ function showRecDetail(code, recIdx) {
       </div>
     </div>
 
-    <!-- Return hero -->
+    <!-- Return hero — dual saat done=true (Live kiri | Hit Target kanan) -->
     <div class="rec-modal-return-hero">
+      ${rating && rating.done ? `
+      <div class="rec-modal-return-dual">
+        <!-- Kiri: return live saat ini -->
+        <div>
+          <div class="rec-modal-return-val ${returnCls}" id="recReturnVal">
+            ${currentReturn != null
+              ? (currentReturn >= 0 ? '+' : '') + (currentReturn * 100).toFixed(2) + '%'
+              : '—'}
+          </div>
+          <div class="rec-modal-return-sub">Return Live</div>
+          ${liveChg != null
+            ? `<div class="rec-modal-daily-chg ${liveCls}" style="margin-top:3px">${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}% hari ini</div>`
+            : ''}
+        </div>
+        <!-- Divider -->
+        <div class="rec-modal-return-divider"></div>
+        <!-- Kanan: return saat hit target (di-freeze) -->
+        <div class="rec-modal-return-hit">
+          <div class="rec-modal-return-hit-val">
+            🎯 ${rating.hitReturn != null ? '+' + (rating.hitReturn*100).toFixed(2) + '%' : '✓'}
+          </div>
+          <div class="rec-modal-return-hit-sub">Return Hit Target</div>
+          ${rating.hitDate ? `<div class="rec-modal-return-hit-date">${rating.hitDate}</div>` : ''}
+        </div>
+      </div>
+      ` : `
       <div>
         <div class="rec-modal-return-val ${returnCls}" id="recReturnVal">
           ${currentReturn != null
@@ -3257,15 +3313,13 @@ function showRecDetail(code, recIdx) {
             : '—'}
         </div>
         <div class="rec-modal-return-sub">Return Sejak Rilis</div>
-        ${rating && rating.done
-          ? `<div style="margin-top:5px;display:inline-flex;align-items:center;gap:5px;background:var(--green-bg);color:var(--green);font-size:10px;font-weight:800;padding:3px 9px;border-radius:var(--radius-pill);border:1px solid rgba(5,150,105,.3)">🎯 Target tercapai${rating.hitReturn != null ? ` · +${(rating.hitReturn*100).toFixed(2)}%` : ''}${rating.hitDate ? ` · ${rating.hitDate}` : ''}</div>`
-          : ''}
       </div>
+      `}
       <div style="margin-left:auto;text-align:right">
         <div style="font-family:\'IBM Plex Mono\',monospace;font-size:20px;font-weight:700">
           ${curPrice ? 'Rp' + Math.round(curPrice).toLocaleString('id') : '—'}
         </div>
-        ${liveChg != null
+        ${liveChg != null && !(rating && rating.done)
           ? `<div class="rec-modal-daily-chg ${liveCls}">${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}% hari ini</div>`
           : ''}
       </div>
@@ -5540,6 +5594,18 @@ function showFirmDetail(firm) {
     ? (fr.avgDrawdown * 100).toFixed(2) + '% avg drawdown'
     : '—';
 
+  // Hit-target stats
+  const frHitRate   = fr && fr.hitRate != null ? (fr.hitRate * 100).toFixed(0) + '%' : '—';
+  const frHitCount  = fr ? `${fr.hitCnt}/${fr.eligibleCnt} rec` : '—';
+  const frHitRetTxt = fr && fr.avgHitReturn != null
+    ? '+' + (fr.avgHitReturn * 100).toFixed(2) + '%'
+    : '—';
+  const frCurRetTxt = fr && fr.avgCurReturn != null
+    ? (fr.avgCurReturn >= 0 ? '+' : '') + (fr.avgCurReturn * 100).toFixed(2) + '%'
+    : '—';
+  const frCurRetCls = fr && fr.avgCurReturn != null
+    ? (fr.avgCurReturn > 0 ? 'up' : fr.avgCurReturn < 0 ? 'dn' : 'neu') : 'neu';
+
   document.getElementById('firmStats').innerHTML = `
     <div class="firm-stat">
       <div class="firm-stat-label">Total Rekomendasi</div>
@@ -5582,6 +5648,24 @@ function showFirmDetail(firm) {
       <div style="margin:8px 0 4px">${frRiskBars}</div>
       <div class="firm-stat-sub">${frDdTxt}</div>
       <div class="firm-stat-sub" style="margin-top:2px;color:var(--text3);font-size:10px">${frSample}</div>
+    </div>
+    <div class="firm-stat" title="Berapa % rekomendasi aktif yang harganya pernah menyentuh target">
+      <div class="firm-stat-label">🎯 Hit Rate</div>
+      <div class="firm-stat-value up">${frHitRate}</div>
+      <div class="firm-stat-sub">${frHitCount}</div>
+    </div>
+    <div class="firm-stat" title="Avg return saat target tercapai (frozen) vs return live saat ini">
+      <div class="firm-stat-label">Avg Return</div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Saat Hit Target</div>
+          <div class="firm-stat-value up" style="font-size:18px">${frHitRetTxt}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Return Live</div>
+          <div class="firm-stat-value ${frCurRetCls}" style="font-size:18px">${frCurRetTxt}</div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -6120,11 +6204,19 @@ function _buildFirmRows() {
   const rows = [];
   for (const f of map.values()) {
     let retSum=0, retCnt=0, riskSum=0, riskCnt=0;
+    // hit-target stats
+    let hitCnt=0, hitRetSum=0, hitRetCnt=0, curRetSum=0, curRetCnt=0, eligibleCnt=0;
     for (const r of f.recs) {
       const rt = getRecRating(r, r.code);
       if (!rt || rt.ageMonths < 1 || rt.ageMonths > 24) continue;
+      eligibleCnt++;
       if (rt.returns != null) { retSum += rt.returns; retCnt++; }
       riskSum += rt.risk; riskCnt++;
+      if (rt.done) {
+        hitCnt++;
+        if (rt.hitReturn != null) { hitRetSum += rt.hitReturn; hitRetCnt++; }
+      }
+      if (rt.currentReturn != null) { curRetSum += rt.currentReturn; curRetCnt++; }
     }
     const series = getFirmSeriesAvg(f.recs);
     rows.push({
@@ -6133,6 +6225,12 @@ function _buildFirmRows() {
       returns: retCnt ? Math.round(retSum / retCnt) : null,
       risk: riskCnt ? Math.round(riskSum / riskCnt) : null,
       avgNorm: series.avgNorm, lastDate: f.lastDate,
+      // hit-target portfolio stats
+      eligibleCnt,
+      hitCnt,
+      hitRate:       eligibleCnt > 0 ? hitCnt / eligibleCnt : null,
+      avgHitReturn:  hitRetCnt   > 0 ? hitRetSum / hitRetCnt : null,
+      avgCurReturn:  curRetCnt   > 0 ? curRetSum / curRetCnt : null,
     });
   }
   rows.sort((a, b) => b.total - a.total || String(b.lastDate).localeCompare(String(a.lastDate)));
@@ -6143,6 +6241,20 @@ function _firmRowHTML(f) {
   const fe = escapeHtml(f.name);
   const upCls = f.avgUp==null?'neu':f.avgUp>0?'up':f.avgUp<0?'dn':'neu';
   const upTxt = f.avgUp==null?'—':`${f.avgUp>=0?'+':''}${f.avgUp.toFixed(1)}%`;
+
+  // Hit-rate & avg return pills
+  const hasHit = f.hitRate != null && f.eligibleCnt > 0;
+  const hitRatePct = hasHit ? (f.hitRate * 100).toFixed(0) : null;
+  const hitPill = hasHit
+    ? `<span style="margin-left:6px;background:var(--green-bg);color:var(--green);font-size:10px;font-weight:800;padding:1px 6px;border-radius:4px;border:1px solid rgba(5,150,105,.25)">🎯 ${hitRatePct}% hit (${f.hitCnt}/${f.eligibleCnt})</span>`
+    : '';
+  const avgHitTxt = f.avgHitReturn != null
+    ? `<span style="margin-left:4px;color:var(--green);font-weight:700">avg +${(f.avgHitReturn*100).toFixed(1)}%</span>`
+    : '';
+  const avgCurTxt = f.avgCurReturn != null
+    ? `<span style="margin-left:4px;color:${f.avgCurReturn>=0?'var(--green)':'var(--red)'};font-weight:700">live ${f.avgCurReturn>=0?'+':''}${(f.avgCurReturn*100).toFixed(1)}%</span>`
+    : '';
+
   let periodCells = '';
   for (let k = 1; k <= 6; k++) {
     const idx = (f.avgNorm && f.avgNorm[k] != null) ? f.avgNorm[k] : null;
@@ -6154,7 +6266,7 @@ function _firmRowHTML(f) {
   return `<div class="ovl-firm-row" data-firm="${fe}" onclick="showFirmDetail(this.dataset.firm)" title="Klik untuk lihat detail ${fe}">
     <div class="ovl-fc-name">
       <div class="ovl-firm-name">${fe}</div>
-      <div class="ovl-firm-meta">${f.total} rec · ${f.stocks} saham · <span class="${upCls}">${upTxt}</span> upside</div>
+      <div class="ovl-firm-meta">${f.total} rec · ${f.stocks} saham · <span class="${upCls}">${upTxt}</span> upside${hitPill}${avgHitTxt}${avgCurTxt}</div>
     </div>
     <div class="ovl-fc">${renderRatingBars(f.returns, 'green', 'sm')}</div>
     <div class="ovl-fc">${renderRatingBars(f.risk, 'red', 'sm')}</div>
@@ -6181,30 +6293,44 @@ function getFirmRating(firm) {
   let riskSum = 0, riskCnt = 0;
   let achSum = 0, achCnt = 0;
   let ddSum  = 0, ddCnt  = 0;
+  // hit-target stats
+  let hitCnt = 0, hitRetSum = 0, hitRetCnt = 0;
+  let curRetSum = 0, curRetCnt = 0;
+  let eligibleCnt = 0;
 
   for (const [code, recs] of Object.entries(slim)) {
     for (const r of recs) {
       if (r.firm !== firm) continue;
       const rating = getRecRating(r, code);
-      if (!rating) continue; // null = N/A (terlalu baru atau data kurang)
-
-      // Filter: hanya rec usia 1–24 bulan
+      if (!rating) continue;
       if (rating.ageMonths < 1 || rating.ageMonths > 24) continue;
 
+      eligibleCnt++;
       if (rating.returns != null) { retSum  += rating.returns;    retCnt++;  }
       riskSum  += rating.risk;    riskCnt++;
-
       if (rating.achievement != null) { achSum += rating.achievement; achCnt++; }
       ddSum += rating.maxDrawdown; ddCnt++;
+
+      if (rating.done) {
+        hitCnt++;
+        if (rating.hitReturn != null) { hitRetSum += rating.hitReturn; hitRetCnt++; }
+      }
+      if (rating.currentReturn != null) { curRetSum += rating.currentReturn; curRetCnt++; }
     }
   }
 
   return {
     returns:        retCnt  > 0 ? Math.round(retSum  / retCnt)  : null,
     risk:           riskCnt > 0 ? Math.round(riskSum / riskCnt) : null,
-    sampleSize:     riskCnt,   // jumlah rec yang masuk kalkulasi
+    sampleSize:     eligibleCnt,
     avgAchievement: achCnt  > 0 ? achSum / achCnt : null,
     avgDrawdown:    ddCnt   > 0 ? ddSum  / ddCnt  : null,
+    // hit-target
+    hitCnt,
+    eligibleCnt,
+    hitRate:       eligibleCnt > 0 ? hitCnt / eligibleCnt : null,
+    avgHitReturn:  hitRetCnt   > 0 ? hitRetSum / hitRetCnt : null,
+    avgCurReturn:  curRetCnt   > 0 ? curRetSum / curRetCnt : null,
   };
 }
 
