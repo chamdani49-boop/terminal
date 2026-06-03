@@ -9,6 +9,11 @@
   "scripts": {
     "refresh": "node scripts/build-data.js",
     "refresh:ohlc": "node scripts/build-ohlc.js",
-    "dev": "npx serve public"
+    "dev": "npx serve public",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.97.0"
   }
 }
