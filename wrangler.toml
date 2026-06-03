@@ -1,0 +1,21 @@
+#:schema node_modules/wrangler/config-schema.json
+# ════════════════════════════════════════════════════════════════════════
+# ROOT wrangler.toml — konfigurasi Cloudflare Pages
+#
+# File ini ada di ROOT repo supaya Cloudflare Pages tahu bahwa ini adalah
+# proyek PAGES (bukan Workers), dan men-serve folder `public/` sebagai
+# output build statis.
+#
+# Tanpa file ini, CF auto-detect wrangler.toml di subfolder worker/ dan
+# mencoba deploy Worker `terminal-live` → gagal karena secrets tidak ada
+# di CF build environment → deployment Pages ikut dibatalkan.
+#
+# Subfolder worker/ (Worker `terminal-live`) adalah proyek TERPISAH yang
+# di-deploy secara manual via `wrangler deploy` dari folder tersebut.
+# ════════════════════════════════════════════════════════════════════════
+
+name = "terminal"
+pages_build_output_dir = "public"
+
+# Kompatibilitas CF Workers runtime (diperlukan oleh Pages)
+compatibility_date = "2025-05-01"
