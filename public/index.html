@@ -2912,8 +2912,9 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
 
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-  // Warna tema
-  const bg          = isDark ? '#1f1450' : '#ffffff';
+  // Warna tema — background chart dibuat sedikit BEDA dari card biar ada
+  // kontras lembut (efek "inset"): lebih gelap di dark, lavender muda di light.
+  const bg          = isDark ? '#150f33' : '#f1eefc';
   const textColor   = isDark ? '#c4b8e8' : '#6e6490';
   const gridColor   = isDark ? 'rgba(164,156,192,0.12)' : 'rgba(164,156,192,0.18)';
   const borderColor = isDark ? '#4a3590' : '#d4ccf0';
@@ -2930,6 +2931,7 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
       textColor:   textColor,
       fontFamily:  "'IBM Plex Mono', monospace",
       fontSize:    10,
+      attributionLogo: false,   // sembunyikan watermark logo TradingView
     },
     grid: {
       vertLines:   { color: gridColor },
@@ -2968,6 +2970,20 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
     borderDownColor:  downColor,
     wickUpColor:      wickUp,
     wickDownColor:    wickDown,
+    // Paksa rentang autoscale mencakup harga Rilis & Target → kedua garis
+    // langsung kelihatan tanpa perlu scroll/zoom manual.
+    autoscaleInfoProvider: (orig) => {
+      const res = orig();
+      if (!res || !res.priceRange) return res;
+      let { minValue, maxValue } = res.priceRange;
+      [releasePrice, targetPrice].forEach((p) => {
+        if (Number.isFinite(p) && p > 0) {
+          minValue = Math.min(minValue, p);
+          maxValue = Math.max(maxValue, p);
+        }
+      });
+      return { ...res, priceRange: { minValue, maxValue } };
+    },
   });
 
   // Konversi ke format lightweight-charts.
