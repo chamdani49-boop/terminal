@@ -1380,6 +1380,7 @@ select.form-control option{background:var(--card);color:var(--text)}
   position:relative;z-index:1;
 }
 .firm-hero-dist .firm-dist-donut-wrap{width:96px;height:96px}
+.firm-hero-dist .firm-dist-legend{flex-direction:column;gap:3px;align-items:center;font-size:10px;margin-top:0}
 @media(max-width:680px){
   .firm-hero{flex-direction:column-reverse;align-items:flex-start;gap:16px}
   .firm-hero-dist{align-self:center}
@@ -5329,12 +5330,9 @@ function renderFirmDistDonut(buyCount, neuCount, sellCount) {
       maintainAspectRatio: true,
       plugins: {
         legend: { display: false },
-        tooltip: {
-          backgroundColor: ct.tooltipBg, titleColor: ct.tooltipTitle,
-          bodyColor: ct.tooltipText, borderColor: ct.tooltipBorder, borderWidth: 1,
-          padding: 10, cornerRadius: 10,
-          callbacks: { label: i => ` ${i.label}: ${i.raw} (${total ? (i.raw / total * 100).toFixed(1) : 0}%)` },
-        },
+        // Tooltip dimatikan: canvas donut kecil (96px) → tooltip ke-clip.
+        // Info distribusi + persentase sudah tampil lengkap di legend bawah.
+        tooltip: { enabled: false },
       },
     },
   });
@@ -5705,10 +5703,11 @@ function showFirmDetail(firm) {
   // ── Donat distribusi (center + legend) di hero ─────────────────────────
   const domValEl = document.getElementById('firmDistDomVal');
   if (domValEl) { domValEl.textContent = domStance; domValEl.className = 'dc-val ' + domCls; }
+  const _distPct = (n) => totalRec ? Math.round(n / totalRec * 100) : 0;
   document.getElementById('firmDistLegend').innerHTML = `
-    <span class="dt b">${buyCount} BUY</span>
-    <span class="dt n">${neuCount} NEUTRAL</span>
-    <span class="dt s">${sellCount} SELL</span>
+    <span class="dt b">${buyCount} BUY · ${_distPct(buyCount)}%</span>
+    <span class="dt n">${neuCount} NEUTRAL · ${_distPct(neuCount)}%</span>
+    <span class="dt s">${sellCount} SELL · ${_distPct(sellCount)}%</span>
   `;
 
   // ── Caption Track Record (sumber tunggal teks "rec aktif") ─────────────
