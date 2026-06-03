@@ -1,21 +1,24 @@
 #:schema node_modules/wrangler/config-schema.json
 # ════════════════════════════════════════════════════════════════════════
-# ROOT wrangler.toml — konfigurasi Cloudflare Pages
+# ROOT wrangler.toml — deploy site statis sebagai Cloudflare Worker (Static Assets)
 #
-# File ini ada di ROOT repo supaya Cloudflare Pages tahu bahwa ini adalah
-# proyek PAGES (bukan Workers), dan men-serve folder `public/` sebagai
-# output build statis.
+# CF project "terminal" terhubung ke repo via Git dan menjalankan
+# `npx wrangler deploy` setiap push ke main. Tanpa config ini, command tsb
+# gagal dengan error:
+#   "Missing entry-point to Worker script or to assets directory"
 #
-# Tanpa file ini, CF auto-detect wrangler.toml di subfolder worker/ dan
-# mencoba deploy Worker `terminal-live` → gagal karena secrets tidak ada
-# di CF build environment → deployment Pages ikut dibatalkan.
+# Config di bawah memberi tahu wrangler untuk men-deploy folder `public/`
+# sebagai static assets (tanpa perlu script Worker / `main`). File statis
+# (index.html, data.json, ohlc.json, _headers) langsung di-serve dari edge.
 #
-# Subfolder worker/ (Worker `terminal-live`) adalah proyek TERPISAH yang
-# di-deploy secara manual via `wrangler deploy` dari folder tersebut.
+# Worker `terminal-live` (folder worker/) adalah proyek TERPISAH — di-deploy
+# manual via `wrangler deploy` dari dalam folder tersebut.
 # ════════════════════════════════════════════════════════════════════════
 
 name = "terminal"
-pages_build_output_dir = "public"
-
-# Kompatibilitas CF Workers runtime (diperlukan oleh Pages)
 compatibility_date = "2025-05-01"
+
+# Static Assets — serve folder public/ sebagai situs statis.
+# `_headers` & `_redirects` di public/ tetap didukung (sama seperti Pages).
+[assets]
+directory = "./public"
