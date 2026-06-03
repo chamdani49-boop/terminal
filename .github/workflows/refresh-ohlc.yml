@@ -67,6 +67,8 @@ jobs:
       # ── Build ohlc.json ────────────────────────────────────────────────
       - name: Build ohlc.json
         if: steps.dow.outputs.skip != 'true'
+        env:
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
         run: |
           if [ "${{ github.event.inputs.full }}" = "true" ]; then
             node scripts/build-ohlc.js --full

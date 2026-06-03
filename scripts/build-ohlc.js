@@ -1,22 +1,28 @@
 /**
  * scripts/build-ohlc.js — build-time OHLC pipeline.
  *
- * Fetch data candle HARIAN (open/high/low/close) dari Yahoo Finance untuk
- * SEMUA ticker yang punya rekomendasi analis (consensus_slim di data.json),
- * lalu tulis ke public/ohlc.json. Frontend serve sebagai static asset via
- * CDN jsDelivr dan render candlestick di popup detail rekomendasi.
+ * Fetch data candle HARIAN (open/high/low/close) untuk SEMUA ticker yang punya
+ * rekomendasi analis (consensus_slim di data.json), lalu tulis ke
+ * public/ohlc.json. Frontend serve sebagai static asset via CDN jsDelivr dan
+ * render candlestick di popup detail rekomendasi.
+ *
+ * SUMBER DATA (otomatis):
+ *   - Twelve Data (UTAMA) — kalau env TWELVEDATA_API_KEY di-set. Cakupan resmi
+ *     bursa IDX (exchange XIDX), free tier 800 call/hari & 8 call/menit.
+ *   - Yahoo Finance (FALLBACK) — kalau API key tidak ada. Sering kena 401/429
+ *     dari IP datacenter, jadi hanya cadangan untuk dev lokal.
  *
  * KENAPA build-time (bukan Cloudflare Worker)?
- *   Yahoo Finance agresif memblokir IP datacenter (Cloudflare Workers sering
- *   kena 401/429). GitHub Actions runner pakai IP ephemeral yang jauh lebih
- *   jarang diblokir, dan jadwal cron-nya pas dengan kebutuhan "tarik data tiap
- *   jam 6 sore WIB".
+ *   IP datacenter (Cloudflare Workers) sering diblokir provider data. GitHub
+ *   Actions runner + API key resmi jauh lebih andal, dan jadwal cron-nya pas
+ *   dengan kebutuhan "tarik data tiap jam 6 sore WIB". API key disimpan di
+ *   GitHub Secrets → tidak pernah bocor ke browser (cuma ohlc.json statis).
  *
  * STRATEGI CACHE (sesuai permintaan):
  *   - Per ticker, fetch dari tanggal rekomendasi PALING LAMA (rec_ohlc_meta
  *     atau dihitung dari consensus_slim), di-clamp maksimal 18 bulan ke belakang.
  *   - Incremental: kalau public/ohlc.json sudah ada untuk ticker itu, hanya
- *     re-fetch ~10 hari terakhir lalu di-merge → hemat request ke Yahoo.
+ *     re-fetch ~12 hari terakhir lalu di-merge → hemat kuota API.
  *   - Robust: kalau fetch satu ticker gagal, data lama TETAP dipertahankan
  *     (tidak hilang). Retry 3x dengan backoff saat kena 429.
  *   - Data hari ini (berjalan) TIDAK disimpan di sini — frontend overlay
@@ -25,7 +31,7 @@
  * FORMAT OUTPUT (public/ohlc.json) — compact untuk hemat ukuran:
  *   {
  *     "generated_at": "2026-06-03T11:00:00.000Z",
- *     "source": "yahoo",
+ *     "source": "twelvedata",
  *     "tickers": {
  *       "TLKM": {
  *         "from": "2025-11-27",
@@ -39,6 +45,10 @@
  *   node scripts/build-ohlc.js                 # incremental (default)
  *   node scripts/build-ohlc.js --full          # abaikan cache, fetch ulang penuh
  *   node scripts/build-ohlc.js --only=TLKM,BBCA # batasi ke ticker tertentu (debug)
+ *
+ * Env:
+ *   TWELVEDATA_API_KEY  (opsional) API key Twelve Data. Kalau ada → jadi sumber utama.
+ *   TWELVEDATA_EXCHANGE (opsional) override kode bursa. Default "XIDX".
  */
 
 const fs = require('fs');
@@ -52,9 +62,18 @@ const OUT_PATH  = path.join(__dirname, '..', 'public', 'ohlc.json');
 
 const MAX_BACK_MONTHS    = 18;     // batas paling jauh fetch ke belakang
 const INCREMENTAL_DAYS   = 12;     // berapa hari terakhir di-refetch saat incremental
-const FETCH_DELAY_MS     = 350;    // jeda antar request (sopan ke Yahoo)
 const MAX_RETRIES        = 3;      // retry saat 429 / network error
 const RETRY_BACKOFF_MS   = 1500;   // backoff awal (naik linear tiap retry)
+
+// ── Sumber data ──
+const TWELVEDATA_API_KEY  = (process.env.TWELVEDATA_API_KEY || '').trim();
+const TWELVEDATA_EXCHANGE = (process.env.TWELVEDATA_EXCHANGE || 'XIDX').trim();
+const SOURCE = TWELVEDATA_API_KEY ? 'twelvedata' : 'yahoo';
+
+// Jeda antar request — beda per sumber:
+//   - Twelve Data free: 8 call/menit → 8 dtk/call (7.5/menit, aman di bawah limit)
+//   - Yahoo: cukup 350 ms (tapi sering diblokir)
+const FETCH_DELAY_MS = SOURCE === 'twelvedata' ? 8000 : 350;
 
 // ─────────────────────────────────────────────
 // Util
@@ -139,9 +158,83 @@ async function fetchYahooOhlc(symbol, fromIsoDate) {
 }
 
 /**
- * Merge candle lama + baru berdasarkan unix-day (kolom 0).
- * Candle baru menimpa yang lama untuk hari yang sama (koreksi/adjustment).
+ * Fetch OHLC harian dari Twelve Data time_series API.
+ * Free tier: 800 call/hari, 8 call/menit. Cakupan bursa IDX = XIDX.
+ *
+ * Catatan kuota: 1 ticker = 1 credit. 111 ticker << 800/hari → aman.
+ * Rate-limit per-menit ditangani via FETCH_DELAY_MS (8 dtk) di main loop,
+ * plus retry kalau tetap kena 429.
+ *
+ * @param {string} ticker      - kode IDX murni, mis. "TLKM" (tanpa suffix)
+ * @param {string} fromIsoDate - "YYYY-MM-DD"
+ * @returns {Array<[number,number,number,number,number]>} [[unixDaySec,o,h,l,c],...] asc
  */
+async function fetchTwelveData(ticker, fromIsoDate) {
+  const params = new URLSearchParams({
+    symbol:     ticker,
+    exchange:   TWELVEDATA_EXCHANGE,
+    interval:   '1day',
+    start_date: fromIsoDate,
+    order:      'ASC',
+    outputsize: '5000',
+    format:     'JSON',
+    apikey:     TWELVEDATA_API_KEY,
+  });
+  const url = `https://api.twelvedata.com/time_series?${params.toString()}`;
+
+  let lastErr = null;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      // Twelve Data biasanya balas HTTP 200 walau error logis (cek body).
+      if (res.status === 429) throw new Error('HTTP 429 (rate-limit)');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const json = await res.json();
+
+      // Error logis: { status:'error', code, message }
+      if (json && json.status === 'error') {
+        const code = json.code;
+        const msg  = json.message || 'unknown error';
+        // 429 di body → tunggu lebih lama lalu retry
+        if (code === 429) throw new Error(`429 body: ${msg}`);
+        // 400/404 = simbol/bursa salah / tidak ada data → jangan retry
+        throw new Error(`TD ${code}: ${msg}`);
+      }
+
+      const values = (json && Array.isArray(json.values)) ? json.values : [];
+      const candles = [];
+      for (const v of values) {
+        const o = parseFloat(v.open), h = parseFloat(v.high),
+              l = parseFloat(v.low),  c = parseFloat(v.close);
+        if (![o, h, l, c].every(Number.isFinite)) continue;
+        const dayUnix = dayToUnix(String(v.datetime).slice(0, 10));
+        candles.push([dayUnix, Math.round(o), Math.round(h), Math.round(l), Math.round(c)]);
+      }
+      candles.sort((a, b) => a[0] - b[0]);
+      return candles;
+
+    } catch (e) {
+      lastErr = e;
+      // Backoff lebih panjang untuk 429 (limit per-menit reset tiap 60 dtk)
+      const is429 = /429/.test(e.message);
+      if (attempt < MAX_RETRIES) {
+        await sleep(is429 ? 60000 : RETRY_BACKOFF_MS * attempt);
+      }
+    }
+  }
+  throw lastErr || new Error('fetch gagal (unknown)');
+}
+
+/**
+ * Dispatcher: pilih sumber sesuai SOURCE.
+ * @param {string} ticker - kode IDX murni ("TLKM")
+ * @param {string} fromIsoDate
+ */
+async function fetchCandles(ticker, fromIsoDate) {
+  if (SOURCE === 'twelvedata') return fetchTwelveData(ticker, fromIsoDate);
+  return fetchYahooOhlc(toYahooSymbol(ticker), fromIsoDate);
+}
 function mergeCandles(oldCandles, newCandles) {
   const map = new Map();
   for (const c of (oldCandles || [])) map.set(c[0], c);
@@ -204,10 +297,13 @@ async function main() {
     console.error('FATAL: tidak ada ticker consensus di data.json.');
     process.exit(1);
   }
-  console.log(`OHLC build: ${tickers.length} ticker · mode=${fullMode ? 'full' : 'incremental'}`);
+  console.log(`OHLC build: ${tickers.length} ticker · mode=${fullMode ? 'full' : 'incremental'} · source=${SOURCE}${SOURCE === 'twelvedata' ? ' (XIDX)' : ''}`);
+  if (SOURCE === 'yahoo') {
+    console.warn('  ⚠️  TWELVEDATA_API_KEY tidak di-set — pakai Yahoo (sering diblokir). Set secret untuk hasil andal.');
+  }
 
   // Load cache lama (kalau ada)
-  let cache = { generated_at: null, source: 'yahoo', tickers: {} };
+  let cache = { generated_at: null, source: SOURCE, tickers: {} };
   if (!fullMode && fs.existsSync(OUT_PATH)) {
     try {
       const prev = JSON.parse(fs.readFileSync(OUT_PATH, 'utf8'));
@@ -219,7 +315,6 @@ async function main() {
   let okCount = 0, failCount = 0, skipCount = 0, totalCandles = 0;
 
   for (const t of tickers) {
-    const symbol      = toYahooSymbol(t);
     const desiredFrom = targets[t];
     const existing    = (!fullMode && cache.tickers[t]) ? cache.tickers[t] : null;
 
@@ -237,7 +332,7 @@ async function main() {
     }
 
     try {
-      const fresh = await fetchYahooOhlc(symbol, fetchFrom);
+      const fresh = await fetchCandles(t, fetchFrom);
 
       if (fresh.length === 0) {
         // Tidak ada candle baru → pertahankan cache lama kalau ada
@@ -258,7 +353,7 @@ async function main() {
       // Fetch gagal → pertahankan cache lama supaya data tidak hilang
       if (existing) { outTickers[t] = existing; skipCount++; }
       else failCount++;
-      console.warn(`  ⚠️  ${t} (${symbol}): ${e.message}${existing ? ' → pakai cache lama' : ''}`);
+      console.warn(`  ⚠️  ${t}: ${e.message}${existing ? ' → pakai cache lama' : ''}`);
     }
 
     await sleep(FETCH_DELAY_MS);
@@ -266,7 +361,7 @@ async function main() {
 
   const payload = {
     generated_at: new Date().toISOString(),
-    source: 'yahoo',
+    source: SOURCE,
     max_back_months: MAX_BACK_MONTHS,
     ticker_count: Object.keys(outTickers).length,
     tickers: outTickers,
@@ -278,7 +373,7 @@ async function main() {
   console.log(`✓ Wrote ${OUT_PATH} (${sizeKB} KB)`);
   console.log(`  OK: ${okCount} · cache-kept: ${skipCount} · gagal: ${failCount} · total candle: ${totalCandles}`);
   if (failCount > 0 && okCount === 0) {
-    console.error('FATAL: semua fetch gagal (kemungkinan Yahoo memblokir IP runner). Cek log di atas.');
+    console.error(`FATAL: semua fetch gagal (source=${SOURCE}). Cek API key / cakupan bursa / log di atas.`);
     process.exit(1);
   }
 }
@@ -289,5 +384,5 @@ if (require.main === module) {
     process.exit(1);
   });
 } else {
-  module.exports = { toYahooSymbol, fetchYahooOhlc, mergeCandles, buildTickerTargets };
+  module.exports = { toYahooSymbol, fetchYahooOhlc, fetchTwelveData, fetchCandles, mergeCandles, buildTickerTargets };
 }
