@@ -5642,30 +5642,35 @@ function showFirmDetail(firm) {
       <div style="margin:8px 0 4px">${frRetBars}</div>
       <div class="firm-stat-sub">${frAchTxt}</div>
       <div class="firm-stat-sub" style="margin-top:2px;color:var(--text3);font-size:10px">${frSample}</div>
+      ${fr && fr.eligibleCnt > 0 ? `
+      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--border)">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:6px">Hit Target · Portofolio</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:10px;color:var(--text3);font-weight:600">Hit Rate
+            <span style="display:block;font-size:9px;font-weight:500;margin-top:1px">rec aktif yg pernah tembus target</span>
+          </span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:var(--green)">🎯 ${frHitRate}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:10px;color:var(--text3);font-weight:600">Avg Return saat Hit
+            <span style="display:block;font-size:9px;font-weight:500;margin-top:1px">return terkunci saat target tersentuh</span>
+          </span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:var(--green)">${frHitRetTxt}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10px;color:var(--text3);font-weight:600">Avg Return Live
+            <span style="display:block;font-size:9px;font-weight:500;margin-top:1px">posisi return semua rec saat ini</span>
+          </span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800" class="${frCurRetCls}">${frCurRetTxt}</span>
+        </div>
+        <div style="font-size:9px;color:var(--text3);font-weight:500;margin-top:5px;text-align:right">${frHitCount}</div>
+      </div>` : ''}
     </div>
     <div class="firm-stat firm-stat-rating" title="${frSample}">
       <div class="firm-stat-label">Risk Rating</div>
       <div style="margin:8px 0 4px">${frRiskBars}</div>
       <div class="firm-stat-sub">${frDdTxt}</div>
       <div class="firm-stat-sub" style="margin-top:2px;color:var(--text3);font-size:10px">${frSample}</div>
-    </div>
-    <div class="firm-stat" title="Berapa % rekomendasi aktif yang harganya pernah menyentuh target">
-      <div class="firm-stat-label">🎯 Hit Rate</div>
-      <div class="firm-stat-value up">${frHitRate}</div>
-      <div class="firm-stat-sub">${frHitCount}</div>
-    </div>
-    <div class="firm-stat" title="Avg return saat target tercapai (frozen) vs return live saat ini">
-      <div class="firm-stat-label">Avg Return</div>
-      <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">
-        <div>
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Saat Hit Target</div>
-          <div class="firm-stat-value up" style="font-size:18px">${frHitRetTxt}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Return Live</div>
-          <div class="firm-stat-value ${frCurRetCls}" style="font-size:18px">${frCurRetTxt}</div>
-        </div>
-      </div>
     </div>
   `;
 
@@ -6242,18 +6247,16 @@ function _firmRowHTML(f) {
   const upCls = f.avgUp==null?'neu':f.avgUp>0?'up':f.avgUp<0?'dn':'neu';
   const upTxt = f.avgUp==null?'—':`${f.avgUp>=0?'+':''}${f.avgUp.toFixed(1)}%`;
 
-  // Hit-rate & avg return pills
-  const hasHit = f.hitRate != null && f.eligibleCnt > 0;
-  const hitRatePct = hasHit ? (f.hitRate * 100).toFixed(0) : null;
-  const hitPill = hasHit
-    ? `<span style="margin-left:6px;background:var(--green-bg);color:var(--green);font-size:10px;font-weight:800;padding:1px 6px;border-radius:4px;border:1px solid rgba(5,150,105,.25)">🎯 ${hitRatePct}% hit (${f.hitCnt}/${f.eligibleCnt})</span>`
-    : '';
-  const avgHitTxt = f.avgHitReturn != null
-    ? `<span style="margin-left:4px;color:var(--green);font-weight:700">avg +${(f.avgHitReturn*100).toFixed(1)}%</span>`
-    : '';
-  const avgCurTxt = f.avgCurReturn != null
-    ? `<span style="margin-left:4px;color:${f.avgCurReturn>=0?'var(--green)':'var(--red)'};font-weight:700">live ${f.avgCurReturn>=0?'+':''}${(f.avgCurReturn*100).toFixed(1)}%</span>`
-    : '';
+  // Hit-rate summary — format ringkas di meta line
+  let hitMeta = '';
+  if (f.hitRate != null && f.eligibleCnt > 0) {
+    const hitPct  = (f.hitRate * 100).toFixed(0) + '%';
+    const hitRet  = f.avgHitReturn != null ? ` · avg +${(f.avgHitReturn*100).toFixed(1)}% saat hit` : '';
+    const liveRet = f.avgCurReturn != null
+      ? ` · live ${f.avgCurReturn>=0?'+':''}${(f.avgCurReturn*100).toFixed(1)}%`
+      : '';
+    hitMeta = ` · <span style="color:var(--green);font-weight:700">🎯 ${hitPct} hit</span>${hitRet}<span style="color:${f.avgCurReturn!=null&&f.avgCurReturn>=0?'var(--green)':'var(--red)'}">${liveRet}</span>`;
+  }
 
   let periodCells = '';
   for (let k = 1; k <= 6; k++) {
@@ -6266,7 +6269,7 @@ function _firmRowHTML(f) {
   return `<div class="ovl-firm-row" data-firm="${fe}" onclick="showFirmDetail(this.dataset.firm)" title="Klik untuk lihat detail ${fe}">
     <div class="ovl-fc-name">
       <div class="ovl-firm-name">${fe}</div>
-      <div class="ovl-firm-meta">${f.total} rec · ${f.stocks} saham · <span class="${upCls}">${upTxt}</span> upside${hitPill}${avgHitTxt}${avgCurTxt}</div>
+      <div class="ovl-firm-meta">${f.total} rec · ${f.stocks} saham · <span class="${upCls}">${upTxt}</span> upside${hitMeta}</div>
     </div>
     <div class="ovl-fc">${renderRatingBars(f.returns, 'green', 'sm')}</div>
     <div class="ovl-fc">${renderRatingBars(f.risk, 'red', 'sm')}</div>
