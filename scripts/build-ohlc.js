@@ -75,12 +75,18 @@ const TWELVEDATA_API_KEY  = (process.env.TWELVEDATA_API_KEY || '').trim();
 const TWELVEDATA_MIC      = (process.env.TWELVEDATA_MIC || 'XIDX').trim();
 const TWELVEDATA_EXCHANGE = (process.env.TWELVEDATA_EXCHANGE || '').trim();
 const TWELVEDATA_COUNTRY  = (process.env.TWELVEDATA_COUNTRY || '').trim();
-const SOURCE = TWELVEDATA_API_KEY ? 'twelvedata' : 'yahoo';
+
+// Pilih sumber data:
+//   - OHLC_SOURCE env eksplisit ('yahoo' | 'twelvedata') menang.
+//   - Default 'yahoo'. CATATAN: Twelve Data FREE tier meng-gate saham IDX ke
+//     plan Pro/Venture (berbayar) → JANGAN auto-pilih twelvedata walau key ada.
+//     Set OHLC_SOURCE=twelvedata HANYA kalau akun Twelve Data sudah upgrade.
+const SOURCE = (process.env.OHLC_SOURCE || 'yahoo').trim().toLowerCase();
 
 // Jeda antar request — beda per sumber:
-//   - Twelve Data free: 8 call/menit → 8 dtk/call (7.5/menit, aman di bawah limit)
-//   - Yahoo: cukup 350 ms (tapi sering diblokir)
-const FETCH_DELAY_MS = SOURCE === 'twelvedata' ? 8000 : 350;
+//   - Twelve Data: 8 call/menit → 8 dtk/call (7.5/menit, aman di bawah limit)
+//   - Yahoo: 400 ms (volume rendah, sekali sehari)
+const FETCH_DELAY_MS = SOURCE === 'twelvedata' ? 8000 : 400;
 
 // ─────────────────────────────────────────────
 // Util
@@ -111,12 +117,14 @@ function dayToUnix(isoDateStr) {
 async function fetchYahooOhlc(symbol, fromIsoDate) {
   const period1 = dayToUnix(fromIsoDate);
   const period2 = Math.floor(Date.now() / 1000);
-  const url =
-    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
-    `?interval=1d&period1=${period1}&period2=${period2}&events=div,split`;
+  const qs = `?interval=1d&period1=${period1}&period2=${period2}&events=div,split`;
+  // Coba 2 host Yahoo (query1 & query2) — kalau satu diblokir, coba yang lain.
+  const hosts = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
 
   let lastErr = null;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const host = hosts[(attempt - 1) % hosts.length];
+    const url = `https://${host}/v8/finance/chart/${encodeURIComponent(symbol)}${qs}`;
     try {
       const res = await fetch(url, {
         headers: {
@@ -310,8 +318,12 @@ async function main() {
     process.exit(1);
   }
   console.log(`OHLC build: ${tickers.length} ticker · mode=${fullMode ? 'full' : 'incremental'} · source=${SOURCE}${SOURCE === 'twelvedata' ? ' (XIDX)' : ''}`);
-  if (SOURCE === 'yahoo') {
-    console.warn('  ⚠️  TWELVEDATA_API_KEY tidak di-set — pakai Yahoo (sering diblokir). Set secret untuk hasil andal.');
+  if (SOURCE === 'twelvedata' && !TWELVEDATA_API_KEY) {
+    console.error('FATAL: OHLC_SOURCE=twelvedata tapi TWELVEDATA_API_KEY kosong.');
+    process.exit(1);
+  }
+  if (SOURCE === 'twelvedata') {
+    console.warn('  ℹ️  Twelve Data free tier meng-gate saham IDX (butuh Pro/Venture). Pastikan akun sudah upgrade.');
   }
 
   // Load cache lama (kalau ada)
