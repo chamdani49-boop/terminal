@@ -1343,60 +1343,89 @@ select.form-control option{background:var(--card);color:var(--text)}
   background:var(--grad-soft);
   border:1px solid var(--border);
   border-radius:var(--radius-lg);
-  padding:24px 28px;margin-bottom:16px;
+  padding:22px 26px;margin-bottom:14px;
   box-shadow:var(--shadow-card);
   position:relative;overflow:hidden;
-  display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
 }
 .firm-hero::before{
-  content:'';position:absolute;top:-40px;right:-40px;
-  width:160px;height:160px;border-radius:50%;
-  background:var(--grad);opacity:.08;
+  content:'';position:absolute;top:-50px;right:-30px;
+  width:180px;height:180px;border-radius:50%;
+  background:var(--grad);opacity:.07;
   pointer-events:none;
 }
-.firm-hero-left{flex:1;min-width:0}
-/* Pojok kanan hero: statistik hit target */
-.firm-hero-hit{
-  flex-shrink:0;
-  background:rgba(5,150,105,.08);
-  border:1px solid rgba(5,150,105,.25);
-  border-radius:var(--radius);
-  padding:12px 16px;min-width:190px;
+.firm-hero-main{flex:1;min-width:0;position:relative;z-index:1}
+/* KPI chips di bawah nama firm — mengisi ruang hero */
+.firm-hero-kpis{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;
+}
+.firm-kpi-chip{
+  display:flex;flex-direction:column;gap:2px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:8px 15px;
+  box-shadow:var(--shadow-card);
+}
+.firm-kpi-chip .k-lbl{
+  font-size:9px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--text2);
+}
+.firm-kpi-chip .k-val{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:17px;font-weight:800;line-height:1.05;
+  font-variant-numeric:tabular-nums;color:var(--text);
+}
+/* Donat distribusi di kanan hero */
+.firm-hero-dist{
+  flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:8px;
   position:relative;z-index:1;
 }
-[data-theme="dark"] .firm-hero-hit{
-  background:rgba(74,222,128,.08);
-  border-color:rgba(74,222,128,.22);
+.firm-hero-dist .firm-dist-donut-wrap{width:96px;height:96px}
+@media(max-width:680px){
+  .firm-hero{flex-direction:column-reverse;align-items:flex-start;gap:16px}
+  .firm-hero-dist{align-self:center}
 }
-.firm-hero-hit-title{
-  font-size:9px;font-weight:800;text-transform:uppercase;
-  letter-spacing:1px;color:var(--green);margin-bottom:10px;
+
+/* ── TRACK RECORD: header + 3 kartu sejajar ── */
+.firm-track-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:10px;margin:2px 2px 10px;flex-wrap:wrap;
 }
-.firm-hero-hit-row{
-  display:flex;justify-content:space-between;align-items:baseline;
-  gap:12px;margin-bottom:6px;
+.firm-track-title{
+  font-size:13px;font-weight:800;letter-spacing:1px;
+  text-transform:uppercase;color:var(--text);
 }
-.firm-hero-hit-label{
-  font-size:10px;font-weight:600;color:var(--text3);
-  line-height:1.4;
+.firm-track-sample{
+  font-size:11px;font-weight:600;color:var(--text3);
 }
-.firm-hero-hit-label small{
-  display:block;font-size:9px;font-weight:500;opacity:.75;
+.firm-stat-bars{margin:10px 0 8px}
+/* Kartu Hit Target (clear & menonjol) */
+.firm-hit-card{
+  justify-content:flex-start;
+  border-color:rgba(5,150,105,.3);
+  background:linear-gradient(160deg,rgba(5,150,105,.06),var(--card) 60%);
 }
-.firm-hero-hit-val{
+[data-theme="dark"] .firm-hit-card{
+  border-color:rgba(74,222,128,.25);
+  background:linear-gradient(160deg,rgba(74,222,128,.07),var(--card) 60%);
+}
+.firm-hit-card .firm-stat-label{color:var(--green)}
+.firm-hit-rate{
   font-family:'IBM Plex Mono',monospace;
-  font-size:14px;font-weight:800;
+  font-size:32px;font-weight:800;line-height:1;color:var(--green);
+  font-variant-numeric:tabular-nums;margin:2px 0 4px;
+}
+.firm-hit-rows{
+  margin-top:auto;padding-top:10px;
+  border-top:1px dashed rgba(5,150,105,.25);
+  display:flex;flex-direction:column;gap:7px;
+}
+.firm-hit-r{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-size:11px;font-weight:600;color:var(--text2);
+}
+.firm-hit-r b{
+  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;
   font-variant-numeric:tabular-nums;
-  white-space:nowrap;
-}
-.firm-hero-hit-footer{
-  font-size:9px;color:var(--text3);font-weight:500;
-  text-align:right;margin-top:8px;padding-top:6px;
-  border-top:1px dashed rgba(5,150,105,.2);
-}
-@media(max-width:640px){
-  .firm-hero{flex-direction:column;gap:14px}
-  .firm-hero-hit{min-width:0;width:100%}
 }
 .firm-hero-tag{
   font-size:10px;font-weight:800;letter-spacing:1.2px;
@@ -1417,13 +1446,13 @@ select.form-control option{background:var(--card);color:var(--text)}
 
 .firm-stats{
   display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;margin-bottom:14px;align-items:stretch;
+  gap:12px;margin-bottom:16px;align-items:stretch;
 }
-@media(max-width:900px){.firm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:520px){.firm-stats{grid-template-columns:1fr}}
+@media(max-width:760px){.firm-stats{grid-template-columns:1fr}}
 
-/* 6 stat cards → grid 3 kolom (2 baris penuh, tanpa sel kosong). Card padat,
-   konten rata-atas supaya tidak ada ruang kosong di bawah. */
+/* 3 stat cards sejajar (Returns · Risk · Hit Target). Rating cards
+   center vertikal supaya seimbang dgn Hit Target card yang lebih tinggi. */
+.firm-stat-rating{justify-content:center}
 
 .firm-stat{
   background:var(--card);border:1px solid var(--border);
@@ -1617,7 +1646,7 @@ select.form-control option{background:var(--card);color:var(--text)}
   .firm-hero{padding:18px 16px}
   .firm-name{font-size:24px}
   .firm-hero-tag{font-size:9px}
-  .firm-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .firm-stats{grid-template-columns:1fr;gap:8px}
   .firm-stat{padding:12px 14px}
   .firm-stat-label{font-size:9px}
   .firm-stat-value{font-size:18px}
@@ -2609,12 +2638,26 @@ select.form-control option{background:var(--card);color:var(--text)}
         <span aria-hidden="true">←</span> Kembali ke daftar Firm
       </div>
       <div class="firm-hero" id="firmHero">
-        <div class="firm-hero-left">
+        <div class="firm-hero-main">
           <div class="firm-hero-tag">FIRM ANALYST</div>
           <div class="firm-name" id="firmName">—</div>
           <div class="firm-meta" id="firmMeta">—</div>
+          <div class="firm-hero-kpis" id="firmHeroKpis"></div>
         </div>
-        <div class="firm-hero-hit" id="firmHeroHit" style="display:none"></div>
+        <div class="firm-hero-dist" id="firmHeroDist">
+          <div class="firm-dist-donut-wrap">
+            <canvas id="firmDistDonut" width="120" height="120"></canvas>
+            <div class="firm-dist-donut-center">
+              <span class="dc-val" id="firmDistDomVal">—</span>
+              <span class="dc-lbl">dominan</span>
+            </div>
+          </div>
+          <div class="firm-dist-legend" id="firmDistLegend"></div>
+        </div>
+      </div>
+      <div class="firm-track-head">
+        <span class="firm-track-title">Track Record</span>
+        <span class="firm-track-sample" id="firmTrackSample">—</span>
       </div>
       <div class="firm-stats" id="firmStats"></div>
       <!-- Firm Performance Chart -->
@@ -5624,110 +5667,74 @@ function showFirmDetail(firm) {
   else if (sellCount > neuCount && sellCount >= buyCount) { domStance = 'SELL'; domCount = sellCount; }
   const domCls = domStance === 'BUY' ? 'up' : domStance === 'SELL' ? 'dn' : 'neu';
 
-  // Hero
+  // Hero text
   document.getElementById('firmName').textContent = firm;
   document.getElementById('firmMeta').textContent =
     `${totalRec} rekomendasi · ${stockCount} saham di-cover`;
 
-  // Stats cards
-  const firmRating = getFirmRating(firm);
-  const fr = firmRating;
+  // Rating + hit-target stats
+  const fr = getFirmRating(firm);
   const frRetBars  = renderRatingBars(fr ? fr.returns : null, 'green', 'lg');
   const frRiskBars = renderRatingBars(fr ? fr.risk    : null, 'red',   'lg');
-  const frSample   = fr && fr.sampleSize > 0 ? `${fr.sampleSize} rec aktif (1–24 bln)` : 'Belum ada rec aktif';
+  const sampleN    = fr ? fr.sampleSize : 0;
   const frAchTxt   = fr && fr.avgAchievement != null
-    ? (fr.avgAchievement >= 0 ? '+' : '') + (fr.avgAchievement * 100).toFixed(1) + '% rata-rata pencapaian'
-    : '—';
+    ? (fr.avgAchievement >= 0 ? '+' : '') + (fr.avgAchievement * 100).toFixed(1) + '% rata-rata pencapaian target'
+    : 'Data tidak cukup';
   const frDdTxt    = fr && fr.avgDrawdown != null
     ? (fr.avgDrawdown * 100).toFixed(2) + '% avg drawdown'
-    : '—';
+    : 'Data tidak cukup';
 
   // Hit-target stats
   const frHitRate   = fr && fr.hitRate != null ? (fr.hitRate * 100).toFixed(0) + '%' : '—';
-  const frHitCount  = fr ? `${fr.hitCnt}/${fr.eligibleCnt} rec` : '—';
-  const frHitRetTxt = fr && fr.avgHitReturn != null
-    ? '+' + (fr.avgHitReturn * 100).toFixed(2) + '%'
-    : '—';
+  const frHitCount  = fr ? `${fr.hitCnt}/${fr.eligibleCnt} rec tembus target` : '—';
+  const frHitRetTxt = fr && fr.avgHitReturn != null ? '+' + (fr.avgHitReturn * 100).toFixed(2) + '%' : '—';
   const frCurRetTxt = fr && fr.avgCurReturn != null
     ? (fr.avgCurReturn >= 0 ? '+' : '') + (fr.avgCurReturn * 100).toFixed(2) + '%'
     : '—';
   const frCurRetCls = fr && fr.avgCurReturn != null
     ? (fr.avgCurReturn > 0 ? 'up' : fr.avgCurReturn < 0 ? 'dn' : 'neu') : 'neu';
 
-  // ── Isi pojok kanan firm-hero ──────────────────────────────────────────
-  const hitBox = document.getElementById('firmHeroHit');
-  if (hitBox) {
-    if (fr && fr.eligibleCnt > 0) {
-      hitBox.style.display = '';
-      hitBox.innerHTML = `
-        <div class="firm-hero-hit-title">🎯 Hit Target · Portofolio</div>
-        <div class="firm-hero-hit-row">
-          <div class="firm-hero-hit-label">Hit Rate
-            <small>rec aktif yg pernah tembus target</small>
-          </div>
-          <div class="firm-hero-hit-val up">${frHitRate}</div>
-        </div>
-        <div class="firm-hero-hit-row">
-          <div class="firm-hero-hit-label">Avg Return saat Hit
-            <small>return terkunci saat target tersentuh</small>
-          </div>
-          <div class="firm-hero-hit-val up">${frHitRetTxt}</div>
-        </div>
-        <div class="firm-hero-hit-row">
-          <div class="firm-hero-hit-label">Avg Return Live
-            <small>posisi return semua rec saat ini</small>
-          </div>
-          <div class="firm-hero-hit-val ${frCurRetCls}">${frCurRetTxt}</div>
-        </div>
-        <div class="firm-hero-hit-footer">${frHitCount}</div>
-      `;
-    } else {
-      hitBox.style.display = 'none';
-    }
-  }
+  // ── Hero KPI chips (mengisi ruang kosong hero) ─────────────────────────
+  document.getElementById('firmHeroKpis').innerHTML = `
+    <div class="firm-kpi-chip"><span class="k-lbl">Total Rec</span><span class="k-val">${totalRec}</span></div>
+    <div class="firm-kpi-chip"><span class="k-lbl">Saham</span><span class="k-val">${stockCount}</span></div>
+    <div class="firm-kpi-chip"><span class="k-lbl">Avg Upside</span><span class="k-val ${avgUpsideCls}">${avgUpside >= 0 ? '+' : ''}${avgUpside.toFixed(1)}%</span></div>
+    <div class="firm-kpi-chip"><span class="k-lbl">Stance Dominan</span><span class="k-val ${domCls}">${domStance}</span></div>
+  `;
 
+  // ── Donat distribusi (center + legend) di hero ─────────────────────────
+  const domValEl = document.getElementById('firmDistDomVal');
+  if (domValEl) { domValEl.textContent = domStance; domValEl.className = 'dc-val ' + domCls; }
+  document.getElementById('firmDistLegend').innerHTML = `
+    <span class="dt b">${buyCount} BUY</span>
+    <span class="dt n">${neuCount} NEUTRAL</span>
+    <span class="dt s">${sellCount} SELL</span>
+  `;
+
+  // ── Caption Track Record (sumber tunggal teks "rec aktif") ─────────────
+  document.getElementById('firmTrackSample').textContent =
+    sampleN > 0 ? `${sampleN} rec aktif · window 1–24 bln` : 'Belum ada rec aktif (1–24 bln)';
+
+  // ── 3 kartu sejajar: Returns · Risk · Hit Target ───────────────────────
   document.getElementById('firmStats').innerHTML = `
-    <div class="firm-stat">
-      <div class="firm-stat-label">Total Rekomendasi</div>
-      <div class="firm-stat-value">${totalRec}</div>
-      <div class="firm-stat-sub">dari ${stockCount} saham</div>
-    </div>
-    <div class="firm-stat">
-      <div class="firm-stat-label">Avg Target Upside</div>
-      <div class="firm-stat-value ${avgUpsideCls}">${avgUpside >= 0 ? '+' : ''}${avgUpside.toFixed(1)}%</div>
-      <div class="firm-stat-sub">vs harga saat ini</div>
-    </div>
-    <div class="firm-stat">
-      <div class="firm-stat-label">Stance Dominan</div>
-      <div class="firm-stat-value ${domCls}">${domStance}</div>
-      <div class="firm-stat-sub">${domCount} dari ${totalRec} rekomendasi</div>
-    </div>
-    <div class="firm-stat">
-      <div class="firm-stat-label">Distribusi Rating</div>
-      <div class="firm-dist-donut-wrap">
-        <canvas id="firmDistDonut" width="120" height="120"></canvas>
-        <div class="firm-dist-donut-center">
-          <span class="dc-val ${domCls}">${domStance}</span>
-          <span class="dc-lbl">dominan</span>
-        </div>
-      </div>
-      <div class="firm-dist-legend">
-        <span class="dt b">${buyCount} BUY</span>
-        <span class="dt n">${neuCount} NEUTRAL</span>
-        <span class="dt s">${sellCount} SELL</span>
-      </div>
-    </div>
-    <div class="firm-stat firm-stat-rating" title="${frSample}">
+    <div class="firm-stat firm-stat-rating">
       <div class="firm-stat-label">Returns Rating</div>
-      <div style="margin:8px 0 4px">${frRetBars}</div>
+      <div class="firm-stat-bars">${frRetBars}</div>
       <div class="firm-stat-sub">${frAchTxt}</div>
-      <div class="firm-stat-sub" style="margin-top:2px;color:var(--text3);font-size:10px">${frSample}</div>
     </div>
-    <div class="firm-stat firm-stat-rating" title="${frSample}">
+    <div class="firm-stat firm-stat-rating">
       <div class="firm-stat-label">Risk Rating</div>
-      <div style="margin:8px 0 4px">${frRiskBars}</div>
-      <div class="firm-stat-sub">${frDdTxt}</div>
-      <div class="firm-stat-sub" style="margin-top:2px;color:var(--text3);font-size:10px">${frSample}</div>
+      <div class="firm-stat-bars">${frRiskBars}</div>
+      <div class="firm-stat-sub">${frDdTxt} · diukur sebelum target tercapai</div>
+    </div>
+    <div class="firm-stat firm-hit-card" title="Performa nyata: berapa rec yg harganya pernah menyentuh target analis">
+      <div class="firm-stat-label">🎯 Hit Target</div>
+      <div class="firm-hit-rate">${frHitRate}</div>
+      <div class="firm-stat-sub">${frHitCount}</div>
+      <div class="firm-hit-rows">
+        <div class="firm-hit-r"><span>Avg return saat hit <small style="display:block;font-size:9px;color:var(--text3)">terkunci saat target tersentuh</small></span><b class="up">${frHitRetTxt}</b></div>
+        <div class="firm-hit-r"><span>Avg return live <small style="display:block;font-size:9px;color:var(--text3)">posisi semua rec saat ini</small></span><b class="${frCurRetCls}">${frCurRetTxt}</b></div>
+      </div>
     </div>
   `;
 
