@@ -1346,12 +1346,57 @@ select.form-control option{background:var(--card);color:var(--text)}
   padding:24px 28px;margin-bottom:16px;
   box-shadow:var(--shadow-card);
   position:relative;overflow:hidden;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
 }
 .firm-hero::before{
   content:'';position:absolute;top:-40px;right:-40px;
   width:160px;height:160px;border-radius:50%;
   background:var(--grad);opacity:.08;
   pointer-events:none;
+}
+.firm-hero-left{flex:1;min-width:0}
+/* Pojok kanan hero: statistik hit target */
+.firm-hero-hit{
+  flex-shrink:0;
+  background:rgba(5,150,105,.08);
+  border:1px solid rgba(5,150,105,.25);
+  border-radius:var(--radius);
+  padding:12px 16px;min-width:190px;
+  position:relative;z-index:1;
+}
+[data-theme="dark"] .firm-hero-hit{
+  background:rgba(74,222,128,.08);
+  border-color:rgba(74,222,128,.22);
+}
+.firm-hero-hit-title{
+  font-size:9px;font-weight:800;text-transform:uppercase;
+  letter-spacing:1px;color:var(--green);margin-bottom:10px;
+}
+.firm-hero-hit-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  gap:12px;margin-bottom:6px;
+}
+.firm-hero-hit-label{
+  font-size:10px;font-weight:600;color:var(--text3);
+  line-height:1.4;
+}
+.firm-hero-hit-label small{
+  display:block;font-size:9px;font-weight:500;opacity:.75;
+}
+.firm-hero-hit-val{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:14px;font-weight:800;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.firm-hero-hit-footer{
+  font-size:9px;color:var(--text3);font-weight:500;
+  text-align:right;margin-top:8px;padding-top:6px;
+  border-top:1px dashed rgba(5,150,105,.2);
+}
+@media(max-width:640px){
+  .firm-hero{flex-direction:column;gap:14px}
+  .firm-hero-hit{min-width:0;width:100%}
 }
 .firm-hero-tag{
   font-size:10px;font-weight:800;letter-spacing:1.2px;
@@ -2563,10 +2608,13 @@ select.form-control option{background:var(--card);color:var(--text)}
       <div class="firm-back" onclick="closeFirmDetail()">
         <span aria-hidden="true">←</span> Kembali ke daftar Firm
       </div>
-      <div class="firm-hero">
-        <div class="firm-hero-tag">FIRM ANALYST</div>
-        <div class="firm-name" id="firmName">—</div>
-        <div class="firm-meta" id="firmMeta">—</div>
+      <div class="firm-hero" id="firmHero">
+        <div class="firm-hero-left">
+          <div class="firm-hero-tag">FIRM ANALYST</div>
+          <div class="firm-name" id="firmName">—</div>
+          <div class="firm-meta" id="firmMeta">—</div>
+        </div>
+        <div class="firm-hero-hit" id="firmHeroHit" style="display:none"></div>
       </div>
       <div class="firm-stats" id="firmStats"></div>
       <!-- Firm Performance Chart -->
@@ -5606,6 +5654,38 @@ function showFirmDetail(firm) {
   const frCurRetCls = fr && fr.avgCurReturn != null
     ? (fr.avgCurReturn > 0 ? 'up' : fr.avgCurReturn < 0 ? 'dn' : 'neu') : 'neu';
 
+  // ── Isi pojok kanan firm-hero ──────────────────────────────────────────
+  const hitBox = document.getElementById('firmHeroHit');
+  if (hitBox) {
+    if (fr && fr.eligibleCnt > 0) {
+      hitBox.style.display = '';
+      hitBox.innerHTML = `
+        <div class="firm-hero-hit-title">🎯 Hit Target · Portofolio</div>
+        <div class="firm-hero-hit-row">
+          <div class="firm-hero-hit-label">Hit Rate
+            <small>rec aktif yg pernah tembus target</small>
+          </div>
+          <div class="firm-hero-hit-val up">${frHitRate}</div>
+        </div>
+        <div class="firm-hero-hit-row">
+          <div class="firm-hero-hit-label">Avg Return saat Hit
+            <small>return terkunci saat target tersentuh</small>
+          </div>
+          <div class="firm-hero-hit-val up">${frHitRetTxt}</div>
+        </div>
+        <div class="firm-hero-hit-row">
+          <div class="firm-hero-hit-label">Avg Return Live
+            <small>posisi return semua rec saat ini</small>
+          </div>
+          <div class="firm-hero-hit-val ${frCurRetCls}">${frCurRetTxt}</div>
+        </div>
+        <div class="firm-hero-hit-footer">${frHitCount}</div>
+      `;
+    } else {
+      hitBox.style.display = 'none';
+    }
+  }
+
   document.getElementById('firmStats').innerHTML = `
     <div class="firm-stat">
       <div class="firm-stat-label">Total Rekomendasi</div>
@@ -5642,29 +5722,6 @@ function showFirmDetail(firm) {
       <div style="margin:8px 0 4px">${frRetBars}</div>
       <div class="firm-stat-sub">${frAchTxt}</div>
       <div class="firm-stat-sub" style="margin-top:2px;color:var(--text3);font-size:10px">${frSample}</div>
-      ${fr && fr.eligibleCnt > 0 ? `
-      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--border)">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:6px">Hit Target · Portofolio</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-size:10px;color:var(--text3);font-weight:600">Hit Rate
-            <span style="display:block;font-size:9px;font-weight:500;margin-top:1px">rec aktif yg pernah tembus target</span>
-          </span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:var(--green)">🎯 ${frHitRate}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-size:10px;color:var(--text3);font-weight:600">Avg Return saat Hit
-            <span style="display:block;font-size:9px;font-weight:500;margin-top:1px">return terkunci saat target tersentuh</span>
-          </span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:var(--green)">${frHitRetTxt}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:10px;color:var(--text3);font-weight:600">Avg Return Live
-            <span style="display:block;font-size:9px;font-weight:500;margin-top:1px">posisi return semua rec saat ini</span>
-          </span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800" class="${frCurRetCls}">${frCurRetTxt}</span>
-        </div>
-        <div style="font-size:9px;color:var(--text3);font-weight:500;margin-top:5px;text-align:right">${frHitCount}</div>
-      </div>` : ''}
     </div>
     <div class="firm-stat firm-stat-rating" title="${frSample}">
       <div class="firm-stat-label">Risk Rating</div>
