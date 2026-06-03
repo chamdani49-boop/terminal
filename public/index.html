@@ -2139,6 +2139,33 @@ select.form-control option{background:var(--card);color:var(--text)}
   font-size:12px;font-weight:600;color:var(--text3);
   padding:12px;text-align:center;
 }
+/* ── Stempel "TARGET TERCAPAI" di area chart ── */
+.rec-chart-stamp{
+  position:absolute;
+  top:10px;left:50%;
+  transform:translateX(-50%) rotate(-7deg);
+  z-index:5;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:5px 12px;
+  border:2px solid var(--green);
+  border-radius:8px;
+  background:rgba(5,150,105,.12);
+  color:var(--green);
+  font-weight:800;font-size:12px;letter-spacing:.5px;
+  text-transform:uppercase;
+  box-shadow:0 2px 10px rgba(5,150,105,.25);
+  animation:stamp-in .35s cubic-bezier(.2,1.3,.5,1) both;
+}
+[data-theme="dark"] .rec-chart-stamp{ background:rgba(74,222,128,.16) }
+.rec-chart-stamp-date{
+  font-size:9px;font-weight:700;letter-spacing:.3px;
+  text-transform:none;opacity:.85;
+  font-family:'IBM Plex Mono',monospace;
+}
+@keyframes stamp-in{
+  from{opacity:0;transform:translateX(-50%) rotate(-7deg) scale(1.6)}
+  to  {opacity:1;transform:translateX(-50%) rotate(-7deg) scale(1)}
+}
 </style>
 </head>
 <body>
@@ -3043,6 +3070,40 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
   // Fit ke rentang data
   chart.timeScale().fitContent();
 
+  // ── Stempel "TARGET TERCAPAI" kalau harga pernah menyentuh target ──────
+  // BUY/NEUTRAL: target tercapai bila ada candle high >= target.
+  // SELL: target tercapai bila ada candle low <= target.
+  if (targetPrice && targetPrice > 0 && candles.length) {
+    let hitDate = null;
+    for (const c of candles) {
+      const reached = suggestion === 'SELL' ? (c.low <= targetPrice) : (c.high >= targetPrice);
+      if (reached) { hitDate = c.date; break; }
+    }
+    if (hitDate) {
+      // Marker panah di candle saat target pertama kali tersentuh
+      try {
+        candleSeries.setMarkers([{
+          time:     hitDate,
+          position: suggestion === 'SELL' ? 'belowBar' : 'aboveBar',
+          color:    isDark ? '#4ade80' : '#059669',
+          shape:    suggestion === 'SELL' ? 'arrowDown' : 'arrowUp',
+          text:     'Target',
+        }]);
+      } catch (_) { /* setMarkers opsional */ }
+
+      // Stempel overlay di area chart
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      const p = hitDate.split('-');
+      const label = p.length === 3
+        ? `${parseInt(p[2], 10)} ${months[parseInt(p[1], 10) - 1]} ${p[0]}`
+        : hitDate;
+      const stamp = document.createElement('div');
+      stamp.className = 'rec-chart-stamp';
+      stamp.innerHTML = `🎯 Target Tercapai<span class="rec-chart-stamp-date">${label}</span>`;
+      container.appendChild(stamp);
+    }
+  }
+
   // Responsive resize
   const ro = new ResizeObserver(() => {
     chart.applyOptions({ width: container.clientWidth });
@@ -3148,7 +3209,7 @@ function showRecDetail(code, recIdx) {
     <!-- Return hero -->
     <div class="rec-modal-return-hero">
       <div>
-        <div class="rec-modal-return-val ${returnCls}">
+        <div class="rec-modal-return-val ${returnCls}" id="recReturnVal">
           ${currentReturn != null
             ? (currentReturn >= 0 ? '+' : '') + (currentReturn * 100).toFixed(2) + '%'
             : '—'}
@@ -3210,7 +3271,7 @@ function showRecDetail(code, recIdx) {
       </div>
       <div class="rec-modal-detail-row">
         <span class="rec-modal-detail-label">Harga Saat Rilis</span>
-        <span class="rec-modal-detail-val">${releasePrice ? 'Rp' + Math.round(releasePrice).toLocaleString('id') : '—'}</span>
+        <span class="rec-modal-detail-val" id="recRelPrice">${releasePrice ? 'Rp' + Math.round(releasePrice).toLocaleString('id') : '—'}</span>
       </div>
       <div class="rec-modal-detail-row">
         <span class="rec-modal-detail-label">Target Harga</span>
@@ -3218,7 +3279,7 @@ function showRecDetail(code, recIdx) {
       </div>
       <div class="rec-modal-detail-row">
         <span class="rec-modal-detail-label">Upside Target</span>
-        <span class="rec-modal-detail-val">
+        <span class="rec-modal-detail-val" id="recUpsideVal">
           ${rating && rating.targetUpside != null
             ? `<span class="${rating.targetUpside >= 0 ? 'up' : 'dn'}">${rating.targetUpside >= 0 ? '+' : ''}${(rating.targetUpside * 100).toFixed(2)}%</span>`
             : '—'}
@@ -3283,10 +3344,35 @@ function showRecDetail(code, recIdx) {
     // Filter hanya dari recDate supaya chart mulai dari tanggal rilis
     const chartCandles = candles.filter(c => c.date >= recDateClean);
 
+    // Harga rilis AKURAT = harga penutupan candle di tanggal rilis (sumber
+    // harian, sama dgn chart) — bukan price_history bulanan. Ini bikin garis
+    // "Rilis" nyambung dgn awal chart + angka turunannya konsisten.
+    const relDaily = chartCandles.length > 0 ? chartCandles[0].close : releasePrice;
+
+    if (relDaily && relDaily > 0) {
+      const fmtRp = (v) => 'Rp' + Math.round(v).toLocaleString('id');
+      const elRel = document.getElementById('recRelPrice');
+      if (elRel) elRel.textContent = fmtRp(relDaily);
+
+      if (curPrice) {
+        const ret = (curPrice - relDaily) / relDaily;
+        const elRet = document.getElementById('recReturnVal');
+        if (elRet) {
+          elRet.textContent = (ret >= 0 ? '+' : '') + (ret * 100).toFixed(2) + '%';
+          elRet.className = 'rec-modal-return-val ' + (ret > 0 ? 'up' : ret < 0 ? 'dn' : 'neu');
+        }
+      }
+      if (r.target_price) {
+        const up = (r.target_price - relDaily) / relDaily;
+        const elUp = document.getElementById('recUpsideVal');
+        if (elUp) elUp.innerHTML = `<span class="${up >= 0 ? 'up' : 'dn'}">${up >= 0 ? '+' : ''}${(up * 100).toFixed(2)}%</span>`;
+      }
+    }
+
     const lwChart = renderRecChart(
       chartContainerId,
       chartCandles,
-      releasePrice,
+      relDaily,
       r.target_price || null,
       recDateClean,
       r.suggestion
