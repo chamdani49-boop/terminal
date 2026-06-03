@@ -8,6 +8,7 @@
   },
   "scripts": {
     "refresh": "node scripts/build-data.js",
+    "refresh:ohlc": "node scripts/build-ohlc.js",
     "dev": "npx serve public"
   }
 }

@@ -2764,50 +2764,72 @@ function fmtPct(v, digits = 2) {
 // OHLC CHART HELPERS — fetch + render candlestick di rec-modal
 // ═══════════════════════════════════════════
 
-// URL Worker endpoint OHLC — definisi di sini agar tersedia saat fungsi helper
-// di-parse. Nilai sama dengan yang ada di blok DATA LOADER di bawah.
-const OHLC_WORKER_URL = 'https://terminal-live.chamdani49.workers.dev/ohlc.json';
-const _ohlcMemCache   = {};   // in-memory cache per-tab { TICKER: {fetchedAt, candles} }
+// URL data OHLC harian — di-build GitHub Actions (scripts/build-ohlc.js) tiap
+// jam 18 WIB dari Yahoo Finance, disajikan sebagai static asset via CDN.
+// Pakai CDN jsDelivr (sama seperti data.json) dengan fallback ke file lokal.
+// Definisi di sini agar tersedia saat fungsi helper di-parse.
+const OHLC_CDN_URL   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/ohlc.json';
+const OHLC_LOCAL_URL = 'ohlc.json';
+let   _ohlcAll       = null;   // payload ohlc.json yang sudah ke-load (1x per tab)
+let   _ohlcLoading   = null;   // Promise in-flight (hindari fetch dobel)
 
 /**
- * Fetch data OHLC harian untuk satu ticker.
- * Urutan sumber:
- *   1. In-memory cache (_ohlcMemCache) — valid 60 menit, skip fetch ulang
- *   2. Worker endpoint /ohlc.json (KV cache, refresh jam 18 WIB)
+ * Load ohlc.json sekali per tab (lazy, saat rec-modal pertama dibuka).
+ * Coba CDN dulu (fresh, di-purge tiap commit), fallback ke file lokal.
+ * @returns {Promise<object|null>} { tickers: {TICKER:{from,candles:[[ts,o,h,l,c]]}} }
+ */
+async function loadOhlcAll() {
+  if (_ohlcAll) return _ohlcAll;
+  if (_ohlcLoading) return _ohlcLoading;
+
+  _ohlcLoading = (async () => {
+    // Cache-bust ringan per 6 jam agar CDN tetap segar tapi tidak tiap reload.
+    const bust = Math.floor(Date.now() / (6 * 3600 * 1000));
+    for (const base of [OHLC_CDN_URL, OHLC_LOCAL_URL]) {
+      try {
+        const res = await fetch(`${base}?v=${bust}`);
+        if (!res.ok) continue;
+        const json = await res.json();
+        if (json && json.tickers) { _ohlcAll = json; return json; }
+      } catch (_) { /* coba sumber berikutnya */ }
+    }
+    _ohlcAll = { tickers: {} };   // tandai sudah dicoba (jangan ulang terus)
+    return _ohlcAll;
+  })();
+
+  return _ohlcLoading;
+}
+
+/**
+ * Decode candle compact [ts,o,h,l,c] → {date,open,high,low,close}.
+ * ts = unix detik (UTC midnight) → "YYYY-MM-DD".
+ */
+function _decodeCandles(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(([ts, o, h, l, c]) => ({
+    date:  new Date(ts * 1000).toISOString().slice(0, 10),
+    open:  o, high: h, low: l, close: c,
+  }));
+}
+
+/**
+ * Ambil data OHLC harian untuk satu ticker dari ohlc.json (CDN/lokal).
+ * Data hari ini (berjalan) ditambahkan dari DATA.live (sheet Live) supaya
+ * candle terakhir fresh tanpa nunggu rebuild jam 18 WIB.
  *
- * Data hari ini (berjalan) ditambahkan SETELAH fetch selesai dari DATA.live
- * supaya candle terakhir selalu fresh tanpa tunggu Worker refresh.
- *
- * @param {string} ticker  - kode IDX, mis. "TLKM"
+ * @param {string} ticker   - kode IDX, mis. "TLKM"
  * @param {string} fromDate - "YYYY-MM-DD", tanggal paling awal yang dibutuhkan
- * @returns {Promise<Array>} array candle {date,open,high,low,close,volume}
+ * @returns {Promise<Array>} array candle {date,open,high,low,close[,intraday]}
  */
 async function fetchOhlcForModal(ticker, fromDate) {
-  if (!OHLC_WORKER_URL || !ticker) return [];
+  if (!ticker) return [];
 
-  // 1. In-memory cache (60 menit)
-  const memEntry = _ohlcMemCache[ticker];
-  const MEM_TTL  = 60 * 60 * 1000;
-  if (memEntry && (Date.now() - memEntry.fetchedAt) < MEM_TTL && memEntry.candles.length > 0) {
-    return _ohlcMergeToday(ticker, memEntry.candles, fromDate);
-  }
+  const all = await loadOhlcAll();
+  const entry = all && all.tickers ? all.tickers[ticker] : null;
+  const candles = entry ? _decodeCandles(entry.candles) : [];
 
-  // 2. Fetch dari Worker
-  try {
-    const url = `${OHLC_WORKER_URL}?ticker=${encodeURIComponent(ticker)}&from=${encodeURIComponent(fromDate)}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    if (!json.ok || !Array.isArray(json.candles)) throw new Error(json.error || 'invalid response');
-
-    const candles = json.candles;
-    _ohlcMemCache[ticker] = { fetchedAt: Date.now(), candles };
-    return _ohlcMergeToday(ticker, candles, fromDate);
-  } catch (e) {
-    console.warn('[OHLC] fetch gagal untuk', ticker, e.message);
-    // Kembalikan array kosong → chart akan tampil empty state
-    return [];
-  }
+  // Merge candle hari ini dari sheet Live + filter dari fromDate
+  return _ohlcMergeToday(ticker, candles, fromDate);
 }
 
 /**
@@ -3373,10 +3395,9 @@ let   _liveFeedTimer    = null;           // handle setInterval feed
 let   _lastLiveFeed     = null;           // payload live terakhir (re-apply setelah swap data.json)
 let   _liveFeedOk       = false;          // pernah sukses fetch feed?
 
-// ── OHLC harian (via endpoint /ohlc.json di Worker yang sama) ──────────
-// Worker men-cache OHLC tiap ticker di KV, refresh jam 11:00 UTC (18:00 WIB).
-// Konstanta OHLC_WORKER_URL & _ohlcMemCache sudah dideklarasikan di atas
-// (blok OHLC CHART HELPERS) — tidak perlu deklarasi ulang di sini.
+// ── OHLC harian (chart candlestick di rec-modal) ───────────────────────
+// Konstanta OHLC_CDN_URL / OHLC_LOCAL_URL + loader sudah dideklarasikan di
+// blok "OHLC CHART HELPERS" di atas — data di-build GitHub Actions tiap 18 WIB.
 let   _visibilityHooked = false;          // listener visibilitychange sudah dipasang?
 let   _marketClosedLogged = false;        // sudah log "di luar jam market"?
 

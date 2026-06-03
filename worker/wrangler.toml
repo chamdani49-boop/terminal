@@ -30,14 +30,6 @@ ALLOW_ORIGIN = "*"
 # pulih. Default 43200 (12 jam) kalau kosong.
 STALE_TTL_SECONDS = "43200"
 
-# ── KV Namespace untuk cache OHLC harian ──────────────────────────────────
-# Buat dengan: wrangler kv namespace create OHLC_CACHE
-# Lalu isi binding & id di bawah ini.
-[[kv_namespaces]]
-binding = "OHLC_CACHE"
-id      = "GANTI_DENGAN_KV_ID_DARI_WRANGLER"
-# preview_id = "GANTI_DENGAN_KV_PREVIEW_ID"  # opsional untuk wrangler dev
-
 # ── Rahasia (JANGAN ditaruh di file ini) ──
 # Set lewat CLI sekali saja:
 #   wrangler secret put LIVE_SHEET_ID
