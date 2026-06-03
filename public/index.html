@@ -2932,12 +2932,16 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
     },
     timeScale: {
       borderColor:     borderColor,
-      timeVisible:     true,
+      timeVisible:     false,   // data harian → pakai axis business-day, bukan intraday
       secondsVisible:  false,
       tickMarkFormatter: (time) => {
-        const d = new Date(time * 1000);
         const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-        return months[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2);
+        // Data harian: lightweight-charts kirim BusinessDay {year,month,day}
+        if (time && typeof time === 'object' && 'day' in time) {
+          return time.day + ' ' + months[time.month - 1];
+        }
+        const d = new Date((typeof time === 'number' ? time * 1000 : time));
+        return d.getUTCDate() + ' ' + months[d.getUTCMonth()];
       },
     },
     handleScroll:  true,
@@ -2954,14 +2958,26 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
     wickDownColor:    wickDown,
   });
 
-  // Konversi ke format lightweight-charts: time = unix timestamp (UTC midnight)
-  const lwData = candles.map(c => ({
-    time:  Math.floor(new Date(c.date + 'T00:00:00Z').getTime() / 1000),
-    open:  c.open,
-    high:  c.high,
-    low:   c.low,
-    close: c.close,
-  }));
+  // Konversi ke format lightweight-charts.
+  // Data HARIAN → pakai format business-day string 'YYYY-MM-DD' (BUKAN
+  // UTCTimestamp angka). Ini cara kanonik untuk candle harian; pakai
+  // timestamp bikin axis dianggap intraday & candle bisa gagal ter-render.
+  // Dedupe by date + urut ascending (syarat setData lightweight-charts).
+  const seen = new Set();
+  const lwData = candles
+    .filter(c => {
+      if (!c.date || seen.has(c.date)) return false;
+      seen.add(c.date);
+      return Number.isFinite(c.open) && Number.isFinite(c.close);
+    })
+    .map(c => ({
+      time:  c.date,          // 'YYYY-MM-DD' = BusinessDay
+      open:  c.open,
+      high:  c.high,
+      low:   c.low,
+      close: c.close,
+    }))
+    .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
   candleSeries.setData(lwData);
 
   // ── Garis harga rilis ──────────────────────────────────────────────────
