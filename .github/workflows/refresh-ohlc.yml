@@ -12,16 +12,19 @@ name: Refresh OHLC harian dari Yahoo Finance
 #   - Isolasi: kalau Yahoo error, refresh data.json utama tidak terganggu.
 #
 # JADWAL:
-#   - 11:00 UTC = 18:00 WIB (≈ jam 6 sore, setelah bursa IDX tutup 16:30 WIB
-#     + buffer untuk data candle final di Yahoo).
-#   - Senin–Sabtu UTC (Sabtu UTC = Sabtu sore WIB; Minggu UTC di-skip karena
-#     bursa libur — tidak ada candle baru).
+#   - 10:00 UTC = 17:00 WIB (jam 5 sore) — data candle final Yahoo biasanya
+#     sudah tersedia 30 menit setelah bursa IDX tutup jam 16:30 WIB.
+#     Tarik jam 17:00 WIB lebih hemat kuota & menghindari blokir karena
+#     traffic Yahoo saat peak-hour belum seramai sore/malam.
+#   - Hanya Senin–Jumat (skip Sabtu & Minggu) — bursa libur, tidak ada
+#     candle baru, tidak ada gunanya tarik data.
 # ═══════════════════════════════════════════════════════════════════════
 
 on:
   schedule:
-    # 11:00 UTC tiap hari — filter weekend dilakukan di step bash.
-    - cron: '0 11 * * *'
+    # 10:00 UTC = 17:00 WIB, Senin–Jumat (0=Sun,1=Mon,...,5=Fri,6=Sat)
+    # Cron GitHub tidak support filter hari kerja langsung → filter di step bash.
+    - cron: '0 10 * * 1-5'
   workflow_dispatch:
     inputs:
       full:
@@ -49,15 +52,17 @@ jobs:
         with:
           node-version: '20'
 
-      # ── Skip Minggu (bursa libur, tidak ada candle baru) ──────────────
+      # ── Skip Sabtu & Minggu (bursa libur, tidak ada candle baru) ────────
       # Hanya untuk run terjadwal (cron). Manual dispatch selalu jalan.
-      - name: Skip on Sunday (scheduled only)
+      # Cron sudah di-set 1-5 (Senin–Jumat UTC), tapi step ini sebagai
+      # safeguard eksplisit kalau ada edge case timezone.
+      - name: Skip on weekend (scheduled only)
         id: dow
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            DOW=$(date -u +%u)   # 1=Mon ... 7=Sun
-            if [ "$DOW" -eq 7 ]; then
-              echo "⏭  Minggu — bursa libur, skip OHLC refresh."
+            DOW=$(date -u +%u)   # 1=Mon ... 6=Sat, 7=Sun
+            if [ "$DOW" -ge 6 ]; then
+              echo "⏭  Weekend (Sabtu/Minggu) — bursa libur, skip OHLC refresh."
               echo "skip=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
