@@ -67,7 +67,14 @@ const RETRY_BACKOFF_MS   = 1500;   // backoff awal (naik linear tiap retry)
 
 // ── Sumber data ──
 const TWELVEDATA_API_KEY  = (process.env.TWELVEDATA_API_KEY || '').trim();
-const TWELVEDATA_EXCHANGE = (process.env.TWELVEDATA_EXCHANGE || 'XIDX').trim();
+// Identifikasi bursa IDX di Twelve Data. PENTING:
+//   - mic_code = "XIDX"  (Market Identifier Code — INI yang benar untuk IDX)
+//   - exchange = "IDX"   (nama bursa — alternatif)
+// JANGAN pakai exchange="XIDX" (campur MIC ke param nama → "symbol invalid").
+// Bisa di-override via env kalau ternyata akun butuh format lain.
+const TWELVEDATA_MIC      = (process.env.TWELVEDATA_MIC || 'XIDX').trim();
+const TWELVEDATA_EXCHANGE = (process.env.TWELVEDATA_EXCHANGE || '').trim();
+const TWELVEDATA_COUNTRY  = (process.env.TWELVEDATA_COUNTRY || '').trim();
 const SOURCE = TWELVEDATA_API_KEY ? 'twelvedata' : 'yahoo';
 
 // Jeda antar request — beda per sumber:
@@ -172,7 +179,6 @@ async function fetchYahooOhlc(symbol, fromIsoDate) {
 async function fetchTwelveData(ticker, fromIsoDate) {
   const params = new URLSearchParams({
     symbol:     ticker,
-    exchange:   TWELVEDATA_EXCHANGE,
     interval:   '1day',
     start_date: fromIsoDate,
     order:      'ASC',
@@ -180,6 +186,12 @@ async function fetchTwelveData(ticker, fromIsoDate) {
     format:     'JSON',
     apikey:     TWELVEDATA_API_KEY,
   });
+  // Identifikasi bursa — prioritas: mic_code > exchange > country.
+  // Default mic_code=XIDX (Market Identifier Code resmi IDX).
+  if (TWELVEDATA_MIC)      params.set('mic_code', TWELVEDATA_MIC);
+  else if (TWELVEDATA_EXCHANGE) params.set('exchange', TWELVEDATA_EXCHANGE);
+  if (TWELVEDATA_COUNTRY)  params.set('country', TWELVEDATA_COUNTRY);
+
   const url = `https://api.twelvedata.com/time_series?${params.toString()}`;
 
   let lastErr = null;
