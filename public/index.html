@@ -2623,6 +2623,19 @@ function getRiskRating(maxDrawdown) {
  * @param {object} r    - rec object: { date, suggestion, target_price, ... }
  * @param {string} code - kode saham
  * @returns {object|null}
+// ── Cache status rekomendasi (release price + hit target) dari build-time ──
+// Diisi loadRecStatus() saat bootstrap, sebelum init(). Key cocok dgn
+// scripts/build-ohlc.js → buildRecStatus(). Kosong = fallback ke data bulanan.
+let REC_STATUS = {};
+
+/** Key rec untuk lookup REC_STATUS — HARUS identik dgn recKey() di build-ohlc.js */
+function recStatusFor(r, code) {
+  if (!REC_STATUS || !r || !r.date) return null;
+  const key = `${code}|${String(r.date).slice(0, 10)}|${r.firm || ''}|${r.suggestion || ''}|${r.target_price || ''}`;
+  return REC_STATUS[key] || null;
+}
+
+/**
  *   null = data tidak cukup (rec bulan ini, atau price_history kosong)
  */
 function getRecRating(r, code) {
@@ -2642,17 +2655,25 @@ function getRecRating(r, code) {
   }
   if (releaseIdx < 0) releaseIdx = ph.length - 1;
 
-  const releasePrice = ph[releaseIdx][code];
-  if (!releasePrice || releasePrice <= 0) return null;
+  // Status harian (rec-status cache, build-time). Kalau ada → dipakai untuk
+  // release price, high/low, drawdown, & hit target (lebih akurat dari bulanan).
+  const status = recStatusFor(r, code);
+
+  let releasePrice = ph[releaseIdx][code];
+  if (!releasePrice || releasePrice <= 0) {
+    if (status && status.release_price > 0) releasePrice = status.release_price;
+    else return null;
+  }
 
   // ── Current price ───────────────────────────────────────────────────────
   const lastRow     = ph[ph.length - 1];
   const currentPrice = lastRow[code];
   if (!currentPrice || currentPrice <= 0) return null;
 
-  // Rec harus minimal 1 bulan lalu
+  // Rec harus minimal 1 bulan lalu — KECUALI ada data harian (status), rec
+  // baru pun bisa dinilai dari candle harian.
   const ageMonths = ph.length - 1 - releaseIdx;
-  if (ageMonths < 1) return null;
+  if (ageMonths < 1 && !status) return null;
 
   // ── Price slice sejak rilis (monthly, untuk performance + fallback) ─────
   const slice = ph.slice(releaseIdx).map(row => row[code]).filter(v => v > 0);
@@ -2714,9 +2735,25 @@ function getRecRating(r, code) {
     lowestDate  = null;
   }
 
+  // ── Override pakai data HARIAN (rec-status cache) bila tersedia ─────────
+  // releasePrice = close di tgl rilis; high/low & risk_low dari candle harian.
+  // riskLow = low terendah dalam window rilis→hit (drop setelah hit tidak
+  // dihitung sebagai risiko).
+  let riskLow = lowestSince;
+  let hit = false, hitDate = null, hitReturn = null;
+  if (status && status.release_price > 0) {
+    releasePrice = status.release_price;
+    if (Number.isFinite(status.highest)) { highestSince = status.highest; highestDate = status.highest_date || null; highFromLive = false; }
+    if (Number.isFinite(status.lowest))  { lowestSince  = status.lowest;  lowestDate  = status.lowest_date  || null; lowFromLive = false; }
+    riskLow   = Number.isFinite(status.risk_low) ? status.risk_low : lowestSince;
+    hit       = !!status.hit;
+    hitDate   = status.hit_date || null;
+    hitReturn = Number.isFinite(status.hit_return) ? status.hit_return : null;
+  }
+
   // ── Derived metrics ─────────────────────────────────────────────────────
   const currentReturn = (currentPrice - releasePrice) / releasePrice;
-  const maxDrawdown   = (lowestSince  - releasePrice) / releasePrice;
+  const maxDrawdown   = (riskLow - releasePrice) / releasePrice;
 
   const targetUpside = r.target_price
     ? (r.target_price - releasePrice) / releasePrice
@@ -2743,7 +2780,7 @@ function getRecRating(r, code) {
   }
 
   return {
-    returns:  achievement != null ? getReturnsRating(achievement) : null,
+    returns:  hit ? 5 : (achievement != null ? getReturnsRating(achievement) : null),
     risk:     getRiskRating(maxDrawdown),
     achievement,
     maxDrawdown,
@@ -2751,6 +2788,9 @@ function getRecRating(r, code) {
     currentPrice,
     currentReturn,
     targetUpside,
+    done:     hit,            // target pernah tercapai (dari data harian)
+    hitDate:  hitDate,        // tanggal target pertama tersentuh
+    hitReturn: hitReturn,     // return saat target tercapai (=targetUpside efektif)
     perf1m:       perfPeriod(1),
     perf3m:       perfPeriod(3),
     perf6m:       perfPeriod(6),
@@ -2761,7 +2801,7 @@ function getRecRating(r, code) {
     highestDate:  highestDate,
     highFromLive: highFromLive,
     lowest:       lowestSince,
-    lowestPct:    maxDrawdown,
+    lowestPct:    (lowestSince - releasePrice) / releasePrice,
     lowestDate:   lowestDate,
     lowFromLive:  lowFromLive,
     ageMonths,
@@ -3189,10 +3229,12 @@ function showRecDetail(code, recIdx) {
       <div class="rec-modal-rating-block">
         <div class="rec-modal-rating-label">Returns</div>
         ${renderRatingBars(rating ? rating.returns : null, 'green', 'lg')}
-        <div style="font-size:10px;color:var(--text3);font-weight:600;margin-top:2px">
-          ${rating && rating.achievement != null
-            ? (rating.achievement >= 0 ? '+' : '') + (rating.achievement * 100).toFixed(1) + '% pencapaian target'
-            : 'Data tidak cukup'}
+        <div style="font-size:10px;font-weight:700;margin-top:2px;color:${rating && rating.done ? 'var(--green)' : 'var(--text3)'}">
+          ${rating && rating.done
+            ? '✓ Target tercapai'
+            : (rating && rating.achievement != null
+                ? (rating.achievement >= 0 ? '+' : '') + (rating.achievement * 100).toFixed(1) + '% pencapaian target'
+                : 'Data tidak cukup')}
         </div>
       </div>
       <div class="rec-modal-rating-block">
@@ -3215,6 +3257,9 @@ function showRecDetail(code, recIdx) {
             : '—'}
         </div>
         <div class="rec-modal-return-sub">Return Sejak Rilis</div>
+        ${rating && rating.done
+          ? `<div style="margin-top:5px;display:inline-flex;align-items:center;gap:5px;background:var(--green-bg);color:var(--green);font-size:10px;font-weight:800;padding:3px 9px;border-radius:var(--radius-pill);border:1px solid rgba(5,150,105,.3)">🎯 Target tercapai${rating.hitReturn != null ? ` · +${(rating.hitReturn*100).toFixed(2)}%` : ''}${rating.hitDate ? ` · ${rating.hitDate}` : ''}</div>`
+          : ''}
       </div>
       <div style="margin-left:auto;text-align:right">
         <div style="font-family:\'IBM Plex Mono\',monospace;font-size:20px;font-weight:700">
@@ -3621,6 +3666,32 @@ function _sanitizeData(data) {
   return data;
 }
 
+// Load rec-status.json (release price + hit target harian, di-build build-ohlc.js).
+// CDN dulu (fresh tiap commit), fallback same-origin. Gagal → REC_STATUS kosong
+// (rating otomatis fallback ke data bulanan, tidak error).
+async function loadRecStatus() {
+  const v = Math.floor(Date.now() / (6 * 3600 * 1000));
+  const urls = [
+    'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/rec-status.json?v=' + v,
+    'rec-status.json?v=' + v,
+  ];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { cache: 'no-cache' });
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (json && json.recs) {
+        REC_STATUS = json.recs;
+        console.info('[rec-status] loaded', Object.keys(REC_STATUS).length, 'recs');
+        return;
+      }
+    } catch (e) {
+      console.warn('[rec-status] gagal fetch', url, '—', e.message);
+    }
+  }
+  console.warn('[rec-status] tidak termuat — rating pakai fallback data bulanan');
+}
+
 async function loadData() {
   const v = Math.floor(Date.now() / CACHE_BUST_MS);
   const sources = [
@@ -3643,6 +3714,9 @@ async function loadData() {
           `mode=${meta.refresh_mode ?? '-'} · live_tickers=${meta.live_tickers ?? '-'}`
         );
       } catch (_) {}
+      // Load rec-status (release price + hit target harian) SEBELUM init()
+      // supaya semua tabel & modal pakai rating berbasis data harian.
+      await loadRecStatus();
       init();
       _startLivePolling();  // mulai polling setelah initial load berhasil
       _startLiveFeedPolling();  // mulai live feed real-time (Worker)

@@ -59,6 +59,7 @@ const path = require('path');
 // ─────────────────────────────────────────────
 const DATA_PATH = path.join(__dirname, '..', 'public', 'data.json');
 const OUT_PATH  = path.join(__dirname, '..', 'public', 'ohlc.json');
+const REC_STATUS_PATH = path.join(__dirname, '..', 'public', 'rec-status.json');
 
 const MAX_BACK_MONTHS    = 18;     // batas paling jauh fetch ke belakang
 const INCREMENTAL_DAYS   = 12;     // berapa hari terakhir di-refetch saat incremental
@@ -255,6 +256,121 @@ async function fetchCandles(ticker, fromIsoDate) {
   if (SOURCE === 'twelvedata') return fetchTwelveData(ticker, fromIsoDate);
   return fetchYahooOhlc(toYahooSymbol(ticker), fromIsoDate);
 }
+
+// ─────────────────────────────────────────────
+// REC STATUS — release price + hit-target per rekomendasi (di-cache & freeze)
+// ─────────────────────────────────────────────
+
+/** Key unik per rekomendasi. Firm tidak mengandung "|", aman dipakai delimiter. */
+function recKey(ticker, r) {
+  return `${ticker}|${String(r.date).slice(0, 10)}|${r.firm || ''}|${r.suggestion || ''}|${r.target_price || ''}`;
+}
+
+/**
+ * Bangun rec-status.json: untuk tiap rekomendasi di consensus, hitung dari
+ * data HARIAN (OHLC):
+ *   - release_price : close candle di tanggal rilis (close pertama >= tgl rilis)
+ *   - hit / hit_date: apakah harga pernah menyentuh target (BUY/NEUTRAL high>=tgt,
+ *                     SELL low<=tgt) + tanggal pertama tersentuh
+ *   - hit_return    : (target - release)/release saat hit (return ketika target tercapai)
+ *   - risk_low      : low TERENDAH dalam window rilis→hit (kalau hit) atau rilis→now.
+ *                     Drop harga SETELAH hit tidak dihitung sebagai risk.
+ *   - highest/lowest: high/low ekstrem sejak rilis (semua, untuk display faktual)
+ *
+ * FREEZE: kalau entry sudah ada di cache lama dgn hit=true, pertahankan
+ * hit/hit_date/hit_return/risk_low/release_price (tidak dihitung ulang).
+ * PRUNE : key yang tidak ada lagi di consensus otomatis hilang (tidak disalin).
+ *
+ * @param {object} consensus  - DATA.consensus_slim {ticker:[recs]}
+ * @param {object} ohlcTickers- outTickers {ticker:{from,candles:[[ts,o,h,l,c]]}}
+ * @param {object} prev       - rec-status.json lama (untuk freeze)
+ */
+function buildRecStatus(consensus, ohlcTickers, prev) {
+  const prevRecs = (prev && prev.recs) || {};
+  const out = { generated_at: new Date().toISOString(), recs: {} };
+  let total = 0, hitCount = 0, frozen = 0;
+
+  for (const [ticker, recs] of Object.entries(consensus || {})) {
+    const entry = ohlcTickers[ticker];
+    const candles = (entry && Array.isArray(entry.candles)) ? entry.candles : null;
+
+    for (const r of (recs || [])) {
+      if (!r.date) continue;
+      const key = recKey(ticker, r);
+      const prevS = prevRecs[key];
+      const target = Number(r.target_price);
+      const isSell = r.suggestion === 'SELL';
+      total++;
+
+      const recUnix = dayToUnix(String(r.date).slice(0, 10));
+      const since = candles ? candles.filter((c) => c[0] >= recUnix) : [];
+
+      // Tidak ada data harian → pertahankan cache lama kalau ada
+      if (since.length === 0) {
+        if (prevS) { out.recs[key] = prevS; frozen++; }
+        continue;
+      }
+
+      // release_price: freeze kalau sudah pernah tercatat (deterministik tapi
+      // aman dari window OHLC yang bergeser)
+      const releasePrice = (prevS && prevS.release_price > 0) ? prevS.release_price : since[0][4];
+      const releaseDate  = (prevS && prevS.release_date) || isoDay(new Date(since[0][0] * 1000));
+
+      // hit: freeze kalau sudah true
+      let hit = false, hitDate = null;
+      if (prevS && prevS.hit) {
+        hit = true; hitDate = prevS.hit_date;
+      } else if (Number.isFinite(target) && target > 0) {
+        for (const c of since) {
+          const reached = isSell ? (c[3] <= target) : (c[2] >= target); // c[2]=high, c[3]=low
+          if (reached) { hit = true; hitDate = isoDay(new Date(c[0] * 1000)); break; }
+        }
+      }
+      if (hit) hitCount++;
+      const hitReturn = (hit && releasePrice > 0 && Number.isFinite(target))
+        ? (isSell ? (releasePrice - target) : (target - releasePrice)) / releasePrice
+        : null;
+
+      // highest & lowest sejak rilis (semua candle, faktual untuk display)
+      let hi = -Infinity, hiD = null, lo = Infinity, loD = null;
+      for (const c of since) {
+        if (c[2] > hi) { hi = c[2]; hiD = isoDay(new Date(c[0] * 1000)); }
+        if (c[3] < lo) { lo = c[3]; loD = isoDay(new Date(c[0] * 1000)); }
+      }
+
+      // risk_low: low terendah dalam window rilis→hit (inklusif). Drop setelah
+      // hit TIDAK dihitung. Freeze kalau sudah hit (window tidak bertambah lagi).
+      let riskLow, riskLowD;
+      if (prevS && prevS.hit && Number.isFinite(prevS.risk_low)) {
+        riskLow = prevS.risk_low; riskLowD = prevS.risk_low_date; frozen++;
+      } else {
+        riskLow = Infinity; riskLowD = null;
+        const hitUnix = (hit && hitDate) ? dayToUnix(hitDate) : Infinity;
+        for (const c of since) {
+          if (c[0] > hitUnix) break;             // exclude candle setelah hit
+          if (c[3] < riskLow) { riskLow = c[3]; riskLowD = isoDay(new Date(c[0] * 1000)); }
+        }
+      }
+
+      out.recs[key] = {
+        release_price: releasePrice,
+        release_date:  releaseDate,
+        hit,
+        hit_date:      hitDate,
+        hit_return:    hitReturn,
+        highest:       hi === -Infinity ? null : hi,
+        highest_date:  hiD,
+        lowest:        lo === Infinity ? null : lo,
+        lowest_date:   loD,
+        risk_low:      riskLow === Infinity ? null : riskLow,
+        risk_low_date: riskLowD,
+        last_date:     isoDay(new Date(since[since.length - 1][0] * 1000)),
+      };
+    }
+  }
+
+  return { payload: out, stats: { total, hitCount, frozen } };
+}
 function mergeCandles(oldCandles, newCandles) {
   const map = new Map();
   for (const c of (oldCandles || [])) map.set(c[0], c);
@@ -400,6 +516,23 @@ async function main() {
     console.error(`FATAL: semua fetch gagal (source=${SOURCE}). Cek API key / cakupan bursa / log di atas.`);
     process.exit(1);
   }
+
+  // ── rec-status.json: release price + hit-target per rekomendasi ─────────
+  try {
+    let prevRecStatus = null;
+    if (fs.existsSync(REC_STATUS_PATH)) {
+      try { prevRecStatus = JSON.parse(fs.readFileSync(REC_STATUS_PATH, 'utf8')); } catch (_) {}
+    }
+    const { payload: recStatus, stats: rs } = buildRecStatus(
+      data.consensus_slim || {}, outTickers, prevRecStatus
+    );
+    fs.writeFileSync(REC_STATUS_PATH, JSON.stringify(recStatus));
+    const rsKB = (fs.statSync(REC_STATUS_PATH).size / 1024).toFixed(1);
+    console.log(`✓ Wrote ${REC_STATUS_PATH} (${rsKB} KB)`);
+    console.log(`  Recs: ${rs.total} · hit target: ${rs.hitCount} · frozen: ${rs.frozen}`);
+  } catch (e) {
+    console.warn('  ⚠️  Gagal bangun rec-status.json:', e.message);
+  }
 }
 
 if (require.main === module) {
@@ -408,5 +541,5 @@ if (require.main === module) {
     process.exit(1);
   });
 } else {
-  module.exports = { toYahooSymbol, fetchYahooOhlc, fetchTwelveData, fetchCandles, mergeCandles, buildTickerTargets };
+  module.exports = { toYahooSymbol, fetchYahooOhlc, fetchTwelveData, fetchCandles, mergeCandles, buildTickerTargets, buildRecStatus, recKey };
 }
