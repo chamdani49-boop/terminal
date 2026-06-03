@@ -309,6 +309,241 @@ function _parseLiveBody(rows, dataStart, iTicker, iPrice, iPct,
 }
 
 // ─────────────────────────────────────────────
+// OHLC — Yahoo Finance v8 chart API
+// ─────────────────────────────────────────────
+
+/**
+ * Konversi kode saham IDX → Yahoo Finance symbol (suffix .JK).
+ * Contoh: "TLKM" → "TLKM.JK"
+ */
+function toYahooSymbol(code) {
+  const upper = String(code || '').trim().toUpperCase();
+  if (!upper) return null;
+  if (upper.includes('.')) return upper;   // sudah ada suffix
+  return upper + '.JK';
+}
+
+/**
+ * Ambil OHLC harian dari Yahoo Finance v8 chart API.
+ * Mengembalikan array of { date, open, high, low, close, volume } diurutkan asc.
+ * date format "YYYY-MM-DD" (UTC).
+ *
+ * @param {string} symbol   - Yahoo symbol, mis. "TLKM.JK"
+ * @param {string} fromDate - ISO date "YYYY-MM-DD", titik mulai fetch
+ */
+async function fetchYahooOhlc(symbol, fromDate) {
+  // Hitung period1 (unix) dari fromDate, mundur 7 hari buat buffer
+  const fromMs  = new Date(fromDate + 'T00:00:00Z').getTime() - 7 * 86400 * 1000;
+  const period1 = Math.floor(fromMs / 1000);
+  const period2 = Math.floor(Date.now() / 1000);
+
+  const url =
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
+    `?interval=1d&period1=${period1}&period2=${period2}&events=div,split`;
+
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; terminal-worker/1.0)',
+      'Accept': 'application/json',
+    },
+    cf: { cacheTtl: 600, cacheEverything: true },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Yahoo Finance HTTP ${res.status} for ${symbol}`);
+  }
+
+  const json = await res.json();
+  const result = json?.chart?.result?.[0];
+  if (!result) {
+    const errMsg = json?.chart?.error?.description || 'No result in Yahoo response';
+    throw new Error(`Yahoo Finance: ${errMsg} (${symbol})`);
+  }
+
+  const timestamps = result.timestamp || [];
+  const q = result.indicators?.quote?.[0] || {};
+  const opens   = q.open   || [];
+  const highs   = q.high   || [];
+  const lows    = q.low    || [];
+  const closes  = q.close  || [];
+  const volumes = q.volume || [];
+
+  const rows = [];
+  for (let i = 0; i < timestamps.length; i++) {
+    const o = opens[i];
+    const h = highs[i];
+    const l = lows[i];
+    const c = closes[i];
+    if (o == null || h == null || l == null || c == null) continue;
+    if (!Number.isFinite(o) || !Number.isFinite(c)) continue;
+    const d = new Date(timestamps[i] * 1000);
+    const dateStr = isoDate(d);
+    rows.push({
+      date:   dateStr,
+      open:   Math.round(o),
+      high:   Math.round(h),
+      low:    Math.round(l),
+      close:  Math.round(c),
+      volume: Number.isFinite(volumes[i]) ? volumes[i] : null,
+    });
+  }
+
+  // Sort ascending (biasanya sudah, tapi jaga-jaga)
+  rows.sort((a, b) => a.date.localeCompare(b.date));
+
+  // Potong dari fromDate
+  const cutoff = fromDate;
+  const filtered = rows.filter(r => r.date >= cutoff);
+  return filtered.length > 0 ? filtered : rows;  // fallback ke semua kalau terlalu sedikit
+}
+
+/**
+ * Cek apakah cache OHLC perlu di-refresh.
+ * Refresh rule: setiap hari jam 11:00 UTC = 18:00 WIB (jam tutup bursa IDX + buffer).
+ * Jika cache sudah ada dan masih "hari ini sebelum jam 11 UTC" → skip refresh.
+ *
+ * @param {string|null} cachedAt - ISO string waktu terakhir cache ditulis
+ * @returns {boolean} true = perlu refresh
+ */
+function needsOhlcRefresh(cachedAt) {
+  if (!cachedAt) return true;
+
+  const now = new Date();
+  const cached = new Date(cachedAt);
+
+  // Hitung "refresh boundary" terakhir = hari ini jam 11:00 UTC
+  // Kalau sekarang belum jam 11 UTC → boundary = kemarin jam 11:00 UTC
+  const todayBoundary = new Date(Date.UTC(
+    now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
+    11, 0, 0, 0
+  ));
+  const boundary = now < todayBoundary
+    ? new Date(todayBoundary.getTime() - 86400000)  // kemarin 11:00 UTC
+    : todayBoundary;                                 // hari ini 11:00 UTC
+
+  return cached < boundary;
+}
+
+/**
+ * Handler GET /ohlc.json?ticker=TLKM[&from=YYYY-MM-DD][&nocache=1]
+ *
+ * Cache strategy:
+ *   - KV OHLC_CACHE key "ohlc:{ticker}" menyimpan payload lengkap.
+ *   - Refresh satu kali sehari jam 11:00 UTC (18:00 WIB).
+ *   - KV TTL di-set ke 25 jam sebagai safety net.
+ *   - Kalau KV belum ada (binding tidak diset/belum dikonfigurasi) → langsung
+ *     fetch Yahoo dan kembalikan hasilnya (degradasi graceful).
+ *   - Kalau Yahoo gagal tapi KV punya stale → kembalikan stale + flag stale:true.
+ *
+ * Response: {
+ *   ok, ticker, symbol, from, cached_at, stale?, count,
+ *   candles: [{ date, open, high, low, close, volume }]
+ * }
+ */
+async function handleOhlc(request, env, ctx) {
+  const url      = new URL(request.url);
+  const rawCode  = (url.searchParams.get('ticker') || '').trim().toUpperCase();
+  const noCache  = url.searchParams.get('nocache') === '1';
+
+  if (!rawCode || !TICKER_RX.test(rawCode)) {
+    return jsonResponse(
+      { ok: false, error: 'Parameter "ticker" wajib ada dan berformat valid (contoh: TLKM).' },
+      env, { status: 400 }
+    );
+  }
+
+  // "from" opsional: tanggal paling awal data yang dibutuhkan.
+  // Jika tidak diisi → ambil 1 tahun ke belakang sebagai default.
+  let fromDate = url.searchParams.get('from') || '';
+  if (!fromDate || !/^\d{4}-\d{2}-\d{2}$/.test(fromDate)) {
+    const fallback = new Date();
+    fallback.setUTCFullYear(fallback.getUTCFullYear() - 1);
+    fromDate = isoDate(fallback);
+  }
+
+  const symbol  = toYahooSymbol(rawCode);
+  const kvKey   = `ohlc:${rawCode}`;
+  const hasKv   = env.OHLC_CACHE && typeof env.OHLC_CACHE.get === 'function';
+
+  // ── Baca cache KV ──────────────────────────────────────────────────────
+  let cached = null;
+  if (hasKv && !noCache) {
+    try {
+      const raw = await env.OHLC_CACHE.get(kvKey, 'json');
+      if (raw && Array.isArray(raw.candles)) cached = raw;
+    } catch (_) { /* KV error — lanjut fetch */ }
+  }
+
+  // ── Putuskan apakah perlu refresh ─────────────────────────────────────
+  const shouldRefresh = noCache || !cached || needsOhlcRefresh(cached.cached_at);
+
+  if (!shouldRefresh && cached) {
+    // Potong candles ke fromDate yang diminta (cache mungkin punya data lebih panjang)
+    const candles = cached.candles.filter(c => c.date >= fromDate);
+    return jsonResponse({
+      ok: true, ticker: rawCode, symbol,
+      from: fromDate, cached_at: cached.cached_at,
+      count: candles.length, candles,
+    }, env, { cacheSeconds: 3600 });
+  }
+
+  // ── Fetch fresh dari Yahoo Finance ────────────────────────────────────
+  // Untuk cache, selalu ambil dari tanggal paling awal yang tersedia di KV
+  // (atau 18 bulan ke belakang), bukan hanya fromDate yang diminta sekarang.
+  // Alasannya: kalau user buka rec lama nanti, data sudah ada di cache.
+  const fetchFrom = cached?.from || (() => {
+    const d = new Date();
+    d.setUTCMonth(d.getUTCMonth() - 18);
+    return isoDate(d);
+  })();
+
+  let freshCandles = null;
+  let fetchError   = null;
+  try {
+    freshCandles = await fetchYahooOhlc(symbol, fetchFrom);
+  } catch (e) {
+    fetchError = e?.message || String(e);
+  }
+
+  // Sukses → simpan ke KV + kembalikan
+  if (freshCandles && freshCandles.length > 0) {
+    const now       = new Date().toISOString();
+    const kvPayload = { ticker: rawCode, symbol, from: fetchFrom, cached_at: now, candles: freshCandles };
+
+    if (hasKv) {
+      // TTL 25 jam: KV akan auto-expire meski cron tidak jalan
+      ctx.waitUntil(
+        env.OHLC_CACHE.put(kvKey, JSON.stringify(kvPayload), { expirationTtl: 25 * 3600 })
+      );
+    }
+
+    const candles = freshCandles.filter(c => c.date >= fromDate);
+    return jsonResponse({
+      ok: true, ticker: rawCode, symbol,
+      from: fromDate, cached_at: now,
+      count: candles.length, candles,
+    }, env, { cacheSeconds: 3600 });
+  }
+
+  // Yahoo gagal tapi ada stale cache → kembalikan stale
+  if (cached && cached.candles && cached.candles.length > 0) {
+    const candles = cached.candles.filter(c => c.date >= fromDate);
+    return jsonResponse({
+      ok: true, ticker: rawCode, symbol,
+      from: fromDate, cached_at: cached.cached_at,
+      stale: true, fetch_error: fetchError,
+      count: candles.length, candles,
+    }, env, { cacheSeconds: 300 });
+  }
+
+  // Tidak ada data sama sekali
+  return jsonResponse({
+    ok: false, ticker: rawCode, symbol,
+    error: 'Gagal fetch data Yahoo Finance & tidak ada cache: ' + (fetchError || 'unknown'),
+  }, env, { status: 502 });
+}
+
+// ─────────────────────────────────────────────
 // HTTP helpers
 // ─────────────────────────────────────────────
 function corsHeaders(env) {
@@ -439,13 +674,17 @@ export default {
       return handleLive(request, env, ctx);
     }
 
+    if (url.pathname === '/ohlc.json') {
+      return handleOhlc(request, env, ctx);
+    }
+
     if (url.pathname === '/' || url.pathname === '') {
       return jsonResponse(
         {
           ok: true,
           service: 'terminal-live',
-          endpoints: ['/live.json'],
-          note: 'Live price feed untuk dashboard terminal. Lihat /live.json',
+          endpoints: ['/live.json', '/ohlc.json?ticker=TLKM&from=YYYY-MM-DD'],
+          note: 'Live price feed & OHLC harian untuk dashboard terminal.',
         },
         env, { status: 200 }
       );
@@ -457,4 +696,4 @@ export default {
 
 
 // Named exports — untuk unit test (tidak memengaruhi runtime Worker).
-export { parseLive, _parseLiveBody, parseCsv, toNum, parseDate, cleanTickerName };
+export { parseLive, _parseLiveBody, parseCsv, toNum, parseDate, cleanTickerName, toYahooSymbol, fetchYahooOhlc, needsOhlcRefresh };

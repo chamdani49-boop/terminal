@@ -1374,6 +1374,18 @@ async function main() {
       computeBetaAndRelVol(price_history, stats);
       const zcores = computeZcores(stats);
 
+      // Rebuild rec_ohlc_meta dari consensus_slim yang baru
+      const rec_ohlc_meta_new = {};
+      for (const [ticker, recs] of Object.entries(consensus_slim)) {
+        const dates = recs.map(r => r.date).filter(Boolean).sort();
+        if (dates.length > 0) {
+          const maxBack = new Date();
+          maxBack.setUTCMonth(maxBack.getUTCMonth() - 18);
+          const maxBackStr = maxBack.toISOString().slice(0, 10);
+          rec_ohlc_meta_new[ticker] = dates[0] > maxBackStr ? dates[0] : maxBackStr;
+        }
+      }
+
       const payload = {
         ...baseData,
         price_history,
@@ -1383,6 +1395,7 @@ async function main() {
         live: liveCsv ? newLive : baseData.live,
         consensus_slim,
         consensus_summary,
+        rec_ohlc_meta: rec_ohlc_meta_new,
         _meta: {
           ...baseData._meta,
           generated_at: new Date().toISOString(),
@@ -1496,6 +1509,22 @@ async function main() {
     }
   }
 
+  // ── rec_ohlc_meta: daftar ticker unik dari consensus + tanggal rilis paling lama.
+  // Dipakai frontend sebagai seed untuk fetch OHLC harian ke Worker.
+  // Format: { "TLKM": "2025-11-27", "BBCA": "2025-11-28", ... }
+  const rec_ohlc_meta = {};
+  for (const [ticker, recs] of Object.entries(consensus_slim)) {
+    const dates = recs.map(r => r.date).filter(Boolean).sort();
+    if (dates.length > 0) {
+      // Ambil 18 bulan ke belakang dari today sebagai batas maksimum,
+      // supaya tidak fetch terlalu jauh ke belakang kalau ada rec sangat lama.
+      const maxBack = new Date();
+      maxBack.setUTCMonth(maxBack.getUTCMonth() - 18);
+      const maxBackStr = maxBack.toISOString().slice(0, 10);
+      rec_ohlc_meta[ticker] = dates[0] > maxBackStr ? dates[0] : maxBackStr;
+    }
+  }
+
   const payload = {
     price_history,
     consensus_slim,
@@ -1504,6 +1533,7 @@ async function main() {
     correlations,
     zcores,
     live,                 // ← raw live overlay map (juga di-overlay ke price_history & stats)
+    rec_ohlc_meta,        // ← seed: {TICKER: "oldest-rec-date"} untuk fetch OHLC per ticker
     stock_info: autoMeta.stock_info,
     stock_list: autoMeta.stock_list,
     watchlist:  autoMeta.watchlist,
