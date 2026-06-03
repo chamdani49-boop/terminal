@@ -2779,22 +2779,34 @@ let   _ohlcLoading   = null;   // Promise in-flight (hindari fetch dobel)
  * @returns {Promise<object|null>} { tickers: {TICKER:{from,candles:[[ts,o,h,l,c]]}} }
  */
 async function loadOhlcAll() {
-  if (_ohlcAll) return _ohlcAll;
+  // Hanya pakai cache kalau SUKSES (punya ticker). Hasil kosong TIDAK di-cache
+  // permanen — supaya kalau fetch pertama gagal sekali, modal berikutnya retry.
+  if (_ohlcAll && _ohlcAll.__ok) return _ohlcAll;
   if (_ohlcLoading) return _ohlcLoading;
 
   _ohlcLoading = (async () => {
-    // Cache-bust ringan per 6 jam agar CDN tetap segar tapi tidak tiap reload.
     const bust = Math.floor(Date.now() / (6 * 3600 * 1000));
-    for (const base of [OHLC_CDN_URL, OHLC_LOCAL_URL]) {
+    // Lokal (same-origin) DULU — paling reliable & fresh tiap deploy, tanpa CORS.
+    // CDN jsDelivr sebagai cadangan.
+    for (const base of [OHLC_LOCAL_URL, OHLC_CDN_URL]) {
       try {
-        const res = await fetch(`${base}?v=${bust}`);
+        const res = await fetch(`${base}?v=${bust}`, { cache: 'no-cache' });
         if (!res.ok) continue;
         const json = await res.json();
-        if (json && json.tickers) { _ohlcAll = json; return json; }
-      } catch (_) { /* coba sumber berikutnya */ }
+        if (json && json.tickers && Object.keys(json.tickers).length > 0) {
+          json.__ok = true;
+          _ohlcAll = json;
+          console.info('[ohlc] loaded', Object.keys(json.tickers).length, 'tickers from', base);
+          return json;
+        }
+      } catch (e) {
+        console.warn('[ohlc] gagal fetch', base, '—', e.message);
+      }
     }
-    _ohlcAll = { tickers: {} };   // tandai sudah dicoba (jangan ulang terus)
-    return _ohlcAll;
+    // Semua sumber gagal → JANGAN cache. Reset in-flight supaya bisa retry.
+    console.warn('[ohlc] semua sumber gagal; akan retry saat modal dibuka lagi');
+    _ohlcLoading = null;
+    return { tickers: {} };
   })();
 
   return _ohlcLoading;
