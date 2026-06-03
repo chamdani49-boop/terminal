@@ -16,6 +16,7 @@
   })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2082,6 +2083,59 @@ select.form-control option{background:var(--card);color:var(--text)}
   font-family:'IBM Plex Mono',monospace;font-weight:700;
   font-variant-numeric:tabular-nums;
 }
+
+/* ── OHLC CHART di dalam rec-modal ── */
+.rec-modal-chart-wrap{
+  padding:14px 20px 0;
+  border-bottom:1px solid var(--border);
+}
+.rec-modal-chart-title{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--text2);margin-bottom:8px;
+}
+.rec-modal-chart-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace;
+  letter-spacing:0;text-transform:none;
+}
+.rec-modal-chart-legend{
+  display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px;
+}
+.rec-modal-chart-legend-item{
+  display:flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:700;color:var(--text2);font-family:'IBM Plex Mono',monospace;
+}
+.rec-modal-chart-legend-line{
+  width:22px;height:2px;border-radius:1px;flex-shrink:0;
+}
+.rec-modal-chart-legend-line.dashed{
+  background: repeating-linear-gradient(
+    90deg, currentColor 0, currentColor 5px, transparent 5px, transparent 9px
+  );
+}
+.rec-modal-chart-container{
+  height:200px;
+  width:100%;
+  position:relative;
+  border-radius:8px;
+  overflow:hidden;
+  background:var(--bg2);
+  margin-bottom:10px;
+}
+.rec-modal-chart-loading{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;color:var(--text3);
+  gap:8px;
+}
+.rec-modal-chart-error{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:6px;
+  font-size:12px;font-weight:600;color:var(--text3);
+  padding:12px;text-align:center;
+}
 </style>
 </head>
 <body>
@@ -2707,6 +2761,231 @@ function fmtPct(v, digits = 2) {
 }
 
 // ═══════════════════════════════════════════
+// OHLC CHART HELPERS — fetch + render candlestick di rec-modal
+// ═══════════════════════════════════════════
+
+// URL Worker endpoint OHLC — definisi di sini agar tersedia saat fungsi helper
+// di-parse. Nilai sama dengan yang ada di blok DATA LOADER di bawah.
+const OHLC_WORKER_URL = 'https://terminal-live.chamdani49.workers.dev/ohlc.json';
+const _ohlcMemCache   = {};   // in-memory cache per-tab { TICKER: {fetchedAt, candles} }
+
+/**
+ * Fetch data OHLC harian untuk satu ticker.
+ * Urutan sumber:
+ *   1. In-memory cache (_ohlcMemCache) — valid 60 menit, skip fetch ulang
+ *   2. Worker endpoint /ohlc.json (KV cache, refresh jam 18 WIB)
+ *
+ * Data hari ini (berjalan) ditambahkan SETELAH fetch selesai dari DATA.live
+ * supaya candle terakhir selalu fresh tanpa tunggu Worker refresh.
+ *
+ * @param {string} ticker  - kode IDX, mis. "TLKM"
+ * @param {string} fromDate - "YYYY-MM-DD", tanggal paling awal yang dibutuhkan
+ * @returns {Promise<Array>} array candle {date,open,high,low,close,volume}
+ */
+async function fetchOhlcForModal(ticker, fromDate) {
+  if (!OHLC_WORKER_URL || !ticker) return [];
+
+  // 1. In-memory cache (60 menit)
+  const memEntry = _ohlcMemCache[ticker];
+  const MEM_TTL  = 60 * 60 * 1000;
+  if (memEntry && (Date.now() - memEntry.fetchedAt) < MEM_TTL && memEntry.candles.length > 0) {
+    return _ohlcMergeToday(ticker, memEntry.candles, fromDate);
+  }
+
+  // 2. Fetch dari Worker
+  try {
+    const url = `${OHLC_WORKER_URL}?ticker=${encodeURIComponent(ticker)}&from=${encodeURIComponent(fromDate)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (!json.ok || !Array.isArray(json.candles)) throw new Error(json.error || 'invalid response');
+
+    const candles = json.candles;
+    _ohlcMemCache[ticker] = { fetchedAt: Date.now(), candles };
+    return _ohlcMergeToday(ticker, candles, fromDate);
+  } catch (e) {
+    console.warn('[OHLC] fetch gagal untuk', ticker, e.message);
+    // Kembalikan array kosong → chart akan tampil empty state
+    return [];
+  }
+}
+
+/**
+ * Gabungkan data hari ini dari DATA.live ke candles.
+ * Candle "hari ini" bersifat intraday sementara (belum close).
+ * Hanya ditambah jika tanggal belum ada di array candles.
+ */
+function _ohlcMergeToday(ticker, candles, fromDate) {
+  const lv = DATA && DATA.live && DATA.live[ticker];
+  const st = DATA && DATA.stats && DATA.stats[ticker];
+  const todayPrice = (lv && lv.price) || (st && st.current) || 0;
+
+  if (!todayPrice) return candles.filter(c => c.date >= fromDate);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const alreadyHas = candles.some(c => c.date === todayStr);
+
+  let merged = [...candles];
+  if (!alreadyHas) {
+    // Buat candle sintesis hari ini: open = close kemarin, OHLC = harga live
+    const lastClose = candles.length > 0 ? candles[candles.length - 1].close : todayPrice;
+    const liveChgPct = (lv && Number.isFinite(lv.change_pct)) ? lv.change_pct : 0;
+    const openEst = liveChgPct !== 0
+      ? Math.round(todayPrice / (1 + liveChgPct))
+      : lastClose;
+    merged.push({
+      date:   todayStr,
+      open:   openEst,
+      high:   Math.max(openEst, todayPrice),
+      low:    Math.min(openEst, todayPrice),
+      close:  Math.round(todayPrice),
+      volume: null,
+      intraday: true,
+    });
+  }
+
+  return merged.filter(c => c.date >= fromDate);
+}
+
+/**
+ * Render candlestick chart lightweight-charts di dalam container.
+ * Tambahkan garis horizontal: harga rilis (abu-abu) + target harga (kuning).
+ *
+ * @param {string}  containerId  - id elemen <div> container
+ * @param {Array}   candles      - array {date,open,high,low,close}
+ * @param {number}  releasePrice - harga saat rilis rec
+ * @param {number|null} targetPrice  - target analis (null = tidak ada)
+ * @param {string}  recDate      - "YYYY-MM-DD" tanggal rilis rec
+ * @param {string}  suggestion   - "BUY" | "SELL" | "NEUTRAL"
+ * @returns {object|null} instance LightweightCharts chart (untuk dispose)
+ */
+function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate, suggestion) {
+  const container = document.getElementById(containerId);
+  if (!container) return null;
+  if (typeof LightweightCharts === 'undefined') return null;
+
+  // Hapus loading state
+  container.innerHTML = '';
+
+  if (!candles || candles.length === 0) {
+    container.innerHTML = `
+      <div class="rec-modal-chart-error">
+        <span style="font-size:20px">📡</span>
+        <span>Data harian tidak tersedia</span>
+      </div>`;
+    return null;
+  }
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+  // Warna tema
+  const bg          = isDark ? '#1f1450' : '#ffffff';
+  const textColor   = isDark ? '#c4b8e8' : '#6e6490';
+  const gridColor   = isDark ? 'rgba(164,156,192,0.12)' : 'rgba(164,156,192,0.18)';
+  const borderColor = isDark ? '#4a3590' : '#d4ccf0';
+  const upColor     = isDark ? '#4ade80' : '#059669';
+  const downColor   = isDark ? '#fb7185' : '#e11d48';
+  const wickUp      = isDark ? '#4ade80' : '#059669';
+  const wickDown    = isDark ? '#fb7185' : '#e11d48';
+
+  const chart = LightweightCharts.createChart(container, {
+    width:  container.clientWidth  || 400,
+    height: container.clientHeight || 200,
+    layout: {
+      background:  { color: bg },
+      textColor:   textColor,
+      fontFamily:  "'IBM Plex Mono', monospace",
+      fontSize:    10,
+    },
+    grid: {
+      vertLines:   { color: gridColor },
+      horzLines:   { color: gridColor },
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+    },
+    rightPriceScale: {
+      borderColor: borderColor,
+      scaleMargins: { top: 0.08, bottom: 0.08 },
+    },
+    timeScale: {
+      borderColor:     borderColor,
+      timeVisible:     true,
+      secondsVisible:  false,
+      tickMarkFormatter: (time) => {
+        const d = new Date(time * 1000);
+        const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+        return months[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2);
+      },
+    },
+    handleScroll:  true,
+    handleScale:   true,
+  });
+
+  // Candlestick series
+  const candleSeries = chart.addCandlestickSeries({
+    upColor:          upColor,
+    downColor:        downColor,
+    borderUpColor:    upColor,
+    borderDownColor:  downColor,
+    wickUpColor:      wickUp,
+    wickDownColor:    wickDown,
+  });
+
+  // Konversi ke format lightweight-charts: time = unix timestamp (UTC midnight)
+  const lwData = candles.map(c => ({
+    time:  Math.floor(new Date(c.date + 'T00:00:00Z').getTime() / 1000),
+    open:  c.open,
+    high:  c.high,
+    low:   c.low,
+    close: c.close,
+  }));
+  candleSeries.setData(lwData);
+
+  // ── Garis harga rilis ──────────────────────────────────────────────────
+  if (releasePrice && releasePrice > 0) {
+    const releaseLine = chart.addPriceLine({
+      price:      releasePrice,
+      color:      isDark ? '#c4b8e8' : '#6e6490',
+      lineWidth:  1,
+      lineStyle:  LightweightCharts.LineStyle.Dashed,
+      axisLabelVisible: true,
+      title:      'Rilis',
+    });
+    void releaseLine; // dipakai via addPriceLine — no ref needed
+  }
+
+  // ── Garis target harga ─────────────────────────────────────────────────
+  if (targetPrice && targetPrice > 0) {
+    const tColor = suggestion === 'SELL'
+      ? (isDark ? '#fb7185' : '#e11d48')   // merah untuk SELL
+      : (isDark ? '#fbbf24' : '#d97706');  // kuning/oranye untuk BUY/NEUTRAL
+    chart.addPriceLine({
+      price:      targetPrice,
+      color:      tColor,
+      lineWidth:  1,
+      lineStyle:  LightweightCharts.LineStyle.Dashed,
+      axisLabelVisible: true,
+      title:      'Target',
+    });
+  }
+
+  // Fit ke rentang data
+  chart.timeScale().fitContent();
+
+  // Responsive resize
+  const ro = new ResizeObserver(() => {
+    chart.applyOptions({ width: container.clientWidth });
+  });
+  ro.observe(container);
+
+  // Simpan ro di element untuk cleanup
+  container._chartRo = ro;
+
+  return chart;
+}
+
+// ═══════════════════════════════════════════
 // REC DETAIL MODAL — kartu Bareksa-style
 // ═══════════════════════════════════════════
 function showRecDetail(code, recIdx) {
@@ -2753,6 +3032,7 @@ function showRecDetail(code, recIdx) {
   // Risk description
   const riskLabels = ['', 'Sangat Rendah', 'Rendah', 'Sedang', 'Tinggi', 'Sangat Tinggi'];
   const riskLabel = rating ? (riskLabels[rating.risk] || '') : '—';
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
   const modal = document.getElementById('recDetailModal');
   document.getElementById('recDetailBody').innerHTML = `
@@ -2812,6 +3092,30 @@ function showRecDetail(code, recIdx) {
         ${liveChg != null
           ? `<div class="rec-modal-daily-chg ${liveCls}">${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}% hari ini</div>`
           : ''}
+      </div>
+    </div>
+
+    <!-- Chart OHLC harian — ditampilkan sebelum Performance -->
+    <div class="rec-modal-chart-wrap" id="recChartWrap">
+      <div class="rec-modal-chart-title">
+        <span>Chart Harian</span>
+        <span class="rec-modal-chart-badge" id="recChartStatus" style="color:var(--text3)">memuat…</span>
+      </div>
+      <div class="rec-modal-chart-legend">
+        <div class="rec-modal-chart-legend-item">
+          <div class="rec-modal-chart-legend-line" style="background:${isDark?'#c4b8e8':'#6e6490'}"></div>
+          <span>Harga Rilis</span>
+        </div>
+        <div class="rec-modal-chart-legend-item">
+          <div class="rec-modal-chart-legend-line" style="background:${r.suggestion==='SELL'?(isDark?'#fb7185':'#e11d48'):(isDark?'#fbbf24':'#d97706')}"></div>
+          <span>Target Analis</span>
+        </div>
+      </div>
+      <div class="rec-modal-chart-container" id="recChartContainer">
+        <div class="rec-modal-chart-loading">
+          <span style="animation:spin 1s linear infinite;display:inline-block">⟳</span>
+          Memuat data harian…
+        </div>
       </div>
     </div>
 
@@ -2875,11 +3179,71 @@ function showRecDetail(code, recIdx) {
 
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // ── Async: fetch OHLC + render chart setelah modal terbuka ────────────
+  // Simpan referensi chart untuk dispose saat modal ditutup
+  if (modal._lwChart) {
+    modal._lwChart.remove();
+    modal._lwChart = null;
+  }
+
+  // Tentukan fromDate: ambil dari rec_ohlc_meta jika ada, fallback ke recDate
+  const recDateClean = (r.date || '').slice(0, 10);
+  const ohlcMeta     = DATA.rec_ohlc_meta || {};
+  const fromDate     = ohlcMeta[code] || recDateClean || (() => {
+    const d = new Date(); d.setUTCMonth(d.getUTCMonth() - 18);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  const chartContainerId = 'recChartContainer';
+  const statusEl         = document.getElementById('recChartStatus');
+
+  fetchOhlcForModal(code, fromDate).then(candles => {
+    if (statusEl) {
+      if (candles.length > 0) {
+        const intradayFlag = candles[candles.length - 1]?.intraday ? ' · hari ini: live' : '';
+        statusEl.textContent = candles.length + ' hari' + intradayFlag;
+        statusEl.style.color = 'var(--text3)';
+      } else {
+        statusEl.textContent = 'tidak ada data';
+        statusEl.style.color = 'var(--red)';
+      }
+    }
+
+    // Filter hanya dari recDate supaya chart mulai dari tanggal rilis
+    const chartCandles = candles.filter(c => c.date >= recDateClean);
+
+    const lwChart = renderRecChart(
+      chartContainerId,
+      chartCandles,
+      releasePrice,
+      r.target_price || null,
+      recDateClean,
+      r.suggestion
+    );
+
+    // Simpan ref untuk dispose saat modal ditutup
+    if (lwChart) modal._lwChart = lwChart;
+
+  }).catch(() => {
+    if (statusEl) { statusEl.textContent = 'gagal memuat'; statusEl.style.color = 'var(--red)'; }
+    const cont = document.getElementById(chartContainerId);
+    if (cont) cont.innerHTML = `<div class="rec-modal-chart-error"><span style="font-size:18px">⚠️</span><span>Gagal memuat data harian</span></div>`;
+  });
 }
 
 function closeRecDetail() {
   const modal = document.getElementById('recDetailModal');
-  if (modal) modal.classList.remove('open');
+  if (!modal) return;
+  // Dispose lightweight-charts instance untuk mencegah memory leak
+  if (modal._lwChart) {
+    try { modal._lwChart.remove(); } catch(_) {}
+    modal._lwChart = null;
+  }
+  // Cleanup ResizeObserver pada chart container
+  const cont = document.getElementById('recChartContainer');
+  if (cont && cont._chartRo) { cont._chartRo.disconnect(); cont._chartRo = null; }
+  modal.classList.remove('open');
   document.body.style.overflow = '';
 }
 
@@ -3008,6 +3372,11 @@ const LIVE_FEED_POLL_MS = 3 * 60 * 1000;  // 3 menit
 let   _liveFeedTimer    = null;           // handle setInterval feed
 let   _lastLiveFeed     = null;           // payload live terakhir (re-apply setelah swap data.json)
 let   _liveFeedOk       = false;          // pernah sukses fetch feed?
+
+// ── OHLC harian (via endpoint /ohlc.json di Worker yang sama) ──────────
+// Worker men-cache OHLC tiap ticker di KV, refresh jam 11:00 UTC (18:00 WIB).
+// Konstanta OHLC_WORKER_URL & _ohlcMemCache sudah dideklarasikan di atas
+// (blok OHLC CHART HELPERS) — tidak perlu deklarasi ulang di sini.
 let   _visibilityHooked = false;          // listener visibilitychange sudah dipasang?
 let   _marketClosedLogged = false;        // sudah log "di luar jam market"?
 
