@@ -1,38 +1,38 @@
 name: Refresh data from Google Sheets
 
 # ═══════════════════════════════════════════════════════════════════════
-# 4 MODE REFRESH:
+# 3 MODE REFRESH (Opsi A — tanpa mode "full" terjadwal):
 #
 #  live      — tiap 5 menit, HANYA Live Sheet (harga + % + high/low).
+#              Jam kerja bursa: Senin–Jumat, 08:00–17:00 WIB.
+#              (= 01:00–10:00 UTC). Sabtu & Minggu TIDAK ada fetch.
 #              Cache check: kalau ≥98% harga identik → skip commit.
-#              Aktif 7 hari seminggu (termasuk weekend — closing tetap
-#              valid sebagai cache kalau market tutup).
 #
-#  consensus — tiap 3 hari sekali jam 06:00 UTC, Senin–Jumat saja.
-#              Jadwal cron: tgl 1,4,7,10,13,16,19,22,25,28 jam 06:00.
-#              Di bash: cek hari (MON-FRI), kalau Sabtu/Minggu → skip.
+#  consensus — seminggu sekali, Senin 07:00 WIB (= Senin 00:00 UTC).
 #              Fetch: Consensus Sheet + Live Sheet (tidak fetch History).
 #
-#  history   — tgl 1–5 setiap bulan jam 01:00 UTC.
+#  history   — tgl 1–5 setiap bulan, 08:00 WIB (= 01:00 UTC).
 #              Fetch semua sheet. Rolling window 121 bulan aktif.
-#              Jaga-jaga kalau update Google Sheet terlambat/lupa.
+#              Range tgl 1–5 (bukan tgl 3 spesifik) sebagai jaring
+#              pengaman kalau update Google Sheet terlambat/lupa.
 #
-#  full      — tiap 15 menit, semua sheet.
-#              Untuk update reguler History + Consensus + Live.
-#              Note: mode full overlap dengan cron live (*/5) dan cron
-#              consensus, tapi mode detection memastikan tidak double.
+#  full      — TIDAK dijadwalkan lagi. Hanya tersedia lewat manual
+#              workflow_dispatch (mode default = full) untuk re-fetch
+#              penuh semua sheet bila diperlukan.
+#
+# Catatan timezone: cron GitHub Actions memakai UTC. WIB = UTC + 7.
 # ═══════════════════════════════════════════════════════════════════════
 
 on:
   schedule:
-    # MODE LIVE: tiap 5 menit — hanya Live Sheet
-    - cron: '*/5 * * * *'
-    # MODE CONSENSUS: tgl 1,4,7,10,13,16,19,22,25,28 jam 23:00 UTC = 06:00 WIB (≈3 harian)
-    - cron: '0 23 1,4,7,10,13,16,19,22,25,28 * *'
-    # MODE HISTORY: tgl 1–5 jam 01:00 UTC — full re-fetch + rolling window
+    # MODE LIVE: tiap 5 menit, Senin–Jumat, 01:00–09:55 UTC (08:00–16:55 WIB)
+    - cron: '*/5 1-9 * * 1-5'
+    # MODE LIVE: tick penutup 10:00 UTC = 17:00 WIB, Senin–Jumat
+    - cron: '0 10 * * 1-5'
+    # MODE CONSENSUS: Senin 00:00 UTC = Senin 07:00 WIB (seminggu sekali)
+    - cron: '0 0 * * 1'
+    # MODE HISTORY: tgl 1–5 jam 01:00 UTC = 08:00 WIB — full re-fetch + rolling window
     - cron: '0 1 1-5 * *'
-    # MODE FULL: tiap 15 menit — semua sheet
-    - cron: '*/15 * * * *'
 
   workflow_dispatch:
     inputs:
@@ -61,19 +61,23 @@ jobs:
         with:
           node-version: '20'
 
-      # ── Deteksi mode dari waktu eksekusi ────────────────────────────────
+      # ── Deteksi mode dari waktu eksekusi (UTC) ──────────────────────────
       # Prioritas (tinggi ke rendah):
-      #   1. workflow_dispatch input  → pakai langsung
-      #   2. Tanggal 1-5 jam 01:xx   → history
-      #   3. Tanggal di set consensus (1,4,7,...,28) jam 06:xx → consensus
-      #      KECUALI hari Sabtu (6) atau Minggu (0) → skip (exit 0)
-      #   4. Menit tidak habis dibagi 15 → live  (cron */5 non-quarter)
-      #   5. Lainnya → full (cron */15)
+      #   1. workflow_dispatch input          → pakai langsung
+      #   2. tgl 1-5 & jam 01:00 UTC          → history
+      #   3. Senin & jam 00:00 UTC            → consensus
+      #   4. sisanya (semua trigger cron live) → live
       #
-      # Overlap handling:
-      #   - Tgl 1 jam 01:xx → history (priority lebih tinggi dari consensus)
-      #   - Tgl 1 jam 06:xx → consensus (bukan jam 01, bukan history)
-      #   - Tgl 1,4,... menit non-quarter → live (cron */5, bukan jam 06)
+      # Kenapa "sisanya → live": setelah Opsi A, satu-satunya cron lain
+      # adalah cron live (Senin–Jumat 01:00–10:00 UTC). Jadi trigger
+      # terjadwal apa pun yang bukan history/consensus pasti berasal dari
+      # cron live. Tidak ada cron live di akhir pekan → weekend otomatis
+      # tidak pernah fetch.
+      #
+      # Overlap tgl 1-5 jam 01:00: cron history dan cron live sama-sama
+      # menyala. Karena concurrency group serial (cancel-in-progress:false),
+      # run kedua jalan setelah run pertama selesai dan umumnya kena
+      # cache-hit (tidak commit). Aman, hanya sedikit boros.
       - name: Determine refresh mode
         id: mode
         run: |
@@ -92,45 +96,24 @@ jobs:
 
           echo "📅 UTC: day=$DAY hour=$HOUR min=$MIN dow=$DOW"
 
-          # 1. History: tgl 1-5 jam 01:xx
-          if [ "$DAY" -le 5 ] && [ "$HOUR" -eq 1 ]; then
+          # 1. History: tgl 1-5 jam 01:00 UTC (= 08:00 WIB)
+          if [ "$DAY" -le 5 ] && [ "$HOUR" -eq 1 ] && [ "$MIN" -eq 0 ]; then
             MODE="history"
 
-          # 2. Consensus: tgl 1,4,7,10,13,16,19,22,25,28 jam 23:xx UTC = 06:00 WIB, Senin-Jumat
-          # Catatan: jam 23 UTC = dini hari UTC tapi besok pagi WIB.
-          # DOW di sini adalah hari UTC saat cron jalan (bukan hari WIB).
-          # Contoh: Minggu 23:00 UTC = Senin 06:00 WIB → boleh jalan.
-          # Sabtu 23:00 UTC = Minggu 06:00 WIB → skip.
-          # Jadi: skip kalau DOW=6 (Sabtu UTC = Minggu WIB).
-          elif [ "$HOUR" -eq 23 ] && [ $(( (DAY - 1) % 3 )) -eq 0 ]; then
-            if [ "$DOW" -eq 6 ]; then
-              # Sabtu UTC jam 23:00 = Minggu WIB jam 06:00 → skip
-              echo "⏭  Sabtu UTC (= Minggu WIB pagi) — consensus skip."
-              echo "mode=skip" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
+          # 2. Consensus: Senin jam 00:00 UTC (= Senin 07:00 WIB)
+          elif [ "$DOW" -eq 1 ] && [ "$HOUR" -eq 0 ] && [ "$MIN" -eq 0 ]; then
             MODE="consensus"
 
-          # 3. Live: menit tidak habis dibagi 15 (cron */5 murni)
-          elif [ $(( MIN % 15 )) -ne 0 ]; then
-            MODE="live"
-
-          # 4. Full: quarter-hour (cron */15)
+          # 3. Live: semua trigger cron live lainnya (Senin–Jumat, jam kerja)
           else
-            MODE="full"
+            MODE="live"
           fi
 
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "🔧 Refresh mode: $MODE"
 
-      # ── Skip kalau mode=skip (Sabtu/Minggu consensus) ──────────────────
-      - name: Skip if weekend consensus
-        if: steps.mode.outputs.mode == 'skip'
-        run: echo "Weekend skip — no action needed."
-
       # ── Build data.json ─────────────────────────────────────────────────
       - name: Build data.json
-        if: steps.mode.outputs.mode != 'skip'
         env:
           HISTORY_SHEET_ID:   ${{ secrets.HISTORY_SHEET_ID }}
           HISTORY_GID:        ${{ secrets.HISTORY_GID }}
@@ -142,8 +125,11 @@ jobs:
         run: node scripts/build-data.js --mode=${{ steps.mode.outputs.mode }}
 
       # ── Commit hanya kalau data berubah ─────────────────────────────────
+      # Push pakai rebase + retry: workflow OHLC (refresh-ohlc.yml) push ke
+      # branch main yang sama dengan concurrency group berbeda, jadi bisa
+      # terjadi race (non-fast-forward) terutama jam 10:00 UTC. Loop ini
+      # rebase ke main terbaru lalu coba lagi, agar job tidak gagal.
       - name: Commit & push if data changed
-        if: steps.mode.outputs.mode != 'skip'
         id: commit
         run: |
           if git diff --quiet -- public/data.json; then
@@ -155,7 +141,23 @@ jobs:
           git config user.email "data-refresh@economstock.local"
           git add public/data.json
           git commit -m "data: refresh $(date -u +%FT%TZ) [mode=${{ steps.mode.outputs.mode }}] [skip ci]"
-          git push
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "✓ Pushed on attempt $attempt"
+              pushed=true
+              break
+            fi
+            echo "⚠️  Push gagal (attempt $attempt) — rebase ke origin/main lalu retry…"
+            git pull --rebase --autostash origin main || true
+            sleep $(( (RANDOM % 5) + 2 ))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "FATAL: push gagal setelah 5 percobaan."
+            exit 1
+          fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       # ── Purge jsDelivr CDN hanya kalau ada commit ───────────────────────
