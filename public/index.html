@@ -886,8 +886,8 @@ select.form-control option{background:var(--card);color:var(--text)}
 /* ── Chart wrapper heights ── */
 .ov-donut-wrap{
   position:relative;
-  width:120px;height:120px;
-  margin:0 auto 12px;
+  width:150px;height:150px;
+  flex-shrink:0;
 }
 .ov-donut-center{
   position:absolute;inset:0;
@@ -902,7 +902,7 @@ select.form-control option{background:var(--card);color:var(--text)}
 }
 .ov-donut-center-value{
   font-family:'IBM Plex Mono',monospace;
-  font-size:22px;font-weight:800;line-height:1;
+  font-size:24px;font-weight:800;line-height:1;
   color:var(--text);
 }
 .ov-donut-center-sub{
@@ -930,6 +930,12 @@ select.form-control option{background:var(--card);color:var(--text)}
 .ov-hbar-wrap{position:relative;width:100%}
 .ov-trend-wrap{position:relative;width:100%;height:200px}
 .ov-card-sentiment{display:flex;flex-direction:column}
+/* Donut + legenda berdampingan, mengisi tinggi kartu secara vertikal */
+.ov-sent-body{
+  display:flex;align-items:center;justify-content:center;
+  gap:20px;flex:1;min-height:0;
+}
+.ov-sent-body #ovSentLegend{flex:1;min-width:0}
 
 /* ── Baris 2 (Sentiment · Upside · Aktivitas Rekomendasi) ──
    Samakan tinggi ketiga kartu dengan tinggi chart Aktivitas Rekomendasi
@@ -937,6 +943,12 @@ select.form-control option{background:var(--card);color:var(--text)}
    membuat ketiga kartu sejajar tingginya. */
 #ovRow2{align-items:stretch}
 #ovRow2 .ov-hbar-wrap{height:200px}
+
+/* ── Baris 3 (Sektor · Top Firm · Saham Direkomendasikan) ──
+   Seragamkan tinggi ketiga kartu (340px) seperti baris 2, supaya
+   chart stacked-bar 10 item + legenda muat rapi & tinggi kartu sejajar. */
+#ovRow3{align-items:stretch}
+#ovRow3 .ov-hbar-wrap{height:340px}
 
 /* ── Latest feed ── */
 .ov-latest-list{
@@ -991,6 +1003,7 @@ select.form-control option{background:var(--card);color:var(--text)}
   .ov-kpi-icon{font-size:16px;margin-bottom:5px}
   .ov-grid-3{grid-template-columns:1fr}
   .ov-donut-wrap{width:150px;height:150px}
+  .ov-sent-body{flex-direction:column;gap:12px}
   .ov-donut-center-value{font-size:20px}
   .ov-trend-wrap{height:160px}
   .ov-date-filter{padding:8px 10px;gap:5px}
@@ -2584,11 +2597,13 @@ select.form-control option{background:var(--card);color:var(--text)}
             <span class="card-title" style="margin:0">Market Sentiment</span>
             <span class="ov-card-badge" id="ovSentBadge"></span>
           </div>
-          <div class="ov-donut-wrap">
-            <canvas id="ovSentDonut"></canvas>
-            <div class="ov-donut-center" id="ovDonutCenter"></div>
+          <div class="ov-sent-body">
+            <div class="ov-donut-wrap">
+              <canvas id="ovSentDonut"></canvas>
+              <div class="ov-donut-center" id="ovDonutCenter"></div>
+            </div>
+            <div id="ovSentLegend"></div>
           </div>
-          <div id="ovSentLegend"></div>
         </div>
         <!-- Top Upside horizontal bar -->
         <div class="card">
@@ -6048,7 +6063,7 @@ function buildOverview() {
 
   // ── 5. SECTOR STACKED HORIZONTAL BAR ────────────────────────────────
   const sectorList=[...sectorAgg.entries()].map(([name,s])=>({name,total:s.total,buy:s.buy,neu:s.neu,sell:s.sell,stocks:s.stocks.size,avgUp:s.upC?(s.upS/s.upC)*100:0})).sort((a,b)=>b.total-a.total).slice(0,10);
-  document.getElementById('ovSectorBar').parentElement.style.height=Math.max(220,sectorList.length*36)+'px';
+  // Tinggi kartu baris 3 dikunci lewat CSS (#ovRow3 .ov-hbar-wrap:340px) — seragam.
   _ovMkChart('ovSectorBar',{type:'bar',
     data:{labels:sectorList.map(s=>s.name),datasets:[
       {label:'BUY',    data:sectorList.map(s=>s.buy), backgroundColor:'rgba(5,150,105,.8)'},
@@ -6067,7 +6082,6 @@ function buildOverview() {
 
   // ── 6. TOP 10 FIRMS STACKED BAR ──────────────────────────────────────
   const topFirms=[...firmAgg.entries()].map(([name,f])=>({name,...f,avgUp:f.upC?(f.upS/f.upC)*100:0})).sort((a,b)=>b.total-a.total).slice(0,10);
-  document.getElementById('ovFirmsBar').parentElement.style.height=Math.max(220,topFirms.length*36)+'px';
   _ovMkChart('ovFirmsBar',{type:'bar',
     data:{labels:topFirms.map(f=>f.name.length>28?f.name.slice(0,26)+'…':f.name),datasets:[
       {label:'BUY',    data:topFirms.map(f=>f.buy), backgroundColor:'rgba(5,150,105,.8)'},
@@ -6087,7 +6101,6 @@ function buildOverview() {
 
   // ── 7. MOST RECOMMENDED STOCKS ────────────────────────────────────────
   const topStocks=[...stockAgg.entries()].filter(([,s])=>s.buy>0).map(([code,s])=>({code,...s,buyRatio:s.total?s.buy/s.total:0})).sort((a,b)=>b.buy-a.buy||b.buyRatio-a.buyRatio).slice(0,10);
-  document.getElementById('ovMostRecBar').parentElement.style.height=Math.max(200,topStocks.length*34)+'px';
   _ovMkChart('ovMostRecBar',{type:'bar',
     data:{labels:topStocks.map(s=>s.code),datasets:[
       {label:'BUY',    data:topStocks.map(s=>s.buy), backgroundColor:'rgba(5,150,105,.85)'},
