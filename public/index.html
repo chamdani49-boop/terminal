@@ -6893,6 +6893,13 @@ function toggleViewMode() {
   const next = isDesktopView() ? 'mobile' : 'desktop';
   applyViewMode(next);
   try { localStorage.setItem('econ-view', next); } catch (e) {}
+  // Setelah viewport berubah, layout perlu di-render ulang supaya komponen yang
+  // bergantung pada lebar (mis. statistik deskriptif) ikut reflow tanpa harus
+  // refresh manual. Beri jeda 1 frame agar perubahan viewport sudah diterapkan.
+  requestAnimationFrame(() => {
+    try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+    try { if (typeof DATA !== 'undefined' && DATA && currentStock) renderDashboard(currentStock); } catch (e) {}
+  });
 }
 document.addEventListener('DOMContentLoaded', () => {
   // Tandai perangkat layar sempit (HP) sekali saja berdasarkan ukuran fisik
