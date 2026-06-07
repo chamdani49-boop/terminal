@@ -886,7 +886,7 @@ select.form-control option{background:var(--card);color:var(--text)}
 /* ── Chart wrapper heights ── */
 .ov-donut-wrap{
   position:relative;
-  width:180px;height:180px;
+  width:120px;height:120px;
   margin:0 auto 12px;
 }
 .ov-donut-center{
@@ -902,7 +902,7 @@ select.form-control option{background:var(--card);color:var(--text)}
 }
 .ov-donut-center-value{
   font-family:'IBM Plex Mono',monospace;
-  font-size:26px;font-weight:800;line-height:1;
+  font-size:22px;font-weight:800;line-height:1;
   color:var(--text);
 }
 .ov-donut-center-sub{
@@ -930,6 +930,13 @@ select.form-control option{background:var(--card);color:var(--text)}
 .ov-hbar-wrap{position:relative;width:100%}
 .ov-trend-wrap{position:relative;width:100%;height:200px}
 .ov-card-sentiment{display:flex;flex-direction:column}
+
+/* ── Baris 2 (Sentiment · Upside · Aktivitas Rekomendasi) ──
+   Samakan tinggi ketiga kartu dengan tinggi chart Aktivitas Rekomendasi
+   (200px) supaya rapi & tidak ada ruang kosong. align-items:stretch
+   membuat ketiga kartu sejajar tingginya. */
+#ovRow2{align-items:stretch}
+#ovRow2 .ov-hbar-wrap{height:200px}
 
 /* ── Latest feed ── */
 .ov-latest-list{
@@ -5996,7 +6003,8 @@ function buildOverview() {
   // ── 3. TOP UPSIDE HORIZONTAL BAR ────────────────────────────────────
   const topUpside=[...stockAgg.entries()].filter(([,s])=>s.total>=2&&s.avgUp>0)
     .map(([code,s])=>({code,...s})).sort((a,b)=>b.avgUp-a.avgUp).slice(0,10);
-  document.getElementById('ovUpsideBar').parentElement.style.height=Math.max(200,topUpside.length*34)+'px';
+  // Tinggi kartu Upside di baris 2 dikunci lewat CSS (#ovRow2 .ov-hbar-wrap:200px)
+  // supaya seragam dengan kartu Aktivitas Rekomendasi — jangan set tinggi inline.
   _ovMkChart('ovUpsideBar',{type:'bar',
     data:{labels:topUpside.map(s=>s.code),datasets:[{label:'Avg Upside %',
       data:topUpside.map(s=>+s.avgUp.toFixed(2)),
