@@ -17,6 +17,18 @@
       if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     } catch (e) {}
   })();
+
+  // Terapkan preferensi tampilan (desktop/mobile) sedini mungkin agar tidak ada
+  // flash layout. Kalau user memilih "desktop" di HP, viewport dipaksa ke lebar
+  // tetap sehingga browser merender layout desktop (sama persis seperti di PC).
+  (function() {
+    try {
+      if (localStorage.getItem('econ-view') === 'desktop') {
+        var vp = document.querySelector('meta[name="viewport"]');
+        if (vp) vp.setAttribute('content', 'width=1280');
+      }
+    } catch (e) {}
+  })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -170,6 +182,20 @@ a{color:inherit;text-decoration:none}
   margin-left:4px;
 }
 .theme-toggle:hover{color:var(--accent);border-color:var(--accent);transform:rotate(15deg)}
+
+/* ── VIEW TOGGLE (desktop/mobile) — hanya tampil di perangkat layar sempit ──
+   Visibilitas dikontrol lewat body.is-mobile-device (di-set JS via screen.width),
+   BUKAN media query, supaya tombol tetap muncul saat viewport dipaksa ke lebar
+   desktop (kalau pakai media query, tombolnya bakal hilang & user terkunci). */
+.view-toggle{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--border);background:var(--card);color:var(--text2);
+  cursor:pointer;font-size:14px;display:none;align-items:center;justify-content:center;
+  transition:transform .2s, border-color .2s, color .2s;
+  margin-left:4px;
+}
+.view-toggle:hover{color:var(--accent);border-color:var(--accent);transform:scale(1.08)}
+body.is-mobile-device .view-toggle{display:inline-flex}
 
 /* ── STOCK TICKER (running sideways, mirror of rupiah-monitor pattern) ── */
 .stock-ticker{
@@ -2289,6 +2315,9 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
     <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
   </nav>
+  <button class="view-toggle" id="viewToggle" type="button" aria-label="Ganti tampilan desktop/mobile" title="Tampilan desktop">
+    <span id="viewIcon">🖥</span>
+  </button>
   <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
     <span id="themeIcon">☀</span>
   </button>
@@ -6834,6 +6863,49 @@ document.addEventListener('DOMContentLoaded', () => {
   setThemeIcon();
   const btn = document.getElementById('themeToggle');
   if (btn) btn.addEventListener('click', toggleTheme);
+});
+
+// ═══════════════════════════════════════════
+// VIEW TOGGLE (desktop / mobile)
+// Di HP, user bisa memaksa tampilan "desktop" dengan mengunci lebar viewport
+// ke nilai tetap (1280px) — browser lalu merender layout desktop persis seperti
+// di PC. Toggle balik mengembalikan width=device-width (tampilan mobile normal).
+// ═══════════════════════════════════════════
+function isDesktopView() {
+  const vp = document.querySelector('meta[name="viewport"]');
+  return !!vp && /width=1280/.test(vp.getAttribute('content') || '');
+}
+function setViewIcon() {
+  const ic = document.getElementById('viewIcon');
+  const btn = document.getElementById('viewToggle');
+  const desktop = isDesktopView();
+  if (ic) ic.textContent = desktop ? '📱' : '🖥';
+  if (btn) btn.title = desktop ? 'Kembali ke tampilan mobile' : 'Tampilan desktop';
+}
+function applyViewMode(mode) {
+  const vp = document.querySelector('meta[name="viewport"]');
+  if (!vp) return;
+  if (mode === 'desktop') vp.setAttribute('content', 'width=1280');
+  else vp.setAttribute('content', 'width=device-width, initial-scale=1.0');
+  setViewIcon();
+}
+function toggleViewMode() {
+  const next = isDesktopView() ? 'mobile' : 'desktop';
+  applyViewMode(next);
+  try { localStorage.setItem('econ-view', next); } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Tandai perangkat layar sempit (HP) sekali saja berdasarkan ukuran fisik
+  // layar — tidak terpengaruh oleh viewport yang dipaksa. Tombol hanya tampil
+  // di sini sehingga user tidak terkunci saat berada di mode desktop.
+  try {
+    if (Math.min(screen.width, screen.height) <= 640) {
+      document.body.classList.add('is-mobile-device');
+    }
+  } catch (e) {}
+  setViewIcon();
+  const vbtn = document.getElementById('viewToggle');
+  if (vbtn) vbtn.addEventListener('click', toggleViewMode);
 });
 
 // ═══════════════════════════════════════════
