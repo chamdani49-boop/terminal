@@ -945,10 +945,11 @@ select.form-control option{background:var(--card);color:var(--text)}
 #ovRow2 .ov-hbar-wrap{height:200px}
 
 /* ── Baris 3 (Sektor · Top Firm · Saham Direkomendasikan) ──
-   Seragamkan tinggi ketiga kartu (340px) seperti baris 2, supaya
-   chart stacked-bar 10 item + legenda muat rapi & tinggi kartu sejajar. */
+   Seragamkan tinggi ketiga kartu DENGAN baris 2 (200px) supaya seluruh
+   kartu overview sejajar tingginya. align-items:stretch menjaga ketiga
+   kartu sama tinggi. */
 #ovRow3{align-items:stretch}
-#ovRow3 .ov-hbar-wrap{height:340px}
+#ovRow3 .ov-hbar-wrap{height:200px}
 
 /* ── Latest feed ── */
 .ov-latest-list{
