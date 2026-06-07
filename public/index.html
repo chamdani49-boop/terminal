@@ -945,10 +945,11 @@ select.form-control option{background:var(--card);color:var(--text)}
 #ovRow2 .ov-hbar-wrap{height:200px}
 
 /* ── Baris 3 (Sektor · Top Firm · Saham Direkomendasikan) ──
-   Seragamkan tinggi ketiga kartu (340px) seperti baris 2, supaya
-   chart stacked-bar 10 item + legenda muat rapi & tinggi kartu sejajar. */
+   Seragamkan tinggi ketiga kartu DENGAN baris 2 (200px) supaya seluruh
+   kartu overview sejajar tingginya. align-items:stretch menjaga ketiga
+   kartu sama tinggi. */
 #ovRow3{align-items:stretch}
-#ovRow3 .ov-hbar-wrap{height:340px}
+#ovRow3 .ov-hbar-wrap{height:200px}
 
 /* ── Latest feed ── */
 .ov-latest-list{
@@ -6063,7 +6064,7 @@ function buildOverview() {
 
   // ── 5. SECTOR STACKED HORIZONTAL BAR ────────────────────────────────
   const sectorList=[...sectorAgg.entries()].map(([name,s])=>({name,total:s.total,buy:s.buy,neu:s.neu,sell:s.sell,stocks:s.stocks.size,avgUp:s.upC?(s.upS/s.upC)*100:0})).sort((a,b)=>b.total-a.total).slice(0,10);
-  // Tinggi kartu baris 3 dikunci lewat CSS (#ovRow3 .ov-hbar-wrap:340px) — seragam.
+  // Tinggi kartu baris 3 dikunci lewat CSS (#ovRow3 .ov-hbar-wrap:200px) — seragam dgn baris 2.
   _ovMkChart('ovSectorBar',{type:'bar',
     data:{labels:sectorList.map(s=>s.name),datasets:[
       {label:'BUY',    data:sectorList.map(s=>s.buy), backgroundColor:'rgba(5,150,105,.8)'},
