@@ -9,6 +9,7 @@
   "scripts": {
     "refresh": "node scripts/build-data.js",
     "refresh:ohlc": "node scripts/build-ohlc.js",
+    "refresh:macro": "node scripts/build-macro.js",
     "dev": "npx serve public"
   }
 }
