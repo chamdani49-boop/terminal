@@ -2335,7 +2335,9 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
     <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
-    <div class="nav-tab" onclick="showPage('global');glEnsure()">Global</div>
+    <!-- Menu Global disembunyikan sementara (banyak baris masih snapshot statis).
+         Untuk memunculkan kembali: hapus komentar di bawah ini. -->
+    <!-- <div class="nav-tab" onclick="showPage('global');glEnsure()">Global</div> -->
   </nav>
   <button class="view-toggle" id="viewToggle" type="button" aria-label="Ganti tampilan desktop/mobile" title="Tampilan desktop">
     <span id="viewIcon">🖥</span>
@@ -7952,9 +7954,11 @@ loadData();
   <button class="bottom-nav-item" id="bn-valuasi" onclick="showPageMobile('valuasi',this);vlEnsureCharts()">
     <span class="bn-icon">🧮</span>Valuasi
   </button>
+  <!-- Menu Global disembunyikan sementara — hapus komentar untuk memunculkan kembali.
   <button class="bottom-nav-item" id="bn-global" onclick="showPageMobile('global',this);glEnsure()">
     <span class="bn-icon">🌍</span>Global
   </button>
+  -->
 </nav>
 
 <!-- INFO MODAL (universal, position:fixed agar tidak terpotong) -->
