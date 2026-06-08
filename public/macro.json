@@ -1,0 +1,33 @@
+{
+  "generated_at": null,
+  "source": "snapshot",
+  "base_date": "2016-10",
+  "as_of": "Mei-26",
+  "chart": {
+    "base_date": "2016-10",
+    "labels": [],
+    "series": { "IHSG": [], "SPX": [], "MXAPJ": [] },
+    "pending": true
+  },
+  "table": [
+    { "key": "IDR",     "label": "Rupiah (USD/IDR)",                          "group": "currency",  "last": 17874.0, "r1_avg": 4.7,  "r1_std": 5.6,  "r1_ratio": 0.83,  "r5_avg": 3.0,  "r5_std": 7.8,  "r5_ratio": 0.38,  "live": false, "source": "snapshot" },
+    { "key": "DXY",     "label": "US Dollar Index",                           "group": "currency",  "last": 98.9,    "r1_avg": 2.2,  "r1_std": 7.2,  "r1_ratio": 0.30,  "r5_avg": 0.5,  "r5_std": 6.4,  "r5_ratio": 0.08,  "live": false, "source": "snapshot" },
+    { "key": "JCI",     "label": "IHSG / Jakarta Composite",                  "group": "indonesia", "last": 6127.4,  "r1_avg": 1.6,  "r1_std": 14.1, "r1_ratio": 0.11,  "r5_avg": 3.5,  "r5_std": 14.3, "r5_ratio": 0.24,  "live": false, "source": "snapshot" },
+    { "key": "LQ45",    "label": "LQ45 Index",                                "group": "indonesia", "last": 611.2,   "r1_avg": -6.2, "r1_std": 15.8, "r1_ratio": -0.39, "r5_avg": -1.5, "r5_std": 16.7, "r5_ratio": -0.09, "live": false, "source": "snapshot" },
+    { "key": "JAKISL",  "label": "Jakarta Islamic Index",                     "group": "indonesia", "last": 382.0,   "r1_avg": -6.6, "r1_std": 16.1, "r1_ratio": -0.41, "r5_avg": -3.9, "r5_std": 16.5, "r5_ratio": -0.24, "live": false, "source": "snapshot" },
+    { "key": "IDL",     "label": "IDX Large Cap (IDXL)",                      "group": "indonesia", "last": 745.2,   "r1_avg": -5.3, "r1_std": 16.5, "r1_ratio": -0.32, "r5_avg": -0.2, "r5_std": 16.5, "r5_ratio": -0.01, "live": false, "source": "snapshot" },
+    { "key": "SPX",     "label": "S&P 500",                                   "group": "global",    "last": 7580.1,  "r1_avg": 13.1, "r1_std": 15.8, "r1_ratio": 0.83,  "r5_avg": 14.1, "r5_std": 15.3, "r5_ratio": 0.92,  "live": false, "source": "snapshot" },
+    { "key": "MXAPJ",   "label": "MSCI AC Asia Pacific ex-Japan (proxy AAXJ)","group": "global",    "last": 902.1,   "r1_avg": 6.8,  "r1_std": 19.3, "r1_ratio": 0.35,  "r5_avg": 9.5,  "r5_std": 17.5, "r5_ratio": 0.54,  "live": false, "source": "snapshot" },
+    { "key": "SX5E",    "label": "Euro Stoxx 50",                             "group": "global",    "last": 6050.5,  "r1_avg": 9.2,  "r1_std": 14.9, "r1_ratio": 0.62,  "r5_avg": 8.1,  "r5_std": 16.1, "r5_ratio": 0.50,  "live": false, "source": "snapshot" },
+    { "key": "TWSE",    "label": "Taiwan Weighted Index",                     "group": "global",    "last": 44732.9, "r1_avg": 21.7, "r1_std": 21.7, "r1_ratio": 1.00,  "r5_avg": 18.3, "r5_std": 18.4, "r5_ratio": 1.00,  "live": false, "source": "snapshot" },
+    { "key": "SENSEX",  "label": "BSE Sensex (India)",                        "group": "global",    "last": 74775.7, "r1_avg": 8.2,  "r1_std": 13.5, "r1_ratio": 0.61,  "r5_avg": 11.7, "r5_std": 16.1, "r5_ratio": 0.72,  "live": false, "source": "snapshot" },
+    { "key": "BCOM",    "label": "Bloomberg Commodity Index",                 "group": "commodity", "last": 135.1,   "r1_avg": 8.6,  "r1_std": 14.5, "r1_ratio": 0.59,  "r5_avg": 5.5,  "r5_std": 13.7, "r5_ratio": 0.41,  "live": false, "source": "snapshot" },
+    { "key": "COAL",    "label": "Coal (Newcastle)",                          "group": "commodity", "last": 131.3,   "r1_avg": 14.6, "r1_std": 49.4, "r1_ratio": 0.30,  "r5_avg": 18.4, "r5_std": 43.3, "r5_ratio": 0.42,  "live": false, "source": "snapshot" },
+    { "key": "CPO",     "label": "Crude Palm Oil",                            "group": "commodity", "last": 4470.0,  "r1_avg": 8.3,  "r1_std": 35.6, "r1_ratio": 0.23,  "r5_avg": 10.3, "r5_std": 32.0, "r5_ratio": 0.32,  "live": false, "source": "snapshot" },
+    { "key": "Rubber",  "label": "Rubber",                                    "group": "commodity", "last": 229.0,   "r1_avg": 8.1,  "r1_std": 20.4, "r1_ratio": 0.40,  "r5_avg": 9.1,  "r5_std": 25.3, "r5_ratio": 0.36,  "live": false, "source": "snapshot" },
+    { "key": "Oil",     "label": "Crude Oil (WTI)",                           "group": "commodity", "last": 92.1,    "r1_avg": 12.1, "r1_std": 39.1, "r1_ratio": 0.31,  "r5_avg": 14.7, "r5_std": 40.8, "r5_ratio": 0.36,  "live": false, "source": "snapshot" },
+    { "key": "Gold",    "label": "Gold (XAU/USD)",                            "group": "commodity", "last": 4540.3,  "r1_avg": 18.7, "r1_std": 16.0, "r1_ratio": 1.17,  "r5_avg": 14.3, "r5_std": 14.8, "r5_ratio": 0.97,  "live": false, "source": "snapshot" },
+    { "key": "SBN",     "label": "Surat Berharga Negara (proxy)",             "group": "bond",      "last": 723.2,   "r1_avg": 6.4,  "r1_std": 3.6,  "r1_ratio": 1.79,  "r5_avg": 7.8,  "r5_std": 5.1,  "r5_ratio": 1.52,  "live": false, "source": "snapshot" },
+    { "key": "BITCOIN", "label": "Bitcoin (BTC/USD)",                         "group": "crypto",    "last": 91872.4, "r1_avg": 30.0, "r1_std": 57.8, "r1_ratio": 0.53,  "r5_avg": 77.3, "r5_std": 76.8, "r5_ratio": 1.01,  "live": false, "source": "snapshot" }
+  ]
+}

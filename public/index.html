@@ -2335,6 +2335,7 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
     <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
+    <div class="nav-tab" onclick="showPage('global');glEnsure()">Global</div>
   </nav>
   <button class="view-toggle" id="viewToggle" type="button" aria-label="Ganti tampilan desktop/mobile" title="Tampilan desktop">
     <span id="viewIcon">🖥</span>
@@ -7595,6 +7596,348 @@ loadData();
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════
+     GLOBAL MODULE (additive) — menu "Global".
+     1) Grafik indeks ternormalisasi USD (IHSG vs SPX vs MXAPJ), base=100.
+     2) Tabel "Asset Class Return & Volatility" dengan heatmap warna.
+     Data: public/macro.json (di-build GitHub Actions dari Yahoo Finance).
+     Semua kelas di-prefix .gl-, JS di-namespace IIFE + window.gl*.
+     Tidak mengubah kode menu lain.
+═══════════════════════════════════════════════════════════════════ -->
+<style>
+.gl-wrap{max-width:1280px;margin:0 auto}
+.gl-hero-title{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-size:26px;line-height:1.15;color:var(--text);margin-bottom:2px;
+}
+.gl-hero-title .star{color:var(--accent3)}
+.gl-hero-sub{font-size:13px;color:var(--text2);font-weight:500;margin-bottom:14px}
+.gl-asof{
+  display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;
+  background:var(--bg2);border:1px solid var(--border);color:var(--text2);
+  padding:3px 10px;border-radius:var(--radius-pill);margin-left:8px;
+}
+
+/* Chart card */
+.gl-chart-wrap{position:relative;width:100%;height:420px}
+@media(max-width:700px){.gl-chart-wrap{height:300px}}
+.gl-legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px}
+.gl-leg{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text)}
+.gl-leg .d{width:22px;height:4px;border-radius:2px}
+.gl-leg .v{font-family:'IBM Plex Mono',monospace;font-weight:700;margin-left:4px;color:var(--text2)}
+.gl-pending{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:24px;
+}
+.gl-pending .box{
+  max-width:460px;background:var(--bg2);border:1px dashed var(--border);
+  border-radius:var(--radius);padding:18px 20px;color:var(--text2);font-size:13px;line-height:1.6;
+}
+.gl-pending code{font-family:'IBM Plex Mono',monospace;background:var(--bg3);padding:2px 6px;border-radius:5px;color:var(--text)}
+
+/* Table */
+.gl-table-scroll{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.gl-table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}
+.gl-table th{
+  background:var(--bg2);color:var(--text);font-weight:800;
+  padding:10px 10px;font-size:11px;letter-spacing:.4px;text-transform:uppercase;
+  text-align:center;position:sticky;top:0;white-space:nowrap;
+}
+.gl-table th.l{text-align:left}
+.gl-table .grp-th th{
+  background:var(--bg3);font-size:10px;letter-spacing:.6px;padding:6px 10px;color:var(--text2);
+}
+.gl-table td{
+  padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-weight:700;
+}
+.gl-table td.asset{
+  text-align:left;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:var(--text);
+  white-space:nowrap;
+}
+.gl-table td.asset .full{display:block;font-family:'Plus Jakarta Sans',sans-serif;font-weight:500;font-size:10px;color:var(--text2);letter-spacing:0}
+.gl-table td.last{color:var(--text)}
+.gl-dot-live,.gl-dot-snap{display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:6px;vertical-align:middle}
+.gl-dot-live{background:var(--green);box-shadow:0 0 0 2px var(--green-bg)}
+.gl-dot-snap{background:var(--text3)}
+.gl-sep td{border-left:2px solid var(--border2)}
+.gl-table-note{font-size:11px;color:var(--text2);margin-top:10px;line-height:1.6}
+.gl-table-note .lg{color:var(--green);font-weight:800}
+.gl-table-note .sn{color:var(--text3);font-weight:800}
+</style>
+
+<!-- ═══ PAGE 5: GLOBAL ═══ -->
+<div class="page" id="page-global">
+  <div class="gl-wrap">
+
+    <div class="info-banner">
+      🌍 <strong>Pasar Global</strong> — perbandingan kinerja IHSG terhadap pasar dunia &amp; ringkasan return/volatilitas lintas aset.
+    </div>
+
+    <!-- GRAFIK INDEKS TERNORMALISASI -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="gl-hero-title">Robohnya Bursa Kami<span class="star">*</span></div>
+      <div class="gl-hero-sub">
+        Kinerja indeks ternormalisasi dalam <strong>USD</strong> (basis = 100 pada <span id="glBaseLabel">Okt 2016</span>).
+        IHSG dikonversi ke USD memakai kurs USD/IDR.
+      </div>
+      <div class="gl-legend" id="glLegend">
+        <div class="gl-leg"><span class="d" style="background:#e11d48"></span>SPX <span class="v" id="glvSPX">–</span></div>
+        <div class="gl-leg"><span class="d" style="background:#059669"></span>MXAPJ <span class="v" id="glvMXAPJ">–</span></div>
+        <div class="gl-leg"><span class="d" style="background:#2563eb"></span>IHSG (USD) <span class="v" id="glvIHSG">–</span></div>
+      </div>
+      <div class="gl-chart-wrap">
+        <canvas id="glChart"></canvas>
+        <div class="gl-pending" id="glPending" style="display:none">
+          <div class="box">
+            📡 <strong>Grafik menunggu data.</strong><br>
+            Jalankan workflow <code>Refresh macro (Global)</code> di GitHub Actions
+            (tab <em>Actions → Run workflow</em>) untuk menarik data historis dari Yahoo Finance.
+            Setelah itu grafik &amp; tabel terisi otomatis.
+          </div>
+        </div>
+      </div>
+      <div class="gl-table-note" style="margin-top:12px">
+        <strong>*</strong> Dalam denominasi USD, IHSG tertinggal jauh dari S&amp;P 500 (AS) dan MSCI Asia Pasifik ex-Jepang sejak 2016.
+        MXAPJ memakai proxy ETF <strong>AAXJ</strong>.
+      </div>
+    </div>
+
+    <!-- TABEL ASSET CLASS RETURN & VOLATILITY -->
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;flex-wrap:wrap">
+        Asset Class Return &amp; Volatility
+        <span class="gl-asof" id="glAsOf">snapshot</span>
+        <button type="button" class="info-btn" style="margin-left:8px"
+          onclick="showInfoModal('Cara Baca Tabel','<strong>Last</strong>: harga/level terakhir.<br><br><strong>Avg</strong>: rata-rata return teranualisasi (return bulanan rata-rata × 12).<br><br><strong>Std</strong>: volatilitas teranualisasi (standar deviasi return bulanan × √12).<br><br><strong>Avg/Std</strong>: rasio imbal hasil terhadap risiko (mirip Sharpe tanpa risk-free). Makin tinggi makin baik. Nilai negatif ditulis dalam tanda kurung.<br><br>Warna sel = heatmap: hijau (return positif), merah (return negatif), oranye (volatilitas tinggi).')">?</button>
+      </div>
+      <div class="gl-table-scroll">
+        <table class="gl-table">
+          <thead>
+            <tr class="grp-th">
+              <th class="l" rowspan="2">Aset</th>
+              <th rowspan="2">Last</th>
+              <th colspan="3">1 Tahun</th>
+              <th colspan="3">5 Tahun</th>
+            </tr>
+            <tr>
+              <th>Avg</th><th>Std</th><th>Avg/Std</th>
+              <th>Avg</th><th>Std</th><th>Avg/Std</th>
+            </tr>
+          </thead>
+          <tbody id="glTableBody">
+            <tr><td colspan="8" style="padding:24px;color:var(--text2);font-family:inherit;font-weight:500">Memuat data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="gl-table-note">
+        <span class="lg">●</span> live (Yahoo Finance) &nbsp;·&nbsp; <span class="sn">●</span> snapshot statis.
+        Baris snapshot (JAKISL, IDL, BCOM, COAL, CPO, Rubber, SBN) belum punya sumber gratis &amp;
+        memakai data acuan Bloomberg per <span id="glAsOf2">Mei-26</span>.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// GLOBAL MODULE — fetch macro.json + render grafik & tabel heatmap.
+// Namespace gl*, isolated IIFE. Tidak menyentuh DATA / menu lain.
+// ═══════════════════════════════════════════════════════════════════
+(function(){
+  const MACRO_CDN_URL   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/macro.json';
+  const MACRO_LOCAL_URL = 'macro.json';
+
+  const MONTHS_ID = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const state = { data:null, chart:null, built:false };
+
+  function fmtYm(ym){
+    const [y,m] = String(ym).split('-');
+    const mi = parseInt(m,10)-1;
+    return `${MONTHS_ID[mi]||m} ${y}`;
+  }
+  function fmtNum(v){
+    if(v==null||!Number.isFinite(v)) return '–';
+    return v.toLocaleString('id-ID',{ maximumFractionDigits: Math.abs(v)>=100?1:2 });
+  }
+  function fmtPct(v){
+    if(v==null||!Number.isFinite(v)) return '–';
+    return (v>0?'':'') + v.toFixed(1) + '%';
+  }
+  function fmtRatio(v){
+    if(v==null||!Number.isFinite(v)) return '–';
+    return v<0 ? `(${Math.abs(v).toFixed(2)})` : v.toFixed(2);
+  }
+
+  // Heatmap: kembalikan style background (rgba) untuk tiap jenis sel.
+  function heatReturn(v){
+    if(v==null||!Number.isFinite(v)) return '';
+    const a = Math.min(0.55, Math.abs(v)/25*0.55);
+    const rgb = v>=0 ? '5,150,105' : '225,29,72';
+    return `background:rgba(${rgb},${a.toFixed(3)})`;
+  }
+  function heatStd(v){
+    if(v==null||!Number.isFinite(v)) return '';
+    const a = Math.min(0.5, v/50*0.5);
+    return `background:rgba(234,88,12,${a.toFixed(3)})`;
+  }
+  function heatRatio(v){
+    if(v==null||!Number.isFinite(v)) return '';
+    const a = Math.min(0.55, Math.abs(v)/1.2*0.55);
+    const rgb = v>=0 ? '5,150,105' : '225,29,72';
+    return `background:rgba(${rgb},${a.toFixed(3)})`;
+  }
+
+  function glTheme(){
+    const cs = getComputedStyle(document.documentElement);
+    const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+    return {
+      tick: cs.getPropertyValue('--text2').trim() || '#6e6490',
+      grid: isDark ? 'rgba(255,255,255,.07)' : 'rgba(26,15,60,.06)',
+    };
+  }
+
+  // ── Render tabel ──────────────────────────────────────────────────
+  function renderTable(){
+    const tb = document.getElementById('glTableBody');
+    if(!tb || !state.data) return;
+    const rows = state.data.table || [];
+    tb.innerHTML = rows.map(r => `
+      <tr>
+        <td class="asset">${r.key}<span class="${r.live?'gl-dot-live':'gl-dot-snap'}" title="${r.live?'live (Yahoo Finance)':'snapshot statis'}"></span>
+          <span class="full">${r.label||''}</span></td>
+        <td class="last">${fmtNum(r.last)}</td>
+        <td style="${heatReturn(r.r1_avg)}">${fmtPct(r.r1_avg)}</td>
+        <td style="${heatStd(r.r1_std)}">${fmtPct(r.r1_std)}</td>
+        <td style="${heatRatio(r.r1_ratio)}">${fmtRatio(r.r1_ratio)}</td>
+        <td class="gl-sep" style="${heatReturn(r.r5_avg)}">${fmtPct(r.r5_avg)}</td>
+        <td style="${heatStd(r.r5_std)}">${fmtPct(r.r5_std)}</td>
+        <td style="${heatRatio(r.r5_ratio)}">${fmtRatio(r.r5_ratio)}</td>
+      </tr>
+    `).join('');
+
+    // as-of label
+    const asof = state.data.as_of || '';
+    const e1 = document.getElementById('glAsOf'); if(e1) e1.textContent = asof || 'live';
+    const e2 = document.getElementById('glAsOf2'); if(e2 && asof) e2.textContent = asof;
+  }
+
+  // ── Render grafik ─────────────────────────────────────────────────
+  function renderChart(){
+    if(typeof Chart==='undefined') return;
+    const c = state.data && state.data.chart;
+    const canvas = document.getElementById('glChart');
+    const pending = document.getElementById('glPending');
+    if(!canvas) return;
+
+    const hasData = c && Array.isArray(c.labels) && c.labels.length>0 && !c.pending;
+    if(pending) pending.style.display = hasData ? 'none' : 'flex';
+
+    // base label
+    const baseEl = document.getElementById('glBaseLabel');
+    if(baseEl && (c?.base_date)) baseEl.textContent = fmtYm(c.base_date);
+
+    if(!hasData){
+      if(state.chart){ state.chart.destroy(); state.chart=null; }
+      return;
+    }
+
+    // update legend last values
+    const lastOf = (arr)=>{ for(let i=arr.length-1;i>=0;i--){ if(arr[i]!=null) return arr[i]; } return null; };
+    const setLeg=(id,arr)=>{ const el=document.getElementById(id); if(el){ const v=lastOf(arr||[]); el.textContent = v!=null? v.toFixed(2):'–'; } };
+    setLeg('glvSPX',   c.series.SPX);
+    setLeg('glvMXAPJ', c.series.MXAPJ);
+    setLeg('glvIHSG',  c.series.IHSG);
+
+    const T = glTheme();
+    const labels = c.labels.map(fmtYm);
+    const mk = (data,color,width)=>({
+      data, borderColor:color, backgroundColor:'transparent',
+      borderWidth:width, pointRadius:0, pointHoverRadius:4, tension:.15, spanGaps:true,
+    });
+    const datasets = [
+      { label:'SPX',        ...mk(c.series.SPX,   '#e11d48', 2.2) },
+      { label:'MXAPJ',      ...mk(c.series.MXAPJ, '#059669', 2) },
+      { label:'IHSG (USD)', ...mk(c.series.IHSG,  '#2563eb', 2) },
+    ];
+
+    if(state.chart){
+      state.chart.data.labels = labels;
+      state.chart.data.datasets.forEach((ds,i)=>{ ds.data = datasets[i].data; });
+      state.chart.update();
+      return;
+    }
+
+    state.chart = new Chart(canvas, {
+      type:'line',
+      data:{ labels, datasets },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            backgroundColor:'rgba(26,15,60,.94)', titleFont:{size:11}, bodyFont:{size:11},
+            padding:10, cornerRadius:8,
+            callbacks:{ label:(ctx)=>` ${ctx.dataset.label}: ${ctx.parsed.y==null?'–':ctx.parsed.y.toFixed(2)}` }
+          }
+        },
+        scales:{
+          y:{ ticks:{ color:T.tick, font:{size:10} }, grid:{ color:T.grid } },
+          x:{
+            ticks:{ color:T.tick, font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:10,
+              callback:function(val,idx){ const l=this.getLabelForValue(val); return l? l.split(' ')[1]||l : l; } },
+            grid:{ display:false }
+          }
+        }
+      }
+    });
+  }
+
+  // ── Fetch macro.json (jsDelivr → same-origin) ─────────────────────
+  async function fetchMacro(){
+    const v = Math.floor(Date.now()/30000);
+    for(const url of [MACRO_CDN_URL+'?v='+v, MACRO_LOCAL_URL+'?v='+v]){
+      try{
+        const res = await fetch(url, { cache:'no-store' });
+        if(!res.ok) continue;
+        const json = await res.json();
+        if(json && Array.isArray(json.table)){ return json; }
+      }catch(_){}
+    }
+    return null;
+  }
+
+  async function init(){
+    const data = await fetchMacro();
+    if(!data){
+      const tb = document.getElementById('glTableBody');
+      if(tb) tb.innerHTML = '<tr><td colspan="8" style="padding:24px;color:var(--text2);font-family:inherit;font-weight:500">⚠️ Gagal memuat macro.json.</td></tr>';
+      return;
+    }
+    state.data = data;
+    renderTable();
+    if(state.built) renderChart();
+  }
+
+  // Lazy: render chart saat halaman Global pertama dibuka (canvas sudah tampil).
+  window.glEnsure = function(){
+    state.built = true;
+    if(state.data){ renderChart(); }
+    if(state.chart){ try{ state.chart.resize(); }catch(_){} }
+  };
+
+  // Re-render chart saat ganti tema (warna grid/tick ikut).
+  try{
+    const mo = new MutationObserver(()=>{ if(state.chart){ state.chart.destroy(); state.chart=null; renderChart(); } });
+    mo.observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+  }catch(_){}
+
+  init();
+})();
+</script>
+
 <!-- BOTTOM NAV (mobile only — hidden di desktop via CSS) -->
 <nav class="bottom-nav" id="bottomNav">
   <button class="bottom-nav-item active" id="bn-dashboard" onclick="showPageMobile('dashboard',this)">
@@ -7608,6 +7951,9 @@ loadData();
   </button>
   <button class="bottom-nav-item" id="bn-valuasi" onclick="showPageMobile('valuasi',this);vlEnsureCharts()">
     <span class="bn-icon">🧮</span>Valuasi
+  </button>
+  <button class="bottom-nav-item" id="bn-global" onclick="showPageMobile('global',this);glEnsure()">
+    <span class="bn-icon">🌍</span>Global
   </button>
 </nav>
 
