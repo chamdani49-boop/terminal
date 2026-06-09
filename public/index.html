@@ -2319,6 +2319,74 @@ select.form-control option{background:var(--card);color:var(--text)}
   to  {opacity:1;transform:translateX(-50%) rotate(-7deg) scale(1)}
 }
 </style>
+
+<!-- ═══════════════════════════════════════════
+     STYLE: PAGE PASAR LIVE (Chart / Heatmap / Seasonality / Headlines)
+═══════════════════════════════════════════ -->
+<style>
+#page-pasar{padding:18px clamp(12px,3vw,32px) 90px}
+.pl-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.pl-title{font-size:22px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:9px}
+.pl-title .pl-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px var(--green-bg);animation:plPulse 2s infinite}
+@keyframes plPulse{0%,100%{opacity:1}50%{opacity:.45}}
+.pl-sub{font-size:13px;color:var(--text2);font-weight:600}
+
+/* Sub-tab bar */
+.pl-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;background:var(--bg2);padding:6px;border-radius:var(--radius-pill);width:fit-content;max-width:100%}
+.pl-tab{padding:9px 18px;font-size:14px;font-weight:700;border-radius:var(--radius-pill);cursor:pointer;color:var(--text2);border:none;background:none;font-family:inherit;transition:all .18s;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.pl-tab:hover{color:var(--accent)}
+.pl-tab.active{background:var(--grad);color:#fff;box-shadow:0 6px 18px rgba(109,40,217,.25)}
+
+.pl-panel{display:none;animation:plFade .25s ease}
+.pl-panel.active{display:block}
+@keyframes plFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── CHART ── */
+.pl-chart-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.pl-chips{display:flex;gap:6px;flex-wrap:wrap}
+.pl-chip{padding:7px 14px;font-size:13px;font-weight:700;border-radius:var(--radius-pill);cursor:pointer;color:var(--text2);background:var(--card);border:1px solid var(--border);transition:all .15s}
+.pl-chip:hover{border-color:var(--accent);color:var(--accent)}
+.pl-chip.active{background:var(--accent);color:#fff;border-color:transparent}
+.pl-select{padding:8px 14px;font-size:13px;font-weight:600;border-radius:var(--radius-pill);background:var(--card);color:var(--text);border:1px solid var(--border);font-family:inherit;cursor:pointer;min-width:200px}
+.pl-chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-card);height:min(72vh,640px)}
+.pl-chart-wrap .tradingview-widget-container,.pl-chart-wrap .tradingview-widget-container__widget{height:100%;width:100%}
+
+/* ── HEATMAP ── */
+.pl-hm-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-size:13px;color:var(--text2);font-weight:600}
+.pl-hm-legend{display:flex;align-items:center;gap:4px;margin-left:auto}
+.pl-hm-legend .sw{width:16px;height:12px;border-radius:3px}
+.pl-sector{margin-bottom:18px}
+.pl-sector-name{font-size:13px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.pl-sector-name .cnt{font-size:11px;font-weight:600;background:var(--bg2);padding:2px 9px;border-radius:var(--radius-pill);color:var(--text3)}
+.pl-hm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.pl-tile{border-radius:10px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:#fff;min-height:62px;transition:transform .12s;text-align:center}
+.pl-tile:hover{transform:scale(1.05)}
+.pl-tile .tc{font-size:13px;font-weight:800;line-height:1}
+.pl-tile .tp{font-size:12px;font-weight:700;opacity:.95}
+
+/* ── SEASONALITY ── */
+.pl-seas-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.pl-seas-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:6px;box-shadow:var(--shadow-card);overflow-x:auto}
+table.pl-seas{border-collapse:collapse;width:100%;font-size:12px;min-width:680px}
+table.pl-seas th,table.pl-seas td{padding:7px 6px;text-align:center;font-weight:700;white-space:nowrap}
+table.pl-seas thead th{color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid var(--border)}
+table.pl-seas tbody td:first-child,table.pl-seas thead th:first-child{text-align:left;color:var(--text2);font-weight:800;position:sticky;left:0;background:var(--card)}
+table.pl-seas td.cell{color:#fff;border-radius:6px;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+table.pl-seas tr.avg td{border-top:2px solid var(--border);font-weight:800}
+table.pl-seas tr.avg td:first-child{color:var(--text)}
+.pl-empty{padding:40px 20px;text-align:center;color:var(--text2);font-weight:600;line-height:1.6}
+
+/* ── HEADLINES ── */
+.pl-news-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-card);height:min(72vh,640px)}
+.pl-news-wrap .tradingview-widget-container,.pl-news-wrap .tradingview-widget-container__widget{height:100%;width:100%}
+
+@media (max-width:640px){
+  #page-pasar{padding:14px 12px 96px}
+  .pl-select{min-width:0;flex:1}
+  .pl-chart-wrap,.pl-news-wrap{height:min(66vh,520px)}
+  .pl-hm-grid{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))}
+}
+</style>
 </head>
 <body>
 
@@ -2335,6 +2403,7 @@ select.form-control option{background:var(--card);color:var(--text)}
     <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
     <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
+    <div class="nav-tab" onclick="showPage('pasar');plEnsure()">Pasar Live</div>
     <!-- Menu Global disembunyikan sementara (banyak baris masih snapshot statis).
          Untuk memunculkan kembali: hapus komentar di bawah ini. -->
     <!-- <div class="nav-tab" onclick="showPage('global');glEnsure()">Global</div> -->
@@ -2456,6 +2525,62 @@ select.form-control option{background:var(--card);color:var(--text)}
     </div><!-- /right-col -->
   </div><!-- /dash-grid -->
 </div><!-- /page-dashboard -->
+
+
+<!-- ═══════════════════════════════════════════
+     PAGE: PASAR LIVE (khusus saham IDX + IHSG)
+═══════════════════════════════════════════ -->
+<div class="page" id="page-pasar">
+  <div class="pl-head">
+    <div class="pl-title"><span class="pl-dot"></span>Pasar Live</div>
+    <div class="pl-sub">Chart interaktif, heatmap sektor & seasonality — saham IDX &amp; IHSG</div>
+  </div>
+
+  <div class="pl-tabs" role="tablist">
+    <button class="pl-tab active" id="pltab-chart"       onclick="plShowTab('chart')">📈 Chart</button>
+    <button class="pl-tab"        id="pltab-heatmap"     onclick="plShowTab('heatmap')">🔥 Heatmap</button>
+    <button class="pl-tab"        id="pltab-seasonality" onclick="plShowTab('seasonality')">🗓 Seasonality</button>
+    <button class="pl-tab"        id="pltab-headlines"   onclick="plShowTab('headlines')">📰 Headlines</button>
+  </div>
+
+  <!-- ── CHART ── -->
+  <div class="pl-panel active" id="plpanel-chart">
+    <div class="pl-chart-bar">
+      <div class="pl-chips" id="plChips"></div>
+      <select class="pl-select" id="plSymbolSelect" onchange="plSetSymbol(this.value)" aria-label="Pilih saham"></select>
+    </div>
+    <div class="pl-chart-wrap" id="plChartWrap"></div>
+  </div>
+
+  <!-- ── HEATMAP ── -->
+  <div class="pl-panel" id="plpanel-heatmap">
+    <div class="pl-hm-bar">
+      <span>Heatmap per sektor — warna = perubahan harian</span>
+      <div class="pl-hm-legend">
+        <span>−</span>
+        <span class="sw" style="background:#e11d48"></span>
+        <span class="sw" style="background:#9ca3af"></span>
+        <span class="sw" style="background:#059669"></span>
+        <span>+</span>
+      </div>
+    </div>
+    <div id="plHeatmap"></div>
+  </div>
+
+  <!-- ── SEASONALITY ── -->
+  <div class="pl-panel" id="plpanel-seasonality">
+    <div class="pl-seas-bar">
+      <span class="pl-sub">Return bulanan historis (%) per tahun</span>
+      <select class="pl-select" id="plSeasSelect" onchange="plRenderSeasonality(this.value)" aria-label="Pilih simbol seasonality"></select>
+    </div>
+    <div class="pl-seas-wrap" id="plSeasonality"></div>
+  </div>
+
+  <!-- ── HEADLINES ── -->
+  <div class="pl-panel" id="plpanel-headlines">
+    <div class="pl-news-wrap" id="plNewsWrap"></div>
+  </div>
+</div><!-- /page-pasar -->
 
 
 <!-- ═══════════════════════════════════════════
@@ -4211,6 +4336,274 @@ function showPage(name) {
 // Alias untuk bottom nav — biar tidak break onclick lama.
 function showPageMobile(name) {
   showPage(name);
+}
+
+// ═══════════════════════════════════════════
+// PAGE: PASAR LIVE (Chart / Heatmap / Seasonality / Headlines)
+// ═══════════════════════════════════════════
+const PL_DEFAULT_SYMBOL = 'IHSG';
+const PL_QUICK = ['IHSG', 'BBRI', 'BBCA', 'BMRI', 'TLKM', 'ASII', 'BBNI'];
+const PL_MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+// Sumber Headlines — sementara pakai widget berita TradingView.
+// Nanti tinggal ganti plLoadNews() agar fetch dari feed mesin Python kamu
+// (mis. const PL_HEADLINES_URL = 'headlines.json').
+const PL_NEWS_FEED_MODE = 'all_symbols';
+
+let _plInit       = false;
+let _plSymbol     = PL_DEFAULT_SYMBOL;
+let _plActiveTab  = 'chart';
+
+function plTheme()      { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+function plTvSymbol(c)  { return c === 'IHSG' ? 'IDX:COMPOSITE' : 'IDX:' + c; }
+function plName(code)   {
+  if (code === 'IHSG') return 'Indeks Harga Saham Gabungan';
+  const s = (DATA && DATA.stock_list || []).find(x => x.code === code);
+  return s ? s.name : '';
+}
+
+// Skala warna heatmap: merah (turun) → abu (flat) → hijau (naik). Cap ±3.5%.
+function plHeatColor(chg) {
+  if (!Number.isFinite(chg)) return 'var(--bg3)';
+  if (Math.abs(chg) < 0.05) return '#9ca3af';
+  const mag   = Math.min(Math.abs(chg) / 3.5, 1);
+  const light = 46 - mag * 16;            // 46% → 30%
+  const hue   = chg > 0 ? 152 : 349;
+  const sat   = chg > 0 ? 58 : 72;
+  return `hsl(${hue} ${sat}% ${light}%)`;
+}
+
+// Dipanggil dari nav-tab / bottom-nav saat membuka menu Pasar Live.
+function plEnsure() {
+  if (!_plInit) {
+    _plInit = true;
+    plBuildControls();
+  }
+  plShowTab(_plActiveTab || 'chart');
+}
+
+function plBuildControls() {
+  // Quick chips
+  const chips = document.getElementById('plChips');
+  if (chips) {
+    chips.innerHTML = PL_QUICK
+      .map(c => `<button class="pl-chip" data-code="${c}" onclick="plSetSymbol('${c}')">${c}</button>`)
+      .join('');
+  }
+  // Dropdown saham (IHSG + semua saham)
+  const codes = (DATA && Array.isArray(DATA.stock_list))
+    ? DATA.stock_list.map(s => s.code).filter(Boolean).sort()
+    : [];
+  const opts = ['<option value="IHSG">IHSG — Indeks Harga Saham Gabungan</option>']
+    .concat(codes.map(c => {
+      const nm = plName(c);
+      return `<option value="${c}">${c}${nm ? ' — ' + nm : ''}</option>`;
+    })).join('');
+  const sel  = document.getElementById('plSymbolSelect');
+  const ssel = document.getElementById('plSeasSelect');
+  if (sel)  sel.innerHTML  = opts;
+  if (ssel) ssel.innerHTML = opts;
+  plSyncControls();
+
+  // Rebuild widget saat theme di-toggle (hanya bila halaman Pasar aktif)
+  const tt = document.getElementById('themeToggle');
+  if (tt) tt.addEventListener('click', () => {
+    const page = document.getElementById('page-pasar');
+    if (!page || !page.classList.contains('active')) return;
+    setTimeout(() => {
+      if (_plActiveTab === 'chart') plLoadChart(true);
+      else if (_plActiveTab === 'headlines') { const w = document.getElementById('plNewsWrap'); if (w) w._built = false; plLoadNews(); }
+      else if (_plActiveTab === 'heatmap') plRenderHeatmap();
+      else if (_plActiveTab === 'seasonality') plRenderSeasonality();
+    }, 80);
+  });
+}
+
+function plSyncControls() {
+  const sel = document.getElementById('plSymbolSelect');
+  if (sel) sel.value = _plSymbol;
+  document.querySelectorAll('#plChips .pl-chip').forEach(b =>
+    b.classList.toggle('active', b.dataset.code === _plSymbol));
+}
+
+function plShowTab(name) {
+  _plActiveTab = name;
+  document.querySelectorAll('#page-pasar .pl-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#page-pasar .pl-panel').forEach(p => p.classList.remove('active'));
+  const tab   = document.getElementById('pltab-' + name);
+  const panel = document.getElementById('plpanel-' + name);
+  if (tab)   tab.classList.add('active');
+  if (panel) panel.classList.add('active');
+
+  if (name === 'chart')            plLoadChart();
+  else if (name === 'heatmap')     plRenderHeatmap();
+  else if (name === 'seasonality') plRenderSeasonality();
+  else if (name === 'headlines')   plLoadNews();
+}
+
+function plSetSymbol(code) {
+  _plSymbol = code;
+  plSyncControls();
+  // Bangun chart hanya saat panel chart sudah/akan terlihat (hindari tinggi 0).
+  if (_plActiveTab !== 'chart') plShowTab('chart');  // plShowTab → plLoadChart() (symbol berubah → rebuild)
+  else plLoadChart(true);
+}
+
+// ── CHART: TradingView Advanced Chart (indikator bisa ditambah via toolbar fx) ──
+function plLoadChart(force) {
+  const wrap = document.getElementById('plChartWrap');
+  if (!wrap) return;
+  const theme = plTheme();
+  if (!force && wrap._sym === _plSymbol && wrap._theme === theme) return;
+  wrap._sym = _plSymbol; wrap._theme = theme;
+  wrap.innerHTML = '';
+
+  const container = document.createElement('div');
+  container.className = 'tradingview-widget-container';
+  const widgetDiv = document.createElement('div');
+  widgetDiv.className = 'tradingview-widget-container__widget';
+  container.appendChild(widgetDiv);
+
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.async = true;
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.text = JSON.stringify({
+    autosize: true,
+    symbol: plTvSymbol(_plSymbol),
+    interval: 'D',
+    timezone: 'Asia/Jakarta',
+    theme: theme,
+    style: '1',
+    locale: 'id',
+    withdateranges: true,
+    hide_side_toolbar: false,
+    allow_symbol_change: true,
+    studies: ['MASimple@tv-basicstudies', 'RSI@tv-basicstudies', 'Volume@tv-basicstudies'],
+    support_host: 'https://www.tradingview.com'
+  });
+  container.appendChild(script);
+  wrap.appendChild(container);
+}
+
+// ── HEADLINES: sementara widget berita TradingView (ganti ke feed Python nanti) ──
+function plLoadNews() {
+  const wrap = document.getElementById('plNewsWrap');
+  if (!wrap) return;
+  const theme = plTheme();
+  if (wrap._built && wrap._theme === theme) return;
+  wrap._built = true; wrap._theme = theme;
+  wrap.innerHTML = '';
+
+  const container = document.createElement('div');
+  container.className = 'tradingview-widget-container';
+  const widgetDiv = document.createElement('div');
+  widgetDiv.className = 'tradingview-widget-container__widget';
+  container.appendChild(widgetDiv);
+
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.async = true;
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
+  script.text = JSON.stringify({
+    feedMode: PL_NEWS_FEED_MODE,
+    isTransparent: false,
+    displayMode: 'regular',
+    width: '100%',
+    height: '100%',
+    colorTheme: theme,
+    locale: 'id'
+  });
+  container.appendChild(script);
+  wrap.appendChild(container);
+}
+
+// ── HEATMAP: per sektor, warna = perubahan harian (data sendiri ohlc.json) ──
+async function plRenderHeatmap() {
+  const host = document.getElementById('plHeatmap');
+  if (!host) return;
+  host.innerHTML = '<div class="pl-empty">Memuat heatmap…</div>';
+
+  let all = null;
+  try { all = await loadOhlcAll(); } catch (_) {}
+  const tickers = (all && all.tickers) ? all.tickers : {};
+
+  const sectorOf = {}, nameOf = {};
+  (DATA && DATA.stock_list || []).forEach(s => { sectorOf[s.code] = s.sector || 'Lainnya'; nameOf[s.code] = s.name; });
+
+  const sectors = {};
+  Object.keys(tickers).forEach(code => {
+    const c = tickers[code].candles;
+    if (!Array.isArray(c) || c.length < 2) return;
+    const prev = c[c.length - 2][4], last = c[c.length - 1][4];
+    if (!prev || !last) return;
+    let chg = (last / prev - 1) * 100;
+    const lv = DATA && DATA.live && DATA.live[code];
+    if (lv && Number.isFinite(lv.change_pct)) chg = lv.change_pct * 100;
+    const sec = sectorOf[code] || 'Lainnya';
+    (sectors[sec] = sectors[sec] || []).push({ code, chg });
+  });
+
+  const secNames = Object.keys(sectors).sort();
+  if (!secNames.length) {
+    host.innerHTML = '<div class="pl-empty">Data OHLC belum tersedia.<br>Coba lagi sebentar.</div>';
+    return;
+  }
+
+  let html = '';
+  secNames.forEach(sec => {
+    const arr = sectors[sec].sort((a, b) => b.chg - a.chg);
+    html += `<div class="pl-sector"><div class="pl-sector-name">${sec}<span class="cnt">${arr.length}</span></div><div class="pl-hm-grid">`;
+    arr.forEach(t => {
+      html += `<div class="pl-tile" style="background:${plHeatColor(t.chg)}" title="${(nameOf[t.code] || t.code).replace(/"/g, '')}" onclick="plSetSymbol('${t.code}')">`
+        + `<span class="tc">${t.code}</span><span class="tp">${t.chg >= 0 ? '+' : ''}${t.chg.toFixed(2)}%</span></div>`;
+    });
+    html += '</div></div>';
+  });
+  host.innerHTML = html;
+}
+
+// ── SEASONALITY: return bulanan historis per tahun (data sendiri data.json) ──
+function plRenderSeasonality(code) {
+  const host = document.getElementById('plSeasonality');
+  const sel  = document.getElementById('plSeasSelect');
+  code = code || (sel && sel.value) || _plSymbol || 'IHSG';
+  if (sel && sel.value !== code) sel.value = code;
+  if (!host) return;
+
+  const ph = (DATA && DATA.price_history) || [];
+  const series = ph
+    .map(r => ({ date: r.date, price: r[code] }))
+    .filter(x => x.date && Number.isFinite(x.price) && x.price > 0)
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  if (series.length < 13) {
+    host.innerHTML = `<div class="pl-empty">Data historis untuk <b>${code}</b> belum cukup untuk seasonality.</div>`;
+    return;
+  }
+
+  const byYear = {};
+  for (let i = 1; i < series.length; i++) {
+    const d = new Date(series[i].date + 'T00:00:00');
+    const y = d.getFullYear(), m = d.getMonth();
+    const ret = (series[i].price / series[i - 1].price - 1) * 100;
+    (byYear[y] = byYear[y] || new Array(12).fill(null))[m] = ret;
+  }
+  const years = Object.keys(byYear).map(Number).sort((a, b) => a - b);
+
+  const sum = new Array(12).fill(0), cnt = new Array(12).fill(0);
+  years.forEach(y => byYear[y].forEach((v, m) => { if (Number.isFinite(v)) { sum[m] += v; cnt[m]++; } }));
+  const avg = sum.map((s, m) => (cnt[m] ? s / cnt[m] : null));
+
+  const cell = v => Number.isFinite(v)
+    ? `<td class="cell" style="background:${plHeatColor(v)}">${v >= 0 ? '+' : ''}${v.toFixed(1)}</td>`
+    : '<td>·</td>';
+
+  let h = '<table class="pl-seas"><thead><tr><th>Tahun</th>'
+    + PL_MONTHS.map(x => `<th>${x}</th>`).join('') + '</tr></thead><tbody>';
+  years.forEach(y => { h += `<tr><td>${y}</td>` + byYear[y].map(cell).join('') + '</tr>'; });
+  h += `<tr class="avg"><td>Rata²</td>` + avg.map(cell).join('') + '</tr>';
+  h += '</tbody></table>';
+  host.innerHTML = h;
 }
 
 // ═══════════════════════════════════════════
@@ -7953,6 +8346,9 @@ loadData();
   </button>
   <button class="bottom-nav-item" id="bn-valuasi" onclick="showPageMobile('valuasi',this);vlEnsureCharts()">
     <span class="bn-icon">🧮</span>Valuasi
+  </button>
+  <button class="bottom-nav-item" id="bn-pasar" onclick="showPageMobile('pasar',this);plEnsure()">
+    <span class="bn-icon">📡</span>Pasar
   </button>
   <!-- Menu Global disembunyikan sementara — hapus komentar untuk memunculkan kembali.
   <button class="bottom-nav-item" id="bn-global" onclick="showPageMobile('global',this);glEnsure()">
