@@ -2438,7 +2438,9 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 .pl-seasline .ttl b{color:var(--text)}
 .pl-seasline svg{width:100%;height:auto;display:block;overflow:visible}
 .pl-sl-legend{display:flex;flex-wrap:wrap;gap:5px 10px;justify-content:center;padding:8px 6px 2px}
-.pl-sl-key{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--text2)}
+.pl-sl-key{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--text2);cursor:pointer;padding:2px 6px;border-radius:6px}
+.pl-sl-key:hover{background:var(--bg3)}
+.pl-sl-key.on{background:var(--accent);color:#fff}
 .pl-sl-key .sw{width:13px;height:3px;border-radius:2px;display:inline-block;flex-shrink:0}
 
 @media (max-width:900px){
@@ -2616,7 +2618,7 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
           <span class="pl-grip">&#10287;</span>
           <span class="pl-win-title">📈 Market Chart</span>
           <span class="pl-spacer"></span>
-          <select class="pl-select" id="plSelA" onchange="plSetChartSymbol('A',this.value)" aria-label="Simbol chart 1"></select>
+          <input type="text" class="pl-select" id="plSelA" list="plCodesDL" autocomplete="off" placeholder="Kode saham… (mis. BBRI)" onchange="plPickChart('A',this)" aria-label="Simbol chart 1">
           <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
         </div>
         <div class="pl-win-body tv" id="plChartA"></div>
@@ -2628,7 +2630,7 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
           <span class="pl-grip">&#10287;</span>
           <span class="pl-win-title">📈 Market Chart</span>
           <span class="pl-spacer"></span>
-          <select class="pl-select" id="plSelB" onchange="plSetChartSymbol('B',this.value)" aria-label="Simbol chart 2"></select>
+          <input type="text" class="pl-select" id="plSelB" list="plCodesDL" autocomplete="off" placeholder="Kode saham… (mis. BBCA)" onchange="plPickChart('B',this)" aria-label="Simbol chart 2">
           <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
         </div>
         <div class="pl-win-body tv" id="plChartB"></div>
@@ -2656,7 +2658,7 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
             <button class="on" type="button" onclick="plSeasView('table',this)">Tabel</button>
             <button type="button" onclick="plSeasView('line',this)">Line</button>
           </div>
-          <select class="pl-select" id="plSeasSelect" onchange="plRenderSeasonality(this.value)" aria-label="Simbol seasonality"></select>
+          <input type="text" class="pl-select" id="plSeasSelect" list="plCodesDL" autocomplete="off" placeholder="Kode saham… (mis. IHSG)" onchange="plPickSeas(this)" aria-label="Simbol seasonality">
           <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
         </div>
         <div class="pl-win-body scroll" id="plSeasonality"></div>
@@ -2678,6 +2680,8 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
     </div>
 
   </div>
+
+  <datalist id="plCodesDL"></datalist>
 </div><!-- /page-pasar -->
 
 
@@ -4447,6 +4451,7 @@ const PL_NEWS_FEED_MODE = 'all_symbols';
 
 let _plInit = false;
 let _plSyms = { A: 'BBRI', B: 'BBCA' };   // simbol awal tiap panel chart (ada candle → SMC tampil)
+let _plCodesSet = null;                   // set kode valid (IHSG + DATA.stock_list) untuk validasi input search
 
 function plTheme()      { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
 function plTvSymbol(c)  { return c === 'IHSG' ? 'IDX:COMPOSITE' : 'IDX:' + c; }
@@ -4489,16 +4494,20 @@ function plBuildControls() {
   const codes = (DATA && Array.isArray(DATA.stock_list))
     ? DATA.stock_list.map(s => s.code).filter(Boolean).sort()
     : [];
-  const opts = ['<option value="IHSG">IHSG — Indeks Harga Saham Gabungan</option>']
+
+  // himpunan kode valid (IHSG + semua kode) untuk validasi input search
+  _plCodesSet = new Set(['IHSG'].concat(codes));
+
+  // isi <datalist> sekali — sumber autocomplete bersama untuk Chart A/B & Seasonality
+  const dlOpts = ['<option value="IHSG">IHSG — Indeks Harga Saham Gabungan</option>']
     .concat(codes.map(c => {
       const nm = plName(c);
-      return `<option value="${c}">${c}${nm ? ' — ' + nm : ''}</option>`;
+      return `<option value="${c}">${nm ? c + ' — ' + nm : c}</option>`;
     })).join('');
+  const dl = document.getElementById('plCodesDL');
+  if (dl) dl.innerHTML = dlOpts;
 
-  ['plSelA', 'plSelB', 'plSeasSelect'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = opts;
-  });
+  // nilai awal tiap input sesuai simbol aktif
   const a = document.getElementById('plSelA'); if (a) a.value = _plSyms.A;
   const b = document.getElementById('plSelB'); if (b) b.value = _plSyms.B;
   const s = document.getElementById('plSeasSelect'); if (s) s.value = 'IHSG';
@@ -4512,6 +4521,28 @@ function plBuildControls() {
     if (!page || !page.classList.contains('active')) return;
     setTimeout(() => { plLoadChart('A', true); plLoadChart('B', true); plLoadNews(true); }, 80);
   });
+}
+
+// Input search Chart A/B → validasi; jika kode valid set simbol, jika tidak balik ke nilai lama
+function plPickChart(slot, input) {
+  const code = (input.value || '').trim().toUpperCase();
+  if (code && _plCodesSet && _plCodesSet.has(code)) {
+    input.value = code;
+    plSetChartSymbol(slot, code);
+  } else {
+    input.value = _plSyms[slot];   // kode tak valid → kembalikan ke simbol sebelumnya
+  }
+}
+
+// Input search Seasonality → validasi lalu render; tak valid → kembali ke simbol aktif
+function plPickSeas(input) {
+  const code = (input.value || '').trim().toUpperCase();
+  if (code && _plCodesSet && _plCodesSet.has(code)) {
+    input.value = code;
+    plRenderSeasonality(code);
+  } else {
+    input.value = _plSeasCode || 'IHSG';
+  }
 }
 
 // ── PERBESAR/KECILKAN (maximize) + RESIZE panel ala terminal ──
@@ -5044,6 +5075,9 @@ async function plRenderHeatmap() {
 }
 
 let _plSeasView = 'table';   // 'table' | 'line'
+let _plSeas     = null;      // {byYear, years, avg, code} — state data line aktif
+let _plSeasHi   = null;      // tahun yang sedang disorot (number) atau null = rata-rata
+let _plSeasCode = 'IHSG';    // kode seasonality aktif (untuk revert input search)
 function plSeasView(view, btn) {
   _plSeasView = view;
   const seg = document.getElementById('plSeasViewSeg');
@@ -5051,9 +5085,20 @@ function plSeasView(view, btn) {
   plRenderSeasonality();
 }
 
+// Sorot/lepas-sorot satu tahun di chart line seasonality (toggle). null = reset ke rata-rata.
+function plSeasHi(y) {
+  _plSeasHi = (_plSeasHi === y) ? null : y;
+  const h = document.getElementById('plSeasonality');
+  if (h && _plSeas) h.innerHTML = plSeasLineSVG();
+}
+
 // SVG multi-line: SATU GARIS PER TAHUN (indeks kumulatif basis 100, Jan) untuk
 // membandingkan pola musiman antar tahun, plus garis rata-rata (tebal) sbg acuan.
-function plSeasLineSVG(byYear, years, avg, code) {
+// Interaktif: klik tahun (legenda/garis) → fokus; klik "Rata²" → reset. Baca _plSeas/_plSeasHi.
+function plSeasLineSVG() {
+  if (!_plSeas) return '';
+  const { byYear, years, avg, code } = _plSeas;
+  const hi = _plSeasHi;
   const W = 760, H = 330, padL = 40, padR = 12, padT = 14, padB = 26;
   const innerW = W - padL - padR, innerH = H - padT - padB;
   const X = m => padL + (m / 11) * innerW;
@@ -5085,30 +5130,61 @@ function plSeasLineSVG(byYear, years, avg, code) {
   const avgColor = isDark ? '#ffffff' : '#0a0521';
   const yearColor = i => `hsl(${Math.round((i / Math.max(1, years.length)) * 320)} 70% ${isDark ? 62 : 48}%)`;
 
-  const poly = (pts, stroke, w, op) => {
+  const poly = (pts, stroke, w, op, extra) => {
     const s = pts.filter(Boolean).map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
-    return s ? `<polyline points="${s}" fill="none" stroke="${stroke}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" opacity="${op}"/>` : '';
+    return s ? `<polyline points="${s}" fill="none" stroke="${stroke}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" opacity="${op}"${extra || ''}/>` : '';
   };
 
+  // garis per tahun — bisa diklik untuk fokus; saat ada sorot, yang lain diredupkan
   let lines = '';
-  yearCum.forEach((s, i) => { lines += poly(s.pts, yearColor(i), 1.6, 0.8); });
-  const avgLine = poly(avgCum, avgColor, 3, 1);
+  yearCum.forEach((s, i) => {
+    const focused = hi === s.y;
+    const dim     = hi !== null && !focused;
+    const w  = focused ? 2.8 : 1.6;
+    const op = dim ? 0.13 : (focused ? 1 : 0.8);
+    lines += poly(s.pts, yearColor(i), w, op, ` style="cursor:pointer" onclick="plSeasHi(${s.y})"`);
+  });
+
+  // garis rata-rata — tebal saat tak ada sorot, diredupkan saat ada tahun tersorot
+  const avgLine = poly(avgCum, avgColor, hi === null ? 3 : 1.4, hi === null ? 1 : 0.22,
+    ` style="cursor:pointer" onclick="plSeasHi(null)"`);
+
+  // titik + tooltip (%) pada garis yang sedang difokus (tahun tersorot, atau rata-rata bila tidak)
+  let focusRet, focusPts, focusLabel, focusColor;
+  if (hi !== null) {
+    const idx = years.indexOf(hi);
+    focusRet = byYear[hi]; focusPts = idx >= 0 ? yearCum[idx].pts : null;
+    focusLabel = String(hi); focusColor = yearColor(idx);
+  } else {
+    focusRet = avg; focusPts = avgCum; focusLabel = 'Rata²'; focusColor = avgColor;
+  }
+  let dots = '';
+  if (focusPts) {
+    focusPts.forEach(p => {
+      if (!p) return;
+      const m = p[0], v = p[1], r = focusRet[m];
+      const rTxt = Number.isFinite(r) ? `${r >= 0 ? '+' : ''}${r.toFixed(1)}%` : '–';
+      dots += `<circle cx="${X(m).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3" fill="${focusColor}" stroke="${isDark ? '#150f33' : '#ffffff'}" stroke-width="1"><title>${focusLabel} · ${PL_MONTHS[m]}: ${rTxt} — indeks ${v.toFixed(1)}</title></circle>`;
+    });
+  }
 
   const y100 = Y(100);
   let xlabels = '';
   PL_MONTHS.forEach((mn, m) => { xlabels += `<text x="${X(m).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="${grid}">${mn}</text>`; });
   const yLab = (v, t) => `<text x="${padL - 5}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="${grid}">${t}</text>`;
 
-  let legend = years.map((y, i) => `<span class="pl-sl-key"><span class="sw" style="background:${yearColor(i)}"></span>${y}</span>`).join('');
-  legend += `<span class="pl-sl-key"><span class="sw" style="background:${avgColor};height:4px"></span>Rata²</span>`;
+  let legend = years.map((y, i) =>
+    `<span class="pl-sl-key${hi === y ? ' on' : ''}" onclick="plSeasHi(${y})"><span class="sw" style="background:${yearColor(i)}"></span>${y}</span>`
+  ).join('');
+  legend += `<span class="pl-sl-key${hi === null ? ' on' : ''}" onclick="plSeasHi(null)"><span class="sw" style="background:${avgColor};height:4px"></span>Rata²</span>`;
 
   return `
     <div class="pl-seasline">
-      <div class="ttl">Pola musiman <b>${code}</b> per tahun — indeks kumulatif (basis 100, Jan). Garis tebal = rata-rata semua tahun.</div>
+      <div class="ttl">Pola musiman <b>${code}</b> per tahun — indeks kumulatif (basis 100, Jan). Garis tebal = rata-rata semua tahun. Klik tahun untuk fokus.</div>
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Seasonality multi-line ${code}">
         <line x1="${padL}" y1="${y100.toFixed(1)}" x2="${W - padR}" y2="${y100.toFixed(1)}" stroke="${grid}" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
         ${yLab(100, '100')}${yLab(max, max.toFixed(0))}${yLab(min, min.toFixed(0))}
-        ${lines}${avgLine}${xlabels}
+        ${lines}${avgLine}${dots}${xlabels}
       </svg>
       <div class="pl-sl-legend">${legend}</div>
     </div>`;
@@ -5120,6 +5196,7 @@ function plRenderSeasonality(code) {
   const sel  = document.getElementById('plSeasSelect');
   code = code || (sel && sel.value) || 'IHSG';
   if (sel && sel.value !== code) sel.value = code;
+  _plSeasCode = code;
   if (!host) return;
 
   const ph = (DATA && DATA.price_history) || [];
@@ -5146,8 +5223,13 @@ function plRenderSeasonality(code) {
   years.forEach(y => byYear[y].forEach((v, m) => { if (Number.isFinite(v)) { sum[m] += v; cnt[m]++; } }));
   const avg = sum.map((s, m) => (cnt[m] ? s / cnt[m] : null));
 
-  // Tampilan LINE (multi-line per tahun)
-  if (_plSeasView === 'line') { host.innerHTML = plSeasLineSVG(byYear, years, avg, code); return; }
+  // Tampilan LINE (multi-line per tahun, interaktif)
+  if (_plSeasView === 'line') {
+    _plSeas = { byYear, years, avg, code };
+    _plSeasHi = null;
+    host.innerHTML = plSeasLineSVG();
+    return;
+  }
 
   // Tampilan TABEL (heatmap per tahun)
   const cell = v => Number.isFinite(v)
