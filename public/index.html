@@ -2485,11 +2485,11 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
     <div class="search-drop" id="searchDrop"></div>
   </div>
   <nav class="nav-tabs">
+    <div class="nav-tab" onclick="showPage('pasar');plEnsure()">Pasar Live</div>
     <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
     <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
     <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
-    <div class="nav-tab" onclick="showPage('pasar');plEnsure()">Pasar Live</div>
     <!-- Menu Global disembunyikan sementara (banyak baris masih snapshot statis).
          Untuk memunculkan kembali: hapus komentar di bawah ini. -->
     <!-- <div class="nav-tab" onclick="showPage('global');glEnsure()">Global</div> -->
@@ -9182,6 +9182,9 @@ loadData();
 
 <!-- BOTTOM NAV (mobile only — hidden di desktop via CSS) -->
 <nav class="bottom-nav" id="bottomNav">
+  <button class="bottom-nav-item" id="bn-pasar" onclick="showPageMobile('pasar',this);plEnsure()">
+    <span class="bn-icon">📡</span>Pasar
+  </button>
   <button class="bottom-nav-item active" id="bn-dashboard" onclick="showPageMobile('dashboard',this)">
     <span class="bn-icon">📊</span>Dashboard
   </button>
@@ -9193,9 +9196,6 @@ loadData();
   </button>
   <button class="bottom-nav-item" id="bn-valuasi" onclick="showPageMobile('valuasi',this);vlEnsureCharts()">
     <span class="bn-icon">🧮</span>Valuasi
-  </button>
-  <button class="bottom-nav-item" id="bn-pasar" onclick="showPageMobile('pasar',this);plEnsure()">
-    <span class="bn-icon">📡</span>Pasar
   </button>
   <!-- Menu Global disembunyikan sementara — hapus komentar untuk memunculkan kembali.
   <button class="bottom-nav-item" id="bn-global" onclick="showPageMobile('global',this);glEnsure()">
