@@ -2335,9 +2335,11 @@ select.form-control option{background:var(--card);color:var(--text)}
 
 /* ── TERMINAL: kolom kiri (grid) + kolom kanan Headlines yang setinggi kolom kiri ── */
 .pl-terminal{display:flex;gap:12px;align-items:stretch}
-.pl-col-main{flex:1 1 auto;min-width:0;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(280px,40vh);gap:12px}
-.pl-col-side{flex:0 0 clamp(290px,27%,400px);min-width:0;display:flex}
-.pl-col-side .pl-win{flex:1 1 auto}
+.pl-col-main{flex:1 1 auto;min-width:0;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(300px,44vh);gap:12px}
+/* kolom kanan: tinggi MENGIKUTI kolom kiri (anak absolut → konten berita tak
+   memperpanjang kolom; berita scroll di dalam, berakhir tepat di bawah Seasonality) */
+.pl-col-side{flex:0 0 clamp(290px,27%,400px);min-width:0;position:relative}
+.pl-col-side .pl-win{position:absolute;inset:0}
 
 /* ── PANEL "window" ── */
 .pl-win{position:relative;box-sizing:border-box;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);display:flex;flex-direction:column;overflow:hidden;min-width:0;min-height:0}
@@ -2421,7 +2423,8 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 @media (max-width:900px){
   .pl-terminal{flex-direction:column}
   .pl-col-main{grid-template-columns:1fr;grid-auto-rows:auto}
-  .pl-col-side{flex:none}
+  .pl-col-side{flex:none;position:static}
+  .pl-col-side .pl-win{position:static}
   .pl-win{height:auto}
   #plWinChartA,#plWinChartB,#plWinNews{height:440px}
   #plWinHeatmap,#plWinSeas{height:380px}
