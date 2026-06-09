@@ -5092,6 +5092,53 @@ function plSeasHi(y) {
   if (h && _plSeas) h.innerHTML = plSeasLineSVG();
 }
 
+// ── Tooltip interaktif (hover/sentuh) untuk garis seasonality yang sedang difokus ──
+// _plSeasTip diisi tiap render: titik2 garis fokus + geometri & warna utk gambar tooltip.
+let _plSeasTip = null;
+
+// Gerak kursor/jari di atas chart → cari titik bulan terdekat (sumbu X) lalu tampilkan %.
+function plSeasTipMove(evt) {
+  const t = _plSeasTip; if (!t || !t.pts.length) return;
+  const svg = evt.currentTarget;
+  const ctm = svg.getScreenCTM(); if (!ctm) return;
+  const pt = svg.createSVGPoint();
+  pt.x = (evt.clientX != null) ? evt.clientX : (evt.touches && evt.touches[0] && evt.touches[0].clientX);
+  pt.y = (evt.clientY != null) ? evt.clientY : (evt.touches && evt.touches[0] && evt.touches[0].clientY);
+  if (pt.x == null) return;
+  const loc = pt.matrixTransform(ctm.inverse());
+  let best = null, bd = Infinity;
+  t.pts.forEach(p => { const d = Math.abs(p.x - loc.x); if (d < bd) { bd = d; best = p; } });
+  if (best) plSeasTipShow(best);
+}
+
+function plSeasTipShow(p) {
+  const t = _plSeasTip; const g = document.getElementById('plSeasTipG');
+  if (!t || !g) return;
+  const dark = t.isDark;
+  const retTxt = Number.isFinite(p.ret) ? `${p.ret >= 0 ? '+' : ''}${p.ret.toFixed(1)}%` : '–';
+  const l1 = `${t.label} · ${PL_MONTHS[p.m]}`;
+  const l2 = `${retTxt} — indeks ${p.idx.toFixed(1)}`;
+  const bw = 132, bh = 38;
+  let bx = p.x + 12; if (bx + bw > t.W - 2) bx = p.x - bw - 12; if (bx < 2) bx = 2;
+  let by = p.y - bh - 10; if (by < 2) by = p.y + 12;
+  const boxBg = dark ? '#150f33' : '#ffffff';
+  const boxBd = dark ? '#4a3590' : '#d4ccf0';
+  const txMain = dark ? '#e8e3ff' : '#1a1145';
+  const txVal = Number.isFinite(p.ret)
+    ? (p.ret >= 0 ? (dark ? '#34d399' : '#059669') : (dark ? '#f87171' : '#dc2626'))
+    : txMain;
+  g.innerHTML =
+    `<line x1="${p.x.toFixed(1)}" y1="${t.padT}" x2="${p.x.toFixed(1)}" y2="${(t.padT + t.innerH).toFixed(1)}" stroke="${t.color}" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>` +
+    `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="${t.color}" stroke="${dark ? '#150f33' : '#ffffff'}" stroke-width="2"/>` +
+    `<g transform="translate(${bx.toFixed(1)},${by.toFixed(1)})" style="pointer-events:none">` +
+      `<rect width="${bw}" height="${bh}" rx="7" fill="${boxBg}" stroke="${boxBd}" stroke-width="1"/>` +
+      `<text x="9" y="16" font-size="11" font-weight="800" fill="${txMain}">${l1}</text>` +
+      `<text x="9" y="31" font-size="11" font-weight="800" fill="${txVal}">${l2}</text>` +
+    `</g>`;
+}
+
+function plSeasTipHide() { const g = document.getElementById('plSeasTipG'); if (g) g.innerHTML = ''; }
+
 // SVG multi-line: SATU GARIS PER TAHUN (indeks kumulatif basis 100, Jan) untuk
 // membandingkan pola musiman antar tahun, plus garis rata-rata (tebal) sbg acuan.
 // Interaktif: klik tahun (legenda/garis) → fokus; klik "Rata²" → reset. Baca _plSeas/_plSeasHi.
@@ -5159,14 +5206,18 @@ function plSeasLineSVG() {
     focusRet = avg; focusPts = avgCum; focusLabel = 'Rata²'; focusColor = avgColor;
   }
   let dots = '';
+  const tipPts = [];
   if (focusPts) {
     focusPts.forEach(p => {
       if (!p) return;
       const m = p[0], v = p[1], r = focusRet[m];
-      const rTxt = Number.isFinite(r) ? `${r >= 0 ? '+' : ''}${r.toFixed(1)}%` : '–';
-      dots += `<circle cx="${X(m).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3" fill="${focusColor}" stroke="${isDark ? '#150f33' : '#ffffff'}" stroke-width="1"><title>${focusLabel} · ${PL_MONTHS[m]}: ${rTxt} — indeks ${v.toFixed(1)}</title></circle>`;
+      const cx = X(m), cy = Y(v);
+      tipPts.push({ m, x: cx, y: cy, ret: r, idx: v });
+      dots += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="${focusColor}" stroke="${isDark ? '#150f33' : '#ffffff'}" stroke-width="1"/>`;
     });
   }
+  // simpan state untuk tooltip interaktif (hover/sentuh) — garis yang sedang difokus
+  _plSeasTip = { pts: tipPts, label: focusLabel, color: focusColor, padT, innerH, W, isDark };
 
   const y100 = Y(100);
   let xlabels = '';
@@ -5180,11 +5231,12 @@ function plSeasLineSVG() {
 
   return `
     <div class="pl-seasline">
-      <div class="ttl">Pola musiman <b>${code}</b> per tahun — indeks kumulatif (basis 100, Jan). Garis tebal = rata-rata semua tahun. Klik tahun untuk fokus.</div>
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Seasonality multi-line ${code}">
+      <div class="ttl">Pola musiman <b>${code}</b> per tahun — indeks kumulatif (basis 100, Jan). Garis tebal = rata-rata semua tahun. Klik tahun untuk fokus · arahkan kursor/sentuh untuk lihat %.</div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Seasonality multi-line ${code}" style="touch-action:pan-y" onpointermove="plSeasTipMove(event)" onpointerdown="plSeasTipMove(event)" onpointerleave="plSeasTipHide()">
         <line x1="${padL}" y1="${y100.toFixed(1)}" x2="${W - padR}" y2="${y100.toFixed(1)}" stroke="${grid}" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
         ${yLab(100, '100')}${yLab(max, max.toFixed(0))}${yLab(min, min.toFixed(0))}
         ${lines}${avgLine}${dots}${xlabels}
+        <g id="plSeasTipG"></g>
       </svg>
       <div class="pl-sl-legend">${legend}</div>
     </div>`;
