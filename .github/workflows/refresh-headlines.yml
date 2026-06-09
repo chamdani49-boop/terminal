@@ -11,7 +11,12 @@ name: Refresh Headlines (berita pasar)
 
 on:
   schedule:
-    - cron: '*/15 * * * *'   # tiap 15 menit
+    # Tiap ~15 menit, tapi DIGESER dari menit :00 (07,22,37,52).
+    # GitHub Actions menunda/men-drop run terjadwal saat beban tinggi —
+    # dan beban paling tinggi tepat di awal jam (menit :00). Menggeser
+    # jadwal menjauh dari :00 = rekomendasi resmi GitHub agar run lebih
+    # andal benar-benar tereksekusi.
+    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
 
 permissions:

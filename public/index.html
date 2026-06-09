@@ -2433,6 +2433,7 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 .pl-news-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .pl-news-src{font-size:10.5px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pl-news-time{font-size:10.5px;color:var(--text3);font-weight:600;margin-left:auto;white-space:nowrap;flex-shrink:0}
+.pl-news-badge{font-size:9.5px;font-weight:800;color:#fff;background:var(--accent);padding:1px 7px;border-radius:var(--radius-pill);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;flex-shrink:0}
 .pl-news-title{font-size:13px;font-weight:600;line-height:1.35;color:var(--text)}
 .pl-news-item:hover .pl-news-title{color:var(--accent)}
 .pl-win-body.tv .tradingview-widget-container,
@@ -5006,9 +5007,13 @@ function plAttachBox(chart, series, box, isDark) {
 // ── HEADLINES: feed berita dari mesin sendiri (public/headlines.json) ──
 // Dibangun scripts/fetch_headlines.py via GitHub Actions (cron ~15 mnt) dari
 // beberapa portal (CNBC, Kontan, Bisnis, dll.). Link bisa diklik (tab baru).
+// Selain berita, juga digabung artikel "Insight" milik sendiri dari
+// public/insights.json (Economstock, scripts/fetch_insights.py, retensi 90 hari).
 // Fallback ke widget berita TradingView kalau feed belum ada / gagal.
 const PL_HEADLINES_CDN   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/headlines.json';
 const PL_HEADLINES_LOCAL = 'headlines.json';
+const PL_INSIGHTS_CDN    = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/insights.json';
+const PL_INSIGHTS_LOCAL  = 'insights.json';
 
 function plTimeAgo(ts) {
   const s = Math.max(0, Math.floor(Date.now() / 1000 - (ts || 0)));
@@ -5021,6 +5026,20 @@ function plEsc(s) {
   return (s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+// Ambil JSON feed (CDN dulu, fallback lokal) → kembalikan array items atau null
+async function plFetchFeed(cdn, local) {
+  const v = Math.floor(Date.now() / (5 * 60 * 1000));   // cache-bust tiap 5 menit
+  for (const base of [cdn, local]) {
+    try {
+      const res = await fetch(base + '?v=' + v, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data && Array.isArray(data.items)) return data.items;
+    } catch (_) {}
+  }
+  return null;
+}
+
 async function plLoadNews(force) {
   const wrap = document.getElementById('plNewsWrap');
   if (!wrap) return;
@@ -5029,18 +5048,32 @@ async function plLoadNews(force) {
   wrap.className = 'pl-win-body scroll';
   wrap.innerHTML = '<div class="pl-empty">Memuat berita…</div>';
 
-  let data = null;
-  const v = Math.floor(Date.now() / (5 * 60 * 1000));   // cache-bust tiap 5 menit
-  for (const base of [PL_HEADLINES_CDN, PL_HEADLINES_LOCAL]) {
-    try {
-      const res = await fetch(base + '?v=' + v, { cache: 'no-store' });
-      if (!res.ok) continue;
-      data = await res.json();
-      if (data && Array.isArray(data.items)) break;
-    } catch (_) {}
+  // Berita + Insight ditarik paralel lalu DIGABUNG dalam satu daftar
+  const [news, insights] = await Promise.all([
+    plFetchFeed(PL_HEADLINES_CDN, PL_HEADLINES_LOCAL),
+    plFetchFeed(PL_INSIGHTS_CDN, PL_INSIGHTS_LOCAL),
+  ]);
+
+  let items = [];
+  if (Array.isArray(news)) items = items.concat(news);
+  if (Array.isArray(insights)) {
+    items = items.concat(insights.map(it => ({
+      ...it,
+      source: it.source || 'Economstock',
+      cat: it.cat || 'insight',
+    })));
   }
 
-  const items = (data && Array.isArray(data.items)) ? data.items : [];
+  // dedupe (berdasarkan link) lalu urutkan terbaru di atas
+  const seen = new Set();
+  items = items.filter(it => {
+    const k = it.link || it.title;
+    if (!k || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
   if (!items.length) { wrap._feedDone = false; plLoadNewsTV(wrap, plTheme()); return; }
 
   _plNews = items;
@@ -5052,6 +5085,7 @@ let _plNews = [];
 let _plNewsF = { source: 'all', period: 'all', cat: 'all', q: '' };
 const PL_NEWS_CATS = [
   { key: 'all',     label: 'Semua kategori',    kw: [] },
+  { key: 'insight', label: '💡 Insight',         kw: [], cat: 'insight' },
   { key: 'dividen', label: '💰 Dividen',         kw: ['dividen'] },
   { key: 'ipo',     label: '🚀 IPO / Listing',   kw: ['ipo', 'melantai', 'penawaran umum perdana', 'pencatatan perdana'] },
   { key: 'rekom',   label: '🎯 Rekomendasi',     kw: ['rekomendasi', 'target harga', 'cek saham', 'saham pilihan', 'pantau saham', 'top gainer', 'top loser'] },
@@ -5104,7 +5138,8 @@ function plRenderNews() {
     if (f.period === 'today' && plDayIdxWIB(n.ts) !== today) return false;
     if (f.period === 'yest' && plDayIdxWIB(n.ts) !== today - 1) return false;
     const title = (n.title || '').toLowerCase();
-    if (cat.kw.length && !cat.kw.some(k => title.includes(k))) return false;
+    if (cat.cat) { if (n.cat !== cat.cat) return false; }          // kategori berbasis field (mis. Insight)
+    else if (cat.kw.length && !cat.kw.some(k => title.includes(k))) return false;
     if (q && !title.includes(q) && !(n.source || '').toLowerCase().includes(q)) return false;
     return true;
   });
@@ -5116,6 +5151,7 @@ function plRenderNews() {
   list.innerHTML = out.map(it =>
     `<a class="pl-news-item" href="${plEsc(it.link || '#')}" target="_blank" rel="noopener noreferrer">`
     + `<div class="pl-news-meta"><span class="pl-news-src">${plEsc(it.source || '')}</span>`
+    + (it.cat === 'insight' ? '<span class="pl-news-badge">💡 Insight</span>' : '')
     + `<span class="pl-news-time">${plTimeAgo(it.ts)}</span></div>`
     + `<div class="pl-news-title">${plEsc(it.title || '')}</div></a>`
   ).join('');
