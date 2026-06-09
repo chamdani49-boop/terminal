@@ -2410,6 +2410,14 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 #plNewsWrap .tradingview-widget-copyright{display:none!important}
 /* daftar berita kustom (dari headlines.json) */
 .pl-news{padding:0!important}
+/* filter bar headlines */
+.pl-news-host{display:flex;flex-direction:column;overflow:hidden}
+.pl-news-bar{flex-shrink:0;padding:8px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px;background:var(--bg2)}
+.pl-news-bar .row{display:flex;gap:6px}
+.pl-news-search{width:100%;box-sizing:border-box;padding:6px 10px;font-size:12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit}
+.pl-news-sel{flex:1;min-width:0;padding:5px 7px;font-size:11.5px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;cursor:pointer}
+.pl-news-list{flex:1;min-height:0;overflow:auto}
+.pl-news-empty{padding:24px 14px;text-align:center;color:var(--text2);font-size:12px;font-weight:600;line-height:1.5}
 .pl-news-item{display:block;padding:11px 13px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--text);transition:background .12s}
 .pl-news-item:last-child{border-bottom:none}
 .pl-news-item:hover{background:var(--bg2)}
@@ -4888,8 +4896,77 @@ async function plLoadNews(force) {
   const items = (data && Array.isArray(data.items)) ? data.items : [];
   if (!items.length) { wrap._feedDone = false; plLoadNewsTV(wrap, plTheme()); return; }
 
-  wrap.className = 'pl-win-body scroll pl-news';
-  wrap.innerHTML = items.map(it =>
+  _plNews = items;
+  plBuildNewsUI(wrap);
+}
+
+// State & kategori filter berita
+let _plNews = [];
+let _plNewsF = { source: 'all', period: 'all', cat: 'all', q: '' };
+const PL_NEWS_CATS = [
+  { key: 'all',     label: 'Semua kategori',    kw: [] },
+  { key: 'dividen', label: '💰 Dividen',         kw: ['dividen'] },
+  { key: 'ipo',     label: '🚀 IPO / Listing',   kw: ['ipo', 'melantai', 'penawaran umum perdana', 'pencatatan perdana'] },
+  { key: 'rekom',   label: '🎯 Rekomendasi',     kw: ['rekomendasi', 'target harga', 'cek saham', 'saham pilihan', 'pantau saham', 'top gainer', 'top loser'] },
+  { key: 'rups',    label: '🏛 RUPS',            kw: ['rups'] },
+  { key: 'korp',    label: '🤝 Aksi Korporasi',  kw: ['akuisisi', 'merger', 'right issue', 'rights issue', 'buyback', 'stock split', 'private placement', 'caplok', 'divestasi'] },
+  { key: 'kinerja', label: '📊 Kinerja/Laba',    kw: ['laba', 'rugi', 'pendapatan', 'kinerja', 'laporan keuangan', 'penjualan', 'omzet'] },
+  { key: 'ihsg',    label: '📈 IHSG/Indeks',     kw: ['ihsg', 'indeks', 'bursa', 'asing', 'net buy', 'net sell'] },
+];
+function plDayIdxWIB(ts) { return Math.floor(((ts || 0) + 25200) / 86400); }   // hari kalender WIB (UTC+7)
+
+function plBuildNewsUI(wrap) {
+  wrap.className = 'pl-win-body pl-news-host';
+  const sources = Array.from(new Set(_plNews.map(n => n.source).filter(Boolean))).sort();
+  const srcOpts = ['<option value="all">Semua sumber</option>']
+    .concat(sources.map(s => `<option value="${plEsc(s)}">${plEsc(s)}</option>`)).join('');
+  const catOpts = PL_NEWS_CATS.map(c => `<option value="${c.key}">${c.label}</option>`).join('');
+
+  wrap.innerHTML =
+    '<div class="pl-news-bar">'
+    + '<input class="pl-news-search" id="plNewsQ" type="search" placeholder="🔍 Cari kode saham / kata kunci…" oninput="plNewsSetF(\'q\',this.value)">'
+    + '<div class="row">'
+    +   '<select class="pl-news-sel" id="plNewsSrc" onchange="plNewsSetF(\'source\',this.value)">' + srcOpts + '</select>'
+    +   '<select class="pl-news-sel" id="plNewsPer" onchange="plNewsSetF(\'period\',this.value)">'
+    +     '<option value="all">Semua hari</option><option value="today">Hari ini</option><option value="yest">Kemarin</option>'
+    +   '</select>'
+    + '</div>'
+    + '<select class="pl-news-sel" id="plNewsCat" onchange="plNewsSetF(\'cat\',this.value)">' + catOpts + '</select>'
+    + '</div>'
+    + '<div class="pl-news-list" id="plNewsList"></div>';
+
+  // pulihkan pilihan filter sebelumnya
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  set('plNewsSrc', _plNewsF.source); set('plNewsPer', _plNewsF.period); set('plNewsCat', _plNewsF.cat);
+  const q = document.getElementById('plNewsQ'); if (q) q.value = _plNewsF.q;
+  plRenderNews();
+}
+
+function plNewsSetF(key, val) { _plNewsF[key] = val; plRenderNews(); }
+
+function plRenderNews() {
+  const list = document.getElementById('plNewsList');
+  if (!list) return;
+  const f = _plNewsF;
+  const today = plDayIdxWIB(Math.floor(Date.now() / 1000));
+  const cat = PL_NEWS_CATS.find(c => c.key === f.cat) || PL_NEWS_CATS[0];
+  const q = (f.q || '').trim().toLowerCase();
+
+  const out = _plNews.filter(n => {
+    if (f.source !== 'all' && n.source !== f.source) return false;
+    if (f.period === 'today' && plDayIdxWIB(n.ts) !== today) return false;
+    if (f.period === 'yest' && plDayIdxWIB(n.ts) !== today - 1) return false;
+    const title = (n.title || '').toLowerCase();
+    if (cat.kw.length && !cat.kw.some(k => title.includes(k))) return false;
+    if (q && !title.includes(q) && !(n.source || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (!out.length) {
+    list.innerHTML = '<div class="pl-news-empty">Tidak ada berita yang cocok dengan filter ini.</div>';
+    return;
+  }
+  list.innerHTML = out.map(it =>
     `<a class="pl-news-item" href="${plEsc(it.link || '#')}" target="_blank" rel="noopener noreferrer">`
     + `<div class="pl-news-meta"><span class="pl-news-src">${plEsc(it.source || '')}</span>`
     + `<span class="pl-news-time">${plTimeAgo(it.ts)}</span></div>`
