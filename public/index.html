@@ -2549,6 +2549,7 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
         <span class="pl-win-title">📈 Market Chart</span>
         <span class="pl-spacer"></span>
         <select class="pl-select" id="plSelA" onchange="plSetChartSymbol('A',this.value)" aria-label="Simbol chart 1"></select>
+        <button class="pl-ico-btn" type="button" onclick="plOpenTV('A')" title="Buka di TradingView (pakai indikator akunmu: BigBeluga, MA 20/50/200, dll.)" aria-label="Buka di TradingView">&#8599;</button>
         <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
       <div class="pl-win-body tv" id="plChartA"></div>
@@ -2562,6 +2563,7 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
         <span class="pl-win-title">📈 Market Chart</span>
         <span class="pl-spacer"></span>
         <select class="pl-select" id="plSelB" onchange="plSetChartSymbol('B',this.value)" aria-label="Simbol chart 2"></select>
+        <button class="pl-ico-btn" type="button" onclick="plOpenTV('B')" title="Buka di TradingView (pakai indikator akunmu: BigBeluga, MA 20/50/200, dll.)" aria-label="Buka di TradingView">&#8599;</button>
         <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
       <div class="pl-win-body tv" id="plChartB"></div>
@@ -4493,6 +4495,15 @@ function plSetChartSymbol(slot, code) {  _plSyms[slot] = code;
   const sel = document.getElementById('plSel' + slot);
   if (sel && sel.value !== code) sel.value = code;
   plLoadChart(slot, true);
+}
+
+// Buka simbol panel di TradingView penuh (tab baru) — di sana akun-mu sudah login
+// sehingga indikator pribadimu (BigBeluga, MA 20/50/200, dll.) otomatis tampil.
+// Catatan: widget embed selalu mode anonim, jadi tak bisa pakai indikator akun.
+function plOpenTV(slot) {
+  const sym = _plSyms[slot] || 'IHSG';
+  const url = 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(plTvSymbol(sym));
+  window.open(url, '_blank', 'noopener');
 }
 
 // ── CHART: TradingView Advanced Chart (indikator bisa ditambah via toolbar) ──
