@@ -2380,6 +2380,35 @@ table.pl-seas tr.avg td{border-top:2px solid var(--border);font-weight:800}
 table.pl-seas tr.avg td:first-child{color:var(--text)}
 .pl-empty{padding:30px 16px;text-align:center;color:var(--text2);font-weight:600;line-height:1.6;font-size:12.5px}
 
+/* ── CHART KUSTOM (Lightweight Charts): toolbar in-chart + MA legend ── */
+.pl-win-body.lw{display:flex;flex-direction:column;overflow:hidden}
+.pl-cbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 8px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
+.pl-seg2{display:inline-flex;gap:2px;background:var(--bg2);border-radius:var(--radius-pill);padding:2px}
+.pl-seg2 button{border:none;background:none;font-family:inherit;font-size:11px;font-weight:700;color:var(--text2);padding:3px 11px;border-radius:var(--radius-pill);cursor:pointer;transition:all .15s}
+.pl-seg2 button.on{background:var(--accent);color:#fff}
+.pl-ma{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;font-weight:700;color:var(--text2);padding:3px 8px;border-radius:7px;border:1px solid var(--border);user-select:none;white-space:nowrap}
+.pl-ma .dot{width:11px;height:3px;border-radius:2px;flex-shrink:0}
+.pl-ma.off{opacity:.36}
+.pl-cbar .sp{flex:1 1 auto;min-width:4px}
+.pl-cbar .tvlink{color:var(--text2);font-size:11px;font-weight:700;text-decoration:none;padding:3px 8px;border-radius:7px;border:1px solid var(--border);white-space:nowrap;cursor:pointer}
+.pl-cbar .tvlink:hover{border-color:var(--accent);color:var(--accent)}
+.pl-chart-host{flex:1 1 auto;min-height:0;min-width:0;position:relative}
+.pl-chart-host .tradingview-widget-container,.pl-chart-host .tradingview-widget-container__widget,.pl-chart-host iframe{height:100%!important;width:100%!important;display:block}
+.pl-chart-note{position:absolute;top:8px;left:8px;z-index:4;background:var(--bg2);color:var(--text2);font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;border:1px solid var(--border);max-width:84%}
+
+/* ── HEADLINES: paksa iframe penuh ke bawah (hilangkan space kosong) ── */
+.pl-win-body.tv .tradingview-widget-container,
+.pl-win-body.tv .tradingview-widget-container__widget,
+.pl-win-body.tv iframe{height:100%!important;width:100%!important;display:block}
+.pl-win-body.tv .tradingview-widget-copyright{display:none!important}
+
+/* ── SEASONALITY versi line (SVG) ── */
+.pl-seas-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.pl-seasline{padding:4px 2px}
+.pl-seasline .ttl{font-size:12px;font-weight:700;color:var(--text2);margin:0 4px 6px}
+.pl-seasline .ttl b{color:var(--text)}
+.pl-seasline svg{width:100%;height:auto;display:block;overflow:visible}
+
 @media (max-width:900px){
   .pl-win{width:100%!important;height:420px!important}
   #plWinHeatmap,#plWinSeas{height:380px!important}
@@ -2549,7 +2578,6 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
         <span class="pl-win-title">📈 Market Chart</span>
         <span class="pl-spacer"></span>
         <select class="pl-select" id="plSelA" onchange="plSetChartSymbol('A',this.value)" aria-label="Simbol chart 1"></select>
-        <button class="pl-ico-btn" type="button" onclick="plOpenTV('A')" title="Buka di TradingView (pakai indikator akunmu: BigBeluga, MA 20/50/200, dll.)" aria-label="Buka di TradingView">&#8599;</button>
         <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
       <div class="pl-win-body tv" id="plChartA"></div>
@@ -2563,7 +2591,6 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
         <span class="pl-win-title">📈 Market Chart</span>
         <span class="pl-spacer"></span>
         <select class="pl-select" id="plSelB" onchange="plSetChartSymbol('B',this.value)" aria-label="Simbol chart 2"></select>
-        <button class="pl-ico-btn" type="button" onclick="plOpenTV('B')" title="Buka di TradingView (pakai indikator akunmu: BigBeluga, MA 20/50/200, dll.)" aria-label="Buka di TradingView">&#8599;</button>
         <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
       <div class="pl-win-body tv" id="plChartB"></div>
@@ -2601,6 +2628,10 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
         <span class="pl-grip">&#10287;</span>
         <span class="pl-win-title">🗓 Seasonality</span>
         <span class="pl-spacer"></span>
+        <div class="pl-seg2" id="plSeasViewSeg" title="Tampilan seasonality">
+          <button class="on" type="button" onclick="plSeasView('table',this)">Tabel</button>
+          <button type="button" onclick="plSeasView('line',this)">Line</button>
+        </div>
         <select class="pl-select" id="plSeasSelect" onchange="plRenderSeasonality(this.value)" aria-label="Simbol seasonality"></select>
         <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
@@ -4377,7 +4408,7 @@ const PL_MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','
 const PL_NEWS_FEED_MODE = 'all_symbols';
 
 let _plInit = false;
-let _plSyms = { A: 'IHSG', B: 'BBRI' };   // simbol awal tiap panel chart
+let _plSyms = { A: 'BBRI', B: 'BBCA' };   // simbol awal tiap panel chart (ada candle → SMC tampil)
 
 function plTheme()      { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
 function plTvSymbol(c)  { return c === 'IHSG' ? 'IDX:COMPOSITE' : 'IDX:' + c; }
@@ -4506,41 +4537,288 @@ function plOpenTV(slot) {
   window.open(url, '_blank', 'noopener');
 }
 
-// ── CHART: TradingView Advanced Chart (indikator bisa ditambah via toolbar) ──
+// ════════════════════════════════════════════════════════════════════
+// CHART KUSTOM (Lightweight Charts) — MA 20/50/100 + Smart Money Concept
+// Data candle MURNI dari cache ohlc.json (fetchOhlcForModal); SMC & MA
+// dihitung di browser → beban backend = nol. Simbol tanpa candle (mis.
+// IHSG) otomatis fallback ke widget TradingView.
+// ════════════════════════════════════════════════════════════════════
+const PL_MA_DEFS = [
+  { key: 'e20',  period: 20,  color: '#f59e0b', label: 'EMA 20'  },
+  { key: 'e50',  period: 50,  color: '#3b82f6', label: 'EMA 50'  },
+  { key: 'e100', period: 100, color: '#a855f7', label: 'EMA 100' },
+];
+let _plMode = { A: 'smc', B: 'smc' };   // 'smc' (kustom) | 'tv'
+let _plOpts = {
+  A: { e20: true, e50: true, e100: true, smc: true },
+  B: { e20: true, e50: true, e100: true, smc: true },
+};
+
 function plLoadChart(slot, force) {
   const wrap = document.getElementById('plChart' + slot);
   if (!wrap) return;
-  const sym = _plSyms[slot], theme = plTheme();
-  if (!force && wrap._sym === sym && wrap._theme === theme) return;
-  wrap._sym = sym; wrap._theme = theme;
+  const sym = _plSyms[slot];
+  const mode = _plMode[slot] || 'smc';
+  const theme = plTheme();
+  const key = mode + '|' + sym + '|' + theme + '|' + JSON.stringify(_plOpts[slot]);
+  if (!force && wrap._key === key) return;
+  wrap._key = key;
+
+  plDisposeChart(wrap);
+  wrap.className = 'pl-win-body lw';
+  wrap.removeAttribute('style');
   wrap.innerHTML = '';
 
+  const bar  = plChartToolbar(slot, sym);
+  const host = document.createElement('div');
+  host.className = 'pl-chart-host';
+  wrap.append(bar, host);
+
+  if (mode === 'tv') { plTvInHost(slot, host, sym, theme, null); return; }
+  if (typeof LightweightCharts === 'undefined') { plTvInHost(slot, host, sym, theme, 'library chart tak tersedia'); return; }
+  if (sym === 'IHSG') { plTvInHost(slot, host, sym, theme, 'IHSG belum punya data candle'); return; }
+
+  host.innerHTML = '<div class="pl-empty">Memuat chart…</div>';
+  fetchOhlcForModal(sym, '2000-01-01').then(candles => {
+    if (_plSyms[slot] !== sym || _plMode[slot] !== 'smc') return;  // simbol/mode berubah saat nunggu
+    if (!candles || candles.length < 25) { host.innerHTML = ''; plTvInHost(slot, host, sym, theme, 'data candle ' + sym + ' belum cukup'); return; }
+    host.innerHTML = '';
+    try { plBuildLwChart(slot, wrap, host, candles, theme); }
+    catch (e) { console.warn('[pasar] chart kustom gagal:', e); host.innerHTML = ''; plTvInHost(slot, host, sym, theme, 'chart kustom gagal'); }
+  }).catch(() => { host.innerHTML = ''; plTvInHost(slot, host, sym, theme, 'gagal memuat data'); });
+}
+
+function plDisposeChart(wrap) {
+  if (wrap._ro) { try { wrap._ro.disconnect(); } catch (_) {} wrap._ro = null; }
+  if (wrap._lw) { try { wrap._lw.remove(); } catch (_) {} wrap._lw = null; }
+}
+
+// Toolbar di dalam chart: mode SMC/TV, toggle MA, toggle SMC, link ↗ TradingView
+function plChartToolbar(slot, sym) {
+  const bar = document.createElement('div');
+  bar.className = 'pl-cbar';
+  const mode = _plMode[slot] || 'smc';
+  const o = _plOpts[slot];
+  let html =
+    `<div class="pl-seg2">`
+    + `<button class="${mode === 'smc' ? 'on' : ''}" type="button" onclick="plSetMode('${slot}','smc')" title="Chart kustom + indikator">SMC</button>`
+    + `<button class="${mode === 'tv' ? 'on' : ''}" type="button" onclick="plSetMode('${slot}','tv')" title="Widget TradingView">TV</button>`
+    + `</div>`;
+  if (mode === 'smc') {
+    html += PL_MA_DEFS.map(m =>
+      `<span class="pl-ma ${o[m.key] ? '' : 'off'}" onclick="plToggleMA('${slot}','${m.key}')"><span class="dot" style="background:${m.color}"></span>${m.label}</span>`
+    ).join('');
+    html += `<span class="pl-ma ${o.smc ? '' : 'off'}" onclick="plToggleSMC('${slot}')" title="Smart Money Concept: swing, BOS/CHoCH, order block, FVG">🎯 SMC</span>`;
+  }
+  html += `<span class="sp"></span><a class="tvlink" onclick="plOpenTV('${slot}')" title="Buka di TradingView (indikator akunmu: BigBeluga, dll.)">↗ TradingView</a>`;
+  bar.innerHTML = html;
+  return bar;
+}
+
+function plSetMode(slot, mode) { _plMode[slot] = mode; plLoadChart(slot, true); }
+function plToggleMA(slot, key) { _plOpts[slot][key] = !_plOpts[slot][key]; plLoadChart(slot, true); }
+function plToggleSMC(slot)     { _plOpts[slot].smc = !_plOpts[slot].smc; plLoadChart(slot, true); }
+
+// Render widget TradingView ke dalam host (fallback atau mode TV)
+function plTvInHost(slot, host, sym, theme, note) {
+  host.innerHTML = '';
   const container = document.createElement('div');
   container.className = 'tradingview-widget-container';
   const widgetDiv = document.createElement('div');
   widgetDiv.className = 'tradingview-widget-container__widget';
   container.appendChild(widgetDiv);
-
   const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.async = true;
+  script.type = 'text/javascript'; script.async = true;
   script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
   script.text = JSON.stringify({
-    autosize: true,
-    symbol: plTvSymbol(sym),
-    interval: 'D',
-    timezone: 'Asia/Jakarta',
-    theme: theme,
-    style: '1',
-    locale: 'id',
-    withdateranges: true,
-    hide_side_toolbar: true,
-    allow_symbol_change: true,
+    autosize: true, symbol: plTvSymbol(sym), interval: 'D', timezone: 'Asia/Jakarta',
+    theme: theme, style: '1', locale: 'id', withdateranges: true,
+    hide_side_toolbar: true, allow_symbol_change: true,
     studies: ['MASimple@tv-basicstudies', 'Volume@tv-basicstudies'],
     support_host: 'https://www.tradingview.com'
   });
   container.appendChild(script);
-  wrap.appendChild(container);
+  host.appendChild(container);
+  if (note) {
+    const n = document.createElement('div');
+    n.className = 'pl-chart-note';
+    n.textContent = '📊 TradingView — ' + note;
+    host.appendChild(n);
+  }
+}
+
+// EMA → [{time,value}] (seed = SMA periode pertama)
+function plEMAData(lw, period) {
+  if (lw.length < period) return [];
+  const k = 2 / (period + 1);
+  let sum = 0; for (let i = 0; i < period; i++) sum += lw[i].close;
+  let ema = sum / period;
+  const out = [{ time: lw[period - 1].time, value: ema }];
+  for (let i = period; i < lw.length; i++) { ema = lw[i].close * k + ema * (1 - k); out.push({ time: lw[i].time, value: ema }); }
+  return out;
+}
+
+// Bangun chart Lightweight: candle + MA + overlay SMC
+function plBuildLwChart(slot, wrap, host, candles, theme) {
+  const isDark = theme === 'dark';
+  const bg      = isDark ? '#150f33' : '#ffffff';
+  const text    = isDark ? '#c4b8e8' : '#6e6490';
+  const grid    = isDark ? 'rgba(164,156,192,0.10)' : 'rgba(164,156,192,0.16)';
+  const border  = isDark ? '#4a3590' : '#d4ccf0';
+  const up      = isDark ? '#4ade80' : '#059669';
+  const down    = isDark ? '#fb7185' : '#e11d48';
+
+  const chart = LightweightCharts.createChart(host, {
+    width: host.clientWidth || 400, height: host.clientHeight || 300,
+    layout: { background: { color: bg }, textColor: text, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, attributionLogo: false },
+    grid: { vertLines: { color: grid }, horzLines: { color: grid } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: border, scaleMargins: { top: 0.1, bottom: 0.08 } },
+    timeScale: {
+      borderColor: border, timeVisible: false, secondsVisible: false,
+      tickMarkFormatter: (t) => {
+        const M = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+        if (t && typeof t === 'object' && 'day' in t) return t.day + ' ' + M[t.month - 1];
+        const d = new Date(typeof t === 'number' ? t * 1000 : t);
+        return d.getUTCDate() + ' ' + M[d.getUTCMonth()];
+      },
+    },
+    handleScroll: true, handleScale: true,
+  });
+  wrap._lw = chart;
+
+  const candleSeries = chart.addCandlestickSeries({
+    upColor: up, downColor: down, borderUpColor: up, borderDownColor: down, wickUpColor: up, wickDownColor: down,
+  });
+
+  const seen = new Set();
+  const lw = candles
+    .filter(c => { if (!c.date || seen.has(c.date)) return false; seen.add(c.date); return Number.isFinite(c.open) && Number.isFinite(c.close); })
+    .map(c => ({ time: c.date, open: c.open, high: c.high, low: c.low, close: c.close }))
+    .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+  candleSeries.setData(lw);
+
+  // MA lines
+  const o = _plOpts[slot];
+  PL_MA_DEFS.forEach(m => {
+    if (!o[m.key]) return;
+    const data = plEMAData(lw, m.period);
+    if (!data.length) return;
+    const s = chart.addLineSeries({ color: m.color, lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+    s.setData(data);
+  });
+
+  // Smart Money Concept overlay
+  if (o.smc) { try { plDrawSMC(chart, candleSeries, lw, isDark); } catch (e) { console.warn('[pasar] SMC overlay dilewati:', e); } }
+
+  chart.timeScale().fitContent();
+
+  const ro = new ResizeObserver(() => {
+    const r = host.getBoundingClientRect();
+    if (r.width > 1 && r.height > 1) chart.applyOptions({ width: Math.floor(r.width), height: Math.floor(r.height) });
+  });
+  ro.observe(host);
+  wrap._ro = ro;
+}
+
+// Overlay Smart Money Concept: swing high/low, BOS/CHoCH, order block & FVG
+function plDrawSMC(chart, series, lw, isDark) {
+  const n = lw.length, L = 3;
+  const cUp = isDark ? '#4ade80' : '#059669';
+  const cDn = isDark ? '#fb7185' : '#e11d48';
+
+  // 1) Swing pivots
+  const swH = [], swL = [];
+  for (let i = L; i < n - L; i++) {
+    let hi = true, lo = true;
+    for (let j = i - L; j <= i + L; j++) {
+      if (j === i) continue;
+      if (lw[j].high >= lw[i].high) hi = false;
+      if (lw[j].low  <= lw[i].low)  lo = false;
+    }
+    if (hi) swH.push(i);
+    if (lo) swL.push(i);
+  }
+
+  const markers = [];
+  swH.slice(-6).forEach(i => markers.push({ time: lw[i].time, position: 'aboveBar', color: cDn, shape: 'circle' }));
+  swL.slice(-6).forEach(i => markers.push({ time: lw[i].time, position: 'belowBar', color: cUp, shape: 'circle' }));
+
+  // 2) Struktur BOS/CHoCH — break dari swing high/low terakhir
+  let lastSH = null, lastSL = null, trend = 0;   // 1 naik, -1 turun
+  const shArr = swH.slice(), slArr = swL.slice();
+  for (let i = L; i < n; i++) {
+    // perbarui swing acuan yang sudah "matang" (i lewat L bar)
+    while (shArr.length && shArr[0] + L <= i) { lastSH = lw[shArr.shift()].high; }
+    while (slArr.length && slArr[0] + L <= i) { lastSL = lw[slArr.shift()].low; }
+    if (lastSH != null && lw[i].close > lastSH) {
+      const choch = trend === -1;
+      markers.push({ time: lw[i].time, position: 'aboveBar', color: cUp, shape: 'arrowUp', text: choch ? 'CHoCH' : 'BOS' });
+      trend = 1; lastSH = null;
+    } else if (lastSL != null && lw[i].close < lastSL) {
+      const choch = trend === 1;
+      markers.push({ time: lw[i].time, position: 'belowBar', color: cDn, shape: 'arrowDown', text: choch ? 'CHoCH' : 'BOS' });
+      trend = -1; lastSL = null;
+    }
+  }
+
+  markers.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+  series.setMarkers(markers);
+
+  // 3) FVG (fair value gap) — 3 candle, ambil 4 terbaru
+  const lastT = lw[n - 1].time;
+  const boxes = [];
+  for (let i = 2; i < n; i++) {
+    if (lw[i].low > lw[i - 2].high) boxes.push({ t1: lw[i - 2].time, t2: lastT, p1: lw[i - 2].high, p2: lw[i].low, kind: 'fvgUp' });
+    else if (lw[i].high < lw[i - 2].low) boxes.push({ t1: lw[i - 2].time, t2: lastT, p1: lw[i].high, p2: lw[i - 2].low, kind: 'fvgDn' });
+  }
+  // 4) Order block — candle berlawanan terakhir sebelum 2 candle searah kuat
+  for (let i = 2; i < n - 2; i++) {
+    const move = (lw[i + 2].close / lw[i].close - 1) * 100;
+    if (move > 2.5 && lw[i].close < lw[i].open) boxes.push({ t1: lw[i].time, t2: lastT, p1: lw[i].low, p2: lw[i].high, kind: 'obUp' });
+    else if (move < -2.5 && lw[i].close > lw[i].open) boxes.push({ t1: lw[i].time, t2: lastT, p1: lw[i].low, p2: lw[i].high, kind: 'obDn' });
+  }
+  const fvg = boxes.filter(b => b.kind.startsWith('fvg')).slice(-4);
+  const obs = boxes.filter(b => b.kind.startsWith('ob')).slice(-3);
+  fvg.concat(obs).forEach(b => plAttachBox(chart, series, b, isDark));
+}
+
+// Gambar kotak (FVG/OB) sebagai series primitive Lightweight Charts v4.
+function plAttachBox(chart, series, box, isDark) {
+  const fills = {
+    fvgUp: isDark ? 'rgba(74,222,128,0.10)' : 'rgba(5,150,105,0.09)',
+    fvgDn: isDark ? 'rgba(251,113,133,0.10)' : 'rgba(225,29,72,0.09)',
+    obUp:  isDark ? 'rgba(74,222,128,0.20)' : 'rgba(5,150,105,0.16)',
+    obDn:  isDark ? 'rgba(251,113,133,0.20)' : 'rgba(225,29,72,0.16)',
+  };
+  const fill = fills[box.kind] || 'rgba(120,120,120,0.12)';
+  const prim = {
+    attached(p) { this._chart = p.chart; this._series = p.series; },
+    detached() {},
+    updateAllViews() {},
+    paneViews() {
+      const self = this;
+      return [{
+        zOrder: () => 'bottom',
+        renderer: () => ({
+          draw: (target) => {
+            const ts = self._chart.timeScale();
+            const x1 = ts.timeToCoordinate(box.t1), x2 = ts.timeToCoordinate(box.t2);
+            const y1 = self._series.priceToCoordinate(box.p1), y2 = self._series.priceToCoordinate(box.p2);
+            if (x1 == null || x2 == null || y1 == null || y2 == null) return;
+            target.useBitmapCoordinateSpace((scope) => {
+              const ctx = scope.context, hr = scope.horizontalPixelRatio, vr = scope.verticalPixelRatio;
+              const Lx = Math.min(x1, x2) * hr, Rx = Math.max(x1, x2) * hr;
+              const Ty = Math.min(y1, y2) * vr, By = Math.max(y1, y2) * vr;
+              ctx.fillStyle = fill;
+              ctx.fillRect(Lx, Ty, Rx - Lx, By - Ty);
+            });
+          },
+        }),
+      }];
+    },
+  };
+  try { series.attachPrimitive(prim); } catch (e) { /* versi lib tak dukung primitive → kotak dilewati */ }
 }
 
 // ── HEADLINES: sementara widget berita TradingView (ganti ke feed Python nanti) ──
@@ -4620,6 +4898,71 @@ async function plRenderHeatmap() {
   host.innerHTML = html;
 }
 
+let _plSeasView = 'table';   // 'table' | 'line'
+function plSeasView(view, btn) {
+  _plSeasView = view;
+  const seg = document.getElementById('plSeasViewSeg');
+  if (seg) seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+  plRenderSeasonality();
+}
+
+// SVG line: pola musiman = indeks kumulatif (basis 100, awal tahun) dari
+// rata-rata return bulanan. Menunjukkan "bentuk tahun" yang khas.
+function plSeasLineSVG(avg, code) {
+  const W = 760, H = 300, padL = 46, padR = 14, padT = 16, padB = 30;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  let idx = 100;
+  const pts = [];                       // kumulatif tiap akhir bulan
+  for (let m = 0; m < 12; m++) { idx *= (1 + (Number.isFinite(avg[m]) ? avg[m] : 0) / 100); pts.push(idx); }
+  const vals = pts.concat([100]);
+  let min = Math.min(...vals), max = Math.max(...vals);
+  if (max - min < 0.5) { min -= 1; max += 1; }
+  const pad = (max - min) * 0.12; min -= pad; max += pad;
+  const span = (max - min) || 1;
+  const X = m => padL + (m / 11) * innerW;
+  const Y = v => padT + (1 - (v - min) / span) * innerH;
+
+  const isDark = plTheme() === 'dark';
+  const line = '#6d28d9';
+  const linePts = pts.map((v, m) => `${X(m).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const area = `M${X(0).toFixed(1)},${Y(pts[0]).toFixed(1)} `
+    + pts.map((v, m) => `L${X(m).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')
+    + ` L${X(11).toFixed(1)},${(padT + innerH).toFixed(1)} L${X(0).toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
+  const y100 = Y(100);
+
+  // bulan terbaik/terburuk (dari avg return, bukan kumulatif)
+  let bestM = -1, worstM = -1, bv = -Infinity, wv = Infinity;
+  avg.forEach((v, m) => { if (Number.isFinite(v)) { if (v > bv) { bv = v; bestM = m; } if (v < wv) { wv = v; worstM = m; } } });
+
+  const gridText = isDark ? '#8b80b5' : '#9990bd';
+  let dots = '';
+  pts.forEach((v, m) => {
+    const c = m === bestM ? '#059669' : m === worstM ? '#e11d48' : line;
+    dots += `<circle cx="${X(m).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${(m === bestM || m === worstM) ? 4 : 2.5}" fill="${c}"/>`;
+  });
+  let xlabels = '';
+  PL_MONTHS.forEach((mn, m) => { xlabels += `<text x="${X(m).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="${gridText}">${mn}</text>`; });
+  const yLab = (v, txt) => `<text x="${padL - 6}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="${gridText}">${txt}</text>`;
+
+  const endVal = pts[11];
+  const endCls = endVal >= 100 ? 'up' : 'dn';
+  return `
+    <div class="pl-seasline">
+      <div class="ttl">Pola musiman <b>${code}</b> — indeks kumulatif rata-rata (basis 100, Jan).
+        Akhir tahun ≈ <b class="${endCls}">${endVal.toFixed(1)}</b>
+        &nbsp;·&nbsp; Bulan terkuat: <b style="color:#059669">${bestM >= 0 ? PL_MONTHS[bestM] : '-'}</b>,
+        terlemah: <b style="color:#e11d48">${worstM >= 0 ? PL_MONTHS[worstM] : '-'}</b>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Seasonality line ${code}">
+        <line x1="${padL}" y1="${y100.toFixed(1)}" x2="${W - padR}" y2="${y100.toFixed(1)}" stroke="${gridText}" stroke-width="1" stroke-dasharray="4 4" opacity="0.55"/>
+        ${yLab(100, '100')}${yLab(max, max.toFixed(0))}${yLab(min, min.toFixed(0))}
+        <path d="${area}" fill="${line}" opacity="0.12"/>
+        <polyline points="${linePts}" fill="none" stroke="${line}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}${xlabels}
+      </svg>
+    </div>`;
+}
+
 // ── SEASONALITY: return bulanan historis per tahun (data sendiri data.json) ──
 function plRenderSeasonality(code) {
   const host = document.getElementById('plSeasonality');
@@ -4652,6 +4995,10 @@ function plRenderSeasonality(code) {
   years.forEach(y => byYear[y].forEach((v, m) => { if (Number.isFinite(v)) { sum[m] += v; cnt[m]++; } }));
   const avg = sum.map((s, m) => (cnt[m] ? s / cnt[m] : null));
 
+  // Tampilan LINE (pola musiman kumulatif)
+  if (_plSeasView === 'line') { host.innerHTML = plSeasLineSVG(avg, code); return; }
+
+  // Tampilan TABEL (heatmap per tahun)
   const cell = v => Number.isFinite(v)
     ? `<td class="cell" style="background:${plHeatColor(v)}">${v >= 0 ? '+' : ''}${v.toFixed(1)}</td>`
     : '<td>·</td>';
