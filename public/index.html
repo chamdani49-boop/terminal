@@ -2333,32 +2333,32 @@ select.form-control option{background:var(--card);color:var(--text)}
 .pl-reload{margin-left:auto;padding:7px 14px;font-size:12.5px;font-weight:700;border-radius:var(--radius-pill);background:var(--card);color:var(--text2);border:1px solid var(--border);cursor:pointer;font-family:inherit;transition:all .15s}
 .pl-reload:hover{border-color:var(--accent);color:var(--accent)}
 
-/* ── GRID TERMINAL: semua panel tampil sekaligus ── */
-.pl-terminal{
-  display:grid;gap:12px;
-  grid-template-columns:1.05fr 1.05fr .9fr;
-  grid-template-rows:minmax(300px,41vh) minmax(300px,41vh);
-  grid-template-areas:"cA cB news" "hm se news";
-}
-#plWinChartA{grid-area:cA}
-#plWinChartB{grid-area:cB}
-#plWinNews{grid-area:news}
-#plWinHeatmap{grid-area:hm}
-#plWinSeas{grid-area:se}
+/* ── TERMINAL: panel mengambang, bisa diubah ukuran (resize) & maximize ── */
+.pl-terminal{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
 
 /* ── PANEL "window" ── */
-.pl-win{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);display:flex;flex-direction:column;overflow:hidden;min-width:0;min-height:0}
+.pl-win{position:relative;box-sizing:border-box;width:calc(33.333% - 8px);height:min(42vh,440px);background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);display:flex;flex-direction:column;overflow:hidden;min-width:0;min-height:0}
+.pl-win.pl-max{position:fixed;inset:10px;width:auto!important;height:auto!important;z-index:9998;box-shadow:0 24px 70px rgba(0,0,0,.45)}
 .pl-win-head{display:flex;align-items:center;gap:8px;padding:8px 11px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
-.pl-grip{color:var(--text3);font-size:12px;line-height:1;letter-spacing:-2px;user-select:none}
-.pl-win-title{font-size:12.5px;font-weight:800;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pl-win-head .pl-select{margin-left:auto;max-width:165px;padding:5px 10px;font-size:12px;min-width:0}
+.pl-grip{color:var(--text3);font-size:12px;line-height:1;letter-spacing:-2px;user-select:none;cursor:default}
+.pl-win-title{font-size:12.5px;font-weight:800;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.pl-spacer{flex:1 1 auto;min-width:6px}
+.pl-win-head .pl-select{max-width:158px;padding:5px 10px;font-size:12px;min-width:0}
+.pl-ico-btn{flex-shrink:0;width:26px;height:24px;border:1px solid var(--border);background:var(--card);color:var(--text2);border-radius:7px;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all .15s}
+.pl-ico-btn:hover{border-color:var(--accent);color:var(--accent)}
 .pl-win-body{flex:1;min-height:0;min-width:0;position:relative;overflow:hidden}
 .pl-win-body.scroll{overflow:auto;padding:12px}
 .pl-win-body.tv .tradingview-widget-container,.pl-win-body.tv .tradingview-widget-container__widget{height:100%;width:100%}
 .pl-select{padding:8px 14px;font-size:13px;font-weight:600;border-radius:var(--radius-pill);background:var(--card);color:var(--text);border:1px solid var(--border);font-family:inherit;cursor:pointer}
+/* gagang resize di pojok kanan-bawah tiap panel */
+.pl-resize{position:absolute;right:3px;bottom:3px;width:20px;height:20px;cursor:nwse-resize;z-index:6;color:var(--text3);display:flex;align-items:flex-end;justify-content:flex-end;font-size:13px;line-height:1;user-select:none;touch-action:none;opacity:.6}
+.pl-resize:hover{opacity:1;color:var(--accent)}
+.pl-win.pl-max .pl-resize{display:none}
+.pl-drag-overlay{position:fixed;inset:0;z-index:9997;cursor:nwse-resize}
+body.pl-resizing{user-select:none}
 
 /* ── HEATMAP ── */
-.pl-hm-legend{display:flex;align-items:center;gap:4px;margin-left:auto;font-size:11px;color:var(--text3);font-weight:600}
+.pl-hm-legend{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3);font-weight:600;flex-shrink:0}
 .pl-hm-legend .sw{width:14px;height:11px;border-radius:3px}
 .pl-sector{margin-bottom:14px}
 .pl-sector:last-child{margin-bottom:0}
@@ -2381,10 +2381,9 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 .pl-empty{padding:30px 16px;text-align:center;color:var(--text2);font-weight:600;line-height:1.6;font-size:12.5px}
 
 @media (max-width:900px){
-  .pl-terminal{grid-template-columns:1fr;grid-template-rows:none;grid-template-areas:"cA" "cB" "hm" "se" "news"}
-  .pl-win{height:auto}
-  #plWinChartA,#plWinChartB,#plWinNews{height:440px}
-  #plWinHeatmap,#plWinSeas{height:380px}
+  .pl-win{width:100%!important;height:420px!important}
+  #plWinHeatmap,#plWinSeas{height:380px!important}
+  .pl-resize{display:none}
 }
 @media (max-width:640px){
   #page-pasar{padding:12px 10px 96px}
@@ -2548,9 +2547,12 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
       <div class="pl-win-head">
         <span class="pl-grip">&#10287;</span>
         <span class="pl-win-title">📈 Market Chart</span>
+        <span class="pl-spacer"></span>
         <select class="pl-select" id="plSelA" onchange="plSetChartSymbol('A',this.value)" aria-label="Simbol chart 1"></select>
+        <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
       <div class="pl-win-body tv" id="plChartA"></div>
+      <div class="pl-resize" title="Tarik untuk ubah ukuran">&#9698;</div>
     </section>
 
     <!-- Chart B -->
@@ -2558,18 +2560,24 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
       <div class="pl-win-head">
         <span class="pl-grip">&#10287;</span>
         <span class="pl-win-title">📈 Market Chart</span>
+        <span class="pl-spacer"></span>
         <select class="pl-select" id="plSelB" onchange="plSetChartSymbol('B',this.value)" aria-label="Simbol chart 2"></select>
+        <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
       <div class="pl-win-body tv" id="plChartB"></div>
+      <div class="pl-resize" title="Tarik untuk ubah ukuran">&#9698;</div>
     </section>
 
-    <!-- Headlines (memanjang di kolom kanan) -->
+    <!-- Headlines -->
     <section class="pl-win" id="plWinNews">
       <div class="pl-win-head">
         <span class="pl-grip">&#10287;</span>
         <span class="pl-win-title">📰 Headlines</span>
+        <span class="pl-spacer"></span>
+        <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
       <div class="pl-win-body tv" id="plNewsWrap"></div>
+      <div class="pl-resize" title="Tarik untuk ubah ukuran">&#9698;</div>
     </section>
 
     <!-- Heatmap -->
@@ -2577,9 +2585,12 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
       <div class="pl-win-head">
         <span class="pl-grip">&#10287;</span>
         <span class="pl-win-title">🔥 Heatmap Sektor</span>
+        <span class="pl-spacer"></span>
         <div class="pl-hm-legend"><span>−</span><span class="sw" style="background:#e11d48"></span><span class="sw" style="background:#9ca3af"></span><span class="sw" style="background:#059669"></span><span>+</span></div>
+        <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
       <div class="pl-win-body scroll" id="plHeatmap"></div>
+      <div class="pl-resize" title="Tarik untuk ubah ukuran">&#9698;</div>
     </section>
 
     <!-- Seasonality -->
@@ -2587,9 +2598,12 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
       <div class="pl-win-head">
         <span class="pl-grip">&#10287;</span>
         <span class="pl-win-title">🗓 Seasonality</span>
+        <span class="pl-spacer"></span>
         <select class="pl-select" id="plSeasSelect" onchange="plRenderSeasonality(this.value)" aria-label="Simbol seasonality"></select>
+        <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
       </div>
       <div class="pl-win-body scroll" id="plSeasonality"></div>
+      <div class="pl-resize" title="Tarik untuk ubah ukuran">&#9698;</div>
     </section>
 
   </div>
@@ -4418,6 +4432,8 @@ function plBuildControls() {
   const b = document.getElementById('plSelB'); if (b) b.value = _plSyms.B;
   const s = document.getElementById('plSeasSelect'); if (s) s.value = 'IHSG';
 
+  plInitResize();   // aktifkan gagang resize tiap panel
+
   // Rebuild widget TradingView saat theme di-toggle (hanya bila halaman Pasar aktif)
   const tt = document.getElementById('themeToggle');
   if (tt) tt.addEventListener('click', () => {
@@ -4427,8 +4443,53 @@ function plBuildControls() {
   });
 }
 
-function plSetChartSymbol(slot, code) {
-  _plSyms[slot] = code;
+// ── PERBESAR/KECILKAN (maximize) + RESIZE panel ala terminal ──
+function plMax(btn) {
+  const win = btn.closest('.pl-win');
+  if (!win) return;
+  const maxed = win.classList.toggle('pl-max');
+  btn.innerHTML = maxed ? '&#10532;' : '&#10530;';      // ⤤ restore / ⤢ maximize
+  btn.title = maxed ? 'Kecilkan' : 'Perbesar / kecilkan';
+  document.body.style.overflow = document.querySelector('#page-pasar .pl-win.pl-max') ? 'hidden' : '';
+}
+
+function plInitResize() {
+  document.querySelectorAll('#page-pasar .pl-resize').forEach(h => {
+    if (h._wired) return;
+    h._wired = true;
+    h.addEventListener('pointerdown', plResizeStart);
+  });
+}
+
+function plResizeStart(e) {
+  const win = e.currentTarget.closest('.pl-win');
+  if (!win || win.classList.contains('pl-max')) return;
+  e.preventDefault();
+  const sx = e.clientX, sy = e.clientY;
+  const r = win.getBoundingClientRect();
+  const sw = r.width, sh = r.height;
+
+  // overlay transparan supaya gerak mouse tidak "ditelan" iframe TradingView
+  const ov = document.createElement('div');
+  ov.className = 'pl-drag-overlay';
+  document.body.appendChild(ov);
+  document.body.classList.add('pl-resizing');
+
+  const move = ev => {
+    win.style.width  = Math.max(240, sw + (ev.clientX - sx)) + 'px';
+    win.style.height = Math.max(200, sh + (ev.clientY - sy)) + 'px';
+  };
+  const up = () => {
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    ov.remove();
+    document.body.classList.remove('pl-resizing');
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+}
+
+function plSetChartSymbol(slot, code) {  _plSyms[slot] = code;
   const sel = document.getElementById('plSel' + slot);
   if (sel && sel.value !== code) sel.value = code;
   plLoadChart(slot, true);
