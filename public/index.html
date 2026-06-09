@@ -2437,6 +2437,9 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 .pl-seasline .ttl{font-size:12px;font-weight:700;color:var(--text2);margin:0 4px 6px}
 .pl-seasline .ttl b{color:var(--text)}
 .pl-seasline svg{width:100%;height:auto;display:block;overflow:visible}
+.pl-sl-legend{display:flex;flex-wrap:wrap;gap:5px 10px;justify-content:center;padding:8px 6px 2px}
+.pl-sl-key{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--text2)}
+.pl-sl-key .sw{width:13px;height:3px;border-radius:2px;display:inline-block;flex-shrink:0}
 
 @media (max-width:900px){
   .pl-terminal{flex-direction:column}
@@ -5048,60 +5051,66 @@ function plSeasView(view, btn) {
   plRenderSeasonality();
 }
 
-// SVG line: pola musiman = indeks kumulatif (basis 100, awal tahun) dari
-// rata-rata return bulanan. Menunjukkan "bentuk tahun" yang khas.
-function plSeasLineSVG(avg, code) {
-  const W = 760, H = 300, padL = 46, padR = 14, padT = 16, padB = 30;
+// SVG multi-line: SATU GARIS PER TAHUN (indeks kumulatif basis 100, Jan) untuk
+// membandingkan pola musiman antar tahun, plus garis rata-rata (tebal) sbg acuan.
+function plSeasLineSVG(byYear, years, avg, code) {
+  const W = 760, H = 330, padL = 40, padR = 12, padT = 14, padB = 26;
   const innerW = W - padL - padR, innerH = H - padT - padB;
-  let idx = 100;
-  const pts = [];                       // kumulatif tiap akhir bulan
-  for (let m = 0; m < 12; m++) { idx *= (1 + (Number.isFinite(avg[m]) ? avg[m] : 0) / 100); pts.push(idx); }
-  const vals = pts.concat([100]);
-  let min = Math.min(...vals), max = Math.max(...vals);
-  if (max - min < 0.5) { min -= 1; max += 1; }
-  const pad = (max - min) * 0.12; min -= pad; max += pad;
-  const span = (max - min) || 1;
   const X = m => padL + (m / 11) * innerW;
+
+  // kumulatif per deret return bulanan (basis 100 sebelum Jan); null = bulan kosong
+  function cumul(arr) {
+    let idx = 100; const out = [];
+    for (let m = 0; m < 12; m++) {
+      const r = arr[m];
+      if (Number.isFinite(r)) { idx *= (1 + r / 100); out.push([m, idx]); }
+      else out.push(null);
+    }
+    return out;
+  }
+  const yearCum = years.map(y => ({ y, pts: cumul(byYear[y]) }));
+  const avgCum = cumul(avg);
+
+  // skala Y dari semua nilai semua tahun
+  const allV = [100];
+  yearCum.forEach(s => s.pts.forEach(p => { if (p) allV.push(p[1]); }));
+  avgCum.forEach(p => { if (p) allV.push(p[1]); });
+  let min = Math.min(...allV), max = Math.max(...allV);
+  const padv = (max - min) * 0.1 || 1; min -= padv; max += padv;
+  const span = (max - min) || 1;
   const Y = v => padT + (1 - (v - min) / span) * innerH;
 
   const isDark = plTheme() === 'dark';
-  const line = '#6d28d9';
-  const linePts = pts.map((v, m) => `${X(m).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
-  const area = `M${X(0).toFixed(1)},${Y(pts[0]).toFixed(1)} `
-    + pts.map((v, m) => `L${X(m).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')
-    + ` L${X(11).toFixed(1)},${(padT + innerH).toFixed(1)} L${X(0).toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
+  const grid = isDark ? '#8b80b5' : '#9990bd';
+  const avgColor = isDark ? '#ffffff' : '#0a0521';
+  const yearColor = i => `hsl(${Math.round((i / Math.max(1, years.length)) * 320)} 70% ${isDark ? 62 : 48}%)`;
+
+  const poly = (pts, stroke, w, op) => {
+    const s = pts.filter(Boolean).map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
+    return s ? `<polyline points="${s}" fill="none" stroke="${stroke}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" opacity="${op}"/>` : '';
+  };
+
+  let lines = '';
+  yearCum.forEach((s, i) => { lines += poly(s.pts, yearColor(i), 1.6, 0.8); });
+  const avgLine = poly(avgCum, avgColor, 3, 1);
+
   const y100 = Y(100);
-
-  // bulan terbaik/terburuk (dari avg return, bukan kumulatif)
-  let bestM = -1, worstM = -1, bv = -Infinity, wv = Infinity;
-  avg.forEach((v, m) => { if (Number.isFinite(v)) { if (v > bv) { bv = v; bestM = m; } if (v < wv) { wv = v; worstM = m; } } });
-
-  const gridText = isDark ? '#8b80b5' : '#9990bd';
-  let dots = '';
-  pts.forEach((v, m) => {
-    const c = m === bestM ? '#059669' : m === worstM ? '#e11d48' : line;
-    dots += `<circle cx="${X(m).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${(m === bestM || m === worstM) ? 4 : 2.5}" fill="${c}"/>`;
-  });
   let xlabels = '';
-  PL_MONTHS.forEach((mn, m) => { xlabels += `<text x="${X(m).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="${gridText}">${mn}</text>`; });
-  const yLab = (v, txt) => `<text x="${padL - 6}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="${gridText}">${txt}</text>`;
+  PL_MONTHS.forEach((mn, m) => { xlabels += `<text x="${X(m).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="${grid}">${mn}</text>`; });
+  const yLab = (v, t) => `<text x="${padL - 5}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="${grid}">${t}</text>`;
 
-  const endVal = pts[11];
-  const endCls = endVal >= 100 ? 'up' : 'dn';
+  let legend = years.map((y, i) => `<span class="pl-sl-key"><span class="sw" style="background:${yearColor(i)}"></span>${y}</span>`).join('');
+  legend += `<span class="pl-sl-key"><span class="sw" style="background:${avgColor};height:4px"></span>Rata²</span>`;
+
   return `
     <div class="pl-seasline">
-      <div class="ttl">Pola musiman <b>${code}</b> — indeks kumulatif rata-rata (basis 100, Jan).
-        Akhir tahun ≈ <b class="${endCls}">${endVal.toFixed(1)}</b>
-        &nbsp;·&nbsp; Bulan terkuat: <b style="color:#059669">${bestM >= 0 ? PL_MONTHS[bestM] : '-'}</b>,
-        terlemah: <b style="color:#e11d48">${worstM >= 0 ? PL_MONTHS[worstM] : '-'}</b>
-      </div>
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Seasonality line ${code}">
-        <line x1="${padL}" y1="${y100.toFixed(1)}" x2="${W - padR}" y2="${y100.toFixed(1)}" stroke="${gridText}" stroke-width="1" stroke-dasharray="4 4" opacity="0.55"/>
+      <div class="ttl">Pola musiman <b>${code}</b> per tahun — indeks kumulatif (basis 100, Jan). Garis tebal = rata-rata semua tahun.</div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Seasonality multi-line ${code}">
+        <line x1="${padL}" y1="${y100.toFixed(1)}" x2="${W - padR}" y2="${y100.toFixed(1)}" stroke="${grid}" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
         ${yLab(100, '100')}${yLab(max, max.toFixed(0))}${yLab(min, min.toFixed(0))}
-        <path d="${area}" fill="${line}" opacity="0.12"/>
-        <polyline points="${linePts}" fill="none" stroke="${line}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
-        ${dots}${xlabels}
+        ${lines}${avgLine}${xlabels}
       </svg>
+      <div class="pl-sl-legend">${legend}</div>
     </div>`;
 }
 
@@ -5137,8 +5146,8 @@ function plRenderSeasonality(code) {
   years.forEach(y => byYear[y].forEach((v, m) => { if (Number.isFinite(v)) { sum[m] += v; cnt[m]++; } }));
   const avg = sum.map((s, m) => (cnt[m] ? s / cnt[m] : null));
 
-  // Tampilan LINE (pola musiman kumulatif)
-  if (_plSeasView === 'line') { host.innerHTML = plSeasLineSVG(avg, code); return; }
+  // Tampilan LINE (multi-line per tahun)
+  if (_plSeasView === 'line') { host.innerHTML = plSeasLineSVG(byYear, years, avg, code); return; }
 
   // Tampilan TABEL (heatmap per tahun)
   const cell = v => Number.isFinite(v)
