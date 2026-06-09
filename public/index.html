@@ -2355,6 +2355,15 @@ select.form-control option{background:var(--card);color:var(--text)}
 .pl-win-body.scroll{overflow:auto;padding:12px}
 .pl-win-body.tv .tradingview-widget-container,.pl-win-body.tv .tradingview-widget-container__widget{height:100%;width:100%}
 .pl-select{padding:8px 14px;font-size:13px;font-weight:600;border-radius:var(--radius-pill);background:var(--card);color:var(--text);border:1px solid var(--border);font-family:inherit;cursor:pointer}
+/* dropdown autocomplete untuk input search Chart A/B & Seasonality (gaya search header,
+   dipasang sbg anak <body> + position:fixed agar tak terpotong overflow panel) */
+.pl-search-drop{position:fixed;z-index:10050;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:264px;overflow-y:auto;display:none;box-shadow:var(--shadow-card-lg);min-width:210px}
+.pl-search-drop.open{display:block}
+.pl-search-item{padding:7px 11px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .12s}
+.pl-search-item:hover,.pl-search-item.active{background:var(--bg2)}
+.pl-search-item .code{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:var(--accent);width:50px;flex-shrink:0}
+.pl-search-item .sname{font-size:11.5px;color:var(--text);font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.pl-search-item .sector{font-size:10px;color:var(--text2);margin-left:auto;flex-shrink:0;background:var(--bg2);padding:2px 8px;border-radius:var(--radius-pill);font-weight:600;white-space:nowrap}
 /* gagang resize di pojok kanan-bawah tiap panel */
 .pl-resize{position:absolute;right:3px;bottom:3px;width:20px;height:20px;cursor:nwse-resize;z-index:6;color:var(--text3);display:flex;align-items:flex-end;justify-content:flex-end;font-size:13px;line-height:1;user-select:none;touch-action:none;opacity:.6}
 .pl-resize:hover{opacity:1;color:var(--accent)}
@@ -2449,12 +2458,18 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
   .pl-col-side{flex:none;position:static}
   .pl-col-side .pl-win{position:static}
   .pl-win{height:auto}
-  #plWinChartA,#plWinChartB,#plWinNews{height:440px}
+  #plWinChartA,#plWinChartB{height:440px}
   #plWinHeatmap,#plWinSeas{height:380px}
+  /* Versi HP: kolom Headlines dipanjangkan agar lebih banyak berita terlihat
+     sebelum perlu scroll di dalam panel. */
+  #plWinNews{height:640px}
 }
 @media (max-width:640px){
   #page-pasar{padding:12px 10px 96px}
-  .pl-win-head .pl-select{max-width:128px}
+  .pl-win-head .pl-select{max-width:150px}
+  /* Versi HP: cukup satu chart — Chart B disembunyikan (muncul lagi bila user
+     paksa "tampilan desktop" karena viewport jadi 1280px). */
+  #plWinChartB{display:none}
 }
 </style>
 </head>
@@ -2618,7 +2633,7 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
           <span class="pl-grip">&#10287;</span>
           <span class="pl-win-title">📈 Market Chart</span>
           <span class="pl-spacer"></span>
-          <input type="text" class="pl-select" id="plSelA" list="plCodesDL" autocomplete="off" placeholder="Kode saham… (mis. BBRI)" onchange="plPickChart('A',this)" aria-label="Simbol chart 1">
+          <input type="text" class="pl-select pl-search-input" id="plSelA" autocomplete="off" placeholder="Cari kode… (BBRI)" aria-label="Simbol chart 1">
           <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
         </div>
         <div class="pl-win-body tv" id="plChartA"></div>
@@ -2630,7 +2645,7 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
           <span class="pl-grip">&#10287;</span>
           <span class="pl-win-title">📈 Market Chart</span>
           <span class="pl-spacer"></span>
-          <input type="text" class="pl-select" id="plSelB" list="plCodesDL" autocomplete="off" placeholder="Kode saham… (mis. BBCA)" onchange="plPickChart('B',this)" aria-label="Simbol chart 2">
+          <input type="text" class="pl-select pl-search-input" id="plSelB" autocomplete="off" placeholder="Cari kode… (BBCA)" aria-label="Simbol chart 2">
           <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
         </div>
         <div class="pl-win-body tv" id="plChartB"></div>
@@ -2658,7 +2673,7 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
             <button class="on" type="button" onclick="plSeasView('table',this)">Tabel</button>
             <button type="button" onclick="plSeasView('line',this)">Line</button>
           </div>
-          <input type="text" class="pl-select" id="plSeasSelect" list="plCodesDL" autocomplete="off" placeholder="Kode saham… (mis. IHSG)" onchange="plPickSeas(this)" aria-label="Simbol seasonality">
+          <input type="text" class="pl-select pl-search-input" id="plSeasSelect" autocomplete="off" placeholder="Cari kode… (IHSG)" aria-label="Simbol seasonality">
           <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
         </div>
         <div class="pl-win-body scroll" id="plSeasonality"></div>
@@ -2680,8 +2695,6 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
     </div>
 
   </div>
-
-  <datalist id="plCodesDL"></datalist>
 </div><!-- /page-pasar -->
 
 
@@ -4495,22 +4508,27 @@ function plBuildControls() {
     ? DATA.stock_list.map(s => s.code).filter(Boolean).sort()
     : [];
 
-  // himpunan kode valid (IHSG + semua kode) untuk validasi input search
+  // himpunan kode valid (IHSG + semua kode) untuk validasi commit input search
   _plCodesSet = new Set(['IHSG'].concat(codes));
-
-  // isi <datalist> sekali — sumber autocomplete bersama untuk Chart A/B & Seasonality
-  const dlOpts = ['<option value="IHSG">IHSG — Indeks Harga Saham Gabungan</option>']
-    .concat(codes.map(c => {
-      const nm = plName(c);
-      return `<option value="${c}">${nm ? c + ' — ' + nm : c}</option>`;
-    })).join('');
-  const dl = document.getElementById('plCodesDL');
-  if (dl) dl.innerHTML = dlOpts;
 
   // nilai awal tiap input sesuai simbol aktif
   const a = document.getElementById('plSelA'); if (a) a.value = _plSyms.A;
   const b = document.getElementById('plSelB'); if (b) b.value = _plSyms.B;
   const s = document.getElementById('plSeasSelect'); if (s) s.value = 'IHSG';
+
+  // Pasang autocomplete (gaya search header) ke tiap input
+  [['plSelA', 'chartA'], ['plSelB', 'chartB'], ['plSeasSelect', 'seas']].forEach(([id, kind]) => {
+    const el = document.getElementById(id);
+    if (!el || el._plWired) return;
+    el._plWired = true;
+    el.addEventListener('focus', () => { el.select(); plSearchOpen(el, kind); });
+    el.addEventListener('input', plSearchInputEvt);
+    el.addEventListener('keydown', plSearchKey);
+    el.addEventListener('blur', () => setTimeout(() => plSearchCommit(el, kind), 160));
+  });
+  // tutup/posisikan ulang dropdown saat scroll atau resize
+  window.addEventListener('scroll', plSearchClose, true);
+  window.addEventListener('resize', plSearchClose);
 
   plInitResize();   // aktifkan gagang resize tiap panel
 
@@ -4523,26 +4541,121 @@ function plBuildControls() {
   });
 }
 
-// Input search Chart A/B → validasi; jika kode valid set simbol, jika tidak balik ke nilai lama
-function plPickChart(slot, input) {
-  const code = (input.value || '').trim().toUpperCase();
-  if (code && _plCodesSet && _plCodesSet.has(code)) {
-    input.value = code;
-    plSetChartSymbol(slot, code);
-  } else {
-    input.value = _plSyms[slot];   // kode tak valid → kembalikan ke simbol sebelumnya
-  }
+// ── Autocomplete kustom (meniru search header) untuk input Chart A/B & Seasonality ──
+let _plSearchEl = null;       // elemen dropdown (anak <body>)
+let _plSearchInput = null;    // input yang sedang aktif
+let _plSearchKind = null;     // 'chartA' | 'chartB' | 'seas'
+let _plSearchItems = [];      // hasil filter saat ini
+let _plSearchActive = -1;     // index highlight keyboard
+
+function plSearchEnsureEl() {
+  if (_plSearchEl) return _plSearchEl;
+  const d = document.createElement('div');
+  d.className = 'pl-search-drop';
+  d.id = 'plSearchDrop';
+  document.body.appendChild(d);
+  _plSearchEl = d;
+  return d;
 }
 
-// Input search Seasonality → validasi lalu render; tak valid → kembali ke simbol aktif
-function plPickSeas(input) {
-  const code = (input.value || '').trim().toUpperCase();
-  if (code && _plCodesSet && _plCodesSet.has(code)) {
-    input.value = code;
-    plRenderSeasonality(code);
-  } else {
-    input.value = _plSeasCode || 'IHSG';
+// Daftar hasil pencarian: IHSG (bila cocok) + saham dari DATA.stock_list (maks 14)
+function plSearchList(qRaw) {
+  const q = (qRaw || '').trim().toUpperCase();
+  const out = [];
+  if (!q || 'IHSG'.includes(q) || 'INDEKS HARGA SAHAM GABUNGAN'.includes(q)) {
+    out.push({ code: 'IHSG', name: 'Indeks Harga Saham Gabungan', sector: 'Indeks' });
   }
+  const list = (DATA && Array.isArray(DATA.stock_list)) ? DATA.stock_list : [];
+  for (const s of list) {
+    if (out.length >= 14) break;
+    if (!q || s.code.includes(q) || (s.name && s.name.toUpperCase().includes(q))) {
+      out.push({ code: s.code, name: s.name || '', sector: s.sector || '' });
+    }
+  }
+  return out.slice(0, 14);
+}
+
+function plSearchPos() {
+  if (!_plSearchInput) return;
+  const d = plSearchEnsureEl();
+  const r = _plSearchInput.getBoundingClientRect();
+  d.style.left = Math.round(r.left) + 'px';
+  d.style.top = Math.round(r.bottom + 4) + 'px';
+  d.style.minWidth = Math.max(Math.round(r.width), 210) + 'px';
+}
+
+function plSearchRender() {
+  const d = plSearchEnsureEl();
+  if (!_plSearchItems.length) { d.classList.remove('open'); d.innerHTML = ''; return; }
+  d.innerHTML = _plSearchItems.map((s, i) =>
+    `<div class="pl-search-item${i === _plSearchActive ? ' active' : ''}" data-code="${s.code}" onmousedown="event.preventDefault();plSearchPick('${s.code}')">` +
+      `<span class="code">${s.code}</span>` +
+      `<span class="sname">${s.name}</span>` +
+      (s.sector ? `<span class="sector">${s.sector}</span>` : '') +
+    `</div>`).join('');
+  d.classList.add('open');
+}
+
+function plSearchOpen(input, kind) {
+  _plSearchInput = input; _plSearchKind = kind; _plSearchActive = -1;
+  _plSearchItems = plSearchList(input.value);
+  plSearchPos();
+  plSearchRender();
+}
+
+function plSearchInputEvt() {
+  if (!_plSearchInput) return;
+  _plSearchActive = -1;
+  _plSearchItems = plSearchList(_plSearchInput.value);
+  plSearchPos();
+  plSearchRender();
+}
+
+function plSearchClose() {
+  if (_plSearchEl) _plSearchEl.classList.remove('open');
+}
+
+// Pilih satu kode dari dropdown → set value + jalankan aksi sesuai jenis input
+function plSearchPick(code) {
+  code = (code || '').toUpperCase();
+  const input = _plSearchInput, kind = _plSearchKind;
+  if (!input) return;
+  input.value = code;
+  plSearchClose();
+  plSearchDispatch(kind, code);
+  input.blur();
+}
+
+// Jalankan aksi: ganti simbol chart atau render seasonality
+function plSearchDispatch(kind, code) {
+  if (kind === 'chartA') { if (_plSyms.A !== code) plSetChartSymbol('A', code); }
+  else if (kind === 'chartB') { if (_plSyms.B !== code) plSetChartSymbol('B', code); }
+  else if (kind === 'seas') { if (_plSeasCode !== code) plRenderSeasonality(code); }
+}
+
+// Commit saat blur: kode valid → terapkan; tak valid → kembalikan ke simbol aktif
+function plSearchCommit(el, kind) {
+  plSearchClose();
+  const code = (el.value || '').trim().toUpperCase();
+  const valid = code && _plCodesSet && _plCodesSet.has(code);
+  if (kind === 'chartA') { if (valid) { el.value = code; plSearchDispatch(kind, code); } else el.value = _plSyms.A; }
+  else if (kind === 'chartB') { if (valid) { el.value = code; plSearchDispatch(kind, code); } else el.value = _plSyms.B; }
+  else if (kind === 'seas') { if (valid) { el.value = code; plSearchDispatch(kind, code); } else el.value = _plSeasCode || 'IHSG'; }
+}
+
+// Navigasi keyboard: ↑/↓ pindah highlight, Enter pilih, Esc tutup
+function plSearchKey(evt) {
+  const d = _plSearchEl;
+  const open = d && d.classList.contains('open') && _plSearchItems.length;
+  if (evt.key === 'ArrowDown' && open) { evt.preventDefault(); _plSearchActive = Math.min(_plSearchItems.length - 1, _plSearchActive + 1); plSearchRender(); }
+  else if (evt.key === 'ArrowUp' && open) { evt.preventDefault(); _plSearchActive = Math.max(0, _plSearchActive - 1); plSearchRender(); }
+  else if (evt.key === 'Enter') {
+    if (open) {
+      evt.preventDefault();
+      const pick = _plSearchItems[_plSearchActive >= 0 ? _plSearchActive : 0];
+      if (pick) plSearchPick(pick.code);
+    }
+  } else if (evt.key === 'Escape') { plSearchClose(); }
 }
 
 // ── PERBESAR/KECILKAN (maximize) + RESIZE panel ala terminal ──
