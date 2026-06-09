@@ -2406,6 +2406,16 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 #plNewsWrap .tradingview-widget-container__widget,
 #plNewsWrap iframe{height:100%!important;width:100%!important;display:block}
 #plNewsWrap .tradingview-widget-copyright{display:none!important}
+/* daftar berita kustom (dari headlines.json) */
+.pl-news{padding:0!important}
+.pl-news-item{display:block;padding:11px 13px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--text);transition:background .12s}
+.pl-news-item:last-child{border-bottom:none}
+.pl-news-item:hover{background:var(--bg2)}
+.pl-news-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.pl-news-src{font-size:10.5px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-news-time{font-size:10.5px;color:var(--text3);font-weight:600;margin-left:auto;white-space:nowrap;flex-shrink:0}
+.pl-news-title{font-size:13px;font-weight:600;line-height:1.35;color:var(--text)}
+.pl-news-item:hover .pl-news-title{color:var(--accent)}
 .pl-win-body.tv .tradingview-widget-container,
 .pl-win-body.tv .tradingview-widget-container__widget,
 .pl-win-body.tv iframe{height:100%!important;width:100%!important;display:block}
@@ -4835,33 +4845,71 @@ function plAttachBox(chart, series, box, isDark) {
   try { series.attachPrimitive(prim); } catch (e) { /* versi lib tak dukung primitive → kotak dilewati */ }
 }
 
-// ── HEADLINES: sementara widget berita TradingView (ganti ke feed Python nanti) ──
-function plLoadNews(force) {
+// ── HEADLINES: feed berita dari mesin sendiri (public/headlines.json) ──
+// Dibangun scripts/fetch_headlines.py via GitHub Actions (cron ~15 mnt) dari
+// beberapa portal (CNBC, Kontan, Bisnis, dll.). Link bisa diklik (tab baru).
+// Fallback ke widget berita TradingView kalau feed belum ada / gagal.
+const PL_HEADLINES_CDN   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/headlines.json';
+const PL_HEADLINES_LOCAL = 'headlines.json';
+
+function plTimeAgo(ts) {
+  const s = Math.max(0, Math.floor(Date.now() / 1000 - (ts || 0)));
+  if (s < 60) return 'baru saja';
+  const m = Math.floor(s / 60); if (m < 60) return m + ' mnt lalu';
+  const h = Math.floor(m / 60); if (h < 24) return h + ' jam lalu';
+  return Math.floor(h / 24) + ' hari lalu';
+}
+function plEsc(s) {
+  return (s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+async function plLoadNews(force) {
   const wrap = document.getElementById('plNewsWrap');
   if (!wrap) return;
-  const theme = plTheme();
-  if (!force && wrap._built && wrap._theme === theme) return;
-  wrap._built = true; wrap._theme = theme;
-  wrap.innerHTML = '';
+  if (!force && wrap._feedDone) return;
+  wrap._feedDone = true;
+  wrap.className = 'pl-win-body scroll';
+  wrap.innerHTML = '<div class="pl-empty">Memuat berita…</div>';
 
+  let data = null;
+  const v = Math.floor(Date.now() / (5 * 60 * 1000));   // cache-bust tiap 5 menit
+  for (const base of [PL_HEADLINES_CDN, PL_HEADLINES_LOCAL]) {
+    try {
+      const res = await fetch(base + '?v=' + v, { cache: 'no-store' });
+      if (!res.ok) continue;
+      data = await res.json();
+      if (data && Array.isArray(data.items)) break;
+    } catch (_) {}
+  }
+
+  const items = (data && Array.isArray(data.items)) ? data.items : [];
+  if (!items.length) { wrap._feedDone = false; plLoadNewsTV(wrap, plTheme()); return; }
+
+  wrap.className = 'pl-win-body scroll pl-news';
+  wrap.innerHTML = items.map(it =>
+    `<a class="pl-news-item" href="${plEsc(it.link || '#')}" target="_blank" rel="noopener noreferrer">`
+    + `<div class="pl-news-meta"><span class="pl-news-src">${plEsc(it.source || '')}</span>`
+    + `<span class="pl-news-time">${plTimeAgo(it.ts)}</span></div>`
+    + `<div class="pl-news-title">${plEsc(it.title || '')}</div></a>`
+  ).join('');
+}
+
+// Fallback: widget berita TradingView (dipakai kalau headlines.json kosong/gagal)
+function plLoadNewsTV(wrap, theme) {
+  wrap.className = 'pl-win-body tv';
+  wrap.innerHTML = '';
   const container = document.createElement('div');
   container.className = 'tradingview-widget-container';
   const widgetDiv = document.createElement('div');
   widgetDiv.className = 'tradingview-widget-container__widget';
   container.appendChild(widgetDiv);
-
   const script = document.createElement('script');
   script.type = 'text/javascript';
   script.async = true;
   script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
   script.text = JSON.stringify({
-    feedMode: PL_NEWS_FEED_MODE,
-    isTransparent: false,
-    displayMode: 'regular',
-    width: '100%',
-    height: '100%',
-    colorTheme: theme,
-    locale: 'id'
+    feedMode: PL_NEWS_FEED_MODE, isTransparent: false, displayMode: 'regular',
+    width: '100%', height: '100%', colorTheme: theme, locale: 'id'
   });
   container.appendChild(script);
   wrap.appendChild(container);

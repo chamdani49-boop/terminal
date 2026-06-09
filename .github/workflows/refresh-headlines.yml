@@ -1,0 +1,59 @@
+name: Refresh Headlines (berita pasar)
+
+# ═══════════════════════════════════════════════════════════════════════
+# Tarik berita terbaru dari beberapa portal (CNBC, Kontan, Bisnis.com,
+# Bloomberg Technoz, EmitenNews, InvestorTrust, Stockwatch) via Google News
+# RSS, lalu tulis/gabung ke public/headlines.json (retensi 3 hari, maks 80).
+# Frontend (Pasar Live → Headlines) membaca file ini via jsDelivr CDN.
+#
+# Tidak memakai Gemini/Telegram — murni fetch + tulis JSON.
+# ═══════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # tiap 15 menit
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-headlines
+  cancel-in-progress: false
+
+jobs:
+  refresh-headlines:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build headlines.json
+        run: python scripts/fetch_headlines.py
+
+      - name: Commit & push if changed
+        id: commit
+        run: |
+          if git diff --quiet -- public/headlines.json; then
+            echo "⏭  No headline changes — skipping commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "headlines-refresh[bot]"
+          git config user.email "headlines-refresh@economstock.local"
+          git add public/headlines.json
+          git commit -m "headlines: refresh $(date -u +%FT%TZ) [skip ci]"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Purge jsDelivr CDN cache
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          response=$(curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/public/headlines.json")
+          echo "Purge headlines.json: $response"
