@@ -2387,15 +2387,15 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 
 /* ── CHART KUSTOM (Lightweight Charts): toolbar in-chart + MA legend ── */
 .pl-win-body.lw{display:flex;flex-direction:column;overflow:hidden}
-.pl-cbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 8px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
-.pl-seg2{display:inline-flex;gap:2px;background:var(--bg2);border-radius:var(--radius-pill);padding:2px}
-.pl-seg2 button{border:none;background:none;font-family:inherit;font-size:11px;font-weight:700;color:var(--text2);padding:3px 11px;border-radius:var(--radius-pill);cursor:pointer;transition:all .15s}
+.pl-cbar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:4px 6px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
+.pl-seg2{display:inline-flex;gap:2px;background:var(--bg2);border-radius:var(--radius-pill);padding:1px}
+.pl-seg2 button{border:none;background:none;font-family:inherit;font-size:9.5px;font-weight:700;color:var(--text2);padding:2px 8px;border-radius:var(--radius-pill);cursor:pointer;transition:all .15s}
 .pl-seg2 button.on{background:var(--accent);color:#fff}
-.pl-ma{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;font-weight:700;color:var(--text2);padding:3px 8px;border-radius:7px;border:1px solid var(--border);user-select:none;white-space:nowrap}
-.pl-ma .dot{width:11px;height:3px;border-radius:2px;flex-shrink:0}
+.pl-ma{display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:9.5px;font-weight:700;color:var(--text2);padding:2px 6px;border-radius:6px;border:1px solid var(--border);user-select:none;white-space:nowrap}
+.pl-ma .dot{width:10px;height:3px;border-radius:2px;flex-shrink:0}
 .pl-ma.off{opacity:.36}
 .pl-cbar .sp{flex:1 1 auto;min-width:4px}
-.pl-cbar .tvlink{color:var(--text2);font-size:11px;font-weight:700;text-decoration:none;padding:3px 8px;border-radius:7px;border:1px solid var(--border);white-space:nowrap;cursor:pointer}
+.pl-cbar .tvlink{color:var(--text2);font-size:9.5px;font-weight:700;text-decoration:none;padding:2px 6px;border-radius:6px;border:1px solid var(--border);white-space:nowrap;cursor:pointer}
 .pl-cbar .tvlink:hover{border-color:var(--accent);color:var(--accent)}
 .pl-chart-host{flex:1 1 auto;min-height:0;min-width:0;position:relative}
 .pl-chart-host .tradingview-widget-container,.pl-chart-host .tradingview-widget-container__widget,.pl-chart-host iframe{height:100%!important;width:100%!important;display:block}
@@ -5182,19 +5182,27 @@ function plSeasLineSVG() {
     return s ? `<polyline points="${s}" fill="none" stroke="${stroke}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" opacity="${op}"${extra || ''}/>` : '';
   };
 
-  // garis per tahun — bisa diklik untuk fokus; saat ada sorot, yang lain diredupkan
+  // garis per tahun — saat ada sorot, yang lain diredupkan (klik ditangani hit-line lebar di bawah)
   let lines = '';
   yearCum.forEach((s, i) => {
     const focused = hi === s.y;
     const dim     = hi !== null && !focused;
     const w  = focused ? 2.8 : 1.6;
     const op = dim ? 0.13 : (focused ? 1 : 0.8);
-    lines += poly(s.pts, yearColor(i), w, op, ` style="cursor:pointer" onclick="plSeasHi(${s.y})"`);
+    lines += poly(s.pts, yearColor(i), w, op, ` pointer-events="none"`);
   });
 
   // garis rata-rata — tebal saat tak ada sorot, diredupkan saat ada tahun tersorot
-  const avgLine = poly(avgCum, avgColor, hi === null ? 3 : 1.4, hi === null ? 1 : 0.22,
-    ` style="cursor:pointer" onclick="plSeasHi(null)"`);
+  const avgLine = poly(avgCum, avgColor, hi === null ? 3 : 1.4, hi === null ? 1 : 0.22, ` pointer-events="none"`);
+
+  // hit-area transparan & lebar di atas tiap garis → klik garis = klik legenda tahun (toggle fokus)
+  const hitLine = (pts, onclk) => {
+    const s = pts.filter(Boolean).map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
+    return s ? `<polyline points="${s}" fill="none" stroke="transparent" stroke-width="16" stroke-linejoin="round" stroke-linecap="round" pointer-events="stroke" style="cursor:pointer" onclick="${onclk}"/>` : '';
+  };
+  let hits = '';
+  yearCum.forEach(s => { hits += hitLine(s.pts, `plSeasHi(${s.y})`); });
+  hits += hitLine(avgCum, 'plSeasHi(null)');
 
   // titik + tooltip (%) pada garis yang sedang difokus (tahun tersorot, atau rata-rata bila tidak)
   let focusRet, focusPts, focusLabel, focusColor;
@@ -5213,7 +5221,7 @@ function plSeasLineSVG() {
       const m = p[0], v = p[1], r = focusRet[m];
       const cx = X(m), cy = Y(v);
       tipPts.push({ m, x: cx, y: cy, ret: r, idx: v });
-      dots += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="${focusColor}" stroke="${isDark ? '#150f33' : '#ffffff'}" stroke-width="1"/>`;
+      dots += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="${focusColor}" stroke="${isDark ? '#150f33' : '#ffffff'}" stroke-width="1" pointer-events="none"/>`;
     });
   }
   // simpan state untuk tooltip interaktif (hover/sentuh) — garis yang sedang difokus
@@ -5235,7 +5243,7 @@ function plSeasLineSVG() {
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Seasonality multi-line ${code}" style="touch-action:pan-y" onpointermove="plSeasTipMove(event)" onpointerdown="plSeasTipMove(event)" onpointerleave="plSeasTipHide()">
         <line x1="${padL}" y1="${y100.toFixed(1)}" x2="${W - padR}" y2="${y100.toFixed(1)}" stroke="${grid}" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
         ${yLab(100, '100')}${yLab(max, max.toFixed(0))}${yLab(min, min.toFixed(0))}
-        ${lines}${avgLine}${dots}${xlabels}
+        ${lines}${avgLine}${hits}${dots}${xlabels}
         <g id="plSeasTipG"></g>
       </svg>
       <div class="pl-sl-legend">${legend}</div>
