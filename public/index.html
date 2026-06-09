@@ -2396,7 +2396,13 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 .pl-chart-host .tradingview-widget-container,.pl-chart-host .tradingview-widget-container__widget,.pl-chart-host iframe{height:100%!important;width:100%!important;display:block}
 .pl-chart-note{position:absolute;top:8px;left:8px;z-index:4;background:var(--bg2);color:var(--text2);font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;border:1px solid var(--border);max-width:84%}
 
-/* ── HEADLINES: paksa iframe penuh ke bawah (hilangkan space kosong) ── */
+/* ── HEADLINES: paksa widget penuh ke bawah (hilangkan space kosong) ── */
+#plNewsWrap{position:relative}
+#plNewsWrap .tradingview-widget-container{position:absolute;inset:0}
+#plNewsWrap .tradingview-widget-container,
+#plNewsWrap .tradingview-widget-container__widget,
+#plNewsWrap iframe{height:100%!important;width:100%!important;display:block}
+#plNewsWrap .tradingview-widget-copyright{display:none!important}
 .pl-win-body.tv .tradingview-widget-container,
 .pl-win-body.tv .tradingview-widget-container__widget,
 .pl-win-body.tv iframe{height:100%!important;width:100%!important;display:block}
@@ -4634,7 +4640,7 @@ function plTvInHost(slot, host, sym, theme, note) {
     autosize: true, symbol: plTvSymbol(sym), interval: 'D', timezone: 'Asia/Jakarta',
     theme: theme, style: '1', locale: 'id', withdateranges: true,
     hide_side_toolbar: true, allow_symbol_change: true,
-    studies: ['MASimple@tv-basicstudies', 'Volume@tv-basicstudies'],
+    studies: [],
     support_host: 'https://www.tradingview.com'
   });
   container.appendChild(script);
