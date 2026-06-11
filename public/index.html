@@ -4675,6 +4675,11 @@ const PL_MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','
 // Nanti tinggal ganti plLoadNews() agar fetch dari feed mesin Python kamu
 // (mis. const PL_HEADLINES_URL = 'headlines.json').
 const PL_NEWS_FEED_MODE = 'all_symbols';
+// Auto-refresh headlines: poll tiap 5 menit (selaras cache-bust feed di
+// plFetchFeed), dijeda saat tab tidak terlihat / halaman Pasar tidak aktif →
+// hemat request. Workflow refresh-headlines jalan ~15 mnt, jadi 5 mnt cukup.
+const PL_NEWS_POLL_MS = 5 * 60 * 1000;
+let   _plNewsTimer    = null;   // handle setInterval auto-refresh berita
 
 let _plInit = false;
 let _plSyms = { A: 'BBRI', B: 'BBCA' };   // simbol awal tiap panel chart (ada candle → SMC tampil)
@@ -4704,6 +4709,7 @@ function plEnsure() {
   if (!_plInit) {
     _plInit = true;
     plBuildControls();
+    _startNewsPolling();   // auto-refresh berita selama halaman aktif & tab terlihat
   }
   plLoadAll(false);   // semua panel tampil sekaligus (gaya terminal)
 }
@@ -4716,6 +4722,27 @@ function plLoadAll(force) {
   plRenderSeasonality();
 }
 function plReloadAll() { plLoadAll(true); }
+
+// ── Auto-refresh berita (headlines) ──────────────────────────────────────
+// Hanya menyegarkan saat halaman Pasar AKTIF dan tab TERLIHAT → hemat request.
+// Workflow refresh-headlines jalan ~15 mnt & feed di-cache-bust per 5 mnt, jadi
+// poll 5 mnt sudah memunculkan berita baru tanpa perlu reload manual.
+function _plPasarActive() {
+  const page = document.getElementById('page-pasar');
+  return !!(page && page.classList.contains('active'));
+}
+function _startNewsPolling() {
+  if (_plNewsTimer) return;   // idempotent — cukup sekali pasang
+  _plNewsTimer = setInterval(() => {
+    if (document.hidden || !_plPasarActive()) return;   // jeda saat tab/halaman tidak aktif
+    plLoadNews(true);
+  }, PL_NEWS_POLL_MS);
+  // Saat tab kembali terlihat di halaman Pasar → segarkan langsung tanpa
+  // menunggu tick berikutnya, supaya berita fresh begitu user kembali.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && _plPasarActive()) plLoadNews(true);
+  });
+}
 
 function plBuildControls() {
   const codes = (DATA && Array.isArray(DATA.stock_list))
