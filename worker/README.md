@@ -24,8 +24,17 @@ Browser ──(poll 2 mnt)──► /live.json (Worker) ──► fetch+parse Li
 | Method | Path | Keterangan |
 |--------|------|-----------|
 | GET | `/live.json` | `{ ok, generated_at, count, live: { CODE: {price, change_pct, max_price, max_date, low_price, low_date} } }` |
-| GET | `/live.json?nocache=1` | bypass cache edge (debug) |
+| GET | `/consensus.json` | `{ ok, generated_at, count, consensus_slim: { CODE: [{no,date,firm,suggestion,target_price,pct_d}] }, consensus_summary: { CODE: {total,buy,neutral,sell,high,low,target} } }` |
+| GET | `/history.json` | `{ ok, generated_at, count, price_history: [ {label,date, CODE: harga, ...} ] }` |
+| GET | `/live.json?nocache=1` | bypass cache edge (debug; juga berlaku utk `/consensus.json?nocache=1` & `/history.json?nocache=1`) |
 | GET | `/` | health check |
+
+> **Kenapa konsensus & history ikut di Worker?** Logika fetch-nya nyaris sama
+> dengan live (sama-sama gviz CSV dari Google Sheet). Dengan menyajikannya dari
+> Worker, edit di Sheet langsung kebaca **tanpa nunggu cron GitHub Actions /
+> rebuild `data.json` / purge CDN**, dan **tetap jalan saat repo di-private**
+> (jsDelivr hanya untuk repo public). Frontend meng-overlay `consensus_slim`,
+> `consensus_summary`, dan `price_history` ke `data.json` yang sudah ke-load.
 
 ---
 
@@ -71,6 +80,18 @@ npx wrangler secret put LIVE_GID
 # tempel nilai LIVE_GID, Enter
 ```
 
+Untuk mengaktifkan endpoint **konsensus & history**, set juga (nilainya sama
+dengan GitHub Secrets `CONSENSUS_*` / `HISTORY_*` yang dipakai `build-data.js`):
+```bash
+npx wrangler secret put CONSENSUS_SHEET_ID
+npx wrangler secret put CONSENSUS_GID
+npx wrangler secret put HISTORY_SHEET_ID
+npx wrangler secret put HISTORY_GID
+```
+> `/consensus.json` juga memanfaatkan `LIVE_SHEET_ID`/`LIVE_GID` (opsional) untuk
+> menghitung `pct_d` (upside) — persis seperti `build-data.js`. Kalau tidak
+> di-set, `pct_d` diambil dari kolom sheet (kalau ada).
+
 ### 4. Deploy
 ```bash
 npm run deploy        # = npx wrangler deploy
@@ -108,6 +129,14 @@ otomatis tiap 2 menit. Buka **Console** (F12) → harusnya ada log:
 Di `public/index.html`:
 - Aktif → `const LIVE_FEED_URL = 'https://.../live.json';`
 - Mati  → `const LIVE_FEED_URL = null;` (UI balik ke perilaku lama: poll `data.json`)
+
+Hal yang sama berlaku untuk konsensus & history:
+- `const CONSENSUS_FEED_URL = 'https://.../consensus.json';` → `null` untuk mati.
+- `const HISTORY_FEED_URL   = 'https://.../history.json';`   → `null` untuk mati.
+
+Saat di-set `null`, UI tetap aman: konsensus/history diambil dari `data.json`
+seperti sebelumnya. Konsensus di-poll ~15 menit, history ~30 menit (jarang
+berubah, "jam tarikan seperti awal") — tanpa gating jam bursa.
 
 ---
 
@@ -167,9 +196,10 @@ npx wrangler dev
 ---
 
 ## Catatan teknis
-- Logika parsing (`parseLive`, `_parseLiveBody`, `toNum`, `parseDate`,
+- Logika parsing (`parseLive`, `_parseLiveBody`, `parseConsensus`,
+  `computeConsensusSummary`, `parseHistory`, `toNum`, `parseDate`,
   `cleanTickerName`) adalah **port langsung** dari `scripts/build-data.js`.
-  Kalau format Live Sheet berubah dan kamu update `build-data.js`, update juga
+  Kalau format Sheet berubah dan kamu update `build-data.js`, update juga
   `worker/src/index.js` agar tetap sinkron.
 - Frontend hanya meng-overlay ticker yang **sudah ada** di `data.json`
   (punya harga di baris terakhir `price_history`). Ticker baru yang hanya ada

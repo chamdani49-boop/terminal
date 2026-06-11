@@ -4062,6 +4062,24 @@ let   _liveFeedTimer    = null;           // handle setInterval feed
 let   _lastLiveFeed     = null;           // payload live terakhir (re-apply setelah swap data.json)
 let   _liveFeedOk       = false;          // pernah sukses fetch feed?
 
+// ── Feed KONSENSUS & HISTORY real-time (Worker yang sama) ───────────────
+// Disamakan dengan live feed: data konsensus & history di-fetch LANGSUNG dari
+// Google Sheet oleh Worker (bukan lewat repo→jsDelivr/Pages), jadi selalu fresh
+// & tetap jalan saat repo private. Set ke null untuk MATIKAN (balik ke data.json).
+const CONSENSUS_FEED_URL = 'https://terminal-live.chamdani49.workers.dev/consensus.json';
+const HISTORY_FEED_URL   = 'https://terminal-live.chamdani49.workers.dev/history.json';
+// "Jam tarikan seperti awal": konsensus (mingguan) & history (bulanan) jarang
+// berubah → poll jauh lebih jarang dari harga live. Tidak ada gating jam bursa
+// (data ini tidak tergantung sesi perdagangan). Fetch pertama saat load.
+const CONSENSUS_FEED_POLL_MS = 15 * 60 * 1000;  // 15 menit
+const HISTORY_FEED_POLL_MS   = 30 * 60 * 1000;  // 30 menit
+let   _consensusFeedTimer = null;
+let   _historyFeedTimer   = null;
+let   _lastConsensusFeed  = null;   // payload konsensus terakhir (re-apply setelah swap data.json)
+let   _lastHistoryFeed    = null;   // payload history terakhir (re-apply setelah swap data.json)
+let   _consensusFeedOk    = false;
+let   _historyFeedOk      = false;
+
 // ── OHLC harian (chart candlestick di rec-modal) ───────────────────────
 // Konstanta OHLC_CDN_URL / OHLC_LOCAL_URL + loader sudah dideklarasikan di
 // blok "OHLC CHART HELPERS" di atas — data di-build GitHub Actions tiap 18 WIB.
@@ -4208,6 +4226,8 @@ async function loadData() {
       init();
       _startLivePolling();  // mulai polling setelah initial load berhasil
       _startLiveFeedPolling();  // mulai live feed real-time (Worker)
+      _startConsensusFeedPolling();  // feed konsensus real-time (Worker)
+      _startHistoryFeedPolling();    // feed history real-time (Worker)
       return;
     } catch (e) {
       console.warn(`[data] ${src.label} fetch gagal:`, e.message || e);
@@ -4276,6 +4296,10 @@ async function _pollLiveData() {
   // data.json baru me-reset DATA → re-apply overlay live terakhir supaya
   // harga live tidak balik ke nilai lama (stale) sampai feed poll berikutnya.
   if (_lastLiveFeed) { try { _overlayLiveInto(DATA, _lastLiveFeed); } catch (_) {} }
+  // Idem untuk konsensus & history (feed Worker) — supaya swap data.json tidak
+  // mengembalikan konsensus/history ke versi data.json yang mungkin lebih lama.
+  if (_lastConsensusFeed) { try { _applyConsensusInto(DATA, _lastConsensusFeed); } catch (_) {} }
+  if (_lastHistoryFeed)   { try { _applyHistoryInto(DATA, _lastHistoryFeed);   } catch (_) {} }
 
   // Re-render komponen ringan langsung (tidak blokir UI thread)
   requestAnimationFrame(() => { _rerenderLive(prevStock); });
@@ -4461,6 +4485,146 @@ function _startLiveFeedPolling() {
     });
   }
   console.info(`[live-feed] polling aktif — interval ${LIVE_FEED_POLL_MS / 1000}s (jam bursa WIB, pause saat tab background)`);
+}
+
+// ═══════════════════════════════════════════
+// FEED KONSENSUS & HISTORY — overlay dari Worker (pola SAMA seperti live feed)
+// ═══════════════════════════════════════════
+// Data konsensus & history di-fetch LANGSUNG dari Google Sheet oleh Worker,
+// jadi selalu fresh (tak perlu nunggu cron GitHub Actions / rebuild) & tetap
+// jalan saat repo private. UI meng-overlay-nya ke DATA seperti harga live.
+
+// Signature murah untuk deteksi "berubah/tidak" → hindari re-render sia-sia.
+function _consSig(slim) {
+  if (!slim || typeof slim !== 'object') return '0';
+  const codes = Object.keys(slim);
+  let recs = 0, maxd = '';
+  for (const c of codes) {
+    const a = slim[c];
+    if (Array.isArray(a)) {
+      recs += a.length;
+      for (const r of a) { if (r && r.date && r.date > maxd) maxd = r.date; }
+    }
+  }
+  return codes.length + ':' + recs + ':' + maxd;
+}
+function _phSig(ph) {
+  if (!Array.isArray(ph) || !ph.length) return '0';
+  const last = ph[ph.length - 1] || {};
+  return ph.length + ':' + (last.date || '') + ':' + Object.keys(last).length;
+}
+
+// Set DATA.consensus_slim / consensus_summary dari payload feed (tanpa render).
+// Return jumlah ticker kalau benar-benar berubah, 0 kalau identik / invalid.
+function _applyConsensusInto(data, payload) {
+  if (!data || !payload || payload.ok !== true) return 0;
+  const slim = payload.consensus_slim;
+  if (!slim || typeof slim !== 'object' || Array.isArray(slim) || !Object.keys(slim).length) return 0;
+  if (_consSig(slim) === _consSig(data.consensus_slim)) return 0; // tidak berubah
+  data.consensus_slim = slim;
+  if (payload.consensus_summary && typeof payload.consensus_summary === 'object') {
+    data.consensus_summary = payload.consensus_summary;
+  }
+  try { _sanitizeData(data); } catch (_) {}   // bersihkan placeholder/non-ticker
+  return Object.keys(data.consensus_slim || {}).length;
+}
+
+function applyConsensusFeed(payload) {
+  _lastConsensusFeed = payload;
+  const n = _applyConsensusInto(DATA, payload);
+  if (n > 0) {
+    requestAnimationFrame(() => {
+      try { renderConsensus(currentStock);   } catch (_) {}
+      try { renderPriceTarget(currentStock); } catch (_) {}
+    });
+    const idleFn = () => {
+      try { buildConsensusAll(); } catch (_) {}
+      const ovView = document.getElementById('ovView');
+      if (ovView && ovView.style.display !== 'none') { try { buildOverview(); } catch (_) {} }
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(idleFn, { timeout: 3000 });
+    else setTimeout(idleFn, 500);
+  }
+  return n;
+}
+
+async function _pollConsensusFeed() {
+  if (!CONSENSUS_FEED_URL) return;
+  if (typeof document !== 'undefined' && document.hidden) return;
+  try {
+    // URL stabil (tanpa cache-bust) → dilayani edge cache Worker, hemat invoke.
+    const res = await fetch(CONSENSUS_FEED_URL, { cache: 'default' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json || json.ok !== true || !json.consensus_slim) throw new Error('payload konsensus tidak valid');
+    const n = applyConsensusFeed(json);
+    const tag = json.stale ? ' (STALE — sheet error, pakai data terakhir)' : '';
+    if (!_consensusFeedOk) {
+      _consensusFeedOk = true;
+      console.info(`[consensus-feed] aktif — ${n} ticker ter-overlay (generated_at=${json.generated_at})${tag}`);
+    } else if (n > 0) {
+      console.info(`[consensus-feed] update — ${n} ticker (generated_at=${json.generated_at})${tag}`);
+    }
+  } catch (e) {
+    console.warn('[consensus-feed] gagal:', e.message || e, '— tetap pakai konsensus dari data.json.');
+  }
+}
+
+function _startConsensusFeedPolling() {
+  if (!CONSENSUS_FEED_URL) { console.info('[consensus-feed] dimatikan (URL null) — pakai data.json.'); return; }
+  _pollConsensusFeed();
+  if (_consensusFeedTimer) clearInterval(_consensusFeedTimer);
+  _consensusFeedTimer = setInterval(_pollConsensusFeed, CONSENSUS_FEED_POLL_MS);
+}
+
+// Set DATA.price_history dari payload feed (tanpa render). Re-apply overlay live
+// supaya baris terakhir tetap harga live. Return jumlah baris kalau berubah.
+function _applyHistoryInto(data, payload) {
+  if (!data || !payload || payload.ok !== true) return 0;
+  const ph = payload.price_history;
+  if (!Array.isArray(ph) || ph.length < 2) return 0;
+  if (_phSig(ph) === _phSig(data.price_history)) return 0; // tidak berubah
+  data.price_history = ph;
+  if (_lastLiveFeed) { try { _overlayLiveInto(data, _lastLiveFeed); } catch (_) {} }
+  return ph.length;
+}
+
+function applyHistoryFeed(payload) {
+  _lastHistoryFeed = payload;
+  const n = _applyHistoryInto(DATA, payload);
+  if (n > 0) {
+    // History bulanan → jarang berubah, jadi re-render penuh aman (tak sering).
+    requestAnimationFrame(() => { try { renderDashboard(currentStock); } catch (_) {} });
+  }
+  return n;
+}
+
+async function _pollHistoryFeed() {
+  if (!HISTORY_FEED_URL) return;
+  if (typeof document !== 'undefined' && document.hidden) return;
+  try {
+    const res = await fetch(HISTORY_FEED_URL, { cache: 'default' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json || json.ok !== true || !Array.isArray(json.price_history)) throw new Error('payload history tidak valid');
+    const n = applyHistoryFeed(json);
+    const tag = json.stale ? ' (STALE — sheet error, pakai data terakhir)' : '';
+    if (!_historyFeedOk) {
+      _historyFeedOk = true;
+      console.info(`[history-feed] aktif — ${json.price_history.length} baris (generated_at=${json.generated_at})${tag}`);
+    } else if (n > 0) {
+      console.info(`[history-feed] update — ${n} baris (generated_at=${json.generated_at})${tag}`);
+    }
+  } catch (e) {
+    console.warn('[history-feed] gagal:', e.message || e, '— tetap pakai history dari data.json.');
+  }
+}
+
+function _startHistoryFeedPolling() {
+  if (!HISTORY_FEED_URL) { console.info('[history-feed] dimatikan (URL null) — pakai data.json.'); return; }
+  _pollHistoryFeed();
+  if (_historyFeedTimer) clearInterval(_historyFeedTimer);
+  _historyFeedTimer = setInterval(_pollHistoryFeed, HISTORY_FEED_POLL_MS);
 }
 
 function init() {
