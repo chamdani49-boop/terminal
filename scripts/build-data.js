@@ -531,6 +531,27 @@ function parseConsensus(csv, latestPrices, debug = {}) {
     grouped[t].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     grouped[t].forEach((rec, i) => rec.no = String(i + 1));
   }
+
+  // ── Diagnostik konsensus ───────────────────────────────────────────────
+  // Bantu deteksi "baris hilang": kalau jumlah baris mentah yang dibaca gviz
+  // (consensus_data_rows) lebih kecil dari yang ada di sheet, atau max_date
+  // tertinggal dari tanggal edit terbaru, berarti masalahnya di FETCH/SHEET
+  // (mis. gviz memotong baris di gap kosong, atau tab konsensus pakai
+  // QUERY/IMPORTRANGE yang cache-nya basi di sisi Google Sheets) — bukan di
+  // parser. Disimpan ke _meta.consensus_diag (bukan _debug) supaya tetap ada
+  // setelah refresh live menimpa data.json.
+  let _totalRecs = 0, _maxDate = '';
+  for (const t of Object.keys(grouped)) {
+    _totalRecs += grouped[t].length;
+    for (const rec of grouped[t]) {
+      if (rec.date && rec.date > _maxDate) _maxDate = rec.date;
+    }
+  }
+  debug.consensus_data_rows  = rows.length - (headerIdx + 1);
+  debug.consensus_total_recs = _totalRecs;
+  debug.consensus_ticker_cnt = Object.keys(grouped).length;
+  debug.consensus_max_date   = _maxDate;
+
   return grouped;
 }
 
@@ -1413,6 +1434,16 @@ async function main() {
           fallback_used: !consensusCsv || !liveCsv
             ? `${!consensusCsv?'consensus ':''} ${!liveCsv?'live':''}`.trim()
             : null,
+          // Diagnostik konsensus persisten (bertahan setelah refresh live).
+          consensus_diag: consensusCsv ? {
+            data_rows:  debug.consensus_data_rows  ?? null,
+            total_recs: debug.consensus_total_recs ?? null,
+            tickers:    debug.consensus_ticker_cnt ?? null,
+            max_date:   debug.consensus_max_date   ?? null,
+            header_idx: debug.consensus_header_idx ?? null,
+            cols:       debug.consensus_cols       ?? null,
+            fetched_at: new Date().toISOString(),
+          } : (baseData._meta && baseData._meta.consensus_diag) || null,
           _debug: debug,
         },
       };
