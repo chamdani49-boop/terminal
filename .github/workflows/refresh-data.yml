@@ -139,8 +139,22 @@ jobs:
           fi
           git config user.name  "data-refresh[bot]"
           git config user.email "data-refresh@economstock.local"
+
+          # [skip ci] HANYA untuk mode live (commit tiap 5 menit) — supaya tidak
+          # memicu rebuild Cloudflare Pages terus-menerus. Harga live sudah
+          # ditangani Worker /live.json, jadi same-origin data.json TIDAK perlu
+          # selalu fresh untuk harga.
+          #
+          # Mode consensus/history/full JARANG terjadi → BIARKAN memicu rebuild
+          # Cloudflare Pages (tanpa [skip ci]) supaya same-origin /data.json ikut
+          # ter-update. Ini PENTING saat repo private: jsDelivr hanya jalan untuk
+          # repo public, jadi saat private UI mengandalkan same-origin Pages.
+          MODE="${{ steps.mode.outputs.mode }}"
+          SKIP_CI=""
+          if [ "$MODE" = "live" ]; then SKIP_CI=" [skip ci]"; fi
+
           git add public/data.json
-          git commit -m "data: refresh $(date -u +%FT%TZ) [mode=${{ steps.mode.outputs.mode }}] [skip ci]"
+          git commit -m "data: refresh $(date -u +%FT%TZ) [mode=$MODE]$SKIP_CI"
 
           pushed=false
           for attempt in 1 2 3 4 5; do
