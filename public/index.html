@@ -5999,12 +5999,62 @@ function renderChart(code) {
   let si = 0;
   stockNorm.forEach((v,i) => { if(v && si < trendLine.length) trendFull[i] = trendLine[si++]; });
 
+  // ── Target rata-rata konsensus → titik (dot) di sisi kanan, BUKAN garis ──
+  const csSum   = (DATA.consensus_summary && DATA.consensus_summary[code]) || null;
+  const recsCon = (DATA.consensus_slim || {})[code] || [];
+  const totalCon = csSum ? csSum.total : recsCon.length;
+  let targetCon = (csSum && Number.isFinite(csSum.target))
+    ? csSum.target
+    : (totalCon ? recsCon.reduce((s, r) => s + (r.target_price || 0), 0) / totalCon : null);
+  // Chart ternormalisasi (base=100) → konversi harga target ke skala index.
+  const targetNorm = (Number.isFinite(targetCon) && targetCon > 0 && stockBase)
+    ? (targetCon / stockBase) * 100 : null;
+  const lastI = labels.length - 1;
+
   if (mainChartInstance) mainChartInstance.destroy();
 
   const ctx = document.getElementById('mainChart').getContext('2d');
   const ct = chartColors();
+  const isDarkC  = document.documentElement.getAttribute('data-theme') === 'dark';
+  const consColor = isDarkC ? '#fbbf24' : '#d97706';   // amber / gold
+
+  // Plugin inline: gambar badge "Konsensus <harga>" di samping dot (selalu
+  // tampil). Teks pop-up "Target rata-rata konsensus" ditangani di tooltip.
+  const consensusDotLabel = {
+    id: 'consensusDotLabel',
+    afterDatasetsDraw(chart) {
+      if (targetNorm == null || !Number.isFinite(targetCon)) return;
+      const di = chart.data.datasets.findIndex(d => d.label === 'Konsensus');
+      if (di < 0) return;
+      const meta = chart.getDatasetMeta(di);
+      const pt = meta && meta.data && meta.data[lastI];
+      if (!pt) return;
+      const x = pt.x, y = pt.y, c = chart.ctx;
+      const txt = 'Konsensus ' + Math.round(targetCon).toLocaleString('id');
+      c.save();
+      c.font = "700 10.5px 'IBM Plex Mono', monospace";
+      const padX = 6, h = 18, r = 5;
+      const w = c.measureText(txt).width + padX * 2;
+      // Badge di KIRI dot supaya tidak terpotong tepi kanan chart.
+      let bx = x - 9 - w; const by = y - h / 2;
+      if (bx < chart.chartArea.left + 2) bx = x + 9;
+      c.beginPath();
+      c.moveTo(bx + r, by);
+      c.arcTo(bx + w, by, bx + w, by + h, r);
+      c.arcTo(bx + w, by + h, bx, by + h, r);
+      c.arcTo(bx, by + h, bx, by, r);
+      c.arcTo(bx, by, bx + w, by, r);
+      c.closePath();
+      c.fillStyle = consColor; c.fill();
+      c.fillStyle = '#1a0f3c'; c.textBaseline = 'middle'; c.textAlign = 'left';
+      c.fillText(txt, bx + padX, by + h / 2 + 0.5);
+      c.restore();
+    }
+  };
+
   mainChartInstance = new Chart(ctx, {
     type: 'line',
+    plugins: [consensusDotLabel],
     data: {
       labels,
       datasets: [
@@ -6020,7 +6070,13 @@ function renderChart(code) {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             return isDark ? 'rgba(244, 114, 182, 0.95)' : 'rgba(190, 24, 93, 0.85)';
           },
-          borderWidth: 3, borderDash:[8,5], pointRadius:0, fill:false, tension:0 }
+          borderWidth: 3, borderDash:[8,5], pointRadius:0, fill:false, tension:0 },
+        { label:'Konsensus',
+          data: labels.map((_, i) => i === lastI ? targetNorm : null),
+          borderColor: consColor, backgroundColor: consColor,
+          pointRadius:      labels.map((_, i) => (i === lastI && targetNorm != null) ? 5 : 0),
+          pointHoverRadius: labels.map((_, i) => (i === lastI && targetNorm != null) ? 7 : 0),
+          pointStyle:'circle', showLine:false, fill:false, order:0 }
       ]
     },
     options: {
@@ -6034,9 +6090,15 @@ function renderChart(code) {
           callbacks:{
             title: items => labels[items[0].dataIndex],
             label: item => {
-              if (item.datasetIndex === 2) return null;
-              const orig = item.datasetIndex === 0 ? ihsgVals[item.dataIndex] : stockVals[item.dataIndex];
-              return ` ${item.dataset.label}: ${orig ? orig.toLocaleString('id') : '-'} (idx: ${item.raw})`;
+              const lbl = item.dataset.label;
+              if (lbl === 'Linear Trend') return null;
+              if (lbl === 'Konsensus') {
+                return Number.isFinite(targetCon)
+                  ? ` Target rata-rata konsensus: ${Math.round(targetCon).toLocaleString('id')}`
+                  : null;
+              }
+              const orig = lbl === 'IHSG' ? ihsgVals[item.dataIndex] : stockVals[item.dataIndex];
+              return ` ${lbl}: ${orig ? orig.toLocaleString('id') : '-'} (idx: ${item.raw})`;
             }
           }
         }
