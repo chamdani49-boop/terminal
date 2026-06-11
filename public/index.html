@@ -26,6 +26,10 @@
       if (localStorage.getItem('econ-view') === 'desktop') {
         var vp = document.querySelector('meta[name="viewport"]');
         if (vp) vp.setAttribute('content', 'width=1280');
+        // Tandai html (body belum ada di <head>) supaya CSS bisa scope perbaikan
+        // khusus mode HP-paksa-desktop tanpa menyentuh tampilan desktop asli.
+        // Kelas dipindah ke <body> setelah DOM siap (lihat handler di bawah).
+        document.documentElement.setAttribute('data-view', 'desktop');
       }
     } catch (e) {}
   })();
@@ -2452,6 +2456,20 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 .pl-sl-key:hover{background:var(--bg3)}
 .pl-sl-key.on{background:var(--accent);color:#fff}
 .pl-sl-key .sw{width:13px;height:3px;border-radius:2px;display:inline-block;flex-shrink:0}
+
+/* ── FIX HP yang memaksa tampilan DESKTOP (viewport=1280) ──
+   Saat HP fisik (layar ≤640px) memaksa viewport 1280, browser zoom-out untuk
+   muat ke layar. Akibatnya 1vh CSS jadi membesar (mis. HP 360×800 → 1vh ≈
+   28.5px), sehingga panel Pasar Live yang pakai 44vh menjadi ~1257px tinggi
+   dan tampak "ketarik ke bawah". Override ke pixel tetap khusus kombinasi
+   .is-mobile-device + .force-desktop. Selector ini TIDAK pernah cocok di
+   laptop/PC normal (tidak ada is-mobile-device) maupun di HP mode mobile
+   (tidak ada force-desktop), jadi versi desktop asli & versi mobile tidak
+   berubah sama sekali. */
+body.is-mobile-device.force-desktop .pl-col-main{
+  /* setara 44vh di layar laptop normal (~352px), tanpa bergantung pada vh */
+  grid-auto-rows:360px
+}
 
 @media (max-width:900px){
   .pl-terminal{flex-direction:column}
@@ -8185,6 +8203,11 @@ function applyViewMode(mode) {
   if (!vp) return;
   if (mode === 'desktop') vp.setAttribute('content', 'width=1280');
   else vp.setAttribute('content', 'width=device-width, initial-scale=1.0');
+  // Toggle marker pada <body> supaya CSS perbaikan layout HP-paksa-desktop bisa
+  // di-scope ketat (lihat selector body.is-mobile-device.force-desktop).
+  // Tampilan desktop di laptop tidak terpengaruh karena kelas is-mobile-device
+  // tidak pernah aktif di sana.
+  document.body.classList.toggle('force-desktop', mode === 'desktop');
   setViewIcon();
 }
 function toggleViewMode() {
@@ -8208,6 +8231,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.add('is-mobile-device');
     }
   } catch (e) {}
+  // Sinkronkan kelas force-desktop di body dengan preferensi yang sudah
+  // diterapkan ke <html> di IIFE awal (untuk menghindari flash layout).
+  if (document.documentElement.getAttribute('data-view') === 'desktop') {
+    document.body.classList.add('force-desktop');
+  }
   setViewIcon();
   const vbtn = document.getElementById('viewToggle');
   if (vbtn) vbtn.addEventListener('click', toggleViewMode);
