@@ -27,12 +27,20 @@ const path = require('path');
 // CSV utilities
 // ─────────────────────────────────────────────
 function gvizCsvUrl(sheetId, gid) {
-  return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`;
+  // Cache-bust: endpoint gviz/tq Google Sheets bisa menyajikan respons cache
+  // beberapa menit setelah sheet diedit. Tanpa pembeda, workflow refresh bisa
+  // membaca snapshot LAMA (mis. user menambah baris konsensus, tapi build masih
+  // dapat versi sebelum edit). Query param unik membuat URL berbeda tiap fetch
+  // → cache miss di edge Google → data selalu fresh.
+  const cb = Date.now();
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}&_cb=${cb}`;
 }
 
 async function fetchCsv(sheetId, gid) {
   const url = gvizCsvUrl(sheetId, gid);
-  const res = await fetch(url, { redirect: 'follow' });
+  // `cache: 'no-store'` mencegah cache HTTP sisi-klien (undici/Node) ikut menahan
+  // respons lama; dikombinasikan dengan cache-buster URL di atas.
+  const res = await fetch(url, { redirect: 'follow', cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch sheet ${sheetId}/${gid}: ${res.status}`);
   return await res.text();
 }
