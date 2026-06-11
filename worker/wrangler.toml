@@ -29,11 +29,25 @@ ALLOW_ORIGIN = "*"
 # saat Google Sheet error → Worker tetap menyajikan harga terakhir sampai sheet
 # pulih. Default 43200 (12 jam) kalau kosong.
 STALE_TTL_SECONDS = "43200"
+# CONSENSUS_CACHE_SECONDS / HISTORY_CACHE_SECONDS: lama cache edge untuk endpoint
+# /consensus.json & /history.json. Konsensus & history jarang berubah → boleh
+# lebih panjang dari harga live. Default 120 (konsensus) & 600 (history).
+CONSENSUS_CACHE_SECONDS = "120"
+HISTORY_CACHE_SECONDS = "600"
 
 # ── Rahasia (JANGAN ditaruh di file ini) ──
 # Set lewat CLI sekali saja:
 #   wrangler secret put LIVE_SHEET_ID
 #   wrangler secret put LIVE_GID
+#   wrangler secret put CONSENSUS_SHEET_ID   # untuk /consensus.json
+#   wrangler secret put CONSENSUS_GID
+#   wrangler secret put HISTORY_SHEET_ID     # untuk /history.json
+#   wrangler secret put HISTORY_GID
+#
+# Nilainya SAMA dengan GitHub Secrets yang dipakai scripts/build-data.js.
+# Catatan: /consensus.json juga ikut memakai LIVE_SHEET_ID/LIVE_GID (opsional)
+# untuk menghitung pct_d (upside) — sama seperti build-data. Kalau tidak di-set,
+# pct_d diambil dari kolom sheet (kalau ada).
 #
 # Atau, kalau kamu nggak keberatan ID-nya ada di repo (data sheet sudah publik),
-# bisa juga pindahkan keduanya ke blok [vars] di atas. Tapi pakai secret lebih rapi.
+# bisa juga pindahkan ke blok [vars] di atas. Tapi pakai secret lebih rapi.

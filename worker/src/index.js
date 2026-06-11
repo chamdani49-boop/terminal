@@ -309,6 +309,345 @@ function _parseLiveBody(rows, dataStart, iTicker, iPrice, iPct,
 }
 
 // ─────────────────────────────────────────────
+// History sheet parser (port dari build-data.js)
+// ─────────────────────────────────────────────
+function findHistoryHeaderRow(rows) {
+  let best = { idx: -1, count: 0 };
+  const limit = Math.min(rows.length, 25);
+  for (let i = 0; i < limit; i++) {
+    const row = rows[i];
+    let count = 0;
+    let hasIhsg = false;
+    for (const c of row) {
+      const cleaned = cleanTickerName(c);
+      if (TICKER_RX.test(cleaned)) count++;
+      if (/^(IHSG|JKSE|COMPOSITE)$/i.test(cleaned)) hasIhsg = true;
+    }
+    const score = count + (hasIhsg ? 5 : 0);
+    if (score > best.count) best = { idx: i, count: score };
+  }
+  return best.idx;
+}
+
+function parseHistory(csv, debug = {}) {
+  const rows = parseCsv(csv);
+  if (rows.length < 2) return [];
+
+  let headerIdx = findHistoryHeaderRow(rows);
+  if (headerIdx < 0) headerIdx = Math.min(2, rows.length - 1);
+
+  const rawHeader = rows[headerIdx];
+  const header = rawHeader.map(cleanTickerName);
+
+  let idxDate = -1, idxLabel = -1;
+  for (let i = 0; i < header.length; i++) {
+    const h = header[i].toLowerCase();
+    if (idxDate < 0 && (h === 'date' || h === 'tanggal' || h === 'tgl')) idxDate = i;
+    if (idxLabel < 0 && (h === 'label' || h === 'period' || h === 'periode' || h === 'bulanz' || h === 'month')) idxLabel = i;
+  }
+
+  let firstDataRow = null;
+  for (let r = headerIdx + 1; r < rows.length; r++) {
+    if (rows[r].some(c => c && c.trim())) { firstDataRow = rows[r]; break; }
+  }
+
+  if (idxDate < 0 && firstDataRow) {
+    for (let i = 0; i < firstDataRow.length; i++) {
+      if (parseDate((firstDataRow[i] || '').trim())) { idxDate = i; break; }
+    }
+  }
+  if (idxLabel < 0 && firstDataRow) {
+    for (let i = 0; i < firstDataRow.length; i++) {
+      if (i === idxDate) continue;
+      const v = (firstDataRow[i] || '').trim();
+      if (/^[A-Za-z]{3,9}[-\s\/]\d{2,4}$/.test(v) || /^\d{4}[-\/]\d{1,2}$/.test(v)) {
+        idxLabel = i; break;
+      }
+    }
+  }
+
+  if (idxLabel >= 0 && idxLabel === idxDate && firstDataRow) {
+    let altLabel = -1;
+    for (let i = 0; i < firstDataRow.length; i++) {
+      if (i === idxDate) continue;
+      const v = (firstDataRow[i] || '').trim();
+      if (/^[A-Za-z]{3,9}[-\s\/]\d{2,4}$/.test(v) || /^\d{4}[-\/]\d{1,2}$/.test(v)) {
+        altLabel = i; break;
+      }
+    }
+    idxLabel = altLabel;
+  }
+
+  if (idxDate < 0) idxDate = 0;
+
+  const META_NAMES = new Set([
+    'DATE','TANGGAL','TGL','LABEL','PERIOD','PERIODE',
+    'BULANZ','MONTH','BULAN','NO','#',
+  ]);
+  const tickerCols = [];
+  for (let i = 0; i < header.length; i++) {
+    if (i === idxDate || i === idxLabel) continue;
+    const name = header[i];
+    if (!name || /^\d+$/.test(name)) continue;
+    if (META_NAMES.has(name)) continue;
+    tickerCols.push({ name, i });
+  }
+
+  const seen = new Set();
+  const dedupedCols = tickerCols.filter(c => {
+    if (seen.has(c.name)) return false;
+    seen.add(c.name);
+    return true;
+  });
+
+  const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const out = [];
+
+  for (let r = headerIdx + 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || row.every(c => !c || !String(c).trim())) continue;
+
+    const rec = {};
+    let dateStr = idxDate >= 0 ? row[idxDate] : '';
+    let label   = idxLabel >= 0 ? row[idxLabel] : '';
+
+    if (dateStr) {
+      const d = parseDate(dateStr);
+      if (d) {
+        const yyyy = d.getUTCFullYear();
+        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+        dateStr = `${yyyy}-${mm}-01`;
+        if (!label) label = `${monthShort[d.getUTCMonth()]}-${String(yyyy).slice(2)}`;
+      } else {
+        dateStr = null;
+      }
+    } else {
+      dateStr = null;
+    }
+
+    if (!dateStr && label) {
+      const d2 = parseDate(label);
+      if (d2) {
+        const yyyy = d2.getUTCFullYear();
+        const mm = String(d2.getUTCMonth() + 1).padStart(2, '0');
+        dateStr = `${yyyy}-${mm}-01`;
+      }
+    }
+
+    rec.label = (label || '').trim() || (dateStr ? dateStr.slice(0, 7) : `Row ${r}`);
+    rec.date  = dateStr;
+
+    let hasNum = false;
+    for (const c of dedupedCols) {
+      const v = toNum(row[c.i]);
+      rec[c.name] = v;
+      if (Number.isFinite(v) && v !== 0) hasNum = true;
+    }
+    if (hasNum && rec.date) out.push(rec);
+  }
+  out.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  return out;
+}
+
+// ─────────────────────────────────────────────
+// Consensus sheet parser (port dari build-data.js)
+// ─────────────────────────────────────────────
+const CONSENSUS_HEADER_HINTS = [
+  'symbol','ticker','code','kode','saham',
+  'date','tanggal','tgl',
+  'firmname','firm','sekuritas','broker','analyst','analis',
+  'tprice','target','tp','hargatarget','targetharga','pricetarget',
+  'rating','recommendation','rekomendasi','suggestion','call',
+  'pctd','pct','upside','disc',
+];
+
+function findConsensusHeaderRow(rows) {
+  let best = { idx: -1, score: 0 };
+  const limit = Math.min(rows.length, 15);
+  for (let i = 0; i < limit; i++) {
+    const r = rows[i].map(c => norm(c));
+    if (!r.some(x => x)) continue;
+    let score = 0;
+    for (const cand of CONSENSUS_HEADER_HINTS) {
+      if (r.some(x => x === cand)) score += 2;
+      else if (r.some(x => x && x.includes(cand))) score += 1;
+    }
+    if (score > best.score) best = { idx: i, score };
+  }
+  return best.idx;
+}
+
+/** Decode rekomendasi B/N/S, BUY/SELL/HOLD, OVERWEIGHT/UNDERWEIGHT, dll. */
+function decodeSuggestion(raw) {
+  const s = String(raw || '').trim().toUpperCase();
+  if (!s) return '';
+  if (s === 'B' || /BUY|OVERWEIGHT|OUTPERFORM|^ADD$|ACCUMULATE|STRONG.?BUY/.test(s)) return 'BUY';
+  if (s === 'S' || /SELL|UNDERWEIGHT|UNDERPERFORM|^REDUCE$/.test(s)) return 'SELL';
+  if (s === 'N' || /NEUTRAL|HOLD|MARKETPERFORM|MARKET.?WEIGHT|EQUAL.?WEIGHT/.test(s)) return 'NEUTRAL';
+  return s;
+}
+
+function parseConsensus(csv, latestPrices = {}, debug = {}) {
+  const rows = parseCsv(csv);
+  if (rows.length < 2) return {};
+
+  let headerIdx = findConsensusHeaderRow(rows);
+  if (headerIdx < 0) headerIdx = Math.min(3, rows.length - 1);
+
+  const rawHeader = rows[headerIdx];
+  const header = rawHeader.map(c => norm(c));
+
+  const findFz = (...names) => {
+    for (const n of names) {
+      const nn = norm(n);
+      if (!nn) continue;
+      const i = header.indexOf(nn);
+      if (i >= 0) return i;
+    }
+    for (const n of names) {
+      const nn = norm(n);
+      if (!nn) continue;
+      const i = header.findIndex(h => h && h.includes(nn));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+
+  const iTicker = findFz('symbol', 'ticker', 'code', 'kode', 'saham');
+  let iDate    = findFz('date', 'tanggal', 'tgl', 'tanggalriset', 'tanggalreview', 'reviewdate', 'tanggalpublikasi');
+  const iFirm  = findFz('firmname', 'firm', 'analyst', 'sekuritas', 'broker', 'analis', 'penerbit', 'firmnamesekuritas');
+  let iSugg    = findFz('suggestion', 'rec', 'recommendation', 'rating', 'bns', 'rekomendasi', 'call');
+  let iTgt     = findFz('tprice', 'tprice1', 'targetprice', 'pricetarget', 'targetharga', 'hargatarget', 'target', 'tp');
+  const iPct   = findFz('pctd', 'pct', 'upside', 'pctdelta', 'delta');
+
+  if (iSugg < 0) {
+    const i = rawHeader.findIndex(c => String(c || '').trim() === '[]');
+    if (i >= 0) iSugg = i;
+  }
+
+  if (iSugg < 0) {
+    const RX_SUGG = /^(B|N|S|BUY|SELL|HOLD|NEUTRAL|OVERWEIGHT|UNDERWEIGHT|OUTPERFORM|UNDERPERFORM|ADD|REDUCE|ACCUMULATE)$/i;
+    const counts = {};
+    for (let r = headerIdx + 1; r < Math.min(rows.length, headerIdx + 200); r++) {
+      const row = rows[r];
+      for (let c = 0; c < (row || []).length; c++) {
+        if (c === iTicker || c === iDate || c === iFirm || c === iTgt || c === iPct) continue;
+        const v = String(row[c] || '').trim();
+        if (RX_SUGG.test(v)) counts[c] = (counts[c] || 0) + 1;
+      }
+    }
+    let bestCol = -1, bestCount = 0;
+    for (const [c, n] of Object.entries(counts)) {
+      if (n > bestCount) { bestCount = n; bestCol = parseInt(c, 10); }
+    }
+    if (bestCol >= 0 && bestCount >= 3) iSugg = bestCol;
+  }
+
+  if (iTgt < 0 || iTgt === iPct) {
+    const candCols = {};
+    for (let r = headerIdx + 1; r < Math.min(rows.length, headerIdx + 200); r++) {
+      const row = rows[r];
+      for (let c = 0; c < (row || []).length; c++) {
+        if (c === iTicker || c === iDate || c === iFirm || c === iSugg || c === iPct) continue;
+        const v = toNum(row[c]);
+        if (Number.isFinite(v) && v > 50 && v < 1e7) {
+          (candCols[c] ||= []).push(v);
+        }
+      }
+    }
+    let bestCol = -1, bestCount = 0;
+    for (const [c, vals] of Object.entries(candCols)) {
+      if (vals.length > bestCount) { bestCount = vals.length; bestCol = parseInt(c, 10); }
+    }
+    if (bestCol >= 0 && bestCount >= 2) iTgt = bestCol;
+  }
+
+  if (iDate < 0) {
+    const dateCounts = {};
+    for (let r = headerIdx + 1; r < Math.min(rows.length, headerIdx + 200); r++) {
+      const row = rows[r];
+      for (let c = 0; c < (row || []).length; c++) {
+        if (c === iTicker || c === iFirm || c === iSugg || c === iTgt || c === iPct) continue;
+        const v = (row[c] || '').trim();
+        if (v && parseDate(v)) dateCounts[c] = (dateCounts[c] || 0) + 1;
+      }
+    }
+    let bestCol = -1, bestCount = 0;
+    for (const [c, count] of Object.entries(dateCounts)) {
+      if (count > bestCount) { bestCount = count; bestCol = parseInt(c, 10); }
+    }
+    if (bestCol >= 0 && bestCount >= 2) iDate = bestCol;
+  }
+
+  const grouped = {};
+  for (let r = headerIdx + 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row) continue;
+    const t = (row[iTicker] || '').trim().toUpperCase();
+    if (!t || /^[\d.,\s]+$/.test(t)) continue;
+    if (t.length > 10 || /\s/.test(t)) continue;
+    if (!TICKER_RX.test(t) && t !== 'IHSG') continue;
+
+    const target = iTgt >= 0 ? toNum(row[iTgt]) : null;
+    const last = latestPrices[t];
+    let pct = iPct >= 0 ? toNum(row[iPct]) : null;
+    if ((pct == null || pct === 0) && target != null && last) {
+      pct = ((target - last) / last) * 100;
+    }
+
+    let dateRaw = iDate >= 0 ? (row[iDate] || '').trim() : '';
+    const dParsed = parseDate(dateRaw);
+    if (dParsed) {
+      dateRaw = `${dParsed.getUTCFullYear()}-${String(dParsed.getUTCMonth()+1).padStart(2,'0')}-${String(dParsed.getUTCDate()).padStart(2,'0')}`;
+    }
+
+    (grouped[t] ||= []).push({
+      no: '',
+      date: dateRaw,
+      firm: iFirm >= 0 ? (row[iFirm] || '').trim() : '',
+      suggestion: iSugg >= 0 ? decodeSuggestion(row[iSugg]) : '',
+      target_price: target,
+      pct_d: pct == null ? 0 : pct,
+    });
+  }
+
+  for (const t of Object.keys(grouped)) {
+    grouped[t].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    grouped[t].forEach((rec, i) => rec.no = String(i + 1));
+  }
+
+  return grouped;
+}
+
+function computeConsensusSummary(consensus) {
+  const out = {};
+  for (const t of Object.keys(consensus)) {
+    const recs = consensus[t];
+    let buy = 0, neutral = 0, sell = 0;
+    let high = -Infinity, low = Infinity, sum = 0, n = 0;
+    for (const r of recs) {
+      const sg = (r.suggestion || '').toUpperCase();
+      if (sg.includes('BUY') || sg.includes('OVERWEIGHT') || sg.includes('OUTPERFORM') || sg.includes('ADD')) buy++;
+      else if (sg.includes('SELL') || sg.includes('UNDERWEIGHT') || sg.includes('UNDERPERFORM') || sg.includes('REDUCE')) sell++;
+      else neutral++;
+      if (Number.isFinite(r.target_price)) {
+        if (r.target_price > high) high = r.target_price;
+        if (r.target_price < low)  low  = r.target_price;
+        sum += r.target_price; n++;
+      }
+    }
+    out[t] = {
+      total: recs.length,
+      buy, neutral, sell,
+      high: high === -Infinity ? null : high,
+      low:  low  ===  Infinity ? null : low,
+      target: n ? Math.round(sum / n) : null,
+    };
+  }
+  return out;
+}
+
+// ─────────────────────────────────────────────
 // HTTP helpers
 // ─────────────────────────────────────────────
 function corsHeaders(env) {
@@ -425,6 +764,104 @@ async function handleLive(request, env, ctx) {
 }
 
 // ─────────────────────────────────────────────
+// Generic sheet feed handler (dipakai /consensus.json & /history.json)
+// Pola sama dgn handleLive: cache fresh + backup stale (12 jam) saat sheet error.
+// ─────────────────────────────────────────────
+async function fetchSheetCsv(sheetId, gid, cacheTtl) {
+  const res = await fetch(gvizCsvUrl(sheetId, gid), {
+    redirect: 'follow',
+    cf: { cacheTtl: Math.min(cacheTtl || 60, 60), cacheEverything: true },
+  });
+  if (!res.ok) throw new Error(`gviz HTTP ${res.status}`);
+  return await res.text();
+}
+
+async function buildConsensus(env) {
+  if (!env.CONSENSUS_SHEET_ID || env.CONSENSUS_GID === undefined || env.CONSENSUS_GID === null || env.CONSENSUS_GID === '') {
+    throw new Error('CONSENSUS_SHEET_ID / CONSENSUS_GID belum di-set di environment Worker.');
+  }
+  // latestPrices dari Live Sheet (opsional) → untuk hitung pct_d, persis seperti
+  // scripts/build-data.js. Kalau Live Sheet gagal, pct_d tetap dari kolom sheet.
+  let latest = {};
+  if (env.LIVE_SHEET_ID && env.LIVE_GID !== undefined && env.LIVE_GID !== null && env.LIVE_GID !== '') {
+    try {
+      const lcsv = await fetchSheetCsv(env.LIVE_SHEET_ID, env.LIVE_GID, 60);
+      const live = parseLive(lcsv, {});
+      for (const c in live) latest[c] = live[c].price;
+    } catch (_) { /* abaikan — pct_d fallback ke kolom sheet */ }
+  }
+  const csv = await fetchSheetCsv(env.CONSENSUS_SHEET_ID, env.CONSENSUS_GID, 60);
+  const consensus_slim = parseConsensus(csv, latest, {});
+  const consensus_summary = computeConsensusSummary(consensus_slim);
+  return { count: Object.keys(consensus_slim).length, consensus_slim, consensus_summary };
+}
+
+async function buildHistory(env) {
+  if (!env.HISTORY_SHEET_ID || env.HISTORY_GID === undefined || env.HISTORY_GID === null || env.HISTORY_GID === '') {
+    throw new Error('HISTORY_SHEET_ID / HISTORY_GID belum di-set di environment Worker.');
+  }
+  const csv = await fetchSheetCsv(env.HISTORY_SHEET_ID, env.HISTORY_GID, 60);
+  const price_history = parseHistory(csv, {});
+  return { count: price_history.length, price_history };
+}
+
+async function handleSheetFeed(request, env, ctx, { name, cacheSeconds, build }) {
+  const staleSeconds = Number(env.STALE_TTL_SECONDS) > 0 ? Number(env.STALE_TTL_SECONDS) : 12 * 3600;
+
+  const url = new URL(request.url);
+  const noCache = url.searchParams.get('nocache') === '1';
+  const origin = url.origin;
+
+  const cache = caches.default;
+  const freshKey  = new Request(new URL('/' + name + '.json', origin).toString(), { method: 'GET' });
+  const backupKey = new Request(new URL('/' + name + '.json?__backup=1', origin).toString(), { method: 'GET' });
+
+  if (!noCache) {
+    const cached = await cache.match(freshKey);
+    if (cached) return cached;
+  }
+
+  const serveStale = async (reason) => {
+    const backup = await cache.match(backupKey);
+    if (!backup) return null;
+    let data;
+    try { data = await backup.json(); } catch (_) { return null; }
+    data.ok = true;
+    data.stale = true;
+    data.stale_reason = reason;
+    return jsonResponse(data, env, { status: 200, cacheSeconds: 30 });
+  };
+
+  let payload = null;
+  let failReason = null;
+  try {
+    payload = await build();
+  } catch (e) {
+    failReason = (e && e.message) ? e.message : String(e);
+  }
+
+  if (payload && payload.count > 0) {
+    const body = { ok: true, generated_at: new Date().toISOString(), ...payload };
+    const fresh  = jsonResponse(body, env, { status: 200, cacheSeconds });
+    const backup = jsonResponse(body, env, { status: 200, cacheSeconds: staleSeconds });
+    if (!noCache) {
+      ctx.waitUntil(cache.put(freshKey, fresh.clone()));
+      ctx.waitUntil(cache.put(backupKey, backup.clone()));
+    }
+    return fresh;
+  }
+
+  const reason = failReason || `${name}: 0 baris (kemungkinan sheet error/empty).`;
+  const stale = await serveStale(reason);
+  if (stale) return stale;
+
+  return jsonResponse(
+    { ok: false, error: `${name} error & belum ada data cadangan: ${reason}` },
+    env, { status: 502 }
+  );
+}
+
+// ─────────────────────────────────────────────
 // Entry
 // ─────────────────────────────────────────────
 export default {
@@ -439,13 +876,23 @@ export default {
       return handleLive(request, env, ctx);
     }
 
+    if (url.pathname === '/consensus.json') {
+      const cacheSeconds = Number(env.CONSENSUS_CACHE_SECONDS) > 0 ? Number(env.CONSENSUS_CACHE_SECONDS) : 120;
+      return handleSheetFeed(request, env, ctx, { name: 'consensus', cacheSeconds, build: () => buildConsensus(env) });
+    }
+
+    if (url.pathname === '/history.json') {
+      const cacheSeconds = Number(env.HISTORY_CACHE_SECONDS) > 0 ? Number(env.HISTORY_CACHE_SECONDS) : 600;
+      return handleSheetFeed(request, env, ctx, { name: 'history', cacheSeconds, build: () => buildHistory(env) });
+    }
+
     if (url.pathname === '/' || url.pathname === '') {
       return jsonResponse(
         {
           ok: true,
           service: 'terminal-live',
-          endpoints: ['/live.json'],
-          note: 'Live price feed untuk dashboard terminal. Lihat /live.json',
+          endpoints: ['/live.json', '/consensus.json', '/history.json'],
+          note: 'Live price + consensus + history feed untuk dashboard terminal.',
         },
         env, { status: 200 }
       );
@@ -457,4 +904,5 @@ export default {
 
 
 // Named exports — untuk unit test (tidak memengaruhi runtime Worker).
-export { parseLive, _parseLiveBody, parseCsv, toNum, parseDate, cleanTickerName };
+export { parseLive, _parseLiveBody, parseCsv, toNum, parseDate, cleanTickerName,
+         parseConsensus, computeConsensusSummary, decodeSuggestion, parseHistory };

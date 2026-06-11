@@ -1,6 +1,6 @@
 // Test ringan untuk parser Live Sheet di Worker.
 // Jalankan: node worker/test/parse.test.mjs
-import { parseLive } from '../src/index.js';
+import { parseLive, parseConsensus, computeConsensusSummary, parseHistory } from '../src/index.js';
 
 let pass = 0, fail = 0;
 function eq(label, got, want) {
@@ -76,6 +76,58 @@ console.log('Test 4: filter baris sampah');
   eq('TLKM ada', !!live.TLKM, true);
   eq('"Sektor Perbankan" di-skip', !!live['SEKTOR PERBANKAN'], false);
   eq('numeric ticker di-skip', !!live['12345'], false);
+}
+
+// ── Test 5: parseConsensus — grouping, decode B/N/S, target, summary ──
+console.log('Test 5: parseConsensus + computeConsensusSummary');
+{
+  const csv = [
+    'Symbol,Date,Firm Name,Rec,T.Price',
+    'AADI,2026-06-10,Ciptadana,B,14000',
+    'AADI,2026-06-04,Maybank,BUY,12500',
+    'AADI,2026-05-25,Samuel,N,13000',
+    'BBCA,2026-06-09,UBS,S,9000',
+    'X,2026-06-01,Pembatas,B,100',          // marker non-ticker → harus di-skip
+    'Sektor Bank,2026-06-01,Banner,B,0',    // ada spasi → skip
+  ].join('\n');
+  const slim = parseConsensus(csv, { AADI: 8000, BBCA: 10000 });
+  eq('AADI ada', !!slim.AADI, true);
+  eq('AADI 3 rekomendasi', slim.AADI.length, 3);
+  eq('marker "X" di-skip', !!slim.X, false);
+  eq('"Sektor Bank" di-skip', !!slim['SEKTOR BANK'], false);
+  eq('AADI rec terbaru = 2026-06-10 (sort desc)', slim.AADI[0].date, '2026-06-10');
+  eq('decode B → BUY', slim.AADI[0].suggestion, 'BUY');
+  eq('decode N → NEUTRAL', slim.AADI[2].suggestion, 'NEUTRAL');
+  eq('decode S → SELL', slim.BBCA[0].suggestion, 'SELL');
+  approx('AADI target_price baris terbaru', slim.AADI[0].target_price, 14000);
+  // pct_d dihitung dari latestPrices kalau kolom pct tak ada: (14000-8000)/8000*100
+  approx('AADI pct_d dari latestPrices', slim.AADI[0].pct_d, 75, 1e-6);
+
+  const sum = computeConsensusSummary(slim);
+  eq('AADI total', sum.AADI.total, 3);
+  eq('AADI buy', sum.AADI.buy, 2);
+  eq('AADI neutral', sum.AADI.neutral, 1);
+  eq('AADI sell', sum.AADI.sell, 0);
+  approx('AADI high', sum.AADI.high, 14000);
+  approx('AADI low', sum.AADI.low, 12500);
+  approx('AADI target (rata2 13000..14000..12500=13166.67→13167)', sum.AADI.target, 13167);
+}
+
+// ── Test 6: parseHistory — header detect, date normalize, ticker cols ──
+console.log('Test 6: parseHistory');
+{
+  const csv = [
+    'Date,Label,TLKM,BBCA,IHSG',
+    '2026-04-01,Apr-26,3000,9000,7000',
+    '2026-05-01,May-26,3100,9200,7100',
+    '2026-06-01,Jun-26,3090,9250,7150',
+  ].join('\n');
+  const ph = parseHistory(csv);
+  eq('3 baris history', ph.length, 3);
+  eq('baris terakhir date dinormalisasi', ph[2].date, '2026-06-01');
+  approx('TLKM bulan terakhir', ph[2].TLKM, 3090);
+  approx('BBCA bulan pertama', ph[0].BBCA, 9000);
+  eq('urut tanggal naik (Apr dulu)', ph[0].date, '2026-04-01');
 }
 
 console.log(`\nHasil: ${pass} pass, ${fail} fail`);
