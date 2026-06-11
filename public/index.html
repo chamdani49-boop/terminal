@@ -4735,12 +4735,12 @@ function _startNewsPolling() {
   if (_plNewsTimer) return;   // idempotent — cukup sekali pasang
   _plNewsTimer = setInterval(() => {
     if (document.hidden || !_plPasarActive()) return;   // jeda saat tab/halaman tidak aktif
-    plLoadNews(true);
+    plLoadNews(true, true);   // silent: jangan flash "Memuat…" / reset filter & scroll
   }, PL_NEWS_POLL_MS);
   // Saat tab kembali terlihat di halaman Pasar → segarkan langsung tanpa
   // menunggu tick berikutnya, supaya berita fresh begitu user kembali.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && _plPasarActive()) plLoadNews(true);
+    if (!document.hidden && _plPasarActive()) plLoadNews(true, true);
   });
 }
 
@@ -5280,13 +5280,18 @@ async function plFetchFeed(cdn, local) {
   return null;
 }
 
-async function plLoadNews(force) {
+async function plLoadNews(force, silent) {
   const wrap = document.getElementById('plNewsWrap');
   if (!wrap) return;
   if (!force && wrap._feedDone) return;
   wrap._feedDone = true;
-  wrap.className = 'pl-win-body scroll';
-  wrap.innerHTML = '<div class="pl-empty">Memuat berita…</div>';
+  // Refresh SENYAP (auto-poll / balik ke tab): jangan kosongkan UI atau
+  // tampilkan "Memuat…" — biar filter, fokus ketikan, & posisi scroll user
+  // tidak terganggu. Hanya saat load awal / klik reload yang menampilkan loading.
+  if (!silent) {
+    wrap.className = 'pl-win-body scroll';
+    wrap.innerHTML = '<div class="pl-empty">Memuat berita…</div>';
+  }
 
   // Berita + Insight ditarik paralel lalu DIGABUNG dalam satu daftar
   const [news, insights] = await Promise.all([
@@ -5314,10 +5319,33 @@ async function plLoadNews(force) {
   });
   items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
-  if (!items.length) { wrap._feedDone = false; plLoadNewsTV(wrap, plTheme()); return; }
+  if (!items.length) {
+    // Saat silent & feed kosong → pertahankan tampilan lama (jangan ganti ke
+    // widget TV). Hanya fallback ke TV saat load awal / reload eksplisit.
+    if (!silent) { wrap._feedDone = false; plLoadNewsTV(wrap, plTheme()); }
+    return;
+  }
+
+  // Lewati render bila isi tidak berubah → hindari kerja & kedipan sia-sia.
+  const sig = items.map(it => (it.link || it.title) + '|' + (it.ts || 0)).join('\n');
+  if (silent && sig === wrap._newsSig) return;
+  wrap._newsSig = sig;
 
   _plNews = items;
-  plBuildNewsUI(wrap);
+
+  // Kalau UI daftar berita sudah terbangun & ini refresh senyap → update
+  // IN-PLACE: cukup re-render daftar (pertahankan filter + posisi scroll).
+  // Selain itu (load awal / reload) → bangun ulang UI penuh.
+  const hasUI = wrap.classList.contains('pl-news-host') && document.getElementById('plNewsList');
+  if (silent && hasUI) {
+    plSyncNewsSources();                       // segarkan opsi sumber bila ada sumber baru
+    const list = document.getElementById('plNewsList');
+    const keepTop = list ? list.scrollTop : 0; // simpan posisi scroll
+    plRenderNews();
+    if (list) list.scrollTop = keepTop;        // pulihkan posisi scroll
+  } else {
+    plBuildNewsUI(wrap);
+  }
 }
 
 // State & kategori filter berita
@@ -5364,6 +5392,22 @@ function plBuildNewsUI(wrap) {
 }
 
 function plNewsSetF(key, val) { _plNewsF[key] = val; plRenderNews(); }
+
+// Segarkan opsi <select> sumber bila daftar sumber berubah (mis. ada portal
+// baru di feed), TANPA membangun ulang seluruh UI — dipakai saat refresh senyap.
+// Pilihan filter user dipertahankan; kalau sumber yang dipilih hilang → 'all'.
+function plSyncNewsSources() {
+  const sel = document.getElementById('plNewsSrc');
+  if (!sel) return;
+  const sources = Array.from(new Set(_plNews.map(n => n.source).filter(Boolean))).sort();
+  const sig = ['all'].concat(sources).join('|');
+  if (sel._srcSig === sig) return;   // tidak ada perubahan sumber → biarkan
+  sel._srcSig = sig;
+  sel.innerHTML = ['<option value="all">Semua sumber</option>']
+    .concat(sources.map(s => `<option value="${plEsc(s)}">${plEsc(s)}</option>`)).join('');
+  if (_plNewsF.source !== 'all' && !sources.includes(_plNewsF.source)) _plNewsF.source = 'all';
+  sel.value = _plNewsF.source;
+}
 
 function plRenderNews() {
   const list = document.getElementById('plNewsList');
