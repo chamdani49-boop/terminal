@@ -3337,8 +3337,11 @@ async function fetchOhlcForModal(ticker, fromDate) {
 
 /**
  * Gabungkan data hari ini dari DATA.live ke candles.
- * Candle "hari ini" bersifat intraday sementara (belum close).
- * Hanya ditambah jika tanggal belum ada di array candles.
+ * Candle "hari ini" bersifat intraday sementara (belum close) dan HANYA
+ * ditambahkan bila: bursa sudah buka (hari kerja & ≥09:00 WIB), data live
+ * fresh hari ini (WIB), dan tanggalnya belum ada di array candles.
+ * Sebelum jam buka / akhir pekan / libur tidak dibuat candle palsu dari
+ * harga live yang masih harga close kemarin.
  */
 function _ohlcMergeToday(ticker, candles, fromDate) {
   const lv = DATA && DATA.live && DATA.live[ticker];
@@ -3347,11 +3350,34 @@ function _ohlcMergeToday(ticker, candles, fromDate) {
 
   if (!todayPrice) return candles.filter(c => c.date >= fromDate);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // "Sekarang" dalam WIB (UTC+7). Pakai WIB, bukan UTC, supaya tanggal &
+  // jam buka bursa dihitung benar (UTC murni bikin off-by-one jam 00–07 WIB).
+  const nowWib   = new Date(Date.now() + 7 * 3600 * 1000);
+  const todayStr = nowWib.toISOString().slice(0, 10);
+  const dowWib   = nowWib.getUTCDay();      // 0=Min … 6=Sab (sudah di-shift ke WIB)
+  const hourWib  = nowWib.getUTCHours();
+
+  // Apakah bursa IDX sedang/ sudah buka hari ini? (hari kerja & jam ≥ 09:00 WIB)
+  const sessionStarted = dowWib >= 1 && dowWib <= 5 && hourWib >= 9;
+
+  // Apakah data live benar-benar fresh hari ini? data.json di-rebuild tiap
+  // refresh live; kalau generated_at-nya bukan hari ini (WIB) berarti bursa
+  // libur / belum ada update → jangan pakai. Ini menutup kasus hari libur.
+  const genAt    = DATA && DATA._meta && DATA._meta.generated_at;
+  const genWibDay = genAt
+    ? new Date(new Date(genAt).getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10)
+    : null;
+  const liveFreshToday = genWibDay === todayStr;
+
+  // Hanya fabrikasi candle "hari ini" kalau sesi sudah jalan DAN datanya fresh.
+  // Sebelum jam buka / akhir pekan / libur → jangan bikin candle dari harga
+  // live yang masih harga close kemarin.
+  const showToday = sessionStarted && liveFreshToday;
+
   const alreadyHas = candles.some(c => c.date === todayStr);
 
   let merged = [...candles];
-  if (!alreadyHas) {
+  if (showToday && !alreadyHas) {
     // Buat candle sintesis hari ini: open = close kemarin, OHLC = harga live
     const lastClose = candles.length > 0 ? candles[candles.length - 1].close : todayPrice;
     const liveChgPct = (lv && Number.isFinite(lv.change_pct)) ? lv.change_pct : 0;
