@@ -5915,6 +5915,31 @@ function linearRegression(arr) {
   return arr.map((_,i) => Math.round(m*i + b));
 }
 
+// Hitung trigger BELI/JUAL (sigma) IDENTIK dengan Price Target Blueprint
+// (renderPriceTarget / updatePtSigSignal). Dipakai chart utk gambar garis batas
+// yang FLEKSIBEL: baca input σ per-ticker dari localStorage, jadi saat user ubah
+// angka di blueprint lalu chart di-update, garis ikut bergeser.
+//   Beli = harga × (1 + avgAnnual − buySig  × stdAnnual)
+//   Jual = harga × (1 + avgAnnual + sellSig × stdAnnual)
+function ptSigmaTriggers(code) {
+  const ph = DATA.price_history;
+  if (!ph || !ph.length) return null;
+  const last = ph[ph.length - 1];
+  const st   = DATA.stats ? DATA.stats[code] : null;
+  const price = (last && last[code]) || (st ? st.current : 0);
+  const stPT = getStatsMerged(code) || {};
+  const avgAnnual = Number.isFinite(stPT.avg_annual) ? stPT.avg_annual : 0;
+  const stdAnnual = (Number.isFinite(stPT.std_annual) && stPT.std_annual > 0) ? stPT.std_annual : 0;
+  if (!price || !stdAnnual) return null;
+  const lsB = localStorage.getItem(`econ-pt-bsig-${code}`);
+  const lsS = localStorage.getItem(`econ-pt-ssig-${code}`);
+  const buySig  = lsB != null ? parseFloat(lsB) : 2;
+  const sellSig = lsS != null ? parseFloat(lsS) : 1;
+  const buyPrice  = price * (1 + avgAnnual - (Number.isFinite(buySig)  ? buySig  : 2) * stdAnnual);
+  const sellPrice = price * (1 + avgAnnual + (Number.isFinite(sellSig) ? sellSig : 1) * stdAnnual);
+  return { price, buyPrice, sellPrice };
+}
+
 function renderChart(code) {
   let stockData = getStockData(code);
   const ph = DATA.price_history;
@@ -5966,12 +5991,20 @@ function renderChart(code) {
     ? (targetCon / stockBase) * 100 : null;
   const lastI = labels.length - 1;
 
+  // ── Garis batas BELI / JUAL (σ) mengikuti Price Target Blueprint ──
+  // Harga absolut dari blueprint dikonversi ke skala index (base=100) chart.
+  const sigTrig  = ptSigmaTriggers(code);
+  const buyNorm  = (sigTrig && stockBase) ? (sigTrig.buyPrice  / stockBase) * 100 : null;
+  const sellNorm = (sigTrig && stockBase) ? (sigTrig.sellPrice / stockBase) * 100 : null;
+
   if (mainChartInstance) mainChartInstance.destroy();
 
   const ctx = document.getElementById('mainChart').getContext('2d');
   const ct = chartColors();
   const isDarkC  = document.documentElement.getAttribute('data-theme') === 'dark';
   const consColor = isDarkC ? '#fbbf24' : '#d97706';   // amber / gold
+  const buyColor  = isDarkC ? '#4ade80' : '#16a34a';   // hijau — batas beli
+  const sellColor = isDarkC ? '#fb7185' : '#dc2626';   // merah — batas jual
 
   // Plugin inline: gambar badge "Konsensus <harga>" di samping dot (selalu
   // tampil). Teks pop-up "Target rata-rata konsensus" ditangani di tooltip.
@@ -6031,7 +6064,13 @@ function renderChart(code) {
           borderColor: consColor, backgroundColor: consColor,
           pointRadius:      labels.map((_, i) => (i === lastI && targetNorm != null) ? 5 : 0),
           pointHoverRadius: labels.map((_, i) => (i === lastI && targetNorm != null) ? 7 : 0),
-          pointStyle:'circle', showLine:false, fill:false, order:0 }
+          pointStyle:'circle', showLine:false, fill:false, order:0 },
+        { label:'Batas Jual', data: labels.map(() => sellNorm),
+          borderColor: sellColor, borderWidth:1.6, borderDash:[6,4],
+          pointRadius:0, pointHoverRadius:0, fill:false, tension:0, order:6, spanGaps:true },
+        { label:'Batas Beli', data: labels.map(() => buyNorm),
+          borderColor: buyColor, borderWidth:1.6, borderDash:[6,4],
+          pointRadius:0, pointHoverRadius:0, fill:false, tension:0, order:6, spanGaps:true }
       ]
     },
     options: {
@@ -6052,6 +6091,17 @@ function renderChart(code) {
                   ? ` Target rata-rata konsensus: ${Math.round(targetCon).toLocaleString('id')}`
                   : null;
               }
+              // Garis batas σ — baca harga LIVE dari chart.$trig supaya teks
+              // pop-up ikut berubah saat input blueprint diubah.
+              const tg = item.chart.$trig;
+              if (lbl === 'Batas Jual') {
+                return tg ? [` Jual: ${Math.round(tg.sellPrice).toLocaleString('id')}`,
+                             ' Sell jika harga di atas tren'] : null;
+              }
+              if (lbl === 'Batas Beli') {
+                return tg ? [` Beli: ${Math.round(tg.buyPrice).toLocaleString('id')}`,
+                             ' Buy jika harga di bawah tren'] : null;
+              }
               const orig = lbl === 'IHSG' ? ihsgVals[item.dataIndex] : stockVals[item.dataIndex];
               return ` ${lbl}: ${orig ? orig.toLocaleString('id') : '-'} (idx: ${item.raw})`;
             }
@@ -6065,6 +6115,28 @@ function renderChart(code) {
       }
     }
   });
+  // Simpan konteks utk update garis σ tanpa rebuild penuh (dipanggil saat user
+  // mengubah input batas beli/jual di Price Target Blueprint → garis fleksibel).
+  mainChartInstance.$code = code;
+  mainChartInstance.$stockBase = stockBase;
+  mainChartInstance.$trig = sigTrig;
+}
+
+// Update garis batas BELI/JUAL di chart utama tanpa rebuild — dipanggil dari
+// updatePtSigSignal() supaya garis ikut angka blueprint terbaru (fleksibel).
+function updateChartSigmaLines(code) {
+  const ch = mainChartInstance;
+  if (!ch || ch.$code !== code || !ch.data) return;
+  const stockBase = ch.$stockBase;
+  const trig = ptSigmaTriggers(code);
+  ch.$trig = trig;
+  const buyNorm  = (trig && stockBase) ? (trig.buyPrice  / stockBase) * 100 : null;
+  const sellNorm = (trig && stockBase) ? (trig.sellPrice / stockBase) * 100 : null;
+  const dsSell = ch.data.datasets.find(d => d.label === 'Batas Jual');
+  const dsBuy  = ch.data.datasets.find(d => d.label === 'Batas Beli');
+  if (dsSell) dsSell.data = ch.data.labels.map(() => sellNorm);
+  if (dsBuy)  dsBuy.data  = ch.data.labels.map(() => buyNorm);
+  ch.update('none');
 }
 
 // ─ Stats ─
@@ -6395,6 +6467,10 @@ function updatePtSigSignal(code) {
       <div style="font-size:10px;color:var(--text2);margin-top:2px;font-weight:600">${desc}</div>
     </div>
   `;
+
+  // Sinkronkan garis batas BELI/JUAL di chart utama dgn angka terbaru
+  // (fleksibel: ikut berubah saat user mengubah input σ di blueprint).
+  if (typeof updateChartSigmaLines === 'function') updateChartSigmaLines(code);
 }
 
 // ─ Consensus ─
