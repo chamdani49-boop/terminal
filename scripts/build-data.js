@@ -1472,6 +1472,10 @@ async function main() {
       : Promise.resolve(null),
   ]);
 
+  // Debug map dideklarasikan SEBELUM dipakai (dulu di-`Object.assign` sebelum
+  // deklarasi `const` → ReferenceError TDZ saat History berhasil di-fetch).
+  const debug = {};
+
   // Kalau History gagal → FATAL kalau belum ada base, fallback ke base kalau ada
   let price_history;
   let historyFallback = false;
@@ -1490,8 +1494,10 @@ async function main() {
 
   console.log('Parsing & computing…');
 
-  console.log('Parsing & computing…');
-  const debug = {};
+  // Status fetch Live Sheet (null = sukses / tidak di-set). Dipakai di _meta.
+  const liveFetchError = (LIVE_SHEET_ID && !liveCsv)
+    ? 'Live Sheet tidak bisa diakses — pakai harga cache terakhir'
+    : null;
 
   // Live overlay
   const live = liveCsv ? parseLive(liveCsv, debug) : (baseData ? baseData.live || {} : {});
