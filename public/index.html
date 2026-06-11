@@ -6149,11 +6149,11 @@ function renderChart(code) {
               const tg = item.chart.$trig;
               if (lbl === 'Batas Jual') {
                 return tg ? [` Jual: ${Math.round(tg.sellPrice).toLocaleString('id')}`,
-                             ' Sell jika harga di atas tren'] : null;
+                             ' Gunakan sell jika harga sekarang di bawah tren'] : null;
               }
               if (lbl === 'Batas Beli') {
                 return tg ? [` Beli: ${Math.round(tg.buyPrice).toLocaleString('id')}`,
-                             ' Buy jika harga di bawah tren'] : null;
+                             ' Gunakan buy jika harga sekarang di atas tren'] : null;
               }
               const orig = lbl === 'IHSG' ? ihsgVals[item.dataIndex] : stockVals[item.dataIndex];
               return ` ${lbl}: ${orig ? orig.toLocaleString('id') : '-'} (idx: ${item.raw})`;
