@@ -4024,16 +4024,14 @@ let consensusDonutInstance = null;
 let savingChartInstance = null;
 
 // Strategi loading data.json:
-//   1) Coba jsDelivr CDN dulu — track main branch git langsung. Begitu
-//      workflow refresh-data push commit, jsDelivr serve file baru dalam
-//      ~1 menit (apalagi setelah workflow purge cache jsDelivr). Bypass
-//      Cloudflare Pages deploy yang ke-skip karena `[skip ci]` di commit
-//      message data refresh.
-//   2) Fallback ke same-origin (Cloudflare Pages bundle) kalau CDN miss
-//      (mis. jsDelivr down, atau dev lokal tanpa internet ke jsDelivr).
-//
-// Repo harus public buat jsDelivr bisa akses; `chamdani49-boop/terminal`
-// memang public.
+//   1) Same-origin (Cloudflare Pages bundle) DULU. Jalan untuk repo PUBLIC
+//      maupun PRIVATE, dan tidak terkena cache basi jsDelivr. Agar selalu
+//      fresh, commit data mode consensus/history/full TIDAK memakai [skip ci]
+//      (lihat .github/workflows/refresh-data.yml) sehingga Pages rebuild saat
+//      data penting berubah. Commit mode live (tiap 5 mnt) tetap [skip ci]
+//      karena harga live sudah ditangani Worker /live.json.
+//   2) Fallback ke jsDelivr CDN kalau same-origin gagal (hanya berguna saat
+//      repo masih public; saat private jsDelivr akan 404 dan dilewati).
 const DATA_CDN_URL = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/data.json';
 const DATA_LOCAL_URL = 'data.json';
 
@@ -4185,8 +4183,8 @@ async function loadRecStatus() {
 async function loadData() {
   const v = Math.floor(Date.now() / CACHE_BUST_MS);
   const sources = [
-    { url: DATA_CDN_URL   + '?v=' + v, label: 'jsDelivr CDN' },
     { url: DATA_LOCAL_URL + '?v=' + v, label: 'same-origin'  },
+    { url: DATA_CDN_URL   + '?v=' + v, label: 'jsDelivr CDN' },
   ];
 
   for (const src of sources) {
@@ -4232,8 +4230,8 @@ async function _pollLiveData() {
   // agar CDN tidak serve cached response dari initial load.
   const v = Date.now();
   const sources = [
-    { url: DATA_CDN_URL   + '?v=' + v },
     { url: DATA_LOCAL_URL + '?v=' + v },
+    { url: DATA_CDN_URL   + '?v=' + v },
   ];
 
   let json = null;
