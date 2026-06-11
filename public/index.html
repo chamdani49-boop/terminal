@@ -3270,10 +3270,16 @@ async function loadOhlcAll() {
   if (_ohlcLoading) return _ohlcLoading;
 
   _ohlcLoading = (async () => {
-    const bust = Math.floor(Date.now() / (6 * 3600 * 1000));
-    // Lokal (same-origin) DULU — paling reliable & fresh tiap deploy, tanpa CORS.
-    // CDN jsDelivr sebagai cadangan.
-    for (const base of [OHLC_LOCAL_URL, OHLC_CDN_URL]) {
+    // Cache-bust 30 dtk (samakan dgn data.json) — window 6 jam dulu bikin
+    // candle terbaru telat muncul sampai 6 jam.
+    const bust = Math.floor(Date.now() / (30 * 1000));
+    // CDN jsDelivr DULU — di-purge tiap commit refresh-ohlc, jadi selalu fresh.
+    // File lokal (same-origin/Cloudflare) sebagai FALLBACK: commit OHLC pakai
+    // [skip ci] → Cloudflare tidak redeploy → ohlc.json lokal BEKU di deploy
+    // kode terakhir. Kalau lokal didahulukan, candle terbaru (mis. hari ini /
+    // kemarin) tidak pernah muncul walau workflow sudah jalan. Sama persis
+    // dengan strategi data.json (CDN-first) yang memang selalu fresh.
+    for (const base of [OHLC_CDN_URL, OHLC_LOCAL_URL]) {
       try {
         const res = await fetch(`${base}?v=${bust}`, { cache: 'no-cache' });
         if (!res.ok) continue;
