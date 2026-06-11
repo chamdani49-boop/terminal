@@ -6110,12 +6110,20 @@ function renderChart(code) {
           pointRadius:      labels.map((_, i) => (i === lastI && targetNorm != null) ? 5 : 0),
           pointHoverRadius: labels.map((_, i) => (i === lastI && targetNorm != null) ? 7 : 0),
           pointStyle:'circle', showLine:false, fill:false, order:0 },
-        { label:'Batas Jual', data: labels.map(() => sellNorm),
-          borderColor: sellColor, borderWidth:1.6, borderDash:[6,4],
-          pointRadius:0, pointHoverRadius:0, fill:false, tension:0, order:6, spanGaps:true },
-        { label:'Batas Beli', data: labels.map(() => buyNorm),
-          borderColor: buyColor, borderWidth:1.6, borderDash:[6,4],
-          pointRadius:0, pointHoverRadius:0, fill:false, tension:0, order:6, spanGaps:true }
+        { label:'Batas Jual',
+          data: labels.map((_, i) => i === lastI ? sellNorm : null),
+          borderColor: sellColor, backgroundColor: sellColor,
+          pointStyle:'line', pointBorderWidth:4,
+          pointRadius:      (ctx) => (ctx.dataIndex === lastI && ctx.raw != null) ? 11 : 0,
+          pointHoverRadius: (ctx) => (ctx.dataIndex === lastI && ctx.raw != null) ? 13 : 0,
+          showLine:false, fill:false, order:6 },
+        { label:'Batas Beli',
+          data: labels.map((_, i) => i === lastI ? buyNorm : null),
+          borderColor: buyColor, backgroundColor: buyColor,
+          pointStyle:'line', pointBorderWidth:4,
+          pointRadius:      (ctx) => (ctx.dataIndex === lastI && ctx.raw != null) ? 11 : 0,
+          pointHoverRadius: (ctx) => (ctx.dataIndex === lastI && ctx.raw != null) ? 13 : 0,
+          showLine:false, fill:false, order:6 }
       ]
     },
     options: {
@@ -6179,8 +6187,9 @@ function updateChartSigmaLines(code) {
   const sellNorm = (trig && stockBase) ? (trig.sellPrice / stockBase) * 100 : null;
   const dsSell = ch.data.datasets.find(d => d.label === 'Batas Jual');
   const dsBuy  = ch.data.datasets.find(d => d.label === 'Batas Beli');
-  if (dsSell) dsSell.data = ch.data.labels.map(() => sellNorm);
-  if (dsBuy)  dsBuy.data  = ch.data.labels.map(() => buyNorm);
+  const lastIdx = ch.data.labels.length - 1;
+  if (dsSell) dsSell.data = ch.data.labels.map((_, i) => i === lastIdx ? sellNorm : null);
+  if (dsBuy)  dsBuy.data  = ch.data.labels.map((_, i) => i === lastIdx ? buyNorm  : null);
   ch.update('none');
 }
 
