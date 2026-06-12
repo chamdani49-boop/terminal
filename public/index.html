@@ -6150,12 +6150,27 @@ function renderHero(code) {
     ? DATA.stats[code].rel_vol
     : null;
 
+  // Breadcrumb sektor detail: Sektor › Subsektor › Industri (dari Meta Sheet).
+  // Buang level kosong/"-" dan hilangkan duplikat berurutan (sering subsektor =
+  // industri). Fallback ke teks generik kalau tidak ada data taksonomi.
+  const _secLevels = [info.sector, info.subsector, info.industry]
+    .map(s => (s == null ? '' : String(s).trim()))
+    .filter(s => s && s !== '-');
+  const _secDedup = [];
+  for (const s of _secLevels) { if (_secDedup[_secDedup.length - 1] !== s) _secDedup.push(s); }
+  const sectorPath = _secDedup.length ? _secDedup.join(' › ') : 'Indonesia Stock Exchange';
+  // Tooltip lengkap termasuk subindustri (kalau ada).
+  const _secFull = [info.sector, info.subsector, info.industry, info.subindustry]
+    .map(s => (s == null ? '' : String(s).trim()))
+    .filter(s => s && s !== '-');
+  const sectorTip = _secFull.length ? _secFull.join(' › ') : '';
+
   el.innerHTML = `
     <div class="stock-hero">
       <div class="stock-name-block">
         <div class="ticker">${code}</div>
         <div class="fullname">${info.name || code}</div>
-        <div class="meta">${info.sector || 'Indonesia Stock Exchange'} · ${info.board || 'IDX'}</div>
+        <div class="meta" title="${sectorTip}">${sectorPath} · ${info.board || 'IDX'}</div>
         <div class="meta" style="margin-top:3px;color:var(--text2);font-size:11px">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'} · Data Bulanan IDX</div>
       </div>
       <div class="hero-middle">
