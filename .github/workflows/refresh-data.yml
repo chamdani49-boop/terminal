@@ -121,6 +121,8 @@ jobs:
           CONSENSUS_GID:      ${{ secrets.CONSENSUS_GID }}
           LIVE_SHEET_ID:      ${{ secrets.LIVE_SHEET_ID }}
           LIVE_GID:           ${{ secrets.LIVE_GID }}
+          META_SHEET_ID:      ${{ secrets.META_SHEET_ID }}
+          META_GID:           ${{ secrets.META_GID }}
           REFRESH_MODE:       ${{ steps.mode.outputs.mode }}
         run: node scripts/build-data.js --mode=${{ steps.mode.outputs.mode }}
 

@@ -120,6 +120,43 @@ Sheet ke-3 ini yang bikin angka harga di hero card / watchlist / price target / 
 > - Kalau mau pakai MoM proper, isi formula sendiri: `=B2/INDEX(HistoriSheet!B:B, ROW_BULAN_LALU) - 1`. Format apa pun (`%` / desimal / fraksi) akan di-handle parser.
 > - Kalau kolom **% Live** dikosongin, builder otomatis hitung MoM = `(harga_live − harga_bulan_sebelumnya) / harga_bulan_sebelumnya` dari sheet histori.
 
+### Fase 1C — Publish Sheet META (Nama & Sektor Emiten, Opsional)
+
+Sheet ini khusus berisi **metadata emiten** — nama perusahaan, sektor, dan papan
+pencatatan. Berguna terutama untuk **emiten baru** yang belum ada di
+`lib/static.json` (mis. listing IPO terbaru). Tanpa ini, saham baru tampil
+dengan **kode-nya saja** (mis. `WBSA`) dan sektor `Lainnya`.
+
+Layout cukup 2–4 kolom (header bebas urutan):
+
+| Kode | Nama | Sektor | Papan |
+|---|---|---|---|
+| WBSA | Wira Bhumi Sejati Tbk | Transportation & Logistic | Pengembangan |
+| BBCA | Bank Central Asia Tbk | Financials | Utama |
+
+**Aturan kolom:**
+- **Kode** — kode ticker (boleh `WBSA` atau `IDX:WBSA`; prefix di-strip otomatis). **Wajib ada.**
+- **Nama** — nama perusahaan. (Header alternatif: `Name`/`Emiten`/`Company`/`Nama Perusahaan`.)
+- **Sektor** — sektor/industri. (Header alternatif: `Sector`/`Industri`/`Industry`.)
+- **Papan** — papan pencatatan (Utama/Pengembangan/dll). Opsional. (Alternatif: `Board`.)
+
+Minimal harus ada kolom **Kode** + salah satu dari **Nama/Sektor/Papan**.
+
+**Cara publish (sama seperti sheet lain):**
+
+1. Buka sheet meta-mu (boleh tab terpisah di file yang sama, atau spreadsheet lain).
+2. Pastikan baris pertama = header (`Kode`, `Nama`, `Sektor`, `Papan`).
+3. **File → Share → Publish to web** → format **CSV** → **Publish**.
+4. Catat `META_SHEET_ID` & `META_GID` dari URL editor:
+   ```
+   https://docs.google.com/spreadsheets/d/[INI_META_SHEET_ID]/edit#gid=[INI_META_GID]
+   ```
+5. Set sebagai GitHub Secrets di Fase 2.
+
+> **Penting:** Meta Sheet **hanya dibaca saat build mode `full`/`history`** (di situlah daftar saham `stock_info` di-rebuild). Setelah mengisi/mengubah Meta Sheet, jalankan workflow **manual mode `full`** supaya langsung kepakai (lihat Fase 2 langkah 3).
+>
+> **Prioritas nama/sektor:** Meta Sheet → kolom `Nama`/`Sektor` di Live Sheet → `lib/static.json` → kode ticker (fallback). Jadi 956 nama emiten lama tetap utuh; Meta Sheet hanya menambah/menimpa yang kamu isi.
+
 ### Fase 2 — Set GitHub Repository Secrets
 
 1. Buka [github.com/chamdani49-boop/terminal/settings/secrets/actions](https://github.com/chamdani49-boop/terminal/settings/secrets/actions)
@@ -133,6 +170,8 @@ Sheet ke-3 ini yang bikin angka harga di hero card / watchlist / price target / 
    | `CONSENSUS_GID` | (dari Fase 1) | ✅ |
    | `LIVE_SHEET_ID` | (dari Fase 1B) | Opsional |
    | `LIVE_GID` | (dari Fase 1B) | Opsional |
+   | `META_SHEET_ID` | (dari Fase 1C) | Opsional |
+   | `META_GID` | (dari Fase 1C) | Opsional |
 
    Kalau `LIVE_SHEET_ID` dikosongin, dashboard tetap jalan — angka harga diambil dari row terakhir sheet histori. Tambah sheet live kalau mau angka realtime.
 
@@ -293,7 +332,8 @@ Daftar saham (`stock_info`, `stock_list`, `watchlist`) **di-generate otomatis da
 **Menambah saham baru (mis. WBSA, SUPA):**
 1. Tambahkan ke **Histori Sheet** (kolom baru ticker + harga bulanannya) → saham langsung dapat chart, stats, dan **bisa dicari**.
 2. (Opsional) tambahkan juga di **Live Sheet** → harga real-time + `% Live`.
-3. (Opsional) isi kolom `Nama` & `Sektor` di **Live Sheet** → nama & sektor tampil rapi. Kalau tidak diisi, fallback ke `lib/static.json`, lalu ke kode ticker.
+3. (Opsional) isi nama & sektornya di **Meta Sheet** (Fase 1C) atau kolom `Nama`/`Sektor` di **Live Sheet** → nama & sektor tampil rapi. Kalau tidak diisi, fallback ke `lib/static.json`, lalu ke kode ticker.
+4. Jalankan workflow **mode `full`/`history`** (manual atau tunggu jadwal) supaya daftar saham + nama/sektor di-rebuild.
 
 > Saham yang **cuma** ada di Live Sheet (belum di Histori) **tidak** muncul — sengaja, supaya tidak ada ticker tanpa riwayat/stats. Masukkan ke Histori dulu.
 
@@ -301,7 +341,7 @@ Daftar saham (`stock_info`, `stock_list`, `watchlist`) **di-generate otomatis da
 - Hapus kolomnya dari **Histori Sheet** → otomatis hilang dari chart/stats/search/watchlist saat rebuild berikutnya.
 - Kalau hanya berhenti di Live Sheet (kolom histori tetap ada) → harga berhenti update, tapi saham tetap tampil dengan harga terakhir.
 
-**Prioritas sumber nama/sektor:** kolom Live Sheet → `lib/static.json` → kode ticker (fallback). Jadi nama 956 saham lama tetap utuh, saham baru cukup diisi via sheet.
+**Prioritas sumber nama/sektor:** Meta Sheet → kolom Live Sheet → `lib/static.json` → kode ticker (fallback). Jadi nama 956 saham lama tetap utuh, saham baru cukup diisi via sheet.
 
 ---
 
