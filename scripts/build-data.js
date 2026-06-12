@@ -1236,6 +1236,12 @@ async function main() {
     HISTORY_SHEET_ID, HISTORY_GID = '0',
     CONSENSUS_SHEET_ID, CONSENSUS_GID = '0',
     LIVE_SHEET_ID, LIVE_GID = '0',
+    // Opsional — sheet khusus metadata emiten (Kode | Nama | Sektor | Papan).
+    // Dipakai untuk nama/sektor saham (terutama emiten baru yang belum ada di
+    // lib/static.json). Hanya dibaca di mode full/history (stock_info di-rebuild
+    // di mode itu). Prioritas nama/sektor: Meta Sheet > kolom Live Sheet >
+    // lib/static.json > kode ticker.
+    META_SHEET_ID, META_GID = '0',
   } = process.env;
 
   if (!HISTORY_SHEET_ID || !CONSENSUS_SHEET_ID) {
@@ -1541,8 +1547,34 @@ async function main() {
   // Auto-meta: stock_info/stock_list/watchlist dari universe sheet (History +
   // Live), bukan murni dari static.json. Saham baru di History Sheet otomatis
   // ikut; nama/sektor opsional dari kolom Live Sheet, fallback ke static → kode.
+  //
+  // Sumber metadata (nama/sektor/papan), prioritas tinggi → rendah:
+  //   1) Meta Sheet khusus (META_SHEET_ID)  — sheet "Kode | Nama | Sektor | Papan"
+  //   2) Kolom opsional di Live Sheet         — Nama/Sektor/Papan kalau ada
+  //   3) lib/static.json                      — 957 emiten bawaan
+  //   4) kode ticker (fallback)
   const liveMeta = liveCsv ? parseLiveMeta(liveCsv) : {};
-  const autoMeta = buildAutoMeta(price_history, live, stat, liveMeta);
+
+  // Meta Sheet hanya di-fetch di mode full/history (di sinilah stock_info
+  // di-rebuild). Non-fatal: kalau gagal/ kosong, fallback ke liveMeta + static.
+  let sheetMeta = {};
+  if (META_SHEET_ID) {
+    const metaCsv = await safeFetch(META_SHEET_ID, META_GID, 'Meta Sheet');
+    if (metaCsv) {
+      sheetMeta = parseLiveMeta(metaCsv);
+      console.log(`  ✓ Meta Sheet parsed: ${Object.keys(sheetMeta).length} emiten`);
+    } else {
+      console.warn('  ↪ Meta Sheet gagal di-fetch — pakai Live Sheet / static.json.');
+    }
+  }
+
+  // Merge: Meta Sheet menimpa kolom Live Sheet (per-field), sisanya dipertahankan.
+  const mergedMeta = { ...liveMeta };
+  for (const [code, m] of Object.entries(sheetMeta)) {
+    mergedMeta[code] = { ...(mergedMeta[code] || {}), ...m };
+  }
+
+  const autoMeta = buildAutoMeta(price_history, live, stat, mergedMeta);
 
   // Diagnostics: berapa target_price yang berhasil terbaca, tanggal, dll
   let consensus_with_target = 0, consensus_with_date = 0, consensus_total_rows = 0;
@@ -1599,6 +1631,8 @@ async function main() {
       live_tickers: Object.keys(live).length,
       live_enabled: !!LIVE_SHEET_ID,
       live_fetch_error: liveFetchError,
+      meta_sheet_enabled: !!META_SHEET_ID,
+      meta_sheet_emiten: Object.keys(sheetMeta).length,
       _debug: debug,
     },
   };
