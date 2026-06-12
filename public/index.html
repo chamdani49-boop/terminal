@@ -6182,7 +6182,7 @@ function renderHero(code) {
         ${relVol != null ? `<div class="hero-corr" title="std saham / std IHSG — volatilitas relatif">Vol Rel: <span class="correl-val ${relVol > 1 ? 'dn' : 'up'}">${relVol.toFixed(2)}×</span></div>` : ''}
       </div>
       <div class="price-block">
-        <div class="price">${priceStr}${liveChg != null ? ` <span class="price-live ${liveCls}">${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}% live</span>` : ''}</div>
+        <div class="price">${priceStr}${liveChg != null ? ` <span class="price-live ${liveCls}"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-bg);animation:plPulse 2s infinite;margin-right:4px;vertical-align:middle"></span>${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}%</span>` : ''}</div>
         <div class="change ${momCls}">${mom >= 0 ? '+' : ''}${(mom*100).toFixed(2)}% MoM</div>
       </div>
     </div>
@@ -6659,7 +6659,7 @@ function renderPriceTarget(code) {
       </div>
       <div style="text-align:right">
         <div class="ticker-price">${price.toLocaleString('id')}</div>
-        ${liveChg != null ? `<div class="${liveCls}" style="font-size:13px;font-weight:800;font-family:'IBM Plex Mono',monospace;margin-top:1px">${liveSym}${(Math.abs(liveChg)*100).toFixed(2)}% live</div>` : ''}
+        ${liveChg != null ? `<div class="${liveCls}" style="font-size:13px;font-weight:800;font-family:'IBM Plex Mono',monospace;margin-top:1px;display:flex;align-items:center;justify-content:flex-end;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-bg);animation:plPulse 2s infinite"></span>${liveSym}${(Math.abs(liveChg)*100).toFixed(2)}%</div>` : ''}
         <div style="font-size:11px;color:var(--text2);font-weight:600">${lastLabel}</div>
       </div>
     </div>
