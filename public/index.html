@@ -6171,7 +6171,7 @@ function renderHero(code) {
         <div class="ticker">${code}</div>
         <div class="fullname">${info.name || code}</div>
         <div class="meta" title="${sectorTip}">${sectorPath} · ${info.board || 'IDX'}</div>
-        <div class="meta" style="margin-top:3px;color:var(--text2);font-size:11px">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'} · Data Bulanan IDX</div>
+        <div class="meta" style="margin-top:3px;color:var(--text2);font-size:11px">Data Bulanan IDX</div>
       </div>
       <div class="hero-middle">
         <div class="zcore-badge">
@@ -6649,8 +6649,6 @@ function renderPriceTarget(code) {
   const buySigma = lsBuySig != null ? parseFloat(lsBuySig) : 2;
   const sellSigma = lsSellSig != null ? parseFloat(lsSellSig) : 1;
 
-  const lastLabel = formatMonthYear(last.label, last.date, 'long');
-
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
       <div style="min-width:0;flex:1 1 140px">
@@ -6660,7 +6658,6 @@ function renderPriceTarget(code) {
       <div style="text-align:right">
         <div class="ticker-price">${price.toLocaleString('id')}</div>
         ${liveChg != null ? `<div class="${liveCls}" style="font-size:13px;font-weight:800;font-family:'IBM Plex Mono',monospace;margin-top:1px">${liveSym}${(Math.abs(liveChg)*100).toFixed(2)}% live</div>` : ''}
-        <div style="font-size:11px;color:var(--text2);font-weight:600">${lastLabel}</div>
       </div>
     </div>
 
