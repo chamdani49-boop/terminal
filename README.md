@@ -157,6 +157,37 @@ Minimal harus ada kolom **Kode** + salah satu dari **Nama/Sektor/Papan**.
 >
 > **Prioritas nama/sektor:** Meta Sheet → kolom `Nama`/`Sektor` di Live Sheet → `lib/static.json` → kode ticker (fallback). Jadi 956 nama emiten lama tetap utuh; Meta Sheet hanya menambah/menimpa yang kamu isi.
 
+#### Fase 1C-2 — Tab kedua: "Sektor Screener" (Fundamental, Opsional)
+
+Selain tab nama/sektor di atas, kamu bisa menambah **tab kedua** di spreadsheet
+META yang sama untuk data **fundamental & taksonomi sektor lengkap**. Pembacanya
+**generik** — deteksi kolom kode ticker otomatis, lalu tangkap kolom-kolom yang
+dikenal. Header bebas urutan; kolom yang tidak dikenal diabaikan.
+
+Kolom yang ditangkap (semua opsional kecuali kode):
+
+| Kelompok | Kolom (header dikenali) | Disimpan ke |
+|---|---|---|
+| Ticker | `Kode Saham` / `Kode` / `Ticker` | (kunci) |
+| Taksonomi | `Sektor`, `Subsektor`, `Industri`, `Subindustri`, `Index` | `stock_info` |
+| Valuasi | `PER`, `PBV` | `fundamentals` |
+| Profitabilitas | `ROE %`, `ROA %`, `NPM %` | `fundamentals` |
+| Leverage/Size | `DER`, `Mkt Cap`, `Total Rev`, `Saham` | `fundamentals` |
+| Kinerja harga | `4-wk %Pr. Chg`, `13-wk`, `26-wk`, `52-wk`, `MTD`, `YTD` | `fundamentals` |
+
+Cara pakai:
+1. Buka tab "sektor screener", **Publish to web → CSV** (sama seperti tab lain).
+2. Catat **GID** tab itu dari URL saat tab aktif (`...#gid=ANGKA`).
+3. Set sebagai secret **`SCREENER_GID`** (SHEET_ID sama dengan `META_SHEET_ID`).
+4. Jalankan workflow mode `full`.
+
+Hasilnya tersimpan di `data.json`:
+- **`stock_info[KODE]`** mendapat `sector`, `subsector`, `industry`, `subindustry`, `index`, `listing_date`.
+- **`fundamentals[KODE]`** = `{ per, pbv, roe, roa, der, mkt_cap, total_rev, npm, chg_4w, chg_13w, chg_26w, chg_52w, mtd, ytd, shares }`.
+
+> Angka format Indonesia (`5,48` = 5.48) maupun internasional di-handle otomatis.
+> Diagnostik di `_meta`: `meta_company_emiten`, `meta_screener_emiten`, `fundamentals_count`.
+
 ### Fase 2 — Set GitHub Repository Secrets
 
 1. Buka [github.com/chamdani49-boop/terminal/settings/secrets/actions](https://github.com/chamdani49-boop/terminal/settings/secrets/actions)
@@ -172,8 +203,9 @@ Minimal harus ada kolom **Kode** + salah satu dari **Nama/Sektor/Papan**.
    | `LIVE_GID` | (dari Fase 1B) | Opsional |
    | `META_SHEET_ID` | (dari Fase 1C) | Opsional |
    | `META_GID` | (dari Fase 1C) | Opsional |
+   | `SCREENER_GID` | (dari Fase 1C-2) | Opsional |
 
-   > Nama secret untuk Meta Sheet fleksibel — selain `META_SHEET_ID`/`META_GID`, kode juga menerima alias `SECTORNAMA_SHEET_ID`/`SECTORNAMA_GID` atau `SECTOR_SHEET_ID`/`SECTOR_GID`.
+   > Nama secret untuk Meta Sheet fleksibel — selain `META_SHEET_ID`/`META_GID`, kode juga menerima alias `SECTORNAMA_SHEET_ID`/`SECTORNAMA_GID` atau `SECTOR_SHEET_ID`/`SECTOR_GID`. Untuk tab screener: `SCREENER_GID` (alias `SECTORNAMA_SCREENER_GID`/`SECTOR_SCREENER_GID`).
 
    Kalau `LIVE_SHEET_ID` dikosongin, dashboard tetap jalan — angka harga diambil dari row terakhir sheet histori. Tambah sheet live kalau mau angka realtime.
 

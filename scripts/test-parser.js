@@ -2,7 +2,7 @@
  * Local sanity tests for build-data.js parser. Tidak dijalankan di CI;
  * panggil manual: `node scripts/test-parser.js`.
  */
-const { parseHistory, parseConsensus, parseLive, applyLiveOverlay, decodeSuggestion, cleanTickerName, toNum, parseDate } = require('./build-data.js');
+const { parseHistory, parseConsensus, parseLive, applyLiveOverlay, decodeSuggestion, cleanTickerName, toNum, parseDate, parseTickerSheet, buildMetaFromTabs } = require('./build-data.js');
 
 let pass = 0, fail = 0;
 function assert(cond, label) {
@@ -326,6 +326,39 @@ console.log('\n[applyLiveOverlay] live kosong → no-op');
 const ph4 = [{ date: _curIsoMonth, label: 'Cur-XX', TLKM: 5000 }];
 applyLiveOverlay(ph4, {}, {});
 expect(ph4[0].TLKM, 5000, 'price_history unchanged');
+
+// ─── parseTickerSheet + buildMetaFromTabs: Meta Spreadsheet 2 tab ───
+console.log('\n[parseTickerSheet] tab "perusahaan" (Source.Name=sektor, Saham=jml saham)');
+const companyCsv = [
+  'Source.Name,No,Kode,Nama Perusahaan,Tanggal Pencatatan,Saham,Papan Pencatatan',
+  'Basic Materials,1,AKPI,Argha Karya Prima Industry Tbk,18 Des 1992,"612,248,000",Pengembangan',
+  'Transportation & Logistic,2,WBSA,BSA Logistics Indonesia Tbk.,02 Jan 2024,"1,000,000,000",Pengembangan',
+].join('\n');
+const compTab = parseTickerSheet(companyCsv);
+expect(Object.keys(compTab.byCode).sort(), ['AKPI', 'WBSA'], 'perusahaan: 2 ticker (Kode = kolom ticker, bukan Saham)');
+assert(compTab.byCode.AKPI.namaperusahaan === 'Argha Karya Prima Industry Tbk', 'perusahaan: nama tertangkap');
+
+console.log('\n[parseTickerSheet] tab "sektor screener" (header Kode Saham + fundamental)');
+const screenerCsv = [
+  'No,Nama Perusahaan,Kode Saham,Kode Subindustri,Sektor,Subsektor,Industri,Subindustri,Index,PER,PBV,ROE %,ROA %,DER,Mkt Cap,Total Rev,4-wk %Pr. Chg,13-wk %Pr. Chg,26-wk %Pr. Chg,52-wk %Pr. Chg,NPM %,MTD,YTD',
+  '1,BSA Logistics,WBSA,K211,Transportation & Logistic,Logistics & Deliv,Logistics,Logistics,"COMPOSITE, DB","5,48","1,02","18,58","12,15","0,53","890784000","219808000","-13,08","-17,14","8,14","10,38","67,28","-4,20","13,12"',
+].join('\n');
+const screenTab = parseTickerSheet(screenerCsv);
+expect(Object.keys(screenTab.byCode), ['WBSA'], 'screener: deteksi "Kode Saham" sebagai ticker (bukan "Kode Subindustri")');
+
+console.log('\n[buildMetaFromTabs] merge 2 tab → info + fundamentals');
+const { info, fundamentals } = buildMetaFromTabs(compTab.byCode, screenTab.byCode);
+expect(info.WBSA.name, 'BSA Logistics Indonesia Tbk.', 'WBSA name dari tab perusahaan (otoritatif)');
+expect(info.WBSA.sector, 'Transportation & Logistic', 'WBSA sector dari screener');
+expect(info.WBSA.subsector, 'Logistics & Deliv', 'WBSA subsector dari screener');
+expect(info.WBSA.board, 'Pengembangan', 'WBSA board dari perusahaan');
+expect(info.WBSA.listing_date, '02 Jan 2024', 'WBSA listing_date dari perusahaan');
+expect(info.AKPI.sector, 'Basic Materials', 'AKPI sector dari Source.Name (perusahaan)');
+expect(fundamentals.WBSA.per, 5.48, 'PER "5,48" → 5.48 (desimal Indonesia)');
+expect(fundamentals.WBSA.roe, 18.58, 'ROE % "18,58" → 18.58');
+expect(fundamentals.WBSA.chg_52w, 10.38, '52-wk %Chg → 10.38');
+expect(fundamentals.WBSA.shares, 1000000000, 'shares dari tab perusahaan');
+expect(fundamentals.WBSA.mkt_cap, 890784000, 'Mkt Cap tertangkap');
 
 // ─── Summary ───
 console.log(`\n──────────────────────────────────────`);
