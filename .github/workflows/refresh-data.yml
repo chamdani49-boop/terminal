@@ -123,6 +123,8 @@ jobs:
           LIVE_GID:           ${{ secrets.LIVE_GID }}
           META_SHEET_ID:      ${{ secrets.META_SHEET_ID }}
           META_GID:           ${{ secrets.META_GID }}
+          SECTORNAMA_SHEET_ID: ${{ secrets.SECTORNAMA_SHEET_ID }}
+          SECTORNAMA_GID:     ${{ secrets.SECTORNAMA_GID }}
           REFRESH_MODE:       ${{ steps.mode.outputs.mode }}
         run: node scripts/build-data.js --mode=${{ steps.mode.outputs.mode }}
 
