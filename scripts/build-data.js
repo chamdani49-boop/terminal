@@ -840,23 +840,190 @@ function parseLiveMeta(csv) {
   } catch (_) { return {}; }
 }
 
+// ─────────────────────────────────────────────
+// Meta Spreadsheet (2 tab: "perusahaan" + "sektor screener") — pembaca GENERIK.
+// Tidak memaksa skema kolom tertentu: deteksi kolom ticker, lalu tangkap SEMUA
+// kolom lain apa adanya (key = slug header). Pemetaan ke field kanonik dilakukan
+// terpisah lewat alias di bawah, jadi user bebas menata kolomnya sendiri.
+// ─────────────────────────────────────────────
+
+// Slug agresif untuk mencocokkan nama header: buang semua non-alfanumerik.
+//   "ROE %" → "roe" · "4-wk %Pr. Chg" → "4wkprchg" · "Source.Name" → "sourcename"
+const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/** Baca sheet ber-ticker → { headers:[slug...], byCode:{ TICKER:{slug:rawValue} } }. */
+function parseTickerSheet(csv) {
+  const rows = parseCsv(csv);
+  if (rows.length < 2) return { headers: [], byCode: {} };
+
+  // Cari baris header: baris yang punya kolom ticker-ish (Kode/Kode Saham/Ticker).
+  let headerIdx = -1;
+  const limit = Math.min(rows.length, 12);
+  for (let i = 0; i < limit; i++) {
+    const r = rows[i].map(c => slug(c));
+    if (r.some(x => x === 'kodesaham' || x === 'kode' || x === 'ticker' ||
+                    x === 'symbol' || x === 'saham' || x === 'code' ||
+                    x.includes('kodesaham') || x.includes('ticker'))) { headerIdx = i; break; }
+  }
+  if (headerIdx < 0) return { headers: [], byCode: {} };
+
+  const header = rows[headerIdx].map(c => slug(c));
+  const findCol = (...names) => {
+    for (const n of names) { const i = header.indexOf(n); if (i >= 0) return i; }
+    for (const n of names) { const i = header.findIndex(h => h && h.includes(n)); if (i >= 0) return i; }
+    return -1;
+  };
+  // Prioritas: "kodesaham" lalu "kode" (hindari nyamber "kodesubindustri").
+  const iTicker = findCol('kodesaham', 'kode', 'ticker', 'symbol', 'saham', 'code');
+  if (iTicker < 0) return { headers: [], byCode: {} };
+
+  const byCode = {};
+  for (let r = headerIdx + 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row) continue;
+    const t = cleanTickerName(row[iTicker]);
+    if (!t || (!TICKER_RX.test(t) && t !== 'IHSG')) continue;
+    const rec = {};
+    for (let c = 0; c < header.length; c++) {
+      if (c === iTicker || !header[c]) continue;
+      const v = row[c] != null ? String(row[c]).trim() : '';
+      if (v === '') continue;
+      if (!(header[c] in rec)) rec[header[c]] = v; // kolom duplikat → ambil pertama
+    }
+    if (Object.keys(rec).length) byCode[t] = rec;
+  }
+  return { headers: header, byCode };
+}
+
+// Alias slug-header → field kanonik (teks/info).
+const META_INFO_ALIASES = {
+  name:         ['namaperusahaan', 'nama', 'name', 'namaemiten', 'company', 'emiten', 'namasaham'],
+  sector:       ['sektor', 'sector', 'sourcename'],
+  subsector:    ['subsektor', 'subsector'],
+  industry:     ['industri', 'industry'],
+  subindustry:  ['subindustri', 'subindustry'],
+  board:        ['papanpencatatan', 'papan', 'board'],
+  listing_date: ['tanggalpencatatan', 'tglpencatatan', 'listingdate', 'ipodate'],
+  index:        ['index', 'indeks'],
+};
+// Alias slug-header → field kanonik (angka/fundamental). Exact-match only.
+const META_FUND_ALIASES = {
+  shares:    ['saham', 'jumlahsaham', 'listedshares', 'sharesoutstanding'],
+  per:       ['per'],
+  pbv:       ['pbv'],
+  roe:       ['roe'],
+  roa:       ['roa'],
+  der:       ['der'],
+  mkt_cap:   ['mktcap', 'marketcap', 'kapitalisasi'],
+  total_rev: ['totalrev', 'totalrevenue', 'revenue', 'pendapatan'],
+  npm:       ['npm'],
+  chg_4w:    ['4wkprchg', '4wkpchg', '4wk'],
+  chg_13w:   ['13wkprchg', '13wk'],
+  chg_26w:   ['26wkprchg', '26wk'],
+  chg_52w:   ['52wkprchg', '52wk'],
+  mtd:       ['mtd'],
+  ytd:       ['ytd'],
+};
+
+// Ambil nilai pertama dari rec yang cocok salah satu alias (exact slug match).
+function _pickAlias(rec, aliases) {
+  for (const a of aliases) {
+    if (rec[a] != null && String(rec[a]).trim() !== '') return rec[a];
+  }
+  return undefined;
+}
+
+function _mapInfo(rec) {
+  const out = {};
+  for (const [field, al] of Object.entries(META_INFO_ALIASES)) {
+    const v = _pickAlias(rec, al);
+    if (v != null) out[field] = String(v).trim();
+  }
+  return out;
+}
+function _mapFund(rec) {
+  const out = {};
+  for (const [field, al] of Object.entries(META_FUND_ALIASES)) {
+    const raw = _pickAlias(rec, al);
+    if (raw == null) continue;
+    const n = toNum(raw);
+    if (Number.isFinite(n)) out[field] = n;
+  }
+  return out;
+}
+
+/**
+ * Gabungkan byCode dari tab "perusahaan" + "sektor screener" → { info, fundamentals }.
+ *
+ * Prioritas per-field:
+ *   - name, board, listing_date  : tab perusahaan (otoritatif) → fallback screener
+ *   - sector, subsector, industry, subindustry, index : tab screener → fallback perusahaan
+ *   - fundamentals (PER/PBV/ROE/...) : screener menimpa perusahaan; `shares` dari perusahaan
+ */
+function buildMetaFromTabs(companyByCode, screenerByCode) {
+  companyByCode  = companyByCode  || {};
+  screenerByCode = screenerByCode || {};
+  const info = {}, fundamentals = {};
+  const codes = new Set([...Object.keys(companyByCode), ...Object.keys(screenerByCode)]);
+
+  for (const code of codes) {
+    const c = companyByCode[code]  || {};
+    const s = screenerByCode[code] || {};
+    const ci = _mapInfo(c), si = _mapInfo(s);
+
+    const merged = {
+      name:         ci.name        || si.name,
+      sector:       si.sector       || ci.sector,
+      subsector:    si.subsector    || ci.subsector,
+      industry:     si.industry     || ci.industry,
+      subindustry:  si.subindustry  || ci.subindustry,
+      board:        ci.board        || si.board,
+      listing_date: ci.listing_date || si.listing_date,
+      index:        si.index        || ci.index,
+    };
+    const cleanInfo = {};
+    for (const [k, v] of Object.entries(merged)) {
+      if (v != null && String(v).trim() !== '') cleanInfo[k] = String(v).trim();
+    }
+    if (Object.keys(cleanInfo).length) info[code] = cleanInfo;
+
+    // Fundamentals: company dulu (shares), screener menimpa metrik bersama.
+    const fund = { ..._mapFund(c), ..._mapFund(s) };
+    if (Object.keys(fund).length) fundamentals[code] = fund;
+  }
+  return { info, fundamentals };
+}
+
+
 // Bentuk { stock_info, stock_list, watchlist } otomatis dari universe.
 // staticData = isi lib/static.json (atau base data lama). liveMeta = hasil
-// parseLiveMeta (boleh kosong).
+// parseLiveMeta / merge Meta Sheet (boleh kosong). Selain name/sector/board,
+// field opsional (subsector, industry, subindustry, listing_date, index) ikut
+// disalin ke stock_info kalau tersedia di meta.
 function buildAutoMeta(price_history, live, staticData, liveMeta) {
   const universe   = collectUniverse(price_history, live);
   const staticInfo = (staticData && staticData.stock_info) || {};
   liveMeta = liveMeta || {};
 
+  // Field info tambahan (di luar name/sector/board) yang disalin kalau ada.
+  const EXTRA_INFO = ['subsector', 'industry', 'subindustry', 'listing_date', 'index'];
+
   const stock_info = {};
   for (const code of universe) {
     const s = staticInfo[code] || {};
     const m = liveMeta[code] || {};
-    stock_info[code] = {
+    const entry = {
       name:   (m.name   && m.name.trim())   || s.name   || code,
       sector: (m.sector && m.sector.trim()) || s.sector || 'Lainnya',
       board:  (m.board  && m.board.trim())  || s.board  || '-',
     };
+    for (const f of EXTRA_INFO) {
+      const v = (m[f] != null && String(m[f]).trim()) ? String(m[f]).trim()
+              : (s[f] != null && String(s[f]).trim()) ? String(s[f]).trim()
+              : null;
+      if (v) entry[f] = v;
+    }
+    stock_info[code] = entry;
   }
 
   const stock_list = Array.from(universe).sort().map(code => ({
@@ -1254,6 +1421,13 @@ async function main() {
     || process.env.SECTORNAMA_GID
     || process.env.SECTOR_GID
     || '0';
+  // GID tab kedua — "sektor screener" (taksonomi sektor lengkap + fundamental
+  // PER/PBV/ROE/dll). Spreadsheet sama (META_SHEET_ID), beda tab/GID. Opsional.
+  const SCREENER_GID = process.env.SCREENER_GID
+    || process.env.SECTORNAMA_SCREENER_GID
+    || process.env.SECTOR_SCREENER_GID
+    || process.env.META_SCREENER_GID
+    || '';
 
   if (!HISTORY_SHEET_ID || !CONSENSUS_SHEET_ID) {
     console.error('FATAL: HISTORY_SHEET_ID and CONSENSUS_SHEET_ID must be set.');
@@ -1557,31 +1731,44 @@ async function main() {
 
   // Auto-meta: stock_info/stock_list/watchlist dari universe sheet (History +
   // Live), bukan murni dari static.json. Saham baru di History Sheet otomatis
-  // ikut; nama/sektor opsional dari kolom Live Sheet, fallback ke static → kode.
+  // ikut; nama/sektor/fundamental dari Meta Spreadsheet, fallback ke static → kode.
   //
   // Sumber metadata (nama/sektor/papan), prioritas tinggi → rendah:
-  //   1) Meta Sheet khusus (META_SHEET_ID)  — sheet "Kode | Nama | Sektor | Papan"
-  //   2) Kolom opsional di Live Sheet         — Nama/Sektor/Papan kalau ada
-  //   3) lib/static.json                      — 957 emiten bawaan
+  //   1) Meta Spreadsheet — tab "perusahaan" (META_GID) + "sektor screener" (SCREENER_GID)
+  //   2) Kolom opsional di Live Sheet — Nama/Sektor/Papan kalau ada
+  //   3) lib/static.json — 957 emiten bawaan
   //   4) kode ticker (fallback)
   const liveMeta = liveCsv ? parseLiveMeta(liveCsv) : {};
 
-  // Meta Sheet hanya di-fetch di mode full/history (di sinilah stock_info
-  // di-rebuild). Non-fatal: kalau gagal/ kosong, fallback ke liveMeta + static.
-  let sheetMeta = {};
+  // Meta Spreadsheet hanya di-fetch di mode full/history (di sinilah stock_info
+  // di-rebuild). Non-fatal: kalau gagal/kosong, fallback ke liveMeta + static.
+  // 2 tab: "perusahaan" (nama/sektor/papan/listing/jml saham) + "sektor screener"
+  // (taksonomi sektor lengkap + fundamental PER/PBV/ROE/ROA/DER/MktCap/Rev/dll).
+  let metaInfo = {}, fundamentals = {};
+  let metaCompanyCount = 0, metaScreenerCount = 0;
   if (META_SHEET_ID) {
-    const metaCsv = await safeFetch(META_SHEET_ID, META_GID, 'Meta Sheet');
-    if (metaCsv) {
-      sheetMeta = parseLiveMeta(metaCsv);
-      console.log(`  ✓ Meta Sheet parsed: ${Object.keys(sheetMeta).length} emiten`);
-    } else {
-      console.warn('  ↪ Meta Sheet gagal di-fetch — pakai Live Sheet / static.json.');
+    const [companyCsv, screenerCsv] = await Promise.all([
+      safeFetch(META_SHEET_ID, META_GID, 'Meta Sheet (perusahaan)'),
+      SCREENER_GID
+        ? safeFetch(META_SHEET_ID, SCREENER_GID, 'Meta Sheet (sektor screener)')
+        : Promise.resolve(null),
+    ]);
+    const companyTab  = companyCsv  ? parseTickerSheet(companyCsv)  : { byCode: {} };
+    const screenerTab = screenerCsv ? parseTickerSheet(screenerCsv) : { byCode: {} };
+    metaCompanyCount  = Object.keys(companyTab.byCode).length;
+    metaScreenerCount = Object.keys(screenerTab.byCode).length;
+    const mapped = buildMetaFromTabs(companyTab.byCode, screenerTab.byCode);
+    metaInfo     = mapped.info;
+    fundamentals = mapped.fundamentals;
+    console.log(`  ✓ Meta Spreadsheet: perusahaan=${metaCompanyCount}, screener=${metaScreenerCount}, fundamental=${Object.keys(fundamentals).length} emiten`);
+    if (!companyCsv && !screenerCsv) {
+      console.warn('  ↪ Meta Spreadsheet gagal di-fetch — pakai Live Sheet / static.json.');
     }
   }
 
-  // Merge: Meta Sheet menimpa kolom Live Sheet (per-field), sisanya dipertahankan.
+  // Merge: Meta Spreadsheet menimpa kolom Live Sheet (per-field), sisanya tetap.
   const mergedMeta = { ...liveMeta };
-  for (const [code, m] of Object.entries(sheetMeta)) {
+  for (const [code, m] of Object.entries(metaInfo)) {
     mergedMeta[code] = { ...(mergedMeta[code] || {}), ...m };
   }
 
@@ -1625,6 +1812,7 @@ async function main() {
     stock_info: autoMeta.stock_info,
     stock_list: autoMeta.stock_list,
     watchlist:  autoMeta.watchlist,
+    fundamentals,         // ← {TICKER: {per,pbv,roe,roa,der,mkt_cap,total_rev,npm,chg_*,mtd,ytd,shares}}
     _meta: {
       generated_at: new Date().toISOString(),
       refresh_mode: mode,
@@ -1643,7 +1831,10 @@ async function main() {
       live_enabled: !!LIVE_SHEET_ID,
       live_fetch_error: liveFetchError,
       meta_sheet_enabled: !!META_SHEET_ID,
-      meta_sheet_emiten: Object.keys(sheetMeta).length,
+      meta_company_emiten: metaCompanyCount,
+      meta_screener_emiten: metaScreenerCount,
+      meta_screener_enabled: !!SCREENER_GID,
+      fundamentals_count: Object.keys(fundamentals).length,
       _debug: debug,
     },
   };
@@ -1680,5 +1871,5 @@ if (require.main === module) {
     process.exit(1);
   });
 } else {
-  module.exports = { parseHistory, parseConsensus, parseLive, applyLiveOverlay, parseCsv, parseDate, toNum, decodeSuggestion, cleanTickerName, collectUniverse, parseLiveMeta, buildAutoMeta };
+  module.exports = { parseHistory, parseConsensus, parseLive, applyLiveOverlay, parseCsv, parseDate, toNum, decodeSuggestion, cleanTickerName, collectUniverse, parseLiveMeta, buildAutoMeta, parseTickerSheet, buildMetaFromTabs };
 }

@@ -125,6 +125,8 @@ jobs:
           META_GID:           ${{ secrets.META_GID }}
           SECTORNAMA_SHEET_ID: ${{ secrets.SECTORNAMA_SHEET_ID }}
           SECTORNAMA_GID:     ${{ secrets.SECTORNAMA_GID }}
+          SCREENER_GID:       ${{ secrets.SCREENER_GID }}
+          SECTORNAMA_SCREENER_GID: ${{ secrets.SECTORNAMA_SCREENER_GID }}
           REFRESH_MODE:       ${{ steps.mode.outputs.mode }}
         run: node scripts/build-data.js --mode=${{ steps.mode.outputs.mode }}
 
