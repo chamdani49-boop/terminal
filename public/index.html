@@ -6495,9 +6495,17 @@ function renderStats(code) {
 
   function makeRow(label, s, cls='') {
     const av = s.avg_annual, sv = s.std_annual;
+    const liveChg = Number.isFinite(s.change_pct_live) ? s.change_pct_live
+      : (DATA.live && DATA.live[label] && Number.isFinite(DATA.live[label].change_pct)) ? DATA.live[label].change_pct
+      : null;
+    const liveCls = liveChg == null ? 'neu' : liveChg > 0 ? 'up' : liveChg < 0 ? 'dn' : 'neu';
+    const liveSym = liveChg == null ? '' : liveChg > 0 ? '▲' : liveChg < 0 ? '▼' : '';
+    const liveHtml = liveChg != null
+      ? `<div class="${liveCls}" style="font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace;margin-top:1px">${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}% live</div>`
+      : '';
     return `
       <div class="stat-cell ${cls}" style="text-align:left"><div class="stat-label">${label}</div></div>
-      <div class="stat-cell ${cls}"><div class="stat-label">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'}</div><div class="stat-val">${Math.round(s.current).toLocaleString('id')}</div></div>
+      <div class="stat-cell ${cls}"><div class="stat-label">${formatMonthYear(last.label, last.date, 'long') || 'Bulan ini'}</div><div class="stat-val">${Math.round(s.current).toLocaleString('id')}</div>${liveHtml}</div>
       <div class="stat-cell ${cls}"><div class="stat-label">MoM</div><div class="stat-val ${s.mom>0?'up':'dn'}">${fmt(s.mom)}</div><div style="${SUB}">${momSub}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">YTD</div><div class="stat-val ${s.ytd>0?'up':'dn'}">${fmt(s.ytd)}</div><div style="${SUB}">${ytdSub}</div></div>
       <div class="stat-cell ${cls}"><div class="stat-label">YoY</div><div class="stat-val ${s.yoy>0?'up':'dn'}">${fmt(s.yoy)}</div><div style="${SUB}">${yoySub}</div></div>
