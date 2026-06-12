@@ -6501,7 +6501,7 @@ function renderStats(code) {
     const liveCls = liveChg == null ? 'neu' : liveChg > 0 ? 'up' : liveChg < 0 ? 'dn' : 'neu';
     const liveSym = liveChg == null ? '' : liveChg > 0 ? '▲' : liveChg < 0 ? '▼' : '';
     const liveHtml = liveChg != null
-      ? `<div class="${liveCls}" style="font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace;margin-top:1px">${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}% live</div>`
+      ? `<div class="${liveCls}" style="font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace;margin-top:1px;display:flex;align-items:center;justify-content:center;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-bg);animation:plPulse 2s infinite"></span>${liveSym} ${(Math.abs(liveChg)*100).toFixed(2)}%</div>`
       : '';
     return `
       <div class="stat-cell ${cls}" style="text-align:left"><div class="stat-label">${label}</div></div>
