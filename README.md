@@ -173,6 +173,8 @@ Minimal harus ada kolom **Kode** + salah satu dari **Nama/Sektor/Papan**.
    | `META_SHEET_ID` | (dari Fase 1C) | Opsional |
    | `META_GID` | (dari Fase 1C) | Opsional |
 
+   > Nama secret untuk Meta Sheet fleksibel — selain `META_SHEET_ID`/`META_GID`, kode juga menerima alias `SECTORNAMA_SHEET_ID`/`SECTORNAMA_GID` atau `SECTOR_SHEET_ID`/`SECTOR_GID`.
+
    Kalau `LIVE_SHEET_ID` dikosongin, dashboard tetap jalan — angka harga diambil dari row terakhir sheet histori. Tambah sheet live kalau mau angka realtime.
 
 3. Tes manual: buka [Actions → Refresh data from Google Sheets](https://github.com/chamdani49-boop/terminal/actions/workflows/refresh-data.yml) → **Run workflow** → **Run workflow** (warna hijau).
