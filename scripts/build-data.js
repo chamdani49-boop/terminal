@@ -1236,13 +1236,24 @@ async function main() {
     HISTORY_SHEET_ID, HISTORY_GID = '0',
     CONSENSUS_SHEET_ID, CONSENSUS_GID = '0',
     LIVE_SHEET_ID, LIVE_GID = '0',
-    // Opsional — sheet khusus metadata emiten (Kode | Nama | Sektor | Papan).
-    // Dipakai untuk nama/sektor saham (terutama emiten baru yang belum ada di
-    // lib/static.json). Hanya dibaca di mode full/history (stock_info di-rebuild
-    // di mode itu). Prioritas nama/sektor: Meta Sheet > kolom Live Sheet >
-    // lib/static.json > kode ticker.
-    META_SHEET_ID, META_GID = '0',
   } = process.env;
+
+  // Opsional — sheet khusus metadata emiten (Kode | Nama | Sektor | Papan).
+  // Dipakai untuk nama/sektor saham (terutama emiten baru yang belum ada di
+  // lib/static.json). Hanya dibaca di mode full/history (stock_info di-rebuild
+  // di mode itu). Prioritas nama/sektor: Meta Sheet > kolom Live Sheet >
+  // lib/static.json > kode ticker.
+  //
+  // Menerima beberapa nama env (alias) supaya cocok dengan penamaan secret yang
+  // umum dipakai: META_SHEET_ID, atau SECTORNAMA_SHEET_ID / SECTOR_SHEET_ID.
+  const META_SHEET_ID = process.env.META_SHEET_ID
+    || process.env.SECTORNAMA_SHEET_ID
+    || process.env.SECTOR_SHEET_ID
+    || '';
+  const META_GID = process.env.META_GID
+    || process.env.SECTORNAMA_GID
+    || process.env.SECTOR_GID
+    || '0';
 
   if (!HISTORY_SHEET_ID || !CONSENSUS_SHEET_ID) {
     console.error('FATAL: HISTORY_SHEET_ID and CONSENSUS_SHEET_ID must be set.');
