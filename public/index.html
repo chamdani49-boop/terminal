@@ -9214,11 +9214,12 @@ loadData();
     const combine          = (future_value+cagr)/2;
     const margin_of_safety = acc('mos');
 
-    // Lintasan harga: Potensi = last*(1 + combine*n). Ramp pakai COMBINE saja
-    // (dividen sudah ikut dalam combine via future_value) — sesuai sheet Excel.
+    // Lintasan harga: Potensi = last*(1 + (combine + dividen_yield)*n).
+    // Ramp = Combine + Dividen Yield (sesuai sheet Excel ANTM terbaru).
+    const ramp = combine + dividend_yield;
     const price_targets = [];
     for(let n=1;n<=5;n++){
-      const pt = last*(1 + combine*n);
+      const pt = last*(1 + ramp*n);
       price_targets.push({ year:n, target_price:Math.round(pt), gl_pct: last>0?(pt-last)/last*100:null });
     }
 
@@ -9668,8 +9669,9 @@ loadData();
     const dividend_yield=(ok(inp.eps)&&basis>0)? dpr_win*inp.eps/basis : 0;
     const future_value=blend_annual+dividend_yield;   // Excel: FV = blend annual + dividen yield
     const combine=(future_value+cagr)/2;
-    // Potensi price = capital gain via Combine (dividen sudah termasuk di Combine)
-    const potensi=[]; for(let n=1;n<=5;n++) potensi.push(Math.round(basis*(1+combine*n)));
+    // Potensi price = Last x (1 + (Combine + Dividen Yield) x n) — sesuai sheet Excel terbaru
+    const ramp=combine+dividend_yield;
+    const potensi=[]; for(let n=1;n<=5;n++) potensi.push(Math.round(basis*(1+ramp*n)));
     return { applicable:true, basis, win, combine, cagr, future_value, dividend_yield,
              dpr_win, eps:inp.eps, dps_est:dpr_win*(inp.eps||0), potensi, target5:potensi[4] };
   }
