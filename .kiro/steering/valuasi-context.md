@@ -74,25 +74,35 @@ Tahap sekarang = **testing dengan 5 saham** (AADI, AALI, ANTM, BBCA, BBRI).
   valuation.json saat Excel di `data/valuation/` di-push; + manual dispatch).
   Branch `feat/valuation-workflow`. **Merge #166 dulu, baru #167.**
 
-## TUGAS BERIKUTNYA (belum selesai) — "Sub-menu UJI DATA"
-User minta membuat **sub-halaman "Uji Data"** di dalam menu Valuasi untuk
-memvalidasi data & mesin agar **sama persis dengan hasil Excel user**. Acuan = 2
-screenshot Excel (BBRI/bbri) yang berisi (gabung jadi 1 halaman):
-- Tabel kuartal (Q1–Q4: tanggal, harga, nama) + header emiten (kode, harga, %).
-- Blok **GROWTH & CAPITAL GAIN** (Tahun 2025–2029: Potensi Price, %).
-- Blok **ESTIMASI DIVIDEN YIELD** (DPS, yield, DPR%, "x", Th Balik Modal, Market cap).
-- Blok **ACTUAL** (G&L vs Potensi Price per tahun) + **MARGIN OF SAFETY** besar.
-- Blok **COMBINE RETURN** (Future Value, CAGR, Combine, Dividen Yield).
-- Baris "Harga Saat analisa / Price Now / Price High".
-- Tabel **TTM** (basis Q1/Q2/Q3/Annual → Potensi Price & G&L per tahun 2025–2029,
-  + MARGIN OF SAFETY per basis).
-- 3 chart (sudah ada di tab Ringkasan, bisa direuse): Pendapatan/Laba+LastPrice;
-  Laba%/ROE+LastPrice; PBV/PER/PSR+BookValue.
-Tujuan visual ini HANYA untuk uji data (nanti tidak dipakai), jadi buat **sama persis
-gambar**. Backend WAJIB dari data yang sudah ada (`valuation.json` + `data.json`).
-Catatan: layout Excel berbasis kuartal (Q1/Q2/Q3/Annual); data kita saat ini punya
-`q1`, `annualized`, dan `annual`. Perlu klarifikasi/mapping basis kuartal Q2/Q3 bila
-diperlukan (data sheet baru hanya Q1). User akan mengirim ulang 2 gambar acuan.
+## Sub-menu UJI DATA — SELESAI (PR #169)
+Sub-tab **🧪 Uji Data** sudah dibuat di dalam `#page-valuasi` (tab ke-6, setelah
+Multiples). Mereplikasi 2 screenshot Excel BBRI jadi 1 halaman; semua angka =
+output mesin kita untuk dibandingkan langsung dengan Excel.
+- **Branch:** `feat/valuation-uji-data` · **PR #169** (target `main`).
+- Blok yang dibuat: tabel periode, GROWTH & CAPITAL GAIN, ESTIMASI DIVIDEN YIELD,
+  ACTUAL + Margin of Safety, COMBINE RETURN, baris harga (Price Now/High),
+  tabel TTM multi-basis + mini "Sekarang", 3 chart (Pendapatan/Laba, Laba%/ROE,
+  PBV/PER/PSR+BookValue).
+- **Basis fleksibel:** toggle **Kuartal (Q1–Q4)** / **Tahunan** (4 th terakhir) —
+  `window.vlUjiSetMode('quarter'|'year')`, default kuartal.
+- **Sumber data (semua backend yang ada):**
+  - Harga kuartalan dari `data.json.price_history` by label tanggal — cocok 100%
+    dgn Excel: 4/30→3.850 (Q1), 7/31→3.710 (Q2), 10/31→3.980 (Q3), 3/31→3.330 (Annual).
+  - Harga sekarang / %perubahan / harga tertinggi dari `data.json.live`.
+  - Model 5-th, avg multiples, EPS/BVPS/SPS/DPR dari `valuation.json`.
+- **Implementasi:** `vlUjiCalc(stock,win,basis)` = cermin `computeModel` yang
+  di-parameter harga basis (untuk mengisi kolom per-kuartal/per-tahun). `renderUji()`
+  + `buildUjiCharts()` dipanggil di dalam `renderAll()`. `init()` kini juga menyimpan
+  `state.priceHist`. Tidak menyentuh area terkunci.
+
+### TEMUAN UJI (untuk disetel berikutnya)
+Mesin kita ≠ Excel pada sebagian sel (inilah gunanya halaman ini). Contoh BBRI
+basis Q3 (3.980): **combine mesin 17,30% vs Excel 22,83%**; potensi 2025 mesin
+~4.669 vs Excel 4.885. Indikasi: Excel tampak **PBV-dominan** (combine ≈ sub-model
+PBV ~22,7%), sedangkan mesin membaur PBV 50%/PER 40%/PSR 10% (ter-dilusi). CAGR
+relatif dekat (~9,7% vs 9,43%). Kandidat penyetelan: bobot model per sektor
+(bank/finansial → PBV-dominan) di `build-valuation.py` + `computeModel`. Belum
+diubah, menunggu keputusan user.
 
 ## Cara update data bulanan (untuk user)
 Upload Excel ke `data/valuation/` via:

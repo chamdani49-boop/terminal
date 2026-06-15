@@ -8844,6 +8844,7 @@ loadData();
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('proyeksi',this)">🎯 Proyeksi Harga</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('dividen',this)">💸 Dividen</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('ttm',this)">📐 Multiples</button>
+      <button class="vl-tab" role="tab" onclick="vlSwitchTab('uji',this)">🧪 Uji Data</button>
     </div>
 
     <!-- ===== TAB: RINGKASAN ===== -->
@@ -9003,6 +9004,62 @@ loadData();
       </div>
     </div>
 
+    <!-- ===== TAB: UJI DATA (replika sheet Excel — diagnostik) ===== -->
+    <style>
+      /* UJI DATA — prefiks .uj- (replika tampilan sheet Excel user) */
+      #vl-tab-uji .uj-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+      #vl-tab-uji .uj-note-inline{font-size:11px;color:var(--text3);font-weight:600}
+      .uj-sheet{display:flex;flex-direction:column;gap:14px}
+      .uj-row{display:flex;gap:14px;flex-wrap:wrap;align-items:stretch}
+      .uj-col{flex:1 1 300px;min-width:260px;display:flex;flex-direction:column;gap:10px}
+      .uj-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+      .uj-tbl{border-collapse:collapse;width:100%;font-family:'IBM Plex Mono',monospace;font-size:12px}
+      .uj-tbl th,.uj-tbl td{border:1px solid #c9b8e8;padding:5px 8px;text-align:right;white-space:nowrap}
+      .uj-tbl th{background:#7c3aed;color:#fff;font-weight:800;text-align:center;letter-spacing:.2px}
+      .uj-tbl td.l,.uj-tbl th.l{text-align:left}
+      .uj-tbl .uj-hdr2{background:#a78bda;color:#fff;font-weight:800;text-align:center}
+      .uj-tbl .uj-yr{background:#ede7f9;color:#4c1d95;font-weight:800;text-align:center}
+      .uj-tbl .uj-foot td{background:#ede7f9;color:#4c1d95;font-weight:800}
+      [data-theme="dark"] .uj-tbl td{border-color:#5b4b86;color:var(--text)}
+      [data-theme="dark"] .uj-tbl .uj-yr,[data-theme="dark"] .uj-tbl .uj-foot td{background:#2a2342;color:#cbb8f5}
+      .uj-pos{color:#059669;font-weight:800}
+      .uj-neg{color:#dc2626;font-weight:800}
+      .uj-band{background:#7c3aed;color:#fff;font-weight:800;text-align:center;padding:8px;border-radius:5px;letter-spacing:.3px;font-size:13px}
+      .uj-codebox{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#ede7f9;border:1px solid #c9b8e8;border-radius:6px;padding:8px 12px}
+      [data-theme="dark"] .uj-codebox{background:#2a2342;border-color:#5b4b86}
+      .uj-codebox .code{font-family:'DM Serif Display',Georgia,serif;font-size:24px;font-weight:700;color:#4c1d95;text-transform:lowercase;line-height:1}
+      [data-theme="dark"] .uj-codebox .code{color:#cbb8f5}
+      .uj-codebox .px{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:800;color:var(--text)}
+      .uj-codebox .tag{font-size:11px;font-weight:800;color:#fff;background:#7c3aed;border-radius:4px;padding:2px 8px}
+      .uj-mos-big{border:2px solid #7c3aed;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;height:100%}
+      .uj-mos-big .lbl{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+      .uj-mos-big .val{font-size:38px;font-weight:900;color:#7c3aed;font-family:'IBM Plex Mono',monospace;line-height:1.1;margin-top:4px}
+      .uj-cap{font-size:10px;color:var(--text3);text-align:right;font-style:italic;margin-top:2px}
+      .uj-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+      @media(max-width:900px){.uj-grid3{grid-template-columns:1fr}}
+      .uj-chart{position:relative;width:100%;height:260px}
+      .uj-blk-title{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+    </style>
+    <div id="vl-tab-uji" class="vl-tc">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">🧪 Uji Data — Replika Sheet Excel (validasi mesin vs Excel)</div>
+        <div class="uj-controls">
+          <span class="vl-tb-label" style="margin-right:4px">Basis Periode</span>
+          <button class="vl-basis-btn active" id="ujBtnQ" onclick="vlUjiSetMode('quarter')">Kuartal (Q1–Q4)</button>
+          <button class="vl-basis-btn" id="ujBtnY" onclick="vlUjiSetMode('year')">Tahunan</button>
+          <span class="uj-note-inline">Semua angka = output mesin kita (sumber: valuation.json + data.json) — untuk dibandingkan langsung dengan Excel.</span>
+        </div>
+      </div>
+      <div id="ujMsg"></div>
+      <div id="ujBody" class="uj-sheet"></div>
+      <div class="uj-grid3" style="margin-top:14px">
+        <div class="card"><div class="card-title" id="ujC1Title">Pendapatan &amp; Laba Bersih + Harga</div><div class="uj-chart"><canvas id="ujC1"></canvas></div></div>
+        <div class="card"><div class="card-title">Laba% &amp; ROE (Tahunan) + Harga</div><div class="uj-chart"><canvas id="ujC2"></canvas></div></div>
+        <div class="card"><div class="card-title">PBV · PER · PSR + Book Value</div><div class="uj-chart"><canvas id="ujC3"></canvas></div></div>
+      </div>
+      <p class="vl-note" style="margin-top:12px">Halaman ini khusus uji data: bila ada sel yang berbeda dengan Excel, itu menandakan perbedaan input data atau metodologi mesin yang perlu disetel. Basis dapat diganti Kuartal/Tahunan.</p>
+    </div>
+
     <div class="vl-note" style="margin-top:18px;text-align:center" id="vlFootNote">
       ⚠️ Proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>
     </div>
@@ -9037,6 +9094,7 @@ loadData();
   const state = {
     raw:null,    // valuation.json
     live:null,   // data.json .live (sheet live) → harga realtime
+    priceHist:null, // data.json .price_history → harga historis bulanan (utk Uji Data)
     code:null,   // kode emiten aktif
     win:5,       // window rata-rata multiple aktif (3/5/7/10)
     model:null,  // hasil hitung ulang model 5-tahun (client-side)
@@ -9484,6 +9542,8 @@ loadData();
     const ci = document.getElementById('vlCalcPrice');
     if(ci){ const lp = Math.round(effLast(s).price); if(lp>0) ci.value = lp; }
     buildCharts();
+    renderUji();
+    buildUjiCharts();
     window.vlCalcYield();
   }
 
@@ -9530,6 +9590,7 @@ loadData();
     if(tc) tc.classList.add('active');
     if(el) el.classList.add('active');
     charts.forEach(c => { try { c.resize(); } catch(e){} });
+    ujCharts.forEach(c => { try { c.resize(); } catch(e){} });
   };
 
   function showError(msg){
@@ -9547,6 +9608,7 @@ loadData();
       try{
         const data = await fetchJson([DATA_LOCAL_URL, DATA_CDN_URL]);
         state.live = (data && data.live) ? data.live : null;
+        state.priceHist = (data && Array.isArray(data.price_history)) ? data.price_history : null;
       }catch(e){ state.live = null; }   // harga live opsional
       state.code = pickDefaultCode();
       populateStockSelect();
@@ -9565,6 +9627,288 @@ loadData();
   window.vlEnsureCharts = function(){
     if(state.raw){ charts.forEach(c=>{ try{ c.resize(); }catch(e){} }); return; }
     init();
+  };
+
+  /* ════════════════════════════════════════════════════════════════
+     UJI DATA — replika sheet Excel user (diagnostik validasi mesin).
+     Semua angka dihitung dari valuation.json + data.json (price_history,
+     live). Layout fleksibel: basis Kuartal (Q1–Q4) atau Tahunan.
+     Tidak mengubah mesin lama; vlUjiCalc adalah cermin computeModel
+     yang di-parameter dgn harga basis sembarang.
+  ════════════════════════════════════════════════════════════════ */
+  let _ujMode = 'quarter';                 // 'quarter' | 'year'
+  const ujCharts = [];                     // chart Uji Data (terpisah)
+  const ujN  = v => ok(v) ? Math.round(v).toLocaleString('en-US') : '–';     // 4,888
+  const ujP  = v => ok(v) ? v.toFixed(2)+'%' : '–';
+  const ujG  = v => ok(v) ? '<span class="'+(v>=0?'uj-pos':'uj-neg')+'">'+v.toFixed(2)+'%</span>' : '–';
+
+  // Cermin computeModel, tapi memakai harga "basis" yg diberikan (bukan harga terakhir).
+  function vlUjiCalc(stock, win, basis){
+    const v=(stock&&stock.valuation)||{}; const fy=v.five_year||{};
+    if(!fy.applicable || !ok(basis) || basis<=0) return { applicable:false, basis:basis, potensi:[null,null,null,null,null], target5:null };
+    const wk=String(win); const mult=fy.avg_multiples||{}; const inp=fy.inputs||{};
+    const g_bv =0.8*(inp.roe_5y||0)        + 0.2*(inp.roe_annual||0);
+    const g_eps=0.8*(inp.eps_growth_5y||0) + 0.2*(inp.eps_growth_annual||0);
+    const g_sps=0.8*(inp.sps_growth_5y||0) + 0.2*(inp.sps_growth_annual||0);
+    function sub(key, baseVal, g){
+      const m=(mult[key]||{})[wk]; const valid=ok(baseVal)&&baseVal>0&&ok(m)&&m>0;
+      const proj=[]; for(let t=1;t<=5;t++){ const val=baseVal*Math.pow(1+g,t); proj.push({value:val, pt:val*(m||0)}); }
+      const t5=proj[4].pt, v1=proj[0].value, v5=proj[4].value;
+      const gl=basis>0?(t5-basis)/basis:null, cagr=v1>0?Math.pow(v5/v1,1/5)-1:null, mos=t5>0?1-basis/t5:null;
+      return { applicable:valid, target5:t5, cagr, mos, annual:(gl!=null?gl/5:null) };
+    }
+    const subm={ pbv:sub('pbv',inp.bvps,g_bv), per:sub('per',inp.eps,g_eps), psr:sub('psr',inp.sps,g_sps) };
+    const baseW={pbv:0.5,per:0.4,psr:0.1}; let wsum=0; const w={};
+    ['pbv','per','psr'].forEach(k=>{ if(subm[k].applicable){ w[k]=baseW[k]; wsum+=baseW[k]; } else w[k]=0; });
+    if(wsum>0) ['pbv','per','psr'].forEach(k=> w[k]=w[k]/wsum);
+    const acc=f=>['pbv','per','psr'].reduce((s,k)=>s+(w[k]||0)*(subm[k][f]||0),0);
+    const future_value=acc('annual'), cagr=acc('cagr'); const combine=(future_value+cagr)/2;
+    const dpr_win=((mult.dpr||{})[wk])||0;
+    const dividend_yield=(ok(inp.eps)&&basis>0)? dpr_win*inp.eps/basis : 0;
+    // Potensi price = capital gain saja (mirip blok GROWTH & CAPITAL GAIN Excel)
+    const potensi=[]; for(let n=1;n<=5;n++) potensi.push(Math.round(basis*(1+combine*n)));
+    return { applicable:true, basis, win, combine, cagr, future_value, dividend_yield,
+             dpr_win, eps:inp.eps, dps_est:dpr_win*(inp.eps||0), potensi, target5:potensi[4] };
+  }
+
+  // Cari harga di price_history berdasar label tanggal (mis. "10/31/2025").
+  function ujPriceOn(label){
+    const ph=state.priceHist||[]; const r=ph.find(x=>x && x.label===label);
+    return r ? r[state.code] : null;
+  }
+  // Tahun fiskal terbaru yg punya snapshot 10/31 (deadline Q3).
+  function ujFiscalYear(){
+    const ph=state.priceHist||[]; let yr=null;
+    ph.forEach(r=>{ const m=/^10\/31\/(\d{4})$/.exec((r&&r.label)||''); if(m){ const y=+m[1]; if(yr==null||y>yr) yr=y; } });
+    if(yr==null) ph.forEach(r=>{ const m=/\/(\d{4})$/.exec((r&&r.label)||''); if(m){ const y=+m[1]; if(yr==null||y>yr) yr=y; } });
+    return yr;
+  }
+  // Daftar basis periode: Kuartal (Q1–Q4 dari price_history) atau Tahunan (4 tahun terakhir).
+  function ujBasisSet(stock){
+    if(_ujMode==='year'){
+      return annualYears(stock).slice(-4).map(y=>{
+        const a=stock.annual[y]||{};
+        return { key:y, label:y, date:'12/31/'+y, price:(ok(a.price)?a.price:ujPriceOn('12/31/'+y)) };
+      });
+    }
+    const yr=ujFiscalYear();
+    const defs=[
+      { key:'Q1',     label:'Q1',           desc:'Kuartal 1 (Q1): 1 Jan – 31 Mar',  late:'Akhir April',   date:'4/30/'+yr },
+      { key:'Q2',     label:'Q2',           desc:'Kuartal 2 (Q2): 1 Apr – 30 Jun',  late:'Akhir Juli',    date:'7/31/'+yr },
+      { key:'Q3',     label:'Q3',           desc:'Kuartal 3 (Q3): 1 Jul – 30 Sep',  late:'Akhir Oktober', date:'10/31/'+yr },
+      { key:'Annual', label:'Annual '+yr,   desc:'Kuartal 4 (Q4): 1 Okt – 31 Des',  late:'Akhir Maret',   date:'3/31/'+(yr+1) },
+    ];
+    return defs.map(d=>({ ...d, price:ujPriceOn(d.date) }));
+  }
+
+  function ujTodayStr(){
+    const d=new Date(); const p=n=>String(n).padStart(2,'0');
+    return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();
+  }
+
+  /* ── Render replika sheet ── */
+  function renderUji(){
+    const msg=document.getElementById('ujMsg'); const body=document.getElementById('ujBody');
+    if(!body) return;
+    const s=curStock(); if(!s){ body.innerHTML=''; return; }
+    const v=s.valuation||{}; const fy=v.five_year||{};
+    if(!fy.applicable){
+      if(msg) msg.innerHTML='<div class="vl-msg">Model 5-tahun belum tersedia untuk <strong>'+s.code+'</strong> — uji data hanya untuk emiten dengan histori lengkap (mis. BBRI).</div>';
+      body.innerHTML=''; return;
+    }
+    if(msg) msg.innerHTML='';
+
+    const e=effLast(s); const now=e.price;
+    const live=(state.live&&state.live[s.code])||{};
+    const chg = ok(live.change_pct)? live.change_pct*100 : (ok(e.change)? e.change*100 : null);
+    const maxPrice=live.max_price;
+
+    const set=ujBasisSet(s);
+    let primary=set.filter(b=>ok(b.price)).slice(-1)[0] || set[set.length-1];
+    if(_ujMode==='quarter'){ const qs=set.filter(b=>/^Q\d/.test(b.key)&&ok(b.price)); if(qs.length) primary=qs[qs.length-1]; }
+    const pBasis = primary && primary.price;
+    const win=state.win;
+    const pc = vlUjiCalc(s, win, pBasis);
+    const by = parseInt(fy.base_year,10) || parseInt(latestYear(s),10) || 0;
+    const years=[0,1,2,3,4].map(i=> by? (by+i) : ('T+'+(i+1)));
+
+    const glNow  = i => (ok(pc.potensi&&pc.potensi[i]) && now>0)    ? (pc.potensi[i]/now-1)*100 : null;
+    const glPrim = i => (ok(pc.potensi&&pc.potensi[i]) && pBasis>0) ? (pc.potensi[i]/pBasis-1)*100 : null;
+    const mosNow  = (pc.applicable && now>0    && pc.target5>0) ? (1-now/pc.target5)*100    : null;
+    const mosPrim = (pc.applicable && pBasis>0 && pc.target5>0) ? (1-pBasis/pc.target5)*100 : null;
+
+    const H=[];
+
+    /* ── A. Tabel periode (Kuartal/Tahunan) ── */
+    if(_ujMode==='quarter'){
+      H.push('<div class="card"><div class="uj-blk-title">Periode Laporan &amp; Harga (Kuartal)</div><div class="uj-scroll"><table class="uj-tbl">'+
+        '<thead><tr><th class="l">Kuartal</th><th class="l">Paling Lambat</th><th>TGL</th><th>HARGA</th><th>Nama</th></tr></thead><tbody>'+
+        set.map(b=>'<tr><td class="l">'+b.desc+'</td><td class="l">'+b.late+'</td><td>'+b.date+'</td><td>'+ujN(b.price)+'</td><td class="uj-yr">'+b.label+'</td></tr>').join('')+
+        '</tbody></table></div></div>');
+    } else {
+      H.push('<div class="card"><div class="uj-blk-title">Periode &amp; Harga (Tahunan — 4 tahun terakhir)</div><div class="uj-scroll"><table class="uj-tbl">'+
+        '<thead><tr><th class="l">Tahun</th><th>TGL</th><th>HARGA</th></tr></thead><tbody>'+
+        set.map(b=>'<tr><td class="l uj-yr">'+b.label+'</td><td>'+b.date+'</td><td>'+ujN(b.price)+'</td></tr>').join('')+
+        '</tbody></table></div></div>');
+    }
+
+    /* ── B. Header emiten + GROWTH & CAPITAL GAIN + ACTUAL ── */
+    const gcgRows = years.map((yr,i)=>'<tr><td class="uj-yr">'+yr+'</td><td>'+ujN(pc.potensi[i])+'</td><td>'+ujG(glNow(i))+'</td></tr>').join('');
+    const gcg =
+      '<div class="card"><div class="uj-band">GROWTH &amp; CAPITAL GAIN</div>'+
+      '<div class="uj-scroll" style="margin-top:8px"><table class="uj-tbl">'+
+      '<thead><tr><th>Tahun</th><th>Potensi Price</th><th>%</th></tr></thead><tbody>'+gcgRows+
+      '<tr class="uj-foot"><td class="l">Potensi G&amp;L</td><td></td><td>'+ujG(glNow(4))+'</td></tr>'+
+      '</tbody></table></div>'+
+      '<div class="uj-cap">Potensi = basis '+primary.label+' ('+ujN(pBasis)+') × (1 + combine × n) · % vs harga sekarang '+ujN(now)+'</div></div>';
+
+    const codeLeft =
+      '<div class="card"><div class="uj-codebox"><span class="code">'+s.code.toLowerCase()+'</span>'+
+      '<span class="px">'+ujN(now)+'</span>'+
+      (ok(chg)?'<span class="'+(chg>=0?'uj-pos':'uj-neg')+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
+      '<span class="tag">'+primary.label+'</span></div>'+ ujEstDividen(s, pc, primary, now) + '</div>';
+
+    const actRows = years.map((yr,i)=>'<tr><td>'+ujG(glNow(i))+'</td><td>'+ujN(pc.potensi[i])+'</td><td class="uj-yr">'+yr+'</td><td>'+ujN(pc.potensi[i])+'</td><td>'+ujG(glPrim(i))+'</td></tr>').join('');
+    const actual =
+      '<div class="card"><div class="uj-codebox"><span class="code">'+s.code.toLowerCase()+'</span>'+
+      '<span class="px">'+ujN(now)+'</span><span class="tag">ACTUAL</span><span class="px">'+ujN(pBasis)+'</span>'+
+      '<span class="'+((now/pBasis-1)>=0?'uj-pos':'uj-neg')+'">'+ujP((now/pBasis-1)*100)+'</span></div>'+
+      '<div class="uj-scroll" style="margin-top:8px"><table class="uj-tbl">'+
+      '<thead><tr><th>G&amp;L (vs now)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>G&amp;L (vs '+primary.label+')</th></tr></thead>'+
+      '<tbody>'+actRows+
+      '<tr class="uj-foot"><td colspan="2">MoS vs now: '+ujP(mosNow)+'</td><td></td><td colspan="2">MoS vs '+primary.label+': '+ujP(mosPrim)+'</td></tr>'+
+      '</tbody></table></div></div>';
+
+    H.push('<div class="uj-row"><div class="uj-col">'+codeLeft+'</div><div class="uj-col">'+gcg+'</div><div class="uj-col" style="flex:1.4 1 420px">'+actual+'</div></div>');
+
+    /* ── C. COMBINE RETURN + MARGIN OF SAFETY + price strip ── */
+    const combineTbl=
+      '<div class="card"><div class="uj-band soft">COMBINE RETURN</div><table class="uj-tbl" style="margin-top:8px">'+
+      '<tbody>'+
+      '<tr><td class="l">Future Value</td><td>'+ujP(pc.future_value*100)+'</td></tr>'+
+      '<tr><td class="l">CAGR</td><td>'+ujP(pc.cagr*100)+'</td></tr>'+
+      '<tr><td class="l">Combine</td><td>'+ujP(pc.combine*100)+'</td></tr>'+
+      '<tr><td class="l">Dividen Yield</td><td>'+ujP(pc.dividend_yield*100)+'</td></tr>'+
+      '</tbody></table></div>';
+    const mosBig='<div class="uj-mos-big"><div class="lbl">Margin of Safety</div><div class="val">'+ujP(mosNow)+'</div><div class="uj-cap" style="text-align:center">1 − harga sekarang ÷ potensi 5-th</div></div>';
+    const priceStrip=
+      '<div class="card"><div class="uj-blk-title">Harga Saat Analisa</div><div class="uj-scroll"><table class="uj-tbl"><tbody>'+
+      '<tr><td class="l">Price Now</td><td>'+ujN(now)+'</td><td>'+ujG((now/pBasis-1)*100)+'</td></tr>'+
+      '<tr><td class="l">'+primary.label+'</td><td>'+ujN(pBasis)+'</td><td class="l">basis potensi</td></tr>'+
+      '<tr><td class="l">Price High</td><td>'+ujN(maxPrice)+'</td><td>'+(ok(maxPrice)?ujG((maxPrice/pBasis-1)*100):'–')+'</td></tr>'+
+      '</tbody></table></div><div class="uj-cap">'+ujTodayStr()+'</div></div>';
+    H.push('<div class="uj-row"><div class="uj-col">'+combineTbl+'</div><div class="uj-col">'+mosBig+'</div><div class="uj-col" style="flex:1.4 1 420px">'+priceStrip+'</div></div>');
+
+    /* ── D. Tabel TTM multi-basis + mini "Sekarang" ── */
+    H.push(ujTtmTable(s, win, set, by, years, now, primary, pc, mosNow));
+
+    body.innerHTML=H.join('');
+  }
+
+  // Blok ESTIMASI DIVIDEN YIELD (kiri).
+  function ujEstDividen(s, pc, primary, now){
+    const ly=latestYear(s); const a=s.annual[ly]||{};
+    const yieldP = (ok(pc.dps_est)&&pc.basis>0)? pc.dps_est/pc.basis*100 : null;
+    const payback= (ok(pc.dps_est)&&pc.dps_est>0)? pc.basis/pc.dps_est : null;
+    const divCount=annualYears(s).filter(y=>{ const d=(s.annual[y]||{}).dps; return ok(d)&&d>0; }).length;
+    const shares=a.shares; const mktcap = ok(shares)? now*shares/1e9 : (ok(a.market_cap)?a.market_cap/1e9:null);
+    return '<div class="uj-band soft" style="margin-top:10px">ESTIMASI DIVIDEN YIELD</div>'+
+      '<table class="uj-tbl" style="margin-top:8px"><tbody>'+
+      '<tr><td class="l">DPS (est)</td><td>'+ujN(pc.dps_est)+'</td><td>'+ujP(yieldP)+'</td></tr>'+
+      '<tr><td class="l">(DPR%)</td><td colspan="2">'+ujP(pc.dpr_win*100)+'</td></tr>'+
+      '<tr><td class="l">Telah bagikan dividen</td><td colspan="2">'+divCount+' ×</td></tr>'+
+      '<tr><td class="l">Th Balik Modal</td><td colspan="2">'+(ok(payback)?payback.toFixed(2)+' ×':'–')+'</td></tr>'+
+      '<tr><td class="l">Market cap</td><td colspan="2">'+ujN(mktcap)+' Milyar</td></tr>'+
+      '</tbody></table>';
+  }
+
+  // Tabel TTM (per basis) + mini-tabel "Sekarang".
+  function ujTtmTable(s, win, set, by, years, now, primary, pc, mosNow){
+    const calcs=set.map(b=> ({ b, c: vlUjiCalc(s, win, b.price) }));
+    let head1='<tr><th class="l" rowspan="2">'+(_ujMode==='quarter'?'TTM':'Tahun')+'</th>';
+    let head2='<tr>';
+    calcs.forEach(({b})=>{ head1+='<th colspan="2">'+b.date+' · '+b.label+'</th>'; head2+='<th class="uj-hdr2">Potensi</th><th class="uj-hdr2">G&amp;L</th>'; });
+    head1+='</tr>'; head2+='</tr>';
+    let rows='';
+    years.forEach((yr,i)=>{
+      rows+='<tr><td class="uj-yr">'+yr+'</td>';
+      calcs.forEach(({b,c})=>{
+        if(!c.applicable || !ok(b.price)){ rows+='<td>–</td><td>–</td>'; return; }
+        const pt=c.potensi[i]; const gl=(pt/b.price-1)*100;
+        rows+='<td>'+ujN(pt)+'</td><td>'+ujG(gl)+'</td>';
+      });
+      rows+='</tr>';
+    });
+    let mosRow='<tr class="uj-foot"><td class="l">MARGIN OF SAFETY</td>';
+    calcs.forEach(({b,c})=>{
+      const mos=(c.applicable&&ok(b.price)&&c.target5>0)?(1-b.price/c.target5)*100:null;
+      mosRow+='<td colspan="2">'+ujP(mos)+'</td>';
+    });
+    mosRow+='</tr>';
+    const ttm='<div class="card"><div class="uj-blk-title">Tabel '+(_ujMode==='quarter'?'TTM (per kuartal)':'Per Tahun')+' — Potensi Price &amp; G&amp;L (vs basis masing-masing)</div>'+
+      '<div class="uj-scroll"><table class="uj-tbl"><thead>'+head1+head2+'</thead><tbody>'+rows+mosRow+'</tbody></table></div></div>';
+
+    // mini "Sekarang" — potensi basis primary, G&L vs harga sekarang
+    const miniRows=years.map((yr,i)=>{
+      const pt=pc.potensi[i]; const gl=(now>0)?(pt/now-1)*100:null;
+      return '<tr><td class="uj-yr">'+yr+'</td><td>'+ujN(pt)+'</td><td>'+ujG(gl)+'</td></tr>';
+    }).join('');
+    const mini='<div class="card" style="flex:0 0 280px"><div class="uj-codebox"><span class="px">Sekarang</span><span class="tag">'+primary.label+'</span><span class="px">'+ujN(now)+'</span></div>'+
+      '<div class="uj-scroll" style="margin-top:8px"><table class="uj-tbl"><thead><tr><th>Tahun</th><th>Potensi</th><th>G&amp;L</th></tr></thead><tbody>'+miniRows+
+      '<tr class="uj-foot"><td class="l">MoS</td><td colspan="2">'+ujP(mosNow)+'</td></tr></tbody></table></div></div>';
+
+    return '<div class="uj-row"><div class="uj-col" style="flex:2 1 560px">'+ttm+'</div><div class="uj-col">'+mini+'</div></div>';
+  }
+
+  /* ── Chart Uji Data (3 chart, basis 4 tahun terakhir) ── */
+  function buildUjiCharts(){
+    if(typeof Chart==='undefined') return;
+    while(ujCharts.length){ const c=ujCharts.pop(); try{ c.destroy(); }catch(e){} }
+    const s=curStock(); if(!s) return;
+    const T=themeColors(); const TICK={font:{size:10},color:T.tick}; const GRID={color:T.grid};
+    const base={ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'rgba(26,15,60,.94)', padding:10, cornerRadius:8 } } };
+    const ys=annualYears(s).slice(-4); const labels=ys;
+    const A=f=>ys.map(y=>{ const val=f(s.annual[y]||{}); return ok(val)?val:null; });
+    const mk=(id,cfg)=>{ const cv=document.getElementById(id); if(cv) ujCharts.push(new Chart(cv,cfg)); };
+
+    mk('ujC1', { type:'bar', data:{ labels, datasets:[
+      { label:'Pendapatan', data:A(a=>ok(a.total_revenue)?a.total_revenue/1e6:null), backgroundColor:COL.blue, borderRadius:3, yAxisID:'y' },
+      { label:'Laba Bersih', data:A(a=>ok(a.net_income)?a.net_income/1e6:null), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
+      { label:'Last Price', data:A(a=>a.price), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
+    ]}, options:{...base, scales:{
+      y:{ ticks:{...TICK, callback:v=>(v/1e6).toFixed(0)+'jt'}, grid:GRID },
+      y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
+      x:{ ticks:TICK, grid:{display:false} } }} });
+
+    const ni=ys.map(y=>(s.annual[y]||{}).net_income);
+    const grow=ys.map((y,i)=> (i>0 && ok(ni[i]) && ok(ni[i-1]) && ni[i-1]!==0) ? (ni[i]-ni[i-1])/Math.abs(ni[i-1])*100 : null);
+    mk('ujC2', { type:'bar', data:{ labels, datasets:[
+      { label:'Laba%', data:grow, backgroundColor:COL.blue, borderRadius:3, yAxisID:'y' },
+      { label:'ROE', data:A(a=>a.roe), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
+      { label:'Last Price', data:A(a=>a.price), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
+    ]}, options:{...base, scales:{
+      y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID },
+      y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
+      x:{ ticks:TICK, grid:{display:false} } }} });
+
+    mk('ujC3', { type:'bar', data:{ labels, datasets:[
+      { label:'PBV', data:A(a=>a.pbv), backgroundColor:COL.purple, borderRadius:3, yAxisID:'y' },
+      { label:'PER', data:A(a=>a.per), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
+      { label:'PSR', data:A(a=>a.psr), backgroundColor:COL.orange, borderRadius:3, yAxisID:'y' },
+      { label:'Book Value', data:A(a=>a.bvps), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
+    ]}, options:{...base, scales:{
+      y:{ ticks:TICK, grid:GRID },
+      y2:{ position:'right', ticks:{...TICK, callback:v=>(v/1000).toFixed(1)+'k'}, grid:{display:false} },
+      x:{ ticks:TICK, grid:{display:false} } }} });
+  }
+
+  // Toggle basis Kuartal/Tahunan.
+  window.vlUjiSetMode = function(mode){
+    _ujMode = (mode==='year') ? 'year' : 'quarter';
+    const bq=document.getElementById('ujBtnQ'), byb=document.getElementById('ujBtnY');
+    if(bq)  bq.classList.toggle('active',  _ujMode==='quarter');
+    if(byb) byb.classList.toggle('active', _ujMode==='year');
+    renderUji();
   };
 
   // Tandai tombol window default (5Th) sejak awal.
