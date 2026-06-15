@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-15T12:34:47.968716+00:00",
+  "generated_at": "2026-06-15T13:28:24.277493+00:00",
   "source_files": [
     "valuation-batch-01.xlsx"
   ],
@@ -281,14 +281,14 @@
         "wacc": {
           "risk_free": 0.068,
           "equity_risk_premium": 0.075,
-          "beta": 2.13,
-          "cost_of_equity": 0.2277,
+          "beta": 2.12,
+          "cost_of_equity": 0.227,
           "cost_of_debt": 0.0,
           "cost_of_debt_after_tax": 0.0,
           "tax_rate_effective": 0.1954,
           "weight_equity": 0.8635,
           "weight_debt": 0.1365,
-          "wacc": 0.1967
+          "wacc": 0.196
         },
         "dcf": {
           "applicable": true,
@@ -298,42 +298,42 @@
           "growth_5y": 0.08,
           "growth_5y_source": "PLACEHOLDER (menunggu rumus proyeksi 5 th pemilik)",
           "terminal_growth": 0.035,
-          "wacc": 0.1967,
+          "wacc": 0.196,
           "projected_fcf": [
             {
               "year": 1,
               "fcf": 9667080000000,
-              "pv": 8078114815743
+              "pv": 8082842809365
             },
             {
               "year": 2,
               "fcf": 10440446400000,
-              "pv": 7290351801623
+              "pv": 7298888155613
             },
             {
               "year": 3,
               "fcf": 11275682112000,
-              "pv": 6579409998958
+              "pv": 6590969237510
             },
             {
               "year": 4,
               "fcf": 12177736680960,
-              "pv": 5937797943407
+              "pv": 5951711351598
             },
             {
               "year": 5,
               "fcf": 13151955615437,
-              "pv": 5358754724559
+              "pv": 5374455066660
             }
           ],
-          "pv_fcf_sum": 33244429284290,
-          "pv_terminal": 34300007049587,
-          "enterprise_value": 67544436333877,
+          "pv_fcf_sum": 33298866620747,
+          "pv_terminal": 34550068285675,
+          "enterprise_value": 67848934906422,
           "net_debt": -1258000000000,
-          "equity_value": 68802436333877,
-          "fair_value_per_share": 8832.15,
+          "equity_value": 69106934906422,
+          "fair_value_per_share": 8871.24,
           "current_price": 8275,
-          "upside_pct": 6.73,
+          "upside_pct": 7.21,
           "caveats": []
         },
         "ddm": {
@@ -344,39 +344,39 @@
           "growth_5y": 0.1135,
           "growth_5y_source": "g = ROE × (1 − payout) [berkelanjutan]",
           "terminal_growth": 0.035,
-          "cost_of_equity": 0.2277,
+          "cost_of_equity": 0.227,
           "projected_dps": [
             {
               "year": 1,
               "dps": 1115.05,
-              "pv": 908.25
+              "pv": 908.76
             },
             {
               "year": 2,
               "dps": 1241.61,
-              "pv": 823.76
+              "pv": 824.7
             },
             {
               "year": 3,
               "dps": 1382.52,
-              "pv": 747.13
+              "pv": 748.41
             },
             {
               "year": 4,
               "dps": 1539.43,
-              "pv": 677.63
+              "pv": 679.18
             },
             {
               "year": 5,
               "dps": 1714.15,
-              "pv": 614.59
+              "pv": 616.35
             }
           ],
-          "pv_dividends_sum": 3771.35,
-          "pv_terminal": 3301.01,
-          "fair_value_per_share": 7072.36,
+          "pv_dividends_sum": 3777.4,
+          "pv_terminal": 3322.5,
+          "fair_value_per_share": 7099.9,
           "current_price": 8275,
-          "upside_pct": -14.53,
+          "upside_pct": -14.2,
           "caveats": []
         },
         "notes": []
@@ -991,13 +991,13 @@
         "sector": "Consumer Non-Cyclicals",
         "industry": "Agricultural Products",
         "is_financial": false,
-        "last_price": 6150,
+        "last_price": 6100,
         "price_source": "live",
         "five_year": {
           "applicable": true,
           "method": "Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%)",
           "base_year": "2025",
-          "last_price": 6150,
+          "last_price": 6100,
           "avg_window_used": 5,
           "avg_windows_available": [
             3,
@@ -1077,10 +1077,10 @@
                 }
               ],
               "target_5y": 20832,
-              "gl_5y": 2.3874,
-              "annual": 0.4775,
+              "gl_5y": 2.4151,
+              "annual": 0.483,
               "cagr": 0.1614,
-              "mos": 0.7048
+              "mos": 0.7072
             },
             "per": {
               "key": "per",
@@ -1115,10 +1115,10 @@
                 }
               ],
               "target_5y": 15913,
-              "gl_5y": 1.5875,
-              "annual": 0.3175,
+              "gl_5y": 1.6087,
+              "annual": 0.3217,
               "cagr": 0.1206,
-              "mos": 0.6135
+              "mos": 0.6167
             },
             "psr": {
               "key": "psr",
@@ -1153,46 +1153,46 @@
                 }
               ],
               "target_5y": 17610,
-              "gl_5y": 1.8634,
-              "annual": 0.3727,
+              "gl_5y": 1.8869,
+              "annual": 0.3774,
               "cagr": 0.1051,
-              "mos": 0.6508
+              "mos": 0.6536
             }
           },
-          "future_value": 0.403,
+          "future_value": 0.4079,
           "cagr": 0.1394,
-          "combine": 0.2712,
-          "dividend_yield": 0.0597,
-          "margin_of_safety": 0.6629,
+          "combine": 0.2737,
+          "dividend_yield": 0.0601,
+          "margin_of_safety": 0.6656,
           "price_targets": [
             {
               "year": 1,
-              "target_price": 8185,
-              "gl_pct": 33.09
+              "target_price": 8136,
+              "gl_pct": 33.38
             },
             {
               "year": 2,
-              "target_price": 10220,
-              "gl_pct": 66.18
+              "target_price": 10173,
+              "gl_pct": 66.77
             },
             {
               "year": 3,
-              "target_price": 12255,
-              "gl_pct": 99.27
+              "target_price": 12209,
+              "gl_pct": 100.15
             },
             {
               "year": 4,
-              "target_price": 14290,
-              "gl_pct": 132.36
+              "target_price": 14245,
+              "gl_pct": 133.53
             },
             {
               "year": 5,
-              "target_price": 16325,
-              "gl_pct": 165.45
+              "target_price": 16282,
+              "gl_pct": 166.92
             }
           ],
-          "target_price_5y": 16325,
-          "potential_pct": 165.45
+          "target_price_5y": 16282,
+          "potential_pct": 166.92
         },
         "wacc": {
           "risk_free": 0.068,
@@ -1248,8 +1248,8 @@
           "net_debt": -4704000000000,
           "equity_value": 38390269453674,
           "fair_value_per_share": 19994.93,
-          "current_price": 6150,
-          "upside_pct": 225.12,
+          "current_price": 6100,
+          "upside_pct": 227.79,
           "caveats": []
         },
         "ddm": {
@@ -1291,8 +1291,8 @@
           "pv_dividends_sum": 1602.99,
           "pv_terminal": 2035.11,
           "fair_value_per_share": 3638.1,
-          "current_price": 6150,
-          "upside_pct": -40.84,
+          "current_price": 6100,
+          "upside_pct": -40.36,
           "caveats": []
         },
         "notes": []
@@ -1907,13 +1907,13 @@
         "sector": "Basic Materials",
         "industry": "Metals & Minerals",
         "is_financial": false,
-        "last_price": 3140,
+        "last_price": 3130,
         "price_source": "live",
         "five_year": {
           "applicable": true,
           "method": "Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%)",
           "base_year": "2025",
-          "last_price": 3140,
+          "last_price": 3130,
           "avg_window_used": 5,
           "avg_windows_available": [
             3,
@@ -1993,10 +1993,10 @@
                 }
               ],
               "target_5y": 9943,
-              "gl_5y": 2.1667,
-              "annual": 0.4333,
+              "gl_5y": 2.1768,
+              "annual": 0.4354,
               "cagr": 0.2309,
-              "mos": 0.6842
+              "mos": 0.6852
             },
             "per": {
               "key": "per",
@@ -2031,10 +2031,10 @@
                 }
               ],
               "target_5y": 40497,
-              "gl_5y": 11.897,
-              "annual": 2.3794,
+              "gl_5y": 11.9382,
+              "annual": 2.3876,
               "cagr": 0.4201,
-              "mos": 0.9225
+              "mos": 0.9227
             },
             "psr": {
               "key": "psr",
@@ -2069,58 +2069,58 @@
                 }
               ],
               "target_5y": 10357,
-              "gl_5y": 2.2985,
-              "annual": 0.4597,
+              "gl_5y": 2.309,
+              "annual": 0.4618,
               "cagr": 0.1934,
-              "mos": 0.6968
+              "mos": 0.6978
             }
           },
-          "future_value": 1.2144,
+          "future_value": 1.2189,
           "cagr": 0.3028,
-          "combine": 0.7586,
-          "dividend_yield": 0.0707,
-          "margin_of_safety": 0.7808,
+          "combine": 0.7609,
+          "dividend_yield": 0.0709,
+          "margin_of_safety": 0.7815,
           "price_targets": [
             {
               "year": 1,
-              "target_price": 5744,
-              "gl_pct": 82.93
+              "target_price": 5734,
+              "gl_pct": 83.18
             },
             {
               "year": 2,
-              "target_price": 8348,
-              "gl_pct": 165.86
+              "target_price": 8337,
+              "gl_pct": 166.36
             },
             {
               "year": 3,
-              "target_price": 10952,
-              "gl_pct": 248.79
+              "target_price": 10941,
+              "gl_pct": 249.54
             },
             {
               "year": 4,
-              "target_price": 13556,
-              "gl_pct": 331.72
+              "target_price": 13544,
+              "gl_pct": 332.72
             },
             {
               "year": 5,
-              "target_price": 16160,
-              "gl_pct": 414.65
+              "target_price": 16148,
+              "gl_pct": 415.9
             }
           ],
-          "target_price_5y": 16160,
-          "potential_pct": 414.65
+          "target_price_5y": 16148,
+          "potential_pct": 415.9
         },
         "wacc": {
           "risk_free": 0.068,
           "equity_risk_premium": 0.075,
-          "beta": 1.89,
-          "cost_of_equity": 0.2097,
+          "beta": 1.88,
+          "cost_of_equity": 0.209,
           "cost_of_debt": 0.1151,
           "cost_of_debt_after_tax": 0.0935,
           "tax_rate_effective": 0.1874,
           "weight_equity": 0.9415,
           "weight_debt": 0.0585,
-          "wacc": 0.2029
+          "wacc": 0.2022
         },
         "dcf": {
           "applicable": true,
@@ -2130,42 +2130,42 @@
           "growth_5y": 0.08,
           "growth_5y_source": "PLACEHOLDER (menunggu rumus proyeksi 5 th pemilik)",
           "terminal_growth": 0.035,
-          "wacc": 0.2029,
+          "wacc": 0.2022,
           "projected_fcf": [
             {
               "year": 1,
               "fcf": 4521960000000,
-              "pv": 3759215229861
+              "pv": 3761404092497
             },
             {
               "year": 2,
               "fcf": 4883716800000,
-              "pv": 3375137125488
+              "pv": 3379068723920
             },
             {
               "year": 3,
               "fcf": 5274414144000,
-              "pv": 3030300187487
+              "pv": 3035596591111
             },
             {
               "year": 4,
               "fcf": 5696367275520,
-              "pv": 2720695155446
+              "pv": 2727037363500
             },
             {
               "year": 5,
               "fcf": 6152076657562,
-              "pv": 2442722394115
+              "pv": 2449842249692
             }
           ],
-          "pv_fcf_sum": 15328070092397,
-          "pv_terminal": 15057877771943,
-          "enterprise_value": 30385947864340,
+          "pv_fcf_sum": 15352949020721,
+          "pv_terminal": 15164992394927,
+          "enterprise_value": 30517941415648,
           "net_debt": -3450000000000,
-          "equity_value": 33835947864340,
-          "fair_value_per_share": 1408.07,
-          "current_price": 3140,
-          "upside_pct": -55.16,
+          "equity_value": 33967941415648,
+          "fair_value_per_share": 1413.56,
+          "current_price": 3130,
+          "upside_pct": -54.84,
           "caveats": []
         },
         "ddm": {
@@ -2176,39 +2176,39 @@
           "growth_5y": 0.0614,
           "growth_5y_source": "g = ROE × (1 − payout) [berkelanjutan]",
           "terminal_growth": 0.035,
-          "cost_of_equity": 0.2097,
+          "cost_of_equity": 0.209,
           "projected_dps": [
             {
               "year": 1,
               "dps": 222.88,
-              "pv": 184.24
+              "pv": 184.35
             },
             {
               "year": 2,
               "dps": 236.56,
-              "pv": 161.65
+              "pv": 161.84
             },
             {
               "year": 3,
               "dps": 251.07,
-              "pv": 141.83
+              "pv": 142.08
             },
             {
               "year": 4,
               "dps": 266.48,
-              "pv": 124.44
+              "pv": 124.73
             },
             {
               "year": 5,
               "dps": 282.84,
-              "pv": 109.18
+              "pv": 109.5
             }
           ],
-          "pv_dividends_sum": 721.34,
-          "pv_terminal": 646.84,
-          "fair_value_per_share": 1368.18,
-          "current_price": 3140,
-          "upside_pct": -56.43,
+          "pv_dividends_sum": 722.49,
+          "pv_terminal": 651.32,
+          "fair_value_per_share": 1373.81,
+          "current_price": 3130,
+          "upside_pct": -56.11,
           "caveats": []
         },
         "notes": []
@@ -2823,13 +2823,13 @@
         "sector": "Financials",
         "industry": "Banks",
         "is_financial": true,
-        "last_price": 6250,
+        "last_price": 6275,
         "price_source": "live",
         "five_year": {
           "applicable": true,
           "method": "Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%)",
           "base_year": "2025",
-          "last_price": 6250,
+          "last_price": 6275,
           "avg_window_used": 5,
           "avg_windows_available": [
             3,
@@ -2909,10 +2909,10 @@
                 }
               ],
               "target_5y": 14646,
-              "gl_5y": 1.3433,
-              "annual": 0.2687,
+              "gl_5y": 1.334,
+              "annual": 0.2668,
               "cagr": 0.0616,
-              "mos": 0.5733
+              "mos": 0.5716
             },
             "per": {
               "key": "per",
@@ -2947,10 +2947,10 @@
                 }
               ],
               "target_5y": 5907,
-              "gl_5y": -0.0549,
-              "annual": -0.011,
+              "gl_5y": -0.0587,
+              "annual": -0.0117,
               "cagr": -0.0941,
-              "mos": -0.0581
+              "mos": -0.0624
             },
             "psr": {
               "key": "psr",
@@ -2985,46 +2985,46 @@
                 }
               ],
               "target_5y": 4277,
-              "gl_5y": -0.3157,
-              "annual": -0.0631,
+              "gl_5y": -0.3184,
+              "annual": -0.0637,
               "cagr": -0.1303,
-              "mos": -0.4614
+              "mos": -0.4672
             }
           },
-          "future_value": 0.1236,
+          "future_value": 0.1224,
           "cagr": -0.0199,
-          "combine": 0.0519,
-          "dividend_yield": 0.0488,
-          "margin_of_safety": 0.2173,
+          "combine": 0.0512,
+          "dividend_yield": 0.0486,
+          "margin_of_safety": 0.2141,
           "price_targets": [
             {
               "year": 1,
-              "target_price": 6879,
-              "gl_pct": 10.07
+              "target_price": 6902,
+              "gl_pct": 9.99
             },
             {
               "year": 2,
-              "target_price": 7509,
-              "gl_pct": 20.14
+              "target_price": 7528,
+              "gl_pct": 19.97
             },
             {
               "year": 3,
-              "target_price": 8138,
-              "gl_pct": 30.21
+              "target_price": 8155,
+              "gl_pct": 29.96
             },
             {
               "year": 4,
-              "target_price": 8767,
-              "gl_pct": 40.28
+              "target_price": 8781,
+              "gl_pct": 39.94
             },
             {
               "year": 5,
-              "target_price": 9397,
-              "gl_pct": 50.35
+              "target_price": 9408,
+              "gl_pct": 49.93
             }
           ],
-          "target_price_5y": 9397,
-          "potential_pct": 50.35
+          "target_price_5y": 9408,
+          "potential_pct": 49.93
         },
         "wacc": {
           "risk_free": 0.068,
@@ -3081,8 +3081,8 @@
           "pv_dividends_sum": 1388.71,
           "pv_terminal": 2660.57,
           "fair_value_per_share": 4049.28,
-          "current_price": 6250,
-          "upside_pct": -35.21,
+          "current_price": 6275,
+          "upside_pct": -35.47,
           "caveats": []
         },
         "notes": []
@@ -3697,13 +3697,13 @@
         "sector": "Financials",
         "industry": "Banks",
         "is_financial": true,
-        "last_price": 2970,
+        "last_price": 2990,
         "price_source": "live",
         "five_year": {
           "applicable": true,
           "method": "Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%)",
           "base_year": "2025",
-          "last_price": 2970,
+          "last_price": 2990,
           "avg_window_used": 5,
           "avg_windows_available": [
             3,
@@ -3783,10 +3783,10 @@
                 }
               ],
               "target_5y": 8366,
-              "gl_5y": 1.817,
-              "annual": 0.3634,
+              "gl_5y": 1.7981,
+              "annual": 0.3596,
               "cagr": 0.0948,
-              "mos": 0.645
+              "mos": 0.6426
             },
             "per": {
               "key": "per",
@@ -3821,10 +3821,10 @@
                 }
               ],
               "target_5y": 10307,
-              "gl_5y": 2.4705,
-              "annual": 0.4941,
+              "gl_5y": 2.4473,
+              "annual": 0.4895,
               "cagr": 0.1165,
-              "mos": 0.7119
+              "mos": 0.7099
             },
             "psr": {
               "key": "psr",
@@ -3859,46 +3859,46 @@
                 }
               ],
               "target_5y": 6308,
-              "gl_5y": 1.1238,
-              "annual": 0.2248,
+              "gl_5y": 1.1096,
+              "annual": 0.2219,
               "cagr": 0.0295,
-              "mos": 0.5291
+              "mos": 0.526
             }
           },
-          "future_value": 0.4018,
+          "future_value": 0.3978,
           "cagr": 0.0969,
-          "combine": 0.2494,
-          "dividend_yield": 0.1082,
-          "margin_of_safety": 0.6602,
+          "combine": 0.2474,
+          "dividend_yield": 0.1075,
+          "margin_of_safety": 0.6579,
           "price_targets": [
             {
               "year": 1,
-              "target_price": 4032,
-              "gl_pct": 35.76
+              "target_price": 4051,
+              "gl_pct": 35.49
             },
             {
               "year": 2,
-              "target_price": 5094,
-              "gl_pct": 71.52
+              "target_price": 5112,
+              "gl_pct": 70.97
             },
             {
               "year": 3,
-              "target_price": 6156,
-              "gl_pct": 107.28
+              "target_price": 6173,
+              "gl_pct": 106.46
             },
             {
               "year": 4,
-              "target_price": 7218,
-              "gl_pct": 143.04
+              "target_price": 7234,
+              "gl_pct": 141.94
             },
             {
               "year": 5,
-              "target_price": 8280,
-              "gl_pct": 178.8
+              "target_price": 8295,
+              "gl_pct": 177.43
             }
           ],
-          "target_price_5y": 8280,
-          "potential_pct": 178.8
+          "target_price_5y": 8295,
+          "potential_pct": 177.43
         },
         "wacc": {
           "risk_free": 0.068,
@@ -3955,8 +3955,8 @@
           "pv_dividends_sum": 1192.62,
           "pv_terminal": 1581.07,
           "fair_value_per_share": 2773.69,
-          "current_price": 2970,
-          "upside_pct": -6.61,
+          "current_price": 2990,
+          "upside_pct": -7.23,
           "caveats": []
         },
         "notes": []
