@@ -8649,7 +8649,8 @@ loadData();
 <!-- ═══════════════════════════════════════════════════════════════════
      VALUASI MODULE (additive) — halaman valuasi saham.
      Selaras dengan tema utama (memakai CSS variables yang sama).
-     Data masih contoh/hardcoded (DMAS) — backend menyusul.
+     Data-driven dari public/valuation.json (fetch CDN→same-origin),
+     harga realtime overlay dari sheet live data.json.
      Semua kelas di-prefix .vl-, JS di-namespace IIFE + window.vl*.
      Tidak mengubah kode 3 menu inti.
 ═══════════════════════════════════════════════════════════════════ -->
@@ -8786,61 +8787,55 @@ loadData();
 <div class="page" id="page-valuasi">
   <div class="vl-wrap">
 
-    <div class="info-banner">
-      🧮 <strong>Valuasi Saham</strong> — Analisa fundamental, proyeksi harga &amp; margin of safety.
-      Data contoh (DMAS) · sumber data dinamis menyusul.
-    </div>
+    <!-- Style kecil khusus toolbar valuasi (komponen baru: dropdown + segmented window) -->
+    <style>
+      .vl-toolbar{display:flex;flex-wrap:wrap;gap:18px 24px;align-items:flex-end;
+        background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+        padding:14px 18px;margin-bottom:14px;box-shadow:var(--shadow-card)}
+      [data-theme="dark"] .vl-toolbar{box-shadow:var(--shadow-card),0 0 0 1px var(--border) inset}
+      .vl-tb-group{display:flex;flex-direction:column;gap:7px;min-width:0}
+      .vl-tb-label{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.6px}
+      .vl-select{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+        padding:10px 36px 10px 14px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;
+        font-weight:700;outline:none;cursor:pointer;min-width:230px;transition:border-color .2s,box-shadow .2s;
+        appearance:none;
+        background-image:linear-gradient(45deg,transparent 50%,var(--text2) 50%),linear-gradient(135deg,var(--text2) 50%,transparent 50%);
+        background-position:calc(100% - 18px) center,calc(100% - 13px) center;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+      .vl-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
+      .vl-select option{background:var(--card);color:var(--text)}
+      .vl-win{display:flex;gap:6px;flex-wrap:wrap}
+      .vl-win .vl-basis-btn{padding:9px 16px;font-size:13px}
+      .vl-msg{background:var(--yellow-bg);border:1px solid rgba(217,119,6,.3);border-left:3px solid var(--yellow);
+        border-radius:0 var(--radius) var(--radius) 0;padding:14px 16px;font-size:13px;color:var(--text);font-weight:600;line-height:1.6}
+    </style>
 
-    <!-- HEADER EMITEN -->
-    <div class="vl-head">
-      <div class="vl-tic">
-        <div class="vl-logo">DMAS</div>
-        <div>
-          <div><span class="vl-name">DMAS</span><span class="vl-tag">Kawasan Industri</span></div>
-          <div class="vl-sub">Puradelta Lestari Tbk. &nbsp;·&nbsp; IDX Indonesia</div>
-          <div class="vl-sub" style="margin-top:2px">48.200 juta lembar saham beredar</div>
+    <!-- TOOLBAR (data-driven) -->
+    <div class="vl-toolbar">
+      <div class="vl-tb-group">
+        <label class="vl-tb-label" for="vlStockSel">Pilih Emiten</label>
+        <select id="vlStockSel" class="vl-select" onchange="vlSelectStock(this.value)"></select>
+      </div>
+      <div class="vl-tb-group">
+        <label class="vl-tb-label">Window Rata-rata Multiple</label>
+        <div class="vl-win" id="vlWinBtns">
+          <button class="vl-basis-btn" data-win="3"  onclick="vlSetWindow(3)">3 Th</button>
+          <button class="vl-basis-btn" data-win="5"  onclick="vlSetWindow(5)">5 Th</button>
+          <button class="vl-basis-btn" data-win="7"  onclick="vlSetWindow(7)">7 Th</button>
+          <button class="vl-basis-btn" data-win="10" onclick="vlSetWindow(10)">10 Th</button>
         </div>
       </div>
-      <div class="vl-head-right">
-        <div>
-          <div class="vl-price">Rp 152</div>
-          <div class="vl-price-meta">Harga sekarang</div>
-          <div class="vl-price-meta" style="margin-top:2px">High: Rp 159 &nbsp;<span class="vl-badge vl-up">+4.61%</span></div>
-        </div>
-        <div class="vl-mktcap">
-          <div class="l">Market Cap</div>
-          <div class="v">Rp 7.326 M</div>
-          <div class="l" style="margin-top:4px">Basis Analisa</div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">Q3 2025</div>
-        </div>
-        <div class="vl-mos">
-          <div class="l">Margin of Safety</div>
-          <div class="v">18.91%</div>
-          <div class="d">🟡 Cukup Aman</div>
-        </div>
-      </div>
     </div>
 
-    <!-- METRIC CARDS -->
-    <div class="vl-mcs">
-      <div class="vl-mc"><div class="i">📈</div><div class="l">CAGR 5 Tahun</div><div class="v" style="color:var(--accent2)">13.82%</div><div class="s">Return tahunan proyeksi</div></div>
-      <div class="vl-mc"><div class="i">💰</div><div class="l">Dividen Yield</div><div class="v" style="color:var(--accent)">11.77%</div><div class="s">Estimasi basis Q3</div></div>
-      <div class="vl-mc"><div class="i">🎯</div><div class="l">Combine Return</div><div class="v" style="color:var(--green)">8.19%</div><div class="s">Capital gain + dividen</div></div>
-      <div class="vl-mc"><div class="i">📊</div><div class="l">ROE 5 Tahun (TV)</div><div class="v" style="color:var(--yellow)">19.86%</div><div class="s">Return on equity TV</div></div>
-      <div class="vl-mc"><div class="i">📤</div><div class="l">DPR</div><div class="v">112.06%</div><div class="s">Dividen payout ratio</div></div>
-      <div class="vl-mc"><div class="i">⏱️</div><div class="l">Th. Balik Modal</div><div class="v">9.52×</div><div class="s">Dari dividen saja</div></div>
+    <!-- INFO BANNER (dinamis — diisi JS dgn sumber data & harga) -->
+    <div class="info-banner" id="vlBanner">
+      🧮 <strong>Valuasi Saham</strong> — Analisa fundamental, proyeksi harga &amp; margin of safety. Memuat data…
     </div>
 
-    <!-- STRIP HARGA KUARTAL -->
-    <div class="vl-qstrip">
-      <div class="vl-qstrip-hd">Harga per Kuartal — dibanding Annual 2024 (Rp 150)</div>
-      <div class="vl-qstrip-row">
-        <div class="vl-qi"><div class="c">Q1</div><div class="dt">30 Apr 2025</div><div class="p">Rp 174</div><span class="vl-badge vl-up">+16.00%</span></div>
-        <div class="vl-qi"><div class="c">Q2</div><div class="dt">31 Jul 2025</div><div class="p">Rp 138</div><span class="vl-badge vl-dn">-8.00%</span></div>
-        <div class="vl-qi"><div class="c">Q3</div><div class="dt">31 Okt 2025</div><div class="p">Rp 133</div><span class="vl-badge vl-dn">-11.33%</span></div>
-        <div class="vl-qi"><div class="c">Annual 2025</div><div class="dt">31 Mar 2026</div><div class="p">Rp 152</div><span class="vl-badge vl-up">+14.29%</span></div>
-      </div>
-    </div>
+    <!-- HEADER EMITEN (dinamis — diisi JS) -->
+    <div class="vl-head" id="vlHead"></div>
+
+    <!-- METRIC CARDS (dinamis — diisi JS) -->
+    <div class="vl-mcs" id="vlCards"></div>
 
     <!-- TABS -->
     <div class="vl-tabs" role="tablist">
@@ -8848,7 +8843,7 @@ loadData();
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('fundamental',this)">📋 Fundamental</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('proyeksi',this)">🎯 Proyeksi Harga</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('dividen',this)">💸 Dividen</button>
-      <button class="vl-tab" role="tab" onclick="vlSwitchTab('ttm',this)">🔁 TTM Valuasi</button>
+      <button class="vl-tab" role="tab" onclick="vlSwitchTab('ttm',this)">📐 Multiples</button>
     </div>
 
     <!-- ===== TAB: RINGKASAN ===== -->
@@ -8873,7 +8868,7 @@ loadData();
         </div>
       </div>
       <div class="card" style="margin-bottom:14px">
-        <div class="card-title">Rasio Valuasi per Kuartal — PBV · PER · PSR</div>
+        <div class="card-title">Rasio Valuasi Tahunan — PBV · PER · PSR</div>
         <div style="position:relative;width:100%;height:200px"><canvas id="vlRatio"></canvas></div>
         <div class="vl-legend" style="margin-top:10px">
           <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV (Price/Book)</div>
@@ -8883,7 +8878,7 @@ loadData();
       </div>
       <div class="vl-grid2">
         <div class="card">
-          <div class="card-title">EPS &amp; SPS per Kuartal (Rp)</div>
+          <div class="card-title">EPS &amp; SPS Tahunan (Rp)</div>
           <div class="vl-chart"><canvas id="vlEps"></canvas></div>
           <div class="vl-legend">
             <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS (Laba/Saham)</div>
@@ -8904,62 +8899,70 @@ loadData();
     <!-- ===== TAB: FUNDAMENTAL ===== -->
     <div id="vl-tab-fundamental" class="vl-tc">
       <div class="card">
-        <div class="card-title">Data Fundamental Lengkap per Kuartal</div>
+        <div class="card-title">Data Fundamental Tahunan</div>
         <div class="vl-tw">
           <table class="vl-table" id="vlFundTable">
-            <thead><tr><th>Metrik</th><th>Annual 2024</th><th>Q1</th><th>Q2</th><th>Q3</th></tr></thead>
+            <thead id="vlFundHead"><tr><th>Metrik</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note">⚠️ Perubahan (▲▼) dihitung relatif terhadap Annual 2024 · Data TTM sudah disetahunkan</p>
+        <p class="vl-note">⚠️ Perubahan (▲▼) dihitung relatif terhadap tahun paling kiri (terlama) · nilai uang dalam Miliar Rupiah</p>
       </div>
     </div>
 
     <!-- ===== TAB: PROYEKSI ===== -->
     <div id="vl-tab-proyeksi" class="vl-tc">
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-title">Pilih Basis Harga Analisa</div>
-        <div class="vl-basis">
-          <button class="vl-basis-btn active" onclick="vlSetBasis('now',this)">Harga Sekarang — Rp 152</button>
-          <button class="vl-basis-btn" onclick="vlSetBasis('q3',this)">Basis Q3 — Rp 133</button>
-          <button class="vl-basis-btn" onclick="vlSetBasis('q2',this)">Basis Q2 — Rp 138</button>
-          <button class="vl-basis-btn" onclick="vlSetBasis('q1',this)">Basis Q1 — Rp 174</button>
-        </div>
-        <div class="vl-kpis">
-          <div class="vl-kpi"><div class="l">Margin of Safety</div><div class="v" id="vlKpiMos" style="color:var(--yellow)">18.91%</div><div class="d" id="vlKpiMosDesc" style="color:var(--yellow)">🟡 Cukup Aman</div></div>
-          <div class="vl-kpi"><div class="l">CAGR 5 Tahun</div><div class="v" style="color:var(--accent2)">13.82%</div></div>
-          <div class="vl-kpi"><div class="l">Dividen Yield</div><div class="v" style="color:var(--accent)">11.77%</div></div>
-          <div class="vl-kpi"><div class="l">Combine Return</div><div class="v" style="color:var(--green)">8.19%</div></div>
-          <div class="vl-kpi"><div class="l">Future Value</div><div class="v">2.55%</div></div>
-        </div>
-      </div>
-      <div class="vl-grid2">
-        <div class="card">
-          <div class="card-title">Proyeksi Harga Potensial 2025–2029</div>
-          <div class="vl-chart-tall"><canvas id="vlProj"></canvas></div>
-          <div class="vl-info">Garis kuning = harga beli basis terpilih. Area ungu = potensi harga tiap tahun. Makin lebar jaraknya, makin besar potensi keuntungan.</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
-          <div class="vl-tw">
-            <table class="vl-table"><thead><tr><th>Tahun</th><th>Harga Potensi</th><th>G&amp;L</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
+      <div id="vlProjMsg"></div>
+      <div id="vlProjBody">
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">Ringkasan Proyeksi Model 5-Tahun</div>
+          <div class="vl-kpis" style="margin-bottom:0">
+            <div class="vl-kpi"><div class="l">Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
+            <div class="vl-kpi"><div class="l">CAGR 5 Tahun</div><div class="v" id="vlKpiCagr" style="color:var(--accent2)">-</div></div>
+            <div class="vl-kpi"><div class="l">Dividen Yield</div><div class="v" id="vlKpiDy" style="color:var(--accent)">-</div></div>
+            <div class="vl-kpi"><div class="l">Combine Return</div><div class="v" id="vlKpiComb" style="color:var(--green)">-</div></div>
+            <div class="vl-kpi"><div class="l">Future Value</div><div class="v" id="vlKpiFv">-</div></div>
           </div>
-          <div class="vl-info" style="margin-top:10px"><strong>G&amp;L</strong> = Gain &amp; Loss. Persentase untung/rugi jika beli sekarang &amp; jual di tahun tersebut, <em>belum termasuk dividen</em>.</div>
+        </div>
+        <div class="vl-grid2">
+          <div class="card">
+            <div class="card-title">Proyeksi Harga Potensial 5 Tahun</div>
+            <div class="vl-chart-tall"><canvas id="vlProj"></canvas></div>
+            <div class="vl-info">Garis oranye = harga terakhir (basis beli). Area ungu = potensi harga tiap tahun. Makin lebar jaraknya, makin besar potensi keuntungan.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
+            <div class="vl-tw">
+              <table class="vl-table"><thead><tr><th>Tahun</th><th>Harga Potensi</th><th>G&amp;L</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
+            </div>
+            <div class="vl-info" style="margin-top:10px"><strong>G&amp;L</strong> = Gain &amp; Loss. Persentase untung/rugi jika beli di harga terakhir &amp; jual di tahun tersebut, <em>belum termasuk dividen</em>.</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div class="card-title">Rincian 3 Sub-Model (window aktif)</div>
+          <div class="vl-tw">
+            <table class="vl-table">
+              <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
+              <tbody id="vlSubModelBody"></tbody>
+            </table>
+          </div>
+          <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10% (dinormalisasi ulang bila ada sub-model tak berlaku).</p>
         </div>
       </div>
     </div>
 
     <!-- ===== TAB: DIVIDEN ===== -->
     <div id="vl-tab-dividen" class="vl-tc">
+      <div id="vlDivMsg"></div>
       <div class="vl-kpis" style="margin-bottom:14px">
-        <div class="vl-kpi"><div class="l">Dividen / Share (Q3)</div><div class="v" style="color:var(--accent)">Rp 15.66</div></div>
-        <div class="vl-kpi"><div class="l">Yield Estimasi (Q3)</div><div class="v" style="color:var(--accent)">11.77%</div></div>
-        <div class="vl-kpi"><div class="l">DPR (Payout Ratio)</div><div class="v" style="color:var(--yellow)">112.06%</div></div>
-        <div class="vl-kpi"><div class="l">Tahun Balik Modal</div><div class="v">9.52×</div><div class="d" style="color:var(--text3)">dari dividen</div></div>
+        <div class="vl-kpi"><div class="l">DPS Terbaru</div><div class="v" id="vlDivDps" style="color:var(--accent)">-</div></div>
+        <div class="vl-kpi"><div class="l">Dividen Yield</div><div class="v" id="vlDivYield" style="color:var(--accent)">-</div></div>
+        <div class="vl-kpi"><div class="l">DPR (window aktif)</div><div class="v" id="vlDivDpr" style="color:var(--yellow)">-</div></div>
+        <div class="vl-kpi"><div class="l">Tahun Balik Modal</div><div class="v" id="vlDivTbm">-</div><div class="d" style="color:var(--text3)">dari dividen</div></div>
       </div>
       <div class="vl-grid2">
         <div class="card">
-          <div class="card-title">Estimasi Dividen per Kuartal</div>
+          <div class="card-title">Dividen per Saham (Tahunan)</div>
           <div class="vl-chart-tall"><canvas id="vlDiv"></canvas></div>
           <div class="vl-legend" style="margin-top:10px">
             <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Dividen / Share (Rp)</div>
@@ -8970,39 +8973,38 @@ loadData();
           <div class="card-title">Kalkulator Yield Dividen</div>
           <div style="margin-bottom:14px">
             <label class="vl-label">Masukkan Harga Beli (Rp)</label>
-            <input id="vlCalcPrice" type="number" value="152" min="1" class="vl-input" oninput="vlCalcYield()">
+            <input id="vlCalcPrice" type="number" value="0" min="1" class="vl-input" oninput="vlCalcYield()">
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-            <div class="vl-kpi"><div class="l">Yield Q1</div><div class="v" id="vlcy1" style="font-size:18px;color:var(--accent)">-</div></div>
-            <div class="vl-kpi"><div class="l">Yield Q2</div><div class="v" id="vlcy2" style="font-size:18px;color:var(--accent)">-</div></div>
-            <div class="vl-kpi"><div class="l">Yield Q3</div><div class="v" id="vlcy3" style="font-size:18px;color:var(--accent)">-</div></div>
+            <div class="vl-kpi"><div class="l">Yield Dividen</div><div class="v" id="vlcyYield" style="font-size:18px;color:var(--accent)">-</div></div>
             <div class="vl-kpi"><div class="l">Th. Balik Modal</div><div class="v" id="vlcyTBM" style="font-size:18px">-</div></div>
           </div>
-          <div class="vl-info"><strong>💡 Cara baca DPR 112%:</strong> Perusahaan membagikan lebih dari total laba bersihnya sebagai dividen — mengambil dari cadangan laba tahun sebelumnya. Menarik untuk investor dividen, namun perlu dipantau keberlanjutannya.</div>
+          <div class="vl-info" id="vlDivNote"><strong>💡 Catatan:</strong> Yield dihitung dari DPS terbaru dibagi harga beli yang dimasukkan. Tahun balik modal = harga beli ÷ DPS terbaru.</div>
         </div>
       </div>
     </div>
 
-    <!-- ===== TAB: TTM VALUASI ===== -->
+    <!-- ===== TAB: MULTIPLES (avg multiples + MoS sub-model) ===== -->
     <div id="vl-tab-ttm" class="vl-tc">
       <div class="card" style="margin-bottom:14px">
-        <div class="card-title">Perbandingan MoS antar Basis Kuartal (TTM Disetahunkan)</div>
+        <div class="card-title">Margin of Safety per Sub-Model (window aktif)</div>
         <div style="position:relative;width:100%;height:210px"><canvas id="vlMos"></canvas></div>
-        <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajarnya. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
+        <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
       </div>
       <div class="card">
-        <div class="card-title">Tabel Valuasi Lengkap Semua Basis</div>
+        <div class="card-title">Rata-rata Multiple Historis per Window</div>
         <div class="vl-tw">
           <table class="vl-table">
-            <thead><tr><th>Tahun</th><th>Q1 (Rp174)</th><th>G&amp;L Q1</th><th>Q2 (Rp138)</th><th>G&amp;L Q2</th><th>Q3 (Rp133)</th><th>G&amp;L Q3</th><th>Now (Rp152)</th><th>G&amp;L Now</th></tr></thead>
-            <tbody id="vlTtmBody"></tbody>
+            <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
+            <tbody id="vlMultBody"></tbody>
           </table>
         </div>
+        <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
       </div>
     </div>
 
-    <div class="vl-note" style="margin-top:18px;text-align:center">
-      ⚠️ Data analisis per Q3 2025 · Proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>
+    <div class="vl-note" style="margin-top:18px;text-align:center" id="vlFootNote">
+      ⚠️ Proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>
     </div>
 
   </div><!-- /vl-wrap -->
@@ -9014,150 +9016,510 @@ loadData();
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════
-   VALUASI MODULE JS — namespaced (IIFE). Data hardcoded (DMAS).
-   Globals dipakai inline onclick: vlSwitchTab, vlSetBasis, vlCalcYield,
-   vlEnsureCharts (lazy build charts saat halaman pertama dibuka).
+   VALUASI MODULE JS — namespaced (IIFE). DATA-DRIVEN dari valuation.json.
+   Harga realtime di-overlay dari data.json (sheet live) bila tersedia.
+   Globals dipakai inline onclick: vlSwitchTab, vlSelectStock, vlSetWindow,
+   vlCalcYield, vlEnsureCharts (lazy fetch + build saat halaman dibuka).
+   Model 5-tahun dihitung ulang client-side mengikuti window terpilih.
 ═══════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
 
-  const LABELS = ['Annual 2024','Q1','Q2','Q3'];
-  const PROJ_YEARS = ['2025','2026','2027','2028','2029'];
+  // ── Sumber data (tiru pola GLOBAL MODULE: CDN dulu, lalu same-origin) ──
+  const VAL_CDN_URL   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/valuation.json';
+  const VAL_LOCAL_URL = 'valuation.json';
+  const DATA_CDN_URL  = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/data.json';
+  const DATA_LOCAL_URL= 'data.json';
 
-  const FUND_ROWS = [
-    { label:'Harga Terakhir (Rp)',   vals:[150,174,138,133],                  type:'p'  },
-    { label:'Pendapatan (Juta Rp)',  vals:[2030000,2031560,1226720,1039453],  type:'c'  },
-    { label:'Laba Bersih (Juta Rp)', vals:[1330000,1341800,826020,673520],    type:'c'  },
-    { label:'Margin Laba',           vals:[65.52,66.05,67.34,64.80],          type:'pct'},
-    { label:'EPS (Laba/Saham)',      vals:[27.59,27.84,17.14,13.97],          type:'d2' },
-    { label:'SPS (Penjualan/Saham)', vals:[42.12,42.15,25.45,21.57],          type:'d2' },
-    { label:'Ekuitas (Juta Rp)',     vals:[1040000,997180,408980,406020],     type:'c'  },
-    { label:'ROE Tahunan',           vals:[127.88,134.56,201.97,165.88],      type:'pct'},
-    { label:'Book Value (Rp)',       vals:[21.58,20.69,8.49,8.42],            type:'d2' },
-    { label:'PBV (Price/Book)',      vals:[6.95,8.41,16.26,15.79],            type:'d2' },
-    { label:'PER (Price/Earnings)',  vals:[5.44,6.25,8.05,9.52],              type:'d2' },
-    { label:'PSR (Price/Sales)',     vals:[3.56,4.13,5.42,6.17],              type:'d2' },
-  ];
+  // Palet warna konsisten dgn modul lama.
+  const COL = { blue:'#2563eb', green:'#059669', purple:'#6d28d9', pink:'#db2777', orange:'#d97706', purpleSoft:'#8b7eb8' };
 
-  const PROJ = {
-    now: { mos:18.91, price:152, label:'Rp 152', prices:[144,155,166,177,187], gls:[-5.33,1.83,9.00,16.16,23.33] },
-    q3:  { mos:30.30, price:133, label:'Rp 133', prices:[145,156,168,179,191], gls:[8.69,17.39,26.08,34.78,43.47] },
-    q2:  { mos:39.36, price:138, label:'Rp 138', prices:[156,174,192,210,228], gls:[12.98,25.97,38.95,51.93,64.92] },
-    q1:  { mos:46.77, price:174, label:'Rp 174', prices:[205,235,266,296,327], gls:[17.57,35.15,52.72,70.30,87.87] },
+  const state = {
+    raw:null,    // valuation.json
+    live:null,   // data.json .live (sheet live) → harga realtime
+    code:null,   // kode emiten aktif
+    win:5,       // window rata-rata multiple aktif (3/5/7/10)
+    model:null,  // hasil hitung ulang model 5-tahun (client-side)
+    built:false, loading:false, error:false,
   };
+  const charts = [];
 
-  // Tabel TTM semua basis (baris per tahun + baris MoS)
-  const TTM_ROWS = [
-    ['2025', 205,17.57, 156,12.98, 145,8.69,  144,-5.33],
-    ['2026', 235,35.15, 174,25.97, 156,17.39, 155,1.83],
-    ['2027', 266,52.72, 192,38.95, 168,26.08, 166,9.00],
-    ['2028', 296,70.30, 210,51.93, 179,34.78, 177,16.16],
-    ['2029', 327,87.87, 228,64.92, 191,43.47, 187,23.33],
-  ];
-  const TTM_MOS = [46.77, 39.36, 30.30, 20.34];
-
-  const DIV_VALS = [31.19, 19.20, 15.66];   // Q1, Q2, Q3
-  const DIV_YLD  = [17.93, 13.92, 11.77];
-
-  /* ── Helpers ── */
-  const fmtC   = v => 'Rp '+(v/1000).toLocaleString('id-ID',{maximumFractionDigits:0})+' M';
-  const fmtD2  = v => v!=null ? v.toFixed(2) : '-';
-  const fmtPct = v => v!=null ? v.toFixed(2)+'%' : '-';
-  const fmtGl  = v => (v>=0?'+':'')+v.toFixed(2)+'%';
-  const pct    = (a,b) => ((b-a)/a)*100;
-  const badgeCls = v => v>0 ? 'vl-badge vl-up' : v<0 ? 'vl-badge vl-dn' : 'vl-badge vl-neu';
-  const fmtCell = (v,t) => t==='c'?fmtC(v) : t==='pct'?fmtPct(v) : t==='d2'?fmtD2(v) : v;
+  /* ── Helper format angka Indonesia ── */
+  const ok      = v => v!=null && isFinite(v);
+  const fmtInt  = v => ok(v) ? Math.round(v).toLocaleString('id-ID') : '-';
+  const fmtRp   = v => ok(v) ? 'Rp '+Math.round(v).toLocaleString('id-ID') : '-';
+  const fmtMrp  = v => ok(v) ? 'Rp '+(v/1e9).toLocaleString('id-ID',{maximumFractionDigits:0})+' M' : '-';
+  const fmtM    = v => ok(v) ? (v/1e9).toLocaleString('id-ID',{maximumFractionDigits:0}) : '-';
+  const fmtD2   = v => ok(v) ? v.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2}) : '-';
+  const fmtPct  = v => ok(v) ? v.toFixed(2)+'%' : '-';
+  const fmtGl   = v => ok(v) ? (v>=0?'+':'')+v.toFixed(2)+'%' : '-';
+  const fmtX    = v => (ok(v)&&v>0) ? v.toFixed(2)+'×' : '-';
+  const badgeCls= v => v>0 ? 'vl-badge vl-up' : v<0 ? 'vl-badge vl-dn' : 'vl-badge vl-neu';
 
   function themeColors(){
     const cs = getComputedStyle(document.documentElement);
-    const g = (n,f) => (cs.getPropertyValue(n).trim() || f);
+    const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+    const g = (n,f)=>(cs.getPropertyValue(n).trim()||f);
+    return { tick:g('--text2','#6e6490'), grid:isDark?'rgba(255,255,255,.07)':'rgba(26,15,60,.06)' };
+  }
+
+  /* ── Fetch JSON dgn fallback (cache:no-store, cache-bust 30 dtk) ── */
+  async function fetchJson(urls){
+    const bust = Math.floor(Date.now()/(30*1000));
+    let lastErr = null;
+    for(const baseUrl of urls){
+      try{
+        const res = await fetch(baseUrl+'?v='+bust, { cache:'no-store' });
+        if(!res.ok){ lastErr = new Error('HTTP '+res.status); continue; }
+        return await res.json();
+      }catch(e){ lastErr = e; }
+    }
+    throw lastErr || new Error('fetch gagal');
+  }
+
+  /* ── Util data ── */
+  function annualYears(stock){
+    return Object.keys((stock&&stock.annual)||{}).map(Number).filter(y=>!isNaN(y)).sort((a,b)=>a-b).map(String);
+  }
+  function latestYear(stock){ const ys=annualYears(stock); return ys[ys.length-1]; }
+  function curStock(){ return state.raw && state.raw.stocks[state.code]; }
+
+  // Harga terakhir efektif: utamakan sheet live (data.json), fallback valuation.last_price
+  function effLast(stock){
+    const v = (stock&&stock.valuation)||{};
+    const lv = state.live && state.live[stock.code];
+    if(lv && ok(lv.price) && lv.price>0) return { price:lv.price, source:'live', change:lv.change_pct };
+    return { price:v.last_price, source:v.price_source||'-', change:null };
+  }
+
+  function mosStyle(mosPct){
+    if(mosPct>=30) return { col:'var(--green)',  txt:'🟢 Sangat Aman' };
+    if(mosPct>=20) return { col:'var(--yellow)', txt:'🟡 Cukup Aman' };
+    return { col:'var(--red)', txt:'🔴 Berisiko Tinggi' };
+  }
+
+  /* ════════════ HITUNG ULANG MODEL 5-TAHUN (client-side) ════════════
+     five_year di JSON dihitung dgn window 5. Saat window lain dipilih,
+     dihitung ulang pakai inputs (window-independent) + avg_multiples[win].
+     Saat window=5 hasilnya identik dgn five_year di JSON (sanity check). */
+  function computeModel(stock, win){
+    const v    = (stock&&stock.valuation) || {};
+    const fy   = v.five_year || {};
+    const last = effLast(stock).price;
+    const wk   = String(win);
+    const mult = fy.avg_multiples || {};
+
+    if(!fy.applicable){
+      return { applicable:false, reason:fy.reason||'Model 5-tahun belum tersedia.', last:last, win:win, avg_multiples:mult };
+    }
+
+    const inp   = fy.inputs || {};
+    // Growth blend: 80% tren 5 tahun + 20% tahun berjalan.
+    const g_bv  = 0.8*(inp.roe_5y||0)        + 0.2*(inp.roe_annual||0);
+    const g_eps = 0.8*(inp.eps_growth_5y||0) + 0.2*(inp.eps_growth_annual||0);
+    const g_sps = 0.8*(inp.sps_growth_5y||0) + 0.2*(inp.sps_growth_annual||0);
+
+    function sub(key, baseVal, g){
+      const m  = (mult[key]||{})[wk];
+      const valid = ok(baseVal) && baseVal>0 && ok(m) && m>0;
+      const proj = [];
+      for(let t=1;t<=5;t++){
+        const val = baseVal*Math.pow(1+g,t);
+        proj.push({ year:t, value:val, price_target: val*(m||0) });
+      }
+      const t5 = proj[4].price_target, v1 = proj[0].value, v5 = proj[4].value;
+      const gl   = last>0 ? (t5-last)/last : null;
+      const cagr = v1>0 ? Math.pow(v5/v1,1/5)-1 : null;
+      const mos  = t5>0 ? 1-last/t5 : null;
+      return { key:key, applicable:valid, growth:g, multiple:m, projection:proj,
+               target_5y:Math.round(t5), gl_5y:gl, cagr:cagr, mos:mos, annual:(gl!=null?gl/5:null) };
+    }
+
+    const subm = {
+      pbv: sub('pbv', inp.bvps, g_bv),
+      per: sub('per', inp.eps,  g_eps),
+      psr: sub('psr', inp.sps,  g_sps),
+    };
+
+    // Blend bobot: PBV .5 / PER .4 / PSR .1 — hanya sub-model valid, normalisasi ulang.
+    const baseW = { pbv:0.5, per:0.4, psr:0.1 };
+    let wsum = 0; const w = {};
+    ['pbv','per','psr'].forEach(k=>{ if(subm[k].applicable){ w[k]=baseW[k]; wsum+=baseW[k]; } else w[k]=0; });
+    if(wsum>0) ['pbv','per','psr'].forEach(k=> w[k]=w[k]/wsum);
+
+    const acc = (field)=> ['pbv','per','psr'].reduce((s,k)=> s + (w[k]||0)*(subm[k][field]||0), 0);
+    const future_value     = acc('annual');
+    const cagr             = acc('cagr');
+    const combine          = (future_value+cagr)/2;
+    const dpr_win          = ((mult.dpr||{})[wk]) || 0;
+    const dividend_yield   = (ok(inp.eps) && last>0) ? dpr_win*inp.eps/last : 0;
+    const margin_of_safety = acc('mos');
+
+    // Lintasan harga blend: pt(n) = last*(combine+div_yield)*n + last
+    const ramp = combine + dividend_yield;
+    const price_targets = [];
+    for(let n=1;n<=5;n++){
+      const pt = last*ramp*n + last;
+      price_targets.push({ year:n, target_price:Math.round(pt), gl_pct: last>0?(pt-last)/last*100:null });
+    }
+
     return {
-      tick:   g('--text2', '#6e6490'),
-      grid:   'rgba(128,128,128,.12)',
-      gridY:  g('--border', '#d4ccf0'),
+      applicable:true, last:last, win:win,
+      base_year: fy.base_year || latestYear(stock),
+      growth:{ bv:g_bv, eps:g_eps, sps:g_sps },
+      submodels:subm, weights:w,
+      future_value, cagr, combine, dividend_yield, margin_of_safety, dpr_win, eps:inp.eps,
+      price_targets,
+      target_price_5y: price_targets[4].target_price,
+      potential_pct: price_targets[4].gl_pct,
+      avg_multiples: mult,
     };
   }
 
-  /* ── Tabel Fundamental ── */
-  function buildFund(){
+  /* ════════════ RENDER ════════════ */
+  function renderBanner(){
+    const el = document.getElementById('vlBanner'); if(!el) return;
+    const s = curStock(); if(!s) return;
+    const e = effLast(s);
+    const srcTxt = e.source==='live' ? 'live (sheet)' : (e.source||'-');
+    el.innerHTML = '🧮 <strong>Valuasi Saham</strong> — Analisa fundamental, proyeksi harga &amp; margin of safety. '+
+      'Sumber: <strong>valuation.json</strong> · harga: <strong>'+srcTxt+'</strong>'+
+      (state.raw.generated_at ? (' · data per '+String(state.raw.generated_at).slice(0,10)) : '');
+  }
+
+  function renderHead(){
+    const el = document.getElementById('vlHead'); if(!el) return;
+    const s = curStock(); const v = s.valuation||{}; const m = state.model;
+    const e = effLast(s);
+    const ly = latestYear(s); const a = s.annual[ly]||{};
+    const shares = a.shares;
+    const sharesTxt = !ok(shares) ? '-' :
+      (shares>=1e9 ? (shares/1e9).toLocaleString('id-ID',{maximumFractionDigits:2})+' miliar lembar'
+                   : (shares/1e6).toLocaleString('id-ID',{maximumFractionDigits:0})+' juta lembar');
+    const tags = [v.sector, v.industry].filter(Boolean).map(t=>'<span class="vl-tag">'+t+'</span>').join('');
+    const chgBadge = ok(e.change)
+      ? '<div class="vl-price-meta" style="margin-top:3px"><span class="'+(e.change>=0?'vl-badge vl-up':'vl-badge vl-dn')+'">'+(e.change>=0?'+':'')+(e.change*100).toFixed(2)+'%</span></div>' : '';
+    const mosApplicable = m && m.applicable;
+    const mosPct = mosApplicable ? m.margin_of_safety*100 : null;
+    const ms = mosApplicable ? mosStyle(mosPct) : { col:'var(--text3)', txt:'belum tersedia' };
+
+    el.innerHTML =
+      '<div class="vl-tic">'+
+        '<div class="vl-logo">'+s.code+'</div>'+
+        '<div>'+
+          '<div><span class="vl-name">'+s.code+'</span>'+tags+'</div>'+
+          '<div class="vl-sub">'+[v.industry||v.sector,'IDX Indonesia'].filter(Boolean).join(' · ')+'</div>'+
+          '<div class="vl-sub" style="margin-top:2px">'+sharesTxt+' saham beredar</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="vl-head-right">'+
+        '<div>'+
+          '<div class="vl-price">'+fmtRp(e.price)+'</div>'+
+          '<div class="vl-price-meta">Harga terakhir · '+(e.source==='live'?'live (sheet)':e.source)+'</div>'+
+          chgBadge+
+        '</div>'+
+        '<div class="vl-mktcap">'+
+          '<div class="l">Market Cap</div>'+
+          '<div class="v">'+fmtMrp(a.market_cap)+'</div>'+
+          '<div class="l" style="margin-top:4px">Tahun Data</div>'+
+          '<div style="font-size:13px;font-weight:700;color:var(--text)">'+(ly||'-')+'</div>'+
+        '</div>'+
+        '<div class="vl-mos" style="background:transparent;border-color:'+ms.col+'">'+
+          '<div class="l" style="color:'+ms.col+'">Margin of Safety</div>'+
+          '<div class="v" style="color:'+ms.col+'">'+(mosApplicable ? mosPct.toFixed(2)+'%' : '—')+'</div>'+
+          '<div class="d" style="color:'+ms.col+'">'+ms.txt+'</div>'+
+        '</div>'+
+      '</div>';
+  }
+
+  function renderCards(){
+    const el = document.getElementById('vlCards'); if(!el) return;
+    const s = curStock(); const v = s.valuation||{}; const m = state.model;
+    const ly = latestYear(s); const a = s.annual[ly]||{};
+    const e = effLast(s);
+    const dpsLatest = a.dps;
+    const cagr = m.applicable ? m.cagr*100 : null;
+    const dy   = m.applicable ? m.dividend_yield*100 : null;
+    const comb = m.applicable ? m.combine*100 : null;
+    const roe  = m.applicable && v.five_year.inputs ? v.five_year.inputs.roe_annual*100 : (ok(a.roe)?a.roe:null);
+    const dpr  = (m.avg_multiples.dpr||{})[String(state.win)];
+    const payback = (ok(dpsLatest) && dpsLatest>0) ? e.price/dpsLatest : null;
+    const cards = [
+      {i:'📈',l:'CAGR 5 Tahun',v:fmtPct(cagr),s:'Return tahunan proyeksi',c:'var(--accent2)'},
+      {i:'💰',l:'Dividen Yield',v:fmtPct(dy),s:'DPR × EPS ÷ harga',c:'var(--accent)'},
+      {i:'🎯',l:'Combine Return',v:fmtPct(comb),s:'Capital gain + dividen',c:'var(--green)'},
+      {i:'📊',l:'ROE Tahunan',v:fmtPct(roe),s:'Return on equity',c:'var(--yellow)'},
+      {i:'📤',l:'DPR (window '+state.win+'Th)',v:fmtPct(ok(dpr)?dpr*100:null),s:'Dividen payout ratio',c:'var(--text)'},
+      {i:'⏱️',l:'Th. Balik Modal',v:fmtX(payback),s:'Dari dividen saja',c:'var(--text)'},
+    ];
+    el.innerHTML = cards.map(c=>'<div class="vl-mc"><div class="i">'+c.i+'</div><div class="l">'+c.l+'</div><div class="v" style="color:'+c.c+'">'+c.v+'</div><div class="s">'+c.s+'</div></div>').join('');
+  }
+
+  function renderFund(){
+    const s = curStock();
+    const head = document.getElementById('vlFundHead');
     const tbody = document.querySelector('#vlFundTable tbody');
-    if(!tbody) return;
-    tbody.innerHTML = FUND_ROWS.map(row => {
-      const cells = row.vals.map((v,ci) => {
-        const ch = ci>0 && row.vals[0] ? pct(row.vals[0], v) : null;
-        return `<td><span style="font-weight:700">${fmtCell(v,row.type)}</span>${
-          ch!==null ? `<span class="${ch>=0?'vl-chg-up':'vl-chg-dn'}">${ch>=0?'▲':'▼'} ${Math.abs(ch).toFixed(1)}%</span>` : ''
-        }</td>`;
+    if(!head || !tbody) return;
+    const cols = annualYears(s).slice(-6);
+    head.innerHTML = '<tr><th>Metrik</th>'+cols.map(y=>'<th>'+y+'</th>').join('')+'</tr>';
+    const rows = [
+      {label:'Harga (Rp)',      f:a=>a.price,        t:'rp'},
+      {label:'Pendapatan (M)',  f:a=>a.total_revenue,t:'m'},
+      {label:'Laba Bersih (M)', f:a=>a.net_income,   t:'m'},
+      {label:'Margin Laba',     f:a=>(a.total_revenue?a.net_income/a.total_revenue*100:null), t:'pct'},
+      {label:'EPS',             f:a=>a.eps,          t:'d2'},
+      {label:'SPS',             f:a=>a.sps,          t:'d2'},
+      {label:'Ekuitas (M)',     f:a=>a.total_equity, t:'m'},
+      {label:'ROE',             f:a=>a.roe,          t:'pct'},
+      {label:'Book Value',      f:a=>a.bvps,         t:'d2'},
+      {label:'PBV',             f:a=>a.pbv,          t:'d2'},
+      {label:'PER',             f:a=>a.per,          t:'d2'},
+      {label:'PSR',             f:a=>a.psr,          t:'d2'},
+    ];
+    const fmtByT = (val,t)=> t==='rp'?fmtRp(val) : t==='m'?fmtM(val) : t==='pct'?fmtPct(val) : fmtD2(val);
+    tbody.innerHTML = rows.map(r=>{
+      const vals = cols.map(y=> r.f(s.annual[y]||{}));
+      const ref = vals[0];
+      const cells = vals.map((val,ci)=>{
+        let chg='';
+        if(ci>0 && ok(ref) && ref!==0 && ok(val)){
+          const c = (val-ref)/Math.abs(ref)*100;
+          chg = '<span class="'+(c>=0?'vl-chg-up':'vl-chg-dn')+'">'+(c>=0?'▲':'▼')+' '+Math.abs(c).toFixed(1)+'%</span>';
+        }
+        return '<td><span style="font-weight:700">'+fmtByT(val,r.t)+'</span>'+chg+'</td>';
       }).join('');
-      return `<tr><td>${row.label}</td>${cells}</tr>`;
+      return '<tr><td>'+r.label+'</td>'+cells+'</tr>';
     }).join('');
   }
 
-  /* ── Tabel Proyeksi ── */
-  function buildProjTable(basis){
-    const d = PROJ[basis];
-    const tbody = document.getElementById('vlProjTableBody');
-    if(!tbody) return;
-    tbody.innerHTML = PROJ_YEARS.map((y,i) =>
-      `<tr><td style="font-weight:700;color:var(--text)">${y}</td><td><strong>Rp ${d.prices[i]}</strong></td><td><span class="${badgeCls(d.gls[i])}">${fmtGl(d.gls[i])}</span></td></tr>`
-    ).join('');
+  function renderProjection(){
+    const m = state.model;
+    const msg = document.getElementById('vlProjMsg');
+    const body = document.getElementById('vlProjBody');
+    if(!m.applicable){
+      if(msg) msg.innerHTML = '<div class="vl-msg">Model 5-tahun belum tersedia: '+m.reason+'</div>';
+      if(body) body.style.display = 'none';
+      ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
+      const tb=document.getElementById('vlProjTableBody'); if(tb) tb.innerHTML='';
+      const sb=document.getElementById('vlSubModelBody'); if(sb) sb.innerHTML='';
+      return;
+    }
+    if(msg) msg.innerHTML='';
+    if(body) body.style.display='';
+    const mosPct = m.margin_of_safety*100; const ms = mosStyle(mosPct);
+    const setK = (id,txt,col)=>{const el=document.getElementById(id);if(el){el.textContent=txt;if(col)el.style.color=col;}};
+    setK('vlKpiMos', mosPct.toFixed(2)+'%', ms.col);
+    const md = document.getElementById('vlKpiMosDesc'); if(md){ md.textContent=ms.txt; md.style.color=ms.col; }
+    setK('vlKpiCagr', fmtPct(m.cagr*100));
+    setK('vlKpiDy',   fmtPct(m.dividend_yield*100));
+    setK('vlKpiComb', fmtPct(m.combine*100));
+    setK('vlKpiFv',   fmtPct(m.future_value*100));
+
+    const tb = document.getElementById('vlProjTableBody');
+    const by = parseInt(m.base_year,10)||0;
+    if(tb) tb.innerHTML = m.price_targets.map(p=>{
+      const yr = by ? (by+p.year) : ('T+'+p.year);
+      return '<tr><td style="font-weight:700;color:var(--text)">'+yr+'</td><td><strong>'+fmtRp(p.target_price)+'</strong></td><td><span class="'+badgeCls(p.gl_pct)+'">'+fmtGl(p.gl_pct)+'</span></td></tr>';
+    }).join('');
+
+    const sb = document.getElementById('vlSubModelBody');
+    if(sb){
+      const names = { pbv:'PBV (Book)', per:'PER (Earnings)', psr:'PSR (Sales)' };
+      sb.innerHTML = ['pbv','per','psr'].map(k=>{
+        const x = m.submodels[k];
+        if(!x.applicable) return '<tr><td>'+names[k]+'</td><td colspan="5" style="text-align:center;color:var(--text3)">tak berlaku</td></tr>';
+        return '<tr><td>'+names[k]+'</td><td>'+fmtPct(x.growth*100)+'</td><td>'+fmtD2(x.multiple)+'</td><td>'+fmtRp(x.target_5y)+'</td><td>'+fmtPct(x.cagr*100)+'</td><td>'+fmtPct(x.mos*100)+'</td></tr>';
+      }).join('');
+    }
   }
 
-  /* ── Tabel TTM ── */
-  function buildTtmTable(){
-    const tbody = document.getElementById('vlTtmBody');
-    if(!tbody) return;
-    let html = TTM_ROWS.map(r =>
-      `<tr><td style="font-weight:700;color:var(--text)">${r[0]}</td>`+
-      `<td><strong>Rp ${r[1]}</strong></td><td><span class="${badgeCls(r[2])}">${fmtGl(r[2])}</span></td>`+
-      `<td><strong>Rp ${r[3]}</strong></td><td><span class="${badgeCls(r[4])}">${fmtGl(r[4])}</span></td>`+
-      `<td><strong>Rp ${r[5]}</strong></td><td><span class="${badgeCls(r[6])}">${fmtGl(r[6])}</span></td>`+
-      `<td><strong>Rp ${r[7]}</strong></td><td><span class="${badgeCls(r[8])}">${fmtGl(r[8])}</span></td></tr>`
-    ).join('');
-    html += `<tr style="background:var(--yellow-bg);font-weight:700">
-      <td style="color:var(--yellow)">MoS</td>
-      <td colspan="2" style="text-align:center;color:var(--green)">${TTM_MOS[0].toFixed(2)}%</td>
-      <td colspan="2" style="text-align:center;color:var(--green)">${TTM_MOS[1].toFixed(2)}%</td>
-      <td colspan="2" style="text-align:center;color:var(--yellow)">${TTM_MOS[2].toFixed(2)}%</td>
-      <td colspan="2" style="text-align:center;color:var(--yellow)">${TTM_MOS[3].toFixed(2)}%</td>
-    </tr>`;
-    tbody.innerHTML = html;
+  function renderDividen(){
+    const s = curStock(); const m = state.model; const e = effLast(s);
+    const ly = latestYear(s); const a = s.annual[ly]||{};
+    const dps = a.dps;
+    const msg = document.getElementById('vlDivMsg');
+    if(msg) msg.innerHTML = m.applicable ? '' : '<div class="vl-msg" style="margin-bottom:14px">Model 5-tahun belum tersedia: '+m.reason+' — KPI yield model dikosongkan, grafik DPS tetap ditampilkan.</div>';
+    const set = (id,t)=>{const el=document.getElementById(id);if(el)el.textContent=t;};
+    set('vlDivDps', fmtRp(dps));
+    set('vlDivYield', m.applicable ? fmtPct(m.dividend_yield*100) : '—');
+    const dpr = (m.avg_multiples.dpr||{})[String(state.win)];
+    set('vlDivDpr', ok(dpr)?fmtPct(dpr*100):'-');
+    set('vlDivTbm', (ok(dps)&&dps>0)?fmtX(e.price/dps):'-');
   }
 
-  /* ── Kalkulator yield ── */
+  function renderMultiples(){
+    const m = state.model;
+    const tb = document.getElementById('vlMultBody'); if(!tb) return;
+    const mult = m.avg_multiples||{};
+    tb.innerHTML = [3,5,7,10].map(w=>{
+      const active = (w===state.win);
+      const g = key => (mult[key]||{})[String(w)];
+      const mark = active ? ' style="background:var(--bg3);font-weight:800"' : '';
+      const tag  = active ? ' <span class="vl-tag">aktif</span>' : '';
+      const dpr  = g('dpr');
+      return '<tr'+mark+'><td>'+w+' Th'+tag+'</td><td>'+fmtD2(g('pbv'))+'</td><td>'+fmtD2(g('per'))+'</td><td>'+fmtD2(g('psr'))+'</td><td>'+(ok(dpr)?fmtPct(dpr*100):'-')+'</td></tr>';
+    }).join('');
+  }
+
+  /* ── Kalkulator yield dividen ── */
   window.vlCalcYield = function(){
+    const s = curStock(); if(!s) return;
+    const ly = latestYear(s); const dps = (s.annual[ly]||{}).dps;
     const el = document.getElementById('vlCalcPrice');
-    const hp = parseFloat(el && el.value) || 152;
-    ['vlcy1','vlcy2','vlcy3'].forEach((id,i) => {
-      const t = document.getElementById(id);
-      if(t) t.textContent = ((DIV_VALS[i]/hp)*100).toFixed(2)+'%';
-    });
+    let hp = parseFloat(el && el.value);
+    if(!ok(hp) || hp<=0) hp = effLast(s).price;
+    const y = document.getElementById('vlcyYield');
     const tbm = document.getElementById('vlcyTBM');
-    if(tbm) tbm.textContent = (hp/DIV_VALS[2]).toFixed(1)+'×';
+    if(y)   y.textContent   = (ok(dps)&&dps>0&&hp>0) ? (dps/hp*100).toFixed(2)+'%' : '-';
+    if(tbm) tbm.textContent = (ok(dps)&&dps>0&&hp>0) ? (hp/dps).toFixed(2)+'×' : '-';
   };
 
-  /* ── Ganti basis proyeksi ── */
-  window.vlSetBasis = function(basis, el){
-    document.querySelectorAll('#page-valuasi .vl-basis-btn').forEach(b => b.classList.remove('active'));
-    if(el) el.classList.add('active');
-    const d = PROJ[basis];
-    const mosEl = document.getElementById('vlKpiMos');
-    const mosDesc = document.getElementById('vlKpiMosDesc');
-    if(mosEl){
-      mosEl.textContent = d.mos.toFixed(2)+'%';
-      let col, txt;
-      if(d.mos>=30){ col='var(--green)'; txt='🟢 Sangat Aman'; }
-      else if(d.mos>=20){ col='var(--yellow)'; txt='🟡 Cukup Aman'; }
-      else { col='var(--red)'; txt='🔴 Berisiko Tinggi'; }
-      mosEl.style.color = col;
-      if(mosDesc){ mosDesc.textContent = txt; mosDesc.style.color = col; }
+  /* ── Charts: destroy lama → build baru ── */
+  function destroyCharts(){ while(charts.length){ const c=charts.pop(); try{ c.destroy(); }catch(e){} } }
+
+  function buildCharts(){
+    if(typeof Chart === 'undefined') return;
+    destroyCharts();
+    const s = curStock(); if(!s) return;
+    const m = state.model;
+    const T = themeColors();
+    const TICK = { font:{ size:10 }, color:T.tick };
+    const GRID = { color:T.grid };
+    const base = {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(26,15,60,.94)', titleFont:{size:11}, bodyFont:{size:11}, padding:10, cornerRadius:8 } }
+    };
+
+    const ys = annualYears(s).slice(-8);
+    const labels = ys;
+    const d9 = v => ok(v) ? v/1e9 : null;
+    const A  = f => ys.map(y=>{ const val = f(s.annual[y]||{}); return ok(val) ? val : null; });
+    const mk = (id,cfg)=>{ const cv=document.getElementById(id); if(cv) charts.push(new Chart(cv,cfg)); };
+
+    // 1. Pendapatan & Laba (Miliar) + Harga
+    mk('vlRev', { type:'bar', data:{ labels, datasets:[
+      { label:'Pendapatan (M)', data:A(a=>d9(a.total_revenue)), backgroundColor:COL.blue, borderRadius:4, yAxisID:'y' },
+      { label:'Laba Bersih (M)', data:A(a=>d9(a.net_income)), backgroundColor:COL.green, borderRadius:4, yAxisID:'y' },
+      { label:'Harga (Rp)', data:A(a=>a.price), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    ]}, options:{...base, scales:{
+      y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
+      y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
+      x:{ ticks:TICK, grid:{display:false} } }} });
+
+    // 2. ROE & Margin Laba (%)
+    mk('vlRoe', { type:'line', data:{ labels, datasets:[
+      { label:'ROE (%)', data:A(a=>a.roe), borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
+      { label:'Margin %', data:A(a=>(a.total_revenue?a.net_income/a.total_revenue*100:null)), borderColor:COL.blue, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
+    ]}, options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
+
+    // 3. Rasio PBV/PER/PSR tahunan
+    mk('vlRatio', { type:'bar', data:{ labels, datasets:[
+      { label:'PBV', data:A(a=>a.pbv), backgroundColor:COL.purple, borderRadius:3 },
+      { label:'PER', data:A(a=>a.per), backgroundColor:COL.blue,   borderRadius:3 },
+      { label:'PSR', data:A(a=>a.psr), backgroundColor:COL.pink,   borderRadius:3 }
+    ]}, options:{...base, scales:{ y:{ ticks:TICK, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
+
+    // 4. EPS / SPS
+    mk('vlEps', { type:'line', data:{ labels, datasets:[
+      { label:'EPS', data:A(a=>a.eps), borderColor:COL.blue, backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
+      { label:'SPS', data:A(a=>a.sps), borderColor:COL.pink, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
+    ]}, options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
+
+    // 5. Ekuitas (Miliar) + Book Value
+    mk('vlEquity', { type:'bar', data:{ labels, datasets:[
+      { label:'Ekuitas (M)', data:A(a=>d9(a.total_equity)), backgroundColor:COL.purpleSoft, borderRadius:4, yAxisID:'y' },
+      { label:'Book Value', data:A(a=>a.bvps), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    ]}, options:{...base, scales:{
+      y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
+      y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:{display:false} },
+      x:{ ticks:TICK, grid:{display:false} } }} });
+
+    // 6. Proyeksi harga (hanya bila model berlaku)
+    if(m.applicable){
+      const by = parseInt(m.base_year,10)||0;
+      const plabels = m.price_targets.map(p=> by ? String(by+p.year) : ('T+'+p.year));
+      const ptData = m.price_targets.map(p=>p.target_price);
+      const lastLine = m.price_targets.map(()=>m.last);
+      const minY = Math.min(m.last, ...ptData)*0.9;
+      mk('vlProj', { type:'line', data:{ labels:plabels, datasets:[
+        { label:'Harga Potensi', data:ptData, borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.12)', fill:true, pointRadius:5, pointHoverRadius:7, borderWidth:2.5, tension:.35, pointBackgroundColor:COL.purple, pointBorderColor:'#fff', pointBorderWidth:2 },
+        { label:'Harga Terakhir', data:lastLine, borderColor:COL.orange, backgroundColor:'transparent', borderWidth:1.5, borderDash:[6,3], pointRadius:0, fill:false }
+      ]}, options:{...base, scales:{ y:{ min:minY, ticks:{...TICK, callback:v=>'Rp'+Math.round(v).toLocaleString('id-ID')}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
     }
-    buildProjTable(basis);
-    if(projChart){
-      projChart.data.datasets[0].data = d.prices;
-      projChart.data.datasets[1].data = PROJ_YEARS.map(() => d.price);
-      projChart.update();
+
+    // 7. Dividen per saham (tahunan) + yield
+    mk('vlDiv', { type:'bar', data:{ labels, datasets:[
+      { label:'DPS (Rp)', data:A(a=>a.dps), backgroundColor:COL.purple, borderRadius:4, yAxisID:'y' },
+      { label:'Yield (%)', data:A(a=>(m.last>0 && ok(a.dps)) ? a.dps/m.last*100 : null), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.35, pointHoverRadius:6 }
+    ]}, options:{...base, scales:{
+      y:{ ticks:{...TICK, callback:v=>'Rp'+v}, grid:GRID },
+      y2:{ position:'right', ticks:{...TICK, callback:v=>v+'%'}, grid:{display:false} },
+      x:{ ticks:TICK, grid:{display:false} } }} });
+
+    // 8. MoS sub-model (window aktif)
+    {
+      const keys=['pbv','per','psr']; const names={pbv:'PBV',per:'PER',psr:'PSR'};
+      let labs, data;
+      if(m.applicable){
+        labs = keys.map(k=>names[k]);
+        data = keys.map(k=> m.submodels[k].applicable ? m.submodels[k].mos*100 : null);
+      } else { labs=['—']; data=[null]; }
+      const cols = data.map(v=> !ok(v)?COL.purpleSoft : v>=30?COL.green : v>=20?COL.orange : COL.pink);
+      mk('vlMos', { type:'bar', data:{ labels:labs, datasets:[
+        { label:'Margin of Safety (%)', data:data, backgroundColor:cols, borderRadius:5 }
+      ]}, options:{...base, indexAxis:'y',
+        scales:{ x:{ ticks:{...TICK, callback:v=>v+'%'}, grid:GRID }, y:{ ticks:{...TICK, font:{size:12}}, grid:{display:false} } },
+        plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{ label:ctx=>' MoS: '+(ok(ctx.parsed.x)?ctx.parsed.x.toFixed(2):'-')+'%' }}}
+      }});
     }
+  }
+
+  /* ── Render penuh untuk emiten/window aktif ── */
+  function renderAll(){
+    const s = curStock(); if(!s) return;
+    state.model = computeModel(s, state.win);
+    renderBanner(); renderHead(); renderCards(); renderFund();
+    renderProjection(); renderDividen(); renderMultiples();
+    // Set default harga kalkulator = harga terakhir, lalu hitung.
+    const ci = document.getElementById('vlCalcPrice');
+    if(ci){ const lp = Math.round(effLast(s).price); if(lp>0) ci.value = lp; }
+    buildCharts();
+    window.vlCalcYield();
+  }
+
+  /* ── Kontrol UI ── */
+  function setWinButtons(){
+    document.querySelectorAll('#vlWinBtns .vl-basis-btn').forEach(b=>{
+      b.classList.toggle('active', Number(b.getAttribute('data-win'))===state.win);
+    });
+  }
+  function populateStockSelect(){
+    const sel = document.getElementById('vlStockSel'); if(!sel || !state.raw) return;
+    sel.innerHTML = Object.keys(state.raw.stocks).map(c=>{
+      const v = (state.raw.stocks[c].valuation)||{};
+      return '<option value="'+c+'">'+c+(v.sector?(' · '+v.sector):'')+'</option>';
+    }).join('');
+    sel.value = state.code;
+  }
+  function pickDefaultCode(){
+    const codes = Object.keys(state.raw.stocks);
+    const firstApplicable = codes.find(c=>{
+      const v = state.raw.stocks[c].valuation;
+      return v && v.five_year && v.five_year.applicable;
+    });
+    return firstApplicable || codes[0];
+  }
+
+  window.vlSelectStock = function(code){
+    if(!state.raw || !state.raw.stocks[code]) return;
+    state.code = code;
+    const sel = document.getElementById('vlStockSel'); if(sel) sel.value = code;
+    renderAll();
+  };
+  window.vlSetWindow = function(win){
+    state.win = Number(win) || 5;
+    setWinButtons();
+    if(state.raw) renderAll();
   };
 
   /* ── Switch tab ── */
@@ -9167,134 +9529,46 @@ loadData();
     const tc = document.getElementById('vl-tab-'+id);
     if(tc) tc.classList.add('active');
     if(el) el.classList.add('active');
-    // Nudge charts agar resize benar setelah container tampil
     charts.forEach(c => { try { c.resize(); } catch(e){} });
   };
 
-  /* ── Charts ── */
-  let projChart = null, built = false;
-  const charts = [];
-
-  function buildCharts(){
-    if(typeof Chart === 'undefined') return;
-    const T = themeColors();
-    const TICK = { font:{ size:10 }, color:T.tick };
-    const GRID = { color:T.grid };
-    const base = {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(26,15,60,.94)', titleFont:{size:11}, bodyFont:{size:11}, padding:10, cornerRadius:8 } }
-    };
-
-    // 1. Pendapatan & Laba
-    charts.push(new Chart(document.getElementById('vlRev'), {
-      type:'bar',
-      data:{ labels:LABELS, datasets:[
-        { label:'Pendapatan (M)', data:[2030,2032,1227,1039], backgroundColor:'#2563eb', borderRadius:4, yAxisID:'y' },
-        { label:'Laba Bersih (M)', data:[1330,1342,826,674], backgroundColor:'#059669', borderRadius:4, yAxisID:'y' },
-        { label:'Harga (Rp)', data:[150,174,138,133], type:'line', borderColor:'#6d28d9', backgroundColor:'#6d28d9', pointRadius:5, pointHoverRadius:7, borderWidth:2.5, yAxisID:'y2', tension:.4 }
-      ]},
-      options:{...base, scales:{
-        y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
-        y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
-        x:{ ticks:TICK, grid:{display:false} }
-      }}
-    }));
-
-    // 2. ROE & Margin
-    charts.push(new Chart(document.getElementById('vlRoe'), {
-      type:'line',
-      data:{ labels:LABELS, datasets:[
-        { label:'ROE (%)', data:[127.88,134.56,201.97,165.88], borderColor:'#6d28d9', backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:5, borderWidth:2.5, tension:.4 },
-        { label:'Margin %', data:[65.52,66.05,67.34,64.80], borderColor:'#2563eb', backgroundColor:'transparent', pointRadius:4, borderWidth:2, borderDash:[5,3], tension:.4 }
-      ]},
-      options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }}
-    }));
-
-    // 3. Rasio
-    charts.push(new Chart(document.getElementById('vlRatio'), {
-      type:'bar',
-      data:{ labels:LABELS, datasets:[
-        { label:'PBV', data:[6.95,8.41,16.26,15.79], backgroundColor:'#6d28d9', borderRadius:3 },
-        { label:'PER', data:[5.44,6.25,8.05,9.52],   backgroundColor:'#2563eb', borderRadius:3 },
-        { label:'PSR', data:[3.56,4.13,5.42,6.17],   backgroundColor:'#db2777', borderRadius:3 }
-      ]},
-      options:{...base, scales:{ y:{ ticks:TICK, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }}
-    }));
-
-    // 4. EPS / SPS
-    charts.push(new Chart(document.getElementById('vlEps'), {
-      type:'line',
-      data:{ labels:LABELS, datasets:[
-        { label:'EPS', data:[27.59,27.84,17.14,13.97], borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:5, borderWidth:2.5, tension:.4 },
-        { label:'SPS', data:[42.12,42.15,25.45,21.57], borderColor:'#db2777', backgroundColor:'transparent', pointRadius:4, borderWidth:2, borderDash:[5,3], tension:.4 }
-      ]},
-      options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }}
-    }));
-
-    // 5. Ekuitas & Book Value
-    charts.push(new Chart(document.getElementById('vlEquity'), {
-      type:'bar',
-      data:{ labels:LABELS, datasets:[
-        { label:'Ekuitas (M)', data:[1040,997,409,406], backgroundColor:'#8b7eb8', borderRadius:4, yAxisID:'y' },
-        { label:'Book Value', data:[21.58,20.69,8.49,8.42], type:'line', borderColor:'#6d28d9', backgroundColor:'#6d28d9', pointRadius:5, borderWidth:2.5, yAxisID:'y2', tension:.4 }
-      ]},
-      options:{...base, scales:{
-        y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
-        y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:{display:false} },
-        x:{ ticks:TICK, grid:{display:false} }
-      }}
-    }));
-
-    // 6. Proyeksi
-    projChart = new Chart(document.getElementById('vlProj'), {
-      type:'line',
-      data:{ labels:PROJ_YEARS, datasets:[
-        { label:'Harga Potensi', data:PROJ.now.prices.slice(), borderColor:'#6d28d9', backgroundColor:'rgba(109,40,217,.12)', fill:true, pointRadius:6, pointHoverRadius:8, borderWidth:2.5, tension:.4, pointBackgroundColor:'#6d28d9', pointBorderColor:'#fff', pointBorderWidth:2 },
-        { label:'Harga Beli', data:PROJ_YEARS.map(()=>152), borderColor:'#d97706', backgroundColor:'transparent', borderWidth:1.5, borderDash:[6,3], pointRadius:0, fill:false }
-      ]},
-      options:{...base, scales:{ y:{ min:100, ticks:{...TICK, callback:v=>'Rp'+v}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }}
-    });
-    charts.push(projChart);
-
-    // 7. Dividen
-    charts.push(new Chart(document.getElementById('vlDiv'), {
-      type:'bar',
-      data:{ labels:['Q1','Q2','Q3'], datasets:[
-        { label:'Dividen/Share (Rp)', data:DIV_VALS, backgroundColor:'#6d28d9', borderRadius:4, yAxisID:'y' },
-        { label:'Yield (%)', data:DIV_YLD, type:'line', borderColor:'#d97706', backgroundColor:'#d97706', pointRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.4, pointHoverRadius:8 }
-      ]},
-      options:{...base, scales:{
-        y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID },
-        y2:{ position:'right', ticks:{...TICK, callback:v=>v+'%'}, grid:{display:false} },
-        x:{ ticks:{...TICK, font:{size:12}}, grid:{display:false} }
-      }}
-    }));
-
-    // 8. MoS comparison
-    charts.push(new Chart(document.getElementById('vlMos'), {
-      type:'bar',
-      data:{ labels:['Basis Q1 (Rp174)','Basis Q2 (Rp138)','Basis Q3 (Rp133)','Harga Sekarang (Rp152)'], datasets:[
-        { label:'Margin of Safety (%)', data:TTM_MOS, backgroundColor:['#059669','#059669','#d97706','#d97706'], borderRadius:5 }
-      ]},
-      options:{...base, indexAxis:'y',
-        scales:{ x:{ ticks:{...TICK, callback:v=>v+'%'}, grid:GRID, max:60 }, y:{ ticks:{...TICK, font:{size:11}}, grid:{display:false} } },
-        plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{ label:ctx=>' MoS: '+ctx.parsed.x.toFixed(2)+'%' }}}
-      }
-    }));
+  function showError(msg){
+    state.error = true;
+    const b = document.getElementById('vlBanner');
+    if(b) b.innerHTML = '⚠️ <strong>Gagal memuat data valuasi.</strong> '+(msg||'')+' — coba muat ulang halaman.';
   }
 
-  // Lazy build: dipanggil saat halaman valuasi pertama dibuka.
+  // Init: fetch valuation.json + (opsional) data.json untuk harga live.
+  async function init(){
+    if(state.loading || state.raw) return;
+    state.loading = true;
+    try{
+      state.raw = await fetchJson([VAL_CDN_URL, VAL_LOCAL_URL]);
+      try{
+        const data = await fetchJson([DATA_LOCAL_URL, DATA_CDN_URL]);
+        state.live = (data && data.live) ? data.live : null;
+      }catch(e){ state.live = null; }   // harga live opsional
+      state.code = pickDefaultCode();
+      populateStockSelect();
+      setWinButtons();
+      renderAll();
+      const fn = document.getElementById('vlFootNote');
+      if(fn && state.raw.generated_at) fn.innerHTML = '⚠️ Data per '+String(state.raw.generated_at).slice(0,10)+' · proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>';
+    }catch(e){
+      showError(String((e && e.message) || e));
+    }finally{
+      state.loading = false;
+    }
+  }
+
+  // Lazy entry: dipanggil saat halaman valuasi dibuka (desktop & mobile nav).
   window.vlEnsureCharts = function(){
-    if(built) return;
-    built = true;
-    buildCharts();
+    if(state.raw){ charts.forEach(c=>{ try{ c.resize(); }catch(e){} }); return; }
+    init();
   };
 
-  // Build tabel di awal (DOM sudah siap — script setelah markup).
-  buildFund();
-  buildProjTable('now');
-  buildTtmTable();
-  window.vlCalcYield();
+  // Tandai tombol window default (5Th) sejak awal.
+  setWinButtons();
 })();
 </script>
 
