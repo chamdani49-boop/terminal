@@ -83,7 +83,42 @@ Tahap sekarang = **testing dengan 5 saham** (AADI, AALI, ANTM, BBCA, BBRI).
   valuation.json saat Excel di `data/valuation/` di-push; + manual dispatch).
   Branch `feat/valuation-workflow`. **Merge #166 dulu, baru #167.**
 
-## Sub-menu UJI DATA — SELESAI (PR #169)
+### FORMULA MODEL 5-TAHUN — FINAL & TERVALIDASI (uji ANTM 2025, PR #170)
+Dibongkar dari sheet Excel ANTM pemilik (kuning=input, sisanya rumus). Mesin kita
+kini **100% cocok** bila input sama. Urutan rumus:
+1. Per-share: `BV=Equity/Shares`, `EPS=Profit/Shares`, `SPS=Revenue/Shares`
+   (semua nilai juta; shares juta — faktor 1.000.000 saling meniadakan).
+2. Growth blend tiap sub-model: `g = 0.8×(growth 5th) + 0.2×(growth tahunan)`.
+   ROE blend untuk PBV. (ANTM: gPBV 29.65%, gEPS 55.03%, gSPS 22.93%).
+3. Proyeksi 5 th: `FutureValue_t = base×(1+g)^t`; `FuturePrice_t = FV_t × avgMultiple`.
+   `avgMultiple` = rata-rata PBV/PER/PSR **window terpilih (default 5th)**.
+4. Kesimpulan tiap sub-model:
+   - `G&L Potential = (FuturePrice_5 − Last)/Last`
+   - `Annual = G&L Potential / 5`
+   - `Margin of Safety = 1 − Last/FuturePrice_5`
+   - `CAGR = (FV_5 / FV_1)^(1/5) − 1`
+5. Blend 3 sub-model bobot **PBV 0.5 / PER 0.4 / PSR 0.1** untuk Annual, CAGR, MoS.
+6. **Dividen:** `DPR = rata-rata DPR 5th`; `Est Dividen = DPR×EPS`; `Dividen Yield = Est Dividen/Last`.
+7. **POTENSI AKUMULASI:**
+   - `Future Value = blendAnnual + Dividen Yield`  ← dividen MASUK di sini.
+   - `CAGR = blendCAGR` ; `Margin of Safety = blendMoS`.
+   - `Combine = (Future Value + CAGR)/2`.
+   - `Potensi Price(n) = Last × (1 + Combine × n)`, n=1..5 (ramp = **Combine saja**,
+     dividen sudah termasuk via Future Value). `Potensi G&L = (Potensi_5 − Last)/Last`.
+Hasil uji ANTM (input Excel): FutureValue 126.90% · Combine 78.52% · CAGR 30.15% ·
+MoS 78.28% · Potensi 5.623→15.517 · semua sub-model cocok 100%.
+**Diterapkan di** `build-valuation.py`, `computeModel` & `vlUjiCalc` (index.html).
+Sebelumnya ada 2 bug (dividen tak masuk FutureValue; ramp potensi dobel-hitung dividen) → sudah diperbaiki.
+
+### Catatan data sumber
+- Data ANTM di `valuation.json` saat ini masih dari batch lama (eps 299.98 vs 311.6
+  Excel, bvps 1468.88 vs 1523, dpr 0.74 vs 0.7141) → menunggu upload Excel **2025
+  ANTM** dari user agar angka konvergen penuh. Saat upload, perhatikan apakah baris
+  EPS/BVPS di sheet = Profit/Shares & Equity/Shares (Excel menghitung begitu);
+  bila baris sheet beda, pertimbangkan **menghitung** eps/sps/bvps dari
+  ni/rev/equity ÷ shares ketimbang membaca baris per-share.
+
+## Sub-menu UJI DATA — SELESAI (PR #169, merged)
 Sub-tab **🧪 Uji Data** sudah dibuat di dalam `#page-valuasi` (tab ke-6, setelah
 Multiples). Mereplikasi 2 screenshot Excel BBRI jadi 1 halaman; semua angka =
 output mesin kita untuk dibandingkan langsung dengan Excel.
