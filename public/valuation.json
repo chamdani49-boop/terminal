@@ -1,10 +1,19 @@
 {
-  "generated_at": "2026-06-15T09:28:17.207963+00:00",
+  "generated_at": "2026-06-15T09:40:03.783371+00:00",
   "source_files": [
     "valuation-batch-01.xlsx"
   ],
   "count": 5,
-  "note": "Kolom 'annualized' = nilai 'tahun berjalan' dari sheet = Q1 x 4 (run-rate, BUKAN TTM). 'annual' di-key per tahun (12M YYYY).",
+  "assumptions": {
+    "risk_free": 0.068,
+    "equity_risk_premium": 0.075,
+    "terminal_growth": 0.035,
+    "default_tax_rate": 0.22,
+    "projection_years": 5,
+    "default_fcf_growth": 0.08,
+    "default_div_growth_cap": 0.15
+  },
+  "note": "'annualized' = 'tahun berjalan' sheet = Q1 x 4 (run-rate, dipakai apa adanya). Growth 5 th DCF masih PLACEHOLDER (menunggu rumus proyeksi pemilik). risk_free sementara konstan; akan dibaca dari sheet 'SBN'.",
   "stocks": {
     "AADI": {
       "code": "AADI",
@@ -220,6 +229,116 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "valuation": {
+        "sector": "Energy",
+        "industry": "Coal",
+        "is_financial": false,
+        "recommended_method": "DCF",
+        "fair_value_per_share": 8832.15,
+        "upside_pct": -23.86,
+        "wacc": {
+          "risk_free": 0.068,
+          "equity_risk_premium": 0.075,
+          "beta": 2.13,
+          "cost_of_equity": 0.2277,
+          "cost_of_debt": 0.0,
+          "cost_of_debt_after_tax": 0.0,
+          "tax_rate_effective": 0.1954,
+          "weight_equity": 0.8635,
+          "weight_debt": 0.1365,
+          "wacc": 0.1967
+        },
+        "dcf": {
+          "applicable": true,
+          "method": "FCFF 2-tahap (5 th eksplisit + terminal Gordon)",
+          "base_year": "2025",
+          "base_fcf": 8951000000000,
+          "growth_5y": 0.08,
+          "growth_5y_source": "PLACEHOLDER (menunggu rumus proyeksi 5 th pemilik)",
+          "terminal_growth": 0.035,
+          "wacc": 0.1967,
+          "projected_fcf": [
+            {
+              "year": 1,
+              "fcf": 9667080000000,
+              "pv": 8078114815743
+            },
+            {
+              "year": 2,
+              "fcf": 10440446400000,
+              "pv": 7290351801623
+            },
+            {
+              "year": 3,
+              "fcf": 11275682112000,
+              "pv": 6579409998958
+            },
+            {
+              "year": 4,
+              "fcf": 12177736680960,
+              "pv": 5937797943407
+            },
+            {
+              "year": 5,
+              "fcf": 13151955615437,
+              "pv": 5358754724559
+            }
+          ],
+          "pv_fcf_sum": 33244429284290,
+          "pv_terminal": 34300007049587,
+          "enterprise_value": 67544436333877,
+          "net_debt": -1258000000000,
+          "equity_value": 68802436333877,
+          "fair_value_per_share": 8832.15,
+          "current_price": 11600.0,
+          "upside_pct": -23.86,
+          "caveats": []
+        },
+        "ddm": {
+          "applicable": true,
+          "method": "DDM 2-tahap (5 th eksplisit + terminal Gordon)",
+          "base_year": "2025",
+          "base_dps": 1001.4,
+          "growth_5y": 0.1135,
+          "growth_5y_source": "g = ROE × (1 − payout) [berkelanjutan]",
+          "terminal_growth": 0.035,
+          "cost_of_equity": 0.2277,
+          "projected_dps": [
+            {
+              "year": 1,
+              "dps": 1115.05,
+              "pv": 908.25
+            },
+            {
+              "year": 2,
+              "dps": 1241.61,
+              "pv": 823.76
+            },
+            {
+              "year": 3,
+              "dps": 1382.52,
+              "pv": 747.13
+            },
+            {
+              "year": 4,
+              "dps": 1539.43,
+              "pv": 677.63
+            },
+            {
+              "year": 5,
+              "dps": 1714.15,
+              "pv": 614.59
+            }
+          ],
+          "pv_dividends_sum": 3771.35,
+          "pv_terminal": 3301.01,
+          "fair_value_per_share": 7072.36,
+          "current_price": 11600.0,
+          "upside_pct": -39.03,
+          "caveats": []
+        },
+        "notes": []
       }
     },
     "AALI": {
@@ -826,6 +945,116 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "valuation": {
+        "sector": "Consumer Non-Cyclicals",
+        "industry": "Agricultural Products",
+        "is_financial": false,
+        "recommended_method": "DCF",
+        "fair_value_per_share": 19994.93,
+        "upside_pct": 146.85,
+        "wacc": {
+          "risk_free": 0.068,
+          "equity_risk_premium": 0.075,
+          "beta": 1.23,
+          "cost_of_equity": 0.1603,
+          "cost_of_debt": null,
+          "cost_of_debt_after_tax": null,
+          "tax_rate_effective": 0.3095,
+          "weight_equity": 1.0,
+          "weight_debt": 0.0,
+          "wacc": 0.1603
+        },
+        "dcf": {
+          "applicable": true,
+          "method": "FCFF 2-tahap (5 th eksplisit + terminal Gordon)",
+          "base_year": "2025",
+          "base_fcf": 3429000000000,
+          "growth_5y": 0.08,
+          "growth_5y_source": "PLACEHOLDER (menunggu rumus proyeksi 5 th pemilik)",
+          "terminal_growth": 0.035,
+          "wacc": 0.1603,
+          "projected_fcf": [
+            {
+              "year": 1,
+              "fcf": 3703320000000,
+              "pv": 3191691803844
+            },
+            {
+              "year": 2,
+              "fcf": 3999585600000,
+              "pv": 2970806815609
+            },
+            {
+              "year": 3,
+              "fcf": 4319552448000,
+              "pv": 2765208446831
+            },
+            {
+              "year": 4,
+              "fcf": 4665116643840,
+              "pv": 2573838768058
+            },
+            {
+              "year": 5,
+              "fcf": 5038325975347,
+              "pv": 2395713065158
+            }
+          ],
+          "pv_fcf_sum": 13897258899499,
+          "pv_terminal": 19789010554175,
+          "enterprise_value": 33686269453674,
+          "net_debt": -4704000000000,
+          "equity_value": 38390269453674,
+          "fair_value_per_share": 19994.93,
+          "current_price": 8100.0,
+          "upside_pct": 146.85,
+          "caveats": []
+        },
+        "ddm": {
+          "applicable": true,
+          "method": "DDM 2-tahap (5 th eksplisit + terminal Gordon)",
+          "base_year": "2025",
+          "base_dps": 458.0,
+          "growth_5y": 0.025,
+          "growth_5y_source": "g = ROE × (1 − payout) [berkelanjutan]",
+          "terminal_growth": 0.035,
+          "cost_of_equity": 0.1603,
+          "projected_dps": [
+            {
+              "year": 1,
+              "dps": 469.44,
+              "pv": 404.59
+            },
+            {
+              "year": 2,
+              "dps": 481.17,
+              "pv": 357.4
+            },
+            {
+              "year": 3,
+              "dps": 493.19,
+              "pv": 315.72
+            },
+            {
+              "year": 4,
+              "dps": 505.51,
+              "pv": 278.9
+            },
+            {
+              "year": 5,
+              "dps": 518.14,
+              "pv": 246.38
+            }
+          ],
+          "pv_dividends_sum": 1602.99,
+          "pv_terminal": 2035.11,
+          "fair_value_per_share": 3638.1,
+          "current_price": 8100.0,
+          "upside_pct": -55.09,
+          "caveats": []
+        },
+        "notes": []
       }
     },
     "ANTM": {
@@ -1432,6 +1661,116 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "valuation": {
+        "sector": "Basic Materials",
+        "industry": "Metals & Minerals",
+        "is_financial": false,
+        "recommended_method": "DCF",
+        "fair_value_per_share": 1408.07,
+        "upside_pct": -62.35,
+        "wacc": {
+          "risk_free": 0.068,
+          "equity_risk_premium": 0.075,
+          "beta": 1.89,
+          "cost_of_equity": 0.2097,
+          "cost_of_debt": 0.1151,
+          "cost_of_debt_after_tax": 0.0935,
+          "tax_rate_effective": 0.1874,
+          "weight_equity": 0.9415,
+          "weight_debt": 0.0585,
+          "wacc": 0.2029
+        },
+        "dcf": {
+          "applicable": true,
+          "method": "FCFF 2-tahap (5 th eksplisit + terminal Gordon)",
+          "base_year": "2025",
+          "base_fcf": 4187000000000,
+          "growth_5y": 0.08,
+          "growth_5y_source": "PLACEHOLDER (menunggu rumus proyeksi 5 th pemilik)",
+          "terminal_growth": 0.035,
+          "wacc": 0.2029,
+          "projected_fcf": [
+            {
+              "year": 1,
+              "fcf": 4521960000000,
+              "pv": 3759215229861
+            },
+            {
+              "year": 2,
+              "fcf": 4883716800000,
+              "pv": 3375137125488
+            },
+            {
+              "year": 3,
+              "fcf": 5274414144000,
+              "pv": 3030300187487
+            },
+            {
+              "year": 4,
+              "fcf": 5696367275520,
+              "pv": 2720695155446
+            },
+            {
+              "year": 5,
+              "fcf": 6152076657562,
+              "pv": 2442722394115
+            }
+          ],
+          "pv_fcf_sum": 15328070092397,
+          "pv_terminal": 15057877771943,
+          "enterprise_value": 30385947864340,
+          "net_debt": -3450000000000,
+          "equity_value": 33835947864340,
+          "fair_value_per_share": 1408.07,
+          "current_price": 3740.0,
+          "upside_pct": -62.35,
+          "caveats": []
+        },
+        "ddm": {
+          "applicable": true,
+          "method": "DDM 2-tahap (5 th eksplisit + terminal Gordon)",
+          "base_year": "2025",
+          "base_dps": 209.99,
+          "growth_5y": 0.0614,
+          "growth_5y_source": "g = ROE × (1 − payout) [berkelanjutan]",
+          "terminal_growth": 0.035,
+          "cost_of_equity": 0.2097,
+          "projected_dps": [
+            {
+              "year": 1,
+              "dps": 222.88,
+              "pv": 184.24
+            },
+            {
+              "year": 2,
+              "dps": 236.56,
+              "pv": 161.65
+            },
+            {
+              "year": 3,
+              "dps": 251.07,
+              "pv": 141.83
+            },
+            {
+              "year": 4,
+              "dps": 266.48,
+              "pv": 124.44
+            },
+            {
+              "year": 5,
+              "dps": 282.84,
+              "pv": 109.18
+            }
+          ],
+          "pv_dividends_sum": 721.34,
+          "pv_terminal": 646.84,
+          "fair_value_per_share": 1368.18,
+          "current_price": 3740.0,
+          "upside_pct": -63.42,
+          "caveats": []
+        },
+        "notes": []
       }
     },
     "BBCA": {
@@ -2038,6 +2377,74 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "valuation": {
+        "sector": "Financials",
+        "industry": "Banks",
+        "is_financial": true,
+        "recommended_method": "DDM",
+        "fair_value_per_share": 4049.28,
+        "upside_pct": -30.78,
+        "wacc": {
+          "risk_free": 0.068,
+          "equity_risk_premium": 0.075,
+          "beta": 0.82,
+          "cost_of_equity": 0.1295,
+          "cost_of_debt": null,
+          "cost_of_debt_after_tax": null,
+          "tax_rate_effective": 0.1922,
+          "weight_equity": 1.0,
+          "weight_debt": 0.0,
+          "wacc": 0.1295
+        },
+        "dcf": {
+          "applicable": false,
+          "reason": "Emiten sektor keuangan — model FCFF tidak sesuai; gunakan DDM / excess-return"
+        },
+        "ddm": {
+          "applicable": true,
+          "method": "DDM 2-tahap (5 th eksplisit + terminal Gordon)",
+          "base_year": "2025",
+          "base_dps": 336.0,
+          "growth_5y": 0.0586,
+          "growth_5y_source": "g = ROE × (1 − payout) [berkelanjutan]",
+          "terminal_growth": 0.035,
+          "cost_of_equity": 0.1295,
+          "projected_dps": [
+            {
+              "year": 1,
+              "dps": 355.67,
+              "pv": 314.89
+            },
+            {
+              "year": 2,
+              "dps": 376.5,
+              "pv": 295.11
+            },
+            {
+              "year": 3,
+              "dps": 398.54,
+              "pv": 276.58
+            },
+            {
+              "year": 4,
+              "dps": 421.88,
+              "pv": 259.2
+            },
+            {
+              "year": 5,
+              "dps": 446.58,
+              "pv": 242.92
+            }
+          ],
+          "pv_dividends_sum": 1388.71,
+          "pv_terminal": 2660.57,
+          "fair_value_per_share": 4049.28,
+          "current_price": 5850.0,
+          "upside_pct": -30.78,
+          "caveats": []
+        },
+        "notes": []
       }
     },
     "BBRI": {
@@ -2644,6 +3051,74 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "valuation": {
+        "sector": "Financials",
+        "industry": "Banks",
+        "is_financial": true,
+        "recommended_method": "DDM",
+        "fair_value_per_share": 2773.69,
+        "upside_pct": -7.23,
+        "wacc": {
+          "risk_free": 0.068,
+          "equity_risk_premium": 0.075,
+          "beta": 1.14,
+          "cost_of_equity": 0.1535,
+          "cost_of_debt": null,
+          "cost_of_debt_after_tax": null,
+          "tax_rate_effective": 0.2151,
+          "weight_equity": 1.0,
+          "weight_debt": 0.0,
+          "wacc": 0.1535
+        },
+        "dcf": {
+          "applicable": false,
+          "reason": "Emiten sektor keuangan — model FCFF tidak sesuai; gunakan DDM / excess-return"
+        },
+        "ddm": {
+          "applicable": true,
+          "method": "DDM 2-tahap (5 th eksplisit + terminal Gordon)",
+          "base_year": "2025",
+          "base_dps": 346.0,
+          "growth_5y": 0.0133,
+          "growth_5y_source": "g = ROE × (1 − payout) [berkelanjutan]",
+          "terminal_growth": 0.035,
+          "cost_of_equity": 0.1535,
+          "projected_dps": [
+            {
+              "year": 1,
+              "dps": 350.61,
+              "pv": 303.95
+            },
+            {
+              "year": 2,
+              "dps": 355.28,
+              "pv": 267.02
+            },
+            {
+              "year": 3,
+              "dps": 360.02,
+              "pv": 234.57
+            },
+            {
+              "year": 4,
+              "dps": 364.81,
+              "pv": 206.06
+            },
+            {
+              "year": 5,
+              "dps": 369.67,
+              "pv": 181.02
+            }
+          ],
+          "pv_dividends_sum": 1192.62,
+          "pv_terminal": 1581.07,
+          "fair_value_per_share": 2773.69,
+          "current_price": 2990.0,
+          "upside_pct": -7.23,
+          "caveats": []
+        },
+        "notes": []
       }
     }
   },
