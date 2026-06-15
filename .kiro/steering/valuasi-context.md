@@ -62,13 +62,15 @@ Tahap sekarang = **testing dengan 5 saham** (AADI, AALI, ANTM, BBCA, BBRI).
 1. "Tahun berjalan" dipakai **apa adanya** (Q1×4), bukan TTM.
 2. ROE 5th / EPS growth 5th / SPS growth 5th diambil dari **field data** (kolom
    tahunan, bukan Q1). DCF & DDM dibuat profesional oleh agent.
-3. **Konvensi unit (KOREKSI dari user, sesi terbaru):** **share outstanding TETAP
-   angka penuh** (tidak dibagi 1.000.000). Yang dibagi 1.000.000 (→ disajikan dalam
-   **juta**) adalah **pendapatan, laba bersih, dan ekuitas**. Catatan: mesin
-   **membaca eps/sps/bvps langsung dari sheet** (baris 25/27/32), bukan menghitung
-   manual via pembagian, sehingga `valuation.json` TIDAK terpengaruh konvensi ini
-   (nilai per-lembar sudah cocok 100% dgn sumber). Implikasi hanya pada TAMPILAN
-   (chart pendapatan/laba/ekuitas pakai satuan juta; market cap pakai shares penuh).
+3. **Konvensi unit (KOREKSI terbaru dari user):** **pendapatan, laba bersih,
+   ekuitas, DAN share outstanding semuanya dibagi 1.000.000** (disajikan dalam
+   **juta**) di sheet Excel user. Implikasi ke mesin: eps/sps/bvps = rasio
+   (mis. laba ÷ saham), sehingga faktor 1.000.000 di pembilang & penyebut
+   **saling meniadakan** → nilai per-lembar identik. Selain itu mesin **membaca
+   eps/sps/bvps langsung dari sheet** (baris 25/27/32), jadi `valuation.json`
+   TIDAK terpengaruh konvensi ini. Yang perlu konsisten hanya TAMPILAN (chart
+   pendapatan/laba/ekuitas → satuan juta). Market cap = harga × shares (absolut,
+   tak terpengaruh konvensi unit selama konsisten).
 4. **Rumus growth tahunan (DIKONFIRMASI benar):** `eps_growth_annual` &
    `sps_growth_annual` = `(nilai annual th terakhir − th sebelumnya) / th sebelumnya`.
    Sudah diimplementasikan persis di `five_year_valuation` (BBRI: EPS −5,49%, SPS +4,27%).
