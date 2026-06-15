@@ -103,12 +103,27 @@ kini **100% cocok** bila input sama. Urutan rumus:
    - `Future Value = blendAnnual + Dividen Yield`  ← dividen MASUK di sini.
    - `CAGR = blendCAGR` ; `Margin of Safety = blendMoS`.
    - `Combine = (Future Value + CAGR)/2`.
-   - `Potensi Price(n) = Last × (1 + Combine × n)`, n=1..5 (ramp = **Combine saja**,
-     dividen sudah termasuk via Future Value). `Potensi G&L = (Potensi_5 − Last)/Last`.
-Hasil uji ANTM (input Excel): FutureValue 126.90% · Combine 78.52% · CAGR 30.15% ·
-MoS 78.28% · Potensi 5.623→15.517 · semua sub-model cocok 100%.
+   - `Potensi Price(n) = Last × (1 + (Combine + Dividen Yield) × n)`, n=1..5
+     (ramp = **Combine + Dividen Yield**; dividen ikut di FutureValue DAN di ramp,
+     sesuai sheet Excel ANTM terbaru). `Potensi G&L = (Potensi_5 − Last)/Last`.
+Hasil uji ANTM (sheet terbaru, input: ROE5y 16.04% / EPSg5y 15.50% / SPSg5y 7.91% /
+EPSgAnn 92.35% / SPSgAnn 22.33% / DPR 71.41% / avgPBV 1.76 PER 14.21 PSR 1.27 /
+last 3150): FutureValue 53.57% · Combine 35.35% · CAGR 17.12% · MoS 61.48% ·
+Potensi 4.486→9.829 · Potensi G&L 212.04% — semua cocok 100%.
+(Catatan: screenshot ANTM versi PERTAMA pakai ramp=Combine saja & input growth beda;
+versi TERBARU inilah yang dipakai: ramp = Combine + Dividen Yield.)
 **Diterapkan di** `build-valuation.py`, `computeModel` & `vlUjiCalc` (index.html).
-Sebelumnya ada 2 bug (dividen tak masuk FutureValue; ramp potensi dobel-hitung dividen) → sudah diperbaiki.
+
+### PRINSIP: utamakan nilai dari FILE SUMBER, bukan hitung ulang
+Metrik berikut SUDAH ADA di file sumber (sheet laporan) dan WAJIB dipakai apa adanya
+(mesin sudah membacanya via ROW_METRICS), JANGAN dihitung ulang dari pembagian
+(share outstanding di sheet dibulatkan → hasil bisa beda; nilai konkret ada di sumber):
+ROE, ROE 5th, EPS (Annual), EPS Growth 5th, SPS, SPS Growth 5th,
+Book Value/Share (Annual), PBV (Annual), PER (Annual), PSR (Annual),
+Net Income–Payout Ratio (DPR), Dividen/EPS-Div (TTM).
+Yang BOLEH dihitung mesin (tidak ada di sumber): EPS Growth (Annual) & SPS Growth
+(Annual) = `(thn terakhir − thn sblm)/thn sblm`; serta rata-rata multiple
+(PBV/PER/PSR/DPR) per window = rata-rata nilai tahunan sumber.
 
 ### Catatan data sumber
 - Data ANTM di `valuation.json` saat ini masih dari batch lama (eps 299.98 vs 311.6
