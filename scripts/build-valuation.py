@@ -451,15 +451,19 @@ def five_year_valuation(stock, last_price, warn):
                           'Input hilang: ' + ', '.join(missing),
                 'avg_multiples': avg_multiples}
 
-    future_value = sum(bw[m['key']] * m['annual'] for m in avail) / wsum
+    blend_annual = sum(bw[m['key']] * m['annual'] for m in avail) / wsum
     cagr_blend   = sum(bw[m['key']] * m['cagr'] for m in avail) / wsum
     mos_blend    = sum(bw[m['key']] * m['mos'] for m in avail if m['mos'] is not None) / wsum
-    combine = (future_value + cagr_blend) / 2
     div_yield = (dpr * eps_LY / last_price) if (dpr is not None and eps_LY is not None) else 0.0
+    # Future Value = blend annual G&L + dividend yield (sesuai rumus Excel pemilik).
+    future_value = blend_annual + div_yield
+    combine = (future_value + cagr_blend) / 2
 
+    # Potensi price akumulasi = Last x (1 + Combine x n) — ramp memakai COMBINE saja
+    # (dividen sudah ikut di dalam Combine via Future Value). Sesuai sheet Excel.
     price_targets = []
     for yr in range(1, n + 1):
-        pt = last_price * (combine + div_yield) * yr + last_price
+        pt = last_price * (1 + combine * yr)
         price_targets.append({'year': yr, 'target_price': round(pt),
                               'gl_pct': round((pt - last_price) / last_price * 100, 2)})
 
@@ -469,7 +473,7 @@ def five_year_valuation(stock, last_price, warn):
 
     return {
         'applicable': True,
-        'method': 'Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%)',
+        'method': 'Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%); FutureValue=blendAnnual+divYield; Potensi=Last×(1+Combine×n)',
         'base_year': ly, 'last_price': last_price,
         'avg_window_used': w, 'avg_windows_available': windows,
         'avg_multiples': avg_multiples,
