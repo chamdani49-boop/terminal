@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-15T16:58:59.281313+00:00",
+  "generated_at": "2026-06-15T17:39:53.583191+00:00",
   "source_files": [
     "valuation-batch-01.xlsx"
   ],
@@ -1167,32 +1167,32 @@
           "price_targets": [
             {
               "year": 1,
-              "target_price": 7953,
-              "gl_pct": 30.38
+              "target_price": 8320,
+              "gl_pct": 36.39
             },
             {
               "year": 2,
-              "target_price": 9806,
-              "gl_pct": 60.75
+              "target_price": 10540,
+              "gl_pct": 72.78
             },
             {
               "year": 3,
-              "target_price": 11659,
-              "gl_pct": 91.13
+              "target_price": 12759,
+              "gl_pct": 109.17
             },
             {
               "year": 4,
-              "target_price": 13512,
-              "gl_pct": 121.5
+              "target_price": 14979,
+              "gl_pct": 145.56
             },
             {
               "year": 5,
-              "target_price": 15365,
-              "gl_pct": 151.88
+              "target_price": 17199,
+              "gl_pct": 181.95
             }
           ],
-          "target_price_5y": 15365,
-          "potential_pct": 151.88
+          "target_price_5y": 17199,
+          "potential_pct": 181.95
         },
         "wacc": {
           "risk_free": 0.068,
@@ -2083,32 +2083,32 @@
           "price_targets": [
             {
               "year": 1,
-              "target_price": 5623,
-              "gl_pct": 79.63
+              "target_price": 5845,
+              "gl_pct": 86.73
             },
             {
               "year": 2,
-              "target_price": 8115,
-              "gl_pct": 159.27
+              "target_price": 8559,
+              "gl_pct": 173.45
             },
             {
               "year": 3,
-              "target_price": 10608,
-              "gl_pct": 238.9
+              "target_price": 11274,
+              "gl_pct": 260.18
             },
             {
               "year": 4,
-              "target_price": 13100,
-              "gl_pct": 318.53
+              "target_price": 13988,
+              "gl_pct": 346.9
             },
             {
               "year": 5,
-              "target_price": 15593,
-              "gl_pct": 398.17
+              "target_price": 16703,
+              "gl_pct": 433.63
             }
           ],
-          "target_price_5y": 15593,
-          "potential_pct": 398.17
+          "target_price_5y": 16703,
+          "potential_pct": 433.63
         },
         "wacc": {
           "risk_free": 0.068,
@@ -2999,32 +2999,32 @@
           "price_targets": [
             {
               "year": 1,
-              "target_price": 6749,
-              "gl_pct": 7.55
+              "target_price": 7054,
+              "gl_pct": 12.42
             },
             {
               "year": 2,
-              "target_price": 7223,
-              "gl_pct": 15.11
+              "target_price": 7833,
+              "gl_pct": 24.83
             },
             {
               "year": 3,
-              "target_price": 7697,
-              "gl_pct": 22.66
+              "target_price": 8612,
+              "gl_pct": 37.25
             },
             {
               "year": 4,
-              "target_price": 8171,
-              "gl_pct": 30.22
+              "target_price": 9391,
+              "gl_pct": 49.66
             },
             {
               "year": 5,
-              "target_price": 8645,
-              "gl_pct": 37.77
+              "target_price": 10171,
+              "gl_pct": 62.08
             }
           ],
-          "target_price_5y": 8645,
-          "potential_pct": 37.77
+          "target_price_5y": 10171,
+          "potential_pct": 62.08
         },
         "wacc": {
           "risk_free": 0.068,
@@ -3873,32 +3873,32 @@
           "price_targets": [
             {
               "year": 1,
-              "target_price": 3890,
-              "gl_pct": 30.11
+              "target_price": 4212,
+              "gl_pct": 40.86
             },
             {
               "year": 2,
-              "target_price": 4791,
-              "gl_pct": 60.22
+              "target_price": 5433,
+              "gl_pct": 81.72
             },
             {
               "year": 3,
-              "target_price": 5691,
-              "gl_pct": 90.33
+              "target_price": 6655,
+              "gl_pct": 122.58
             },
             {
               "year": 4,
-              "target_price": 6591,
-              "gl_pct": 120.45
+              "target_price": 7877,
+              "gl_pct": 163.44
             },
             {
               "year": 5,
-              "target_price": 7492,
-              "gl_pct": 150.56
+              "target_price": 9099,
+              "gl_pct": 204.3
             }
           ],
-          "target_price_5y": 7492,
-          "potential_pct": 150.56
+          "target_price_5y": 9099,
+          "potential_pct": 204.3
         },
         "wacc": {
           "risk_free": 0.068,
