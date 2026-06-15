@@ -1,0 +1,95 @@
+name: Refresh valuation.json dari Excel
+
+# ═══════════════════════════════════════════════════════════════════════
+# Membangun public/valuation.json dari file Excel di data/valuation/.
+#
+# Tiap file .xlsx di data/valuation/ berisi sampai 100 sheet (1 sheet =
+# 1 kode saham, range A1:Z40, layout tetap). Pemilik akan menambah/
+# memperbarui file Excel tiap bulan; workflow ini OTOMATIS me-rebuild
+# valuation.json dan men-purge cache jsDelivr setelahnya.
+#
+# TRIGGER (intentionally TIDAK ada cron):
+#   - push ke main yang menyentuh data/valuation/** atau script-nya →
+#     auto-rebuild begitu file Excel diupload via GitHub web/CLI.
+#   - workflow_dispatch → tombol manual (mis. setelah ubah ASSUMPTIONS
+#     di build-valuation.py atau setelah mesin DCF/DDM di-tweak).
+#
+# Catatan: script ini PURE Python stdlib (zip + xml), tidak butuh
+# `pip install` apa pun, jadi setup runner cukup `actions/setup-python`.
+# ═══════════════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/valuation/**'
+      - 'scripts/build-valuation.py'
+      - '.github/workflows/refresh-valuation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-valuation
+  cancel-in-progress: false
+
+jobs:
+  refresh-valuation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build valuation.json
+        run: python scripts/build-valuation.py
+
+      - name: Commit & push if valuation changed
+        id: commit
+        run: |
+          if git diff --quiet -- public/valuation.json; then
+            echo "⏭  Tidak ada perubahan valuation.json — skip commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "valuation-refresh[bot]"
+          git config user.email "valuation-refresh@economstock.local"
+          git add public/valuation.json
+          git commit -m "valuation: refresh $(date -u +%FT%TZ) [skip ci]"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "✓ Pushed on attempt $attempt"
+              pushed=true
+              break
+            fi
+            echo "⚠️  Push gagal (attempt $attempt) — rebase ke origin/main lalu retry…"
+            git pull --rebase --autostash origin main || true
+            sleep $(( (RANDOM % 5) + 2 ))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "FATAL: push gagal setelah 5 percobaan."
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Purge jsDelivr CDN cache
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          response=$(curl -fsS \
+            "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/public/valuation.json")
+          echo "Purge response: $response"
+          if echo "$response" | grep -q '"status":"finished"'; then
+            echo "✓ jsDelivr cache purged"
+          else
+            echo "⚠️  Purge response unexpected (non-fatal)"
+          fi
