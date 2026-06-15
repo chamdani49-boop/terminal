@@ -9206,18 +9206,19 @@ loadData();
     if(wsum>0) ['pbv','per','psr'].forEach(k=> w[k]=w[k]/wsum);
 
     const acc = (field)=> ['pbv','per','psr'].reduce((s,k)=> s + (w[k]||0)*(subm[k][field]||0), 0);
-    const future_value     = acc('annual');
+    const blend_annual     = acc('annual');
     const cagr             = acc('cagr');
-    const combine          = (future_value+cagr)/2;
     const dpr_win          = ((mult.dpr||{})[wk]) || 0;
     const dividend_yield   = (ok(inp.eps) && last>0) ? dpr_win*inp.eps/last : 0;
+    const future_value     = blend_annual + dividend_yield;   // Excel: FV = blend annual + dividen yield
+    const combine          = (future_value+cagr)/2;
     const margin_of_safety = acc('mos');
 
-    // Lintasan harga blend: pt(n) = last*(combine+div_yield)*n + last
-    const ramp = combine + dividend_yield;
+    // Lintasan harga: Potensi = last*(1 + combine*n). Ramp pakai COMBINE saja
+    // (dividen sudah ikut dalam combine via future_value) — sesuai sheet Excel.
     const price_targets = [];
     for(let n=1;n<=5;n++){
-      const pt = last*ramp*n + last;
+      const pt = last*(1 + combine*n);
       price_targets.push({ year:n, target_price:Math.round(pt), gl_pct: last>0?(pt-last)/last*100:null });
     }
 
@@ -9662,10 +9663,12 @@ loadData();
     ['pbv','per','psr'].forEach(k=>{ if(subm[k].applicable){ w[k]=baseW[k]; wsum+=baseW[k]; } else w[k]=0; });
     if(wsum>0) ['pbv','per','psr'].forEach(k=> w[k]=w[k]/wsum);
     const acc=f=>['pbv','per','psr'].reduce((s,k)=>s+(w[k]||0)*(subm[k][f]||0),0);
-    const future_value=acc('annual'), cagr=acc('cagr'); const combine=(future_value+cagr)/2;
+    const blend_annual=acc('annual'), cagr=acc('cagr');
     const dpr_win=((mult.dpr||{})[wk])||0;
     const dividend_yield=(ok(inp.eps)&&basis>0)? dpr_win*inp.eps/basis : 0;
-    // Potensi price = capital gain saja (mirip blok GROWTH & CAPITAL GAIN Excel)
+    const future_value=blend_annual+dividend_yield;   // Excel: FV = blend annual + dividen yield
+    const combine=(future_value+cagr)/2;
+    // Potensi price = capital gain via Combine (dividen sudah termasuk di Combine)
     const potensi=[]; for(let n=1;n<=5;n++) potensi.push(Math.round(basis*(1+combine*n)));
     return { applicable:true, basis, win, combine, cagr, future_value, dividend_yield,
              dpr_win, eps:inp.eps, dps_est:dpr_win*(inp.eps||0), potensi, target5:potensi[4] };
