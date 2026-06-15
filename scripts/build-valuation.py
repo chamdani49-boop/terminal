@@ -34,9 +34,14 @@ ASSUMPTIONS = {
     'terminal_growth':      0.035,   # pertumbuhan jangka panjang (≈ inflasi + PDB riil).
     'default_tax_rate':     0.22,    # tarif pajak badan Indonesia (fallback).
     'projection_years':     5,
-    # Placeholder pertumbuhan 5 th — DIGANTI rumus pemilik nanti:
+    # Placeholder pertumbuhan 5 th DCF — DIGANTI bila pemilik beri growth FCF:
     'default_fcf_growth':   0.08,
     'default_div_growth_cap': 0.15,  # batas atas g berkelanjutan DDM.
+
+    # ── Model 5-tahun pemilik (multiples) ──
+    'avg_windows':       [3, 5, 7, 10],  # window rata-rata DPR/PBV/PER/PSR
+    'avg_window_default': 5,
+    'blend_weights':     {'pbv': 0.5, 'per': 0.4, 'psr': 0.1},  # bobot sub-model
 }
 
 # ── Peta baris → field (layout tetap, sama di semua sheet) ───────────────────
@@ -218,7 +223,7 @@ def is_financial(info):
     return any(kw in blob for kw in ('financ', 'bank', 'insuranc', 'asuransi'))
 
 
-def dcf_valuation(stock, wacc, warn, financial=False):
+def dcf_valuation(stock, wacc, warn, financial=False, last_price=None):
     """DCF FCFF 2-tahap. Growth 5 th = placeholder (akan diganti rumus pemilik)."""
     if financial:
         return {'applicable': False,
@@ -233,7 +238,7 @@ def dcf_valuation(stock, wacc, warn, financial=False):
     net_debt = stock['q1'].get('net_debt')
     if net_debt is None:
         net_debt = latest_annual(stock, 'net_debt')[0]
-    price = stock['q1'].get('price')
+    price = last_price or stock['q1'].get('price')
 
     caveats = []
     if base_fcf is None or shares is None:
@@ -276,7 +281,7 @@ def dcf_valuation(stock, wacc, warn, financial=False):
     }
 
 
-def ddm_valuation(stock, cost_of_equity, warn):
+def ddm_valuation(stock, cost_of_equity, warn, last_price=None):
     """DDM 2-tahap. g berkelanjutan = ROE × (1 − payout)."""
     n  = ASSUMPTIONS['projection_years']
     gt = ASSUMPTIONS['terminal_growth']
@@ -284,7 +289,7 @@ def ddm_valuation(stock, cost_of_equity, warn):
     base_dps, dps_year = latest_annual(stock, 'dps')
     roe, _   = latest_annual(stock, 'roe')        # dalam persen (mis. 6.23)
     payout, _= latest_annual(stock, 'dpr')        # fraksi (mis. 0.599)
-    price = stock['q1'].get('price')
+    price = last_price or stock['q1'].get('price')
 
     caveats = []
     if not base_dps or base_dps <= 0:
@@ -330,16 +335,174 @@ def ddm_valuation(stock, cost_of_equity, warn):
     }
 
 
+def annual_years_desc(stock):
+    return sorted(stock['annual'].keys(), reverse=True)
+
+
+def avg_over_window(stock, field, n):
+    """Rata-rata `field` atas n tahun terakhir yang tersedia (skip None)."""
+    vals = []
+    for y in annual_years_desc(stock):
+        v = stock['annual'][y].get(field)
+        if v is not None:
+            vals.append(v)
+        if len(vals) >= n:
+            break
+    return (sum(vals) / len(vals)) if vals else None
+
+
+def two_latest(stock, field):
+    """(nilai_terbaru, nilai_sebelumnya, th_terbaru, th_sebelumnya) untuk sebuah field."""
+    found = []
+    for y in annual_years_desc(stock):
+        v = stock['annual'][y].get(field)
+        if v is not None:
+            found.append((y, v))
+        if len(found) >= 2:
+            break
+    lv = found[0][1] if len(found) >= 1 else None
+    pv = found[1][1] if len(found) >= 2 else None
+    ly = found[0][0] if len(found) >= 1 else None
+    py = found[1][0] if len(found) >= 2 else None
+    return lv, pv, ly, py
+
+
+def five_year_valuation(stock, last_price, warn):
+    """Model 5-tahun pemilik: 3 sub-model multiples (PBV / PER / PSR) lalu di-blend."""
+    n = ASSUMPTIONS['projection_years']
+    w = ASSUMPTIONS['avg_window_default']
+    bw = ASSUMPTIONS['blend_weights']
+
+    if not last_price or last_price <= 0:
+        return {'applicable': False, 'reason': 'Harga tidak tersedia'}
+
+    # Base per-share fundamentals (tahunan terbaru).
+    eps_LY, eps_PY, ly, py = two_latest(stock, 'eps')
+    sps_LY, sps_PY, _, _   = two_latest(stock, 'sps')
+    bvps_LY, _, _, _       = two_latest(stock, 'bvps')
+
+    # Growth tahunan (LY vs PY).
+    eps_g_ann = (eps_LY - eps_PY) / eps_PY if (eps_LY is not None and eps_PY) else None
+    sps_g_ann = (sps_LY - sps_PY) / sps_PY if (sps_LY is not None and sps_PY) else None
+    roe_ann_raw, _, _, _ = two_latest(stock, 'roe')           # persen
+    roe_ann = roe_ann_raw / 100.0 if roe_ann_raw is not None else None
+
+    # Angka "5 tahun" diambil dari field data (sesuai arahan pemilik).
+    roe_5y   = latest_annual(stock, 'roe_5y')[0]
+    eps_g_5y = latest_annual(stock, 'eps_growth_5y')[0]
+    sps_g_5y = latest_annual(stock, 'sps_growth_5y')[0]
+
+    # Rata-rata multiples & DPR untuk SEMUA window (3/5/7/10), pakai default utk hitung.
+    windows = ASSUMPTIONS['avg_windows']
+    avg_multiples = {
+        'pbv': {win: round(avg_over_window(stock, 'pbv', win), 4) if avg_over_window(stock, 'pbv', win) is not None else None for win in windows},
+        'per': {win: round(avg_over_window(stock, 'per', win), 4) if avg_over_window(stock, 'per', win) is not None else None for win in windows},
+        'psr': {win: round(avg_over_window(stock, 'psr', win), 4) if avg_over_window(stock, 'psr', win) is not None else None for win in windows},
+        'dpr': {win: round(avg_over_window(stock, 'dpr', win), 4) if avg_over_window(stock, 'dpr', win) is not None else None for win in windows},
+    }
+    avg_pbv = avg_over_window(stock, 'pbv', w)
+    avg_per = avg_over_window(stock, 'per', w)
+    avg_psr = avg_over_window(stock, 'psr', w)
+    dpr     = avg_over_window(stock, 'dpr', w)
+
+    def project(base, g, mult):
+        out = []
+        val = base
+        for t in range(1, n + 1):
+            val = val * (1 + g)
+            out.append({'year': t, 'value': round(val, 2),
+                        'price_target': round(val * mult, 2) if mult is not None else None})
+        return out
+
+    def submodel(key, base, g, mult):
+        if base is None or g is None or mult is None:
+            return {'key': key, 'applicable': False,
+                    'growth': round(g, 4) if g is not None else None,
+                    'multiple': mult, 'annual': None, 'cagr': None, 'mos': None}
+        proj = project(base, g, mult)
+        pt5 = proj[-1]['price_target']
+        gl = (pt5 - last_price) / last_price
+        cagr = (proj[4]['value'] / proj[0]['value']) ** (1 / n) - 1
+        mos = 1 - last_price / pt5 if pt5 else None
+        return {'key': key, 'applicable': True, 'growth': round(g, 4), 'multiple': round(mult, 4),
+                'projection': proj, 'target_5y': round(pt5), 'gl_5y': round(gl, 4),
+                'annual': round(gl / n, 4), 'cagr': round(cagr, 4),
+                'mos': round(mos, 4) if mos is not None else None}
+
+    g_bv  = (0.8 * roe_5y + 0.2 * roe_ann) if (roe_5y is not None and roe_ann is not None) else None
+    g_eps = (0.8 * eps_g_5y + 0.2 * eps_g_ann) if (eps_g_5y is not None and eps_g_ann is not None) else None
+    g_sps = (0.8 * sps_g_5y + 0.2 * sps_g_ann) if (sps_g_5y is not None and sps_g_ann is not None) else None
+
+    m_pbv = submodel('pbv', bvps_LY, g_bv, avg_pbv)
+    m_per = submodel('per', eps_LY, g_eps, avg_per)
+    m_psr = submodel('psr', sps_LY, g_sps, avg_psr)
+    submodels = [m_pbv, m_per, m_psr]
+
+    # Blend hanya sub-model yang valid (bobot dinormalisasi ulang).
+    avail = [m for m in submodels if m['applicable']]
+    wsum = sum(bw[m['key']] for m in avail)
+    if wsum == 0:
+        missing = []
+        if g_bv is None:  missing.append('ROE 5th/tahunan')
+        if g_eps is None: missing.append('EPS growth 5th/tahunan')
+        if g_sps is None: missing.append('Sales growth 5th/tahunan')
+        return {'applicable': False,
+                'reason': 'Data 5-tahun belum lengkap (kemungkinan emiten baru listing). '
+                          'Input hilang: ' + ', '.join(missing),
+                'avg_multiples': avg_multiples}
+
+    future_value = sum(bw[m['key']] * m['annual'] for m in avail) / wsum
+    cagr_blend   = sum(bw[m['key']] * m['cagr'] for m in avail) / wsum
+    mos_blend    = sum(bw[m['key']] * m['mos'] for m in avail if m['mos'] is not None) / wsum
+    combine = (future_value + cagr_blend) / 2
+    div_yield = (dpr * eps_LY / last_price) if (dpr is not None and eps_LY is not None) else 0.0
+
+    price_targets = []
+    for yr in range(1, n + 1):
+        pt = last_price * (combine + div_yield) * yr + last_price
+        price_targets.append({'year': yr, 'target_price': round(pt),
+                              'gl_pct': round((pt - last_price) / last_price * 100, 2)})
+
+    if len(avail) < 3:
+        warn.append('5y: sub-model tidak lengkap (' +
+                    ','.join(m['key'] for m in submodels if not m['applicable']) + ') → bobot dinormalisasi')
+
+    return {
+        'applicable': True,
+        'method': 'Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%)',
+        'base_year': ly, 'last_price': last_price,
+        'avg_window_used': w, 'avg_windows_available': windows,
+        'avg_multiples': avg_multiples,
+        'inputs': {
+            'eps': eps_LY, 'sps': sps_LY, 'bvps': bvps_LY,
+            'roe_annual': round(roe_ann, 4) if roe_ann is not None else None,
+            'roe_5y': roe_5y, 'eps_growth_annual': round(eps_g_ann, 4) if eps_g_ann is not None else None,
+            'eps_growth_5y': eps_g_5y, 'sps_growth_annual': round(sps_g_ann, 4) if sps_g_ann is not None else None,
+            'sps_growth_5y': sps_g_5y, 'dpr': round(dpr, 4) if dpr is not None else None,
+        },
+        'submodels': {'pbv': m_pbv, 'per': m_per, 'psr': m_psr},
+        'future_value': round(future_value, 4),
+        'cagr': round(cagr_blend, 4),
+        'combine': round(combine, 4),
+        'dividend_yield': round(div_yield, 4),
+        'margin_of_safety': round(mos_blend, 4),
+        'price_targets': price_targets,
+        'target_price_5y': price_targets[-1]['target_price'],
+        'potential_pct': price_targets[-1]['gl_pct'],
+    }
+
+
 def load_data_json():
-    """Ambil beta & stock_info per kode saham dari public/data.json."""
+    """Ambil beta, stock_info, dan harga live per kode saham dari public/data.json."""
     try:
         d = json.load(open(DATA_JSON, encoding='utf-8'))
         stats = d.get('stats', {})
         betas = {c: s.get('beta') for c, s in stats.items()}
-        return betas, d.get('stock_info', {})
+        live = {c: (v or {}).get('price') for c, v in d.get('live', {}).items()}
+        return betas, d.get('stock_info', {}), live
     except Exception as e:
-        print(f'[build-valuation] data.json tidak terbaca ({e}) → beta default dipakai', file=sys.stderr)
-        return {}, {}
+        print(f'[build-valuation] data.json tidak terbaca ({e}) → default dipakai', file=sys.stderr)
+        return {}, {}, {}
 
 
 # ════════════════════════════ MAIN ══════════════════════════════════════════
@@ -349,7 +512,7 @@ def main():
     if not files:
         print(f'[build-valuation] Tidak ada file .xlsx di {SRC_DIR}', file=sys.stderr)
 
-    betas, stock_info = load_data_json()
+    betas, stock_info, live_prices = load_data_json()
     stocks, warnings, source_files = {}, [], []
 
     for path in files:
@@ -366,31 +529,27 @@ def main():
 
             info = stock_info.get(code, {})
             financial = is_financial(info)
+            # Harga realtime dari sheet/live data.json; fallback ke harga Excel (q1).
+            last_price = live_prices.get(code) or data['q1'].get('price')
+            price_is_live = bool(live_prices.get(code))
+
             warn = []
             wacc_info = compute_wacc(data, betas.get(code), warn)
             ke = wacc_info['cost_of_equity']
-            dcf = dcf_valuation(data, wacc_info['wacc'], warn, financial=financial)
-            ddm = ddm_valuation(data, ke, warn)
-
-            # Metode yang disarankan + fair value ringkas untuk UI.
-            if financial:
-                primary = 'DDM' if ddm.get('applicable') else None
-            else:
-                primary = 'DCF' if dcf.get('applicable') else ('DDM' if ddm.get('applicable') else None)
-            primary_model = {'DCF': dcf, 'DDM': ddm}.get(primary)
-            fair = primary_model.get('fair_value_per_share') if primary_model else None
-            upside = primary_model.get('upside_pct') if primary_model else None
+            five = five_year_valuation(data, last_price, warn)
+            dcf = dcf_valuation(data, wacc_info['wacc'], warn, financial=financial, last_price=last_price)
+            ddm = ddm_valuation(data, ke, warn, last_price=last_price)
 
             data['valuation'] = {
                 'sector': info.get('sector'),
                 'industry': info.get('industry'),
                 'is_financial': financial,
-                'recommended_method': primary,
-                'fair_value_per_share': fair,
-                'upside_pct': upside,
+                'last_price': last_price,
+                'price_source': 'live' if price_is_live else 'excel',
+                'five_year': five,            # model utama pemilik
                 'wacc': wacc_info,
-                'dcf': dcf,
-                'ddm': ddm,
+                'dcf': dcf,                   # cross-check profesional
+                'ddm': ddm,                   # cross-check profesional
                 'notes': warn,
             }
             stocks[code] = data
