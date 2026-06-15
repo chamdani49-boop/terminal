@@ -9053,7 +9053,7 @@ loadData();
       <div id="ujMsg"></div>
       <div id="ujBody" class="uj-sheet"></div>
       <div class="uj-grid3" style="margin-top:14px">
-        <div class="card"><div class="card-title" id="ujC1Title">Pendapatan &amp; Laba Bersih + Harga</div><div class="uj-chart"><canvas id="ujC1"></canvas></div></div>
+        <div class="card"><div class="card-title" id="ujC1Title">Pendapatan &amp; Laba Bersih + Harga <span style="font-weight:500;color:var(--text3)">(nilai Rp juta)</span></div><div class="uj-chart"><canvas id="ujC1"></canvas></div></div>
         <div class="card"><div class="card-title">Laba% &amp; ROE (Tahunan) + Harga</div><div class="uj-chart"><canvas id="ujC2"></canvas></div></div>
         <div class="card"><div class="card-title">PBV · PER · PSR + Book Value</div><div class="uj-chart"><canvas id="ujC3"></canvas></div></div>
       </div>
@@ -9872,11 +9872,11 @@ loadData();
     const mk=(id,cfg)=>{ const cv=document.getElementById(id); if(cv) ujCharts.push(new Chart(cv,cfg)); };
 
     mk('ujC1', { type:'bar', data:{ labels, datasets:[
-      { label:'Pendapatan', data:A(a=>ok(a.total_revenue)?a.total_revenue/1e6:null), backgroundColor:COL.blue, borderRadius:3, yAxisID:'y' },
-      { label:'Laba Bersih', data:A(a=>ok(a.net_income)?a.net_income/1e6:null), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
+      { label:'Pendapatan (Rp juta)', data:A(a=>ok(a.total_revenue)?a.total_revenue/1e6:null), backgroundColor:COL.blue, borderRadius:3, yAxisID:'y' },
+      { label:'Laba Bersih (Rp juta)', data:A(a=>ok(a.net_income)?a.net_income/1e6:null), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
       { label:'Last Price', data:A(a=>a.price), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
     ]}, options:{...base, scales:{
-      y:{ ticks:{...TICK, callback:v=>(v/1e6).toFixed(0)+'jt'}, grid:GRID },
+      y:{ ticks:{...TICK, callback:v=>'Rp'+(v/1e6).toFixed(0)+'T'}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 

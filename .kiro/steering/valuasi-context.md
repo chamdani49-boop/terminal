@@ -62,10 +62,17 @@ Tahap sekarang = **testing dengan 5 saham** (AADI, AALI, ANTM, BBCA, BBRI).
 1. "Tahun berjalan" dipakai **apa adanya** (Q1×4), bukan TTM.
 2. ROE 5th / EPS growth 5th / SPS growth 5th diambil dari **field data** (kolom
    tahunan, bukan Q1). DCF & DDM dibuat profesional oleh agent.
-3. **Divisor share outstanding** di rumus Excel (B3/C3 ÷ 1.000.000) hanya untuk
-   menghitung EPS/SPS/BVPS manual di Excel. **Tidak diterapkan di mesin** karena
-   valuation.json sudah punya eps/sps/bvps per-lembar dari sumber (hasil cocok 100%).
-4. Boleh menambahkan popup/info modal di UI bila informasinya penting.
+3. **Konvensi unit (KOREKSI dari user, sesi terbaru):** **share outstanding TETAP
+   angka penuh** (tidak dibagi 1.000.000). Yang dibagi 1.000.000 (→ disajikan dalam
+   **juta**) adalah **pendapatan, laba bersih, dan ekuitas**. Catatan: mesin
+   **membaca eps/sps/bvps langsung dari sheet** (baris 25/27/32), bukan menghitung
+   manual via pembagian, sehingga `valuation.json` TIDAK terpengaruh konvensi ini
+   (nilai per-lembar sudah cocok 100% dgn sumber). Implikasi hanya pada TAMPILAN
+   (chart pendapatan/laba/ekuitas pakai satuan juta; market cap pakai shares penuh).
+4. **Rumus growth tahunan (DIKONFIRMASI benar):** `eps_growth_annual` &
+   `sps_growth_annual` = `(nilai annual th terakhir − th sebelumnya) / th sebelumnya`.
+   Sudah diimplementasikan persis di `five_year_valuation` (BBRI: EPS −5,49%, SPS +4,27%).
+5. Boleh menambahkan popup/info modal di UI bila informasinya penting.
 
 ## PR terkait
 - **PR #166** — mesin valuasi (build-valuation.py) + valuation.json + UI valuasi
