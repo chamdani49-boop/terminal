@@ -9915,7 +9915,11 @@ loadData();
     const pc = vlUjiCalc(s, win, primaryLast);
     const cmb = pc.applicable ? pc.combine : null;       // ramp Potensi = Combine
     const startYr = ujBasisStartYear(s);
-    const years = [0,1,2,3,4].map(i=> startYr? (startYr+1+i) : ('T+'+(i+1)));
+    // Label tahun proyeksi. Untuk basis "Tahun Berjalan" (current): 12M annual
+    // tahun berjalan BELUM muncul, jadi proyeksi dimulai dari TAHUN SEKARANG
+    // (startYr) — bukan startYr+1. Untuk basis tahun penuh, T+1 = tahun setelah basis.
+    const projShift = (_ujBasis === 'current') ? 0 : 1;
+    const years = [0,1,2,3,4].map(i=> startYr? (startYr+projShift+i) : ('T+'+(i+1)));
 
     // Acuan "ACTUAL": Sekarang (live) vs harga BASIS = "12M {tahun}" (kolom 12M di Excel).
     // Memakai primaryLast (sama dgn basis valuasi & kartu G&L), BUKAN harga Q3 10/31.
