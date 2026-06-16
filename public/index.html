@@ -9047,7 +9047,21 @@ loadData();
           <span class="vl-tb-label" style="margin-right:4px">Basis Periode</span>
           <button class="vl-basis-btn active" id="ujBtnQ" onclick="vlUjiSetMode('quarter')">Kuartal (Q1–Q4)</button>
           <button class="vl-basis-btn" id="ujBtnY" onclick="vlUjiSetMode('year')">Tahunan</button>
-          <span class="uj-note-inline">Semua angka = output mesin kita (sumber: valuation.json + data.json) — untuk dibandingkan langsung dengan Excel.</span>
+        </div>
+        <div class="uj-controls" style="margin-top:8px">
+          <span class="vl-tb-label" style="margin-right:4px">Last Price untuk Valuasi</span>
+          <button class="vl-basis-btn active" data-uj-last="live" onclick="vlUjiSetLast('live')">🔴 Live</button>
+          <button class="vl-basis-btn" data-uj-last="Q1" onclick="vlUjiSetLast('Q1')">Q1</button>
+          <button class="vl-basis-btn" data-uj-last="Q2" onclick="vlUjiSetLast('Q2')">Q2</button>
+          <button class="vl-basis-btn" data-uj-last="Q3" onclick="vlUjiSetLast('Q3')">Q3</button>
+          <button class="vl-basis-btn" data-uj-last="Annual" onclick="vlUjiSetLast('Annual')">Tahunan</button>
+          <span style="display:inline-flex;gap:4px;align-items:center;margin-left:6px">
+            <button class="vl-basis-btn" data-uj-last="custom" onclick="document.getElementById('ujLastInput').focus()">Custom</button>
+            <input id="ujLastInput" type="number" min="1" step="1" placeholder="Harga…"
+              style="width:110px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px"
+              oninput="vlUjiSetLast('custom', this.value)">
+          </span>
+          <span class="uj-note-inline" id="ujLastInfo">memakai harga live</span>
         </div>
       </div>
       <div id="ujMsg"></div>
@@ -9639,6 +9653,8 @@ loadData();
      yang di-parameter dgn harga basis sembarang.
   ════════════════════════════════════════════════════════════════ */
   let _ujMode = 'quarter';                 // 'quarter' | 'year'
+  let _ujLastSel = 'live';                 // 'live' | 'Q1'..'Annual' | 'custom'
+  let _ujLastCustom = null;                // angka custom dari user (kalau dipilih)
   const ujCharts = [];                     // chart Uji Data (terpisah)
   const ujN  = v => ok(v) ? Math.round(v).toLocaleString('en-US') : '–';     // 4,888
   const ujP  = v => ok(v) ? v.toFixed(2)+'%' : '–';
@@ -9698,10 +9714,10 @@ loadData();
     }
     const yr=ujFiscalYear();
     const defs=[
-      { key:'Q1',     label:'Q1',           desc:'Kuartal 1 (Q1): 1 Jan – 31 Mar',  late:'Akhir April',   date:'4/30/'+yr },
-      { key:'Q2',     label:'Q2',           desc:'Kuartal 2 (Q2): 1 Apr – 30 Jun',  late:'Akhir Juli',    date:'7/31/'+yr },
-      { key:'Q3',     label:'Q3',           desc:'Kuartal 3 (Q3): 1 Jul – 30 Sep',  late:'Akhir Oktober', date:'10/31/'+yr },
-      { key:'Annual', label:'Annual '+yr,   desc:'Kuartal 4 (Q4): 1 Okt – 31 Des',  late:'Akhir Maret',   date:'3/31/'+(yr+1) },
+      { key:'Q1',     label:'Q1',                desc:'Kuartal I (Q1 — 31 Mar)',     late:'Akhir April',   date:'4/30/'+yr },
+      { key:'Q2',     label:'Q2',                desc:'Kuartal II (Q2 — 30 Jun)',    late:'Akhir Juli',    date:'7/31/'+yr },
+      { key:'Q3',     label:'Q3',                desc:'Kuartal III (Q3 — 30 Sep)',   late:'Akhir Oktober', date:'10/31/'+yr },
+      { key:'Annual', label:'Tahunan '+yr,       desc:'Tahunan (Q4 — 31 Des)',       late:'Akhir Maret',   date:'3/31/'+(yr+1) },
     ];
     return defs.map(d=>({ ...d, price:ujPriceOn(d.date) }));
   }
@@ -9723,15 +9739,39 @@ loadData();
     }
     if(msg) msg.innerHTML='';
 
-    const e=effLast(s); const now=e.price;
+    const e=effLast(s); const livePrice=e.price;
     const live=(state.live&&state.live[s.code])||{};
     const chg = ok(live.change_pct)? live.change_pct*100 : (ok(e.change)? e.change*100 : null);
     const maxPrice=live.max_price;
 
     const set=ujBasisSet(s);
-    let primary=set.filter(b=>ok(b.price)).slice(-1)[0] || set[set.length-1];
-    if(_ujMode==='quarter'){ const qs=set.filter(b=>/^Q\d/.test(b.key)&&ok(b.price)); if(qs.length) primary=qs[qs.length-1]; }
-    const pBasis = primary && primary.price;
+
+    // ── Resolve "Last Price untuk valuasi" sesuai selector ──
+    // Default 'live': now=live, pBasis=primary kuartal terakhir (perilaku lama).
+    // Q1/Q2/Q3/Annual: now=pBasis=harga periode tsb (snapshot 1 harga, ala Excel).
+    // 'custom': now=pBasis=harga input user.
+    let primaryAuto = set.filter(b=>ok(b.price)).slice(-1)[0] || set[set.length-1];
+    if(_ujMode==='quarter'){ const qs=set.filter(b=>/^Q\d|Annual/.test(b.key)&&ok(b.price)); if(qs.length) primaryAuto=qs[qs.length-1]; }
+
+    let now=livePrice, primary=primaryAuto, pBasis=primaryAuto && primaryAuto.price;
+    let lastInfo='memakai harga live (data.json.live)';
+    if(_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0){
+      now=_ujLastCustom; pBasis=_ujLastCustom;
+      primary={ key:'Custom', label:'Custom', date:'-', price:_ujLastCustom };
+      lastInfo='Last Price = '+ujN(_ujLastCustom)+' (input manual) — semua perhitungan memakai harga ini';
+    } else if(_ujLastSel!=='live'){
+      const m=set.find(b=>b.key===_ujLastSel);
+      if(m && ok(m.price)){
+        now=m.price; pBasis=m.price; primary=m;
+        lastInfo='Last Price = '+ujN(m.price)+' (basis '+m.label+' · '+m.date+') — semua perhitungan memakai harga ini';
+      } else {
+        lastInfo='Basis '+_ujLastSel+' tidak tersedia → fallback ke harga live';
+      }
+    }
+    const liInfo=document.getElementById('ujLastInfo'); if(liInfo) liInfo.textContent=lastInfo;
+    document.querySelectorAll('#vl-tab-uji .vl-basis-btn[data-uj-last]').forEach(b=>{
+      b.classList.toggle('active', b.getAttribute('data-uj-last')===_ujLastSel);
+    });
     const win=state.win;
     const pc = vlUjiCalc(s, win, pBasis);
     const by = parseInt(fy.base_year,10) || parseInt(latestYear(s),10) || 0;
@@ -9767,10 +9807,13 @@ loadData();
       '</tbody></table></div>'+
       '<div class="uj-cap">Potensi = basis '+primary.label+' ('+ujN(pBasis)+') × (1 + combine × n) · % vs harga sekarang '+ujN(now)+'</div></div>';
 
+    const chgBadge = (_ujLastSel==='live' && ok(chg))
+      ? '<span class="'+(chg>=0?'uj-pos':'uj-neg')+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>'
+      : '';
     const codeLeft =
       '<div class="card"><div class="uj-codebox"><span class="code">'+s.code.toLowerCase()+'</span>'+
       '<span class="px">'+ujN(now)+'</span>'+
-      (ok(chg)?'<span class="'+(chg>=0?'uj-pos':'uj-neg')+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
+      chgBadge+
       '<span class="tag">'+primary.label+'</span></div>'+ ujEstDividen(s, pc, primary, now) + '</div>';
 
     const actRows = years.map((yr,i)=>'<tr><td>'+ujG(glNow(i))+'</td><td>'+ujN(pc.potensi[i])+'</td><td class="uj-yr">'+yr+'</td><td>'+ujN(pc.potensi[i])+'</td><td>'+ujG(glPrim(i))+'</td></tr>').join('');
@@ -9913,6 +9956,21 @@ loadData();
     const bq=document.getElementById('ujBtnQ'), byb=document.getElementById('ujBtnY');
     if(bq)  bq.classList.toggle('active',  _ujMode==='quarter');
     if(byb) byb.classList.toggle('active', _ujMode==='year');
+    renderUji();
+  };
+
+  // Pilih basis Last Price untuk valuasi di tab Uji Data.
+  // sel: 'live' | 'Q1' | 'Q2' | 'Q3' | 'Annual' | 'custom'
+  window.vlUjiSetLast = function(sel, customVal){
+    _ujLastSel = sel || 'live';
+    if(_ujLastSel==='custom'){
+      const v = (customVal!==undefined && customVal!==null && customVal!=='') ? Number(customVal)
+                : Number((document.getElementById('ujLastInput')||{}).value);
+      _ujLastCustom = (isFinite(v) && v>0) ? v : null;
+      if(!_ujLastCustom){ // belum diisi → tetap di mode 'live' agar tidak crash
+        _ujLastSel = 'live';
+      }
+    }
     renderUji();
   };
 
