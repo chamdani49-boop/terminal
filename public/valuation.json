@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-16T07:40:56.754712+00:00",
+  "generated_at": "2026-06-16T16:59:00.131933+00:00",
   "source_files": [
     "valuation-batch-01.xlsx"
   ],
@@ -30,6 +30,7 @@
     "AADI": {
       "code": "AADI",
       "code_in_sheet": "AADI",
+      "q_label": "Q1",
       "q1": {
         "price": 11600.0,
         "total_revenue": 1044192000.0,
@@ -380,12 +381,12 @@
           "caveats": []
         },
         "notes": []
-      },
-      "q_label": "Q1"
+      }
     },
     "AALI": {
       "code": "AALI",
       "code_in_sheet": "AALI",
+      "q_label": "Q1",
       "q1": {
         "price": 8100.0,
         "total_revenue": 7501811000000.0,
@@ -1298,12 +1299,12 @@
           "caveats": []
         },
         "notes": []
-      },
-      "q_label": "Q1"
+      }
     },
     "ANTM": {
       "code": "ANTM",
       "code_in_sheet": "ANTM",
+      "q_label": "Q1",
       "q1": {
         "price": 3740.0,
         "total_revenue": 29323338000000.0,
@@ -2240,12 +2241,12 @@
         "notes": [
           "ANTM: five_year memakai override otoritatif (10 input + 4 multiple, window 5) dari Sheet final ANTM 2025 (Last Price 3150). Per-share = Profit/Equity/Sales / Shares (24.030 jt). Diverifikasi cocok 100% dgn rumus sheet (Combine 78.89%, MoS 78.45%)."
         ]
-      },
-      "q_label": "Q1"
+      }
     },
     "BBCA": {
       "code": "BBCA",
       "code_in_sheet": "BBCA",
+      "q_label": "Q1",
       "q1": {
         "price": 5850.0,
         "total_revenue": 29653619000000.0,
@@ -3116,12 +3117,12 @@
           "caveats": []
         },
         "notes": []
-      },
-      "q_label": "Q1"
+      }
     },
     "BBRI": {
       "code": "BBRI",
       "code_in_sheet": "BBRI",
+      "q_label": "Q1",
       "q1": {
         "price": 2990.0,
         "total_revenue": 52838024000000.0,
@@ -3992,8 +3993,7 @@
           "caveats": []
         },
         "notes": []
-      },
-      "q_label": "Q1"
+      }
     }
   },
   "warnings": []
