@@ -9012,6 +9012,13 @@ loadData();
       .uj-sheet{display:flex;flex-direction:column;gap:14px}
       .uj-row{display:flex;gap:14px;flex-wrap:wrap;align-items:stretch}
       .uj-col{flex:1 1 300px;min-width:260px;display:flex;flex-direction:column;gap:10px}
+      .uj-col > .card{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
+      .uj-col-sm{flex:1 1 240px;max-width:320px}
+      .uj-col-md{flex:1.4 1 360px}
+      .uj-col-lg{flex:1.7 1 460px}
+      .uj-row-2{align-items:stretch}
+      .uj-row-2 > .uj-col{flex:1 1 320px}
+      .uj-spacer{flex:1 1 auto}
       .uj-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
       .uj-tbl{border-collapse:collapse;width:100%;font-family:'IBM Plex Mono',monospace;font-size:12px}
       .uj-tbl th,.uj-tbl td{border:1px solid #c9b8e8;padding:5px 8px;text-align:right;white-space:nowrap}
@@ -9039,6 +9046,13 @@ loadData();
       @media(max-width:900px){.uj-grid3{grid-template-columns:1fr}}
       .uj-chart{position:relative;width:100%;height:260px}
       .uj-blk-title{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+      /* Tab Uji controls */
+      #vl-tab-uji .uj-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 0}
+      #vl-tab-uji .vl-tb-label{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+      #vl-tab-uji .uj-note-inline{font-size:11px;color:var(--text3);font-weight:600}
+      .uj-row .card .uj-band{margin:-2px -2px 8px -2px}
+      .uj-row .card .uj-codebox{margin-bottom:8px}
+      .uj-row .card .uj-tbl{margin-top:0}
 
       /* Panel Override Input */
       .uj-ovr-card{border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);padding:10px 12px}
@@ -9703,6 +9717,26 @@ loadData();
     }};
   }
 
+  // Harga basis: ikut TAHUN basis. Klik basis "2025" → harga = annual.2025.price
+  // (sama spt kolom "12M 2025" di Excel valuasi). Basis 'current' (Tahun Berjalan/Q1)
+  // → null = pakai harga live. Override custom Last Price tetap menang di atas semuanya.
+  function ujBasisPrice(stock){
+    const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
+    const basis = _ujBasis || ('Y'+latest);
+    if(basis==='current') return null;
+    const y = basis.slice(1);
+    const p = (stock.annual[y]||{}).price;
+    return ok(p) && p>0 ? p : null;
+  }
+
+  // Tahun mulai proyeksi (T+1 = tahun setelah basis).
+  function ujBasisStartYear(stock){
+    const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
+    const basis = _ujBasis || ('Y'+latest);
+    if(basis==='current') return parseInt(latest,10) || 0;
+    return parseInt(basis.slice(1),10) || 0;
+  }
+
   // Cermin computeModel, tapi memakai harga "basis" yg diberikan (bukan harga terakhir).
   // Plus: bila ada override input untuk emiten ini (_ujOvr[code]), pakai itu.
   function vlUjiCalc(stock, win, basis){
@@ -9822,11 +9856,20 @@ loadData();
 
     const e=effLast(s); const livePrice=e.price;
     const win=state.win;
+    const basisPrice = ujBasisPrice(s);   // null = basis 'current' → ikut live
 
-    // Last Price utama untuk valuasi: harga live, atau custom/preset bila di-set (untuk uji).
-    const primaryLast = (_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0) ? _ujLastCustom : livePrice;
+    // Last Price utama untuk valuasi:
+    //   override custom (preset/uji) > harga basis tahun (mis. 2025=3150) > harga live.
+    const primaryLast = (_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0)
+      ? _ujLastCustom
+      : (ok(basisPrice) ? basisPrice : livePrice);
     const liInfo=document.getElementById('ujLastInfo');
-    if(liInfo) liInfo.textContent = (primaryLast===livePrice) ? ('live = '+ujN(livePrice)) : (ujN(primaryLast)+' (preset/override)');
+    if(liInfo){
+      const tag = (_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0) ? ' (custom)'
+                : (ok(basisPrice) ? ' (harga '+(_ujBasis ? _ujBasis.replace(/^Y/,'') : '')+')'
+                : ' (live)');
+      liInfo.textContent = ujN(primaryLast)+tag;
+    }
 
     // Harga "ACTUAL": Sekarang (live) + closing kuartal terakhir (Q3 = 10/31 fiskal).
     const fyYr = ujFiscalYear();
@@ -9836,8 +9879,8 @@ loadData();
 
     const pc = vlUjiCalc(s, win, primaryLast);
     const cmb = pc.applicable ? pc.combine : null;       // ramp Potensi = Combine
-    const startYr = parseInt(fy.base_year,10) || parseInt(latestYear(s),10) || 0;
-    const years = [0,1,2,3,4].map(i=> startYr? (startYr+i) : ('T+'+(i+1)));
+    const startYr = ujBasisStartYear(s);
+    const years = [0,1,2,3,4].map(i=> startYr? (startYr+1+i) : ('T+'+(i+1)));
 
     const mosBlend = pc.applicable ? pc.margin_of_safety*100 : null;
     const estDiv   = pc.dps_est;
@@ -9887,7 +9930,7 @@ loadData();
       '<tr class="uj-foot"><td colspan="2">'+ujP(mosLiveA)+'</td><td class="l">MARGIN OF SAFETY</td><td colspan="2">'+ujP(mosQ3A)+'</td></tr>'+
       '</tbody></table></div></div>';
 
-    H.push('<div class="uj-row"><div class="uj-col">'+leftBlk+'</div><div class="uj-col" style="flex:1.2 1 360px">'+gcg+'</div><div class="uj-col" style="flex:1.7 1 480px">'+actual+'</div></div>');
+    H.push('<div class="uj-row"><div class="uj-col uj-col-sm">'+leftBlk+'</div><div class="uj-col uj-col-md">'+gcg+'</div><div class="uj-col uj-col-lg">'+actual+'</div></div>');
 
     /* ── Baris 2: [COMBINE RETURN] [MARGIN OF SAFETY] ── */
     const combineTbl=
@@ -10106,13 +10149,13 @@ loadData();
   window.vlUjiPresetExcelANTM = function(){
     if(!state || state.code!=='ANTM') return;
     _ujOvr['ANTM'] = {
-      // Per-share dihitung manual di Excel (Profit/Equity/Sales ÷ Shares).
-      eps: 311.58, bvps: 1523, sps: 3522.37,
-      // Growth: nilai persis dari sel "ROE/EPS/SPS Growth (Annual)/(in 5 Years)" di template.
-      // CATATAN: Excel template versi terbaru pakai SPS Growth (in 5 Years) = 97.65%.
+      // Per-share dihitung manual di Excel (Profit/Equity/Sales ÷ Shares 24.030 jt).
+      eps: 311.58, bvps: 1523.09, sps: 3522.37,
+      // Growth: nilai persis dari sel "ROE/EPS/SPS Growth (Annual)/(in 5 Years)" di sheet.
+      // PENTING: SPS Growth (in 5 Years) = 25.33% (nilai 97.65% di template lama adalah typo).
       roe_annual: 0.2046, roe_5y: 0.3195,
       eps_growth_annual: 0.9765, eps_growth_5y: 0.4437,
-      sps_growth_annual: 0.2233, sps_growth_5y: 0.9765,
+      sps_growth_annual: 0.2233, sps_growth_5y: 0.2533,
       // Avg multiples (window terpilih) dari Excel.
       avg_pbv: 1.76, avg_per: 14.21, avg_psr: 1.27, avg_dpr: 0.7141,
     };
