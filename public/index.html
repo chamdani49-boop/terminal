@@ -8783,6 +8783,90 @@ loadData();
 }
 </style>
 
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   VALUASI — TERMINAL SKIN (overhaul visual, ADDITIVE)
+   Menyelaraskan halaman Valuasi dgn estetika "Pasar Live" (panel ber-
+   titlebar, border tipis, mono numerals, aksen tegas). Semua di-scope ke
+   #page-valuasi → tidak menyentuh halaman lain. TIDAK ada perubahan JS/logika.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* — Lebar kerja sedikit dilebarkan utk kesan terminal — */
+#page-valuasi .vl-wrap{max-width:1480px}
+#page-valuasi{padding-top:8px}
+
+/* ── PANEL = "window" terminal: .card-title jadi titlebar full-bleed ── */
+#page-valuasi .card{border-radius:var(--radius);box-shadow:none;border-color:var(--border)}
+[data-theme="dark"] #page-valuasi .card{box-shadow:0 0 0 1px var(--border) inset}
+#page-valuasi .card-title{
+  margin:-18px -18px 16px;padding:9px 14px 9px 13px;
+  background:var(--bg2);border-bottom:1px solid var(--border);border-left:3px solid var(--accent);
+  font-size:11px;font-weight:800;letter-spacing:.8px;color:var(--text2);line-height:1.4;
+}
+
+/* ── HEADER EMITEN — bar terminal dgn garis aksen atas + harga mono ── */
+#page-valuasi .vl-head{border-radius:var(--radius);box-shadow:none;padding:16px 20px;position:relative;overflow:hidden}
+#page-valuasi .vl-head::before{content:"";position:absolute;left:0;top:0;right:0;height:2px;background:var(--grad)}
+#page-valuasi .vl-logo{border-radius:9px;box-shadow:0 0 0 1px var(--border)}
+#page-valuasi .vl-name{letter-spacing:1.5px}
+#page-valuasi .vl-tag{background:var(--bg3);border:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px}
+
+/* ── METRIC TILES — flat, aksen kiri, label uppercase rapat ── */
+#page-valuasi .vl-mcs{gap:10px}
+#page-valuasi .vl-mc{border-radius:10px;box-shadow:none;padding:13px 15px 13px 16px;position:relative;overflow:hidden}
+#page-valuasi .vl-mc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:.5}
+#page-valuasi .vl-mc .i{font-size:15px;margin-bottom:5px;opacity:.85}
+#page-valuasi .vl-mc .l{font-size:10px;letter-spacing:.8px}
+#page-valuasi .vl-mc .v{font-size:17px}
+
+/* ── TABS — segmented underline terminal (bukan pill gradient) ── */
+#page-valuasi .vl-tabs{gap:0;flex-wrap:nowrap;border-radius:var(--radius);padding:0;box-shadow:none;background:var(--card);overflow-x:auto;scrollbar-width:none}
+#page-valuasi .vl-tabs::-webkit-scrollbar{height:0}
+#page-valuasi .vl-tab{
+  padding:12px 17px;border-radius:0;border:none;border-bottom:2px solid transparent;
+  font-size:12.5px;font-weight:700;letter-spacing:.2px;color:var(--text2);transition:all .15s;
+}
+#page-valuasi .vl-tab:hover{color:var(--text);background:var(--bg2);border-color:transparent;border-bottom-color:var(--border)}
+#page-valuasi .vl-tab.active{background:var(--bg2);color:var(--accent);border-color:transparent;border-bottom-color:var(--accent);box-shadow:none}
+
+/* ── TOOLBAR + BASIS/WINDOW BUTTONS — flat terminal ── */
+#page-valuasi .vl-toolbar{border-radius:var(--radius);box-shadow:none;padding:12px 16px}
+#page-valuasi .vl-select{border-radius:9px}
+#page-valuasi .vl-basis-btn{border-radius:8px;font-size:12.5px;padding:8px 14px}
+#page-valuasi .vl-basis-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+
+/* ── KPI CELLS — stat terminal dgn aksen atas ── */
+#page-valuasi .vl-kpi{border-radius:9px;border:1px solid var(--border);border-top:2px solid var(--accent);background:var(--bg2)}
+#page-valuasi .vl-kpi .l{font-size:10px;letter-spacing:.7px}
+
+/* ── INFO BANNER — selaras token ── */
+#page-valuasi #vlBanner{border-radius:var(--radius)}
+
+/* ════════════ MESIN VALUASI (eks "Uji Data") — TERMINAL ════════════ */
+/* Ganti warna spreadsheet (#7c3aed/#ede7f9/#c9b8e8) → token tema. */
+#vl-tab-uji .uj-band{
+  background:var(--bg2);color:var(--text);border:1px solid var(--border);border-bottom:2px solid var(--accent);
+  border-radius:0;letter-spacing:.7px;font-size:11px;font-weight:800;text-transform:uppercase;padding:9px 12px;
+}
+#vl-tab-uji .uj-band.soft{border-bottom-color:var(--accent2)}
+#vl-tab-uji .uj-row .card .uj-band{margin:-18px -18px 10px;border-top:none;border-left:none;border-right:none}
+#vl-tab-uji .uj-tbl{font-size:11.5px}
+#vl-tab-uji .uj-tbl th,#vl-tab-uji .uj-tbl td{border-color:var(--border);padding:6px 9px}
+#vl-tab-uji .uj-tbl th{background:var(--bg3);color:var(--text2);text-transform:uppercase;letter-spacing:.4px;font-size:10px;font-weight:800}
+#vl-tab-uji .uj-tbl .uj-hdr2{background:var(--bg2);color:var(--text2)}
+#vl-tab-uji .uj-tbl .uj-yr{background:var(--bg2);color:var(--accent);font-weight:800}
+#vl-tab-uji .uj-tbl .uj-foot td{background:var(--bg2);color:var(--text)}
+#vl-tab-uji .uj-tbl tbody tr:hover td{background:var(--bg2)}
+#vl-tab-uji .uj-codebox{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:9px}
+#vl-tab-uji .uj-row .card .uj-codebox{margin:-18px -18px 10px;border-radius:0;border-top:none;border-right:none}
+#vl-tab-uji .uj-codebox .code{color:var(--accent)}
+#vl-tab-uji .uj-codebox .tag{background:var(--accent);color:#fff;border-radius:5px}
+#vl-tab-uji .uj-mos-big{border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:10px;background:var(--bg2)}
+#vl-tab-uji .uj-mos-big .val{color:var(--accent)}
+#vl-tab-uji .uj-pos{color:var(--green)}
+#vl-tab-uji .uj-neg{color:var(--red)}
+</style>
+
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
 <div class="page" id="page-valuasi">
   <div class="vl-wrap">
@@ -8844,7 +8928,7 @@ loadData();
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('proyeksi',this)">🎯 Proyeksi Harga</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('dividen',this)">💸 Dividen</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('ttm',this)">📐 Multiples</button>
-      <button class="vl-tab" role="tab" onclick="vlSwitchTab('uji',this)">🧪 Uji Data</button>
+      <button class="vl-tab" role="tab" onclick="vlSwitchTab('uji',this)">🔬 Mesin Valuasi</button>
     </div>
 
     <!-- ===== TAB: RINGKASAN ===== -->
@@ -9073,7 +9157,7 @@ loadData();
     </style>
     <div id="vl-tab-uji" class="vl-tc">
       <div class="card" style="margin-bottom:14px">
-        <div class="card-title">🧪 Uji Data — Replika Sheet Excel (validasi mesin vs Excel)</div>
+        <div class="card-title">🔬 Mesin Valuasi — Skenario Multi-Basis (pondasi rumus valuasi, tervalidasi vs Excel)</div>
         <div class="uj-controls">
           <span class="uj-note-inline">Last Price valuasi: <strong id="ujLastInfo">live</strong> · basis <strong>Tahun Berjalan</strong> memakai harga close <strong>31 Mar</strong> (mengikuti tanggal kuartal, sesuai Excel), bukan harga live.</span>
         </div>
@@ -9091,7 +9175,7 @@ loadData();
         <div class="card"><div class="card-title">Laba% &amp; ROE (Tahunan) + Harga</div><div class="uj-chart"><canvas id="ujC2"></canvas></div></div>
         <div class="card"><div class="card-title">PBV · PER · PSR + Book Value</div><div class="uj-chart"><canvas id="ujC3"></canvas></div></div>
       </div>
-      <p class="vl-note" style="margin-top:12px">Halaman ini khusus uji data: bila ada sel yang berbeda dengan Excel, itu menandakan perbedaan input data atau metodologi mesin yang perlu disetel. Basis dapat diganti Kuartal/Tahunan.</p>
+      <p class="vl-note" style="margin-top:12px">Panel <strong>Mesin Valuasi</strong> ini adalah pondasi rumus mesin: bila ada sel yang berbeda dengan Excel, itu menandakan perbedaan input data atau metodologi yang perlu disetel. Basis dapat diganti Kuartal/Tahunan/Tahun Berjalan.</p>
     </div>
 
     <div class="vl-note" style="margin-top:18px;text-align:center" id="vlFootNote">
@@ -9876,7 +9960,7 @@ loadData();
     const s=curStock(); if(!s){ body.innerHTML=''; return; }
     const v=s.valuation||{}; const fy=v.five_year||{};
     if(!fy.applicable){
-      if(msg) msg.innerHTML='<div class="vl-msg">Model 5-tahun belum tersedia untuk <strong>'+s.code+'</strong> — uji data hanya untuk emiten dengan histori lengkap (mis. BBRI).</div>';
+      if(msg) msg.innerHTML='<div class="vl-msg">Model 5-tahun belum tersedia untuk <strong>'+s.code+'</strong> — Mesin Valuasi hanya untuk emiten dengan histori lengkap (mis. BBRI).</div>';
       body.innerHTML=''; return;
     }
     if(msg) msg.innerHTML='';
