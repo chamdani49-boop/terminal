@@ -9684,36 +9684,67 @@ loadData();
   const ujP  = v => ok(v) ? v.toFixed(2)+'%' : '–';
   const ujG  = v => ok(v) ? '<span class="'+(v>=0?'uj-pos':'uj-neg')+'">'+v.toFixed(2)+'%</span>' : '–';
 
-  // Daftar basis data periode utk sebuah emiten: Tahun Berjalan (Q1) + tahun-tahun penuh.
+  // Daftar basis data periode utk sebuah emiten: Tahun Berjalan (Q1) + tahun penuh
+  // (4 tahun terakhir sbg tombol cepat + sisanya di dropdown).
   function ujDataBases(stock){
     const yrs = annualYears(stock);                 // ascending
     const latest = yrs[yrs.length-1];
-    const list = [{ key:'current', label:'Tahun Berjalan', tag:'Q1' }];
-    yrs.slice(-4).reverse().forEach(y=> list.push({ key:'Y'+y, year:y, label:y }));   // 4 tahun terakhir, terbaru dulu
-    return { list, latest, defKey:'Y'+latest };
+    const buttons = [{ key:'current', label:'Tahun Berjalan', tag:'Q1' }];
+    yrs.slice(-4).reverse().forEach(y=> buttons.push({ key:'Y'+y, year:y, label:y }));
+    const moreYears = yrs.slice(0, -4).reverse();   // tahun lebih lama, terbaru dulu di dropdown
+    return { buttons, moreYears, latest, defKey:'Y'+latest };
+  }
+
+  // Trailing 5y CAGR ending at `year`: (val[year]/val[year-5])^(1/5)-1.
+  // Sama dgn rumus Excel sel ROE/EPS/SPS Growth (in 5 Years). Return null bila
+  // salah satu sisi non-positif (mis. ROE negatif → CAGR undefined).
+  function ujTrailingCAGR5y(stock, field, year){
+    const cur = (stock.annual[String(year)]||{})[field];
+    const ago = (stock.annual[String(year-5)]||{})[field];
+    if(!ok(cur)||!ok(ago)||cur<=0||ago<=0) return null;
+    return Math.pow(cur/ago, 1/5) - 1;
   }
 
   // Input fundamental sesuai basis data terpilih (tahun berjalan / tahun penuh).
-  // Growth 5Y & per-share dibaca dari field periode tsb; growth tahunan dihitung YoY.
+  // Untuk past-year, per-share dihitung ulang dgn shares_LATEST (sama spt template
+  // Excel pemilik): EPS = net_income/shares_LATEST, BVPS = total_equity/shares_LATEST,
+  // SPS = total_revenue/shares_LATEST. Ini menjamin metode konsisten antar tahun.
+  // 5y growth: pakai field sheet kalau ada, kalau tidak hitung trailing CAGR.
+  // Multiples (Avg PBV/PER/PSR/DPR) tetap pakai window 5 tahun TERBARU sbg benchmark
+  // (sesuai prinsip template: "valuasi pakai rata-rata multiple historis").
   function ujBasisInputs(stock){
     const fy=((stock&&stock.valuation)||{}).five_year||{};
     const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
     const basis = _ujBasis || ('Y'+latest);
-    // Basis = tahun annual terbaru → pakai fy.inputs apa adanya (identik perilaku lama, cocok Excel).
+    // Basis = tahun annual terbaru → pakai fy.inputs apa adanya (override otoritatif menang).
     if(basis === 'Y'+latest) return { inp: (fy.inputs||{}), label: latest+' (terbaru)' };
-    let period, prev, label;
-    if(basis==='current'){ period=stock.annualized; prev=stock.annual[latest]; label='Tahun Berjalan · Q1'; }
-    else { const y=basis.slice(1); period=stock.annual[y]; const i=yrs.indexOf(y); prev=(i>0)?stock.annual[yrs[i-1]]:null; label=y; }
+    let period, prev, label, year;
+    if(basis==='current'){ period=stock.annualized; prev=stock.annual[latest]; label='Tahun Berjalan · Q1'; year=parseInt(latest,10); }
+    else { const y=basis.slice(1); period=stock.annual[y]; const i=yrs.indexOf(y); prev=(i>0)?stock.annual[yrs[i-1]]:null; label=y; year=parseInt(y,10); }
     if(!period) return { inp:(fy.inputs||{}), label: latest+' (terbaru)' };
+    const sharesLatest = (stock.annual[latest]||{}).shares;
+    const psh = v => (ok(v)&&ok(sharesLatest)&&sharesLatest>0) ? v/sharesLatest : null;
+    // Per-share recalc (terbukti cocok dgn template Excel).
+    const eps  = psh(period.net_income)    || period.eps;
+    const bvps = psh(period.total_equity)  || period.bvps;
+    const sps  = psh(period.total_revenue) || period.sps;
     const g=(cur,pr)=> (ok(cur)&&ok(pr)&&pr!==0)? (cur-pr)/pr : null;
+    // ROE 5y CAGR (sumber data 'roe' dlm persen → konversi sebelum CAGR).
+    const cagrRoe = ()=>{
+      const cur=(period.roe!=null)? period.roe/100 : null;
+      const ago=(stock.annual[String(year-5)]||{}).roe;
+      const a=(ago!=null)? ago/100 : null;
+      if(!ok(cur)||!ok(a)||cur<=0||a<=0) return null;
+      return Math.pow(cur/a, 1/5) - 1;
+    };
     return { label, inp:{
-      eps:period.eps, sps:period.sps, bvps:period.bvps,
+      eps, sps, bvps,
       roe_annual: ok(period.roe)? period.roe/100 : null,
-      roe_5y: period.roe_5y,
-      eps_growth_annual: g(period.eps, prev&&prev.eps),
-      eps_growth_5y: period.eps_growth_5y,
+      roe_5y:           ok(period.roe_5y)         ? period.roe_5y         : cagrRoe(),
+      eps_growth_annual: g(period.eps, prev&&prev.eps),     // YoY pakai per-share sheet (matches Excel)
+      eps_growth_5y:    ok(period.eps_growth_5y) ? period.eps_growth_5y : ujTrailingCAGR5y(stock,'eps',year),
       sps_growth_annual: g(period.sps, prev&&prev.sps),
-      sps_growth_5y: period.sps_growth_5y,
+      sps_growth_5y:    ok(period.sps_growth_5y) ? period.sps_growth_5y : ujTrailingCAGR5y(stock,'sps',year),
     }};
   }
 
@@ -9842,15 +9873,25 @@ loadData();
     }
     if(msg) msg.innerHTML='';
 
-    // ── Render tombol Basis Data (Tahun Berjalan·Q1 + tahun penuh) ──
+    // ── Render tombol Basis Data (Tahun Berjalan·Q1 + 4 tahun terakhir + dropdown utk tahun lainnya) ──
     const bdef = ujDataBases(s);
     const activeBasis = _ujBasis || bdef.defKey;
     const bbEl=document.getElementById('ujBasisBtns');
-    if(bbEl) bbEl.innerHTML = bdef.list.map(b=>{
-      const act = (b.key===activeBasis) ? ' active' : '';
-      const tag = b.tag ? ' <span style="font-size:9px;font-weight:800;opacity:.7">'+b.tag+'</span>' : '';
-      return '<button class="vl-basis-btn'+act+'" onclick="vlUjiSetBasis(\''+b.key+'\')">'+b.label+tag+'</button>';
-    }).join('');
+    if(bbEl){
+      let html = bdef.buttons.map(b=>{
+        const act = (b.key===activeBasis) ? ' active' : '';
+        const tag = b.tag ? ' <span style="font-size:9px;font-weight:800;opacity:.7">'+b.tag+'</span>' : '';
+        return '<button class="vl-basis-btn'+act+'" onclick="vlUjiSetBasis(\''+b.key+'\')">'+b.label+tag+'</button>';
+      }).join('');
+      if(bdef.moreYears && bdef.moreYears.length){
+        const inDrop = bdef.moreYears.some(y=>'Y'+y===activeBasis);
+        const opts = bdef.moreYears.map(y=>'<option value="Y'+y+'"'+(activeBasis==='Y'+y?' selected':'')+'>'+y+'</option>').join('');
+        html += '<select class="vl-basis-btn'+(inDrop?' active':'')+'" onchange="vlUjiSetBasis(this.value)" title="Tahun lebih lama">'+
+                  '<option value="">'+(inDrop?activeBasis.slice(1):'Tahun lain ▾')+'</option>'+opts+
+                '</select>';
+      }
+      bbEl.innerHTML = html;
+    }
     const bi=ujBasisInputs(s);
     const biEl=document.getElementById('ujBasisInfo'); if(biEl) biEl.textContent='fundamental basis: '+bi.label;
 
