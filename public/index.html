@@ -8865,6 +8865,18 @@ loadData();
 #vl-tab-uji .uj-mos-big .val{color:var(--accent)}
 #vl-tab-uji .uj-pos{color:var(--green)}
 #vl-tab-uji .uj-neg{color:var(--red)}
+
+/* ── RANGE TOOLBAR per-chart (3Th/5/7/10/All) ── */
+#page-valuasi .vl-rng{display:inline-flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:2px;margin-bottom:10px}
+#page-valuasi .vl-rng button{border:none;background:none;font-family:inherit;font-size:10.5px;font-weight:800;color:var(--text2);padding:4px 10px;border-radius:6px;cursor:pointer;transition:all .15s;letter-spacing:.3px;line-height:1}
+#page-valuasi .vl-rng button:hover{color:var(--text)}
+#page-valuasi .vl-rng button.on{background:var(--accent);color:#fff}
+
+/* ── Tabel Fundamental: kolom "Metrik" sticky (kolom kini banyak: Q1..2008) ── */
+#page-valuasi .vl-table thead th:first-child{position:sticky;left:0;z-index:2;background:var(--bg2)}
+#page-valuasi .vl-table tbody td:first-child{position:sticky;left:0;z-index:1;background:var(--card)}
+#page-valuasi .vl-table tbody tr:nth-child(even) td:first-child{background:var(--bg2)}
+#page-valuasi .vl-table tbody tr:hover td:first-child{background:var(--bg3)}
 </style>
 
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
@@ -8991,7 +9003,7 @@ loadData();
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note">⚠️ Perubahan (▲▼) dihitung relatif terhadap tahun paling kiri (terlama) · nilai uang dalam Miliar Rupiah</p>
+        <p class="vl-note">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong>Thn Berjalan</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
       </div>
     </div>
 
@@ -9438,8 +9450,13 @@ loadData();
     const head = document.getElementById('vlFundHead');
     const tbody = document.querySelector('#vlFundTable tbody');
     if(!head || !tbody) return;
-    const cols = annualYears(s).slice(-6);
-    head.innerHTML = '<tr><th>Metrik</th>'+cols.map(y=>'<th>'+y+'</th>').join('')+'</tr>';
+    const yearsDesc = annualYears(s).slice().reverse();   // terbaru → terlama (…→2008)
+    // Kolom LENGKAP & dibalik: Q1 + Tahun Berjalan (Q1×4) + semua tahun (apa adanya).
+    const cols = [];
+    if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'Q1',           a:s.q1 });
+    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:'Thn Berjalan', a:s.annualized });
+    yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
+    head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
     const rows = [
       {label:'Harga (Rp)',      f:a=>a.price,        t:'rp'},
       {label:'Pendapatan (M)',  f:a=>a.total_revenue,t:'m'},
@@ -9455,14 +9472,16 @@ loadData();
       {label:'PSR',             f:a=>a.psr,          t:'d2'},
     ];
     const fmtByT = (val,t)=> t==='rp'?fmtRp(val) : t==='m'?fmtM(val) : t==='pct'?fmtPct(val) : fmtD2(val);
+    // Referensi perubahan (▲▼) = tahun TERLAMA (kolom paling kanan); badge hanya utk kolom tahun.
+    const refKey = yearsDesc.length ? yearsDesc[yearsDesc.length-1] : null;
     tbody.innerHTML = rows.map(r=>{
-      const vals = cols.map(y=> r.f(s.annual[y]||{}));
-      const ref = vals[0];
-      const cells = vals.map((val,ci)=>{
+      const ref = refKey ? r.f(s.annual[refKey]||{}) : null;
+      const cells = cols.map(c=>{
+        const val = r.f(c.a);
         let chg='';
-        if(ci>0 && ok(ref) && ref!==0 && ok(val)){
-          const c = (val-ref)/Math.abs(ref)*100;
-          chg = '<span class="'+(c>=0?'vl-chg-up':'vl-chg-dn')+'">'+(c>=0?'▲':'▼')+' '+Math.abs(c).toFixed(1)+'%</span>';
+        if(/^\d{4}$/.test(c.key) && c.key!==refKey && ok(ref) && ref!==0 && ok(val)){
+          const cc = (val-ref)/Math.abs(ref)*100;
+          chg = '<span class="'+(cc>=0?'vl-chg-up':'vl-chg-dn')+'">'+(cc>=0?'▲':'▼')+' '+Math.abs(cc).toFixed(1)+'%</span>';
         }
         return '<td><span style="font-weight:700">'+fmtByT(val,r.t)+'</span>'+chg+'</td>';
       }).join('');
@@ -9552,6 +9571,37 @@ loadData();
     if(tbm) tbm.textContent = (ok(dps)&&dps>0&&hp>0) ? (hp/dps).toFixed(2)+'×' : '-';
   };
 
+  /* ── Range chart per-grafik (3/5/7/10/All tahun) — hanya tampilan, tak ubah model ── */
+  const VL_RANGES = ['3','5','7','10','all'];
+  const VL_DEFAULT_RANGE = '10';
+  const vlChartRange = {};   // id grafik -> '3'|'5'|'7'|'10'|'all'
+  function vlChartYears(s, id){
+    const all = annualYears(s);
+    const r = String(vlChartRange[id] || VL_DEFAULT_RANGE);
+    if(r==='all') return all;
+    const n = parseInt(r,10);
+    return (n>0 && all.length>n) ? all.slice(-n) : all;
+  }
+  // Sisipkan toolbar range tepat di atas canvas (sekali), lalu sinkronkan tombol aktif.
+  function vlEnsureRangeBar(id){
+    const cv=document.getElementById(id); if(!cv) return;
+    const host=cv.closest('.vl-chart, .vl-chart-tall') || cv.parentElement;
+    if(!host || !host.parentElement) return;
+    let bar=host.parentElement.querySelector('.vl-rng[data-rng="'+id+'"]');
+    if(!bar){
+      bar=document.createElement('div');
+      bar.className='vl-rng'; bar.setAttribute('data-rng',id);
+      bar.innerHTML=VL_RANGES.map(r=>{
+        const lbl = (r==='all') ? 'All' : (r==='3' ? '3Th' : r);
+        return '<button type="button" data-r="'+r+'" onclick="vlSetChartRange(\''+id+'\',\''+r+'\')">'+lbl+'</button>';
+      }).join('');
+      host.parentElement.insertBefore(bar, host);
+    }
+    const cur=String(vlChartRange[id] || VL_DEFAULT_RANGE);
+    bar.querySelectorAll('button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-r')===cur));
+  }
+  window.vlSetChartRange=function(id,r){ vlChartRange[id]=String(r); buildCharts(); };
+
   /* ── Charts: destroy lama → build baru ── */
   function destroyCharts(){ while(charts.length){ const c=charts.pop(); try{ c.destroy(); }catch(e){} } }
 
@@ -9568,45 +9618,45 @@ loadData();
       plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(26,15,60,.94)', titleFont:{size:11}, bodyFont:{size:11}, padding:10, cornerRadius:8 } }
     };
 
-    const ys = annualYears(s).slice(-8);
-    const labels = ys;
     const d9 = v => ok(v) ? v/1e9 : null;
-    const A  = f => ys.map(y=>{ const val = f(s.annual[y]||{}); return ok(val) ? val : null; });
     const mk = (id,cfg)=>{ const cv=document.getElementById(id); if(cv) charts.push(new Chart(cv,cfg)); };
+    // Per-grafik: label & data mengikuti range (3/5/7/10/All) yg dipilih di toolbar tiap chart.
+    const lab = id => { vlEnsureRangeBar(id); return vlChartYears(s, id); };
+    const A   = (id,f) => vlChartYears(s, id).map(y=>{ const val=f(s.annual[y]||{}); return ok(val) ? val : null; });
 
     // 1. Pendapatan & Laba (Miliar) + Harga
-    mk('vlRev', { type:'bar', data:{ labels, datasets:[
-      { label:'Pendapatan (M)', data:A(a=>d9(a.total_revenue)), backgroundColor:COL.blue, borderRadius:4, yAxisID:'y' },
-      { label:'Laba Bersih (M)', data:A(a=>d9(a.net_income)), backgroundColor:COL.green, borderRadius:4, yAxisID:'y' },
-      { label:'Harga (Rp)', data:A(a=>a.price), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    mk('vlRev', { type:'bar', data:{ labels:lab('vlRev'), datasets:[
+      { label:'Pendapatan (M)', data:A('vlRev',a=>d9(a.total_revenue)), backgroundColor:COL.blue, borderRadius:4, yAxisID:'y' },
+      { label:'Laba Bersih (M)', data:A('vlRev',a=>d9(a.net_income)), backgroundColor:COL.green, borderRadius:4, yAxisID:'y' },
+      { label:'Harga (Rp)', data:A('vlRev',a=>a.price), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
     ]}, options:{...base, scales:{
       y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
     // 2. ROE & Margin Laba (%)
-    mk('vlRoe', { type:'line', data:{ labels, datasets:[
-      { label:'ROE (%)', data:A(a=>a.roe), borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
-      { label:'Margin %', data:A(a=>(a.total_revenue?a.net_income/a.total_revenue*100:null)), borderColor:COL.blue, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
+    mk('vlRoe', { type:'line', data:{ labels:lab('vlRoe'), datasets:[
+      { label:'ROE (%)', data:A('vlRoe',a=>a.roe), borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
+      { label:'Margin %', data:A('vlRoe',a=>(a.total_revenue?a.net_income/a.total_revenue*100:null)), borderColor:COL.blue, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
     ]}, options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
 
     // 3. Rasio PBV/PER/PSR tahunan
-    mk('vlRatio', { type:'bar', data:{ labels, datasets:[
-      { label:'PBV', data:A(a=>a.pbv), backgroundColor:COL.purple, borderRadius:3 },
-      { label:'PER', data:A(a=>a.per), backgroundColor:COL.blue,   borderRadius:3 },
-      { label:'PSR', data:A(a=>a.psr), backgroundColor:COL.pink,   borderRadius:3 }
+    mk('vlRatio', { type:'bar', data:{ labels:lab('vlRatio'), datasets:[
+      { label:'PBV', data:A('vlRatio',a=>a.pbv), backgroundColor:COL.purple, borderRadius:3 },
+      { label:'PER', data:A('vlRatio',a=>a.per), backgroundColor:COL.blue,   borderRadius:3 },
+      { label:'PSR', data:A('vlRatio',a=>a.psr), backgroundColor:COL.pink,   borderRadius:3 }
     ]}, options:{...base, scales:{ y:{ ticks:TICK, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
 
     // 4. EPS / SPS
-    mk('vlEps', { type:'line', data:{ labels, datasets:[
-      { label:'EPS', data:A(a=>a.eps), borderColor:COL.blue, backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
-      { label:'SPS', data:A(a=>a.sps), borderColor:COL.pink, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
+    mk('vlEps', { type:'line', data:{ labels:lab('vlEps'), datasets:[
+      { label:'EPS', data:A('vlEps',a=>a.eps), borderColor:COL.blue, backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
+      { label:'SPS', data:A('vlEps',a=>a.sps), borderColor:COL.pink, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
     ]}, options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
 
     // 5. Ekuitas (Miliar) + Book Value
-    mk('vlEquity', { type:'bar', data:{ labels, datasets:[
-      { label:'Ekuitas (M)', data:A(a=>d9(a.total_equity)), backgroundColor:COL.purpleSoft, borderRadius:4, yAxisID:'y' },
-      { label:'Book Value', data:A(a=>a.bvps), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    mk('vlEquity', { type:'bar', data:{ labels:lab('vlEquity'), datasets:[
+      { label:'Ekuitas (M)', data:A('vlEquity',a=>d9(a.total_equity)), backgroundColor:COL.purpleSoft, borderRadius:4, yAxisID:'y' },
+      { label:'Book Value', data:A('vlEquity',a=>a.bvps), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.35 }
     ]}, options:{...base, scales:{
       y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:{display:false} },
@@ -9626,9 +9676,9 @@ loadData();
     }
 
     // 7. Dividen per saham (tahunan) + yield
-    mk('vlDiv', { type:'bar', data:{ labels, datasets:[
-      { label:'DPS (Rp)', data:A(a=>a.dps), backgroundColor:COL.purple, borderRadius:4, yAxisID:'y' },
-      { label:'Yield (%)', data:A(a=>(m.last>0 && ok(a.dps)) ? a.dps/m.last*100 : null), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.35, pointHoverRadius:6 }
+    mk('vlDiv', { type:'bar', data:{ labels:lab('vlDiv'), datasets:[
+      { label:'DPS (Rp)', data:A('vlDiv',a=>a.dps), backgroundColor:COL.purple, borderRadius:4, yAxisID:'y' },
+      { label:'Yield (%)', data:A('vlDiv',a=>(m.last>0 && ok(a.dps)) ? a.dps/m.last*100 : null), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.35, pointHoverRadius:6 }
     ]}, options:{...base, scales:{
       y:{ ticks:{...TICK, callback:v=>'Rp'+v}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>v+'%'}, grid:{display:false} },
