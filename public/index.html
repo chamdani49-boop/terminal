@@ -9729,6 +9729,7 @@ loadData();
     if(wsum>0) ['pbv','per','psr'].forEach(k=> w[k]=w[k]/wsum);
     const acc=f=>['pbv','per','psr'].reduce((s,k)=>s+(w[k]||0)*(subm[k][f]||0),0);
     const blend_annual=acc('annual'), cagr=acc('cagr');
+    const mos_blend=acc('mos');                       // blend MoS sub-model (sesuai Excel)
     const dpr_win=((mult.dpr||{})[wk])||0;
     const dividend_yield=(ok(inp.eps)&&basis>0)? dpr_win*inp.eps/basis : 0;
     const future_value=blend_annual+dividend_yield;   // Excel: FV = blend annual + dividen yield
@@ -9739,7 +9740,9 @@ loadData();
     const ramp = (_ujRamp==='combineDiv') ? (combine+dividend_yield) : combine;
     const potensi=[]; for(let n=1;n<=5;n++) potensi.push(Math.round(basis*(1+ramp*n)));
     return { applicable:true, basis, win, combine, cagr, future_value, dividend_yield,
-             dpr_win, eps:inp.eps, dps_est:dpr_win*(inp.eps||0), potensi, target5:potensi[4] };
+             dpr_win, eps:inp.eps, dps_est:dpr_win*(inp.eps||0),
+             margin_of_safety: mos_blend,             // blend MoS sub-model (Excel)
+             potensi, target5:potensi[4] };
   }
 
   // Cari harga di price_history berdasar label tanggal (mis. "10/31/2025").
@@ -9829,6 +9832,9 @@ loadData();
 
     const glNow  = i => (ok(pc.potensi&&pc.potensi[i]) && now>0)    ? (pc.potensi[i]/now-1)*100 : null;
     const glPrim = i => (ok(pc.potensi&&pc.potensi[i]) && pBasis>0) ? (pc.potensi[i]/pBasis-1)*100 : null;
+    // MoS utama (untuk blok besar) = blend MoS sub-model dari mesin (= rumus Excel).
+    const mosBlend = pc.applicable ? pc.margin_of_safety*100 : null;
+    // MoS vs now/primary (referensi target5 ramp) — untuk tabel ACTUAL.
     const mosNow  = (pc.applicable && now>0    && pc.target5>0) ? (1-now/pc.target5)*100    : null;
     const mosPrim = (pc.applicable && pBasis>0 && pc.target5>0) ? (1-pBasis/pc.target5)*100 : null;
 
@@ -9888,7 +9894,7 @@ loadData();
       '<tr><td class="l">Combine</td><td>'+ujP(pc.combine*100)+'</td></tr>'+
       '<tr><td class="l">Dividen Yield</td><td>'+ujP(pc.dividend_yield*100)+'</td></tr>'+
       '</tbody></table></div>';
-    const mosBig='<div class="uj-mos-big"><div class="lbl">Margin of Safety</div><div class="val">'+ujP(mosNow)+'</div><div class="uj-cap" style="text-align:center">1 − harga sekarang ÷ potensi 5-th</div></div>';
+    const mosBig='<div class="uj-mos-big"><div class="lbl">Margin of Safety</div><div class="val">'+ujP(mosBlend)+'</div><div class="uj-cap" style="text-align:center">blend MoS sub-model (PBV/PER/PSR · sesuai Excel)</div></div>';
     const priceStrip=
       '<div class="card"><div class="uj-blk-title">Harga Saat Analisa</div><div class="uj-scroll"><table class="uj-tbl"><tbody>'+
       '<tr><td class="l">Price Now</td><td>'+ujN(now)+'</td><td>'+ujG((now/pBasis-1)*100)+'</td></tr>'+
@@ -10109,9 +10115,10 @@ loadData();
       // Per-share dihitung manual di Excel (Profit/Equity/Sales ÷ Shares).
       eps: 311.58, bvps: 1523, sps: 3522.37,
       // Growth: nilai persis dari sel "ROE/EPS/SPS Growth (Annual)/(in 5 Years)" di template.
+      // CATATAN: Excel template versi terbaru pakai SPS Growth (in 5 Years) = 97.65%.
       roe_annual: 0.2046, roe_5y: 0.3195,
       eps_growth_annual: 0.9765, eps_growth_5y: 0.4437,
-      sps_growth_annual: 0.2533, sps_growth_5y: 0.2233,
+      sps_growth_annual: 0.2233, sps_growth_5y: 0.9765,
       // Avg multiples (window terpilih) dari Excel.
       avg_pbv: 1.76, avg_per: 14.21, avg_psr: 1.27, avg_dpr: 0.7141,
     };
