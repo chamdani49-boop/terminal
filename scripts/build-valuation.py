@@ -459,12 +459,12 @@ def five_year_valuation(stock, last_price, warn):
     future_value = blend_annual + div_yield
     combine = (future_value + cagr_blend) / 2
 
-    # Potensi price akumulasi = Last x (1 + (Combine + Dividen Yield) x n).
-    # Ramp = Combine + Dividen Yield (sesuai sheet Excel ANTM terbaru).
-    ramp = combine + div_yield
+    # Potensi price akumulasi sesuai rumus Excel pemilik:
+    # Future Value = blend Annual + Dividen Yield (sudah di atas), Combine = (FV+CAGR)/2,
+    # Potensi(n) = Last × (1 + Combine × n) — ramp pakai COMBINE SAJA.
     price_targets = []
     for yr in range(1, n + 1):
-        pt = last_price * (1 + ramp * yr)
+        pt = last_price * (1 + combine * yr)
         price_targets.append({'year': yr, 'target_price': round(pt),
                               'gl_pct': round((pt - last_price) / last_price * 100, 2)})
 
