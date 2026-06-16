@@ -9061,15 +9061,7 @@ loadData();
       <div class="card" style="margin-bottom:14px">
         <div class="card-title">🧪 Uji Data — Replika Sheet Excel (validasi mesin vs Excel)</div>
         <div class="uj-controls">
-          <span class="vl-tb-label" style="margin-right:4px">Last Price</span>
-          <button class="vl-basis-btn active" data-uj-last="live" onclick="vlUjiSetLast('live')">🔴 Live</button>
-          <span style="display:inline-flex;gap:4px;align-items:center;margin-left:2px">
-            <button class="vl-basis-btn" data-uj-last="custom" onclick="document.getElementById('ujLastInput').focus()">Custom</button>
-            <input id="ujLastInput" type="number" min="1" step="1" placeholder="Harga…"
-              style="width:110px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px"
-              oninput="vlUjiSetLast('custom', this.value)">
-          </span>
-          <span class="uj-note-inline" id="ujLastInfo">memakai harga live</span>
+          <span class="uj-note-inline">Harga: <strong id="ujLastInfo">live</strong> · Last Price untuk valuasi diambil dari harga live (atau preset/override untuk uji).</span>
         </div>
         <div class="uj-controls" style="margin-top:8px">
           <span class="vl-tb-label" style="margin-right:4px">Basis Data</span>
@@ -9829,77 +9821,84 @@ loadData();
     const biEl=document.getElementById('ujBasisInfo'); if(biEl) biEl.textContent='fundamental basis: '+bi.label;
 
     const e=effLast(s); const livePrice=e.price;
-    const live=(state.live&&state.live[s.code])||{};
-    const chg = ok(live.change_pct)? live.change_pct*100 : (ok(e.change)? e.change*100 : null);
-    const maxPrice=live.max_price;
-
-    const set=ujBasisSet(s);
-
-    // ── Last Price tunggal (sesuai Excel): Live (default) atau Custom (input manual) ──
-    let now=livePrice, pBasis=livePrice;
-    let primary={ key:'live', label:'Live', date:'-', price:livePrice };
-    let lastInfo='memakai harga live (data.json.live) = '+ujN(livePrice);
-    if(_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0){
-      now=_ujLastCustom; pBasis=_ujLastCustom;
-      primary={ key:'Custom', label:'Custom', date:'-', price:_ujLastCustom };
-      lastInfo='Last Price = '+ujN(_ujLastCustom)+' (input manual)';
-    }
-    const liInfo=document.getElementById('ujLastInfo'); if(liInfo) liInfo.textContent=lastInfo;
-    document.querySelectorAll('#vl-tab-uji .vl-basis-btn[data-uj-last]').forEach(b=>{
-      b.classList.toggle('active', b.getAttribute('data-uj-last')===_ujLastSel);
-    });
     const win=state.win;
-    const pc = vlUjiCalc(s, win, pBasis);
-    const by = parseInt(fy.base_year,10) || parseInt(latestYear(s),10) || 0;
-    const years=[0,1,2,3,4].map(i=> by? (by+i) : ('T+'+(i+1)));
 
-    const glNow  = i => (ok(pc.potensi&&pc.potensi[i]) && now>0)    ? (pc.potensi[i]/now-1)*100 : null;
-    const glPrim = i => (ok(pc.potensi&&pc.potensi[i]) && pBasis>0) ? (pc.potensi[i]/pBasis-1)*100 : null;
-    // MoS utama (untuk blok besar) = blend MoS sub-model dari mesin (= rumus Excel).
+    // Last Price utama untuk valuasi: harga live, atau custom/preset bila di-set (untuk uji).
+    const primaryLast = (_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0) ? _ujLastCustom : livePrice;
+    const liInfo=document.getElementById('ujLastInfo');
+    if(liInfo) liInfo.textContent = (primaryLast===livePrice) ? ('live = '+ujN(livePrice)) : (ujN(primaryLast)+' (preset/override)');
+
+    // Harga "ACTUAL": Sekarang (live) + closing kuartal terakhir (Q3 = 10/31 fiskal).
+    const fyYr = ujFiscalYear();
+    const q3date = '10/31/'+fyYr;
+    const q3P = ujPriceOn(q3date) || livePrice;
+    const chgAct = (q3P>0) ? (livePrice/q3P-1)*100 : null;
+
+    const pc = vlUjiCalc(s, win, primaryLast);
+    const cmb = pc.applicable ? pc.combine : null;       // ramp Potensi = Combine
+    const startYr = parseInt(fy.base_year,10) || parseInt(latestYear(s),10) || 0;
+    const years = [0,1,2,3,4].map(i=> startYr? (startYr+i) : ('T+'+(i+1)));
+
     const mosBlend = pc.applicable ? pc.margin_of_safety*100 : null;
-    // MoS vs now/primary (referensi target5 ramp) — untuk tabel ACTUAL.
-    const mosNow  = (pc.applicable && now>0    && pc.target5>0) ? (1-now/pc.target5)*100    : null;
-    const mosPrim = (pc.applicable && pBasis>0 && pc.target5>0) ? (1-pBasis/pc.target5)*100 : null;
+    const estDiv   = pc.dps_est;
+    const yieldP   = (ok(estDiv) && primaryLast>0) ? estDiv/primaryLast*100 : null;
+    const balikMod = (ok(pc.eps) && pc.eps>0) ? primaryLast/pc.eps : null;   // Potensi Balik Modal (= PER)
 
     const H=[];
 
-    /* ── B. Header emiten + GROWTH & CAPITAL GAIN ── */
-    const gcgRows = years.map((yr,i)=>'<tr><td class="uj-yr">'+yr+'</td><td>'+ujN(pc.potensi[i])+'</td><td>'+ujG(glNow(i))+'</td></tr>').join('');
+    /* ── Baris 1: [kode + dividen] [GROWTH & CAPITAL GAIN] [ACTUAL] ── */
+    const leftBlk =
+      '<div class="card"><div class="uj-codebox"><span class="code">'+s.code.toLowerCase()+'</span>'+
+        '<span class="px">'+ujN(primaryLast)+'</span><span class="tag">'+startYr+'</span></div>'+
+      '<table class="uj-tbl" style="margin-top:8px"><tbody>'+
+        '<tr><td class="l">Dividen Payout Ratio (DPR%)</td><td>'+ujP(pc.dpr_win*100)+'</td><td>'+fmtD2(estDiv)+'</td></tr>'+
+        '<tr><td class="l"></td><td></td><td>'+ujP(yieldP)+'</td></tr>'+
+        '<tr class="uj-foot"><td class="l">'+(ok(balikMod)?fmtD2(balikMod):'–')+' Year</td><td colspan="2">Potensi Balik Modal</td></tr>'+
+      '</tbody></table></div>';
+
+    const gcgRows = years.map((yr,i)=>{
+      const n=i+1; const pot=pc.potensi[i]; const pct=ok(cmb)?cmb*n*100:null;
+      return '<tr><td class="uj-yr">'+yr+'</td><td>'+ujN(pot)+'</td><td>'+ujG(pct)+'</td></tr>';
+    }).join('');
     const gcg =
       '<div class="card"><div class="uj-band">GROWTH &amp; CAPITAL GAIN</div>'+
       '<div class="uj-scroll" style="margin-top:8px"><table class="uj-tbl">'+
       '<thead><tr><th>Tahun</th><th>Potensi Price</th><th>%</th></tr></thead><tbody>'+gcgRows+
-      '<tr class="uj-foot"><td class="l">Potensi G&amp;L</td><td></td><td>'+ujG(glNow(4))+'</td></tr>'+
-      '</tbody></table></div>'+
-      '<div class="uj-cap">Potensi = Last Price '+ujN(now)+' × (1 + Combine × n)</div></div>';
+      '<tr class="uj-foot"><td class="l">Potensi G&amp;L</td><td></td><td>'+ujG(ok(cmb)?cmb*5*100:null)+'</td></tr>'+
+      '</tbody></table></div></div>';
 
-    const chgBadge = (_ujLastSel==='live' && ok(chg))
-      ? '<span class="'+(chg>=0?'uj-pos':'uj-neg')+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>'
-      : '';
-    const codeLeft =
+    const actRows = years.map((yr,i)=>{
+      const n=i+1; const potA=ok(cmb)?Math.round(q3P*(1+cmb*n)):null;
+      const glLive=(ok(potA)&&livePrice>0)?(potA/livePrice-1)*100:null;
+      const glQ3  =(ok(potA)&&q3P>0)?(potA/q3P-1)*100:null;
+      return '<tr><td>'+ujG(glLive)+'</td><td>'+ujN(potA)+'</td><td class="uj-yr">'+yr+'</td><td>'+ujN(potA)+'</td><td>'+ujG(glQ3)+'</td></tr>';
+    }).join('');
+    const potA5 = ok(cmb)?Math.round(q3P*(1+cmb*5)):null;
+    const mosLiveA=(ok(potA5)&&potA5>0)?(1-livePrice/potA5)*100:null;
+    const mosQ3A  =(ok(potA5)&&potA5>0)?(1-q3P/potA5)*100:null;
+    const actual =
       '<div class="card"><div class="uj-codebox"><span class="code">'+s.code.toLowerCase()+'</span>'+
-      '<span class="px">'+ujN(now)+'</span>'+
-      chgBadge+
-      '<span class="tag">'+primary.label+'</span></div>'+ ujEstDividen(s, pc, primary, now) + '</div>';
+        '<span class="px">Sekarang '+ujN(livePrice)+'</span><span class="tag">ACTUAL</span>'+
+        '<span class="px">Q3 '+q3date+' · '+ujN(q3P)+'</span>'+
+        (ok(chgAct)?'<span class="'+(chgAct>=0?'uj-pos':'uj-neg')+'">'+(chgAct>=0?'+':'')+chgAct.toFixed(2)+'%</span>':'')+'</div>'+
+      '<div class="uj-scroll" style="margin-top:8px"><table class="uj-tbl">'+
+      '<thead><tr><th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs Q3)</th></tr></thead><tbody>'+
+      actRows+
+      '<tr class="uj-foot"><td colspan="2">'+ujP(mosLiveA)+'</td><td class="l">MARGIN OF SAFETY</td><td colspan="2">'+ujP(mosQ3A)+'</td></tr>'+
+      '</tbody></table></div></div>';
 
-    H.push('<div class="uj-row"><div class="uj-col">'+codeLeft+'</div><div class="uj-col" style="flex:1.4 1 420px">'+gcg+'</div></div>');
+    H.push('<div class="uj-row"><div class="uj-col">'+leftBlk+'</div><div class="uj-col" style="flex:1.2 1 360px">'+gcg+'</div><div class="uj-col" style="flex:1.7 1 480px">'+actual+'</div></div>');
 
-    /* ── C. COMBINE RETURN + MARGIN OF SAFETY + price strip ── */
+    /* ── Baris 2: [COMBINE RETURN] [MARGIN OF SAFETY] ── */
     const combineTbl=
-      '<div class="card"><div class="uj-band soft">COMBINE RETURN</div><table class="uj-tbl" style="margin-top:8px">'+
-      '<tbody>'+
+      '<div class="card"><div class="uj-band soft">COMBINE RETURN</div><table class="uj-tbl" style="margin-top:8px"><tbody>'+
       '<tr><td class="l">Future Value</td><td>'+ujP(pc.future_value*100)+'</td></tr>'+
       '<tr><td class="l">CAGR</td><td>'+ujP(pc.cagr*100)+'</td></tr>'+
       '<tr><td class="l">Combine</td><td>'+ujP(pc.combine*100)+'</td></tr>'+
       '<tr><td class="l">Dividen Yield</td><td>'+ujP(pc.dividend_yield*100)+'</td></tr>'+
       '</tbody></table></div>';
     const mosBig='<div class="uj-mos-big"><div class="lbl">Margin of Safety</div><div class="val">'+ujP(mosBlend)+'</div><div class="uj-cap" style="text-align:center">blend MoS sub-model (PBV/PER/PSR · sesuai Excel)</div></div>';
-    const priceStrip=
-      '<div class="card"><div class="uj-blk-title">Harga Saat Analisa</div><div class="uj-scroll"><table class="uj-tbl"><tbody>'+
-      '<tr><td class="l">Last Price</td><td>'+ujN(now)+'</td><td class="l">basis valuasi</td></tr>'+
-      '<tr><td class="l">Price High</td><td>'+ujN(maxPrice)+'</td><td>'+(ok(maxPrice)?ujG((maxPrice/now-1)*100):'–')+'</td></tr>'+
-      '</tbody></table></div><div class="uj-cap">'+ujTodayStr()+'</div></div>';
-    H.push('<div class="uj-row"><div class="uj-col">'+combineTbl+'</div><div class="uj-col">'+mosBig+'</div><div class="uj-col" style="flex:1.4 1 420px">'+priceStrip+'</div></div>');
+    H.push('<div class="uj-row"><div class="uj-col">'+combineTbl+'</div><div class="uj-col">'+mosBig+'</div><div class="uj-col" style="flex:1.7 1 480px"></div></div>');
 
     body.innerHTML=H.join('');
     renderUjiOvrPanel();
