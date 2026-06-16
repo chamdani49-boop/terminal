@@ -9075,7 +9075,13 @@ loadData();
       <div class="card" style="margin-bottom:14px">
         <div class="card-title">🧪 Uji Data — Replika Sheet Excel (validasi mesin vs Excel)</div>
         <div class="uj-controls">
-          <span class="uj-note-inline">Harga: <strong id="ujLastInfo">live</strong> · Last Price untuk valuasi diambil dari harga live (atau preset/override untuk uji).</span>
+          <span class="vl-tb-label" style="margin-right:4px">Last Price</span>
+          <input type="number" id="ujLastInput" step="1" min="0" placeholder="live"
+                 style="width:96px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:700"
+                 oninput="vlUjiSetLast(this.value)"
+                 title="Isi Last Price untuk valuasi (mis. 3500 sesuai sel Last Price di Excel). Kosongkan = pakai harga live / basis tahun.">
+          <button class="vl-basis-btn" onclick="vlUjiSetLast('')" title="Kembali ke harga live / basis tahun">↺ live</button>
+          <span class="uj-note-inline" style="margin-left:6px">aktif: <strong id="ujLastInfo">live</strong> · kosongkan untuk pakai harga live/basis.</span>
         </div>
         <div class="uj-controls" style="margin-top:8px">
           <span class="vl-tb-label" style="margin-right:4px">Basis Data</span>
@@ -9911,6 +9917,15 @@ loadData();
                 : ' (live)');
       liInfo.textContent = ujN(primaryLast)+tag;
     }
+    // Sinkronkan input Last Price: tampilkan nilai custom bila ada, placeholder = harga live/basis.
+    const liInput=document.getElementById('ujLastInput');
+    if(liInput){
+      const isCustom = (_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0);
+      const liveOrBasis = ok(basisPrice) ? basisPrice : livePrice;
+      liInput.placeholder = ok(liveOrBasis) ? String(Math.round(liveOrBasis)) : 'live';
+      const wantVal = isCustom ? String(Math.round(_ujLastCustom)) : '';
+      if(document.activeElement!==liInput && liInput.value!==wantVal) liInput.value = wantVal;
+    }
 
     const pc = vlUjiCalc(s, win, primaryLast);
     const cmb = pc.applicable ? pc.combine : null;       // ramp Potensi = Combine
@@ -10189,6 +10204,14 @@ loadData();
       if(!_ujOvr[state.code]) _ujOvr[state.code] = {};
       _ujOvr[state.code][k] = v;
     }
+    renderUji();
+  };
+
+  // Set Last Price custom untuk valuasi (mis. 3500 sesuai sel Last Price di Excel).
+  // Kosong → kembali ke harga live / basis tahun.
+  window.vlUjiSetLast = function(val){
+    if(val==='' || val==null){ _ujLastSel='live'; _ujLastCustom=null; }
+    else { const v=Number(val); if(!isFinite(v) || v<=0) return; _ujLastSel='custom'; _ujLastCustom=v; }
     renderUji();
   };
 
