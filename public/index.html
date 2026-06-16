@@ -9582,6 +9582,29 @@ loadData();
     const n = parseInt(r,10);
     return (n>0 && all.length>n) ? all.slice(-n) : all;
   }
+  // Titik "Q" = TAHUN BERJALAN (TTM / annualized Q1×4) untuk GRAFIK.
+  // Harga & rasio (PBV/PER/PSR/Yield) memakai HARGA LIVE (sheet live), BUKAN close
+  // kuartal — supaya terlihat posisi harga sekarang mahal/murah. KHUSUS visual chart;
+  // mesin valuasi & tabel tidak memakai ini.
+  function vlTtmPoint(s){
+    const az = s && s.annualized;
+    if(!az || !Object.keys(az).length) return null;
+    const yrs = annualYears(s); const latest = yrs[yrs.length-1];
+    const shares = (s.annual[latest]||{}).shares;
+    const psh = v => (ok(v)&&ok(shares)&&shares>0) ? v/shares : null;
+    const live = effLast(s).price;
+    const eps  = psh(az.net_income)    || az.eps;
+    const sps  = psh(az.total_revenue) || az.sps;
+    const bvps = psh(az.total_equity)  || az.bvps;
+    return {
+      total_revenue: az.total_revenue, net_income: az.net_income, total_equity: az.total_equity,
+      eps, sps, bvps, roe: az.roe, dps: az.dps,
+      price: live,                                  // harga grafik = LIVE
+      pbv: (ok(bvps)&&bvps>0) ? live/bvps : null,   // rasio dihitung @ harga LIVE
+      per: (ok(eps)&&eps>0)   ? live/eps  : null,
+      psr: (ok(sps)&&sps>0)   ? live/sps  : null,
+    };
+  }
   // Sisipkan toolbar range tepat di atas canvas (sekali), lalu sinkronkan tombol aktif.
   function vlEnsureRangeBar(id){
     const cv=document.getElementById(id); if(!cv) return;
@@ -9621,8 +9644,14 @@ loadData();
     const d9 = v => ok(v) ? v/1e9 : null;
     const mk = (id,cfg)=>{ const cv=document.getElementById(id); if(cv) charts.push(new Chart(cv,cfg)); };
     // Per-grafik: label & data mengikuti range (3/5/7/10/All) yg dipilih di toolbar tiap chart.
-    const lab = id => { vlEnsureRangeBar(id); return vlChartYears(s, id); };
-    const A   = (id,f) => vlChartYears(s, id).map(y=>{ const val=f(s.annual[y]||{}); return ok(val) ? val : null; });
+    // Titik terakhir = "Q" (tahun berjalan TTM); accessor sama → harga/rasio "Q" otomatis LIVE.
+    const qpt = vlTtmPoint(s);
+    const lab = id => { vlEnsureRangeBar(id); const ys=vlChartYears(s,id); return qpt ? [...ys,'Q'] : ys; };
+    const A   = (id,f) => {
+      const arr = vlChartYears(s, id).map(y=>{ const val=f(s.annual[y]||{}); return ok(val) ? val : null; });
+      if(qpt){ const qv=f(qpt); arr.push(ok(qv) ? qv : null); }
+      return arr;
+    };
 
     // 1. Pendapatan & Laba (Miliar) + Harga
     mk('vlRev', { type:'bar', data:{ labels:lab('vlRev'), datasets:[
