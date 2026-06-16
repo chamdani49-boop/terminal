@@ -9061,30 +9061,15 @@ loadData();
       <div class="card" style="margin-bottom:14px">
         <div class="card-title">🧪 Uji Data — Replika Sheet Excel (validasi mesin vs Excel)</div>
         <div class="uj-controls">
-          <span class="vl-tb-label" style="margin-right:4px">Basis Periode</span>
-          <button class="vl-basis-btn active" id="ujBtnQ" onclick="vlUjiSetMode('quarter')">Kuartal (Q1–Q4)</button>
-          <button class="vl-basis-btn" id="ujBtnY" onclick="vlUjiSetMode('year')">Tahunan</button>
-        </div>
-        <div class="uj-controls" style="margin-top:8px">
-          <span class="vl-tb-label" style="margin-right:4px">Last Price untuk Valuasi</span>
+          <span class="vl-tb-label" style="margin-right:4px">Last Price</span>
           <button class="vl-basis-btn active" data-uj-last="live" onclick="vlUjiSetLast('live')">🔴 Live</button>
-          <button class="vl-basis-btn" data-uj-last="Q1" onclick="vlUjiSetLast('Q1')">Q1</button>
-          <button class="vl-basis-btn" data-uj-last="Q2" onclick="vlUjiSetLast('Q2')">Q2</button>
-          <button class="vl-basis-btn" data-uj-last="Q3" onclick="vlUjiSetLast('Q3')">Q3</button>
-          <button class="vl-basis-btn" data-uj-last="Annual" onclick="vlUjiSetLast('Annual')">Tahunan</button>
-          <span style="display:inline-flex;gap:4px;align-items:center;margin-left:6px">
+          <span style="display:inline-flex;gap:4px;align-items:center;margin-left:2px">
             <button class="vl-basis-btn" data-uj-last="custom" onclick="document.getElementById('ujLastInput').focus()">Custom</button>
             <input id="ujLastInput" type="number" min="1" step="1" placeholder="Harga…"
               style="width:110px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px"
               oninput="vlUjiSetLast('custom', this.value)">
           </span>
           <span class="uj-note-inline" id="ujLastInfo">memakai harga live</span>
-        </div>
-        <div class="uj-controls" style="margin-top:8px">
-          <span class="vl-tb-label" style="margin-right:4px">Mode Ramp Potensi</span>
-          <button class="vl-basis-btn active" data-uj-ramp="combine" onclick="vlUjiSetRamp('combine')">Combine</button>
-          <button class="vl-basis-btn" data-uj-ramp="combineDiv" onclick="vlUjiSetRamp('combineDiv')">Combine + Dividen</button>
-          <span class="uj-note-inline">Excel screenshot terbaru pakai <strong>Combine saja</strong>; versi sebelumnya pakai Combine+Dividen.</span>
         </div>
         <div id="ujOvrPanel" style="margin-top:10px"></div>
       </div>
@@ -9799,27 +9784,14 @@ loadData();
 
     const set=ujBasisSet(s);
 
-    // ── Resolve "Last Price untuk valuasi" sesuai selector ──
-    // Default 'live': now=live, pBasis=primary kuartal terakhir (perilaku lama).
-    // Q1/Q2/Q3/Annual: now=pBasis=harga periode tsb (snapshot 1 harga, ala Excel).
-    // 'custom': now=pBasis=harga input user.
-    let primaryAuto = set.filter(b=>ok(b.price)).slice(-1)[0] || set[set.length-1];
-    if(_ujMode==='quarter'){ const qs=set.filter(b=>/^Q\d|Annual/.test(b.key)&&ok(b.price)); if(qs.length) primaryAuto=qs[qs.length-1]; }
-
-    let now=livePrice, primary=primaryAuto, pBasis=primaryAuto && primaryAuto.price;
-    let lastInfo='memakai harga live (data.json.live)';
+    // ── Last Price tunggal (sesuai Excel): Live (default) atau Custom (input manual) ──
+    let now=livePrice, pBasis=livePrice;
+    let primary={ key:'live', label:'Live', date:'-', price:livePrice };
+    let lastInfo='memakai harga live (data.json.live) = '+ujN(livePrice);
     if(_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0){
       now=_ujLastCustom; pBasis=_ujLastCustom;
       primary={ key:'Custom', label:'Custom', date:'-', price:_ujLastCustom };
-      lastInfo='Last Price = '+ujN(_ujLastCustom)+' (input manual) — semua perhitungan memakai harga ini';
-    } else if(_ujLastSel!=='live'){
-      const m=set.find(b=>b.key===_ujLastSel);
-      if(m && ok(m.price)){
-        now=m.price; pBasis=m.price; primary=m;
-        lastInfo='Last Price = '+ujN(m.price)+' (basis '+m.label+' · '+m.date+') — semua perhitungan memakai harga ini';
-      } else {
-        lastInfo='Basis '+_ujLastSel+' tidak tersedia → fallback ke harga live';
-      }
+      lastInfo='Last Price = '+ujN(_ujLastCustom)+' (input manual)';
     }
     const liInfo=document.getElementById('ujLastInfo'); if(liInfo) liInfo.textContent=lastInfo;
     document.querySelectorAll('#vl-tab-uji .vl-basis-btn[data-uj-last]').forEach(b=>{
@@ -9840,20 +9812,7 @@ loadData();
 
     const H=[];
 
-    /* ── A. Tabel periode (Kuartal/Tahunan) ── */
-    if(_ujMode==='quarter'){
-      H.push('<div class="card"><div class="uj-blk-title">Periode Laporan &amp; Harga (Kuartal) — <span style="color:var(--text2);font-weight:700">kunci ada di tanggal closing; kolom TGL hanya batas pelaporan tempat harga referensi diambil</span></div><div class="uj-scroll"><table class="uj-tbl">'+
-        '<thead><tr><th class="l">Kuartal</th><th class="l">Closing</th><th class="l">Paling Lambat</th><th>TGL Harga</th><th>HARGA</th><th>Nama</th></tr></thead><tbody>'+
-        set.map(b=>'<tr><td class="l">'+b.desc+'</td><td class="l" style="font-weight:800;color:var(--accent)">'+(b.closing||'–')+'</td><td class="l">'+b.late+'</td><td>'+b.date+'</td><td>'+ujN(b.price)+'</td><td class="uj-yr">'+b.label+'</td></tr>').join('')+
-        '</tbody></table></div></div>');
-    } else {
-      H.push('<div class="card"><div class="uj-blk-title">Periode &amp; Harga (Tahunan — 4 tahun terakhir)</div><div class="uj-scroll"><table class="uj-tbl">'+
-        '<thead><tr><th class="l">Tahun</th><th>TGL</th><th>HARGA</th></tr></thead><tbody>'+
-        set.map(b=>'<tr><td class="l uj-yr">'+b.label+'</td><td>'+b.date+'</td><td>'+ujN(b.price)+'</td></tr>').join('')+
-        '</tbody></table></div></div>');
-    }
-
-    /* ── B. Header emiten + GROWTH & CAPITAL GAIN + ACTUAL ── */
+    /* ── B. Header emiten + GROWTH & CAPITAL GAIN ── */
     const gcgRows = years.map((yr,i)=>'<tr><td class="uj-yr">'+yr+'</td><td>'+ujN(pc.potensi[i])+'</td><td>'+ujG(glNow(i))+'</td></tr>').join('');
     const gcg =
       '<div class="card"><div class="uj-band">GROWTH &amp; CAPITAL GAIN</div>'+
@@ -9861,7 +9820,7 @@ loadData();
       '<thead><tr><th>Tahun</th><th>Potensi Price</th><th>%</th></tr></thead><tbody>'+gcgRows+
       '<tr class="uj-foot"><td class="l">Potensi G&amp;L</td><td></td><td>'+ujG(glNow(4))+'</td></tr>'+
       '</tbody></table></div>'+
-      '<div class="uj-cap">Potensi = basis '+primary.label+' ('+ujN(pBasis)+') × (1 + combine × n) · % vs harga sekarang '+ujN(now)+'</div></div>';
+      '<div class="uj-cap">Potensi = Last Price '+ujN(now)+' × (1 + Combine × n)</div></div>';
 
     const chgBadge = (_ujLastSel==='live' && ok(chg))
       ? '<span class="'+(chg>=0?'uj-pos':'uj-neg')+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>'
@@ -9872,18 +9831,7 @@ loadData();
       chgBadge+
       '<span class="tag">'+primary.label+'</span></div>'+ ujEstDividen(s, pc, primary, now) + '</div>';
 
-    const actRows = years.map((yr,i)=>'<tr><td>'+ujG(glNow(i))+'</td><td>'+ujN(pc.potensi[i])+'</td><td class="uj-yr">'+yr+'</td><td>'+ujN(pc.potensi[i])+'</td><td>'+ujG(glPrim(i))+'</td></tr>').join('');
-    const actual =
-      '<div class="card"><div class="uj-codebox"><span class="code">'+s.code.toLowerCase()+'</span>'+
-      '<span class="px">'+ujN(now)+'</span><span class="tag">ACTUAL</span><span class="px">'+ujN(pBasis)+'</span>'+
-      '<span class="'+((now/pBasis-1)>=0?'uj-pos':'uj-neg')+'">'+ujP((now/pBasis-1)*100)+'</span></div>'+
-      '<div class="uj-scroll" style="margin-top:8px"><table class="uj-tbl">'+
-      '<thead><tr><th>G&amp;L (vs now)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>G&amp;L (vs '+primary.label+')</th></tr></thead>'+
-      '<tbody>'+actRows+
-      '<tr class="uj-foot"><td colspan="2">MoS vs now: '+ujP(mosNow)+'</td><td></td><td colspan="2">MoS vs '+primary.label+': '+ujP(mosPrim)+'</td></tr>'+
-      '</tbody></table></div></div>';
-
-    H.push('<div class="uj-row"><div class="uj-col">'+codeLeft+'</div><div class="uj-col">'+gcg+'</div><div class="uj-col" style="flex:1.4 1 420px">'+actual+'</div></div>');
+    H.push('<div class="uj-row"><div class="uj-col">'+codeLeft+'</div><div class="uj-col" style="flex:1.4 1 420px">'+gcg+'</div></div>');
 
     /* ── C. COMBINE RETURN + MARGIN OF SAFETY + price strip ── */
     const combineTbl=
@@ -9897,14 +9845,10 @@ loadData();
     const mosBig='<div class="uj-mos-big"><div class="lbl">Margin of Safety</div><div class="val">'+ujP(mosBlend)+'</div><div class="uj-cap" style="text-align:center">blend MoS sub-model (PBV/PER/PSR · sesuai Excel)</div></div>';
     const priceStrip=
       '<div class="card"><div class="uj-blk-title">Harga Saat Analisa</div><div class="uj-scroll"><table class="uj-tbl"><tbody>'+
-      '<tr><td class="l">Price Now</td><td>'+ujN(now)+'</td><td>'+ujG((now/pBasis-1)*100)+'</td></tr>'+
-      '<tr><td class="l">'+primary.label+'</td><td>'+ujN(pBasis)+'</td><td class="l">basis potensi</td></tr>'+
-      '<tr><td class="l">Price High</td><td>'+ujN(maxPrice)+'</td><td>'+(ok(maxPrice)?ujG((maxPrice/pBasis-1)*100):'–')+'</td></tr>'+
+      '<tr><td class="l">Last Price</td><td>'+ujN(now)+'</td><td class="l">basis valuasi</td></tr>'+
+      '<tr><td class="l">Price High</td><td>'+ujN(maxPrice)+'</td><td>'+(ok(maxPrice)?ujG((maxPrice/now-1)*100):'–')+'</td></tr>'+
       '</tbody></table></div><div class="uj-cap">'+ujTodayStr()+'</div></div>';
     H.push('<div class="uj-row"><div class="uj-col">'+combineTbl+'</div><div class="uj-col">'+mosBig+'</div><div class="uj-col" style="flex:1.4 1 420px">'+priceStrip+'</div></div>');
-
-    /* ── D. Tabel TTM multi-basis + mini "Sekarang" ── */
-    H.push(ujTtmTable(s, win, set, by, years, now, primary, pc, mosNow));
 
     body.innerHTML=H.join('');
     renderUjiOvrPanel();
