@@ -1,0 +1,25 @@
+{
+  "_comment": "Override OTORITATIF per-emiten dari template Excel 'Future Value' milik pemilik. Nilai di sini menimpa hasil hitung otomatis pada blok five_year (inputs + avg_multiples window default) di public/valuation.json, supaya tampilan aplikasi (mis. tombol basis '2025' di tab Uji Data) PERSIS sama dengan Excel. Catatan: deret historis tahunan (annual) tidak diubah, jadi chart tetap memakai data laporan apa adanya. Tambahkan emiten lain dengan pola yang sama bila template-nya tersedia.",
+  "ANTM": {
+    "source": "data/baru dari Template Future Value.xlsx",
+    "note": "Disalin dari sel template ANTM 2025 (Last Price 3150). Per-share dihitung manual di Excel (Profit/Equity/Sales / Shares).",
+    "inputs": {
+      "eps": 311.58,
+      "sps": 3522.37,
+      "bvps": 1523.0,
+      "roe_annual": 0.2046,
+      "roe_5y": 0.3195,
+      "eps_growth_annual": 0.9765,
+      "eps_growth_5y": 0.4437,
+      "sps_growth_annual": 0.2233,
+      "sps_growth_5y": 0.9765,
+      "dpr": 0.7141
+    },
+    "avg_multiples": {
+      "pbv": 1.76,
+      "per": 14.21,
+      "psr": 1.27,
+      "dpr": 0.7141
+    }
+  }
+}

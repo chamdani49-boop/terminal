@@ -9898,7 +9898,7 @@ loadData();
       '<tr><td class="l">Dividen Yield</td><td>'+ujP(pc.dividend_yield*100)+'</td></tr>'+
       '</tbody></table></div>';
     const mosBig='<div class="uj-mos-big"><div class="lbl">Margin of Safety</div><div class="val">'+ujP(mosBlend)+'</div><div class="uj-cap" style="text-align:center">blend MoS sub-model (PBV/PER/PSR · sesuai Excel)</div></div>';
-    H.push('<div class="uj-row"><div class="uj-col">'+combineTbl+'</div><div class="uj-col">'+mosBig+'</div><div class="uj-col" style="flex:1.7 1 480px"></div></div>');
+    H.push('<div class="uj-row uj-row-2"><div class="uj-col">'+combineTbl+'</div><div class="uj-col">'+mosBig+'</div></div>');
 
     body.innerHTML=H.join('');
     renderUjiOvrPanel();
