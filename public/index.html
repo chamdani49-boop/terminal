@@ -9252,12 +9252,12 @@ loadData();
     const combine          = (future_value+cagr)/2;
     const margin_of_safety = acc('mos');
 
-    // Lintasan harga: Potensi = last*(1 + (combine + dividen_yield)*n).
-    // Ramp = Combine + Dividen Yield (sesuai sheet Excel ANTM terbaru).
-    const ramp = combine + dividend_yield;
+    // Lintasan harga akumulasi sesuai rumus Excel pemilik:
+    // Potensi(n) = Last × (1 + Combine × n) — ramp pakai COMBINE SAJA
+    // (dividen sudah ikut di Combine via Future Value).
     const price_targets = [];
     for(let n=1;n<=5;n++){
-      const pt = last*(1 + ramp*n);
+      const pt = last*(1 + combine*n);
       price_targets.push({ year:n, target_price:Math.round(pt), gl_pct: last>0?(pt-last)/last*100:null });
     }
 
