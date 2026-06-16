@@ -9922,7 +9922,7 @@ loadData();
     // Mengikuti tombol Tahun: ganti tahun → refPrice & label ikut berubah.
     const refPrice = primaryLast;
     const refLabel = (_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0) ? 'Custom'
-                   : (ok(basisPrice) ? ('12M '+startYr) : 'Live');
+                   : (ok(basisPrice) ? ('12M '+startYr) : 'TAHUN BERJALAN');
     const chgAct = (refPrice>0) ? (livePrice/refPrice-1)*100 : null;
 
     const mosBlend = pc.applicable ? pc.margin_of_safety*100 : null;
