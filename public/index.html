@@ -9071,6 +9071,11 @@ loadData();
           </span>
           <span class="uj-note-inline" id="ujLastInfo">memakai harga live</span>
         </div>
+        <div class="uj-controls" style="margin-top:8px">
+          <span class="vl-tb-label" style="margin-right:4px">Basis Data</span>
+          <span id="ujBasisBtns" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
+          <span class="uj-note-inline" id="ujBasisInfo"></span>
+        </div>
         <div id="ujOvrPanel" style="margin-top:10px"></div>
       </div>
       <div id="ujMsg"></div>
@@ -9665,6 +9670,7 @@ loadData();
   let _ujLastSel = 'live';                 // 'live' | 'Q1'..'Annual' | 'custom'
   let _ujLastCustom = null;                // angka custom dari user (kalau dipilih)
   let _ujRamp = 'combine';                 // 'combine' | 'combineDiv' — ramp Potensi Price
+  let _ujBasis = null;                     // basis data periode: null=tahun annual terbaru, 'current'=tahun berjalan(Q1), 'Y2024' dst
   let _ujOvr = {};                         // override input per emiten: {ANTM:{eps:311.58,...}}
   let _ujOvrOpen = false;                  // panel override expand state
   const ujCharts = [];                     // chart Uji Data (terpisah)
@@ -9672,12 +9678,45 @@ loadData();
   const ujP  = v => ok(v) ? v.toFixed(2)+'%' : '–';
   const ujG  = v => ok(v) ? '<span class="'+(v>=0?'uj-pos':'uj-neg')+'">'+v.toFixed(2)+'%</span>' : '–';
 
+  // Daftar basis data periode utk sebuah emiten: Tahun Berjalan (Q1) + tahun-tahun penuh.
+  function ujDataBases(stock){
+    const yrs = annualYears(stock);                 // ascending
+    const latest = yrs[yrs.length-1];
+    const list = [{ key:'current', label:'Tahun Berjalan', tag:'Q1' }];
+    yrs.slice(-4).reverse().forEach(y=> list.push({ key:'Y'+y, year:y, label:y }));   // 4 tahun terakhir, terbaru dulu
+    return { list, latest, defKey:'Y'+latest };
+  }
+
+  // Input fundamental sesuai basis data terpilih (tahun berjalan / tahun penuh).
+  // Growth 5Y & per-share dibaca dari field periode tsb; growth tahunan dihitung YoY.
+  function ujBasisInputs(stock){
+    const fy=((stock&&stock.valuation)||{}).five_year||{};
+    const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
+    const basis = _ujBasis || ('Y'+latest);
+    // Basis = tahun annual terbaru → pakai fy.inputs apa adanya (identik perilaku lama, cocok Excel).
+    if(basis === 'Y'+latest) return { inp: (fy.inputs||{}), label: latest+' (terbaru)' };
+    let period, prev, label;
+    if(basis==='current'){ period=stock.annualized; prev=stock.annual[latest]; label='Tahun Berjalan · Q1'; }
+    else { const y=basis.slice(1); period=stock.annual[y]; const i=yrs.indexOf(y); prev=(i>0)?stock.annual[yrs[i-1]]:null; label=y; }
+    if(!period) return { inp:(fy.inputs||{}), label: latest+' (terbaru)' };
+    const g=(cur,pr)=> (ok(cur)&&ok(pr)&&pr!==0)? (cur-pr)/pr : null;
+    return { label, inp:{
+      eps:period.eps, sps:period.sps, bvps:period.bvps,
+      roe_annual: ok(period.roe)? period.roe/100 : null,
+      roe_5y: period.roe_5y,
+      eps_growth_annual: g(period.eps, prev&&prev.eps),
+      eps_growth_5y: period.eps_growth_5y,
+      sps_growth_annual: g(period.sps, prev&&prev.sps),
+      sps_growth_5y: period.sps_growth_5y,
+    }};
+  }
+
   // Cermin computeModel, tapi memakai harga "basis" yg diberikan (bukan harga terakhir).
   // Plus: bila ada override input untuk emiten ini (_ujOvr[code]), pakai itu.
   function vlUjiCalc(stock, win, basis){
     const v=(stock&&stock.valuation)||{}; const fy=v.five_year||{};
     if(!fy.applicable || !ok(basis) || basis<=0) return { applicable:false, basis:basis, potensi:[null,null,null,null,null], target5:null };
-    const wk=String(win); const baseMult=fy.avg_multiples||{}; const baseInp=fy.inputs||{};
+    const wk=String(win); const baseMult=fy.avg_multiples||{}; const baseInp=ujBasisInputs(stock).inp;
     const ovr = (_ujOvr[stock.code] || {});
     // Effective input: gunakan override bila ada, fallback ke nilai sheet (valuation.json).
     const inp = {
@@ -9776,6 +9815,18 @@ loadData();
       body.innerHTML=''; return;
     }
     if(msg) msg.innerHTML='';
+
+    // ── Render tombol Basis Data (Tahun Berjalan·Q1 + tahun penuh) ──
+    const bdef = ujDataBases(s);
+    const activeBasis = _ujBasis || bdef.defKey;
+    const bbEl=document.getElementById('ujBasisBtns');
+    if(bbEl) bbEl.innerHTML = bdef.list.map(b=>{
+      const act = (b.key===activeBasis) ? ' active' : '';
+      const tag = b.tag ? ' <span style="font-size:9px;font-weight:800;opacity:.7">'+b.tag+'</span>' : '';
+      return '<button class="vl-basis-btn'+act+'" onclick="vlUjiSetBasis(\''+b.key+'\')">'+b.label+tag+'</button>';
+    }).join('');
+    const bi=ujBasisInputs(s);
+    const biEl=document.getElementById('ujBasisInfo'); if(biEl) biEl.textContent='fundamental basis: '+bi.label;
 
     const e=effLast(s); const livePrice=e.price;
     const live=(state.live&&state.live[s.code])||{};
@@ -10069,6 +10120,7 @@ loadData();
     _ujOvrOpen = true;
     _ujLastSel = 'custom'; _ujLastCustom = 3150;   // Last Price Excel
     _ujRamp = 'combine';                            // versi screenshot terbaru: ramp = Combine saja
+    _ujBasis = null;                                // default basis = tahun annual terbaru (override menimpa semua)
     renderUji();
   };
 
@@ -10078,6 +10130,12 @@ loadData();
     document.querySelectorAll('#vl-tab-uji .vl-basis-btn[data-uj-ramp]').forEach(b=>{
       b.classList.toggle('active', b.getAttribute('data-uj-ramp')===_ujRamp);
     });
+    renderUji();
+  };
+
+  // Pilih basis data periode (Tahun Berjalan·Q1 / tahun penuh).
+  window.vlUjiSetBasis = function(key){
+    _ujBasis = key || null;
     renderUji();
   };
 
