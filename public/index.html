@@ -9714,10 +9714,10 @@ loadData();
     }
     const yr=ujFiscalYear();
     const defs=[
-      { key:'Q1',     label:'Q1',                desc:'Kuartal I (Q1 — 31 Mar)',     late:'Akhir April',   date:'4/30/'+yr },
-      { key:'Q2',     label:'Q2',                desc:'Kuartal II (Q2 — 30 Jun)',    late:'Akhir Juli',    date:'7/31/'+yr },
-      { key:'Q3',     label:'Q3',                desc:'Kuartal III (Q3 — 30 Sep)',   late:'Akhir Oktober', date:'10/31/'+yr },
-      { key:'Annual', label:'Tahunan '+yr,       desc:'Tahunan (Q4 — 31 Des)',       late:'Akhir Maret',   date:'3/31/'+(yr+1) },
+      { key:'Q1',     label:'Q1',                desc:'Kuartal I (Q1 — 1 Jan – 31 Mar)',   closing:'31 Mar '+yr,       late:'Akhir April',   date:'4/30/'+yr },
+      { key:'Q2',     label:'Q2',                desc:'Kuartal II (Q2 — 1 Apr – 30 Jun)',  closing:'30 Jun '+yr,       late:'Akhir Juli',    date:'7/31/'+yr },
+      { key:'Q3',     label:'Q3',                desc:'Kuartal III (Q3 — 1 Jul – 30 Sep)', closing:'30 Sep '+yr,       late:'Akhir Oktober', date:'10/31/'+yr },
+      { key:'Annual', label:'Tahunan '+yr,       desc:'Tahunan (Q4 — 1 Okt – 31 Des)',     closing:'31 Des '+yr,       late:'Akhir Maret',   date:'3/31/'+(yr+1) },
     ];
     return defs.map(d=>({ ...d, price:ujPriceOn(d.date) }));
   }
@@ -9786,9 +9786,9 @@ loadData();
 
     /* ── A. Tabel periode (Kuartal/Tahunan) ── */
     if(_ujMode==='quarter'){
-      H.push('<div class="card"><div class="uj-blk-title">Periode Laporan &amp; Harga (Kuartal)</div><div class="uj-scroll"><table class="uj-tbl">'+
-        '<thead><tr><th class="l">Kuartal</th><th class="l">Paling Lambat</th><th>TGL</th><th>HARGA</th><th>Nama</th></tr></thead><tbody>'+
-        set.map(b=>'<tr><td class="l">'+b.desc+'</td><td class="l">'+b.late+'</td><td>'+b.date+'</td><td>'+ujN(b.price)+'</td><td class="uj-yr">'+b.label+'</td></tr>').join('')+
+      H.push('<div class="card"><div class="uj-blk-title">Periode Laporan &amp; Harga (Kuartal) — <span style="color:var(--text2);font-weight:700">kunci ada di tanggal closing; kolom TGL hanya batas pelaporan tempat harga referensi diambil</span></div><div class="uj-scroll"><table class="uj-tbl">'+
+        '<thead><tr><th class="l">Kuartal</th><th class="l">Closing</th><th class="l">Paling Lambat</th><th>TGL Harga</th><th>HARGA</th><th>Nama</th></tr></thead><tbody>'+
+        set.map(b=>'<tr><td class="l">'+b.desc+'</td><td class="l" style="font-weight:800;color:var(--accent)">'+(b.closing||'–')+'</td><td class="l">'+b.late+'</td><td>'+b.date+'</td><td>'+ujN(b.price)+'</td><td class="uj-yr">'+b.label+'</td></tr>').join('')+
         '</tbody></table></div></div>');
     } else {
       H.push('<div class="card"><div class="uj-blk-title">Periode &amp; Harga (Tahunan — 4 tahun terakhir)</div><div class="uj-scroll"><table class="uj-tbl">'+
