@@ -4,6 +4,9 @@
 /data.json
   Cache-Control: public, max-age=120, s-maxage=120, stale-while-revalidate=600
 
+/valuation.json
+  Cache-Control: public, max-age=120, s-maxage=120, stale-while-revalidate=600
+
 # Static assets (the HTML shell) can be cached longer; HTML revalidates
 # instantly via Pages' atomic deploys.
 /*

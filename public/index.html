@@ -9640,7 +9640,7 @@ loadData();
     if(state.loading || state.raw) return;
     state.loading = true;
     try{
-      state.raw = await fetchJson([VAL_CDN_URL, VAL_LOCAL_URL]);
+      state.raw = await fetchJson([VAL_LOCAL_URL, VAL_CDN_URL]);
       try{
         const data = await fetchJson([DATA_LOCAL_URL, DATA_CDN_URL]);
         state.live = (data && data.live) ? data.live : null;
