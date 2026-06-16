@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-16T04:18:06.723404+00:00",
+  "generated_at": "2026-06-16T06:07:34.563536+00:00",
   "source_files": [
     "valuation-batch-01.xlsx"
   ],
@@ -1192,7 +1192,8 @@
             }
           ],
           "target_price_5y": 15365,
-          "potential_pct": 151.88
+          "potential_pct": 151.88,
+          "override_applied": null
         },
         "wacc": {
           "risk_free": 0.068,
@@ -2234,7 +2235,9 @@
           "upside_pct": -56.11,
           "caveats": []
         },
-        "notes": []
+        "notes": [
+          "ANTM: five_year memakai override otoritatif (10 input + 4 multiple, window 5) dari data/baru dari Template Future Value.xlsx"
+        ]
       }
     },
     "BBCA": {
@@ -3047,7 +3050,8 @@
             }
           ],
           "target_price_5y": 8645,
-          "potential_pct": 37.77
+          "potential_pct": 37.77,
+          "override_applied": null
         },
         "wacc": {
           "risk_free": 0.068,
@@ -3921,7 +3925,8 @@
             }
           ],
           "target_price_5y": 7492,
-          "potential_pct": 150.56
+          "potential_pct": 150.56,
+          "override_applied": null
         },
         "wacc": {
           "risk_free": 0.068,
