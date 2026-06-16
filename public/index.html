@@ -9582,6 +9582,52 @@ loadData();
     const n = parseInt(r,10);
     return (n>0 && all.length>n) ? all.slice(-n) : all;
   }
+  // Titik "Q" = TAHUN BERJALAN (TTM / annualized Q1×4) untuk GRAFIK.
+  // Harga & rasio (PBV/PER/PSR/Yield) memakai HARGA LIVE (sheet live), BUKAN close
+  // kuartal — supaya terlihat posisi harga sekarang mahal/murah. KHUSUS visual chart;
+  // mesin valuasi & tabel tidak memakai ini.
+  function vlTtmPoint(s){
+    const az = s && s.annualized;
+    if(!az || !Object.keys(az).length) return null;
+    const yrs = annualYears(s); const latest = yrs[yrs.length-1];
+    const shares = (s.annual[latest]||{}).shares;
+    const psh = v => (ok(v)&&ok(shares)&&shares>0) ? v/shares : null;
+    const live = effLast(s).price;
+    const eps  = psh(az.net_income)    || az.eps;
+    const sps  = psh(az.total_revenue) || az.sps;
+    const bvps = psh(az.total_equity)  || az.bvps;
+    return {
+      total_revenue: az.total_revenue, net_income: az.net_income, total_equity: az.total_equity,
+      eps, sps, bvps, roe: az.roe, dps: az.dps,
+      price: live,                                  // harga grafik = LIVE
+      pbv: (ok(bvps)&&bvps>0) ? live/bvps : null,   // rasio dihitung @ harga LIVE
+      per: (ok(eps)&&eps>0)   ? live/eps  : null,
+      psr: (ok(sps)&&sps>0)   ? live/sps  : null,
+    };
+  }
+  // Label titik tahun berjalan utk chart: "<kuartal sheet> TTM <tahun berjalan>".
+  // Kuartal diambil dari valuation.json (sel D1 Excel: Q1/Q2/Q3); fallback 'Q1'.
+  // Tahun berjalan = fiscalYear+1 (mis. 2025 → 2026), fallback tahun kalender.
+  function vlTtmLabel(s){
+    let q = (s && s.q_label) ? String(s.q_label).trim() : '';
+    if(!q) q = 'Q1';
+    if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
+    const fy = ujFiscalYear();
+    const yr = ok(fy) ? fy+1 : new Date().getFullYear();
+    return q.toUpperCase()+' TTM '+yr;
+  }
+  // Tooltip utk chart ber-garis harga: di titik "Q" (tahun berjalan), JUDUL popup =
+  // "Last Price (live)" — bukan "Q.. TTM .." — karena nilai harga = harga live terakhir.
+  function vlTipPrice(qLbl){
+    return {
+      title: items => {
+        const it = items && items[0];
+        if(it && /harga|price/i.test(it.dataset.label||'') && qLbl && it.label===qLbl) return 'Last Price (live)';
+        return it ? it.label : '';
+      },
+      label: ctx => ' '+(ctx.dataset.label||'')+': '+ctx.formattedValue
+    };
+  }
   // Sisipkan toolbar range tepat di atas canvas (sekali), lalu sinkronkan tombol aktif.
   function vlEnsureRangeBar(id){
     const cv=document.getElementById(id); if(!cv) return;
@@ -9621,15 +9667,22 @@ loadData();
     const d9 = v => ok(v) ? v/1e9 : null;
     const mk = (id,cfg)=>{ const cv=document.getElementById(id); if(cv) charts.push(new Chart(cv,cfg)); };
     // Per-grafik: label & data mengikuti range (3/5/7/10/All) yg dipilih di toolbar tiap chart.
-    const lab = id => { vlEnsureRangeBar(id); return vlChartYears(s, id); };
-    const A   = (id,f) => vlChartYears(s, id).map(y=>{ const val=f(s.annual[y]||{}); return ok(val) ? val : null; });
+    // Titik terakhir = "Q" (tahun berjalan TTM); accessor sama → harga/rasio "Q" otomatis LIVE.
+    const qpt = vlTtmPoint(s);
+    const qLbl = qpt ? vlTtmLabel(s) : null;
+    const lab = id => { vlEnsureRangeBar(id); const ys=vlChartYears(s,id); return qLbl ? [...ys, qLbl] : ys; };
+    const A   = (id,f) => {
+      const arr = vlChartYears(s, id).map(y=>{ const val=f(s.annual[y]||{}); return ok(val) ? val : null; });
+      if(qpt){ const qv=f(qpt); arr.push(ok(qv) ? qv : null); }
+      return arr;
+    };
 
     // 1. Pendapatan & Laba (Miliar) + Harga
     mk('vlRev', { type:'bar', data:{ labels:lab('vlRev'), datasets:[
       { label:'Pendapatan (M)', data:A('vlRev',a=>d9(a.total_revenue)), backgroundColor:COL.blue, borderRadius:4, yAxisID:'y' },
       { label:'Laba Bersih (M)', data:A('vlRev',a=>d9(a.net_income)), backgroundColor:COL.green, borderRadius:4, yAxisID:'y' },
       { label:'Harga (Rp)', data:A('vlRev',a=>a.price), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
-    ]}, options:{...base, scales:{
+    ]}, options:{...base, plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}}, scales:{
       y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
@@ -10199,35 +10252,41 @@ loadData();
     const s=curStock(); if(!s) return;
     const T=themeColors(); const TICK={font:{size:10},color:T.tick}; const GRID={color:T.grid};
     const base={ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'rgba(26,15,60,.94)', padding:10, cornerRadius:8 } } };
-    const ys=annualYears(s).slice(-4); const labels=ys;
-    const A=f=>ys.map(y=>{ const val=f(s.annual[y]||{}); return ok(val)?val:null; });
+    const qpt = vlTtmPoint(s);
+    const qLbl = qpt ? vlTtmLabel(s) : null;
+    const lab = id => { vlEnsureRangeBar(id); const yy=vlChartYears(s,id); return qLbl ? [...yy, qLbl] : yy; };
+    const A = (id,f) => { const arr=vlChartYears(s,id).map(y=>{ const val=f(s.annual[y]||{}); return ok(val)?val:null; }); if(qpt){ const qv=f(qpt); arr.push(ok(qv)?qv:null); } return arr; };
     const mk=(id,cfg)=>{ const cv=document.getElementById(id); if(cv) ujCharts.push(new Chart(cv,cfg)); };
+    const tipP = () => ({...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}});
 
-    mk('ujC1', { type:'bar', data:{ labels, datasets:[
-      { label:'Pendapatan (Rp juta)', data:A(a=>ok(a.total_revenue)?a.total_revenue/1e6:null), backgroundColor:COL.blue, borderRadius:3, yAxisID:'y' },
-      { label:'Laba Bersih (Rp juta)', data:A(a=>ok(a.net_income)?a.net_income/1e6:null), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
-      { label:'Last Price', data:A(a=>a.price), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
-    ]}, options:{...base, scales:{
+    mk('ujC1', { type:'bar', data:{ labels:lab('ujC1'), datasets:[
+      { label:'Pendapatan (Rp juta)', data:A('ujC1',a=>ok(a.total_revenue)?a.total_revenue/1e6:null), backgroundColor:COL.blue, borderRadius:3, yAxisID:'y' },
+      { label:'Laba Bersih (Rp juta)', data:A('ujC1',a=>ok(a.net_income)?a.net_income/1e6:null), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
+      { label:'Last Price', data:A('ujC1',a=>a.price), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
+    ]}, options:{...base, plugins:tipP(), scales:{
       y:{ ticks:{...TICK, callback:v=>'Rp'+(v/1e6).toFixed(0)+'T'}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
-    const ni=ys.map(y=>(s.annual[y]||{}).net_income);
-    const grow=ys.map((y,i)=> (i>0 && ok(ni[i]) && ok(ni[i-1]) && ni[i-1]!==0) ? (ni[i]-ni[i-1])/Math.abs(ni[i-1])*100 : null);
-    mk('ujC2', { type:'bar', data:{ labels, datasets:[
+    const niOf = y => (s.annual[y]||{}).net_income;
+    const allY = annualYears(s);
+    const growY = y => { const i=allY.indexOf(y); if(i<=0) return null; const c=niOf(y), p=niOf(allY[i-1]); return (ok(c)&&ok(p)&&p!==0)?(c-p)/Math.abs(p)*100:null; };
+    const grow = vlChartYears(s,'ujC2').map(growY);
+    if(qpt){ const p=niOf(allY[allY.length-1]); grow.push((ok(qpt.net_income)&&ok(p)&&p!==0)?(qpt.net_income-p)/Math.abs(p)*100:null); }
+    mk('ujC2', { type:'bar', data:{ labels:lab('ujC2'), datasets:[
       { label:'Laba%', data:grow, backgroundColor:COL.blue, borderRadius:3, yAxisID:'y' },
-      { label:'ROE', data:A(a=>a.roe), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
-      { label:'Last Price', data:A(a=>a.price), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
-    ]}, options:{...base, scales:{
+      { label:'ROE', data:A('ujC2',a=>a.roe), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
+      { label:'Last Price', data:A('ujC2',a=>a.price), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
+    ]}, options:{...base, plugins:tipP(), scales:{
       y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
-    mk('ujC3', { type:'bar', data:{ labels, datasets:[
-      { label:'PBV', data:A(a=>a.pbv), backgroundColor:COL.purple, borderRadius:3, yAxisID:'y' },
-      { label:'PER', data:A(a=>a.per), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
-      { label:'PSR', data:A(a=>a.psr), backgroundColor:COL.orange, borderRadius:3, yAxisID:'y' },
-      { label:'Book Value', data:A(a=>a.bvps), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
+    mk('ujC3', { type:'bar', data:{ labels:lab('ujC3'), datasets:[
+      { label:'PBV', data:A('ujC3',a=>a.pbv), backgroundColor:COL.purple, borderRadius:3, yAxisID:'y' },
+      { label:'PER', data:A('ujC3',a=>a.per), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
+      { label:'PSR', data:A('ujC3',a=>a.psr), backgroundColor:COL.orange, borderRadius:3, yAxisID:'y' },
+      { label:'Book Value', data:A('ujC3',a=>a.bvps), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
     ]}, options:{...base, scales:{
       y:{ ticks:TICK, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>(v/1000).toFixed(1)+'k'}, grid:{display:false} },

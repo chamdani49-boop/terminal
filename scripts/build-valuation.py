@@ -138,9 +138,11 @@ def parse_sheet(name, grid):
             if period and re.match(r'^\d{4}$', period):
                 annual.setdefault(period, {})[field] = to_number(grid.get((row, col)))
     code_in_sheet = grid.get((1, 3))
+    q_label = grid.get((1, 4))   # sel D1 = penanda kuartal tahun berjalan (Q1/Q2/Q3)
     return {
         'code': name.strip().upper(),
         'code_in_sheet': (str(code_in_sheet).strip().upper() if code_in_sheet else None),
+        'q_label': (str(q_label).strip() if q_label else None),
         'q1': q1,
         'annualized': annualized,   # = Q1 x 4 (run-rate, BUKAN TTM) — sesuai keputusan: dipakai apa adanya
         'annual': annual,
