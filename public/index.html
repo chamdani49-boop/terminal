@@ -9039,6 +9039,23 @@ loadData();
       @media(max-width:900px){.uj-grid3{grid-template-columns:1fr}}
       .uj-chart{position:relative;width:100%;height:260px}
       .uj-blk-title{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+
+      /* Panel Override Input */
+      .uj-ovr-card{border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);padding:10px 12px}
+      .uj-ovr-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}
+      .uj-ovr-title{font-size:12px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.4px}
+      .uj-ovr-actions{display:flex;gap:6px;flex-wrap:wrap}
+      .uj-ovr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 12px;margin-top:10px}
+      .uj-ovr-row{display:flex;align-items:center;gap:8px;font-size:12px}
+      .uj-ovr-row label{flex:1 1 auto;color:var(--text2);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .uj-ovr-row .uj-ovr-default{font-family:'IBM Plex Mono',monospace;color:var(--text3);font-size:11px;font-weight:700;min-width:64px;text-align:right}
+      .uj-ovr-row input{width:80px;padding:5px 7px;border:1px solid var(--border);border-radius:5px;background:var(--card);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;text-align:right}
+      .uj-ovr-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(109,40,217,.18)}
+      .uj-ovr-row.changed input{border-color:#d97706;background:rgba(217,119,6,.07)}
+      .uj-ovr-row.changed label{color:var(--text)}
+      .uj-ovr-suffix{font-size:11px;color:var(--text3);font-weight:700;width:14px;display:inline-block;text-align:left}
+      .uj-ovr-foot{margin-top:8px;font-size:11px;color:var(--text3);line-height:1.5}
+      [data-theme="dark"] .uj-ovr-card{background:rgba(255,255,255,.03)}
     </style>
     <div id="vl-tab-uji" class="vl-tc">
       <div class="card" style="margin-bottom:14px">
@@ -9063,6 +9080,13 @@ loadData();
           </span>
           <span class="uj-note-inline" id="ujLastInfo">memakai harga live</span>
         </div>
+        <div class="uj-controls" style="margin-top:8px">
+          <span class="vl-tb-label" style="margin-right:4px">Mode Ramp Potensi</span>
+          <button class="vl-basis-btn active" data-uj-ramp="combine" onclick="vlUjiSetRamp('combine')">Combine</button>
+          <button class="vl-basis-btn" data-uj-ramp="combineDiv" onclick="vlUjiSetRamp('combineDiv')">Combine + Dividen</button>
+          <span class="uj-note-inline">Excel screenshot terbaru pakai <strong>Combine saja</strong>; versi sebelumnya pakai Combine+Dividen.</span>
+        </div>
+        <div id="ujOvrPanel" style="margin-top:10px"></div>
       </div>
       <div id="ujMsg"></div>
       <div id="ujBody" class="uj-sheet"></div>
@@ -9655,16 +9679,40 @@ loadData();
   let _ujMode = 'quarter';                 // 'quarter' | 'year'
   let _ujLastSel = 'live';                 // 'live' | 'Q1'..'Annual' | 'custom'
   let _ujLastCustom = null;                // angka custom dari user (kalau dipilih)
+  let _ujRamp = 'combine';                 // 'combine' | 'combineDiv' — ramp Potensi Price
+  let _ujOvr = {};                         // override input per emiten: {ANTM:{eps:311.58,...}}
+  let _ujOvrOpen = false;                  // panel override expand state
   const ujCharts = [];                     // chart Uji Data (terpisah)
   const ujN  = v => ok(v) ? Math.round(v).toLocaleString('en-US') : '–';     // 4,888
   const ujP  = v => ok(v) ? v.toFixed(2)+'%' : '–';
   const ujG  = v => ok(v) ? '<span class="'+(v>=0?'uj-pos':'uj-neg')+'">'+v.toFixed(2)+'%</span>' : '–';
 
   // Cermin computeModel, tapi memakai harga "basis" yg diberikan (bukan harga terakhir).
+  // Plus: bila ada override input untuk emiten ini (_ujOvr[code]), pakai itu.
   function vlUjiCalc(stock, win, basis){
     const v=(stock&&stock.valuation)||{}; const fy=v.five_year||{};
     if(!fy.applicable || !ok(basis) || basis<=0) return { applicable:false, basis:basis, potensi:[null,null,null,null,null], target5:null };
-    const wk=String(win); const mult=fy.avg_multiples||{}; const inp=fy.inputs||{};
+    const wk=String(win); const baseMult=fy.avg_multiples||{}; const baseInp=fy.inputs||{};
+    const ovr = (_ujOvr[stock.code] || {});
+    // Effective input: gunakan override bila ada, fallback ke nilai sheet (valuation.json).
+    const inp = {
+      eps:               ok(ovr.eps)               ? ovr.eps               : baseInp.eps,
+      sps:               ok(ovr.sps)               ? ovr.sps               : baseInp.sps,
+      bvps:              ok(ovr.bvps)              ? ovr.bvps              : baseInp.bvps,
+      roe_annual:        ok(ovr.roe_annual)        ? ovr.roe_annual        : baseInp.roe_annual,
+      roe_5y:            ok(ovr.roe_5y)            ? ovr.roe_5y            : baseInp.roe_5y,
+      eps_growth_annual: ok(ovr.eps_growth_annual) ? ovr.eps_growth_annual : baseInp.eps_growth_annual,
+      eps_growth_5y:     ok(ovr.eps_growth_5y)     ? ovr.eps_growth_5y     : baseInp.eps_growth_5y,
+      sps_growth_annual: ok(ovr.sps_growth_annual) ? ovr.sps_growth_annual : baseInp.sps_growth_annual,
+      sps_growth_5y:     ok(ovr.sps_growth_5y)     ? ovr.sps_growth_5y     : baseInp.sps_growth_5y,
+    };
+    // Multiples per window: bisa di-override per window aktif.
+    const mult = {
+      pbv: { ...(baseMult.pbv||{}), [wk]: ok(ovr.avg_pbv) ? ovr.avg_pbv : (baseMult.pbv||{})[wk] },
+      per: { ...(baseMult.per||{}), [wk]: ok(ovr.avg_per) ? ovr.avg_per : (baseMult.per||{})[wk] },
+      psr: { ...(baseMult.psr||{}), [wk]: ok(ovr.avg_psr) ? ovr.avg_psr : (baseMult.psr||{})[wk] },
+      dpr: { ...(baseMult.dpr||{}), [wk]: ok(ovr.avg_dpr) ? ovr.avg_dpr : (baseMult.dpr||{})[wk] },
+    };
     const g_bv =0.8*(inp.roe_5y||0)        + 0.2*(inp.roe_annual||0);
     const g_eps=0.8*(inp.eps_growth_5y||0) + 0.2*(inp.eps_growth_annual||0);
     const g_sps=0.8*(inp.sps_growth_5y||0) + 0.2*(inp.sps_growth_annual||0);
@@ -9685,8 +9733,10 @@ loadData();
     const dividend_yield=(ok(inp.eps)&&basis>0)? dpr_win*inp.eps/basis : 0;
     const future_value=blend_annual+dividend_yield;   // Excel: FV = blend annual + dividen yield
     const combine=(future_value+cagr)/2;
-    // Potensi price = Last x (1 + (Combine + Dividen Yield) x n) — sesuai sheet Excel terbaru
-    const ramp=combine+dividend_yield;
+    // Potensi price = Last × (1 + ramp × n). Ramp tergantung _ujRamp:
+    //   'combine'    : ramp = Combine saja (versi screenshot terbaru ANTM)
+    //   'combineDiv' : ramp = Combine + Dividen Yield (versi sebelumnya)
+    const ramp = (_ujRamp==='combineDiv') ? (combine+dividend_yield) : combine;
     const potensi=[]; for(let n=1;n<=5;n++) potensi.push(Math.round(basis*(1+ramp*n)));
     return { applicable:true, basis, win, combine, cagr, future_value, dividend_yield,
              dpr_win, eps:inp.eps, dps_est:dpr_win*(inp.eps||0), potensi, target5:potensi[4] };
@@ -9851,6 +9901,7 @@ loadData();
     H.push(ujTtmTable(s, win, set, by, years, now, primary, pc, mosNow));
 
     body.innerHTML=H.join('');
+    renderUjiOvrPanel();
   }
 
   // Blok ESTIMASI DIVIDEN YIELD (kiri).
@@ -9949,6 +10000,135 @@ loadData();
       y2:{ position:'right', ticks:{...TICK, callback:v=>(v/1000).toFixed(1)+'k'}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
   }
+
+  // Field yang bisa di-override (urutan & tipe).
+  const UJ_OVR_FIELDS = [
+    {k:'eps',                lbl:'EPS (Annual)',       suf:''},
+    {k:'bvps',               lbl:'BVPS (Annual)',      suf:''},
+    {k:'sps',                lbl:'SPS (Annual)',       suf:''},
+    {k:'roe_annual',         lbl:'ROE Annual',         suf:'%', pct:true},
+    {k:'roe_5y',             lbl:'ROE 5 Tahun',        suf:'%', pct:true},
+    {k:'eps_growth_annual',  lbl:'EPS Growth Annual',  suf:'%', pct:true},
+    {k:'eps_growth_5y',      lbl:'EPS Growth 5 Tahun', suf:'%', pct:true},
+    {k:'sps_growth_annual',  lbl:'SPS Growth Annual',  suf:'%', pct:true},
+    {k:'sps_growth_5y',      lbl:'SPS Growth 5 Tahun', suf:'%', pct:true},
+    {k:'avg_pbv',            lbl:'Avg PBV',            suf:''},
+    {k:'avg_per',            lbl:'Avg PER',            suf:''},
+    {k:'avg_psr',            lbl:'Avg PSR',            suf:''},
+    {k:'avg_dpr',            lbl:'DPR (avg)',          suf:'%', pct:true},
+  ];
+
+  // Nilai default (dari valuation.json) untuk field tertentu.
+  function ujOvrDefault(stock, win, k){
+    const fy=(stock&&stock.valuation&&stock.valuation.five_year)||{};
+    const inp=fy.inputs||{}; const m=fy.avg_multiples||{}; const wk=String(win);
+    if(k==='avg_pbv') return (m.pbv||{})[wk];
+    if(k==='avg_per') return (m.per||{})[wk];
+    if(k==='avg_psr') return (m.psr||{})[wk];
+    if(k==='avg_dpr') return (m.dpr||{})[wk];
+    return inp[k];
+  }
+
+  // Format default value utk ditampilkan.
+  function ujOvrFmtDefault(v, pct){
+    if(!ok(v)) return '–';
+    return pct ? (v*100).toFixed(2)+'%' : v.toFixed(2);
+  }
+
+  // Render panel Override Input.
+  function renderUjiOvrPanel(){
+    const el=document.getElementById('ujOvrPanel'); if(!el) return;
+    const s=curStock(); if(!s){ el.innerHTML=''; return; }
+    const ovr = _ujOvr[s.code] || {};
+    const ovrCount = Object.keys(ovr).length;
+    if(!_ujOvrOpen){
+      el.innerHTML =
+        '<div class="uj-ovr-card" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'+
+          '<div><span class="uj-ovr-title">🛠 Override Input</span> '+
+          (ovrCount>0
+            ? '<span style="color:#d97706;font-size:11px;font-weight:800;margin-left:8px">'+ovrCount+' field di-override</span>'
+            : '<span style="color:var(--text3);font-size:11px;margin-left:8px">pakai data sheet sumber</span>')+
+          '</div>'+
+          '<div class="uj-ovr-actions">'+
+            (s.code==='ANTM' ? '<button class="vl-basis-btn" onclick="vlUjiPresetExcelANTM()" title="Set semua field sesuai screenshot Excel ANTM 2025">📋 Preset Excel ANTM</button>' : '')+
+            (ovrCount>0 ? '<button class="vl-basis-btn" onclick="vlUjiResetOvr()">↺ Reset</button>' : '')+
+            '<button class="vl-basis-btn" onclick="vlUjiToggleOvr()">▾ Buka</button>'+
+          '</div>'+
+        '</div>';
+      return;
+    }
+    const rows = UJ_OVR_FIELDS.map(f=>{
+      const def = ujOvrDefault(s, state.win, f.k);
+      const cur = ovr[f.k];
+      const changed = ok(cur);
+      const dispVal = changed ? (f.pct ? (cur*100).toFixed(4) : cur) : '';
+      return '<div class="uj-ovr-row'+(changed?' changed':'')+'">'+
+        '<label title="'+f.lbl+'">'+f.lbl+'</label>'+
+        '<span class="uj-ovr-default" title="nilai default dari sheet">'+ujOvrFmtDefault(def, f.pct)+'</span>'+
+        '<input type="number" step="0.0001" placeholder="'+(ok(def)?(f.pct?(def*100).toFixed(2):def.toFixed(2)):'')+'" value="'+dispVal+'" data-ovr="'+f.k+'" data-pct="'+(f.pct?'1':'')+'" oninput="vlUjiOvrChange(this)">'+
+        '<span class="uj-ovr-suffix">'+(f.suf||'')+'</span>'+
+      '</div>';
+    }).join('');
+    el.innerHTML =
+      '<div class="uj-ovr-card">'+
+        '<div class="uj-ovr-head">'+
+          '<span class="uj-ovr-title">🛠 Override Input — '+s.code+'</span>'+
+          '<div class="uj-ovr-actions">'+
+            (s.code==='ANTM' ? '<button class="vl-basis-btn" onclick="vlUjiPresetExcelANTM()" title="Set semua field sesuai screenshot Excel ANTM 2025">📋 Preset Excel ANTM</button>' : '')+
+            (ovrCount>0 ? '<button class="vl-basis-btn" onclick="vlUjiResetOvr()">↺ Reset semua</button>' : '')+
+            '<button class="vl-basis-btn" onclick="vlUjiToggleOvr()">▴ Tutup</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="uj-ovr-grid">'+rows+'</div>'+
+        '<div class="uj-ovr-foot">Kolom abu-abu = nilai default dari <strong>valuation.json</strong> (window '+state.win+'th aktif). Isi kolom putih untuk override sementara — semua perhitungan di tab Uji Data langsung memakai nilai itu. Kotak warna oranye = field yang sedang di-override.</div>'+
+      '</div>';
+  }
+
+  window.vlUjiToggleOvr = function(){ _ujOvrOpen=!_ujOvrOpen; renderUji(); };
+  window.vlUjiResetOvr = function(){ if(state && state.code) _ujOvr[state.code] = {}; renderUji(); };
+  window.vlUjiOvrChange = function(inp){
+    const k = inp.getAttribute('data-ovr');
+    const isPct = inp.getAttribute('data-pct')==='1';
+    let raw = inp.value;
+    if(raw==='' || raw==null){
+      if(_ujOvr[state.code]) delete _ujOvr[state.code][k];
+    } else {
+      let v = Number(raw);
+      if(!isFinite(v)) return;
+      if(isPct) v = v/100;             // input dalam % → simpan sbg fraksi
+      if(!_ujOvr[state.code]) _ujOvr[state.code] = {};
+      _ujOvr[state.code][k] = v;
+    }
+    renderUji();
+  };
+
+  // Preset cepat: input persis dari screenshot Excel ANTM 2025 (validasi formula).
+  window.vlUjiPresetExcelANTM = function(){
+    if(!state || state.code!=='ANTM') return;
+    _ujOvr['ANTM'] = {
+      // Per-share dihitung manual di Excel (Profit/Equity/Sales ÷ Shares).
+      eps: 311.58, bvps: 1523, sps: 3522.37,
+      // Growth: nilai persis dari sel "ROE/EPS/SPS Growth (Annual)/(in 5 Years)" di template.
+      roe_annual: 0.2046, roe_5y: 0.3195,
+      eps_growth_annual: 0.9765, eps_growth_5y: 0.4437,
+      sps_growth_annual: 0.2533, sps_growth_5y: 0.2233,
+      // Avg multiples (window terpilih) dari Excel.
+      avg_pbv: 1.76, avg_per: 14.21, avg_psr: 1.27, avg_dpr: 0.7141,
+    };
+    _ujOvrOpen = true;
+    _ujLastSel = 'custom'; _ujLastCustom = 3150;   // Last Price Excel
+    _ujRamp = 'combine';                            // versi screenshot terbaru: ramp = Combine saja
+    renderUji();
+  };
+
+  // Toggle ramp Potensi: 'combine' atau 'combineDiv' (Combine + Dividen Yield).
+  window.vlUjiSetRamp = function(mode){
+    _ujRamp = (mode==='combineDiv') ? 'combineDiv' : 'combine';
+    document.querySelectorAll('#vl-tab-uji .vl-basis-btn[data-uj-ramp]').forEach(b=>{
+      b.classList.toggle('active', b.getAttribute('data-uj-ramp')===_ujRamp);
+    });
+    renderUji();
+  };
 
   // Toggle basis Kuartal/Tahunan.
   window.vlUjiSetMode = function(mode){
