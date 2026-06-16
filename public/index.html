@@ -10106,13 +10106,13 @@ loadData();
   window.vlUjiPresetExcelANTM = function(){
     if(!state || state.code!=='ANTM') return;
     _ujOvr['ANTM'] = {
-      // Per-share dihitung manual di Excel (Profit/Equity/Sales ÷ Shares).
-      eps: 311.58, bvps: 1523, sps: 3522.37,
-      // Growth: nilai persis dari sel "ROE/EPS/SPS Growth (Annual)/(in 5 Years)" di template.
-      // CATATAN: Excel template versi terbaru pakai SPS Growth (in 5 Years) = 97.65%.
+      // Per-share dihitung manual di Excel (Profit/Equity/Sales ÷ Shares 24.030 jt).
+      eps: 311.58, bvps: 1523.09, sps: 3522.37,
+      // Growth: nilai persis dari sel "ROE/EPS/SPS Growth (Annual)/(in 5 Years)" di sheet.
+      // PENTING: SPS Growth (in 5 Years) = 25.33% (nilai 97.65% di template lama adalah typo).
       roe_annual: 0.2046, roe_5y: 0.3195,
       eps_growth_annual: 0.9765, eps_growth_5y: 0.4437,
-      sps_growth_annual: 0.2233, sps_growth_5y: 0.9765,
+      sps_growth_annual: 0.2233, sps_growth_5y: 0.2533,
       // Avg multiples (window terpilih) dari Excel.
       avg_pbv: 1.76, avg_per: 14.21, avg_psr: 1.27, avg_dpr: 0.7141,
     };
