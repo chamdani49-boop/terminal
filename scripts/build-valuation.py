@@ -26,6 +26,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR  = os.path.join(ROOT, 'data', 'valuation')
 OUT_FILE = os.path.join(ROOT, 'public', 'valuation.json')
 DATA_JSON = os.path.join(ROOT, 'public', 'data.json')
+OVERRIDES_FILE = os.path.join(SRC_DIR, 'overrides.json')
 
 # ── ASUMSI VALUASI (transparan & mudah disetel) ──────────────────────────────
 ASSUMPTIONS = {
@@ -367,7 +368,7 @@ def two_latest(stock, field):
     return lv, pv, ly, py
 
 
-def five_year_valuation(stock, last_price, warn):
+def five_year_valuation(stock, last_price, warn, override=None):
     """Model 5-tahun pemilik: 3 sub-model multiples (PBV / PER / PSR) lalu di-blend."""
     n = ASSUMPTIONS['projection_years']
     w = ASSUMPTIONS['avg_window_default']
@@ -404,6 +405,36 @@ def five_year_valuation(stock, last_price, warn):
     avg_per = avg_over_window(stock, 'per', w)
     avg_psr = avg_over_window(stock, 'psr', w)
     dpr     = avg_over_window(stock, 'dpr', w)
+
+    # ── Override OTORITATIF (dari Excel pemilik via overrides.json) ──
+    # Timpa nilai turunan SEBELUM sub-model dihitung, supaya seluruh output
+    # (submodels, price_targets, potential_pct) konsisten dgn Excel.
+    override_meta = None
+    if override:
+        oi = override.get('inputs') or {}
+        if 'eps' in oi:               eps_LY    = oi['eps']
+        if 'sps' in oi:               sps_LY    = oi['sps']
+        if 'bvps' in oi:              bvps_LY   = oi['bvps']
+        if 'roe_annual' in oi:        roe_ann   = oi['roe_annual']
+        if 'roe_5y' in oi:            roe_5y    = oi['roe_5y']
+        if 'eps_growth_annual' in oi: eps_g_ann = oi['eps_growth_annual']
+        if 'eps_growth_5y' in oi:     eps_g_5y  = oi['eps_growth_5y']
+        if 'sps_growth_annual' in oi: sps_g_ann = oi['sps_growth_annual']
+        if 'sps_growth_5y' in oi:     sps_g_5y  = oi['sps_growth_5y']
+        om = override.get('avg_multiples') or {}
+        if 'pbv' in om: avg_pbv = om['pbv']
+        if 'per' in om: avg_per = om['per']
+        if 'psr' in om: avg_psr = om['psr']
+        if 'dpr' in om: dpr     = om['dpr']
+        # Cerminkan ke dict avg_multiples pada window default (window lain tetap hasil hitung).
+        for metric, val in om.items():
+            avg_multiples.setdefault(metric, {})[w] = round(val, 4)
+        override_meta = {'source': override.get('source'), 'note': override.get('note'),
+                         'inputs': sorted(oi.keys()), 'avg_multiples': sorted(om.keys()),
+                         'window': w}
+        warn.append(f"{stock.get('code','?')}: five_year memakai override otoritatif "
+                    f"({len(oi)} input + {len(om)} multiple, window {w}) "
+                    f"dari {override.get('source') or 'overrides.json'}")
 
     def project(base, g, mult):
         out = []
@@ -494,6 +525,7 @@ def five_year_valuation(stock, last_price, warn):
         'price_targets': price_targets,
         'target_price_5y': price_targets[-1]['target_price'],
         'potential_pct': price_targets[-1]['gl_pct'],
+        'override_applied': override_meta,
     }
 
 
@@ -510,6 +542,28 @@ def load_data_json():
         return {}, {}, {}
 
 
+def load_overrides():
+    """Baca override OTORITATIF per-emiten dari data/valuation/overrides.json.
+
+    Format: { "ANTM": { "inputs": {...}, "avg_multiples": {pbv,per,psr,dpr} }, ... }
+    Key yang diawali '_' (mis. "_comment") diabaikan.
+    """
+    try:
+        raw = json.load(open(OVERRIDES_FILE, encoding='utf-8'))
+        return {k.upper(): v for k, v in raw.items() if not k.startswith('_') and isinstance(v, dict)}
+    except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f'[build-valuation] overrides.json tidak terbaca ({e}) → diabaikan', file=sys.stderr)
+        return {}
+
+
+def apply_override(code, five, override, warn):
+    """DEPRECATED: override kini diterapkan di dalam five_year_valuation(override=...).
+    Disisakan sebagai no-op untuk kompatibilitas bila ada pemanggil lama."""
+    return
+
+
 # ════════════════════════════ MAIN ══════════════════════════════════════════
 def main():
     files = sorted(glob.glob(os.path.join(SRC_DIR, '*.xlsx')))
@@ -518,6 +572,7 @@ def main():
         print(f'[build-valuation] Tidak ada file .xlsx di {SRC_DIR}', file=sys.stderr)
 
     betas, stock_info, live_prices = load_data_json()
+    overrides = load_overrides()
     stocks, warnings, source_files = {}, [], []
 
     for path in files:
@@ -541,7 +596,7 @@ def main():
             warn = []
             wacc_info = compute_wacc(data, betas.get(code), warn)
             ke = wacc_info['cost_of_equity']
-            five = five_year_valuation(data, last_price, warn)
+            five = five_year_valuation(data, last_price, warn, override=overrides.get(code))
             dcf = dcf_valuation(data, wacc_info['wacc'], warn, financial=financial, last_price=last_price)
             ddm = ddm_valuation(data, ke, warn, last_price=last_price)
 

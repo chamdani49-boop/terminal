@@ -1924,191 +1924,214 @@
           "avg_multiples": {
             "pbv": {
               "3": 1.5467,
-              "5": 1.848,
+              "5": 1.76,
               "7": 1.8271,
               "10": 1.57
             },
             "per": {
               "3": 11.2867,
-              "5": 15.076,
+              "5": 14.21,
               "7": 31.4186,
               "10": 68.247
             },
             "psr": {
               "3": 0.8067,
-              "5": 0.974,
+              "5": 1.27,
               "7": 1.0271,
               "10": 1.147
             },
             "dpr": {
               "3": 0.9,
-              "5": 0.74,
+              "5": 0.7141,
               "7": 0.6285,
               "10": 0.51
             }
           },
           "inputs": {
-            "eps": 299.98,
-            "sps": 3522.3653349979195,
-            "bvps": 1468.88,
+            "eps": 311.58,
+            "sps": 3522.37,
+            "bvps": 1523.0,
             "roe_annual": 0.2046,
-            "roe_5y": 0.31946910026704334,
+            "roe_5y": 0.3195,
             "eps_growth_annual": 0.9765,
-            "eps_growth_5y": 0.44370474539392846,
+            "eps_growth_5y": 0.4437,
             "sps_growth_annual": 0.2233,
-            "sps_growth_5y": 0.25329949426332243,
-            "dpr": 0.74
+            "sps_growth_5y": 0.9765,
+            "dpr": 0.7141
           },
           "submodels": {
             "pbv": {
               "key": "pbv",
               "applicable": true,
               "growth": 0.2965,
-              "multiple": 1.848,
+              "multiple": 1.76,
               "projection": [
                 {
                   "year": 1,
-                  "value": 1904.39,
-                  "price_target": 3519.31
+                  "value": 1974.6,
+                  "price_target": 3475.3
                 },
                 {
                   "year": 2,
-                  "value": 2469.02,
-                  "price_target": 4562.75
+                  "value": 2560.11,
+                  "price_target": 4505.79
                 },
                 {
                   "year": 3,
-                  "value": 3201.06,
-                  "price_target": 5915.55
+                  "value": 3319.23,
+                  "price_target": 5841.85
                 },
                 {
                   "year": 4,
-                  "value": 4150.14,
-                  "price_target": 7669.45
+                  "value": 4303.45,
+                  "price_target": 7574.07
                 },
                 {
                   "year": 5,
-                  "value": 5380.61,
-                  "price_target": 9943.37
+                  "value": 5579.51,
+                  "price_target": 9819.94
                 }
               ],
-              "target_5y": 9943,
-              "gl_5y": 2.1768,
-              "annual": 0.4354,
+              "target_5y": 9820,
+              "gl_5y": 2.1374,
+              "annual": 0.4275,
               "cagr": 0.2309,
-              "mos": 0.6852
+              "mos": 0.6813
             },
             "per": {
               "key": "per",
               "applicable": true,
               "growth": 0.5503,
-              "multiple": 15.076,
+              "multiple": 14.21,
               "projection": [
                 {
                   "year": 1,
-                  "value": 465.05,
-                  "price_target": 7011.1
+                  "value": 483.03,
+                  "price_target": 6863.86
                 },
                 {
                   "year": 2,
-                  "value": 720.96,
-                  "price_target": 10869.12
+                  "value": 748.82,
+                  "price_target": 10640.76
                 },
                 {
                   "year": 3,
-                  "value": 1117.68,
-                  "price_target": 16850.1
+                  "value": 1160.87,
+                  "price_target": 16495.95
                 },
                 {
                   "year": 4,
-                  "value": 1732.7,
-                  "price_target": 26122.25
+                  "value": 1799.65,
+                  "price_target": 25573.01
                 },
                 {
                   "year": 5,
-                  "value": 2686.16,
-                  "price_target": 40496.61
+                  "value": 2789.92,
+                  "price_target": 39644.81
                 }
               ],
-              "target_5y": 40497,
-              "gl_5y": 11.9382,
-              "annual": 2.3876,
+              "target_5y": 39645,
+              "gl_5y": 11.6661,
+              "annual": 2.3332,
               "cagr": 0.4201,
-              "mos": 0.9227
+              "mos": 0.921
             },
             "psr": {
               "key": "psr",
               "applicable": true,
-              "growth": 0.2473,
-              "multiple": 0.974,
+              "growth": 0.8259,
+              "multiple": 1.27,
               "projection": [
                 {
                   "year": 1,
-                  "value": 4393.44,
-                  "price_target": 4279.21
+                  "value": 6431.35,
+                  "price_target": 8167.82
                 },
                 {
                   "year": 2,
-                  "value": 5479.92,
-                  "price_target": 5337.45
+                  "value": 11742.75,
+                  "price_target": 14913.3
                 },
                 {
                   "year": 3,
-                  "value": 6835.1,
-                  "price_target": 6657.38
+                  "value": 21440.62,
+                  "price_target": 27229.59
                 },
                 {
                   "year": 4,
-                  "value": 8525.4,
-                  "price_target": 8303.74
+                  "value": 39147.58,
+                  "price_target": 49717.42
                 },
                 {
                   "year": 5,
-                  "value": 10633.71,
-                  "price_target": 10357.24
+                  "value": 71477.99,
+                  "price_target": 90777.05
                 }
               ],
-              "target_5y": 10357,
-              "gl_5y": 2.309,
-              "annual": 0.4618,
-              "cagr": 0.1934,
-              "mos": 0.6978
+              "target_5y": 90777,
+              "gl_5y": 28.0023,
+              "annual": 5.6005,
+              "cagr": 0.6187,
+              "mos": 0.9655
             }
           },
-          "future_value": 1.2898,
-          "cagr": 0.3028,
-          "combine": 0.7963,
-          "dividend_yield": 0.0709,
-          "margin_of_safety": 0.7815,
+          "future_value": 1.7782,
+          "cagr": 0.3454,
+          "combine": 1.0618,
+          "dividend_yield": 0.0711,
+          "margin_of_safety": 0.8056,
           "price_targets": [
             {
               "year": 1,
-              "target_price": 5623,
-              "gl_pct": 79.63
+              "target_price": 6453,
+              "gl_pct": 106.18
             },
             {
               "year": 2,
-              "target_price": 8115,
-              "gl_pct": 159.27
+              "target_price": 9777,
+              "gl_pct": 212.35
             },
             {
               "year": 3,
-              "target_price": 10608,
-              "gl_pct": 238.9
-            },
-            {
-              "year": 4,
               "target_price": 13100,
               "gl_pct": 318.53
             },
             {
+              "year": 4,
+              "target_price": 16423,
+              "gl_pct": 424.71
+            },
+            {
               "year": 5,
-              "target_price": 15593,
-              "gl_pct": 398.17
+              "target_price": 19747,
+              "gl_pct": 530.88
             }
           ],
-          "target_price_5y": 15593,
-          "potential_pct": 398.17
+          "target_price_5y": 19747,
+          "potential_pct": 530.88,
+          "override_applied": {
+            "source": "data/baru dari Template Future Value.xlsx",
+            "note": "Disalin dari sel template ANTM 2025 (Last Price 3150). Per-share dihitung manual di Excel (Profit/Equity/Sales / Shares).",
+            "inputs": [
+              "bvps",
+              "dpr",
+              "eps",
+              "eps_growth_5y",
+              "eps_growth_annual",
+              "roe_5y",
+              "roe_annual",
+              "sps",
+              "sps_growth_5y",
+              "sps_growth_annual"
+            ],
+            "avg_multiples": [
+              "dpr",
+              "pbv",
+              "per",
+              "psr"
+            ],
+            "window": 5
+          }
         },
         "wacc": {
           "risk_free": 0.068,
