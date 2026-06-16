@@ -167,3 +167,65 @@ diubah, menunggu keputusan user.
 Upload Excel ke `data/valuation/` via:
 https://github.com/chamdani49-boop/terminal/upload/main/data/valuation
 → workflow refresh-valuation auto-rebuild valuation.json.
+
+
+
+## HANDOFF SESI (16 Jun 2026) — status tab "Uji Data" & 2 isu terbuka
+
+### Status PR (sudah merge ke main): #166–#178
+- Formula model 5-th sudah TERVALIDASI 100% vs Excel pemilik (uji ANTM) bila
+  input dipersiskan. Rumus final (sumber: workbook `data/baru dari Template Future Value.xlsx`):
+  - per sub-model (PBV/PER/PSR): `g=0.8*growth5y+0.2*growthAnnual`; `FV_n=base*(1+g)^n`;
+    `FuturePrice_n=FV_n*avgMultiple`; `G&L=(FP5-Last)/Last`; `Annual=G&L/5`;
+    `MoS=1-Last/FP5`; `CAGR=(FV5/FV1)^(1/5)-1`.
+  - akumulasi: `FutureValue=0.5*Ann_PBV+0.4*Ann_EPS+0.1*Ann_SPS + DividenYield`;
+    `CAGR=0.5/0.4/0.1 blend`; `Combine=(FV+CAGR)/2`; `MoS=0.5/0.4/0.1 blend MoS`;
+    `Potensi(n)=Last*(1+Combine*n)` (ramp = COMBINE SAJA).
+  - Verifikasi ANTM (input Excel): FV 176.56% · CAGR 34.54% · Combine 105.55% ·
+    MoS 80.44% · Potensi 6.475/9.800/13.124/16.449/19.774. SEMUA match.
+
+### ISU TERBUKA 1 — Layout tab Uji Data "gak beraturan"
+PR #177 (tombol "Basis Data": Tahun Berjalan·Q1 + 2025/2024/…) DAN #178 (layout
+gambar: GROWTH & CAPITAL GAIN + ACTUAL + COMBINE RETURN + MARGIN OF SAFETY)
+**dua-duanya ter-merge** → blok bertumpuk & kolom flex (`uj-row`/`uj-col`,
+flex-basis 1.2/1.7) tidak rata. PERLU: rapikan jadi grid rata. Layout target (dari
+gambar terbaru user):
+- Baris 1: `[kode+Dividen]` `[GROWTH & CAPITAL GAIN]` `[ACTUAL]`
+- Baris 2: `[COMBINE RETURN]` `[MARGIN OF SAFETY 80.44% besar]`
+- Pertahankan tombol "Basis Data" (user memakainya), tapi tata 1 baris rapi.
+- ACTUAL: Sekarang(live) + Q3(closing 10/31 dari price_history); Potensi=Q3*(1+Combine*n);
+  %vsSekarang & %vsQ3; footer MoS per harga. Tombol "Last Price" sudah dihapus (benar).
+
+### ISU TERBUKA 2 — tombol "2025" ≠ Excel (PENTING)
+User klik "2025" → angka beda dari Excel; klik "Preset" → sama. Penyebab
+(sudah didiagnosa):
+1. **Per-share STALE di valuation.json**: baris EPS/BVPS dari sheet sumber dihitung
+   dgn jumlah saham beda. ANTM: EPS tersimpan 299.98 & BVPS 1468.88, padahal
+   Excel = NI/shares = **311.58** & Equity/shares = **1523** (SPS 3522 sudah cocok).
+   → FIX: di `build-valuation.py` & `computeModel`/`vlUjiCalc`, HITUNG per-share dari
+   mentah: `eps=net_income/shares`, `bvps=total_equity/shares`, `sps=total_revenue/shares`
+   (pakai field `shares` baris 21 yg = angka Excel). Ini juga membetulkan
+   `eps_growth_annual` → 92.35% (cocok Excel) krn eps2024=NI/sh=161.99.
+2. **Avg multiple beda**: Excel PBV 1.76 / PER 14.21 / PSR **1.27** (input manual,
+   "rata-rata 5th"); mesin (recompute dari raw) 1.825 / 13.987 / **0.973**. PSR jauh.
+   Metodologi rata-rata user belum diketahui (window/tahun mana, harga akhir-thn vs rata2,
+   apakah termasuk tahun berjalan). PERLU klarifikasi user ATAU upload data sumber benar.
+3. **`sps_growth_5y` field beda**: mesin 25.33% vs Excel 97.65% (sumber stale).
+4. **AKAR**: file sumber `data/valuation/valuation-batch-01.xlsx` masih BATCH LAMA.
+   Solusi tuntas: user upload Excel data keuangan ANTM 2025 terbaru ke
+   `data/valuation/` → workflow refresh-valuation → regenerate → "2025" match.
+
+### Apa itu tombol "Preset Excel ANTM"
+Tombol uji yg meng-OVERRIDE semua input dgn nilai PERSIS dari sheet Excel ANTM
+(eps 311.58, bvps 1523, sps 3522.37, roe5y 31.95%, epsG5y 44.37%, epsGann 92.35%,
+spsGann 22.33%, spsG5y 97.65%, DPR 71.41%, avgPBV 1.76/PER 14.21/PSR 1.27, last 3150).
+Gunanya: membuktikan FORMULA benar (hasil = Excel). Begitu isu #2 (per-share + avg
+multiple + sumber data) beres, "2025" akan = preset dan tombol preset bisa dihapus.
+
+### LANGKAH BERIKUTNYA (urut)
+1. Rapikan layout tab Uji Data (grid rata; pertahankan tombol Basis Data).
+2. `build-valuation.py`: per-share = flow/shares (regenerate valuation.json) →
+   eps/bvps/eps_growth_annual ANTM jadi cocok Excel. Frontend `vlUjiCalc`/`computeModel` ikut.
+3. Klarifikasi metodologi AVG multiple ke user (atau minta upload data sumber 2025).
+4. Catatan: `ujBasisInputs()` di index.html sudah memetakan basis→input; saat per-share
+   dihitung dari mentah, pastikan basis "2025" pakai eps=NI/sh dst.
