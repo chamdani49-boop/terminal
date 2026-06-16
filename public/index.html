@@ -9912,16 +9912,18 @@ loadData();
       liInfo.textContent = ujN(primaryLast)+tag;
     }
 
-    // Harga "ACTUAL": Sekarang (live) + closing kuartal terakhir (Q3 = 10/31 fiskal).
-    const fyYr = ujFiscalYear();
-    const q3date = '10/31/'+fyYr;
-    const q3P = ujPriceOn(q3date) || livePrice;
-    const chgAct = (q3P>0) ? (livePrice/q3P-1)*100 : null;
-
     const pc = vlUjiCalc(s, win, primaryLast);
     const cmb = pc.applicable ? pc.combine : null;       // ramp Potensi = Combine
     const startYr = ujBasisStartYear(s);
     const years = [0,1,2,3,4].map(i=> startYr? (startYr+1+i) : ('T+'+(i+1)));
+
+    // Acuan "ACTUAL": Sekarang (live) vs harga BASIS = "12M {tahun}" (kolom 12M di Excel).
+    // Memakai primaryLast (sama dgn basis valuasi & kartu G&L), BUKAN harga Q3 10/31.
+    // Mengikuti tombol Tahun: ganti tahun → refPrice & label ikut berubah.
+    const refPrice = primaryLast;
+    const refLabel = (_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0) ? 'Custom'
+                   : (ok(basisPrice) ? ('12M '+startYr) : 'Live');
+    const chgAct = (refPrice>0) ? (livePrice/refPrice-1)*100 : null;
 
     const mosBlend = pc.applicable ? pc.margin_of_safety*100 : null;
     const estDiv   = pc.dps_est;
@@ -9952,23 +9954,23 @@ loadData();
       '</tbody></table></div></div>';
 
     const actRows = years.map((yr,i)=>{
-      const n=i+1; const potA=ok(cmb)?Math.round(q3P*(1+cmb*n)):null;
-      const glLive=(ok(potA)&&livePrice>0)?(potA/livePrice-1)*100:null;
-      const glQ3  =(ok(potA)&&q3P>0)?(potA/q3P-1)*100:null;
-      return '<tr><td>'+ujG(glLive)+'</td><td>'+ujN(potA)+'</td><td class="uj-yr">'+yr+'</td><td>'+ujN(potA)+'</td><td>'+ujG(glQ3)+'</td></tr>';
+      const potA=pc.potensi[i];                                         // = Potensi Price G&L (basis-derived)
+      const glLive=(ok(potA)&&livePrice>0)?(potA/livePrice-1)*100:null;  // vs Sekarang (live)
+      const glRef =(ok(potA)&&refPrice>0)?(potA/refPrice-1)*100:null;    // vs 12M basis (= Combine×n)
+      return '<tr><td>'+ujG(glLive)+'</td><td>'+ujN(potA)+'</td><td class="uj-yr">'+yr+'</td><td>'+ujN(potA)+'</td><td>'+ujG(glRef)+'</td></tr>';
     }).join('');
-    const potA5 = ok(cmb)?Math.round(q3P*(1+cmb*5)):null;
+    const potA5 = pc.potensi[4];
     const mosLiveA=(ok(potA5)&&potA5>0)?(1-livePrice/potA5)*100:null;
-    const mosQ3A  =(ok(potA5)&&potA5>0)?(1-q3P/potA5)*100:null;
+    const mosRefA =(ok(potA5)&&potA5>0)?(1-refPrice/potA5)*100:null;
     const actual =
       '<div class="card"><div class="uj-codebox"><span class="code">'+s.code.toLowerCase()+'</span>'+
         '<span class="px">Sekarang '+ujN(livePrice)+'</span><span class="tag">ACTUAL</span>'+
-        '<span class="px">Q3 '+q3date+' · '+ujN(q3P)+'</span>'+
+        '<span class="px">'+refLabel+' · '+ujN(refPrice)+'</span>'+
         (ok(chgAct)?'<span class="'+(chgAct>=0?'uj-pos':'uj-neg')+'">'+(chgAct>=0?'+':'')+chgAct.toFixed(2)+'%</span>':'')+'</div>'+
       '<div class="uj-scroll" style="margin-top:8px"><table class="uj-tbl">'+
-      '<thead><tr><th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs Q3)</th></tr></thead><tbody>'+
+      '<thead><tr><th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs '+refLabel+')</th></tr></thead><tbody>'+
       actRows+
-      '<tr class="uj-foot"><td colspan="2">'+ujP(mosLiveA)+'</td><td class="l">MARGIN OF SAFETY</td><td colspan="2">'+ujP(mosQ3A)+'</td></tr>'+
+      '<tr class="uj-foot"><td colspan="2">'+ujP(mosLiveA)+'</td><td class="l">MARGIN OF SAFETY</td><td colspan="2">'+ujP(mosRefA)+'</td></tr>'+
       '</tbody></table></div></div>';
 
     H.push('<div class="uj-row"><div class="uj-col uj-col-sm">'+leftBlk+'</div><div class="uj-col uj-col-md">'+gcg+'</div><div class="uj-col uj-col-lg">'+actual+'</div></div>');
