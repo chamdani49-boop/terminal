@@ -380,7 +380,8 @@
           "caveats": []
         },
         "notes": []
-      }
+      },
+      "q_label": "Q1"
     },
     "AALI": {
       "code": "AALI",
@@ -1297,7 +1298,8 @@
           "caveats": []
         },
         "notes": []
-      }
+      },
+      "q_label": "Q1"
     },
     "ANTM": {
       "code": "ANTM",
@@ -2238,7 +2240,8 @@
         "notes": [
           "ANTM: five_year memakai override otoritatif (10 input + 4 multiple, window 5) dari Sheet final ANTM 2025 (Last Price 3150). Per-share = Profit/Equity/Sales / Shares (24.030 jt). Diverifikasi cocok 100% dgn rumus sheet (Combine 78.89%, MoS 78.45%)."
         ]
-      }
+      },
+      "q_label": "Q1"
     },
     "BBCA": {
       "code": "BBCA",
@@ -3113,7 +3116,8 @@
           "caveats": []
         },
         "notes": []
-      }
+      },
+      "q_label": "Q1"
     },
     "BBRI": {
       "code": "BBRI",
@@ -3988,7 +3992,8 @@
           "caveats": []
         },
         "notes": []
-      }
+      },
+      "q_label": "Q1"
     }
   },
   "warnings": []

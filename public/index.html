@@ -9605,6 +9605,17 @@ loadData();
       psr: (ok(sps)&&sps>0)   ? live/sps  : null,
     };
   }
+  // Label titik tahun berjalan utk chart: "<kuartal sheet> TTM <tahun berjalan>".
+  // Kuartal diambil dari valuation.json (sel D1 Excel: Q1/Q2/Q3); fallback 'Q1'.
+  // Tahun berjalan = fiscalYear+1 (mis. 2025 → 2026), fallback tahun kalender.
+  function vlTtmLabel(s){
+    let q = (s && s.q_label) ? String(s.q_label).trim() : '';
+    if(!q) q = 'Q1';
+    if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
+    const fy = ujFiscalYear();
+    const yr = ok(fy) ? fy+1 : new Date().getFullYear();
+    return q.toUpperCase()+' TTM '+yr;
+  }
   // Sisipkan toolbar range tepat di atas canvas (sekali), lalu sinkronkan tombol aktif.
   function vlEnsureRangeBar(id){
     const cv=document.getElementById(id); if(!cv) return;
@@ -9646,7 +9657,8 @@ loadData();
     // Per-grafik: label & data mengikuti range (3/5/7/10/All) yg dipilih di toolbar tiap chart.
     // Titik terakhir = "Q" (tahun berjalan TTM); accessor sama → harga/rasio "Q" otomatis LIVE.
     const qpt = vlTtmPoint(s);
-    const lab = id => { vlEnsureRangeBar(id); const ys=vlChartYears(s,id); return qpt ? [...ys,'Q'] : ys; };
+    const qLbl = qpt ? vlTtmLabel(s) : null;
+    const lab = id => { vlEnsureRangeBar(id); const ys=vlChartYears(s,id); return qLbl ? [...ys, qLbl] : ys; };
     const A   = (id,f) => {
       const arr = vlChartYears(s, id).map(y=>{ const val=f(s.annual[y]||{}); return ok(val) ? val : null; });
       if(qpt){ const qv=f(qpt); arr.push(ok(qv) ? qv : null); }
