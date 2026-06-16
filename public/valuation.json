@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-16T06:07:34.563536+00:00",
+  "generated_at": "2026-06-16T07:40:56.754712+00:00",
   "source_files": [
     "valuation-batch-01.xlsx"
   ],
@@ -2236,7 +2236,7 @@
           "caveats": []
         },
         "notes": [
-          "ANTM: five_year memakai override otoritatif (10 input + 4 multiple, window 5) dari data/baru dari Template Future Value.xlsx"
+          "ANTM: five_year memakai override otoritatif (10 input + 4 multiple, window 5) dari Sheet final ANTM 2025 (Last Price 3150). Per-share = Profit/Equity/Sales / Shares (24.030 jt). Diverifikasi cocok 100% dgn rumus sheet (Combine 78.89%, MoS 78.45%)."
         ]
       }
     },
