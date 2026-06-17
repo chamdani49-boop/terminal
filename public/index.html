@@ -8971,9 +8971,13 @@ body.vl-maxing{overflow:hidden}
         </div>
         <div class="vl-grid2">
           <div class="card">
-            <div class="card-title">Proyeksi Harga Potensial 5 Tahun</div>
+            <div class="card-title">Harga Saham + Proyeksi Valuasi 5 Tahun</div>
             <div class="vl-chart-tall"><canvas id="vlProj"></canvas></div>
-            <div class="vl-info">Garis ungu = potensi harga tiap tahun (basis terpilih). Oranye = harga acuan basis. Hijau putus-putus = <strong>harga LIVE</strong> sekarang — untuk lihat posisi mahal/murah.</div>
+            <div class="vl-legend" style="margin-top:10px">
+              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Harga Saham (historis → live)</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target Valuasi 5Th</div>
+            </div>
+            <div class="vl-info" style="margin-top:8px">Garis ungu = <strong>harga saham</strong> (riwayat bulanan, titik terakhir = harga <strong>live</strong>). Garis oranye putus-putus = <strong>proyeksi target</strong> dari valuasi 5 tahun (basis terpilih). Tombol rentang mengatur lookback riwayat.</div>
           </div>
           <div class="card">
             <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
@@ -9771,24 +9775,35 @@ body.vl-maxing{overflow:hidden}
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 6. Proyeksi harga — basis-driven (state.projModel dari renderProjection) + garis LIVE
+    // 6. Proyeksi harga = HARGA SAHAM (historis) disambung PROYEKSI target valuasi 5-th.
     const pm = state.projModel;
     if(pm && pm.applicable){
+      vlEnsureRangeBar('vlProj');                                  // period toolbar (range global)
       const startYr = pm._startYr; const shift = pm._isCurrent ? 0 : 1;
-      const plabels = [0,1,2,3,4].map(i=> startYr ? (startYr+shift+i) : ('T+'+(i+1)));
-      const ptData = pm.potensi.slice();
-      const lastLine = plabels.map(()=>pm._last);
-      const liveP = effLast(s).price;
-      const haveLive = ok(liveP) && liveP>0;
-      const vals = [pm._last, ...ptData].filter(ok); if(haveLive) vals.push(liveP);
-      const minY = Math.min(...vals)*0.9;
+      const futLabels = [0,1,2,3,4].map(i=> startYr ? String(startYr+shift+i) : ('T+'+(i+1)));
+      // Riwayat harga bulanan dari price_history; lookback ikut range global (th×12 bln).
+      const ph = state.priceHist || [];
+      let hist = ph.map(r=>({ lab:(r.label||r.date||''), p:r[s.code] })).filter(x=>ok(x.p)&&x.p>0);
+      if(vlRange!=='all'){ const mn=parseInt(vlRange,10)*12; if(hist.length>mn) hist=hist.slice(-mn); }
+      const liveP = effLast(s).price;                              // titik terakhir = harga LIVE
+      if(ok(liveP)&&liveP>0&&hist.length) hist[hist.length-1] = { lab:hist[hist.length-1].lab, p:liveP };
+      const histVals = hist.map(x=>x.p);
+      const labels   = [...hist.map(x=>x.lab), ...futLabels];
+      const histData = [...histVals, null,null,null,null,null];
+      // Proyeksi nyambung dari titik harga terakhir → 5 target valuasi.
+      const proj = new Array(hist.length).fill(null);
+      if(hist.length) proj[hist.length-1] = histVals[histVals.length-1];
+      const projData = [...proj, ...pm.potensi];
+      const allv = histVals.concat(pm.potensi).filter(ok);
+      const minY = allv.length ? Math.min(...allv)*0.9 : 0;
       const ds = [
-        { label:'Harga Potensi', data:ptData, borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.12)', fill:true, pointRadius:5, pointHoverRadius:7, borderWidth:2.5, tension:.35, pointBackgroundColor:COL.purple, pointBorderColor:'#fff', pointBorderWidth:2 },
-        { label:'Harga Acuan (basis)', data:lastLine, borderColor:COL.orange, backgroundColor:'transparent', borderWidth:1.5, borderDash:[6,3], pointRadius:0, fill:false }
+        { label:'Harga Saham', data:histData, borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:0, borderWidth:2, tension:.25 },
+        { label:'Proyeksi Valuasi 5Th', data:projData, borderColor:COL.orange, backgroundColor:'transparent', borderDash:[6,4], fill:false, pointRadius:3, pointHoverRadius:6, borderWidth:2.5, tension:.25, spanGaps:true, pointBackgroundColor:COL.orange, pointBorderColor:'#fff', pointBorderWidth:1.5 }
       ];
-      if(haveLive) ds.push({ label:'Harga Live', data:plabels.map(()=>liveP), borderColor:COL.green, backgroundColor:'transparent', borderWidth:2, borderDash:[2,3], pointRadius:0, fill:false });
-      mk('vlProj', { type:'line', data:{ labels:plabels, datasets:ds },
-        options:{...base, scales:{ y:{ min:minY, ticks:{...TICK, callback:v=>'Rp'+Math.round(v).toLocaleString('id-ID')}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
+      mk('vlProj', { type:'line', data:{ labels, datasets:ds },
+        options:{...base, scales:{
+          y:{ min:minY, ticks:{...TICK, callback:v=>'Rp'+Math.round(v).toLocaleString('id-ID')}, grid:GRID },
+          x:{ ticks:{...TICK, maxRotation:0, autoSkip:true, maxTicksLimit:9}, grid:{display:false} } }} });
     }
 
     // 7. Dividen per saham (tahunan) + yield
