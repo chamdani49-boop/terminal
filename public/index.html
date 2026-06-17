@@ -9389,6 +9389,7 @@ body.vl-maxing{overflow:hidden}
     #page-valuasi .vl-sld::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--card);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}
     #page-valuasi .vl-sld::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--card);cursor:pointer}
     #page-valuasi .vl-sld-info{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.4;font-weight:500}
+    #page-valuasi .vl-sld-risk{font-size:10px;margin-left:6px;font-weight:600}
     #page-valuasi .vl-sld-warn{font-size:11px;color:var(--yellow);font-weight:700;margin-top:8px;padding:6px 10px;background:var(--yellow-bg);border-radius:6px}
     /* ── CHART CARDS ── */
     #page-valuasi .vl-cmp-chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px 14px}
@@ -10184,7 +10185,6 @@ body.vl-maxing{overflow:hidden}
   let _cmpWacc = null;   // simpan WACC terakhir (utk popup WACC)
   let _cmpBasis = 'year';// basis data: 'current' (Q1 annualized) atau 'year' (tahun penuh terakhir)
   let _cmpOverrides = {};// user slider overrides: rf, erp, beta, g5, tg
-  let _cmpPriceChart = null; // Chart.js instance harga bulanan
   let _cmpValChart = null;   // Chart.js instance valuasi historis
 
   // WACC: CAPM + bobot utang. Beta diambil dari Dashboard bila ada. Overrides dari slider.
@@ -10192,17 +10192,20 @@ body.vl-maxing{overflow:hidden}
     const w = (stock.valuation && stock.valuation.wacc) || {};
     const a = (state.raw && state.raw.assumptions) || {};
     const ov = _cmpOverrides || {};
-    const rf  = ok(ov.rf) ? ov.rf : (ok(w.risk_free) ? w.risk_free : (a.risk_free!=null?a.risk_free:0.068));
-    const erp = ok(ov.erp) ? ov.erp : (ok(w.equity_risk_premium) ? w.equity_risk_premium : (a.equity_risk_premium!=null?a.equity_risk_premium:0.075));
+    const rf  = ok(w.risk_free) ? w.risk_free : (a.risk_free!=null?a.risk_free:0.068);
+    const erp = ok(w.equity_risk_premium) ? w.equity_risk_premium : (a.equity_risk_premium!=null?a.equity_risk_premium:0.075);
     const db  = state.stats && state.stats[stock.code];
     const dbBeta = (db && ok(db.beta)) ? db.beta : null;
-    const beta = ok(ov.beta) ? ov.beta : (ok(dbBeta) ? dbBeta : (ok(w.beta)?w.beta:1));
+    const beta = ok(dbBeta) ? dbBeta : (ok(w.beta)?w.beta:1);
     const coe  = rf + beta*erp;
     const we   = ok(w.weight_equity) ? w.weight_equity : 1;
     const wd   = ok(w.weight_debt)   ? w.weight_debt   : 0;
     const kdAfter = ok(w.cost_of_debt_after_tax) ? w.cost_of_debt_after_tax : 0;
-    const wacc = we*coe + wd*kdAfter;
-    return { rf, erp, beta, betaSrc: ok(dbBeta)?'Dashboard':'model', coe, we, wd, kd:w.cost_of_debt, kdAfter, tax:w.tax_rate_effective, wacc };
+    const waccCalc = we*coe + wd*kdAfter;
+    // If user overrides wacc directly via slider, use that for both wacc and coe
+    const wacc = ok(ov.wacc) ? ov.wacc : waccCalc;
+    const coeEff = ok(ov.wacc) ? ov.wacc : coe;
+    return { rf, erp, beta, betaSrc: ok(dbBeta)?'Dashboard':'model', coe:coeEff, we, wd, kd:w.cost_of_debt, kdAfter, tax:w.tax_rate_effective, wacc };
   }
 
   // DCF 2-tahap (FCFF). base_fcf/net_debt/shares di-override sesuai basis terpilih.
@@ -10381,46 +10384,30 @@ body.vl-maxing{overflow:hidden}
     const ov=_cmpOverrides||{};
     const dcfData=v.dcf||{}, ddmData=v.ddm||{};
     const aGlobal=(state.raw&&state.raw.assumptions)||{};
-    const defRf=wc.rf, defErp=wc.erp, defBeta=wc.beta;
     const defG5=ok(ov.g5)?ov.g5:(ok(dcfData.growth_5y)?dcfData.growth_5y:(aGlobal.default_fcf_growth||0.08));
     const defTg=ok(ov.tg)?ov.tg:(ok(dcfData.terminal_growth)?dcfData.terminal_growth:(aGlobal.terminal_growth||0.035));
-    const curRf=(ok(ov.rf)?ov.rf:defRf)*100, curErp=(ok(ov.erp)?ov.erp:defErp)*100;
-    const curBeta=ok(ov.beta)?ov.beta:defBeta;
-    const curG5=(ok(ov.g5)?ov.g5:defG5)*100, curTg=(ok(ov.tg)?ov.tg:defTg)*100;
+    const curTg=(ok(ov.tg)?ov.tg:defTg)*100;
     const yrs=annualYears(s);
     const dataYrsWarn=yrs.length<5;
 
     h+='<div class="vl-slider-panel">';
     h+='<div class="vl-slider-hdr" onclick="vlToggleSliders()">';
-    h+='<span class="vl-slider-title">⚙️ Atur Asumsi Valuasi (WACC & Pertumbuhan)</span>';
-    h+='<span class="vl-slider-arrow" id="vlSliderArrow">▼</span>';
+    h+='<span class="vl-slider-title">\u2699\uFE0F Atur Discount Rate & Terminal Growth</span>';
+    h+='<span class="vl-slider-arrow" id="vlSliderArrow">\u25BC</span>';
     h+='</div>';
     h+='<div class="vl-slider-body" id="vlSliderBody">';
 
-    // Risk-Free Rate
-    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Risk-Free Rate (Rf)</span><span class="val" id="vlSldRfVal">'+curRf.toFixed(1)+'%</span></div>';
-    h+='<input type="range" class="vl-sld" id="vlSldRf" min="4" max="10" step="0.1" value="'+curRf.toFixed(1)+'" oninput="vlSldChange(\'rf\',this.value)">';
-    h+='<div class="vl-sld-info">Suku bunga bebas risiko (obligasi pemerintah/SBN). Makin tinggi, makin besar diskonto sehingga nilai wajar turun. Default: yield SBN 10 tahun Indonesia.</div></div>';
-
-    // Equity Risk Premium
-    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Equity Risk Premium (ERP)</span><span class="val" id="vlSldErpVal">'+curErp.toFixed(1)+'%</span></div>';
-    h+='<input type="range" class="vl-sld" id="vlSldErp" min="5" max="12" step="0.1" value="'+curErp.toFixed(1)+'" oninput="vlSldChange(\'erp\',this.value)">';
-    h+='<div class="vl-sld-info">Premi risiko yang diminta investor untuk berinvestasi di saham vs aset bebas risiko. Makin tinggi, makin tinggi tingkat pengembalian yang diharapkan.</div></div>';
-
-    // Beta
-    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Beta (\u03B2)</span><span class="val" id="vlSldBetaVal">'+curBeta.toFixed(2)+'</span></div>';
-    h+='<input type="range" class="vl-sld" id="vlSldBeta" min="0.5" max="3.0" step="0.01" value="'+curBeta.toFixed(2)+'" oninput="vlSldChange(\'beta\',this.value)">';
-    h+='<div class="vl-sld-info">Ukuran volatilitas saham relatif terhadap pasar (IHSG). Beta > 1 = lebih volatil dari pasar. Makin tinggi beta, makin tinggi cost of equity.</div></div>';
-
-    // Growth 1-5 Tahun
-    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Pertumbuhan 1-5 Tahun</span><span class="val" id="vlSldG5Val">'+curG5.toFixed(1)+'%</span></div>';
-    h+='<input type="range" class="vl-sld" id="vlSldG5" min="0" max="30" step="0.5" value="'+curG5.toFixed(1)+'" oninput="vlSldChange(\'g5\',this.value)">';
-    h+='<div class="vl-sld-info">Laju pertumbuhan arus kas/dividen pada fase awal (tahun 1-5). Ini fase high-growth sebelum bisnis matang. Digunakan oleh DCF & DDM.</div></div>';
+    // WACC / Discount Rate
+    const curWaccPct=(wc.wacc*100);
+    const waccRisk=(v2)=>v2<=10?'\u{1F7E2} Risiko Rendah':v2<=13?'\u{1F7E1} Risiko Menengah':'\u{1F534} Risiko Tinggi';
+    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">WACC / Discount Rate</span><span class="val" id="vlSldWaccVal">'+curWaccPct.toFixed(1)+'%</span> <span class="vl-sld-risk" id="vlSldWaccRisk">'+waccRisk(curWaccPct)+'</span></div>';
+    h+='<input type="range" class="vl-sld" id="vlSldWacc" min="8" max="25" step="0.1" value="'+curWaccPct.toFixed(1)+'" oninput="vlSldChange(\'wacc\',this.value)">';
+    h+='<div class="vl-sld-info">Tingkat diskonto (WACC) untuk DCF/FCF dan CoE untuk DDM/EPV. Panduan umum: <strong>8-10%</strong> Risiko Rendah (blue-chip, market leader), <strong>11-13%</strong> Risiko Menengah (mid-cap, sektor stabil), <strong>14%+</strong> Risiko Tinggi (small-cap, siklikal, turnaround). Default dihitung dari: Rf '+fmtPct(wc.rf*100)+', ERP '+fmtPct(wc.erp*100)+', \u03B2 '+fmtD2(wc.beta)+' ('+wc.betaSrc+'). Klik <strong>i</strong> pada kartu WACC untuk detail.</div></div>';
 
     // Terminal Growth 5-10 Tahun (perpetuity)
     h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Terminal Growth (5-10 Tahun ke \u221E)</span><span class="val" id="vlSldTgVal">'+curTg.toFixed(1)+'%</span></div>';
     h+='<input type="range" class="vl-sld" id="vlSldTg" min="1" max="6" step="0.1" value="'+curTg.toFixed(1)+'" oninput="vlSldChange(\'tg\',this.value)">';
-    h+='<div class="vl-sld-info">Laju pertumbuhan jangka panjang setelah tahun ke-5 hingga selamanya (terminal perpetuity). Umumnya ≤ pertumbuhan PDB nominal. Mempengaruhi DCF, DDM, FCF Gordon.</div></div>';
+    h+='<div class="vl-sld-info">Laju pertumbuhan jangka panjang setelah tahun ke-5 hingga selamanya (terminal perpetuity). Umumnya \u2264 pertumbuhan PDB nominal. Mempengaruhi DCF, DDM, FCF Gordon.</div></div>';
 
     if(dataYrsWarn) h+='<div class="vl-sld-warn">\u26A0\uFE0F Data historis < 5 tahun (tersedia '+yrs.length+' tahun) — proyeksi pertumbuhan kurang reliable.</div>';
 
@@ -10474,68 +10461,18 @@ body.vl-maxing{overflow:hidden}
     h+='</tbody></table></div>';
     h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar ÷ harga − 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 − harga ÷ nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>Tahun Berjalan (Q1)</strong> = Q1 disetahunkan (×4), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>—</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar ≥ +15% di atas harga, <strong>Mahal</strong> bila ≤ −15%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
 
-    // ── Chart Harga Bulanan ──
-    h+='<div class="vl-cmp-chart-card" style="margin-top:18px"><div class="hd">Harga Bulanan Historis — '+s.code+'</div>';
-    h+='<div style="position:relative;height:220px"><canvas id="vlCmpPriceChart"></canvas></div></div>';
-
-    // ── Chart Valuasi Historis ──
-    h+='<div class="vl-cmp-chart-card" style="margin-top:18px"><div class="hd">Akurasi Valuasi Historis — Nilai Wajar vs Harga Aktual</div>';
+    // ── Chart Harga vs Nilai Wajar Historis ──
+    h+='<div class="vl-cmp-chart-card" style="margin-top:18px"><div class="hd">\uD83D\uDCCA Harga vs Nilai Wajar Historis \u2014 '+s.code+'</div>';
     if(yrs.length<5) h+='<div class="vl-sld-warn" style="margin-bottom:8px">\u26A0\uFE0F Data historis < 5 tahun — akurasi belum bisa dinilai.</div>';
     h+='<div style="position:relative;height:280px"><canvas id="vlCmpValChart"></canvas></div>';
     h+='<div class="vl-cmp-val-legend" id="vlCmpValLegend"></div></div>';
 
     host.innerHTML=h;
 
-    // Render charts after DOM insertion
-    renderCmpPriceChart(s);
+    // Render chart after DOM insertion
     renderCmpValChart(s, wc, bi, methods);
   }
 
-  // ── Chart: Harga Bulanan ──
-  function renderCmpPriceChart(stock){
-    if(_cmpPriceChart){ _cmpPriceChart.destroy(); _cmpPriceChart=null; }
-    const canvas=document.getElementById('vlCmpPriceChart'); if(!canvas) return;
-    const ctx=canvas.getContext('2d');
-    const ph=state.priceHist||[];
-    const code=stock.code;
-    let data=ph.map(r=>({label:r.label||r.date||'', price:r[code]})).filter(x=>ok(x.price)&&x.price>0);
-    if(!data.length) return;
-    // Replace/append last with live price
-    const lv=state.live&&state.live[code];
-    if(lv&&ok(lv.price)&&lv.price>0){
-      data[data.length-1].price=lv.price;
-    }
-    const labels=data.map(d=>{ const p=d.label.split('/'); return (p.length>=3)?p[0]+'/'+p[2].slice(-2):d.label; });
-    const prices=data.map(d=>d.price);
-    const ct=getCmpChartTheme();
-    _cmpPriceChart=new Chart(ctx,{
-      type:'line',
-      data:{labels, datasets:[{
-        label:'Harga '+code,
-        data:prices,
-        borderColor:ct.linePrice,
-        borderWidth:2,
-        pointRadius:0,
-        pointHoverRadius:4,
-        tension:0.25,
-        fill:true,
-        backgroundColor:ct.fillPrice
-      }]},
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        interaction:{mode:'index',intersect:false},
-        plugins:{legend:{display:false},tooltip:{
-          backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,
-          titleColor:ct.tooltipTitle,bodyColor:ct.tooltipText,padding:8,cornerRadius:8,
-          callbacks:{label:function(item){return 'Rp '+Math.round(item.raw).toLocaleString('id-ID');}}
-        }},
-        scales:{
-          x:{ticks:{color:ct.tick,font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:12},grid:{color:ct.grid}},
-          y:{ticks:{color:ct.tick,font:{size:9,family:'IBM Plex Mono'},callback:function(v){return 'Rp'+Math.round(v).toLocaleString('id-ID');}},grid:{color:ct.grid}}
-        }
-      }
-    });
-  }
 
   // ── Chart: Valuasi Historis per Metode per Tahun + Konsensus + Harga ──
   function renderCmpValChart(stock, wc, bi, currentMethods){
@@ -10718,17 +10655,25 @@ body.vl-maxing{overflow:hidden}
     let h='';
     if(key==='wacc'){
       const w=_cmpWacc||{};
-      h ='<h3>WACC <span class="grp">Biaya Modal</span></h3>'+
-         '<p>WACC (Weighted Average Cost of Capital) adalah tingkat diskonto untuk DCF & FCF — menggabungkan biaya ekuitas (CAPM) dan biaya utang sesuai bobotnya. <strong>Beta diambil dari data Dashboard</strong> ('+(w.betaSrc||'-')+'), digabung dengan asumsi pasar.</p>'+
+      const s2=curStock(), v2=s2&&s2.valuation||{}, dcf2=v2.dcf||{}, aG2=(state.raw&&state.raw.assumptions)||{};
+      const g5Info=ok(dcf2.growth_5y)?dcf2.growth_5y:(aG2.default_fcf_growth||0.08);
+      h ='<h3>WACC <span class="grp">Biaya Modal & Asumsi</span></h3>'+
+         '<p>WACC (Weighted Average Cost of Capital) adalah tingkat diskonto untuk DCF & FCF. Komponen berikut dari model/data Excel dan <strong>tidak bisa diubah via slider</strong> (hanya bisa ubah WACC total).</p>'+
          '<table class="vl-mini">'+
-         row('Risk-free (SBN)',fmtPct((w.rf||0)*100))+
-         row('Equity risk premium',fmtPct((w.erp||0)*100))+
-         row('Beta ('+(w.betaSrc||'-')+')',fmtD2(w.beta))+
-         row('Cost of equity = rf + β×ERP',fmtPct((w.coe||0)*100))+
+         row('Risk-free / Rf (SBN)',fmtPct((w.rf||0)*100))+
+         row('Equity Risk Premium (ERP)',fmtPct((w.erp||0)*100))+
+         row('Beta \u03B2 ('+(w.betaSrc||'-')+')',fmtD2(w.beta))+
+         row('Cost of equity = Rf + \u03B2\u00D7ERP',fmtPct((w.coe||0)*100))+
          row('Cost of debt (stlh pajak)',fmtPct((w.kdAfter||0)*100))+
          row('Bobot ekuitas / utang',fmtPct((w.we||0)*100)+' / '+fmtPct((w.wd||0)*100))+
-         row('<strong>WACC</strong>','<strong>'+fmtPct((w.wacc||0)*100)+'</strong>')+
-         '</table>';
+         row('<strong>WACC (computed)</strong>','<strong>'+fmtPct((w.wacc||0)*100)+'</strong>')+
+         '</table>'+
+         '<h4 style="margin-top:12px">Pertumbuhan (bawaan model)</h4>'+
+         '<table class="vl-mini">'+
+         row('Growth 1-5 Tahun (fase awal)',fmtPct(g5Info*100))+
+         row('Terminal Growth (slider)',fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:(ok(dcf2.terminal_growth)?dcf2.terminal_growth:0.035))*100))+
+         '</table>'+
+         '<p style="margin-top:8px;color:var(--text3);font-size:12px">Growth 1-5 tahun adalah bawaan dari model Excel. Untuk mengubah discount rate keseluruhan, gunakan slider WACC di panel atas.</p>';
     } else {
       const m=_cmpData[key];
       if(!m){ box.innerHTML='<p>Info tidak tersedia.</p>'; if(md) md.classList.add('show'); return; }
@@ -10748,10 +10693,12 @@ body.vl-maxing{overflow:hidden}
   // ── Slider handlers ──
   window.vlSldChange=function(key, val){
     const v=parseFloat(val);
-    if(key==='rf'){ _cmpOverrides.rf=v/100; document.getElementById('vlSldRfVal').textContent=v.toFixed(1)+'%'; }
-    else if(key==='erp'){ _cmpOverrides.erp=v/100; document.getElementById('vlSldErpVal').textContent=v.toFixed(1)+'%'; }
-    else if(key==='beta'){ _cmpOverrides.beta=v; document.getElementById('vlSldBetaVal').textContent=v.toFixed(2); }
-    else if(key==='g5'){ _cmpOverrides.g5=v/100; document.getElementById('vlSldG5Val').textContent=v.toFixed(1)+'%'; }
+    if(key==='wacc'){
+      _cmpOverrides.wacc=v/100;
+      document.getElementById('vlSldWaccVal').textContent=v.toFixed(1)+'%';
+      const rEl=document.getElementById('vlSldWaccRisk');
+      if(rEl) rEl.textContent=v<=10?'\u{1F7E2} Risiko Rendah':v<=13?'\u{1F7E1} Risiko Menengah':'\u{1F534} Risiko Tinggi';
+    }
     else if(key==='tg'){ _cmpOverrides.tg=v/100; document.getElementById('vlSldTgVal').textContent=v.toFixed(1)+'%'; }
     renderCompare();
   };
