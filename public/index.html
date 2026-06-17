@@ -8873,6 +8873,12 @@ loadData();
 #page-valuasi .vl-rng button:hover{color:var(--text)}
 #page-valuasi .vl-rng button.on{background:var(--accent);color:#fff}
 
+/* ── Segmented switch chart (Proyeksi / Harian) ala Pasar Live ── */
+#page-valuasi .vl-seg{display:inline-flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:3px}
+#page-valuasi .vl-seg button{border:none;background:none;font-family:inherit;font-size:12px;font-weight:800;color:var(--text2);padding:6px 14px;border-radius:7px;cursor:pointer;transition:all .15s;letter-spacing:.3px;white-space:nowrap}
+#page-valuasi .vl-seg button:hover{color:var(--text)}
+#page-valuasi .vl-seg button.on{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(109,40,217,.3)}
+
 /* ── Tabel Fundamental: kolom "Metrik" sticky (kolom kini banyak: Q1..2008) ── */
 #page-valuasi .vl-table thead th:first-child{position:sticky;left:0;z-index:2;background:var(--bg2)}
 #page-valuasi .vl-table tbody td:first-child{position:sticky;left:0;z-index:1;background:var(--card)}
@@ -8947,7 +8953,6 @@ body.vl-maxing{overflow:hidden}
     <div class="vl-tabs" role="tablist">
       <button class="vl-tab active" role="tab" onclick="vlSwitchTab('overview',this)">📊 Ringkasan</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('fundamental',this)">📋 Fundamental</button>
-      <button class="vl-tab" role="tab" onclick="vlSwitchTab('harian',this)">📈 Harian (SMC)</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('dividen',this)">💸 Dividen</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('ttm',this)">📐 Multiples</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('uji',this)">🔬 Mesin Valuasi</button>
@@ -8972,13 +8977,25 @@ body.vl-maxing{overflow:hidden}
         </div>
         <div class="vl-grid2">
           <div class="card">
-            <div class="card-title">Harga Saham + Proyeksi Valuasi 5 Tahun</div>
-            <div class="vl-chart-tall"><canvas id="vlProj"></canvas></div>
-            <div class="vl-legend" style="margin-top:10px">
+            <div class="card-title">Harga Saham — Proyeksi 5Th / Harian (SMC)</div>
+            <div class="vl-seg" id="vlChartMode">
+              <button type="button" class="on" data-m="proyeksi" onclick="vlSetChartMode('proyeksi')">📈 Proyeksi 5Th</button>
+              <button type="button" data-m="harian" onclick="vlSetChartMode('harian')">🕯️ Harian (SMC)</button>
+            </div>
+            <div class="vl-chart-tall" id="vlProjBox" style="margin-top:10px"><canvas id="vlProj"></canvas></div>
+            <div id="vlHarianWrap" style="position:relative;width:100%;height:300px;margin-top:10px;display:none"></div>
+            <div class="vl-legend" id="vlProjLegend" style="margin-top:10px">
               <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Harga Saham (historis → live)</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target Valuasi 5Th</div>
             </div>
-            <div class="vl-info" style="margin-top:8px">Garis ungu = <strong>harga saham</strong> (riwayat bulanan, titik terakhir = harga <strong>live</strong>). Garis oranye putus-putus = <strong>proyeksi target</strong> dari valuasi 5 tahun (basis terpilih). Tombol rentang mengatur lookback riwayat.</div>
+            <div class="vl-legend" id="vlHarianLegend" style="margin-top:10px;display:none">
+              <div class="vl-leg"><div class="vl-dot" style="background:#e11d48"></div>Swing High (HH/LH)</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Swing Low (HL/LL)</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>BOS/CHoCH ↑</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>BOS/CHoCH ↓</div>
+            </div>
+            <div class="vl-info" id="vlProjInfo" style="margin-top:8px">Garis ungu = <strong>harga saham</strong> (riwayat → titik terakhir = harga <strong>live</strong>). Oranye putus-putus = <strong>proyeksi target</strong> valuasi 5Th (basis terpilih); <strong>hijau</strong> = target tercapai. Tombol rentang mengatur lookback.</div>
+            <div class="vl-info" id="vlHarianInfo" style="margin-top:8px;display:none">Memuat data harian…</div>
           </div>
           <div class="card">
             <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
@@ -9111,29 +9128,6 @@ body.vl-maxing{overflow:hidden}
           </table>
         </div>
         <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
-      </div>
-    </div>
-
-    <!-- ===== TAB: HARIAN (SMC — candlestick harian + Smart Money Concepts) ===== -->
-    <div id="vl-tab-harian" class="vl-tc">
-      <div class="card">
-        <div class="card-title">📈 Chart Harian + Smart Money Concept (SMC)</div>
-        <div class="vl-rng" id="vlHarianRange" style="margin-bottom:10px">
-          <button type="button" data-d="60"  onclick="vlSetHarianRange('60')">3B</button>
-          <button type="button" data-d="120" onclick="vlSetHarianRange('120')">6B</button>
-          <button type="button" data-d="250" class="on" onclick="vlSetHarianRange('250')">1Th</button>
-          <button type="button" data-d="500" onclick="vlSetHarianRange('500')">2Th</button>
-          <button type="button" data-d="all" onclick="vlSetHarianRange('all')">All</button>
-        </div>
-        <div id="vlHarianWrap" style="position:relative;width:100%;height:440px"></div>
-        <div class="vl-legend" style="margin-top:10px">
-          <div class="vl-leg"><div class="vl-dot" style="background:#e11d48"></div>Swing High (HH/LH)</div>
-          <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Swing Low (HL/LL)</div>
-          <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>BOS/CHoCH Bullish</div>
-          <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>BOS/CHoCH Bearish</div>
-        </div>
-        <div class="vl-info" id="vlHarianInfo" style="margin-top:8px">Memuat data harian…</div>
-        <p class="vl-note">SMC dihitung otomatis dari data harian (ohlc.json): <strong>swing structure</strong> (HH/HL/LH/LL), <strong>BOS/CHoCH</strong>, dan <strong>order block</strong> demand/supply terbaru. Edukasi, bukan rekomendasi.</p>
       </div>
     </div>
 
@@ -9638,6 +9632,7 @@ body.vl-maxing{overflow:hidden}
   /* ── Range chart per-grafik (3/5/7/10/All tahun) — hanya tampilan, tak ubah model ── */
   const VL_RANGES = ['3','5','7','10','all'];
   let vlRange = '10';   // range GLOBAL: berlaku utk SEMUA chart (Ringkasan + Mesin Valuasi)
+  let _vlChartMode = 'proyeksi';   // switch chart utama Ringkasan: 'proyeksi'(line) | 'harian'(candle SMC)
   function vlChartYears(s, id){   // param id diabaikan — range disinkronkan secara global
     const all = annualYears(s);
     if(vlRange==='all') return all;
@@ -9712,6 +9707,7 @@ body.vl-maxing{overflow:hidden}
     vlRange=String(r);
     buildCharts();
     if(typeof buildUjiCharts==='function') buildUjiCharts();
+    if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
   };
 
   /* ── Perbesar panel (maximize) ala Pasar Live: tombol ⛶ di tiap card ber-chart ── */
@@ -9736,11 +9732,16 @@ body.vl-maxing{overflow:hidden}
   };
 
   /* ── CHART HARIAN + SMC (Smart Money Concept) — candlestick dari ohlc.json ── */
-  let _harianChart=null, _harianRO=null, _harianDays=250;
-  window.vlSetHarianRange=function(d){
-    _harianDays = (d==='all') ? 100000 : (parseInt(d,10)||250);
-    document.querySelectorAll('#vlHarianRange button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-d')===String(d)));
-    vlRenderHarian();
+  let _harianChart=null, _harianRO=null;
+  // Switch tampilan chart utama Ringkasan: 'proyeksi' (line) | 'harian' (candle SMC).
+  window.vlSetChartMode=function(m){
+    _vlChartMode = (m==='harian') ? 'harian' : 'proyeksi';
+    document.querySelectorAll('#vlChartMode button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-m')===_vlChartMode));
+    const proj = _vlChartMode==='proyeksi';
+    const show=(id,on)=>{ const el=document.getElementById(id); if(el) el.style.display = on?'':'none'; };
+    show('vlProjBox',proj); show('vlProjLegend',proj); show('vlProjInfo',proj);
+    show('vlHarianWrap',!proj); show('vlHarianLegend',!proj); show('vlHarianInfo',!proj);
+    if(proj){ buildCharts(); } else { requestAnimationFrame(function(){ vlRenderHarian(); }); }
   };
   // Struktur SMC: swing fractal (k=2) → HH/HL/LH/LL, BOS/CHoCH, order block demand/supply.
   function vlComputeSMC(c){
@@ -9780,7 +9781,8 @@ body.vl-maxing{overflow:hidden}
     let candles=[];
     try{ candles=await fetchOhlcForModal(s.code, '2000-01-01'); }catch(e){ candles=[]; }
     if(!candles||!candles.length){ wrap.innerHTML='<div class="vl-msg" style="margin:10px">Data harian belum tersedia untuk <strong>'+s.code+'</strong>.</div>'; if(info) info.textContent=''; return; }
-    if(_harianDays && candles.length>_harianDays) candles=candles.slice(-_harianDays);
+    const maxDays = (vlRange==='all') ? 100000 : ((parseInt(vlRange,10)||5)*252);
+    if(candles.length>maxDays) candles=candles.slice(-maxDays);
     if(_harianRO){ try{_harianRO.disconnect();}catch(e){} _harianRO=null; }
     if(_harianChart){ try{_harianChart.remove();}catch(e){} _harianChart=null; }
     wrap.innerHTML='';
@@ -9886,12 +9888,11 @@ body.vl-maxing{overflow:hidden}
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 6. Proyeksi harga = HARGA SAHAM (historis) + PROYEKSI target valuasi 5-th.
-    //    Proyeksi BERCABANG dari tanggal basis: Tahun Berjalan→tgl kuartal (3/31),
-    //    basis 2025→Januari (1/31). Target yg sudah tercapai diberi warna hijau.
+    // 6. Chart utama Ringkasan: Proyeksi (line) — dibangun hanya saat mode 'proyeksi'.
+    //    (Mode 'harian' pakai candlestick SMC via vlRenderHarian di card yg sama.)
+    vlEnsureRangeBar('vlProj');
     const pm = state.projModel;
-    if(pm && pm.applicable){
-      vlEnsureRangeBar('vlProj');
+    if(_vlChartMode==='proyeksi' && pm && pm.applicable){
       const startYr = pm._startYr;
       const tYears = [0,1,2,3,4].map(i=> startYr ? String(startYr+1+i) : ('T+'+(i+1)));   // 2026..2030
       const ph = state.priceHist || [];
@@ -9972,9 +9973,8 @@ body.vl-maxing{overflow:hidden}
     buildUjiCharts();
     vlEnsureMaxBtns();
     window.vlCalcYield();
-    // Kalau tab Harian (SMC) sedang aktif, render ulang utk emiten baru.
-    const ht=document.getElementById('vl-tab-harian');
-    if(ht && ht.classList.contains('active') && typeof vlRenderHarian==='function') vlRenderHarian();
+    // Kalau chart utama sedang mode Harian (SMC), render ulang utk emiten baru.
+    if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
   }
 
   // Auto-update harga live (dipanggil oleh feed live dashboard tiap refresh).
@@ -9986,6 +9986,7 @@ body.vl-maxing{overflow:hidden}
     try{
       renderHead(); renderCards(); renderProjection();
       buildCharts(); buildUjiCharts(); vlEnsureMaxBtns();
+      if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
       if(window.vlCalcYield) window.vlCalcYield();
     }catch(e){ console.warn('[valuasi] vlApplyLive gagal:', e&&e.message); }
   };
@@ -10034,7 +10035,6 @@ body.vl-maxing{overflow:hidden}
     if(el) el.classList.add('active');
     charts.forEach(c => { try { c.resize(); } catch(e){} });
     ujCharts.forEach(c => { try { c.resize(); } catch(e){} });
-    if(id==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
   };
 
   function showError(msg){
