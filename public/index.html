@@ -9113,6 +9113,7 @@ body.vl-maxing{overflow:hidden}
           <div class="vl-legend">
             <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>ROE Tahunan</div>
             <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin Laba %</div>
+            <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Harga Saham</div>
           </div>
         </div>
       </div>
@@ -9123,6 +9124,7 @@ body.vl-maxing{overflow:hidden}
           <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV (Price/Book)</div>
           <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>PER (Price/Earnings)</div>
           <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>PSR (Price/Sales)</div>
+          <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Book Value (BVPS)</div>
         </div>
       </div>
       <div class="vl-grid2">
@@ -10092,18 +10094,20 @@ body.vl-maxing{overflow:hidden}
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 2. ROE & Margin Laba (%)
+    // 2. ROE & Margin Laba (%) + Harga
     mk('vlRoe', { type:'line', data:{ labels:lab('vlRoe'), datasets:[
-      { label:'ROE (%)', data:A('vlRoe',a=>a.roe), borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
-      { label:'Margin %', data:A('vlRoe',a=>(a.total_revenue?a.net_income/a.total_revenue*100:null)), borderColor:COL.blue, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
-    ]}, options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
+      { label:'ROE (%)', data:A('vlRoe',a=>a.roe), borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35, yAxisID:'y' },
+      { label:'Margin %', data:A('vlRoe',a=>(a.total_revenue?a.net_income/a.total_revenue*100:null)), borderColor:COL.blue, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35, yAxisID:'y' },
+      { label:'Harga (Rp)', data:A('vlRoe',a=>a.price), borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    ]}, options:{...base, plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}}, scales:{ y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID }, y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} }, x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 3. Rasio PBV/PER/PSR tahunan
+    // 3. Rasio PBV/PER/PSR tahunan + Book Value
     mk('vlRatio', { type:'bar', data:{ labels:lab('vlRatio'), datasets:[
-      { label:'PBV', data:A('vlRatio',a=>a.pbv), backgroundColor:COL.purple, borderRadius:3 },
-      { label:'PER', data:A('vlRatio',a=>a.per), backgroundColor:COL.blue,   borderRadius:3 },
-      { label:'PSR', data:A('vlRatio',a=>a.psr), backgroundColor:COL.pink,   borderRadius:3 }
-    ]}, options:{...base, scales:{ y:{ ticks:TICK, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
+      { label:'PBV', data:A('vlRatio',a=>a.pbv), backgroundColor:COL.purple, borderRadius:3, yAxisID:'y' },
+      { label:'PER', data:A('vlRatio',a=>a.per), backgroundColor:COL.blue,   borderRadius:3, yAxisID:'y' },
+      { label:'PSR', data:A('vlRatio',a=>a.psr), backgroundColor:COL.pink,   borderRadius:3, yAxisID:'y' },
+      { label:'Book Value (Rp)', data:A('vlRatio',a=>a.bvps), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    ]}, options:{...base, plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}}, scales:{ y:{ ticks:TICK, grid:GRID }, y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} }, x:{ ticks:TICK, grid:{display:false} } }} });
 
     // 4. EPS / SPS
     mk('vlEps', { type:'line', data:{ labels:lab('vlEps'), datasets:[
