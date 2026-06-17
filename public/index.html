@@ -4454,6 +4454,7 @@ async function _pollLiveFeed(force = false) {
     if (!json || json.ok !== true || !json.live) throw new Error('payload live tidak valid');
     const firstTime = !_liveFeedOk;              // overlay live pertama sejak halaman dibuka
     const n = applyLiveFeed(json.live, firstTime); // first → full render (semua kalkulasi turunan ikut)
+    try { if (window.vlApplyLive) window.vlApplyLive(json.live); } catch (e) {}  // overlay live ke halaman Valuasi
     const tag = json.stale ? ' (STALE — sumber sheet error, pakai data terakhir)' : '';
     if (!_liveFeedOk) {
       _liveFeedOk = true;
@@ -8877,6 +8878,15 @@ loadData();
 #page-valuasi .vl-table tbody td:first-child{position:sticky;left:0;z-index:1;background:var(--card)}
 #page-valuasi .vl-table tbody tr:nth-child(even) td:first-child{background:var(--bg2)}
 #page-valuasi .vl-table tbody tr:hover td:first-child{background:var(--bg3)}
+
+/* ── Perbesar panel (maximize) ala Pasar Live ── */
+#page-valuasi .card{position:relative}
+#page-valuasi .vl-maxbtn{position:absolute;top:5px;right:7px;z-index:6;width:25px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--border);background:var(--card);color:var(--text2);border-radius:6px;cursor:pointer;font-size:12px;line-height:1;transition:all .15s}
+#page-valuasi .vl-maxbtn:hover{border-color:var(--accent);color:var(--accent)}
+#page-valuasi .card.vl-max{position:fixed;inset:12px;z-index:9998;margin:0;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+#page-valuasi .card.vl-max .vl-chart,#page-valuasi .card.vl-max .vl-chart-tall,#page-valuasi .card.vl-max .uj-chart{height:calc(100vh - 150px)}
+#page-valuasi .card.vl-max canvas{max-height:calc(100vh - 150px)}
+body.vl-maxing{overflow:hidden}
 </style>
 
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
@@ -8937,7 +8947,7 @@ loadData();
     <div class="vl-tabs" role="tablist">
       <button class="vl-tab active" role="tab" onclick="vlSwitchTab('overview',this)">📊 Ringkasan</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('fundamental',this)">📋 Fundamental</button>
-      <button class="vl-tab" role="tab" onclick="vlSwitchTab('proyeksi',this)">🎯 Proyeksi Harga</button>
+      <button class="vl-tab" role="tab" onclick="vlSwitchTab('harian',this)">📈 Harian (SMC)</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('dividen',this)">💸 Dividen</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('ttm',this)">📐 Multiples</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('uji',this)">🔬 Mesin Valuasi</button>
@@ -8945,6 +8955,51 @@ loadData();
 
     <!-- ===== TAB: RINGKASAN ===== -->
     <div id="vl-tab-overview" class="vl-tc active">
+
+      <!-- ── PROYEKSI HARGA (UTAMA) — basis-driven: Tahun Berjalan / 2025 ── -->
+      <div id="vlProjMsg"></div>
+      <div id="vlProjBody">
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">🎯 Proyeksi Harga 5 Tahun</div>
+          <div class="vl-basis" id="vlProjBasis" style="margin-bottom:14px"></div>
+          <div class="vl-kpis" style="margin-bottom:0">
+            <div class="vl-kpi"><div class="l">Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
+            <div class="vl-kpi"><div class="l">CAGR 5 Tahun</div><div class="v" id="vlKpiCagr" style="color:var(--accent2)">-</div></div>
+            <div class="vl-kpi"><div class="l">Dividen Yield</div><div class="v" id="vlKpiDy" style="color:var(--accent)">-</div></div>
+            <div class="vl-kpi"><div class="l">Combine Return</div><div class="v" id="vlKpiComb" style="color:var(--green)">-</div></div>
+            <div class="vl-kpi"><div class="l">Future Value</div><div class="v" id="vlKpiFv">-</div></div>
+          </div>
+        </div>
+        <div class="vl-grid2">
+          <div class="card">
+            <div class="card-title">Harga Saham + Proyeksi Valuasi 5 Tahun</div>
+            <div class="vl-chart-tall"><canvas id="vlProj"></canvas></div>
+            <div class="vl-legend" style="margin-top:10px">
+              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Harga Saham (historis → live)</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target Valuasi 5Th</div>
+            </div>
+            <div class="vl-info" style="margin-top:8px">Garis ungu = <strong>harga saham</strong> (riwayat bulanan, titik terakhir = harga <strong>live</strong>). Garis oranye putus-putus = <strong>proyeksi target</strong> dari valuasi 5 tahun (basis terpilih). Tombol rentang mengatur lookback riwayat.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
+            <div class="vl-tw">
+              <table class="vl-table"><thead><tr><th>Tahun</th><th>Harga Potensi</th><th>G&amp;L</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
+            </div>
+            <div class="vl-info" style="margin-top:10px"><strong>G&amp;L</strong> = Gain &amp; Loss vs harga acuan basis (belum termasuk dividen).</div>
+          </div>
+        </div>
+        <div class="card" style="margin:14px 0">
+          <div class="card-title">Rincian 3 Sub-Model (window aktif)</div>
+          <div class="vl-tw">
+            <table class="vl-table">
+              <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
+              <tbody id="vlSubModelBody"></tbody>
+            </table>
+          </div>
+          <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
+        </div>
+      </div>
+
       <div class="vl-grid2">
         <div class="card">
           <div class="card-title">Pendapatan &amp; Laba Bersih (Miliar Rp)</div>
@@ -9007,47 +9062,6 @@ loadData();
       </div>
     </div>
 
-    <!-- ===== TAB: PROYEKSI ===== -->
-    <div id="vl-tab-proyeksi" class="vl-tc">
-      <div id="vlProjMsg"></div>
-      <div id="vlProjBody">
-        <div class="card" style="margin-bottom:14px">
-          <div class="card-title">Ringkasan Proyeksi Model 5-Tahun</div>
-          <div class="vl-kpis" style="margin-bottom:0">
-            <div class="vl-kpi"><div class="l">Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
-            <div class="vl-kpi"><div class="l">CAGR 5 Tahun</div><div class="v" id="vlKpiCagr" style="color:var(--accent2)">-</div></div>
-            <div class="vl-kpi"><div class="l">Dividen Yield</div><div class="v" id="vlKpiDy" style="color:var(--accent)">-</div></div>
-            <div class="vl-kpi"><div class="l">Combine Return</div><div class="v" id="vlKpiComb" style="color:var(--green)">-</div></div>
-            <div class="vl-kpi"><div class="l">Future Value</div><div class="v" id="vlKpiFv">-</div></div>
-          </div>
-        </div>
-        <div class="vl-grid2">
-          <div class="card">
-            <div class="card-title">Proyeksi Harga Potensial 5 Tahun</div>
-            <div class="vl-chart-tall"><canvas id="vlProj"></canvas></div>
-            <div class="vl-info">Garis oranye = harga terakhir (basis beli). Area ungu = potensi harga tiap tahun. Makin lebar jaraknya, makin besar potensi keuntungan.</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
-            <div class="vl-tw">
-              <table class="vl-table"><thead><tr><th>Tahun</th><th>Harga Potensi</th><th>G&amp;L</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
-            </div>
-            <div class="vl-info" style="margin-top:10px"><strong>G&amp;L</strong> = Gain &amp; Loss. Persentase untung/rugi jika beli di harga terakhir &amp; jual di tahun tersebut, <em>belum termasuk dividen</em>.</div>
-          </div>
-        </div>
-        <div class="card" style="margin-top:14px">
-          <div class="card-title">Rincian 3 Sub-Model (window aktif)</div>
-          <div class="vl-tw">
-            <table class="vl-table">
-              <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
-              <tbody id="vlSubModelBody"></tbody>
-            </table>
-          </div>
-          <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10% (dinormalisasi ulang bila ada sub-model tak berlaku).</p>
-        </div>
-      </div>
-    </div>
-
     <!-- ===== TAB: DIVIDEN ===== -->
     <div id="vl-tab-dividen" class="vl-tc">
       <div id="vlDivMsg"></div>
@@ -9097,6 +9111,29 @@ loadData();
           </table>
         </div>
         <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
+      </div>
+    </div>
+
+    <!-- ===== TAB: HARIAN (SMC — candlestick harian + Smart Money Concepts) ===== -->
+    <div id="vl-tab-harian" class="vl-tc">
+      <div class="card">
+        <div class="card-title">📈 Chart Harian + Smart Money Concept (SMC)</div>
+        <div class="vl-rng" id="vlHarianRange" style="margin-bottom:10px">
+          <button type="button" data-d="60"  onclick="vlSetHarianRange('60')">3B</button>
+          <button type="button" data-d="120" onclick="vlSetHarianRange('120')">6B</button>
+          <button type="button" data-d="250" class="on" onclick="vlSetHarianRange('250')">1Th</button>
+          <button type="button" data-d="500" onclick="vlSetHarianRange('500')">2Th</button>
+          <button type="button" data-d="all" onclick="vlSetHarianRange('all')">All</button>
+        </div>
+        <div id="vlHarianWrap" style="position:relative;width:100%;height:440px"></div>
+        <div class="vl-legend" style="margin-top:10px">
+          <div class="vl-leg"><div class="vl-dot" style="background:#e11d48"></div>Swing High (HH/LH)</div>
+          <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Swing Low (HL/LL)</div>
+          <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>BOS/CHoCH Bullish</div>
+          <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>BOS/CHoCH Bearish</div>
+        </div>
+        <div class="vl-info" id="vlHarianInfo" style="margin-top:8px">Memuat data harian…</div>
+        <p class="vl-note">SMC dihitung otomatis dari data harian (ohlc.json): <strong>swing structure</strong> (HH/HL/LH/LL), <strong>BOS/CHoCH</strong>, dan <strong>order block</strong> demand/supply terbaru. Edukasi, bukan rekomendasi.</p>
       </div>
     </div>
 
@@ -9489,42 +9526,69 @@ loadData();
     }).join('');
   }
 
+  let _projBasis = 'current';   // basis proyeksi Ringkasan: 'current'=Tahun Berjalan | 'Y<latest>'=2025
+  // Hitung proyeksi utk basis tertentu memakai mesin yg sama dgn tab Mesin Valuasi
+  // (vlUjiCalc + ujBasisInputs/ujBasisPrice). _ujBasis di-set sementara lalu dipulihkan.
+  function projComputeFor(s, win, basis){
+    const saved = _ujBasis;
+    _ujBasis = basis;
+    try{
+      const bp = ujBasisPrice(s);
+      const last = (ok(bp)&&bp>0) ? bp : effLast(s).price;
+      const pc = vlUjiCalc(s, win, last);
+      pc._last = last; pc._startYr = ujBasisStartYear(s); pc._isCurrent = (basis==='current');
+      return pc;
+    } finally { _ujBasis = saved; }
+  }
+  function projBasisButtons(s){
+    const el = document.getElementById('vlProjBasis'); if(!el) return;
+    const yrs = annualYears(s); const latest = yrs[yrs.length-1];
+    const opts = [{key:'current',label:'Tahun Berjalan'},{key:'Y'+latest,label:String(latest)}];
+    el.innerHTML = opts.map(o=>'<button class="vl-basis-btn'+(_projBasis===o.key?' active':'')+'" onclick="vlSetProjBasis(\''+o.key+'\')">'+o.label+'</button>').join('');
+  }
+  window.vlSetProjBasis = function(b){ _projBasis = b; renderProjection(); buildCharts(); };
+
   function renderProjection(){
-    const m = state.model;
+    const s = curStock(); if(!s) return;
+    const yrs = annualYears(s); const latest = yrs[yrs.length-1];
+    if(_projBasis!=='current' && _projBasis!=='Y'+latest) _projBasis = 'current';
+    projBasisButtons(s);
     const msg = document.getElementById('vlProjMsg');
     const body = document.getElementById('vlProjBody');
-    if(!m.applicable){
-      if(msg) msg.innerHTML = '<div class="vl-msg">Model 5-tahun belum tersedia: '+m.reason+'</div>';
+    const fy = ((s.valuation||{}).five_year)||{};
+    const setK = (id,txt,col)=>{const el=document.getElementById(id);if(el){el.textContent=txt;if(col)el.style.color=col;}};
+    if(!fy.applicable){
+      if(msg) msg.innerHTML = '<div class="vl-msg">Model 5-tahun belum tersedia untuk emiten ini.</div>';
       if(body) body.style.display = 'none';
-      ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
-      const tb=document.getElementById('vlProjTableBody'); if(tb) tb.innerHTML='';
-      const sb=document.getElementById('vlSubModelBody'); if(sb) sb.innerHTML='';
-      return;
+      state.projModel = null; return;
     }
     if(msg) msg.innerHTML='';
     if(body) body.style.display='';
-    const mosPct = m.margin_of_safety*100; const ms = mosStyle(mosPct);
-    const setK = (id,txt,col)=>{const el=document.getElementById(id);if(el){el.textContent=txt;if(col)el.style.color=col;}};
+    const pc = projComputeFor(s, state.win, _projBasis);
+    state.projModel = pc;
+    if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv'].forEach(id=>setK(id,'—')); return; }
+    const mosPct = pc.margin_of_safety*100; const ms = mosStyle(mosPct);
     setK('vlKpiMos', mosPct.toFixed(2)+'%', ms.col);
     const md = document.getElementById('vlKpiMosDesc'); if(md){ md.textContent=ms.txt; md.style.color=ms.col; }
-    setK('vlKpiCagr', fmtPct(m.cagr*100));
-    setK('vlKpiDy',   fmtPct(m.dividend_yield*100));
-    setK('vlKpiComb', fmtPct(m.combine*100));
-    setK('vlKpiFv',   fmtPct(m.future_value*100));
+    setK('vlKpiCagr', fmtPct(pc.cagr*100));
+    setK('vlKpiDy',   fmtPct(pc.dividend_yield*100));
+    setK('vlKpiComb', fmtPct(pc.combine*100));
+    setK('vlKpiFv',   fmtPct(pc.future_value*100));
 
+    const startYr = pc._startYr; const shift = 1;   // proyeksi mulai tahun depan basis (2026..2030)
+    const years = [0,1,2,3,4].map(i=> startYr ? (startYr+shift+i) : ('T+'+(i+1)));
     const tb = document.getElementById('vlProjTableBody');
-    const by = parseInt(m.base_year,10)||0;
-    if(tb) tb.innerHTML = m.price_targets.map(p=>{
-      const yr = by ? (by+p.year) : ('T+'+p.year);
-      return '<tr><td style="font-weight:700;color:var(--text)">'+yr+'</td><td><strong>'+fmtRp(p.target_price)+'</strong></td><td><span class="'+badgeCls(p.gl_pct)+'">'+fmtGl(p.gl_pct)+'</span></td></tr>';
+    if(tb) tb.innerHTML = years.map((yr,i)=>{
+      const pt = pc.potensi[i]; const gl = (pc.basis>0 && ok(pt)) ? (pt/pc.basis-1)*100 : null;
+      return '<tr><td style="font-weight:700;color:var(--text)">'+yr+'</td><td><strong>'+fmtRp(pt)+'</strong></td><td><span class="'+badgeCls(gl)+'">'+fmtGl(gl)+'</span></td></tr>';
     }).join('');
 
     const sb = document.getElementById('vlSubModelBody');
     if(sb){
       const names = { pbv:'PBV (Book)', per:'PER (Earnings)', psr:'PSR (Sales)' };
       sb.innerHTML = ['pbv','per','psr'].map(k=>{
-        const x = m.submodels[k];
-        if(!x.applicable) return '<tr><td>'+names[k]+'</td><td colspan="5" style="text-align:center;color:var(--text3)">tak berlaku</td></tr>';
+        const x = (pc.submodels||{})[k];
+        if(!x || !x.applicable) return '<tr><td>'+names[k]+'</td><td colspan="5" style="text-align:center;color:var(--text3)">tak berlaku</td></tr>';
         return '<tr><td>'+names[k]+'</td><td>'+fmtPct(x.growth*100)+'</td><td>'+fmtD2(x.multiple)+'</td><td>'+fmtRp(x.target_5y)+'</td><td>'+fmtPct(x.cagr*100)+'</td><td>'+fmtPct(x.mos*100)+'</td></tr>';
       }).join('');
     }
@@ -9573,13 +9637,11 @@ loadData();
 
   /* ── Range chart per-grafik (3/5/7/10/All tahun) — hanya tampilan, tak ubah model ── */
   const VL_RANGES = ['3','5','7','10','all'];
-  const VL_DEFAULT_RANGE = '10';
-  const vlChartRange = {};   // id grafik -> '3'|'5'|'7'|'10'|'all'
-  function vlChartYears(s, id){
+  let vlRange = '10';   // range GLOBAL: berlaku utk SEMUA chart (Ringkasan + Mesin Valuasi)
+  function vlChartYears(s, id){   // param id diabaikan — range disinkronkan secara global
     const all = annualYears(s);
-    const r = String(vlChartRange[id] || VL_DEFAULT_RANGE);
-    if(r==='all') return all;
-    const n = parseInt(r,10);
+    if(vlRange==='all') return all;
+    const n = parseInt(vlRange,10);
     return (n>0 && all.length>n) ? all.slice(-n) : all;
   }
   // Titik "Q" = TAHUN BERJALAN (TTM / annualized Q1×4) untuk GRAFIK.
@@ -9639,14 +9701,121 @@ loadData();
       bar.className='vl-rng'; bar.setAttribute('data-rng',id);
       bar.innerHTML=VL_RANGES.map(r=>{
         const lbl = (r==='all') ? 'All' : (r==='3' ? '3Th' : r);
-        return '<button type="button" data-r="'+r+'" onclick="vlSetChartRange(\''+id+'\',\''+r+'\')">'+lbl+'</button>';
+        return '<button type="button" data-r="'+r+'" onclick="vlSetChartRange(\''+r+'\')">'+lbl+'</button>';
       }).join('');
       host.parentElement.insertBefore(bar, host);
     }
-    const cur=String(vlChartRange[id] || VL_DEFAULT_RANGE);
-    bar.querySelectorAll('button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-r')===cur));
+    bar.querySelectorAll('button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-r')===vlRange));
   }
-  window.vlSetChartRange=function(id,r){ vlChartRange[id]=String(r); buildCharts(); };
+  // Klik range di chart MANA PUN → semua chart (Ringkasan + Mesin Valuasi) ikut kompak ke range sama.
+  window.vlSetChartRange=function(r){
+    vlRange=String(r);
+    buildCharts();
+    if(typeof buildUjiCharts==='function') buildUjiCharts();
+  };
+
+  /* ── Perbesar panel (maximize) ala Pasar Live: tombol ⛶ di tiap card ber-chart ── */
+  function vlEnsureMaxBtns(){
+    document.querySelectorAll('#page-valuasi .card').forEach(card=>{
+      if(!card.querySelector('canvas')) return;                 // hanya card berisi grafik
+      if(card.querySelector('.vl-maxbtn')) return;              // sudah ada
+      const b=document.createElement('button');
+      b.type='button'; b.className='vl-maxbtn'; b.title='Perbesar'; b.textContent='⛶';
+      b.onclick=function(ev){ ev.stopPropagation(); window.vlToggleMax(card); };
+      card.appendChild(b);
+    });
+  }
+  window.vlToggleMax=function(card){
+    const on=card.classList.toggle('vl-max');
+    document.body.classList.toggle('vl-maxing', on);
+    const b=card.querySelector('.vl-maxbtn'); if(b){ b.textContent= on?'✕':'⛶'; b.title= on?'Tutup':'Perbesar'; }
+    setTimeout(()=>{
+      charts.concat(ujCharts).forEach(c=>{ try{ c.resize(); }catch(e){} });
+      if(_harianChart){ try{ const w=document.getElementById('vlHarianWrap'); if(w) _harianChart.applyOptions({width:w.clientWidth,height:w.clientHeight}); }catch(e){} }
+    }, 70);
+  };
+
+  /* ── CHART HARIAN + SMC (Smart Money Concept) — candlestick dari ohlc.json ── */
+  let _harianChart=null, _harianRO=null, _harianDays=250;
+  window.vlSetHarianRange=function(d){
+    _harianDays = (d==='all') ? 100000 : (parseInt(d,10)||250);
+    document.querySelectorAll('#vlHarianRange button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-d')===String(d)));
+    vlRenderHarian();
+  };
+  // Struktur SMC: swing fractal (k=2) → HH/HL/LH/LL, BOS/CHoCH, order block demand/supply.
+  function vlComputeSMC(c){
+    const n=c.length, k=2, markers=[], zones=[];
+    const isH=i=>{ for(let j=1;j<=k;j++){ if(i-j<0||i+j>=n) return false; if(!(c[i].high>c[i-j].high&&c[i].high>c[i+j].high)) return false; } return true; };
+    const isL=i=>{ for(let j=1;j<=k;j++){ if(i-j<0||i+j>=n) return false; if(!(c[i].low<c[i-j].low&&c[i].low<c[i+j].low)) return false; } return true; };
+    let lastH=null,lastL=null,prevHp=null,prevLp=null,trend=0,lastBreak='',demandOB=null,supplyOB=null;
+    for(let i=0;i<n;i++){
+      const pi=i-k;
+      if(pi>=0){
+        if(isH(pi)){ const t=(prevHp!=null)?(c[pi].high>prevHp?'HH':'LH'):'H'; markers.push({time:c[pi].date,position:'aboveBar',color:'#e11d48',shape:'circle',text:t}); lastH={i:pi,p:c[pi].high}; prevHp=c[pi].high; }
+        if(isL(pi)){ const t=(prevLp!=null)?(c[pi].low<prevLp?'LL':'HL'):'L'; markers.push({time:c[pi].date,position:'belowBar',color:'#059669',shape:'circle',text:t}); lastL={i:pi,p:c[pi].low}; prevLp=c[pi].low; }
+      }
+      if(lastH && c[i].close>lastH.p && lastBreak!=='U'+lastH.i){
+        markers.push({time:c[i].date,position:'aboveBar',color:'#2563eb',shape:'arrowUp',text:(trend<0?'CHoCH':'BOS')});
+        for(let j=i-1;j>=Math.max(0,i-15);j--){ if(c[j].close<c[j].open){ demandOB={top:c[j].high,bot:c[j].low}; break; } }
+        trend=1; lastBreak='U'+lastH.i; lastH=null;
+      }
+      if(lastL && c[i].close<lastL.p && lastBreak!=='D'+lastL.i){
+        markers.push({time:c[i].date,position:'belowBar',color:'#d97706',shape:'arrowDown',text:(trend>0?'CHoCH':'BOS')});
+        for(let j=i-1;j>=Math.max(0,i-15);j--){ if(c[j].close>c[j].open){ supplyOB={top:c[j].high,bot:c[j].low}; break; } }
+        trend=-1; lastBreak='D'+lastL.i; lastL=null;
+      }
+    }
+    if(demandOB){ zones.push({price:demandOB.top,color:'#059669',title:'OB Demand'},{price:demandOB.bot,color:'#059669',title:''}); }
+    if(supplyOB){ zones.push({price:supplyOB.top,color:'#e11d48',title:'OB Supply'},{price:supplyOB.bot,color:'#e11d48',title:''}); }
+    markers.sort((a,b)=> a.time<b.time?-1:a.time>b.time?1:0);
+    return { markers, zones, trend, demandOB, supplyOB };
+  }
+  async function vlRenderHarian(){
+    const wrap=document.getElementById('vlHarianWrap'); if(!wrap) return;
+    const s=curStock(); const info=document.getElementById('vlHarianInfo');
+    if(!s){ wrap.innerHTML=''; return; }
+    if(typeof LightweightCharts==='undefined' || typeof fetchOhlcForModal!=='function'){
+      wrap.innerHTML='<div class="vl-msg" style="margin:10px">Chart harian butuh library/data OHLC yang belum tersedia.</div>'; return;
+    }
+    let candles=[];
+    try{ candles=await fetchOhlcForModal(s.code, '2000-01-01'); }catch(e){ candles=[]; }
+    if(!candles||!candles.length){ wrap.innerHTML='<div class="vl-msg" style="margin:10px">Data harian belum tersedia untuk <strong>'+s.code+'</strong>.</div>'; if(info) info.textContent=''; return; }
+    if(_harianDays && candles.length>_harianDays) candles=candles.slice(-_harianDays);
+    if(_harianRO){ try{_harianRO.disconnect();}catch(e){} _harianRO=null; }
+    if(_harianChart){ try{_harianChart.remove();}catch(e){} _harianChart=null; }
+    wrap.innerHTML='';
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    const cssv=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+    const chart=LightweightCharts.createChart(wrap, {
+      width:wrap.clientWidth||600, height:wrap.clientHeight||440,
+      layout:{ background:{color:'transparent'}, textColor:cssv('--text2')||'#888', fontFamily:"'IBM Plex Mono',monospace", fontSize:10, attributionLogo:false },
+      grid:{ vertLines:{color:cssv('--border')||'#333'}, horzLines:{color:cssv('--border')||'#333'} },
+      crosshair:{ mode:LightweightCharts.CrosshairMode.Normal },
+      rightPriceScale:{ borderColor:cssv('--border')||'#333', scaleMargins:{top:.1,bottom:.12} },
+      timeScale:{ borderColor:cssv('--border')||'#333', timeVisible:false, secondsVisible:false },
+      handleScroll:true, handleScale:true,
+    });
+    const up=isDark?'#4ade80':'#059669', dn=isDark?'#fb7185':'#e11d48';
+    const series=chart.addCandlestickSeries({ upColor:up, downColor:dn, borderUpColor:up, borderDownColor:dn, wickUpColor:up, wickDownColor:dn });
+    const seen=new Set();
+    const data=candles.filter(c=>{ if(!c.date||seen.has(c.date)) return false; seen.add(c.date); return Number.isFinite(c.open)&&Number.isFinite(c.close); })
+      .map(c=>({time:c.date,open:c.open,high:c.high,low:c.low,close:c.close}))
+      .sort((a,b)=> a.time<b.time?-1:a.time>b.time?1:0);
+    series.setData(data);
+    const smc=vlComputeSMC(candles);
+    try{ series.setMarkers(smc.markers); }catch(e){}
+    smc.zones.forEach(z=>{ try{ series.createPriceLine({price:z.price,color:z.color,lineWidth:1,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:!!z.title,title:z.title||''}); }catch(e){} });
+    const liveP=effLast(s).price;
+    if(ok(liveP)&&liveP>0){ try{ series.createPriceLine({price:liveP,color:(cssv('--accent')||'#6d28d9'),lineWidth:1,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true,title:'Live'}); }catch(e){} }
+    chart.timeScale().fitContent();
+    _harianChart=chart;
+    if(typeof ResizeObserver!=='undefined'){ _harianRO=new ResizeObserver(()=>{ try{ chart.applyOptions({width:wrap.clientWidth, height:wrap.clientHeight}); }catch(e){} }); _harianRO.observe(wrap); }
+    if(info){ const t=smc.trend; info.innerHTML='Tren struktur: <strong>'+(t>0?'Bullish ↑':t<0?'Bearish ↓':'Sideways')+'</strong>'+
+      (smc.demandOB?' · OB Demand ~Rp'+Math.round(smc.demandOB.bot).toLocaleString('id-ID'):'')+
+      (smc.supplyOB?' · OB Supply ~Rp'+Math.round(smc.supplyOB.top).toLocaleString('id-ID'):'')+
+      ' · '+candles.length+' candle harian.'; }
+    vlEnsureMaxBtns();
+  }
 
   /* ── Charts: destroy lama → build baru ── */
   function destroyCharts(){ while(charts.length){ const c=charts.pop(); try{ c.destroy(); }catch(e){} } }
@@ -9715,17 +9884,49 @@ loadData();
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 6. Proyeksi harga (hanya bila model berlaku)
-    if(m.applicable){
-      const by = parseInt(m.base_year,10)||0;
-      const plabels = m.price_targets.map(p=> by ? String(by+p.year) : ('T+'+p.year));
-      const ptData = m.price_targets.map(p=>p.target_price);
-      const lastLine = m.price_targets.map(()=>m.last);
-      const minY = Math.min(m.last, ...ptData)*0.9;
-      mk('vlProj', { type:'line', data:{ labels:plabels, datasets:[
-        { label:'Harga Potensi', data:ptData, borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.12)', fill:true, pointRadius:5, pointHoverRadius:7, borderWidth:2.5, tension:.35, pointBackgroundColor:COL.purple, pointBorderColor:'#fff', pointBorderWidth:2 },
-        { label:'Harga Terakhir', data:lastLine, borderColor:COL.orange, backgroundColor:'transparent', borderWidth:1.5, borderDash:[6,3], pointRadius:0, fill:false }
-      ]}, options:{...base, scales:{ y:{ min:minY, ticks:{...TICK, callback:v=>'Rp'+Math.round(v).toLocaleString('id-ID')}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
+    // 6. Proyeksi harga = HARGA SAHAM (historis) + PROYEKSI target valuasi 5-th.
+    //    Proyeksi BERCABANG dari tanggal basis: Tahun Berjalan→tgl kuartal (3/31),
+    //    basis 2025→Januari (1/31). Target yg sudah tercapai diberi warna hijau.
+    const pm = state.projModel;
+    if(pm && pm.applicable){
+      vlEnsureRangeBar('vlProj');
+      const startYr = pm._startYr;
+      const tYears = [0,1,2,3,4].map(i=> startYr ? String(startYr+1+i) : ('T+'+(i+1)));   // 2026..2030
+      const ph = state.priceHist || [];
+      let hist = ph.map(r=>({ lab:(r.label||r.date||''), p:r[s.code] })).filter(x=>ok(x.p)&&x.p>0);
+      if(vlRange!=='all'){ const mn=parseInt(vlRange,10)*12; if(hist.length>mn) hist=hist.slice(-mn); }
+      const liveP = effLast(s).price;
+      if(ok(liveP)&&liveP>0&&hist.length) hist[hist.length-1] = { lab:hist[hist.length-1].lab, p:liveP };
+      const histVals = hist.map(x=>x.p);
+      // Anchor proyeksi = tanggal basis pada garis historis (kuartal vs Januari).
+      const fyr = ujFiscalYear(); const qYear = ok(fyr) ? fyr+1 : (new Date().getFullYear());
+      const anchorLab = pm._isCurrent ? ('3/31/'+qYear) : ('1/31/'+qYear);
+      let anchorIdx = hist.findIndex(x=>x.lab===anchorLab);
+      if(anchorIdx<0) anchorIdx = hist.length-1;            // fallback: sambung dari titik terakhir
+      const labels   = [...hist.map(x=>x.lab), ...tYears];
+      const histData = [...histVals, null,null,null,null,null];
+      const proj = new Array(hist.length).fill(null);
+      if(anchorIdx>=0 && hist[anchorIdx]) proj[anchorIdx] = hist[anchorIdx].p;   // cabang dari harga basis
+      const projData = [...proj, ...pm.potensi];
+      // Target tercapai? bandingkan dgn harga tertinggi yg pernah dicapai.
+      const hiAll = Math.max.apply(null, ph.map(r=>r[s.code]).filter(ok).concat(ok(liveP)?[liveP]:[]));
+      const reached = pm.potensi.map(t=> ok(t)&&ok(hiAll)&&t<=hiAll);
+      const projCol = [...new Array(hist.length).fill('rgba(0,0,0,0)'), ...reached.map(r=> r?COL.green:COL.orange)];
+      const projRad = [...new Array(hist.length).fill(0), ...reached.map(()=>5)];
+      if(anchorIdx>=0){ projCol[anchorIdx]=COL.purple; projRad[anchorIdx]=3; }
+      const allv = histVals.concat(pm.potensi).filter(ok); const minY = allv.length ? Math.min(...allv)*0.9 : 0;
+      const ds = [
+        { label:'Harga Saham', data:histData, borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:0, borderWidth:2, tension:.25 },
+        { label:'Proyeksi Valuasi 5Th', data:projData, borderColor:COL.orange, backgroundColor:'transparent', borderDash:[6,4], fill:false, spanGaps:true, borderWidth:2.5, tension:.12,
+          pointRadius:projRad, pointHoverRadius:7, pointBackgroundColor:projCol, pointBorderColor:'#fff', pointBorderWidth:1.5 }
+      ];
+      mk('vlProj', { type:'line', data:{ labels, datasets:ds }, options:{...base,
+        plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{
+          label:ctx=>{ const v=ctx.parsed.y; if(!ok(v)) return ''; const rp='Rp'+Math.round(v).toLocaleString('id-ID');
+            if(/proyeksi/i.test(ctx.dataset.label||'')){ const j=ctx.dataIndex-hist.length; if(j>=0) return ' Target '+tYears[j]+': '+rp+(reached[j]?'  ✓ tercapai':''); return ' Basis: '+rp; }
+            return ' Harga: '+rp; } }}},
+        scales:{ y:{ min:minY, ticks:{...TICK, callback:v=>'Rp'+Math.round(v).toLocaleString('id-ID')}, grid:GRID },
+                 x:{ ticks:{...TICK, maxRotation:0, autoSkip:true, maxTicksLimit:9}, grid:{display:false} } }} });
     }
 
     // 7. Dividen per saham (tahunan) + yield
@@ -9767,8 +9968,25 @@ loadData();
     buildCharts();
     renderUji();
     buildUjiCharts();
+    vlEnsureMaxBtns();
     window.vlCalcYield();
+    // Kalau tab Harian (SMC) sedang aktif, render ulang utk emiten baru.
+    const ht=document.getElementById('vl-tab-harian');
+    if(ht && ht.classList.contains('active') && typeof vlRenderHarian==='function') vlRenderHarian();
   }
+
+  // Auto-update harga live (dipanggil oleh feed live dashboard tiap refresh).
+  // Update state.live lalu re-render bagian yg bergantung harga (header, kartu,
+  // proyeksi, chart) — tanpa fetch ulang valuation.json.
+  window.vlApplyLive = function(live){
+    if(!live || !state.raw || !state.code) return;
+    state.live = Object.assign({}, state.live||{}, live);
+    try{
+      renderHead(); renderCards(); renderProjection();
+      buildCharts(); buildUjiCharts(); vlEnsureMaxBtns();
+      if(window.vlCalcYield) window.vlCalcYield();
+    }catch(e){ console.warn('[valuasi] vlApplyLive gagal:', e&&e.message); }
+  };
 
   /* ── Kontrol UI ── */
   function setWinButtons(){
@@ -9814,6 +10032,7 @@ loadData();
     if(el) el.classList.add('active');
     charts.forEach(c => { try { c.resize(); } catch(e){} });
     ujCharts.forEach(c => { try { c.resize(); } catch(e){} });
+    if(id==='harian') vlRenderHarian();
   };
 
   function showError(msg){
@@ -10018,6 +10237,11 @@ loadData();
     return { applicable:true, basis, win, combine, cagr, future_value, dividend_yield,
              dpr_win, eps:inp.eps, dps_est:dpr_win*(inp.eps||0),
              margin_of_safety: mos_blend,             // blend MoS sub-model (Excel)
+             submodels:{
+               pbv:{ applicable:subm.pbv.applicable, growth:g_bv,  multiple:(mult.pbv||{})[wk], target_5y:subm.pbv.target5, cagr:subm.pbv.cagr, mos:subm.pbv.mos },
+               per:{ applicable:subm.per.applicable, growth:g_eps, multiple:(mult.per||{})[wk], target_5y:subm.per.target5, cagr:subm.per.cagr, mos:subm.per.mos },
+               psr:{ applicable:subm.psr.applicable, growth:g_sps, multiple:(mult.psr||{})[wk], target_5y:subm.psr.target5, cagr:subm.psr.cagr, mos:subm.psr.mos },
+             },
              potensi, target5:potensi[4] };
   }
 
