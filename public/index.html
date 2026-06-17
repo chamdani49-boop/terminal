@@ -9306,6 +9306,9 @@ body.vl-maxing{overflow:hidden}
     <style>
     /* ── PERBANDINGAN METODE VALUASI (scoped) ── */
     #page-valuasi #vl-tab-metode .vl-cmp-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(208px,1fr));gap:10px;margin-bottom:12px}
+    #page-valuasi .vl-cmp-basis{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    #page-valuasi .vl-cmp-basis .lab{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2)}
+    #page-valuasi .vl-cmp-basis .src{font-size:10.5px;color:var(--text3);font-weight:600}
     #page-valuasi .vl-cmp-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px 15px;position:relative}
     [data-theme="dark"] #page-valuasi .vl-cmp-card{box-shadow:0 0 0 1px var(--border) inset}
     #page-valuasi .vl-cmp-card .l{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -10138,6 +10141,7 @@ body.vl-maxing{overflow:hidden}
   ════════════════════════════════════════════════════════════════ */
   let _cmpData = {};     // key -> objek metode (utk popup)
   let _cmpWacc = null;   // simpan WACC terakhir (utk popup WACC)
+  let _cmpBasis = 'year';// basis data: 'current' (Q1 annualized) atau 'year' (tahun penuh terakhir)
 
   // WACC: CAPM + bobot utang. Beta diambil dari Dashboard bila ada.
   function cmpWacc(stock){
@@ -10156,28 +10160,29 @@ body.vl-maxing{overflow:hidden}
     return { rf, erp, beta, betaSrc: ok(dbBeta)?'Dashboard':'model', coe, we, wd, kd:w.cost_of_debt, kdAfter, tax:w.tax_rate_effective, wacc };
   }
 
-  // DCF 2-tahap (FCFF) dihitung ulang dgn WACC (beta dashboard).
-  function cmpDCF(d, r){
-    if(!d || !d.applicable || !ok(d.base_fcf) || !ok(d.fair_value_per_share) || d.fair_value_per_share===0) return null;
+  // DCF 2-tahap (FCFF). base_fcf/net_debt/shares di-override sesuai basis terpilih.
+  function cmpDCF(d, r, baseFcf, netDebt, shares){
+    if(!d || !d.applicable) return null;
+    if(!ok(baseFcf) || !ok(shares) || shares<=0) return null;
     if(!(r > d.terminal_growth)) return null;
-    const shares = d.equity_value / d.fair_value_per_share;
-    let fcf = d.base_fcf, pvSum = 0;
+    let fcf = baseFcf, pvSum = 0;
     for(let t=1;t<=5;t++){ fcf *= (1+(d.growth_5y||0)); pvSum += fcf/Math.pow(1+r,t); }
     const term = (fcf*(1+d.terminal_growth))/(r-d.terminal_growth);
     const pvTerm = term/Math.pow(1+r,5);
-    const ev = pvSum+pvTerm, equity = ev-(d.net_debt||0);
-    return { fair:equity/shares, ev, equity, pvSum, pvTerm, shares, r, g:d.growth_5y, tg:d.terminal_growth, netDebt:d.net_debt };
+    const ev = pvSum+pvTerm, equity = ev-(netDebt||0);
+    return { fair:equity/shares, ev, equity, pvSum, pvTerm, shares, r, g:d.growth_5y, tg:d.terminal_growth, netDebt };
   }
 
-  // DDM 2-tahap (Gordon) dgn cost of equity (beta dashboard).
-  function cmpDDM(m, r){
-    if(!m || !m.applicable || !ok(m.base_dps) || m.base_dps<=0) return null;
+  // DDM 2-tahap (Gordon). base_dps di-override sesuai basis terpilih.
+  function cmpDDM(m, r, baseDps){
+    if(!m || !m.applicable) return null;
+    if(!ok(baseDps) || baseDps<=0) return null;
     if(!(r > m.terminal_growth)) return null;
-    let dps = m.base_dps, pvSum = 0;
+    let dps = baseDps, pvSum = 0;
     for(let t=1;t<=5;t++){ dps *= (1+(m.growth_5y||0)); pvSum += dps/Math.pow(1+r,t); }
     const term = (dps*(1+m.terminal_growth))/(r-m.terminal_growth);
     const pvTerm = term/Math.pow(1+r,5);
-    return { fair:pvSum+pvTerm, pvSum, pvTerm, r, g:m.growth_5y, tg:m.terminal_growth, baseDps:m.base_dps };
+    return { fair:pvSum+pvTerm, pvSum, pvTerm, r, g:m.growth_5y, tg:m.terminal_growth, baseDps };
   }
 
   // Verdict: ±15% dari harga.
@@ -10189,72 +10194,95 @@ body.vl-maxing{overflow:hidden}
     return { up, label:'Wajar', cls:'fair' };
   }
 
-  // Susun daftar metode + nilai wajar.
-  function cmpMethods(stock, price, wc){
+  // Ambil per-share & arus kas berdasarkan basis terpilih.
+  function cmpBasis(stock, basis){
     const v=stock.valuation||{}, fy=v.five_year||{}, inp=fy.inputs||{};
+    const yrs=annualYears(stock), ly=yrs[yrs.length-1];
+    if(basis==='current'){
+      const o=stock.annualized||{};
+      return { key:'current', label:'Tahun Berjalan (Q1)', yr:ly,
+        eps:o.eps, bvps:o.bvps, sps:o.sps, g5:o.eps_growth_5y,
+        dps:o.dps, fcf:o.fcf, netDebt:o.net_debt, shares:o.shares,
+        note:'data tahun berjalan — Q1 disetahunkan (×4)' };
+    }
+    const ay=(stock.annual&&stock.annual[ly])||{};
+    return { key:'year', label:String(ly), yr:ly,
+      eps:ok(inp.eps)?inp.eps:ay.eps, bvps:ok(inp.bvps)?inp.bvps:ay.bvps, sps:ok(inp.sps)?inp.sps:ay.sps,
+      g5:ok(inp.eps_growth_5y)?inp.eps_growth_5y:ay.eps_growth_5y,
+      dps:(v.ddm&&ok(v.ddm.base_dps))?v.ddm.base_dps:ay.dps,
+      fcf:(v.dcf&&ok(v.dcf.base_fcf))?v.dcf.base_fcf:ay.fcf,
+      netDebt:(v.dcf&&ok(v.dcf.net_debt))?v.dcf.net_debt:ay.net_debt,
+      shares:ay.shares, note:'data tahun penuh terakhir ('+ly+')' };
+  }
+
+  // Susun daftar metode + nilai wajar. Semua metode selalu tampil; '—' bila
+  // tak bisa dihitung pada basis terpilih (mis. FCF/laba negatif di Q1).
+  function cmpMethods(stock, price, wc, bi){
+    const v=stock.valuation||{}, fy=v.five_year||{};
     const a=(state.raw&&state.raw.assumptions)||{}, am=fy.avg_multiples||{}, win=String(state.win);
-    const eps=inp.eps, bvps=inp.bvps, sps=inp.sps, g5=inp.eps_growth_5y;
+    const eps=bi.eps, bvps=bi.bvps, sps=bi.sps, g5=bi.g5;
     const fund=state.fundamentals&&state.fundamentals[stock.code];
-    const shares=(v.dcf&&ok(v.dcf.equity_value)&&ok(v.dcf.fair_value_per_share)&&v.dcf.fair_value_per_share!==0)
-      ? v.dcf.equity_value/v.dcf.fair_value_per_share : (fund&&ok(fund.shares)?fund.shares:null);
+    const tg=ok(a.terminal_growth)?a.terminal_growth:0.035;
     const list=[];
-    const add=(o)=>{ if(o&&ok(o.fair)&&o.fair>0) list.push(o); };
+    const add=(o)=>{ if(o){ if(!ok(o.fair)||o.fair<=0) o.fair=null; list.push(o); } };
 
     // 1) DCF (FCFF 2-tahap)
-    const dcf=cmpDCF(v.dcf, wc.wacc);
-    if(dcf) add({key:'dcf',name:'DCF (Arus Kas)',grp:'Intrinsik',fair:dcf.fair,cons:true,
-      short:'Discounted Cash Flow: arus kas bebas perusahaan diproyeksi 5 tahun lalu didiskonto dengan WACC, ditambah nilai terminal (Gordon), dikurangi utang bersih.',
-      rows:[['FCF dasar',fmtMrp(v.dcf.base_fcf)],['Pertumbuhan 5Th',fmtPct((dcf.g||0)*100)],['Terminal growth',fmtPct((dcf.tg||0)*100)],['WACC',fmtPct(wc.wacc*100)],['Net debt',fmtMrp(dcf.netDebt)],['Nilai ekuitas',fmtMrp(dcf.equity)]]});
+    const dcf=cmpDCF(v.dcf, wc.wacc, bi.fcf, bi.netDebt, bi.shares);
+    add({key:'dcf',name:'DCF (Arus Kas)',grp:'Intrinsik',fair:dcf?dcf.fair:null,cons:true,
+      short:'Discounted Cash Flow: arus kas bebas perusahaan diproyeksi 5 tahun lalu didiskonto dengan WACC, ditambah nilai terminal (Gordon), dikurangi utang bersih. Bila FCF basis negatif, nilai tidak dihitung.',
+      rows:[['FCF dasar',fmtMrp(bi.fcf)],['Pertumbuhan 5Th',fmtPct(((v.dcf&&v.dcf.growth_5y)||0)*100)],['Terminal growth',fmtPct(((v.dcf&&v.dcf.terminal_growth)||0)*100)],['WACC',fmtPct(wc.wacc*100)],['Net debt',fmtMrp(bi.netDebt)]]});
 
     // 2) DDM
-    const ddm=cmpDDM(v.ddm, wc.coe);
-    if(ddm) add({key:'ddm',name:'DDM (Dividen)',grp:'Intrinsik',fair:ddm.fair,cons:true,
+    const ddm=cmpDDM(v.ddm, wc.coe, bi.dps);
+    add({key:'ddm',name:'DDM (Dividen)',grp:'Intrinsik',fair:ddm?ddm.fair:null,cons:true,
       short:'Dividend Discount Model: proyeksi dividen 5 tahun + terminal Gordon, didiskonto dengan cost of equity. Cocok untuk emiten pembagi dividen rutin.',
-      rows:[['DPS dasar',fmtRp(ddm.baseDps)],['Pertumbuhan dividen',fmtPct((ddm.g||0)*100)],['Terminal growth',fmtPct((ddm.tg||0)*100)],['Cost of equity',fmtPct(wc.coe*100)]]});
+      rows:[['DPS dasar',fmtRp(bi.dps)],['Pertumbuhan dividen',fmtPct(((v.ddm&&v.ddm.growth_5y)||0)*100)],['Terminal growth',fmtPct(((v.ddm&&v.ddm.terminal_growth)||0)*100)],['Cost of equity',fmtPct(wc.coe*100)]]});
 
     // 3) Graham Number
-    if(ok(eps)&&eps>0&&ok(bvps)&&bvps>0){ const gr=Math.sqrt(22.5*eps*bvps);
-      add({key:'graham',name:'Graham Number',grp:'Intrinsik',fair:gr,cons:true,
-        short:'Rumus Benjamin Graham: √(22,5 × EPS × BVPS). Angka 22,5 = PER 15 × PBV 1,5. Batas atas harga wajar yang konservatif untuk saham value.',
-        rows:[['EPS',fmtRp(eps)],['BVPS',fmtRp(bvps)],['Faktor','22,5 (PER 15 × PBV 1,5)']]});}
+    add({key:'graham',name:'Graham Number',grp:'Intrinsik',fair:(ok(eps)&&eps>0&&ok(bvps)&&bvps>0)?Math.sqrt(22.5*eps*bvps):null,cons:true,
+      short:'Rumus Benjamin Graham: √(22,5 × EPS × BVPS). Angka 22,5 = PER 15 × PBV 1,5. Batas atas harga wajar yang konservatif untuk saham value.',
+      rows:[['EPS',fmtRp(eps)],['BVPS',fmtRp(bvps)],['Faktor','22,5 (PER 15 × PBV 1,5)']]});
 
     // 4) FCF (kapitalisasi Gordon 1-tahap)
-    if(v.dcf&&ok(v.dcf.base_fcf)&&ok(shares)&&shares>0){
-      const tg=ok(a.terminal_growth)?a.terminal_growth:0.035, r=wc.wacc;
-      if(r>tg){ const ev=v.dcf.base_fcf*(1+tg)/(r-tg), eq=ev-(v.dcf.net_debt||0);
-        add({key:'fcf',name:'FCF (Yield)',grp:'Intrinsik',fair:eq/shares,cons:true,
-          short:'Kapitalisasi arus kas bebas tanpa fase pertumbuhan eksplisit (Gordon 1-tahap): FCF×(1+g)/(WACC−g), dikurangi utang bersih. Versi lebih konservatif dari DCF.',
-          rows:[['FCF dasar',fmtMrp(v.dcf.base_fcf)],['Terminal growth',fmtPct(tg*100)],['WACC',fmtPct(r*100)],['Net debt',fmtMrp(v.dcf.net_debt)]]});}}
+    let fcfFair=null;
+    if(ok(bi.fcf)&&ok(bi.shares)&&bi.shares>0&&wc.wacc>tg){ const ev=bi.fcf*(1+tg)/(wc.wacc-tg); fcfFair=(ev-(bi.netDebt||0))/bi.shares; }
+    add({key:'fcf',name:'FCF (Yield)',grp:'Intrinsik',fair:fcfFair,cons:true,
+      short:'Kapitalisasi arus kas bebas tanpa fase pertumbuhan eksplisit (Gordon 1-tahap): FCF×(1+g)/(WACC−g), dikurangi utang bersih. Versi lebih konservatif dari DCF.',
+      rows:[['FCF dasar',fmtMrp(bi.fcf)],['Terminal growth',fmtPct(tg*100)],['WACC',fmtPct(wc.wacc*100)],['Net debt',fmtMrp(bi.netDebt)]]});
 
     // 5) PBV (rata-rata historis × BVPS)
     const pbvM=(am.pbv||{})[win];
-    if(ok(pbvM)&&ok(bvps)) add({key:'pbv',name:'PBV (Rata² '+win+'Th)',grp:'Relatif',fair:pbvM*bvps,cons:true,
-      short:'Harga wajar = rata-rata PBV historis ('+win+' tahun) × nilai buku per saham (BVPS) saat ini. Mengasumsikan saham kembali ke valuasi rata-ratanya.',
+    add({key:'pbv',name:'PBV (Rata² '+win+'Th)',grp:'Relatif',fair:(ok(pbvM)&&ok(bvps))?pbvM*bvps:null,cons:true,
+      short:'Harga wajar = rata-rata PBV historis ('+win+' tahun) × nilai buku per saham (BVPS) pada basis terpilih. Mengasumsikan saham kembali ke valuasi rata-ratanya.',
       rows:[['Rata² PBV '+win+'Th',fmtX(pbvM)],['BVPS',fmtRp(bvps)],['PBV sekarang',ok(fund&&fund.pbv)?fmtX(fund.pbv):'-']]});
 
     // 6) PER (rata-rata historis × EPS)
     const perM=(am.per||{})[win];
-    if(ok(perM)&&ok(eps)) add({key:'per',name:'PER (Rata² '+win+'Th)',grp:'Relatif',fair:perM*eps,cons:true,
-      short:'Harga wajar = rata-rata PER historis ('+win+' tahun) × laba per saham (EPS) saat ini. Sensitif terhadap outlier laba; bandingkan dengan metode lain.',
+    add({key:'per',name:'PER (Rata² '+win+'Th)',grp:'Relatif',fair:(ok(perM)&&ok(eps))?perM*eps:null,cons:true,
+      short:'Harga wajar = rata-rata PER historis ('+win+' tahun) × laba per saham (EPS) pada basis terpilih. Sensitif terhadap outlier laba; bandingkan dengan metode lain.',
       rows:[['Rata² PER '+win+'Th',fmtX(perM)],['EPS',fmtRp(eps)],['PER sekarang',ok(fund&&fund.per)?fmtX(fund.per):'-']]});
 
     // 7) PSR (rata-rata historis × SPS)
     const psrM=(am.psr||{})[win];
-    if(ok(psrM)&&ok(sps)) add({key:'psr',name:'PSR (Rata² '+win+'Th)',grp:'Relatif',fair:psrM*sps,cons:true,
-      short:'Harga wajar = rata-rata Price-to-Sales historis ('+win+' tahun) × penjualan per saham (SPS) saat ini. Berguna saat laba fluktuatif/negatif.',
+    add({key:'psr',name:'PSR (Rata² '+win+'Th)',grp:'Relatif',fair:(ok(psrM)&&ok(sps))?psrM*sps:null,cons:true,
+      short:'Harga wajar = rata-rata Price-to-Sales historis ('+win+' tahun) × penjualan per saham (SPS) pada basis terpilih. Berguna saat laba fluktuatif/negatif.',
       rows:[['Rata² PSR '+win+'Th',fmtX(psrM)],['SPS',fmtRp(sps)]]});
 
     // 8) Earnings Power (EPS ÷ WACC)
-    if(ok(eps)&&eps>0) add({key:'epv',name:'Earnings Power (EPS)',grp:'Intrinsik',fair:eps/wc.wacc,cons:true,
+    add({key:'epv',name:'Earnings Power (EPS)',grp:'Intrinsik',fair:(ok(eps)&&eps>0)?eps/wc.wacc:null,cons:true,
       short:'Earnings Power Value: laba per saham dikapitalisasi TANPA pertumbuhan = EPS ÷ WACC. Memberi nilai "lantai" berdasarkan kemampuan laba saat ini.',
       rows:[['EPS',fmtRp(eps)],['WACC',fmtPct(wc.wacc*100)]]});
 
     // 9) PEG (justified, dibatasi) — informatif, di luar konsensus
+    let pegFair=null, pegExtra=null, pegRows=[['EPS',fmtRp(eps)]];
     if(ok(eps)&&eps>0&&ok(g5)&&g5>0){
       const gpct=g5*100, curPER=price/eps, justPER=Math.max(5,Math.min(gpct,25)), peg=curPER/gpct;
-      add({key:'peg',name:'PEG (Growth)',grp:'Relatif',fair:eps*justPER,cons:false,extra:'PEG '+(ok(peg)?peg.toFixed(2):'-'),
-        short:'Price/Earnings-to-Growth. Menurut Peter Lynch, PER yang wajar ≈ laju pertumbuhan laba (PEG=1). Justified PER dibatasi maksimal 25× agar konservatif. PEG < 1 = murah, > 2 = mahal. Bersifat informatif (tidak masuk konsensus).',
-        rows:[['EPS',fmtRp(eps)],['Pertumbuhan laba 5Th',fmtPct(gpct)],['PER sekarang',fmtX(curPER)],['Justified PER (maks 25)',fmtX(justPER)],['PEG sekarang',ok(peg)?peg.toFixed(2):'-']]});}
+      pegFair=eps*justPER; pegExtra='PEG '+(ok(peg)?peg.toFixed(2):'-');
+      pegRows=[['EPS',fmtRp(eps)],['Pertumbuhan laba 5Th',fmtPct(gpct)],['PER sekarang',fmtX(curPER)],['Justified PER (maks 25)',fmtX(justPER)],['PEG sekarang',ok(peg)?peg.toFixed(2):'-']];
+    }
+    add({key:'peg',name:'PEG (Growth)',grp:'Relatif',fair:pegFair,cons:false,extra:pegExtra,
+      short:'Price/Earnings-to-Growth. Menurut Peter Lynch, PER yang wajar ≈ laju pertumbuhan laba (PEG=1). Justified PER dibatasi maksimal 25× agar konservatif. PEG < 1 = murah, > 2 = mahal. Bersifat informatif (tidak masuk konsensus).',
+      rows:pegRows});
 
     return list;
   }
@@ -10269,7 +10297,8 @@ body.vl-maxing{overflow:hidden}
     }
     const price=effLast(s).price;
     const wc=cmpWacc(s); _cmpWacc=wc;
-    const methods=cmpMethods(s, price, wc);
+    const bi=cmpBasis(s, _cmpBasis);
+    const methods=cmpMethods(s, price, wc, bi);
     _cmpData={};
     methods.forEach(m=>{ m.verdict=cmpVerdict(m.fair, price); _cmpData[m.key]=m; });
 
@@ -10291,6 +10320,11 @@ body.vl-maxing{overflow:hidden}
     const upTxt=(vd)=> vd ? '<span class="'+(vd.up>=0?'vl-pos':'vl-neg')+'">'+(vd.up>=0?'+':'')+(vd.up*100).toFixed(1)+'%</span>' : '-';
 
     let h='';
+    h+='<div class="vl-cmp-basis"><span class="lab">Basis Data</span>'+
+       '<div class="vl-basis" style="margin:0">'+
+         '<button class="vl-basis-btn'+(bi.key==='current'?' active':'')+'" onclick="vlSetCmpBasis(\'current\')">Tahun Berjalan (Q1)</button>'+
+         '<button class="vl-basis-btn'+(bi.key==='year'?' active':'')+'" onclick="vlSetCmpBasis(\'year\')">'+bi.yr+'</button>'+
+       '</div><span class="src">'+bi.note+'</span></div>';
     h+='<div class="vl-cmp-top">';
     h+='<div class="vl-cmp-card"><div class="l">Konsensus Nilai Wajar <span class="sub">· median '+cons.length+' metode</span></div>'+
        '<div class="v">'+fmtRp(median)+'</div><div class="vl-cmp-verd">'+chip(cv)+' '+upTxt(cv)+' vs harga '+fmtRp(price)+'</div></div>';
@@ -10314,13 +10348,13 @@ body.vl-maxing{overflow:hidden}
     methods.forEach(m=>{
       h+='<tr><td>'+m.name+(m.extra?' <span class="vl-cmp-x">· '+m.extra+'</span>':'')+(m.cons?'':' <span class="vl-cmp-x">*</span>')+'</td>'+
          '<td style="text-align:left;color:var(--text3)">'+m.grp+'</td>'+
-         '<td>'+fmtRp(m.fair)+'</td>'+
+         '<td>'+(m.fair!=null?fmtRp(m.fair):'<span style="color:var(--text3)">—</span>')+'</td>'+
          '<td>'+upTxt(m.verdict)+'</td>'+
          '<td>'+chip(m.verdict)+'</td>'+
          '<td style="text-align:center"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button></td></tr>';
     });
     h+='</tbody></table></div>';
-    h+='<p class="vl-note" style="margin-top:10px">Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar ≥ +15% di atas harga, <strong>Mahal</strong> bila ≤ −15%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
+    h+='<p class="vl-note" style="margin-top:10px">Basis data bisa diganti: <strong>Tahun Berjalan (Q1)</strong> = Q1 disetahunkan (×4), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>—</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar ≥ +15% di atas harga, <strong>Mahal</strong> bila ≤ −15%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
 
     host.innerHTML=h;
   }
@@ -10350,7 +10384,7 @@ body.vl-maxing{overflow:hidden}
       if(!m){ box.innerHTML='<p>Info tidak tersedia.</p>'; if(md) md.classList.add('show'); return; }
       h ='<h3>'+m.name+' <span class="grp">'+m.grp+'</span></h3><p>'+m.short+'</p><table class="vl-mini">';
       (m.rows||[]).forEach(r=>{ h+=row(r[0],r[1]); });
-      h+=row('<strong>Nilai wajar</strong>','<strong>'+fmtRp(m.fair)+'</strong>');
+      h+=row('<strong>Nilai wajar</strong>','<strong>'+(m.fair!=null?fmtRp(m.fair):'— (tak terhitung pd basis ini)')+'</strong>');
       if(m.verdict) h+=row('Vs harga '+fmtRp(price), '<span class="vl-vchip '+m.verdict.cls+'">'+m.verdict.label+'</span> '+(m.verdict.up>=0?'+':'')+(m.verdict.up*100).toFixed(1)+'%');
       h+='</table>';
     }
@@ -10358,7 +10392,7 @@ body.vl-maxing{overflow:hidden}
     if(md) md.classList.add('show');
   };
   window.vlCloseMethod=function(){ const md=document.getElementById('vlMethodModal'); if(md) md.classList.remove('show'); };
-
+  window.vlSetCmpBasis=function(b){ _cmpBasis = (b==='current') ? 'current' : 'year'; renderCompare(); };
   /* ── Render penuh untuk emiten/window aktif ── */
   function renderAll(){
     const s = curStock(); if(!s) return;
