@@ -9057,7 +9057,7 @@ body.vl-maxing{overflow:hidden}
         </div>
         <div class="vl-grid2">
           <div class="card">
-            <div class="card-title">Harga Saham — Bulanan / Harian</div>
+            <div class="card-title">Harga Saham — Bulanan / Harian <span id="vlChartBasisLabel" style="font-weight:600;color:var(--accent);text-transform:none;letter-spacing:0"></span></div>
             <div class="vl-seg" id="vlChartMode">
               <button type="button" class="on" data-m="proyeksi" onclick="vlSetChartMode('proyeksi')">📈 Bulanan</button>
               <button type="button" data-m="harian" onclick="vlSetChartMode('harian')">🕯️ Harian</button>
@@ -9763,7 +9763,10 @@ body.vl-maxing{overflow:hidden}
     if(_projBasis!=='current' && !yrs.some(function(y){ return 'Y'+y===_projBasis; })) _projBasis = 'current';
     projBasisButtons(s);
     const scopeEl = document.getElementById('vlProjScope');
-    if(scopeEl) scopeEl.textContent = (_projBasis==='current') ? 'Tahun Berjalan' : _projBasis.replace(/^Y/,'');
+    const basisLabel = (_projBasis==='current') ? 'Tahun Berjalan Q1' : _projBasis.replace(/^Y/,'');
+    if(scopeEl) scopeEl.textContent = basisLabel;
+    const chartBasisLbl = document.getElementById('vlChartBasisLabel');
+    if(chartBasisLbl) chartBasisLbl.textContent = '· basis ' + basisLabel;
     const msg = document.getElementById('vlProjMsg');
     const body = document.getElementById('vlProjBody');
     const fy = ((s.valuation||{}).five_year)||{};
