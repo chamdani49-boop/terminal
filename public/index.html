@@ -8896,6 +8896,7 @@ loadData();
 #page-valuasi .vl-cmp-duo .card.vl-max canvas{height:calc(100vh - 180px)!important}
 #page-valuasi .vl-cmp-duo .card.vl-max .vl-ff{max-height:calc(100vh - 180px);overflow-y:auto}
 #page-valuasi .vl-cmp-duo .card.vl-max .vl-cmp-canvas-wrap{height:calc(100vh - 180px)}
+#page-valuasi .vl-cmp-duo .card.vl-max .vl-cmp-canvas-wrap canvas{height:100%!important}
 body.vl-maxing{overflow:hidden}
 
 /* ════════════ DIFERENSIASI GRUP KARTU (Ringkasan vs Proyeksi) ════════════
@@ -9939,8 +9940,9 @@ body.vl-maxing{overflow:hidden}
     const b=card.querySelector('.vl-maxbtn'); if(b){ b.textContent= on?'✕':'⛶'; b.title= on?'Tutup':'Perbesar'; }
     setTimeout(()=>{
       charts.concat(ujCharts).forEach(c=>{ try{ c.resize(); }catch(e){} });
+      if(_cmpValChart){ try{ _cmpValChart.resize(); }catch(e){} }
       if(_harianChart){ try{ const w=document.getElementById('vlHarianWrap'); if(w) _harianChart.applyOptions({width:w.clientWidth,height:w.clientHeight}); }catch(e){} }
-    }, 70);
+    }, 150);
   };
 
   /* ── CHART HARIAN + SMC (Smart Money Concept) — candlestick dari ohlc.json ── */
