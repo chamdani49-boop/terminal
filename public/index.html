@@ -9784,6 +9784,7 @@ body.vl-maxing{overflow:hidden}
     if(_harianRO){ try{_harianRO.disconnect();}catch(e){} _harianRO=null; }
     if(_harianChart){ try{_harianChart.remove();}catch(e){} _harianChart=null; }
     wrap.innerHTML='';
+    try{
     const isDark=document.documentElement.getAttribute('data-theme')==='dark';
     const cssv=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
     const chart=LightweightCharts.createChart(wrap, {
@@ -9815,6 +9816,7 @@ body.vl-maxing{overflow:hidden}
       (smc.supplyOB?' · OB Supply ~Rp'+Math.round(smc.supplyOB.top).toLocaleString('id-ID'):'')+
       ' · '+candles.length+' candle harian.'; }
     vlEnsureMaxBtns();
+    }catch(err){ wrap.innerHTML='<div class="vl-msg" style="margin:10px">Gagal menampilkan chart harian: '+((err&&err.message)||err)+'</div>'; console.warn('[harian] render error:', err); }
   }
 
   /* ── Charts: destroy lama → build baru ── */
@@ -10032,7 +10034,7 @@ body.vl-maxing{overflow:hidden}
     if(el) el.classList.add('active');
     charts.forEach(c => { try { c.resize(); } catch(e){} });
     ujCharts.forEach(c => { try { c.resize(); } catch(e){} });
-    if(id==='harian') vlRenderHarian();
+    if(id==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
   };
 
   function showError(msg){
