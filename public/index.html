@@ -8977,9 +8977,9 @@ body.vl-maxing{overflow:hidden}
         </div>
         <div class="vl-grid2">
           <div class="card">
-            <div class="card-title">Harga Saham — Valuasi 5Th / Harian</div>
+            <div class="card-title">Harga Saham — Bulanan / Harian</div>
             <div class="vl-seg" id="vlChartMode">
-              <button type="button" class="on" data-m="proyeksi" onclick="vlSetChartMode('proyeksi')">📈 Valuasi 5Th</button>
+              <button type="button" class="on" data-m="proyeksi" onclick="vlSetChartMode('proyeksi')">📈 Bulanan</button>
               <button type="button" data-m="harian" onclick="vlSetChartMode('harian')">🕯️ Harian</button>
             </div>
             <div class="vl-chart-tall" id="vlProjBox" style="margin-top:10px"><canvas id="vlProj"></canvas></div>
@@ -9779,12 +9779,14 @@ body.vl-maxing{overflow:hidden}
     series.setData(data);
     const liveP=effLast(s).price;
     if(ok(liveP)&&liveP>0){ try{ series.createPriceLine({price:liveP,color:(cssv('--accent')||'#6d28d9'),lineWidth:1,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true,title:'Live'}); }catch(e){} }
-    // Overlay PROYEKSI TARGET VALUASI 5Th (garis oranye putus-putus) — basis terpilih,
-    // menyambung dari titik harga terakhir ke 5 target tahunan (year-end).
+    const hiAll = Math.max.apply(null, candles.map(c=>c.high).filter(ok));   // harga tertinggi yg pernah dicapai
+    let projSeries=null; const tgtMap={};
+    // Overlay PROYEKSI TARGET VALUASI 5Th (garis oranye putus-putus) — anchor sesuai basis,
+    // target yg SUDAH tercapai (<= harga tertinggi) ditandai hijau.
     try{
       const pm=state.projModel;
       if(pm && pm.applicable && data.length){
-        // Anchor proyeksi sesuai BASIS (sama logika dgn chart Valuasi 5Th):
+        // Anchor proyeksi sesuai BASIS (sama logika dgn chart Bulanan/Valuasi 5Th):
         //  - Tahun Berjalan → akhir kuartal berjalan (Maret <tahun berjalan>)
         //  - basis 2025     → awal Januari <tahun berjalan>
         const fyr=ujFiscalYear(); const qYear=ok(fyr)?fyr+1:new Date().getFullYear();
@@ -9793,19 +9795,45 @@ body.vl-maxing{overflow:hidden}
         else { for(const d of data){ if(d.time.slice(0,7)===qYear+'-01'){ anchor={time:d.time,value:d.close}; break; } } }      // candle Januari pertama
         if(!anchor) anchor={ time:data[data.length-1].time, value:(ok(liveP)&&liveP>0?liveP:data[data.length-1].close) };
         const ay=parseInt(anchor.time.slice(0,4),10)||qYear;
-        const pjData=[anchor];
-        for(let i=0;i<5;i++){ if(ok(pm.potensi[i])) pjData.push({ time:(ay+i)+'-12-31', value:pm.potensi[i] }); }
+        const pjData=[anchor]; const tmarkers=[];
+        for(let i=0;i<5;i++){ if(ok(pm.potensi[i])){ const tt=(ay+i)+'-12-31'; pjData.push({ time:tt, value:pm.potensi[i] });
+          const reached = ok(hiAll) && pm.potensi[i]<=hiAll;
+          tmarkers.push({ time:tt, position:'aboveBar', color: reached?'#16a34a':'#d97706', shape:'circle', text:(ay+i)+(reached?' ✓':'') });
+          tgtMap[tt]={ y:(ay+i), reached:reached }; } }
         if(pjData.length>1){
-          const pj=chart.addLineSeries({ color:'#d97706', lineWidth:2, lineStyle:LightweightCharts.LineStyle.Dashed, pointMarkersVisible:true, pointMarkersRadius:4, lastValueVisible:false, priceLineVisible:false });
-          pj.setData(pjData);
+          projSeries=chart.addLineSeries({ color:'#d97706', lineWidth:2, lineStyle:LightweightCharts.LineStyle.Dashed, pointMarkersVisible:true, pointMarkersRadius:4, lastValueVisible:false, priceLineVisible:false });
+          projSeries.setData(pjData);
+          try{ projSeries.setMarkers(tmarkers); }catch(e){}
         }
       }
     }catch(e){ console.warn('[harian] overlay proyeksi gagal:', e); }
     chart.timeScale().fitContent();
     _harianChart=chart;
     if(typeof ResizeObserver!=='undefined'){ _harianRO=new ResizeObserver(()=>{ try{ chart.applyOptions({width:wrap.clientWidth, height:wrap.clientHeight}); }catch(e){} }); _harianRO.observe(wrap); }
+    // Tooltip popup (crosshair) — OHLC harian + target proyeksi, biar chart lebih hidup.
+    try{
+      const rpf=v=> 'Rp'+Math.round(v).toLocaleString('id-ID');
+      const tkey=t=> (t && typeof t==='object' && 'day' in t) ? (t.year+'-'+String(t.month).padStart(2,'0')+'-'+String(t.day).padStart(2,'0')) : String(t);
+      const tip=document.createElement('div');
+      tip.style.cssText="position:absolute;pointer-events:none;z-index:7;display:none;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 9px;font:11px/1.45 'IBM Plex Mono',monospace;color:var(--text);box-shadow:0 6px 20px rgba(0,0,0,.35);white-space:nowrap";
+      wrap.appendChild(tip);
+      chart.subscribeCrosshairMove(function(param){
+        if(!param || !param.point || !param.time || param.point.x<0 || param.point.y<0){ tip.style.display='none'; return; }
+        const key=tkey(param.time); let html='';
+        const c=param.seriesData.get(series);
+        if(c && ok(c.open)){ const up=c.close>=c.open; html='<b>'+key+'</b><br><span style="color:'+(up?'#16a34a':'#e11d48')+'">'+(up?'▲':'▼')+' Close '+rpf(c.close)+'</span><br>O '+rpf(c.open)+' · H '+rpf(c.high)+' · L '+rpf(c.low); }
+        const pjd=projSeries?param.seriesData.get(projSeries):null;
+        if(pjd && ok(pjd.value)){ const meta=tgtMap[key]; const lbl=meta?('Target '+meta.y+(meta.reached?' ✓ tercapai':'')):'Proyeksi'; html=(html?html+'<br>':'')+'<span style="color:#d97706">'+lbl+': '+rpf(pjd.value)+'</span>'; }
+        if(!html){ tip.style.display='none'; return; }
+        tip.innerHTML=html; tip.style.display='block';
+        let x=param.point.x+14, y=param.point.y+14;
+        if(x+tip.offsetWidth>wrap.clientWidth) x=param.point.x-tip.offsetWidth-14;
+        if(y+tip.offsetHeight>wrap.clientHeight) y=param.point.y-tip.offsetHeight-14;
+        tip.style.left=Math.max(2,x)+'px'; tip.style.top=Math.max(2,y)+'px';
+      });
+    }catch(e){ console.warn('[harian] tooltip gagal:', e); }
     if(info){ const pm=state.projModel; const t5=(pm&&pm.applicable&&ok(pm.potensi[4]))?('Rp'+Math.round(pm.potensi[4]).toLocaleString('id-ID')):'-';
-      info.innerHTML='Candlestick <strong>harian</strong> ('+candles.length+' candle) + <strong style="color:#d97706">proyeksi target valuasi 5Th</strong> (target akhir ~'+t5+'). Titik terakhir = harga live.'; }
+      info.innerHTML='Candlestick <strong>harian</strong> ('+candles.length+' candle) + <strong style="color:#d97706">proyeksi target valuasi 5Th</strong> (target akhir ~'+t5+'). Hover untuk detail · titik <span style="color:#16a34a">hijau</span> = target tercapai.'; }
     vlEnsureMaxBtns();
     }catch(err){ wrap.innerHTML='<div class="vl-msg" style="margin:10px">Gagal menampilkan chart harian: '+((err&&err.message)||err)+'</div>'; console.warn('[harian] render error:', err); }
   }
@@ -9823,6 +9851,7 @@ body.vl-maxing{overflow:hidden}
     const GRID = { color:T.grid };
     const base = {
       responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },   // tooltip muncul saat hover di mana saja
       plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(26,15,60,.94)', titleFont:{size:11}, bodyFont:{size:11}, padding:10, cornerRadius:8 } }
     };
 
