@@ -9007,7 +9007,7 @@ body.vl-maxing{overflow:hidden}
         <select id="vlStockSel" class="vl-select" onchange="vlSelectStock(this.value)"></select>
       </div>
       <div class="vl-tb-group">
-        <label class="vl-tb-label">Window Rata-rata Multiple</label>
+        <label class="vl-tb-label">Window Rata-rata Multiple <button class="vl-iq" onclick="vlMethodInfo('window')" style="vertical-align:middle">i</button></label>
         <div class="vl-win" id="vlWinBtns">
           <button class="vl-basis-btn" data-win="3"  onclick="vlSetWindow(3)">3 Th</button>
           <button class="vl-basis-btn" data-win="5"  onclick="vlSetWindow(5)">5 Th</button>
@@ -9024,14 +9024,6 @@ body.vl-maxing{overflow:hidden}
 
     <!-- HEADER EMITEN (dinamis — diisi JS) -->
     <div class="vl-head" id="vlHead"></div>
-
-    <!-- METRIC CARDS (dinamis — diisi JS) -->
-    <div class="vl-sec-hd">
-      <span class="t">📊 Ringkasan Valuasi</span>
-      <span class="chip" id="vlCardsScope">Model fundamental</span>
-      <span class="line"></span>
-    </div>
-    <div class="vl-mcs" id="vlCards"></div>
 
     <!-- TABS -->
     <div class="vl-tabs" role="tablist">
@@ -9653,11 +9645,6 @@ body.vl-maxing{overflow:hidden}
           '<div class="v">'+fmtMrp(a.market_cap)+'</div>'+
           '<div class="l" style="margin-top:4px">Tahun Data</div>'+
           '<div style="font-size:13px;font-weight:700;color:var(--text)">'+(ly||'-')+'</div>'+
-        '</div>'+
-        '<div class="vl-mos" style="background:transparent;border-color:'+ms.col+'">'+
-          '<div class="l" style="color:'+ms.col+'">Margin of Safety</div>'+
-          '<div class="v" style="color:'+ms.col+'">'+(mosApplicable ? mosPct.toFixed(2)+'%' : '—')+'</div>'+
-          '<div class="d" style="color:'+ms.col+'">'+ms.txt+'</div>'+
         '</div>'+
       '</div>';
   }
@@ -10738,6 +10725,30 @@ body.vl-maxing{overflow:hidden}
     const s=curStock(); const price=s?effLast(s).price:null;
     const row=(a,b)=>'<tr><td>'+a+'</td><td>'+b+'</td></tr>';
     let h='';
+    if(key==='window'){
+      h ='<h3>Window Rata-rata Multiple</h3>'+
+         '<p>Tombol <strong>3 / 5 / 7 / 10 Th</strong> menentukan <strong>berapa tahun ke belakang</strong> data rasio valuasi dirata-rata.</p>'+
+         '<p>Contoh: <strong>5 Th</strong> = rata-rata PBV, PER, PSR, dan DPR dari 5 tahun terakhir.</p>'+
+         '<h4 style="margin-top:10px">Apa yang berubah saat ganti window?</h4>'+
+         '<table class="vl-mini">'+
+         row('Rata-rata PBV/PER/PSR','Dihitung ulang sesuai jumlah tahun yang dipilih')+
+         row('Rata-rata DPR','Ikut menyesuaikan')+
+         row('Target harga 5 tahun','Berubah (per-share × multiple baru)')+
+         row('Combine Return & CAGR','Berubah mengikuti target harga baru')+
+         row('Dividen Yield','Berubah (DPR baru × EPS ÷ harga)')+
+         row('Margin of Safety','Berubah mengikuti target baru')+
+         row('Nilai Wajar (PBV/PER/PSR)','Berubah di tab Perbandingan')+
+         '</table>'+
+         '<h4 style="margin-top:10px">Kapan pakai yang mana?</h4>'+
+         '<table class="vl-mini">'+
+         row('<strong>3 Th</strong>','Sensitif ke kondisi terbaru. Cocok untuk emiten yang berubah cepat (turnaround, re-rating).')+
+         row('<strong>5 Th (default)</strong>','Keseimbangan antara terbaru dan stabil. Paling umum dipakai analis.')+
+         row('<strong>7 Th</strong>','Mencakup 1 siklus ekonomi. Lebih halus, kurang sensitif.')+
+         row('<strong>10 Th</strong>','Paling konservatif. Mencakup beberapa siklus. Cocok untuk emiten stabil jangka panjang.')+
+         '</table>'+
+         '<p style="margin-top:10px;color:var(--text3);font-size:11px">Window lebih pendek = lebih responsif terhadap perubahan terbaru. Window lebih panjang = lebih stabil karena merata-rata lebih banyak data historis. Pilih sesuai karakteristik emiten.</p>';
+      box.innerHTML=h; if(md) md.classList.add('show'); return;
+    }
     if(key==='wacc'){
       const w=_cmpWacc||{};
       const s2=curStock(), v2=s2&&s2.valuation||{}, dcf2=v2.dcf||{}, aG2=(state.raw&&state.raw.assumptions)||{};
