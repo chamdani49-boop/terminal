@@ -8914,6 +8914,59 @@ body.vl-maxing{overflow:hidden}
 #page-valuasi .vl-kpis-proj .vl-kpi .l{display:flex;align-items:center;justify-content:center;gap:5px}
 #page-valuasi .vl-kpis-proj .vl-kpi .d{color:var(--text3);font-weight:500;line-height:1.4;margin-top:4px}
 #page-valuasi .vl-kpis-proj .vl-kpi-key{background:var(--bg3);border-top-width:3px}
+
+/* ════════════════════════════════════════════════════════════════════
+   COMPACT TERMINAL HEADER — redesign minimalis (Bloomberg-like)
+   Merapatkan toolbar, banner, header emiten & kartu ringkasan agar hemat
+   ruang vertikal, padat, dan profesional. CSS-only, scoped #page-valuasi.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* — TOOLBAR: satu baris rapat, label inline di kiri kontrol — */
+#page-valuasi .vl-toolbar{padding:8px 13px;gap:9px 22px;align-items:center;margin-bottom:10px;border-radius:9px}
+#page-valuasi .vl-toolbar .vl-tb-group{flex-direction:row;align-items:center;gap:10px}
+#page-valuasi .vl-tb-label{font-size:9.5px;letter-spacing:.9px;color:var(--text3);white-space:nowrap;margin:0}
+#page-valuasi .vl-select{padding:6px 30px 6px 11px;font-size:12.5px;min-width:196px;border-radius:7px}
+/* Window jadi segmented control rapat (track + tombol di dalam) */
+#page-valuasi .vl-win{gap:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:2px}
+#page-valuasi .vl-win .vl-basis-btn{padding:5px 13px;font-size:11.5px;border:none;background:none;border-radius:6px;color:var(--text2);box-shadow:none}
+#page-valuasi .vl-win .vl-basis-btn:hover{color:var(--text);border-color:transparent}
+#page-valuasi .vl-win .vl-basis-btn.active{background:var(--accent);color:#fff;box-shadow:none}
+
+/* — BANNER: strip tipis selaras panel terminal (bukan gradient mencolok) — */
+#page-valuasi #vlBanner{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;padding:7px 13px;font-size:11px;line-height:1.45;margin-bottom:11px;color:var(--text3)}
+#page-valuasi #vlBanner strong{font-weight:700}
+
+/* — HEADER EMITEN: bar padat, sejajar tengah — */
+#page-valuasi .vl-head{padding:11px 16px;margin-bottom:12px;gap:12px;align-items:center}
+#page-valuasi .vl-logo{width:40px;height:40px;font-size:11px;border-radius:8px}
+#page-valuasi .vl-name{font-size:18px;letter-spacing:1px}
+#page-valuasi .vl-tag{font-size:9px;padding:2px 8px;margin-left:6px}
+#page-valuasi .vl-sub{font-size:11px;margin-top:1px}
+#page-valuasi .vl-head-right{gap:14px 16px;align-items:center}
+#page-valuasi .vl-price{font-size:25px}
+#page-valuasi .vl-price-meta{font-size:10px;margin-top:1px}
+#page-valuasi .vl-badge{font-size:10px;padding:2px 8px}
+#page-valuasi .vl-mktcap .l{font-size:9px}
+#page-valuasi .vl-mktcap .v{font-size:13px}
+#page-valuasi .vl-mos{padding:7px 14px;min-width:104px;border-radius:9px}
+#page-valuasi .vl-mos .v{font-size:18px}
+#page-valuasi .vl-mos .l,#page-valuasi .vl-mos .d{font-size:9.5px}
+
+/* — SECTION HEADER ringkasan: rapat — */
+#page-valuasi .vl-sec-hd{margin:0 2px 8px}
+
+/* — KARTU RINGKASAN: padat, tanpa emoji besar (kesan data terminal) — */
+#page-valuasi .vl-mcs{gap:8px}
+#page-valuasi .vl-mc{padding:10px 14px;border-radius:9px}
+#page-valuasi .vl-mc .i{display:none}
+#page-valuasi .vl-mc .l{font-size:9.5px;letter-spacing:.7px;margin-bottom:4px}
+#page-valuasi .vl-mc .v{font-size:18px}
+#page-valuasi .vl-mc .s{font-size:10px;margin-top:2px}
+
+@media(max-width:760px){
+  #page-valuasi .vl-toolbar .vl-tb-group{flex-direction:column;align-items:flex-start;gap:6px}
+}
 </style>
 
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
