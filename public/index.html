@@ -9079,6 +9079,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <div class="card">
             <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
+            <div id="vlProjTableHeader" style="margin-bottom:10px"></div>
             <div class="vl-tw">
               <table class="vl-table"><thead><tr><th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs Basis)</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
             </div>
@@ -9808,6 +9809,24 @@ body.vl-maxing{overflow:hidden}
     if(tb){
       const basisPrice = pc._last || 0;
       const basisLabel = pc._isCurrent ? 'Thn Berjalan' : (_projBasis.replace(/^Y/,''));
+
+      // Header info (mirip Mesin Valuasi: "KODE Sekarang X · [ACTUAL] 12M YYYY · X / +XX%")
+      const thdr = document.getElementById('vlProjTableHeader');
+      if(thdr){
+        const chg = (ok(livePrice)&&ok(basisPrice)&&basisPrice>0) ? ((livePrice/basisPrice-1)*100) : null;
+        thdr.innerHTML = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+          '<span style="font-size:14px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:var(--text)">'+s.code+'</span>'+
+          '<span style="font-size:12px;color:var(--text2)">Sekarang <strong style="color:var(--text)">'+fmtRp(livePrice)+'</strong></span>'+
+          '<span class="vl-badge '+(ok(chg)&&chg>=0?'vl-up':'vl-dn')+'" style="font-size:11px">ACTUAL</span>'+
+          '<span style="font-size:12px;color:var(--text2)">12M '+basisLabel+' · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
+          (ok(chg)?'<span class="'+(chg>=0?'vl-pos':'vl-neg')+'" style="font-size:14px;font-weight:800">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
+          '</div>';
+      }
+
+      // Update header kolom tabel (vs 12M <tahun>)
+      const thRow = tb.closest('table').querySelector('thead tr');
+      if(thRow) thRow.innerHTML = '<th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs 12M '+basisLabel+')</th>';
+
       let rows = years.map((yr,i)=>{
         const pt = pc.potensi[i];
         const glLive = (livePrice>0 && ok(pt)) ? (pt/livePrice-1)*100 : null;
