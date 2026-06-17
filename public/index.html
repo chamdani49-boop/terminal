@@ -9067,15 +9067,17 @@ body.vl-maxing{overflow:hidden}
             <div class="vl-legend" id="vlProjLegend" style="margin-top:10px">
               <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Harga Saham (historis → live)</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target Valuasi 5Th</div>
+              <button class="vl-iq" onclick="vlMethodInfo('chartproj')" style="margin-left:8px">i</button>
             </div>
             <div class="vl-legend" id="vlHarianLegend" style="margin-top:10px;display:none">
               <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Candle naik</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#e11d48"></div>Candle turun</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Harga Live</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target 5Th</div>
+              <button class="vl-iq" onclick="vlMethodInfo('chartharian')" style="margin-left:8px">i</button>
             </div>
             <div class="vl-info" id="vlProjInfo" style="margin-top:8px;display:none"></div>
-            <div class="vl-info" id="vlHarianInfo" style="margin-top:8px;display:none">Memuat data harian…</div>
+            <div class="vl-info" id="vlHarianInfo" style="margin-top:8px;display:none"></div>
           </div>
           <div class="card">
             <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
@@ -9083,7 +9085,7 @@ body.vl-maxing{overflow:hidden}
             <div class="vl-tw">
               <table class="vl-table"><thead><tr><th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs Basis)</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
             </div>
-            <div class="vl-info" style="margin-top:10px"><strong>vs Sekarang</strong> = potensi ÷ harga live − 1. <strong>vs Basis</strong> = potensi ÷ harga basis − 1. <strong>Margin of Safety</strong> = 1 − harga ÷ potensi tahun ke-5.</div>
+            <div class="vl-info" style="margin-top:10px"><button class="vl-iq" onclick="vlMethodInfo('projgl')" style="vertical-align:middle">i</button> <span style="font-size:11px;color:var(--text3)">Klik untuk penjelasan kolom & rumus</span></div>
           </div>
         </div>
         <div class="card" style="margin:14px 0">
@@ -10862,6 +10864,35 @@ body.vl-maxing{overflow:hidden}
     const s=curStock(); const price=s?effLast(s).price:null;
     const row=(a,b)=>'<tr><td>'+a+'</td><td>'+b+'</td></tr>';
     let h='';
+    if(key==='projgl'){
+      h='<h3>Tabel Proyeksi G&L</h3>'+
+        '<p>Tabel ini menampilkan <strong>potensi harga</strong> saham di tiap tahun proyeksi berdasarkan model valuasi (basis terpilih).</p>'+
+        '<table class="vl-mini">'+
+        row('% (vs Sekarang)','potensi ÷ harga live − 1 (keuntungan jika beli di harga sekarang)')+
+        row('Potensi Price','harga target per tahun = harga basis × (1 + combine × n)')+
+        row('% (vs 12M / Basis)','potensi ÷ harga basis − 1 (keuntungan jika beli di harga basis)')+
+        row('Margin of Safety (kiri)','1 − harga live ÷ potensi tahun ke-5 (diskon harga live vs target)')+
+        row('Margin of Safety (kanan)','1 − harga basis ÷ potensi tahun ke-5 (diskon harga basis vs target)')+
+        '</table>'+
+        '<p style="margin-top:8px;color:var(--text3);font-size:11px">MoS positif = harga masih di bawah target (aman). MoS negatif = harga sudah di atas target (mahal). Semakin tinggi MoS, semakin besar margin keamanan.</p>';
+      box.innerHTML=h; if(md) md.classList.add('show'); return;
+    }
+    if(key==='chartproj'){
+      h='<h3>Chart Harga Bulanan + Proyeksi</h3>'+
+        '<p><strong>Garis ungu</strong> = harga saham historis bulanan (dari sheet price history). Titik terakhir = harga live dari sheet.</p>'+
+        '<p><strong>Garis oranye putus-putus</strong> = proyeksi target valuasi 5 tahun ke depan berdasarkan basis terpilih. Titik bercabang dari harga basis pada tanggal yang sesuai.</p>'+
+        '<p><strong>Titik hijau</strong> = target yang sudah tercapai (harga pernah mencapai level target tersebut).</p>'+
+        '<p><strong>Tombol rentang (3Th/5/7/10/All)</strong> mengatur berapa tahun ke belakang data harga ditampilkan.</p>';
+      box.innerHTML=h; if(md) md.classList.add('show'); return;
+    }
+    if(key==='chartharian'){
+      h='<h3>Chart Harian (Candlestick)</h3>'+
+        '<p><strong>Candlestick</strong> menampilkan harga harian (Open/High/Low/Close). Hijau = harga naik, merah = harga turun.</p>'+
+        '<p><strong>Garis ungu</strong> = harga live terakhir.</p>'+
+        '<p><strong>Garis oranye putus-putus</strong> = overlay proyeksi target valuasi 5 tahun (basis terpilih).</p>'+
+        '<p><strong>Titik hijau</strong> = target sudah tercapai. Hover untuk detail OHLC + target.</p>';
+      box.innerHTML=h; if(md) md.classList.add('show'); return;
+    }
     if(key==='window'){
       h ='<h3>Window Rata-rata Multiple</h3>'+
          '<p>Tombol <strong>3 / 5 / 7 / 10 Th</strong> menentukan <strong>berapa tahun ke belakang</strong> data rasio valuasi dirata-rata.</p>'+
