@@ -8893,6 +8893,27 @@ loadData();
 #page-valuasi .card.vl-max .vl-chart,#page-valuasi .card.vl-max .vl-chart-tall,#page-valuasi .card.vl-max .uj-chart{height:calc(100vh - 150px)}
 #page-valuasi .card.vl-max canvas{max-height:calc(100vh - 150px)}
 body.vl-maxing{overflow:hidden}
+
+/* ════════════ DIFERENSIASI GRUP KARTU (Ringkasan vs Proyeksi) ════════════
+   Dua grup kartu (snapshot model fundamental vs skenario per-basis) tadinya
+   memakai label sama sehingga terlihat duplikat. Tambahkan konteks scope +
+   ikon + deskripsi agar masing-masing jelas, informatif, dan profesional. */
+/* Header kecil di atas grup kartu hero — beri konteks scope */
+#page-valuasi .vl-sec-hd{display:flex;align-items:center;gap:10px;margin:0 2px 11px;flex-wrap:wrap}
+#page-valuasi .vl-sec-hd .t{font-size:12px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--text)}
+#page-valuasi .vl-sec-hd .chip{font-size:10.5px;font-weight:700;color:var(--text2);background:var(--bg2);border:1px solid var(--border);padding:3px 11px;border-radius:var(--radius-pill);letter-spacing:.3px;white-space:nowrap}
+#page-valuasi .vl-sec-hd .line{flex:1;height:1px;background:var(--border);min-width:20px}
+
+/* Sub-judul kartu proyeksi — jelaskan basis aktif (beda dgn snapshot di atas) */
+#page-valuasi .vl-proj-sub{font-size:11.5px;color:var(--text3);font-weight:500;line-height:1.55;margin:-8px 0 14px}
+#page-valuasi .vl-proj-sub b{color:var(--accent);font-weight:800}
+
+/* KPI proyeksi: ikon + deskripsi + hover; highlight metrik kunci (MoS & FV) */
+#page-valuasi .vl-kpis-proj .vl-kpi{transition:transform .15s ease,border-color .15s ease}
+#page-valuasi .vl-kpis-proj .vl-kpi:hover{transform:translateY(-2px);border-color:var(--accent)}
+#page-valuasi .vl-kpis-proj .vl-kpi .l{display:flex;align-items:center;justify-content:center;gap:5px}
+#page-valuasi .vl-kpis-proj .vl-kpi .d{color:var(--text3);font-weight:500;line-height:1.4;margin-top:4px}
+#page-valuasi .vl-kpis-proj .vl-kpi-key{background:var(--bg3);border-top-width:3px}
 </style>
 
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
@@ -8947,6 +8968,11 @@ body.vl-maxing{overflow:hidden}
     <div class="vl-head" id="vlHead"></div>
 
     <!-- METRIC CARDS (dinamis — diisi JS) -->
+    <div class="vl-sec-hd">
+      <span class="t">📊 Ringkasan Valuasi</span>
+      <span class="chip" id="vlCardsScope">Model fundamental</span>
+      <span class="line"></span>
+    </div>
     <div class="vl-mcs" id="vlCards"></div>
 
     <!-- TABS -->
@@ -8966,13 +8992,14 @@ body.vl-maxing{overflow:hidden}
       <div id="vlProjBody">
         <div class="card" style="margin-bottom:14px">
           <div class="card-title">🎯 Proyeksi Harga 5 Tahun</div>
+          <div class="vl-proj-sub">Skenario imbal hasil dari harga beli basis <b id="vlProjScope">Tahun Berjalan</b> — angka menyesuaikan basis yang dipilih (beda dengan snapshot model di atas).</div>
           <div class="vl-basis" id="vlProjBasis" style="margin-bottom:14px"></div>
-          <div class="vl-kpis" style="margin-bottom:0">
-            <div class="vl-kpi"><div class="l">Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
-            <div class="vl-kpi"><div class="l">CAGR 5 Tahun</div><div class="v" id="vlKpiCagr" style="color:var(--accent2)">-</div></div>
-            <div class="vl-kpi"><div class="l">Dividen Yield</div><div class="v" id="vlKpiDy" style="color:var(--accent)">-</div></div>
-            <div class="vl-kpi"><div class="l">Combine Return</div><div class="v" id="vlKpiComb" style="color:var(--green)">-</div></div>
-            <div class="vl-kpi"><div class="l">Future Value</div><div class="v" id="vlKpiFv">-</div></div>
+          <div class="vl-kpis vl-kpis-proj" style="margin-bottom:0">
+            <div class="vl-kpi vl-kpi-key"><div class="l">🛡️ Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
+            <div class="vl-kpi"><div class="l">📈 CAGR 5 Tahun</div><div class="v" id="vlKpiCagr" style="color:var(--accent2)">-</div><div class="d">Pertumbuhan harga / th</div></div>
+            <div class="vl-kpi"><div class="l">💰 Dividen Yield</div><div class="v" id="vlKpiDy" style="color:var(--accent)">-</div><div class="d">Imbal hasil dividen / th</div></div>
+            <div class="vl-kpi"><div class="l">🎯 Combine Return</div><div class="v" id="vlKpiComb" style="color:var(--green)">-</div><div class="d">Capital gain + dividen</div></div>
+            <div class="vl-kpi vl-kpi-key"><div class="l">🪙 Future Value</div><div class="v" id="vlKpiFv">-</div><div class="d">Total apresiasi 5 th</div></div>
           </div>
         </div>
         <div class="vl-grid2">
@@ -9474,6 +9501,8 @@ body.vl-maxing{overflow:hidden}
       {i:'⏱️',l:'Th. Balik Modal',v:fmtX(payback),s:'Dari dividen saja',c:'var(--text)'},
     ];
     el.innerHTML = cards.map(c=>'<div class="vl-mc"><div class="i">'+c.i+'</div><div class="l">'+c.l+'</div><div class="v" style="color:'+c.c+'">'+c.v+'</div><div class="s">'+c.s+'</div></div>').join('');
+    const sc = document.getElementById('vlCardsScope');
+    if(sc) sc.textContent = 'Model fundamental · window '+state.win+' Th';
   }
 
   function renderFund(){
@@ -9547,6 +9576,8 @@ body.vl-maxing{overflow:hidden}
     const yrs = annualYears(s); const latest = yrs[yrs.length-1];
     if(_projBasis!=='current' && _projBasis!=='Y'+latest) _projBasis = 'current';
     projBasisButtons(s);
+    const scopeEl = document.getElementById('vlProjScope');
+    if(scopeEl) scopeEl.textContent = (_projBasis==='current') ? 'Tahun Berjalan' : String(latest);
     const msg = document.getElementById('vlProjMsg');
     const body = document.getElementById('vlProjBody');
     const fy = ((s.valuation||{}).five_year)||{};
