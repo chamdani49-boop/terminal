@@ -9801,7 +9801,7 @@ body.vl-maxing{overflow:hidden}
           tmarkers.push({ time:tt, position:'aboveBar', color: reached?'#16a34a':'#d97706', shape:'circle', text:(ay+i)+(reached?' ✓':'') });
           tgtMap[tt]={ y:(ay+i), reached:reached }; } }
         if(pjData.length>1){
-          projSeries=chart.addLineSeries({ color:'#d97706', lineWidth:2, lineStyle:LightweightCharts.LineStyle.Dashed, pointMarkersVisible:true, pointMarkersRadius:4, lastValueVisible:false, priceLineVisible:false });
+          projSeries=chart.addLineSeries({ color:'#d97706', lineWidth:2, lineStyle:LightweightCharts.LineStyle.Dashed, pointMarkersVisible:false, lastValueVisible:false, priceLineVisible:false });
           projSeries.setData(pjData);
           try{ projSeries.setMarkers(tmarkers); }catch(e){}
         }
