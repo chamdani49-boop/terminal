@@ -167,3 +167,51 @@ diubah, menunggu keputusan user.
 Upload Excel ke `data/valuation/` via:
 https://github.com/chamdani49-boop/terminal/upload/main/data/valuation
 → workflow refresh-valuation auto-rebuild valuation.json.
+
+
+---
+
+## STATUS TERKINI / HANDOFF (per 17 Jun 2026) — untuk sesi baru
+
+Bahasa: balas user dalam **Bahasa Indonesia**. Semua kerja di `public/index.html`
+(modul Valuasi = IIFE, prefix `vl-`/`uj-`). Verifikasi tiap perubahan dgn
+`node --check` pada blok `<script>`. Push lewat tool github (jangan `git push`).
+
+### Alur PR (penting)
+- PR yang SUDAH di-merge user: **#185, #186, #189, #190, #191** (jangan diutak-atik).
+- **PR terbuka saat ini: #192** — branch **`fix/harian-smc-render`**. Selama user
+  bilang "belum aku merge", **tumpuk commit di branch ini**. Kalau user bilang sudah
+  merge, buat branch + PR baru dari `main` terbaru.
+
+### Keputusan logika (JANGAN diubah tanpa diminta)
+1. **3.500 = harga close tanggal kuartal (31 Mar)**, bukan angka custom. Basis
+   "Tahun Berjalan" pakai `ujBasisPrice('current')` = `ujPriceOn('3/31/'+(fiscalYear+1))`.
+2. **"Tahun berjalan" (perhitungan valuasi) mengikuti Excel/close kuartal**, BEDA
+   dari harga live. Mesin (`vlUjiCalc`/`ujBasisInputs`/`ujBasisPrice`/`computeModel`)
+   = pondasi, sudah tervalidasi vs Excel — jangan ubah rumus.
+3. Harga per-periode sudah tersedia di `data.json.price_history` (close by tanggal).
+
+### Fitur Valuasi yang sudah jadi (di #192 / merged)
+- Tab "Uji Data" → di-rename **"Mesin Valuasi"**; UI di-overhaul terminal-style.
+- Tab **Proyeksi Harga digabung ke Ringkasan** (paling atas). Tab terpisah dihapus.
+- Tabel **Fundamental**: kolom lengkap & dibalik (Q1 · Thn Berjalan · 2025→2008).
+- **Range chart GLOBAL tersinkron** (`vlRange`, tombol 3/5/7/10/All) untuk semua chart.
+- Tiap chart historis punya titik **"Q1 TTM <tahun>"** (annualized, harga/rasio @ LIVE).
+- Panel chart bisa **maximize** (`⛶`, `vlToggleMax`). Harga live auto-update via
+  `window.vlApplyLive` (hook di `_pollLiveFeed`).
+- **Card chart utama Ringkasan** punya **switch `vlSetChartMode`**: **📈 Bulanan**
+  (line: harga bulanan historis + proyeksi target 5Th) ↔ **🕯️ Harian** (candlestick
+  dari `ohlc.json`, polos tanpa SMC, + overlay proyeksi target 5Th).
+- **Proyeksi target 5Th**: garis oranye putus-putus; **anchor mengikuti basis** —
+  Tahun Berjalan → mulai Maret (akhir kuartal) tahun berjalan; basis 2025 → mulai
+  Januari. Target **tercapai = HIJAU**, belum = oranye (vs harga tertinggi). 1 marker
+  per target (line `pointMarkersVisible:false`, pakai `setMarkers`).
+- **Tooltip hover** aktif di kedua chart (Chart.js `interaction:index/intersect:false`;
+  lightweight-charts `subscribeCrosshairMove`).
+- Basis proyeksi: tombol "Tahun Berjalan" / "2025" (`vlSetProjBasis`), default current.
+- Helpers kunci: `vlRenderHarian`, `vlComputeSMC` SUDAH DIHAPUS (SMC tak dipakai),
+  `vlTtmPoint`/`vlTtmLabel`, `projComputeFor`, `vlEnsureRangeBar`.
+
+### Catatan label kuartal
+`q_label` (Q1/Q2/Q3) diambil dari sel **D1** Excel oleh `build-valuation.py` →
+`valuation.json` (sudah disuntik "Q1" utk 5 emiten). Frontend fallback "Q1".
