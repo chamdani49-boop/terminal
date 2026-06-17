@@ -10505,6 +10505,7 @@ body.vl-maxing{overflow:hidden}
 
     const seriesData={}; methodDefs.forEach(m=>{seriesData[m.key]=[];});
     const hargaData=[], consData=[];
+    const labels=yrs.slice();
 
     yrs.forEach(yr=>{
       const ay=(stock.annual&&stock.annual[yr])||{};
@@ -10564,23 +10565,56 @@ body.vl-maxing{overflow:hidden}
       consData.push(med);
     });
 
-    // Append current year data point using live price and current methods
+    // Append tahun berjalan (Q1 annualized) sebagai titik terakhir
     const livePrice=effLast(stock).price;
-    // Replace last harga with live if available
-    if(ok(livePrice)&&livePrice>0&&hargaData.length>0) hargaData[hargaData.length-1]=livePrice;
+    const ann=stock.annualized||{};
+    if(ann && Object.keys(ann).length){
+      const qLabel=(stock.q_label||'Q1')+' TTM';
+      labels.push(qLabel);
+      hargaData.push(ok(livePrice)&&livePrice>0 ? livePrice : null);
 
-    // Use current computed method values for last point
+      // Hitung valuasi dari data annualized
+      const aEps=ann.eps, aBvps=ann.bvps, aSps=ann.sps, aFcf=ann.fcf, aDps=ann.dps;
+      const aShares=ann.shares||1, aNetDebt=ann.net_debt||0;
+
+      let aDcf=null;
+      if(dcfD.applicable&&ok(aFcf)&&aFcf>0&&ok(aShares)&&aShares>0&&wc.wacc>tgVal){
+        let fcf=aFcf,pvS=0;for(let t=1;t<=5;t++){fcf*=(1+g5Dcf);pvS+=fcf/Math.pow(1+wc.wacc,t);}
+        const trm=(fcf*(1+tgVal))/(wc.wacc-tgVal); const pvT=trm/Math.pow(1+wc.wacc,5);
+        aDcf=(pvS+pvT-aNetDebt)/aShares; if(aDcf<=0) aDcf=null;
+      }
+      seriesData.dcf.push(aDcf);
+
+      let aDdm=null;
+      if(ddmD.applicable&&ok(aDps)&&aDps>0&&wc.coe>tgVal){
+        let dps=aDps,pvS=0;for(let t=1;t<=5;t++){dps*=(1+g5Ddm);pvS+=dps/Math.pow(1+wc.coe,t);}
+        const trm=(dps*(1+tgVal))/(wc.coe-tgVal); aDdm=pvS+trm/Math.pow(1+wc.coe,5); if(aDdm<=0) aDdm=null;
+      }
+      seriesData.ddm.push(aDdm);
+      seriesData.graham.push((ok(aEps)&&aEps>0&&ok(aBvps)&&aBvps>0)?Math.sqrt(22.5*aEps*aBvps):null);
+      const pbvM2=(am.pbv||{})[win]; seriesData.pbv.push((ok(pbvM2)&&ok(aBvps)&&aBvps>0)?pbvM2*aBvps:null);
+      const perM2=(am.per||{})[win]; seriesData.per.push((ok(perM2)&&ok(aEps)&&aEps>0)?perM2*aEps:null);
+      const psrM2=(am.psr||{})[win]; seriesData.psr.push((ok(psrM2)&&ok(aSps)&&aSps>0)?psrM2*aSps:null);
+      seriesData.epv.push((ok(aEps)&&aEps>0&&wc.wacc>0)?aEps/wc.wacc:null);
+
+      const qVals=methodDefs.map(md=>seriesData[md.key][seriesData[md.key].length-1]).filter(x=>ok(x)&&x>0).sort((a,b)=>a-b);
+      let qMed=null; if(qVals.length){const mi=Math.floor(qVals.length/2); qMed=qVals.length%2?qVals[mi]:(qVals[mi-1]+qVals[mi])/2;}
+      consData.push(qMed);
+    } else {
+      // Fallback: replace last with live price
+      if(ok(livePrice)&&livePrice>0&&hargaData.length>0) hargaData[hargaData.length-1]=livePrice;
+    }
+
+    // Override last point with current computed method values if available
     if(currentMethods&&currentMethods.length){
       const curByKey={}; currentMethods.forEach(m=>{curByKey[m.key]=m.fair;});
       methodDefs.forEach(md=>{
         if(ok(curByKey[md.key])&&curByKey[md.key]>0) seriesData[md.key][seriesData[md.key].length-1]=curByKey[md.key];
       });
-      // Recompute last consensus
       const lastVals=methodDefs.map(md=>seriesData[md.key][seriesData[md.key].length-1]).filter(x=>ok(x)&&x>0).sort((a,b)=>a-b);
       if(lastVals.length){const mi=Math.floor(lastVals.length/2); consData[consData.length-1]=lastVals.length%2?lastVals[mi]:(lastVals[mi-1]+lastVals[mi])/2;}
     }
 
-    const labels=yrs.slice();
     const ct=getCmpChartTheme();
 
     const datasets=[];
