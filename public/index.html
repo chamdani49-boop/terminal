@@ -9397,6 +9397,16 @@ body.vl-maxing{overflow:hidden}
     #page-valuasi .vl-cmp-val-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:10px;font-weight:600;color:var(--text2)}
     #page-valuasi .vl-val-lgd-item{display:flex;align-items:center;gap:4px}
     #page-valuasi .vl-val-lgd-item i{display:inline-block;width:14px;height:4px;border-radius:2px;border:1px solid transparent}
+    /* ── Discount Rate card (compact slider) ── */
+    #page-valuasi .vl-dr-card .vl-sld{margin:4px 0 2px}
+    #page-valuasi .vl-dr-row{display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap}
+    #page-valuasi .vl-dr-lbl{font-size:10px;font-weight:700;color:var(--text2)}
+    #page-valuasi .vl-dr-val{font-size:12px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--accent)}
+    #page-valuasi .vl-dr-sub{font-size:10px;color:var(--text2);margin-top:4px;font-weight:600}
+    /* ── 2-column grid: football field + chart ── */
+    #page-valuasi .vl-cmp-duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+    @media(max-width:760px){#page-valuasi .vl-cmp-duo{grid-template-columns:1fr}}
+    #page-valuasi .vl-cmp-duo>.vl-cmp-range,#page-valuasi .vl-cmp-duo>.vl-cmp-chart-card{position:relative}
     </style>
     <div id="vl-tab-metode" class="vl-tc">
       <div class="card" style="margin-bottom:14px">
@@ -10390,29 +10400,9 @@ body.vl-maxing{overflow:hidden}
     const yrs=annualYears(s);
     const dataYrsWarn=yrs.length<5;
 
-    h+='<div class="vl-slider-panel">';
-    h+='<div class="vl-slider-hdr" onclick="vlToggleSliders()">';
-    h+='<span class="vl-slider-title">\u2699\uFE0F Atur Discount Rate & Terminal Growth</span>';
-    h+='<span class="vl-slider-arrow" id="vlSliderArrow">\u25BC</span>';
-    h+='</div>';
-    h+='<div class="vl-slider-body" id="vlSliderBody">';
-
-    // WACC / Discount Rate
+    // (Slider panel removed — sliders now inline in Discount Rate card below)
     const curWaccPct=(wc.wacc*100);
     const waccRisk=(v2)=>v2<=10?'\u{1F7E2} Risiko Rendah':v2<=13?'\u{1F7E1} Risiko Menengah':'\u{1F534} Risiko Tinggi';
-    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">WACC / Discount Rate</span><span class="val" id="vlSldWaccVal">'+curWaccPct.toFixed(1)+'%</span> <span class="vl-sld-risk" id="vlSldWaccRisk">'+waccRisk(curWaccPct)+'</span></div>';
-    h+='<input type="range" class="vl-sld" id="vlSldWacc" min="8" max="25" step="0.1" value="'+curWaccPct.toFixed(1)+'" oninput="vlSldChange(\'wacc\',this.value)">';
-    h+='<div class="vl-sld-info">Tingkat diskonto (WACC) untuk DCF/FCF dan CoE untuk DDM/EPV. Panduan umum: <strong>8-10%</strong> Risiko Rendah (blue-chip, market leader), <strong>11-13%</strong> Risiko Menengah (mid-cap, sektor stabil), <strong>14%+</strong> Risiko Tinggi (small-cap, siklikal, turnaround). Default dihitung dari: Rf '+fmtPct(wc.rf*100)+', ERP '+fmtPct(wc.erp*100)+', \u03B2 '+fmtD2(wc.beta)+' ('+wc.betaSrc+'). Klik <strong>i</strong> pada kartu WACC untuk detail.</div></div>';
-
-    // Terminal Growth 5-10 Tahun (perpetuity)
-    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Terminal Growth (5-10 Tahun ke \u221E)</span><span class="val" id="vlSldTgVal">'+curTg.toFixed(1)+'%</span></div>';
-    h+='<input type="range" class="vl-sld" id="vlSldTg" min="1" max="6" step="0.1" value="'+curTg.toFixed(1)+'" oninput="vlSldChange(\'tg\',this.value)">';
-    h+='<div class="vl-sld-info">Laju pertumbuhan jangka panjang setelah tahun ke-5 hingga selamanya (terminal perpetuity). Umumnya \u2264 pertumbuhan PDB nominal. Mempengaruhi DCF, DDM, FCF Gordon.</div></div>';
-
-    if(dataYrsWarn) h+='<div class="vl-sld-warn">\u26A0\uFE0F Data historis < 5 tahun (tersedia '+yrs.length+' tahun) — proyeksi pertumbuhan kurang reliable.</div>';
-
-    h+='<div style="margin-top:10px;text-align:right"><button class="vl-basis-btn" onclick="vlResetSliders()">Reset ke Default</button></div>';
-    h+='</div></div>';
 
     h+='<div class="vl-cmp-basis"><span class="lab">Basis Data</span>'+
        '<div class="vl-basis" style="margin:0">'+
@@ -10427,12 +10417,23 @@ body.vl-maxing{overflow:hidden}
        '<div class="vl-cmp-tally"><span class="t cheap">'+nCheap+' Murah</span><span class="t fair">'+nFair+' Wajar</span><span class="t exp">'+nExp+' Mahal</span></div>'+
        '<div class="sub" style="margin-top:7px">Rentang wajar '+fmtRp(lo)+' – '+fmtRp(hi)+'</div></div>';
     h+='<div class="vl-cmp-card"><div class="l">WACC <span class="sub">· beta '+wc.betaSrc+'</span><button class="vl-iq" onclick="vlMethodInfo(\'wacc\')">i</button></div>'+
-       '<div class="v">'+fmtPct(wc.wacc*100)+'</div><div class="sub" style="margin-top:7px">β '+fmtD2(wc.beta)+' · CoE '+fmtPct(wc.coe*100)+'</div></div>';
+       '<div class="v">'+fmtPct(wc.wacc*100)+'</div><div class="sub" style="margin-top:7px">\u03B2 '+fmtD2(wc.beta)+' \xB7 CoE '+fmtPct(wc.coe*100)+'</div></div>';
+    // 4th card: Discount Rate slider (compact)
+    h+='<div class="vl-cmp-card vl-dr-card"><div class="l">Discount Rate <button class="vl-iq" onclick="vlMethodInfo(\'dr\')">i</button></div>';
+    h+='<div class="vl-dr-row"><span class="vl-dr-lbl">WACC</span><span class="vl-dr-val" id="vlSldWaccVal">'+curWaccPct.toFixed(1)+'%</span><span class="vl-sld-risk" id="vlSldWaccRisk">'+waccRisk(curWaccPct)+'</span></div>';
+    h+='<input type="range" class="vl-sld" id="vlSldWacc" min="8" max="25" step="0.1" value="'+curWaccPct.toFixed(1)+'" oninput="vlSldChange(\'wacc\',this.value)">';
+    h+='<div class="vl-dr-sub">Terminal Growth: '+curTg.toFixed(1)+'% <span style="color:var(--text3)">(bawaan model)</span></div>';
+    if(dataYrsWarn) h+='<div class="vl-sld-warn" style="font-size:9.5px;margin-top:6px;padding:4px 8px">\u26A0\uFE0F Data < 5 tahun</div>';
+    h+='<div style="margin-top:6px;text-align:right"><button class="vl-basis-btn" style="font-size:9px;padding:2px 8px" onclick="vlResetSliders()">Reset</button></div>';
     h+='</div>';
+    h+='</div>';
+
+    // football field + chart: 2-column grid
+    h+='<div class="vl-cmp-duo">';
 
     // football field: bar nilai wajar tiap metode + garis harga & median
     const frac=x=> (ok(x)&&top>0) ? Math.max(0,Math.min(1,x/top)) : 0;
-    h+='<div class="vl-cmp-range"><div class="hd">Nilai Wajar per Metode vs Harga</div>';
+    h+='<div class="vl-cmp-range card"><button class="vl-maxbtn" onclick="vlToggleMax(this.parentElement)" title="Perbesar">\u26F6</button><div class="hd">Nilai Wajar per Metode vs Harga</div>';
     h+='<div class="vl-ff">';
     h+='<div class="vl-ff-line price" style="left:calc(100px + (100% - 100px) * '+frac(price)+')"><span>Harga '+fmtRp(price)+'</span></div>';
     if(ok(median)) h+='<div class="vl-ff-line median" style="left:calc(100px + (100% - 100px) * '+frac(median)+')"></div>';
@@ -10446,26 +10447,28 @@ body.vl-maxing{overflow:hidden}
     h+='</div>';
     h+='<div class="vl-cmp-legend" style="margin-top:12px"><span><i class="price"></i>Harga '+fmtRp(price)+'</span><span><i class="median"></i>Median '+fmtRp(median)+'</span><span><i class="sw cheap"></i>Murah</span><span><i class="sw fair"></i>Wajar</span><span><i class="sw exp"></i>Mahal</span></div></div>';
 
+    // ── Chart Harga vs Nilai Wajar Historis (side-by-side with football field) ──
+    h+='<div class="vl-cmp-chart-card card"><button class="vl-maxbtn" onclick="vlToggleMax(this.parentElement)" title="Perbesar">\u26F6</button><div class="hd">\uD83D\uDCCA Harga vs Nilai Wajar Historis \u2014 '+s.code+'</div>';
+    if(yrs.length<5) h+='<div class="vl-sld-warn" style="margin-bottom:8px">\u26A0\uFE0F Data historis < 5 tahun \u2014 akurasi belum bisa dinilai.</div>';
+    h+='<div style="position:relative;height:280px"><canvas id="vlCmpValChart"></canvas></div>';
+    h+='<div class="vl-cmp-val-legend" id="vlCmpValLegend"></div></div>';
+
+    h+='</div>'; // close .vl-cmp-duo
+
     // tabel detail
     h+='<div class="vl-tw" style="margin-top:14px"><table class="vl-table vl-cmp-tbl"><thead><tr>'+
        '<th>Metode</th><th style="text-align:left">Jenis</th><th>Nilai Wajar</th><th>Potensi</th><th>Margin of Safety</th><th>Status</th><th></th></tr></thead><tbody>';
     methods.forEach(m=>{
-      h+='<tr><td>'+m.name+(m.extra?' <span class="vl-cmp-x">· '+m.extra+'</span>':'')+(m.cons?'':' <span class="vl-cmp-x">*</span>')+'</td>'+
+      h+='<tr><td>'+m.name+(m.extra?' <span class="vl-cmp-x">\xB7 '+m.extra+'</span>':'')+(m.cons?'':' <span class="vl-cmp-x">*</span>')+'</td>'+
          '<td style="text-align:left;color:var(--text3)">'+m.grp+'</td>'+
-         '<td>'+(m.fair!=null?fmtRp(m.fair):'<span style="color:var(--text3)">—</span>')+'</td>'+
+         '<td>'+(m.fair!=null?fmtRp(m.fair):'<span style="color:var(--text3)">\u2014</span>')+'</td>'+
          '<td>'+upTxt(m.verdict)+'</td>'+
          '<td>'+mosTxt(m.fair)+'</td>'+
          '<td>'+chip(m.verdict)+'</td>'+
          '<td style="text-align:center"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button></td></tr>';
     });
     h+='</tbody></table></div>';
-    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar ÷ harga − 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 − harga ÷ nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>Tahun Berjalan (Q1)</strong> = Q1 disetahunkan (×4), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>—</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar ≥ +15% di atas harga, <strong>Mahal</strong> bila ≤ −15%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
-
-    // ── Chart Harga vs Nilai Wajar Historis ──
-    h+='<div class="vl-cmp-chart-card" style="margin-top:18px"><div class="hd">\uD83D\uDCCA Harga vs Nilai Wajar Historis \u2014 '+s.code+'</div>';
-    if(yrs.length<5) h+='<div class="vl-sld-warn" style="margin-bottom:8px">\u26A0\uFE0F Data historis < 5 tahun — akurasi belum bisa dinilai.</div>';
-    h+='<div style="position:relative;height:280px"><canvas id="vlCmpValChart"></canvas></div>';
-    h+='<div class="vl-cmp-val-legend" id="vlCmpValLegend"></div></div>';
+    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>Tahun Berjalan (Q1)</strong> = Q1 disetahunkan (\xD74), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
 
     host.innerHTML=h;
 
@@ -10674,6 +10677,19 @@ body.vl-maxing{overflow:hidden}
          row('Terminal Growth (slider)',fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:(ok(dcf2.terminal_growth)?dcf2.terminal_growth:0.035))*100))+
          '</table>'+
          '<p style="margin-top:8px;color:var(--text3);font-size:12px">Growth 1-5 tahun adalah bawaan dari model Excel. Untuk mengubah discount rate keseluruhan, gunakan slider WACC di panel atas.</p>';
+    } else if(key==='dr'){
+      const w=_cmpWacc||{};
+      const curW=ok(_cmpOverrides.wacc)?_cmpOverrides.wacc:w.wacc;
+      const curPct=(curW||0)*100;
+      h ='<h3>Discount Rate <span class="grp">Keterangan Risiko</span></h3>'+
+         '<p>Discount rate (WACC) yang digunakan menentukan kategori risiko emiten:</p>'+
+         '<table class="vl-mini">'+
+         row('<strong>8% - 10%</strong>','\uD83D\uDFE2 Risiko Rendah (blue-chip, market leader, kebal krisis)')+
+         row('<strong>11% - 13%</strong>','\uD83D\uDFE1 Risiko Menengah (mid-cap, sektor stabil namun sensitif ekonomi)')+
+         row('<strong>14% - 15%+</strong>','\uD83D\uDD34 Risiko Tinggi (small-cap, komoditas siklikal, turnaround)')+
+         '</table>'+
+         '<p style="margin-top:10px">Saat ini WACC = <strong>'+curPct.toFixed(1)+'%</strong> '+(curPct<=10?'\uD83D\uDFE2 Risiko Rendah':curPct<=13?'\uD83D\uDFE1 Risiko Menengah':'\uD83D\uDD34 Risiko Tinggi')+'</p>'+
+         '<p style="color:var(--text3);font-size:11px">Default dihitung otomatis: Rf '+fmtPct((w.rf||0)*100)+' + \u03B2 '+fmtD2(w.beta)+' \xD7 ERP '+fmtPct((w.erp||0)*100)+' = CoE '+fmtPct((w.coe||0)*100)+'. Geser slider untuk simulasi. Terminal growth ('+fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:(w.tg||0.035))*100)+') bawaan dari model Excel.</p>';
     } else {
       const m=_cmpData[key];
       if(!m){ box.innerHTML='<p>Info tidak tersedia.</p>'; if(md) md.classList.add('show'); return; }
@@ -10703,14 +10719,7 @@ body.vl-maxing{overflow:hidden}
     renderCompare();
   };
   window.vlResetSliders=function(){ _cmpOverrides={}; renderCompare(); };
-  window.vlToggleSliders=function(){
-    const body=document.getElementById('vlSliderBody');
-    const arrow=document.getElementById('vlSliderArrow');
-    if(!body) return;
-    const open=body.style.display!=='none';
-    body.style.display=open?'none':'block';
-    if(arrow) arrow.textContent=open?'\u25B6':'\u25BC';
-  };
+  window.vlToggleSliders=function(){}; // panel removed, kept as no-op
   /* ── Render penuh untuk emiten/window aktif ── */
   function renderAll(){
     const s = curStock(); if(!s) return;
