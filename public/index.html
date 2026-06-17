@@ -8892,6 +8892,10 @@ loadData();
 #page-valuasi .card.vl-max{position:fixed;inset:12px;z-index:9998;margin:0;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.5)}
 #page-valuasi .card.vl-max .vl-chart,#page-valuasi .card.vl-max .vl-chart-tall,#page-valuasi .card.vl-max .uj-chart{height:calc(100vh - 150px)}
 #page-valuasi .card.vl-max canvas{max-height:calc(100vh - 150px)}
+#page-valuasi .vl-cmp-duo .card.vl-max{position:fixed;inset:12px;z-index:9998;width:auto!important;height:auto!important;grid-column:1/-1}
+#page-valuasi .vl-cmp-duo .card.vl-max canvas{height:calc(100vh - 180px)!important}
+#page-valuasi .vl-cmp-duo .card.vl-max .vl-ff{max-height:calc(100vh - 180px);overflow-y:auto}
+#page-valuasi .vl-cmp-duo .card.vl-max .vl-cmp-canvas-wrap{height:calc(100vh - 180px)}
 body.vl-maxing{overflow:hidden}
 
 /* ════════════ DIFERENSIASI GRUP KARTU (Ringkasan vs Proyeksi) ════════════
@@ -10416,16 +10420,16 @@ body.vl-maxing{overflow:hidden}
     h+='<div class="vl-cmp-card"><div class="l">Sebaran Penilaian</div>'+
        '<div class="vl-cmp-tally"><span class="t cheap">'+nCheap+' Murah</span><span class="t fair">'+nFair+' Wajar</span><span class="t exp">'+nExp+' Mahal</span></div>'+
        '<div class="sub" style="margin-top:7px">Rentang wajar '+fmtRp(lo)+' – '+fmtRp(hi)+'</div></div>';
-    h+='<div class="vl-cmp-card"><div class="l">WACC <span class="sub">· beta '+wc.betaSrc+'</span><button class="vl-iq" onclick="vlMethodInfo(\'wacc\')">i</button></div>'+
-       '<div class="v">'+fmtPct(wc.wacc*100)+'</div><div class="sub" style="margin-top:7px">\u03B2 '+fmtD2(wc.beta)+' \xB7 CoE '+fmtPct(wc.coe*100)+'</div></div>';
-    // 4th card: Discount Rate slider (compact)
-    h+='<div class="vl-cmp-card vl-dr-card"><div class="l">Discount Rate <button class="vl-iq" onclick="vlMethodInfo(\'dr\')">i</button></div>';
-    h+='<div class="vl-dr-row"><span class="vl-dr-lbl">WACC</span><span class="vl-dr-val" id="vlSldWaccVal">'+curWaccPct.toFixed(1)+'%</span><span class="vl-sld-risk" id="vlSldWaccRisk">'+waccRisk(curWaccPct)+'</span></div>';
-    h+='<input type="range" class="vl-sld" id="vlSldWacc" min="8" max="25" step="0.1" value="'+curWaccPct.toFixed(1)+'" oninput="vlSldChange(\'wacc\',this.value)">';
-    h+='<div class="vl-dr-sub">Terminal Growth: '+curTg.toFixed(1)+'% <span style="color:var(--text3)">(bawaan model)</span></div>';
-    if(dataYrsWarn) h+='<div class="vl-sld-warn" style="font-size:9.5px;margin-top:6px;padding:4px 8px">\u26A0\uFE0F Data < 5 tahun</div>';
-    h+='<div style="margin-top:6px;text-align:right"><button class="vl-basis-btn" style="font-size:9px;padding:2px 8px" onclick="vlResetSliders()">Reset</button></div>';
-    h+='</div>';
+    h+='<div class="vl-cmp-card"><div class="l">WACC / Discount Rate <button class="vl-iq" onclick="vlMethodInfo(\'wacc\')">i</button></div>'+
+       '<div class="v" id="vlSldWaccVal">'+fmtPct(curWaccPct)+'</div>'+
+       '<div class="sub" style="margin-top:4px">\u03B2 '+fmtD2(wc.beta)+' ('+wc.betaSrc+') \xB7 CoE '+fmtPct(wc.coe*100)+'</div>'+
+       '<input type="range" class="vl-sld" id="vlSldWacc" min="8" max="25" step="0.1" value="'+curWaccPct.toFixed(1)+'" oninput="vlSldChange(\'wacc\',this.value)" style="margin-top:8px">'+
+       '<div class="vl-dr-sub" style="margin-top:4px"><span class="vl-sld-risk" id="vlSldWaccRisk">'+waccRisk(curWaccPct)+'</span> <button class="vl-basis-btn" style="font-size:9px;padding:2px 8px;margin-left:6px" onclick="vlResetSliders()">Reset</button></div></div>';
+    h+='<div class="vl-cmp-card"><div class="l">Terminal Growth <button class="vl-iq" onclick="vlMethodInfo(\'tg\')">i</button></div>'+
+       '<div class="v" id="vlSldTgVal">'+curTg.toFixed(1)+'%</div>'+
+       '<div class="sub" style="margin-top:4px">Pertumbuhan jangka panjang (setelah Th ke-5)</div>'+
+       '<input type="range" class="vl-sld" id="vlSldTg" min="1" max="6" step="0.1" value="'+curTg.toFixed(1)+'" oninput="vlSldChange(\'tg\',this.value)" style="margin-top:8px">'+
+       (dataYrsWarn?'<div class="vl-sld-warn" style="font-size:9.5px;margin-top:6px;padding:4px 8px">\u26A0\uFE0F Data < 5 tahun</div>':'')+'</div>';
     h+='</div>';
 
     // football field + chart: 2-column grid
@@ -10450,7 +10454,7 @@ body.vl-maxing{overflow:hidden}
     // ── Chart Harga vs Nilai Wajar Historis (side-by-side with football field) ──
     h+='<div class="vl-cmp-chart-card card"><button class="vl-maxbtn" onclick="vlToggleMax(this.parentElement)" title="Perbesar">\u26F6</button><div class="hd">\uD83D\uDCCA Harga vs Nilai Wajar Historis \u2014 '+s.code+'</div>';
     if(yrs.length<5) h+='<div class="vl-sld-warn" style="margin-bottom:8px">\u26A0\uFE0F Data historis < 5 tahun \u2014 akurasi belum bisa dinilai.</div>';
-    h+='<div style="position:relative;height:280px"><canvas id="vlCmpValChart"></canvas></div>';
+    h+='<div style="position:relative;height:280px" class="vl-cmp-canvas-wrap"><canvas id="vlCmpValChart"></canvas></div>';
     h+='<div class="vl-cmp-val-legend" id="vlCmpValLegend"></div></div>';
 
     h+='</div>'; // close .vl-cmp-duo
@@ -10694,8 +10698,8 @@ body.vl-maxing{overflow:hidden}
       const w=_cmpWacc||{};
       const s2=curStock(), v2=s2&&s2.valuation||{}, dcf2=v2.dcf||{}, aG2=(state.raw&&state.raw.assumptions)||{};
       const g5Info=ok(dcf2.growth_5y)?dcf2.growth_5y:(aG2.default_fcf_growth||0.08);
-      h ='<h3>WACC <span class="grp">Biaya Modal & Asumsi</span></h3>'+
-         '<p>WACC (Weighted Average Cost of Capital) adalah tingkat diskonto untuk DCF & FCF. Komponen berikut dari model/data Excel dan <strong>tidak bisa diubah via slider</strong> (hanya bisa ubah WACC total).</p>'+
+      h ='<h3>WACC / Discount Rate <span class="grp">Biaya Modal</span></h3>'+
+         '<p>Nilai default <strong>bukan asumsi sembarangan</strong> — dihitung secara profesional dari data aktual: beta saham (dari Dashboard), risk-free rate (yield SBN), equity risk premium, cost of debt, dan struktur modal emiten. Anda bisa meng-override via slider untuk simulasi skenario.</p>'+
          '<table class="vl-mini">'+
          row('Risk-free / Rf (SBN)',fmtPct((w.rf||0)*100))+
          row('Equity Risk Premium (ERP)',fmtPct((w.erp||0)*100))+
@@ -10705,12 +10709,36 @@ body.vl-maxing{overflow:hidden}
          row('Bobot ekuitas / utang',fmtPct((w.we||0)*100)+' / '+fmtPct((w.wd||0)*100))+
          row('<strong>WACC (computed)</strong>','<strong>'+fmtPct((w.wacc||0)*100)+'</strong>')+
          '</table>'+
-         '<h4 style="margin-top:12px">Pertumbuhan (bawaan model)</h4>'+
+         '<h4 style="margin-top:12px">Kategori Risiko (panduan umum)</h4>'+
+         '<table class="vl-mini">'+
+         row('8% – 10%','\uD83D\uDFE2 Risiko Rendah (blue-chip, market leader, kebal krisis)')+
+         row('11% – 13%','\uD83D\uDFE1 Risiko Menengah (mid-cap, sektor stabil, sensitif ekonomi)')+
+         row('14%+','\uD83D\uDD34 Risiko Tinggi (small-cap, komoditas siklikal, turnaround)')+
+         '</table>'+
+         '<h4 style="margin-top:12px">Pertumbuhan (bawaan model Excel)</h4>'+
          '<table class="vl-mini">'+
          row('Growth 1-5 Tahun (fase awal)',fmtPct(g5Info*100))+
-         row('Terminal Growth (slider)',fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:(ok(dcf2.terminal_growth)?dcf2.terminal_growth:0.035))*100))+
+         row('Terminal Growth',fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:(ok(dcf2.terminal_growth)?dcf2.terminal_growth:0.035))*100))+
          '</table>'+
-         '<p style="margin-top:8px;color:var(--text3);font-size:12px">Growth 1-5 tahun adalah bawaan dari model Excel. Untuk mengubah discount rate keseluruhan, gunakan slider WACC di panel atas.</p>';
+         '<p style="margin-top:8px;color:var(--text3);font-size:12px">Semua komponen dihitung dari data yang telah dikumpulkan (Excel + Dashboard), bukan asumsi manual. Slider berfungsi untuk simulasi skenario.</p>';
+    } else if(key==='tg'){
+      const w=_cmpWacc||{};
+      const s2=curStock(), v2=s2&&s2.valuation||{}, dcf2=v2.dcf||{}, aG2=(state.raw&&state.raw.assumptions)||{};
+      const curTgPct=(ok(_cmpOverrides.tg)?_cmpOverrides.tg:(ok(dcf2.terminal_growth)?dcf2.terminal_growth:0.035))*100;
+      const g5Info2=ok(dcf2.growth_5y)?dcf2.growth_5y:(aG2.default_fcf_growth||0.08);
+      h ='<h3>Terminal Growth <span class="grp">Pertumbuhan Jangka Panjang</span></h3>'+
+         '<p>Laju pertumbuhan arus kas/dividen <strong>setelah tahun ke-5 hingga selamanya</strong> (terminal perpetuity). Dipakai di DCF, DDM, dan FCF Gordon. Nilai default dihitung profesional berdasarkan data historis emiten, bukan asumsi sembarangan.</p>'+
+         '<table class="vl-mini">'+
+         row('<strong>Terminal Growth saat ini</strong>','<strong>'+curTgPct.toFixed(1)+'%</strong>')+
+         row('Growth 1-5 Tahun (fase awal)',fmtPct(g5Info2*100)+' (bawaan model)')+
+         '</table>'+
+         '<h4 style="margin-top:12px">Panduan umum Terminal Growth</h4>'+
+         '<table class="vl-mini">'+
+         row('1% – 2%','Bisnis matang / stagnan, pasar jenuh')+
+         row('2.5% – 4%','Pertumbuhan selaras PDB nominal Indonesia')+
+         row('4% – 6%','Emiten dgn moat kuat, sektor bertumbuh')+
+         '</table>'+
+         '<p style="margin-top:8px;color:var(--text3);font-size:12px">Umumnya terminal growth harus < WACC. Makin tinggi terminal growth, makin tinggi nilai wajar (semakin optimis). Geser slider untuk simulasi skenario.</p>';
     } else if(key==='dr'){
       const w=_cmpWacc||{};
       const curW=ok(_cmpOverrides.wacc)?_cmpOverrides.wacc:w.wacc;
