@@ -9340,6 +9340,25 @@ body.vl-maxing{overflow:hidden}
     #page-valuasi .vl-cmp-legend i.band{background:var(--green-bg);border:1px solid var(--green)}
     #page-valuasi .vl-cmp-legend i.median{background:var(--accent);width:3px;height:12px}
     #page-valuasi .vl-cmp-legend i.price{background:var(--text);width:3px;height:12px}
+    /* football field — bar nilai wajar per metode */
+    #page-valuasi .vl-ff{position:relative;padding-top:16px}
+    #page-valuasi .vl-ff-row{position:relative;display:grid;grid-template-columns:100px 1fr;align-items:center;height:22px;margin:6px 0}
+    #page-valuasi .vl-ff-row .lab{font-size:10px;font-weight:800;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px;letter-spacing:.2px}
+    #page-valuasi .vl-ff-row .trk{position:relative;height:100%;display:flex;align-items:center;border-left:1px solid var(--border)}
+    #page-valuasi .vl-ff-row .bar{position:absolute;left:0;top:3px;bottom:3px;border-radius:0 4px 4px 0;min-width:2px;opacity:.9}
+    #page-valuasi .vl-ff-row .bar.cheap{background:var(--green)}
+    #page-valuasi .vl-ff-row .bar.fair{background:var(--yellow)}
+    #page-valuasi .vl-ff-row .bar.exp{background:var(--red)}
+    #page-valuasi .vl-ff-row .bar.na{background:var(--border)}
+    #page-valuasi .vl-ff-row .amt{position:absolute;right:6px;font-size:10.5px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--text);z-index:2}
+    #page-valuasi .vl-ff-line{position:absolute;top:0;bottom:0;z-index:3;pointer-events:none}
+    #page-valuasi .vl-ff-line.price{width:2px;background:var(--text)}
+    #page-valuasi .vl-ff-line.price span{position:absolute;top:-3px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;color:var(--text);white-space:nowrap;background:var(--card);padding:0 4px;border-radius:3px}
+    #page-valuasi .vl-ff-line.median{width:0;border-left:2px dashed var(--accent)}
+    #page-valuasi .vl-cmp-legend i.sw{width:12px;height:9px;border-radius:2px}
+    #page-valuasi .vl-cmp-legend i.sw.cheap{background:var(--green)}
+    #page-valuasi .vl-cmp-legend i.sw.fair{background:var(--yellow)}
+    #page-valuasi .vl-cmp-legend i.sw.exp{background:var(--red)}
     #page-valuasi .vl-cmp-x{font-size:10px;color:var(--text3);font-weight:600}
     #page-valuasi .vl-cmp-tbl td:nth-child(3){font-weight:800}
     /* modal popup */
@@ -10318,6 +10337,9 @@ body.vl-maxing{overflow:hidden}
 
     const chip=(vd)=> vd ? '<span class="vl-vchip '+vd.cls+'">'+vd.label+'</span>' : '<span class="vl-vchip na">-</span>';
     const upTxt=(vd)=> vd ? '<span class="'+(vd.up>=0?'vl-pos':'vl-neg')+'">'+(vd.up>=0?'+':'')+(vd.up*100).toFixed(1)+'%</span>' : '-';
+    const mosOf=(fair)=> (ok(fair)&&fair>0&&ok(price)) ? (1-price/fair) : null;
+    const mosTxt=(fair)=>{ const mv=mosOf(fair); return mv==null ? '<span style="color:var(--text3)">—</span>' : '<span class="'+(mv>=0?'vl-pos':'vl-neg')+'">'+(mv>=0?'+':'')+(mv*100).toFixed(1)+'%</span>'; };
+    const consMos=mosOf(median);
 
     let h='';
     h+='<div class="vl-cmp-basis"><span class="lab">Basis Data</span>'+
@@ -10327,7 +10349,8 @@ body.vl-maxing{overflow:hidden}
        '</div><span class="src">'+bi.note+'</span></div>';
     h+='<div class="vl-cmp-top">';
     h+='<div class="vl-cmp-card"><div class="l">Konsensus Nilai Wajar <span class="sub">· median '+cons.length+' metode</span></div>'+
-       '<div class="v">'+fmtRp(median)+'</div><div class="vl-cmp-verd">'+chip(cv)+' '+upTxt(cv)+' vs harga '+fmtRp(price)+'</div></div>';
+       '<div class="v">'+fmtRp(median)+'</div><div class="vl-cmp-verd">'+chip(cv)+' '+upTxt(cv)+' vs harga '+fmtRp(price)+'</div>'+
+       '<div class="sub" style="margin-top:5px">Margin of Safety median: '+mosTxt(median)+'</div></div>';
     h+='<div class="vl-cmp-card"><div class="l">Sebaran Penilaian</div>'+
        '<div class="vl-cmp-tally"><span class="t cheap">'+nCheap+' Murah</span><span class="t fair">'+nFair+' Wajar</span><span class="t exp">'+nExp+' Mahal</span></div>'+
        '<div class="sub" style="margin-top:7px">Rentang wajar '+fmtRp(lo)+' – '+fmtRp(hi)+'</div></div>';
@@ -10335,26 +10358,36 @@ body.vl-maxing{overflow:hidden}
        '<div class="v">'+fmtPct(wc.wacc*100)+'</div><div class="sub" style="margin-top:7px">β '+fmtD2(wc.beta)+' · CoE '+fmtPct(wc.coe*100)+'</div></div>';
     h+='</div>';
 
-    // range bar
-    h+='<div class="vl-cmp-range"><div class="hd">Posisi Harga vs Rentang Nilai Wajar</div><div class="vl-cmp-track">';
-    if(ok(lo)&&ok(hi)) h+='<div class="band" style="left:'+sc(lo)+'%;width:'+Math.max(0,sc(hi)-sc(lo))+'%"></div>';
-    if(ok(median)) h+='<div class="mark median" style="left:'+sc(median)+'%"></div>';
-    h+='<div class="mark price" style="left:'+sc(price)+'%"></div></div>';
-    h+='<div class="vl-cmp-legend"><span><i class="band"></i>Rentang wajar</span><span><i class="median"></i>Median '+fmtRp(median)+'</span><span><i class="price"></i>Harga '+fmtRp(price)+'</span></div></div>';
+    // football field: bar nilai wajar tiap metode + garis harga & median
+    const frac=x=> (ok(x)&&top>0) ? Math.max(0,Math.min(1,x/top)) : 0;
+    h+='<div class="vl-cmp-range"><div class="hd">Nilai Wajar per Metode vs Harga</div>';
+    h+='<div class="vl-ff">';
+    h+='<div class="vl-ff-line price" style="left:calc(100px + (100% - 100px) * '+frac(price)+')"><span>Harga '+fmtRp(price)+'</span></div>';
+    if(ok(median)) h+='<div class="vl-ff-line median" style="left:calc(100px + (100% - 100px) * '+frac(median)+')"></div>';
+    methods.forEach(m=>{
+      const cls=m.verdict?m.verdict.cls:'na';
+      const shortName=m.name.replace(/\s*\(.*?\)/,'').replace(/\s+Number/,'');
+      h+='<div class="vl-ff-row"><span class="lab" title="'+m.name+'">'+shortName+'</span>'+
+         '<div class="trk">'+(m.fair!=null?'<span class="bar '+cls+'" style="width:'+sc(m.fair)+'%"></span>':'')+
+         '<span class="amt">'+(m.fair!=null?fmtRp(m.fair):'—')+'</span></div></div>';
+    });
+    h+='</div>';
+    h+='<div class="vl-cmp-legend" style="margin-top:12px"><span><i class="price"></i>Harga '+fmtRp(price)+'</span><span><i class="median"></i>Median '+fmtRp(median)+'</span><span><i class="sw cheap"></i>Murah</span><span><i class="sw fair"></i>Wajar</span><span><i class="sw exp"></i>Mahal</span></div></div>';
 
     // tabel detail
     h+='<div class="vl-tw" style="margin-top:14px"><table class="vl-table vl-cmp-tbl"><thead><tr>'+
-       '<th>Metode</th><th style="text-align:left">Jenis</th><th>Nilai Wajar</th><th>Potensi</th><th>Status</th><th></th></tr></thead><tbody>';
+       '<th>Metode</th><th style="text-align:left">Jenis</th><th>Nilai Wajar</th><th>Potensi</th><th>Margin of Safety</th><th>Status</th><th></th></tr></thead><tbody>';
     methods.forEach(m=>{
       h+='<tr><td>'+m.name+(m.extra?' <span class="vl-cmp-x">· '+m.extra+'</span>':'')+(m.cons?'':' <span class="vl-cmp-x">*</span>')+'</td>'+
          '<td style="text-align:left;color:var(--text3)">'+m.grp+'</td>'+
          '<td>'+(m.fair!=null?fmtRp(m.fair):'<span style="color:var(--text3)">—</span>')+'</td>'+
          '<td>'+upTxt(m.verdict)+'</td>'+
+         '<td>'+mosTxt(m.fair)+'</td>'+
          '<td>'+chip(m.verdict)+'</td>'+
          '<td style="text-align:center"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button></td></tr>';
     });
     h+='</tbody></table></div>';
-    h+='<p class="vl-note" style="margin-top:10px">Basis data bisa diganti: <strong>Tahun Berjalan (Q1)</strong> = Q1 disetahunkan (×4), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>—</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar ≥ +15% di atas harga, <strong>Mahal</strong> bila ≤ −15%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
+    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar ÷ harga − 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 − harga ÷ nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>Tahun Berjalan (Q1)</strong> = Q1 disetahunkan (×4), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>—</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar ≥ +15% di atas harga, <strong>Mahal</strong> bila ≤ −15%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
 
     host.innerHTML=h;
   }
@@ -10386,6 +10419,7 @@ body.vl-maxing{overflow:hidden}
       (m.rows||[]).forEach(r=>{ h+=row(r[0],r[1]); });
       h+=row('<strong>Nilai wajar</strong>','<strong>'+(m.fair!=null?fmtRp(m.fair):'— (tak terhitung pd basis ini)')+'</strong>');
       if(m.verdict) h+=row('Vs harga '+fmtRp(price), '<span class="vl-vchip '+m.verdict.cls+'">'+m.verdict.label+'</span> '+(m.verdict.up>=0?'+':'')+(m.verdict.up*100).toFixed(1)+'%');
+      if(m.fair!=null && m.fair>0 && ok(price)){ const mv=1-price/m.fair; h+=row('Margin of Safety','<span class="'+(mv>=0?'vl-pos':'vl-neg')+'">'+(mv>=0?'+':'')+(mv*100).toFixed(1)+'%</span>'); }
       h+='</table>';
     }
     box.innerHTML=h;
