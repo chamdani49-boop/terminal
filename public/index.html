@@ -9080,9 +9080,9 @@ body.vl-maxing{overflow:hidden}
           <div class="card">
             <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
             <div class="vl-tw">
-              <table class="vl-table"><thead><tr><th>Tahun</th><th>Harga Potensi</th><th>G&amp;L</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
+              <table class="vl-table"><thead><tr><th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs Basis)</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
             </div>
-            <div class="vl-info" style="margin-top:10px"><strong>G&amp;L</strong> = Gain &amp; Loss vs harga live (belum termasuk dividen).</div>
+            <div class="vl-info" style="margin-top:10px"><strong>vs Sekarang</strong> = potensi ÷ harga live − 1. <strong>vs Basis</strong> = potensi ÷ harga basis − 1. <strong>Margin of Safety</strong> = 1 − harga ÷ potensi tahun ke-5.</div>
           </div>
         </div>
         <div class="card" style="margin:14px 0">
@@ -9805,10 +9805,31 @@ body.vl-maxing{overflow:hidden}
     const startYr = pc._startYr; const shift = 1;   // proyeksi mulai tahun depan basis (2026..2030)
     const years = [0,1,2,3,4].map(i=> startYr ? (startYr+shift+i) : ('T+'+(i+1)));
     const tb = document.getElementById('vlProjTableBody');
-    if(tb) tb.innerHTML = years.map((yr,i)=>{
-      const pt = pc.potensi[i]; const gl = (livePrice>0 && ok(pt)) ? (pt/livePrice-1)*100 : null;
-      return '<tr><td style="font-weight:700;color:var(--text)">'+yr+'</td><td><strong>'+fmtRp(pt)+'</strong></td><td><span class="'+badgeCls(gl)+'">'+fmtGl(gl)+'</span></td></tr>';
-    }).join('');
+    if(tb){
+      const basisPrice = pc._last || 0;
+      const basisLabel = pc._isCurrent ? 'Thn Berjalan' : (_projBasis.replace(/^Y/,''));
+      let rows = years.map((yr,i)=>{
+        const pt = pc.potensi[i];
+        const glLive = (livePrice>0 && ok(pt)) ? (pt/livePrice-1)*100 : null;
+        const glBasis = (basisPrice>0 && ok(pt)) ? (pt/basisPrice-1)*100 : null;
+        return '<tr>'+
+          '<td><span class="'+badgeCls(glLive)+'">'+fmtGl(glLive)+'</span></td>'+
+          '<td><strong>'+fmtRp(pt)+'</strong></td>'+
+          '<td style="font-weight:700;color:var(--text);text-align:center">'+yr+'</td>'+
+          '<td><strong>'+fmtRp(pt)+'</strong></td>'+
+          '<td><span class="'+badgeCls(glBasis)+'">'+fmtGl(glBasis)+'</span></td>'+
+          '</tr>';
+      }).join('');
+      // Baris MoS (bawah)
+      const mosVsLive = (ok(livePrice)&&livePrice>0&&ok(pc.potensi[4])&&pc.potensi[4]>0) ? (1-livePrice/pc.potensi[4])*100 : null;
+      const mosVsBasis = (ok(basisPrice)&&basisPrice>0&&ok(pc.potensi[4])&&pc.potensi[4]>0) ? (1-basisPrice/pc.potensi[4])*100 : null;
+      rows += '<tr style="border-top:2px solid var(--border)">'+
+        '<td><span class="'+badgeCls(mosVsLive)+'"><strong>'+fmtGl(mosVsLive)+'</strong></span></td>'+
+        '<td colspan="3" style="text-align:center;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.5px">Margin of Safety</td>'+
+        '<td><span class="'+badgeCls(mosVsBasis)+'"><strong>'+fmtGl(mosVsBasis)+'</strong></span></td>'+
+        '</tr>';
+      tb.innerHTML = rows;
+    }
 
     const sb = document.getElementById('vlSubModelBody');
     if(sb){
