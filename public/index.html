@@ -10222,14 +10222,54 @@ body.vl-maxing{overflow:hidden}
     return { rf, erp, beta, betaSrc: ok(dbBeta)?'Dashboard':'model', coe:coeEff, we, wd, kd:w.cost_of_debt, kdAfter, tax:w.tax_rate_effective, wacc };
   }
 
-  // DCF 2-tahap (FCFF). base_fcf/net_debt/shares di-override sesuai basis terpilih.
-  // Growth & terminal growth bisa di-override slider.
-  function cmpDCF(d, r, baseFcf, netDebt, shares){
+  // Hitung growth fase 1-5 dari data keuangan aktual (bukan flat default).
+  // DCF: prefer FCF CAGR 5y (bila positif), fallback blend EPS+SPS growth.
+  // DDM: DPS growth 5y, fallback EPS growth × DPR.
+  // Terminal (fase 6-10): separuh fase awal, dibatasi min 2% maks 6%.
+  function cmpGrowth(stock, bi){
+    const v=stock.valuation||{}, fy=v.five_year||{}, inp=fy.inputs||{};
+    const a=(state.raw&&state.raw.assumptions)||{};
+
+    // FCF CAGR 5y (dari annual data, kalau tersedia)
+    let fcfCagr=null;
+    const yrs=annualYears(stock);
+    if(yrs.length>=6){
+      const ly=yrs[yrs.length-1], fy5=yrs[yrs.length-6];
+      const fcfNow=(stock.annual[ly]||{}).fcf, fcf5=(stock.annual[fy5]||{}).fcf;
+      if(ok(fcfNow)&&fcfNow>0&&ok(fcf5)&&fcf5>0) fcfCagr=Math.pow(fcfNow/fcf5,1/5)-1;
+    }
+
+    // Blend EPS+SPS growth (dari inputs Excel): 60% EPS + 40% SPS
+    const epsG=ok(inp.eps_growth_5y)?inp.eps_growth_5y:0;
+    const spsG=ok(inp.sps_growth_5y)?inp.sps_growth_5y:0;
+    const blendG = 0.6*epsG + 0.4*spsG;
+
+    // DCF growth: prefer FCF CAGR (langsung dari arus kas), fallback blend EPS+SPS
+    // Dibatasi maks 30% (konservatif) dan min 2%
+    let dcfG = ok(fcfCagr) ? fcfCagr : blendG;
+    dcfG = Math.max(0.02, Math.min(0.30, dcfG));
+
+    // DDM growth: DPS growth 5y (dari inputs), fallback EPS growth × DPR
+    const dpr=ok(inp.dpr)?inp.dpr:0.3;
+    let ddmG = ok(bi.g5) ? bi.g5 : (epsG * dpr > 0 ? epsG : 0);
+    // Cap DDM growth (dividen growth umumnya lebih konservatif)
+    ddmG = Math.max(0.01, Math.min(0.20, ddmG));
+
+    // Terminal growth (fase 6-10 → ∞) = separuh fase awal, dibatasi min 2% maks 6%
+    const defTg = ok(a.terminal_growth)?a.terminal_growth:0.035;
+    const dcfTg = Math.max(0.02, Math.min(0.06, dcfG/2));
+    const ddmTg = Math.max(0.02, Math.min(0.06, ddmG/2));
+
+    return { dcfG, ddmG, dcfTg, ddmTg, fcfCagr, blendG, epsG, spsG, defTg, src: ok(fcfCagr)?'FCF CAGR 5y':'blend EPS+SPS growth 5y' };
+  }
+
+  // DCF 2-tahap (FCFF). Growth dari cmpGrowth (data aktual), bisa di-override slider.
+  function cmpDCF(d, r, baseFcf, netDebt, shares, gi){
     if(!d || !d.applicable) return null;
     if(!ok(baseFcf) || !ok(shares) || shares<=0) return null;
     const ov = _cmpOverrides || {};
-    const g5 = ok(ov.g5) ? ov.g5 : (d.growth_5y||0);
-    const tg = ok(ov.tg) ? ov.tg : (d.terminal_growth||0.035);
+    const g5 = ok(ov.g5) ? ov.g5 : (gi&&gi.dcfG!=null ? gi.dcfG : (d.growth_5y||0));
+    const tg = ok(ov.tg) ? ov.tg : (gi&&gi.dcfTg!=null ? gi.dcfTg : (d.terminal_growth||0.035));
     if(!(r > tg)) return null;
     let fcf = baseFcf, pvSum = 0;
     for(let t=1;t<=5;t++){ fcf *= (1+g5); pvSum += fcf/Math.pow(1+r,t); }
@@ -10239,14 +10279,13 @@ body.vl-maxing{overflow:hidden}
     return { fair:equity/shares, ev, equity, pvSum, pvTerm, shares, r, g:g5, tg, netDebt };
   }
 
-  // DDM 2-tahap (Gordon). base_dps di-override sesuai basis terpilih.
-  // Growth & terminal growth bisa di-override slider.
-  function cmpDDM(m, r, baseDps){
+  // DDM 2-tahap (Gordon). Growth dari cmpGrowth (data aktual), bisa di-override slider.
+  function cmpDDM(m, r, baseDps, gi){
     if(!m || !m.applicable) return null;
     if(!ok(baseDps) || baseDps<=0) return null;
     const ov = _cmpOverrides || {};
-    const g5 = ok(ov.g5) ? ov.g5 : (m.growth_5y||0);
-    const tg = ok(ov.tg) ? ov.tg : (m.terminal_growth||0.035);
+    const g5 = ok(ov.g5) ? ov.g5 : (gi&&gi.ddmG!=null ? gi.ddmG : (m.growth_5y||0));
+    const tg = ok(ov.tg) ? ov.tg : (gi&&gi.ddmTg!=null ? gi.ddmTg : (m.terminal_growth||0.035));
     if(!(r > tg)) return null;
     let dps = baseDps, pvSum = 0;
     for(let t=1;t<=5;t++){ dps *= (1+g5); pvSum += dps/Math.pow(1+r,t); }
@@ -10297,16 +10336,17 @@ body.vl-maxing{overflow:hidden}
     const add=(o)=>{ if(o){ if(!ok(o.fair)||o.fair<=0) o.fair=null; list.push(o); } };
 
     // 1) DCF (FCFF 2-tahap)
-    const dcf=cmpDCF(v.dcf, wc.wacc, bi.fcf, bi.netDebt, bi.shares);
+    const gi=cmpGrowth(stock, bi);
+    const dcf=cmpDCF(v.dcf, wc.wacc, bi.fcf, bi.netDebt, bi.shares, gi);
     add({key:'dcf',name:'DCF (Arus Kas)',grp:'Intrinsik',fair:dcf?dcf.fair:null,cons:true,
-      short:'Discounted Cash Flow: arus kas bebas perusahaan diproyeksi 5 tahun lalu didiskonto dengan WACC, ditambah nilai terminal (Gordon), dikurangi utang bersih. Bila FCF basis negatif, nilai tidak dihitung.',
-      rows:[['FCF dasar',fmtMrp(bi.fcf)],['Pertumbuhan 5Th',fmtPct(((v.dcf&&v.dcf.growth_5y)||0)*100)],['Terminal growth',fmtPct(((v.dcf&&v.dcf.terminal_growth)||0)*100)],['WACC',fmtPct(wc.wacc*100)],['Net debt',fmtMrp(bi.netDebt)]]});
+      short:'Discounted Cash Flow: arus kas bebas perusahaan diproyeksi 5 tahun lalu didiskonto dengan WACC, ditambah nilai terminal (Gordon), dikurangi utang bersih. Growth fase 1-5 dihitung dari data keuangan aktual ('+gi.src+'), bukan asumsi flat.',
+      rows:[['FCF dasar',fmtMrp(bi.fcf)],['Growth 1-5 Th ('+gi.src+')',fmtPct(gi.dcfG*100)],['Terminal growth (½ fase awal)',fmtPct(gi.dcfTg*100)],['WACC',fmtPct(wc.wacc*100)],['Net debt',fmtMrp(bi.netDebt)]]});
 
     // 2) DDM
-    const ddm=cmpDDM(v.ddm, wc.coe, bi.dps);
+    const ddm=cmpDDM(v.ddm, wc.coe, bi.dps, gi);
     add({key:'ddm',name:'DDM (Dividen)',grp:'Intrinsik',fair:ddm?ddm.fair:null,cons:true,
-      short:'Dividend Discount Model: proyeksi dividen 5 tahun + terminal Gordon, didiskonto dengan cost of equity. Cocok untuk emiten pembagi dividen rutin.',
-      rows:[['DPS dasar',fmtRp(bi.dps)],['Pertumbuhan dividen',fmtPct(((v.ddm&&v.ddm.growth_5y)||0)*100)],['Terminal growth',fmtPct(((v.ddm&&v.ddm.terminal_growth)||0)*100)],['Cost of equity',fmtPct(wc.coe*100)]]});
+      short:'Dividend Discount Model: proyeksi dividen 5 tahun + terminal Gordon, didiskonto dengan cost of equity. Growth dividen dari data aktual emiten.',
+      rows:[['DPS dasar',fmtRp(bi.dps)],['Growth dividen 1-5 Th',fmtPct(gi.ddmG*100)],['Terminal growth (½ fase awal)',fmtPct(gi.ddmTg*100)],['Cost of equity',fmtPct(wc.coe*100)]]});
 
     // 3) Graham Number
     add({key:'graham',name:'Graham Number',grp:'Intrinsik',fair:(ok(eps)&&eps>0&&ok(bvps)&&bvps>0)?Math.sqrt(22.5*eps*bvps):null,cons:true,
@@ -10715,12 +10755,12 @@ body.vl-maxing{overflow:hidden}
          row('11% – 13%','\uD83D\uDFE1 Risiko Menengah (mid-cap, sektor stabil, sensitif ekonomi)')+
          row('14%+','\uD83D\uDD34 Risiko Tinggi (small-cap, komoditas siklikal, turnaround)')+
          '</table>'+
-         '<h4 style="margin-top:12px">Pertumbuhan (bawaan model Excel)</h4>'+
+         '<h4 style="margin-top:12px">Pertumbuhan (dari data keuangan aktual)</h4>'+
          '<table class="vl-mini">'+
-         row('Growth 1-5 Tahun (fase awal)',fmtPct(g5Info*100))+
-         row('Terminal Growth',fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:(ok(dcf2.terminal_growth)?dcf2.terminal_growth:0.035))*100))+
+         row('Growth 1-5 Tahun (fase awal, dari data)',fmtPct(g5Info*100))+
+         row('Terminal Growth 6-10 Th → ∞ (½ fase awal)',fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:(ok(dcf2.terminal_growth)?dcf2.terminal_growth:0.035))*100))+
          '</table>'+
-         '<p style="margin-top:8px;color:var(--text3);font-size:12px">Semua komponen dihitung dari data yang telah dikumpulkan (Excel + Dashboard), bukan asumsi manual. Slider berfungsi untuk simulasi skenario.</p>';
+         '<p style="margin-top:8px;color:var(--text3);font-size:12px"><strong>Growth</strong> = pertumbuhan arus kas/laba fase awal (tahun 1-5), dihitung dari data keuangan aktual emiten (bukan flat). <strong>Terminal Growth</strong> = pertumbuhan jangka panjang setelah fase awal (tahun 6-10 → selamanya), default = separuh growth fase awal (dibatasi 2-6%). Keduanya berbeda: growth mencerminkan momentum saat ini, terminal growth = asumsi konvergensi ke PDB jangka panjang.</p>';
     } else if(key==='tg'){
       const w=_cmpWacc||{};
       const s2=curStock(), v2=s2&&s2.valuation||{}, dcf2=v2.dcf||{}, aG2=(state.raw&&state.raw.assumptions)||{};
