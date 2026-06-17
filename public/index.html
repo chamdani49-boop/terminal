@@ -10020,20 +10020,26 @@ body.vl-maxing{overflow:hidden}
     try{
       const pm=state.projModel;
       if(pm && pm.applicable && data.length){
-        // Anchor proyeksi sesuai BASIS (sama logika dgn chart Bulanan/Valuasi 5Th):
+        // Anchor proyeksi sesuai BASIS:
         //  - Tahun Berjalan → akhir kuartal berjalan (Maret <tahun berjalan>)
-        //  - basis 2025     → awal Januari <tahun berjalan>
+        //  - Basis tahun penuh (mis. Y2021) → akhir tahun basis (Desember)
         const fyr=ujFiscalYear(); const qYear=ok(fyr)?fyr+1:new Date().getFullYear();
+        const basisYr = pm._startYr || qYear;
         let anchor=null;
-        if(pm._isCurrent){ for(const d of data){ if(d.time.slice(0,7)===qYear+'-03') anchor={time:d.time,value:d.close}; } }   // candle Maret terakhir
-        else { for(const d of data){ if(d.time.slice(0,7)===qYear+'-01'){ anchor={time:d.time,value:d.close}; break; } } }      // candle Januari pertama
+        if(pm._isCurrent){
+          for(const d of data){ if(d.time.slice(0,7)===qYear+'-03') anchor={time:d.time,value:d.close}; }
+        } else {
+          // Cari candle terdekat dgn akhir tahun basis
+          for(const d of data){ if(d.time.slice(0,7)===basisYr+'-12') anchor={time:d.time,value:d.close}; }
+          if(!anchor){ for(const d of data){ if(d.time.slice(0,7)===(basisYr+1)+'-01'){ anchor={time:d.time,value:d.close}; break; } } }
+        }
         if(!anchor) anchor={ time:data[data.length-1].time, value:(ok(liveP)&&liveP>0?liveP:data[data.length-1].close) };
-        const ay=parseInt(anchor.time.slice(0,4),10)||qYear;
+        const ay = pm._startYr || (parseInt(anchor.time.slice(0,4),10)||qYear);
         const pjData=[anchor]; const tmarkers=[];
-        for(let i=0;i<5;i++){ if(ok(pm.potensi[i])){ const tt=(ay+i)+'-12-31'; pjData.push({ time:tt, value:pm.potensi[i] });
+        for(let i=0;i<5;i++){ if(ok(pm.potensi[i])){ const tgtYr=ay+1+i; const tt=tgtYr+'-12-31'; pjData.push({ time:tt, value:pm.potensi[i] });
           const reached = ok(hiAll) && pm.potensi[i]<=hiAll;
-          tmarkers.push({ time:tt, position:'aboveBar', color: reached?'#16a34a':'#d97706', shape:'circle', text:(ay+i)+(reached?' ✓':'') });
-          tgtMap[tt]={ y:(ay+i), reached:reached }; } }
+          tmarkers.push({ time:tt, position:'aboveBar', color: reached?'#16a34a':'#d97706', shape:'circle', text:String(tgtYr)+(reached?' ✓':'') });
+          tgtMap[tt]={ y:tgtYr, reached:reached }; } }
         if(pjData.length>1){
           projSeries=chart.addLineSeries({ color:'#d97706', lineWidth:2, lineStyle:LightweightCharts.LineStyle.Dashed, pointMarkersVisible:false, lastValueVisible:false, priceLineVisible:false });
           projSeries.setData(pjData);
@@ -10155,11 +10161,33 @@ body.vl-maxing{overflow:hidden}
       const liveP = effLast(s).price;
       if(ok(liveP)&&liveP>0&&hist.length) hist[hist.length-1] = { lab:hist[hist.length-1].lab, p:liveP };
       const histVals = hist.map(x=>x.p);
-      // Anchor proyeksi = tanggal basis pada garis historis (kuartal vs Januari).
+      // Anchor proyeksi = titik cabang di garis historis sesuai basis terpilih:
+      // - Tahun Berjalan → akhir kuartal (3/31/<tahunBerjalan>)
+      // - Basis tahun penuh (mis. Y2021) → akhir tahun basis (12/31/<basisYear>)
       const fyr = ujFiscalYear(); const qYear = ok(fyr) ? fyr+1 : (new Date().getFullYear());
-      const anchorLab = pm._isCurrent ? ('3/31/'+qYear) : ('1/31/'+qYear);
+      let anchorLab;
+      if(pm._isCurrent){
+        anchorLab = '3/31/'+qYear;
+      } else {
+        // Basis tahun penuh: anchor di akhir tahun basis (price_history labels format "M/DD/YYYY")
+        const basisYr = pm._startYr || qYear;
+        anchorLab = '12/31/'+basisYr;
+        // Fallback: coba format lain
+        if(hist.findIndex(x=>x.lab===anchorLab)<0) anchorLab = '12/30/'+basisYr;
+        if(hist.findIndex(x=>x.lab===anchorLab)<0) anchorLab = '1/31/'+(basisYr+1);
+      }
       let anchorIdx = hist.findIndex(x=>x.lab===anchorLab);
-      if(anchorIdx<0) anchorIdx = hist.length-1;            // fallback: sambung dari titik terakhir
+      if(anchorIdx<0){
+        // Fallback: cari titik terdekat dengan tahun basis
+        const byr = pm._startYr || qYear;
+        const targetDate = new Date(byr, 11, 31).getTime();
+        let bestDist = Infinity;
+        hist.forEach((x,i)=>{
+          const parts = x.lab.split('/');
+          if(parts.length>=3){ const d=new Date(parseInt(parts[2]),parseInt(parts[0])-1,parseInt(parts[1])).getTime(); const dist=Math.abs(d-targetDate); if(dist<bestDist){bestDist=dist;anchorIdx=i;}}
+        });
+        if(anchorIdx<0) anchorIdx = hist.length-1;
+      }
       const labels   = [...hist.map(x=>x.lab), ...tYears];
       const histData = [...histVals, null,null,null,null,null];
       const proj = new Array(hist.length).fill(null);
