@@ -10438,9 +10438,10 @@ body.vl-maxing{overflow:hidden}
     const ov=_cmpOverrides||{};
     const dcfData=v.dcf||{}, ddmData=v.ddm||{};
     const aGlobal=(state.raw&&state.raw.assumptions)||{};
-    const defG5=ok(ov.g5)?ov.g5:(ok(dcfData.growth_5y)?dcfData.growth_5y:(aGlobal.default_fcf_growth||0.08));
-    const defTg=ok(ov.tg)?ov.tg:(ok(dcfData.terminal_growth)?dcfData.terminal_growth:(aGlobal.terminal_growth||0.035));
-    const curTg=(ok(ov.tg)?ov.tg:defTg)*100;
+    const giSlider=cmpGrowth(s, cmpBasis(s, _cmpBasis));
+    const defG5=giSlider.dcfG;
+    const defTg=ok(ov.tg)?ov.tg:giSlider.dcfTg;
+    const curTg=(ok(ov.tg)?ov.tg:giSlider.dcfTg)*100;
     const yrs=annualYears(s);
     const dataYrsWarn=yrs.length<5;
 
@@ -10737,7 +10738,8 @@ body.vl-maxing{overflow:hidden}
     if(key==='wacc'){
       const w=_cmpWacc||{};
       const s2=curStock(), v2=s2&&s2.valuation||{}, dcf2=v2.dcf||{}, aG2=(state.raw&&state.raw.assumptions)||{};
-      const g5Info=ok(dcf2.growth_5y)?dcf2.growth_5y:(aG2.default_fcf_growth||0.08);
+      const gi2=cmpGrowth(s2, cmpBasis(s2, _cmpBasis));
+      const g5Info=gi2.dcfG;
       h ='<h3>WACC / Discount Rate <span class="grp">Biaya Modal</span></h3>'+
          '<p>Nilai default <strong>bukan asumsi sembarangan</strong> — dihitung secara profesional dari data aktual: beta saham (dari Dashboard), risk-free rate (yield SBN), equity risk premium, cost of debt, dan struktur modal emiten. Anda bisa meng-override via slider untuk simulasi skenario.</p>'+
          '<table class="vl-mini">'+
@@ -10757,20 +10759,24 @@ body.vl-maxing{overflow:hidden}
          '</table>'+
          '<h4 style="margin-top:12px">Pertumbuhan (dari data keuangan aktual)</h4>'+
          '<table class="vl-mini">'+
-         row('Growth 1-5 Tahun (fase awal, dari data)',fmtPct(g5Info*100))+
-         row('Terminal Growth 6-10 Th → ∞ (½ fase awal)',fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:(ok(dcf2.terminal_growth)?dcf2.terminal_growth:0.035))*100))+
+         row('Growth 1-5 Tahun (fase awal, dari data)',fmtPct(g5Info*100)+' ('+gi2.src+')')+
+         row('Growth 1-5 Tahun DDM',fmtPct(gi2.ddmG*100))+
+         row('Terminal Growth 6-10 Th → ∞ (½ fase awal)',fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:gi2.dcfTg)*100))+
          '</table>'+
          '<p style="margin-top:8px;color:var(--text3);font-size:12px"><strong>Growth</strong> = pertumbuhan arus kas/laba fase awal (tahun 1-5), dihitung dari data keuangan aktual emiten (bukan flat). <strong>Terminal Growth</strong> = pertumbuhan jangka panjang setelah fase awal (tahun 6-10 → selamanya), default = separuh growth fase awal (dibatasi 2-6%). Keduanya berbeda: growth mencerminkan momentum saat ini, terminal growth = asumsi konvergensi ke PDB jangka panjang.</p>';
     } else if(key==='tg'){
       const w=_cmpWacc||{};
       const s2=curStock(), v2=s2&&s2.valuation||{}, dcf2=v2.dcf||{}, aG2=(state.raw&&state.raw.assumptions)||{};
-      const curTgPct=(ok(_cmpOverrides.tg)?_cmpOverrides.tg:(ok(dcf2.terminal_growth)?dcf2.terminal_growth:0.035))*100;
-      const g5Info2=ok(dcf2.growth_5y)?dcf2.growth_5y:(aG2.default_fcf_growth||0.08);
+      const gi3=cmpGrowth(s2, cmpBasis(s2, _cmpBasis));
+      const curTgPct=(ok(_cmpOverrides.tg)?_cmpOverrides.tg:gi3.dcfTg)*100;
+      const g5Info2=gi3.dcfG;
       h ='<h3>Terminal Growth <span class="grp">Pertumbuhan Jangka Panjang</span></h3>'+
-         '<p>Laju pertumbuhan arus kas/dividen <strong>setelah tahun ke-5 hingga selamanya</strong> (terminal perpetuity). Dipakai di DCF, DDM, dan FCF Gordon. Nilai default dihitung profesional berdasarkan data historis emiten, bukan asumsi sembarangan.</p>'+
+         '<p>Laju pertumbuhan arus kas/dividen <strong>setelah tahun ke-5 hingga selamanya</strong> (terminal perpetuity). Dipakai di DCF, DDM, dan FCF Gordon. Nilai default = <strong>separuh dari growth fase awal</strong> ('+fmtPct(gi3.dcfG*100)+' ÷ 2 = '+fmtPct(gi3.dcfTg*100)+'), dihitung dari data keuangan aktual emiten, bukan asumsi flat.</p>'+
          '<table class="vl-mini">'+
          row('<strong>Terminal Growth saat ini</strong>','<strong>'+curTgPct.toFixed(1)+'%</strong>')+
-         row('Growth 1-5 Tahun (fase awal)',fmtPct(g5Info2*100)+' (bawaan model)')+
+         row('Growth 1-5 Tahun DCF (dari data aktual)',fmtPct(gi3.dcfG*100)+' ('+gi3.src+')')+
+         row('Growth 1-5 Tahun DDM',fmtPct(gi3.ddmG*100))+
+         row('Terminal Growth default (½ fase awal DCF)',fmtPct(gi3.dcfTg*100))+
          '</table>'+
          '<h4 style="margin-top:12px">Panduan umum Terminal Growth</h4>'+
          '<table class="vl-mini">'+
