@@ -8992,6 +8992,7 @@ body.vl-maxing{overflow:hidden}
               <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Candle naik</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#e11d48"></div>Candle turun</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Harga Live</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target 5Th</div>
             </div>
             <div class="vl-info" id="vlProjInfo" style="margin-top:8px">Garis ungu = <strong>harga saham</strong> (riwayat → titik terakhir = harga <strong>live</strong>). Oranye putus-putus = <strong>proyeksi target</strong> valuasi 5Th (basis terpilih); <strong>hijau</strong> = target tercapai. Tombol rentang mengatur lookback.</div>
             <div class="vl-info" id="vlHarianInfo" style="margin-top:8px;display:none">Memuat data harian…</div>
@@ -9539,7 +9540,7 @@ body.vl-maxing{overflow:hidden}
     const opts = [{key:'current',label:'Tahun Berjalan'},{key:'Y'+latest,label:String(latest)}];
     el.innerHTML = opts.map(o=>'<button class="vl-basis-btn'+(_projBasis===o.key?' active':'')+'" onclick="vlSetProjBasis(\''+o.key+'\')">'+o.label+'</button>').join('');
   }
-  window.vlSetProjBasis = function(b){ _projBasis = b; renderProjection(); buildCharts(); };
+  window.vlSetProjBasis = function(b){ _projBasis = b; renderProjection(); buildCharts(); if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); }); };
 
   function renderProjection(){
     const s = curStock(); if(!s) return;
@@ -9778,10 +9779,27 @@ body.vl-maxing{overflow:hidden}
     series.setData(data);
     const liveP=effLast(s).price;
     if(ok(liveP)&&liveP>0){ try{ series.createPriceLine({price:liveP,color:(cssv('--accent')||'#6d28d9'),lineWidth:1,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true,title:'Live'}); }catch(e){} }
+    // Overlay PROYEKSI TARGET VALUASI 5Th (garis oranye putus-putus) — basis terpilih,
+    // menyambung dari titik harga terakhir ke 5 target tahunan (year-end).
+    try{
+      const pm=state.projModel;
+      if(pm && pm.applicable && data.length){
+        const lastT=data[data.length-1].time;
+        const startYr=pm._startYr||0;
+        const anchorV=(ok(liveP)&&liveP>0)?liveP:data[data.length-1].close;
+        const pjData=[{ time:lastT, value:anchorV }];
+        for(let i=0;i<5;i++){ if(ok(pm.potensi[i]) && startYr) pjData.push({ time:(startYr+1+i)+'-12-31', value:pm.potensi[i] }); }
+        if(pjData.length>1){
+          const pj=chart.addLineSeries({ color:'#d97706', lineWidth:2, lineStyle:LightweightCharts.LineStyle.Dashed, pointMarkersVisible:true, pointMarkersRadius:4, lastValueVisible:false, priceLineVisible:false });
+          pj.setData(pjData);
+        }
+      }
+    }catch(e){ console.warn('[harian] overlay proyeksi gagal:', e); }
     chart.timeScale().fitContent();
     _harianChart=chart;
     if(typeof ResizeObserver!=='undefined'){ _harianRO=new ResizeObserver(()=>{ try{ chart.applyOptions({width:wrap.clientWidth, height:wrap.clientHeight}); }catch(e){} }); _harianRO.observe(wrap); }
-    if(info){ info.innerHTML='Candlestick <strong>harian</strong> · '+candles.length+' candle · titik terakhir mengikuti <strong>harga live</strong>. Rentang ikut tombol di atas.'; }
+    if(info){ const pm=state.projModel; const t5=(pm&&pm.applicable&&ok(pm.potensi[4]))?('Rp'+Math.round(pm.potensi[4]).toLocaleString('id-ID')):'-';
+      info.innerHTML='Candlestick <strong>harian</strong> ('+candles.length+' candle) + <strong style="color:#d97706">proyeksi target valuasi 5Th</strong> (target akhir ~'+t5+'). Titik terakhir = harga live.'; }
     vlEnsureMaxBtns();
     }catch(err){ wrap.innerHTML='<div class="vl-msg" style="margin:10px">Gagal menampilkan chart harian: '+((err&&err.message)||err)+'</div>'; console.warn('[harian] render error:', err); }
   }
