@@ -9573,13 +9573,11 @@ loadData();
 
   /* ── Range chart per-grafik (3/5/7/10/All tahun) — hanya tampilan, tak ubah model ── */
   const VL_RANGES = ['3','5','7','10','all'];
-  const VL_DEFAULT_RANGE = '10';
-  const vlChartRange = {};   // id grafik -> '3'|'5'|'7'|'10'|'all'
-  function vlChartYears(s, id){
+  let vlRange = '10';   // range GLOBAL: berlaku utk SEMUA chart (Ringkasan + Mesin Valuasi)
+  function vlChartYears(s, id){   // param id diabaikan — range disinkronkan secara global
     const all = annualYears(s);
-    const r = String(vlChartRange[id] || VL_DEFAULT_RANGE);
-    if(r==='all') return all;
-    const n = parseInt(r,10);
+    if(vlRange==='all') return all;
+    const n = parseInt(vlRange,10);
     return (n>0 && all.length>n) ? all.slice(-n) : all;
   }
   // Titik "Q" = TAHUN BERJALAN (TTM / annualized Q1×4) untuk GRAFIK.
@@ -9639,14 +9637,18 @@ loadData();
       bar.className='vl-rng'; bar.setAttribute('data-rng',id);
       bar.innerHTML=VL_RANGES.map(r=>{
         const lbl = (r==='all') ? 'All' : (r==='3' ? '3Th' : r);
-        return '<button type="button" data-r="'+r+'" onclick="vlSetChartRange(\''+id+'\',\''+r+'\')">'+lbl+'</button>';
+        return '<button type="button" data-r="'+r+'" onclick="vlSetChartRange(\''+r+'\')">'+lbl+'</button>';
       }).join('');
       host.parentElement.insertBefore(bar, host);
     }
-    const cur=String(vlChartRange[id] || VL_DEFAULT_RANGE);
-    bar.querySelectorAll('button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-r')===cur));
+    bar.querySelectorAll('button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-r')===vlRange));
   }
-  window.vlSetChartRange=function(id,r){ vlChartRange[id]=String(r); buildCharts(); };
+  // Klik range di chart MANA PUN → semua chart (Ringkasan + Mesin Valuasi) ikut kompak ke range sama.
+  window.vlSetChartRange=function(r){
+    vlRange=String(r);
+    buildCharts();
+    if(typeof buildUjiCharts==='function') buildUjiCharts();
+  };
 
   /* ── Charts: destroy lama → build baru ── */
   function destroyCharts(){ while(charts.length){ const c=charts.pop(); try{ c.destroy(); }catch(e){} } }
