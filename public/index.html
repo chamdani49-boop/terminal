@@ -9074,7 +9074,7 @@ body.vl-maxing{overflow:hidden}
               <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Harga Live</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target 5Th</div>
             </div>
-            <div class="vl-info" id="vlProjInfo" style="margin-top:8px">Garis ungu = <strong>harga saham</strong> (riwayat → titik terakhir = harga <strong>live</strong>). Oranye putus-putus = <strong>proyeksi target</strong> valuasi 5Th (basis terpilih); <strong>hijau</strong> = target tercapai. Tombol rentang mengatur lookback.</div>
+            <div class="vl-info" id="vlProjInfo" style="margin-top:8px;display:none"></div>
             <div class="vl-info" id="vlHarianInfo" style="margin-top:8px;display:none">Memuat data harian…</div>
           </div>
           <div class="card">
@@ -9082,7 +9082,7 @@ body.vl-maxing{overflow:hidden}
             <div class="vl-tw">
               <table class="vl-table"><thead><tr><th>Tahun</th><th>Harga Potensi</th><th>G&amp;L</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
             </div>
-            <div class="vl-info" style="margin-top:10px"><strong>G&amp;L</strong> = Gain &amp; Loss vs harga acuan basis (belum termasuk dividen).</div>
+            <div class="vl-info" style="margin-top:10px"><strong>G&amp;L</strong> = Gain &amp; Loss vs harga live (belum termasuk dividen).</div>
           </div>
         </div>
         <div class="card" style="margin:14px 0">
@@ -9739,19 +9739,31 @@ body.vl-maxing{overflow:hidden}
   }
   function projBasisButtons(s){
     const el = document.getElementById('vlProjBasis'); if(!el) return;
-    const yrs = annualYears(s); const latest = yrs[yrs.length-1];
-    const opts = [{key:'current',label:'Tahun Berjalan'},{key:'Y'+latest,label:String(latest)}];
-    el.innerHTML = opts.map(o=>'<button class="vl-basis-btn'+(_projBasis===o.key?' active':'')+'" onclick="vlSetProjBasis(\''+o.key+'\')">'+o.label+'</button>').join('');
+    const bdef = ujDataBases(s);
+    const activeBasis = _projBasis || 'current';
+    let html = bdef.buttons.map(function(b){
+      const act = (b.key===activeBasis) ? ' active' : '';
+      const tag = b.tag ? ' <span style="font-size:9px;font-weight:800;opacity:.7">'+b.tag+'</span>' : '';
+      return '<button class="vl-basis-btn'+act+'" onclick="vlSetProjBasis(\''+b.key+'\')">'+b.label+tag+'</button>';
+    }).join('');
+    if(bdef.moreYears && bdef.moreYears.length){
+      const inDrop = bdef.moreYears.some(function(y){ return 'Y'+y===activeBasis; });
+      const opts = bdef.moreYears.map(function(y){ return '<option value="Y'+y+'"'+(activeBasis==='Y'+y?' selected':'')+'>'+y+'</option>'; }).join('');
+      html += '<select class="vl-basis-btn'+(inDrop?' active':'')+'" onchange="vlSetProjBasis(this.value)" title="Tahun lebih lama">'+
+                '<option value="">'+(inDrop?activeBasis.slice(1):'Tahun lain \u25BE')+'</option>'+opts+
+              '</select>';
+    }
+    el.innerHTML = html;
   }
   window.vlSetProjBasis = function(b){ _projBasis = b; renderProjection(); buildCharts(); if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); }); };
 
   function renderProjection(){
     const s = curStock(); if(!s) return;
     const yrs = annualYears(s); const latest = yrs[yrs.length-1];
-    if(_projBasis!=='current' && _projBasis!=='Y'+latest) _projBasis = 'current';
+    if(_projBasis!=='current' && !yrs.some(function(y){ return 'Y'+y===_projBasis; })) _projBasis = 'current';
     projBasisButtons(s);
     const scopeEl = document.getElementById('vlProjScope');
-    if(scopeEl) scopeEl.textContent = (_projBasis==='current') ? 'Tahun Berjalan' : String(latest);
+    if(scopeEl) scopeEl.textContent = (_projBasis==='current') ? 'Tahun Berjalan' : _projBasis.replace(/^Y/,'');
     const msg = document.getElementById('vlProjMsg');
     const body = document.getElementById('vlProjBody');
     const fy = ((s.valuation||{}).five_year)||{};
@@ -9766,7 +9778,10 @@ body.vl-maxing{overflow:hidden}
     const pc = projComputeFor(s, state.win, _projBasis);
     state.projModel = pc;
     if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
-    const mosPct = pc.margin_of_safety*100; const ms = mosStyle(mosPct);
+    const livePrice = effLast(s).price;
+    const target5y = (ok(pc.potensi) && pc.potensi.length>=5) ? pc.potensi[4] : null;
+    const mosPct = (ok(livePrice) && livePrice>0 && ok(target5y) && target5y>0) ? (1 - livePrice/target5y)*100 : pc.margin_of_safety*100;
+    const ms = mosStyle(mosPct);
     setK('vlKpiMos', mosPct.toFixed(2)+'%', ms.col);
     const md = document.getElementById('vlKpiMosDesc'); if(md){ md.textContent=ms.txt; md.style.color=ms.col; }
     setK('vlKpiCagr', fmtPct(pc.cagr*100));
@@ -9788,7 +9803,7 @@ body.vl-maxing{overflow:hidden}
     const years = [0,1,2,3,4].map(i=> startYr ? (startYr+shift+i) : ('T+'+(i+1)));
     const tb = document.getElementById('vlProjTableBody');
     if(tb) tb.innerHTML = years.map((yr,i)=>{
-      const pt = pc.potensi[i]; const gl = (pc.basis>0 && ok(pt)) ? (pt/pc.basis-1)*100 : null;
+      const pt = pc.potensi[i]; const gl = (livePrice>0 && ok(pt)) ? (pt/livePrice-1)*100 : null;
       return '<tr><td style="font-weight:700;color:var(--text)">'+yr+'</td><td><strong>'+fmtRp(pt)+'</strong></td><td><span class="'+badgeCls(gl)+'">'+fmtGl(gl)+'</span></td></tr>';
     }).join('');
 
