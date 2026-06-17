@@ -9051,7 +9051,6 @@ body.vl-maxing{overflow:hidden}
             <div class="vl-kpi"><div class="l">💰 Dividen Yield</div><div class="v" id="vlKpiDy" style="color:var(--accent)">-</div><div class="d">Imbal hasil dividen / th</div></div>
             <div class="vl-kpi"><div class="l">🎯 Combine Return</div><div class="v" id="vlKpiComb" style="color:var(--green)">-</div><div class="d">Capital gain + dividen</div></div>
             <div class="vl-kpi vl-kpi-key"><div class="l">🪙 Future Value</div><div class="v" id="vlKpiFv">-</div><div class="d">Total apresiasi 5 th</div></div>
-            <div class="vl-kpi"><div class="l">📊 ROE Tahunan</div><div class="v" id="vlKpiRoe" style="color:var(--yellow)">-</div><div class="d">Return on equity</div></div>
             <div class="vl-kpi"><div class="l">📤 DPR</div><div class="v" id="vlKpiDpr">-</div><div class="d">Dividen payout ratio</div></div>
             <div class="vl-kpi"><div class="l">⏱️ Th. Balik Modal</div><div class="v" id="vlKpiTbm">-</div><div class="d">Tahun (= PER)</div></div>
           </div>
@@ -9764,7 +9763,7 @@ body.vl-maxing{overflow:hidden}
     if(body) body.style.display='';
     const pc = projComputeFor(s, state.win, _projBasis);
     state.projModel = pc;
-    if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiRoe','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
+    if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
     const mosPct = pc.margin_of_safety*100; const ms = mosStyle(mosPct);
     setK('vlKpiMos', mosPct.toFixed(2)+'%', ms.col);
     const md = document.getElementById('vlKpiMosDesc'); if(md){ md.textContent=ms.txt; md.style.color=ms.col; }
@@ -9773,17 +9772,14 @@ body.vl-maxing{overflow:hidden}
     setK('vlKpiComb', fmtPct(pc.combine*100));
     setK('vlKpiFv',   fmtPct(pc.future_value*100));
 
-    // ROE, DPR, Th. Balik Modal (= PER)
+    // DPR, Th. Balik Modal (= PER dari harga basis)
     const inp2 = ((s.valuation||{}).five_year||{}).inputs||{};
-    const ly2 = latestYear(s); const a2 = s.annual[ly2]||{};
-    const roe2 = ok(inp2.roe_annual) ? inp2.roe_annual*100 : (ok(a2.roe)?a2.roe:null);
     const dpr2 = pc.dpr_win!=null ? pc.dpr_win*100 : (ok(inp2.dpr)?inp2.dpr*100:null);
     const eps2 = ok(inp2.eps) ? inp2.eps : null;
-    const price2 = effLast(s).price;
-    // Th. Balik Modal = PER = harga ÷ EPS
-    const tbm2 = (ok(eps2)&&eps2>0&&ok(price2)) ? price2/eps2 : null;
+    // Th. Balik Modal = PER = harga BASIS ÷ EPS (ikut basis terpilih)
+    const priceBasis = pc._last || effLast(s).price;
+    const tbm2 = (ok(eps2)&&eps2>0&&ok(priceBasis)) ? priceBasis/eps2 : null;
 
-    setK('vlKpiRoe', ok(roe2)?fmtPct(roe2):'—');
     setK('vlKpiDpr', ok(dpr2)?fmtPct(dpr2):'—');
     setK('vlKpiTbm', ok(tbm2)?tbm2.toFixed(2)+'×':'—');
 
