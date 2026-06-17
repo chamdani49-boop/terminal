@@ -10188,40 +10188,50 @@ body.vl-maxing{overflow:hidden}
         });
         if(anchorIdx<0) anchorIdx = hist.length-1;
       }
-      // Sisipkan target proyeksi PADA POSISI yang sesuai di array historis
-      // (bukan di-append di akhir). Target tahun ke-n → di bulan 12/<startYr+n+1>.
+      // Sisipkan target proyeksi PADA POSISI yang sesuai di array historis.
+      // Target yang sudah LEWAT (ada di data historis) → sisipkan di posisi tsb.
+      // Target yang masih di MASA DEPAN (belum ada di hist) → append di akhir.
       const labels = hist.map(x=>x.lab);
       const histData = histVals.slice();
       const proj = new Array(hist.length).fill(null);
       if(anchorIdx>=0 && hist[anchorIdx]) proj[anchorIdx] = hist[anchorIdx].p;
 
-      // Cari posisi tiap target tahun di array label historis
+      // Tentukan tahun terakhir di data historis
+      const lastHistDate = hist.length>0 ? hist[hist.length-1].lab : '';
+      const lastHistParts = lastHistDate.split('/');
+      const lastHistYear = lastHistParts.length>=3 ? parseInt(lastHistParts[2],10) : 9999;
+      const lastHistMonth = lastHistParts.length>=3 ? parseInt(lastHistParts[0],10) : 12;
+
       for(let i=0;i<5;i++){
         const tgtYr = startYr+1+i;
-        const tgtLab = '12/31/'+tgtYr;
-        let idx = hist.findIndex(x=>x.lab===tgtLab);
-        if(idx<0){
-          // Cari label terdekat dalam tahun target
-          const tgtDate = new Date(tgtYr,11,31).getTime();
-          let bd=Infinity;
-          hist.forEach((x,j)=>{ const p=x.lab.split('/'); if(p.length>=3){ const d=new Date(parseInt(p[2]),parseInt(p[0])-1,parseInt(p[1])).getTime(); const dist=Math.abs(d-tgtDate); if(dist<bd){bd=dist;idx=j;}}});
-        }
-        if(idx>=0 && ok(pm.potensi[i])){
-          // Taruh target di posisi yang benar dalam array proj
-          proj[idx] = pm.potensi[i];
-        } else if(ok(pm.potensi[i])){
-          // Target di masa depan (belum ada di hist): append
+        // Target di masa depan (tahun > tahun terakhir data, atau tahun sama tapi bulan belum)
+        const isFuture = tgtYr > lastHistYear || (tgtYr === lastHistYear && lastHistMonth < 12);
+        
+        if(!isFuture){
+          // Target sudah dilalui data historis → cari posisi di hist
+          const tgtLab = '12/31/'+tgtYr;
+          let idx = hist.findIndex(x=>x.lab===tgtLab);
+          if(idx<0){
+            const tgtDate = new Date(tgtYr,11,31).getTime();
+            let bd=Infinity;
+            hist.forEach((x,j)=>{ const p=x.lab.split('/'); if(p.length>=3){ const d=new Date(parseInt(p[2]),parseInt(p[0])-1,parseInt(p[1])).getTime(); const dist=Math.abs(d-tgtDate); if(dist<bd){bd=dist;idx=j;}}});
+          }
+          if(idx>=0 && ok(pm.potensi[i])){
+            proj[idx] = pm.potensi[i];
+          }
+        } else {
+          // Target di masa depan → append
           labels.push(String(tgtYr));
           histData.push(null);
-          proj.push(pm.potensi[i]);
+          proj.push(ok(pm.potensi[i])?pm.potensi[i]:null);
         }
       }
 
       // Target tercapai? bandingkan dgn harga tertinggi yg pernah dicapai.
       const hiAll = Math.max.apply(null, ph.map(r=>r[s.code]).filter(ok).concat(ok(liveP)?[liveP]:[]));
-      const reached = proj.map((v,i)=> (i!==anchorIdx && ok(v) && v>0 && ok(hiAll) && v<=hiAll));
-      const projCol = proj.map((v,i)=> i===anchorIdx?COL.purple : (!ok(v)||v<=0)?'rgba(0,0,0,0)' : reached[i]?COL.green:COL.orange);
-      const projRad = proj.map((v,i)=> i===anchorIdx?3 : (ok(v)&&v>0)?5:0);
+      const reached = proj.map((v,i2)=> (i2!==anchorIdx && ok(v) && v>0 && ok(hiAll) && v<=hiAll));
+      const projCol = proj.map((v,i2)=> i2===anchorIdx?COL.purple : (!ok(v)||v<=0)?'rgba(0,0,0,0)' : reached[i2]?COL.green:COL.orange);
+      const projRad = proj.map((v,i2)=> i2===anchorIdx?3 : (ok(v)&&v>0)?5:0);
       const projData = proj;
       const allv = histData.concat(projData).filter(ok); const minY = allv.length ? Math.min(...allv)*0.9 : 0;
       const ds = [
