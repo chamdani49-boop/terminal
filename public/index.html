@@ -9782,8 +9782,8 @@ body.vl-maxing{overflow:hidden}
     state.projModel = pc;
     if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
     const livePrice = effLast(s).price;
-    const target5y = (ok(pc.potensi) && pc.potensi.length>=5) ? pc.potensi[4] : null;
-    const mosPct = (ok(livePrice) && livePrice>0 && ok(target5y) && target5y>0) ? (1 - livePrice/target5y)*100 : pc.margin_of_safety*100;
+    const target5y = (Array.isArray(pc.potensi) && pc.potensi.length>=5 && ok(pc.potensi[4])) ? pc.potensi[4] : null;
+    const mosPct = (ok(livePrice) && livePrice>0 && ok(target5y) && target5y>0) ? (1 - livePrice/target5y)*100 : (pc.margin_of_safety||0)*100;
     const ms = mosStyle(mosPct);
     setK('vlKpiMos', mosPct.toFixed(2)+'%', ms.col);
     const md = document.getElementById('vlKpiMosDesc'); if(md){ md.textContent=ms.txt; md.style.color=ms.col; }
