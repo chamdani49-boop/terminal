@@ -9772,11 +9772,10 @@ body.vl-maxing{overflow:hidden}
     setK('vlKpiComb', fmtPct(pc.combine*100));
     setK('vlKpiFv',   fmtPct(pc.future_value*100));
 
-    // DPR, Th. Balik Modal (= PER dari harga basis)
-    const inp2 = ((s.valuation||{}).five_year||{}).inputs||{};
-    const dpr2 = pc.dpr_win!=null ? pc.dpr_win*100 : (ok(inp2.dpr)?inp2.dpr*100:null);
-    const eps2 = ok(inp2.eps) ? inp2.eps : null;
-    // Th. Balik Modal = PER = harga BASIS ÷ EPS (ikut basis terpilih)
+    // DPR, Th. Balik Modal (= PER dari harga basis ÷ EPS basis)
+    const dpr2 = pc.dpr_win!=null ? pc.dpr_win*100 : null;
+    // EPS dan harga mengikuti basis terpilih (pc.eps dari vlUjiCalc = per-share recalc)
+    const eps2 = ok(pc.eps) ? pc.eps : null;
     const priceBasis = pc._last || effLast(s).price;
     const tbm2 = (ok(eps2)&&eps2>0&&ok(priceBasis)) ? priceBasis/eps2 : null;
 
