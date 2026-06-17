@@ -9784,11 +9784,17 @@ body.vl-maxing{overflow:hidden}
     try{
       const pm=state.projModel;
       if(pm && pm.applicable && data.length){
-        const lastT=data[data.length-1].time;
-        const startYr=pm._startYr||0;
-        const anchorV=(ok(liveP)&&liveP>0)?liveP:data[data.length-1].close;
-        const pjData=[{ time:lastT, value:anchorV }];
-        for(let i=0;i<5;i++){ if(ok(pm.potensi[i]) && startYr) pjData.push({ time:(startYr+1+i)+'-12-31', value:pm.potensi[i] }); }
+        // Anchor proyeksi sesuai BASIS (sama logika dgn chart Valuasi 5Th):
+        //  - Tahun Berjalan → akhir kuartal berjalan (Maret <tahun berjalan>)
+        //  - basis 2025     → awal Januari <tahun berjalan>
+        const fyr=ujFiscalYear(); const qYear=ok(fyr)?fyr+1:new Date().getFullYear();
+        let anchor=null;
+        if(pm._isCurrent){ for(const d of data){ if(d.time.slice(0,7)===qYear+'-03') anchor={time:d.time,value:d.close}; } }   // candle Maret terakhir
+        else { for(const d of data){ if(d.time.slice(0,7)===qYear+'-01'){ anchor={time:d.time,value:d.close}; break; } } }      // candle Januari pertama
+        if(!anchor) anchor={ time:data[data.length-1].time, value:(ok(liveP)&&liveP>0?liveP:data[data.length-1].close) };
+        const ay=parseInt(anchor.time.slice(0,4),10)||qYear;
+        const pjData=[anchor];
+        for(let i=0;i<5;i++){ if(ok(pm.potensi[i])) pjData.push({ time:(ay+i)+'-12-31', value:pm.potensi[i] }); }
         if(pjData.length>1){
           const pj=chart.addLineSeries({ color:'#d97706', lineWidth:2, lineStyle:LightweightCharts.LineStyle.Dashed, pointMarkersVisible:true, pointMarkersRadius:4, lastValueVisible:false, priceLineVisible:false });
           pj.setData(pjData);
