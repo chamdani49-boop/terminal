@@ -9076,16 +9076,13 @@ body.vl-maxing{overflow:hidden}
               <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target 5Th</div>
               <button class="vl-iq" onclick="vlMethodInfo('chartharian')" style="margin-left:8px">i</button>
             </div>
-            <div class="vl-info" id="vlProjInfo" style="margin-top:8px;display:none"></div>
-            <div class="vl-info" id="vlHarianInfo" style="margin-top:8px;display:none"></div>
           </div>
           <div class="card">
-            <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
+            <div class="card-title">Tabel Proyeksi G&amp;L per Tahun <button class="vl-iq" onclick="vlMethodInfo('projgl')" style="vertical-align:middle;margin-left:8px">i</button></div>
             <div id="vlProjTableHeader" style="margin-bottom:10px"></div>
             <div class="vl-tw">
               <table class="vl-table"><thead><tr><th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs Basis)</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
             </div>
-            <div class="vl-info" style="margin-top:10px"><button class="vl-iq" onclick="vlMethodInfo('projgl')" style="vertical-align:middle">i</button> <span style="font-size:11px;color:var(--text3)">Klik untuk penjelasan kolom & rumus</span></div>
           </div>
         </div>
         <div class="card" style="margin:14px 0">
@@ -10015,8 +10012,8 @@ body.vl-maxing{overflow:hidden}
     document.querySelectorAll('#vlChartMode button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-m')===_vlChartMode));
     const proj = _vlChartMode==='proyeksi';
     const show=(id,on)=>{ const el=document.getElementById(id); if(el) el.style.display = on?'':'none'; };
-    show('vlProjBox',proj); show('vlProjLegend',proj); show('vlProjInfo',proj);
-    show('vlHarianWrap',!proj); show('vlHarianLegend',!proj); show('vlHarianInfo',!proj);
+    show('vlProjBox',proj); show('vlProjLegend',proj);
+    show('vlHarianWrap',!proj); show('vlHarianLegend',!proj);
     if(proj){ buildCharts(); } else { requestAnimationFrame(function(){ vlRenderHarian(); }); }
   };
   async function vlRenderHarian(){
