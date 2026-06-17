@@ -9374,6 +9374,28 @@ body.vl-maxing{overflow:hidden}
     #page-valuasi .vl-mini td{padding:6px 8px;border-bottom:1px solid var(--border)}
     #page-valuasi .vl-mini td:first-child{color:var(--text2)}
     #page-valuasi .vl-mini td:last-child{text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--text);font-weight:600}
+    /* ── SLIDER PANEL ── */
+    #page-valuasi .vl-slider-panel{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+    #page-valuasi .vl-slider-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none}
+    #page-valuasi .vl-slider-hdr:hover{background:var(--bg2)}
+    #page-valuasi .vl-slider-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)}
+    #page-valuasi .vl-slider-arrow{font-size:10px;color:var(--text3);transition:transform .2s}
+    #page-valuasi .vl-slider-body{padding:6px 16px 16px;border-top:1px solid var(--border)}
+    #page-valuasi .vl-sld-row{margin-bottom:12px}
+    #page-valuasi .vl-sld-lbl{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+    #page-valuasi .vl-sld-lbl .nm{font-size:11px;font-weight:700;color:var(--text)}
+    #page-valuasi .vl-sld-lbl .val{font-size:12px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--accent);min-width:52px;text-align:right}
+    #page-valuasi .vl-sld{width:100%;height:6px;-webkit-appearance:none;appearance:none;background:var(--bg2);border:1px solid var(--border);border-radius:4px;outline:none;cursor:pointer}
+    #page-valuasi .vl-sld::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--card);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+    #page-valuasi .vl-sld::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--card);cursor:pointer}
+    #page-valuasi .vl-sld-info{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.4;font-weight:500}
+    #page-valuasi .vl-sld-warn{font-size:11px;color:var(--yellow);font-weight:700;margin-top:8px;padding:6px 10px;background:var(--yellow-bg);border-radius:6px}
+    /* ── CHART CARDS ── */
+    #page-valuasi .vl-cmp-chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px 14px}
+    #page-valuasi .vl-cmp-chart-card .hd{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:12px}
+    #page-valuasi .vl-cmp-val-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:10px;font-weight:600;color:var(--text2)}
+    #page-valuasi .vl-val-lgd-item{display:flex;align-items:center;gap:4px}
+    #page-valuasi .vl-val-lgd-item i{display:inline-block;width:14px;height:4px;border-radius:2px;border:1px solid transparent}
     </style>
     <div id="vl-tab-metode" class="vl-tc">
       <div class="card" style="margin-bottom:14px">
@@ -10161,16 +10183,20 @@ body.vl-maxing{overflow:hidden}
   let _cmpData = {};     // key -> objek metode (utk popup)
   let _cmpWacc = null;   // simpan WACC terakhir (utk popup WACC)
   let _cmpBasis = 'year';// basis data: 'current' (Q1 annualized) atau 'year' (tahun penuh terakhir)
+  let _cmpOverrides = {};// user slider overrides: rf, erp, beta, g5, tg
+  let _cmpPriceChart = null; // Chart.js instance harga bulanan
+  let _cmpValChart = null;   // Chart.js instance valuasi historis
 
-  // WACC: CAPM + bobot utang. Beta diambil dari Dashboard bila ada.
+  // WACC: CAPM + bobot utang. Beta diambil dari Dashboard bila ada. Overrides dari slider.
   function cmpWacc(stock){
     const w = (stock.valuation && stock.valuation.wacc) || {};
     const a = (state.raw && state.raw.assumptions) || {};
-    const rf  = ok(w.risk_free) ? w.risk_free : (a.risk_free!=null?a.risk_free:0.068);
-    const erp = ok(w.equity_risk_premium) ? w.equity_risk_premium : (a.equity_risk_premium!=null?a.equity_risk_premium:0.075);
+    const ov = _cmpOverrides || {};
+    const rf  = ok(ov.rf) ? ov.rf : (ok(w.risk_free) ? w.risk_free : (a.risk_free!=null?a.risk_free:0.068));
+    const erp = ok(ov.erp) ? ov.erp : (ok(w.equity_risk_premium) ? w.equity_risk_premium : (a.equity_risk_premium!=null?a.equity_risk_premium:0.075));
     const db  = state.stats && state.stats[stock.code];
     const dbBeta = (db && ok(db.beta)) ? db.beta : null;
-    const beta = ok(dbBeta) ? dbBeta : (ok(w.beta)?w.beta:1);
+    const beta = ok(ov.beta) ? ov.beta : (ok(dbBeta) ? dbBeta : (ok(w.beta)?w.beta:1));
     const coe  = rf + beta*erp;
     const we   = ok(w.weight_equity) ? w.weight_equity : 1;
     const wd   = ok(w.weight_debt)   ? w.weight_debt   : 0;
@@ -10180,28 +10206,36 @@ body.vl-maxing{overflow:hidden}
   }
 
   // DCF 2-tahap (FCFF). base_fcf/net_debt/shares di-override sesuai basis terpilih.
+  // Growth & terminal growth bisa di-override slider.
   function cmpDCF(d, r, baseFcf, netDebt, shares){
     if(!d || !d.applicable) return null;
     if(!ok(baseFcf) || !ok(shares) || shares<=0) return null;
-    if(!(r > d.terminal_growth)) return null;
+    const ov = _cmpOverrides || {};
+    const g5 = ok(ov.g5) ? ov.g5 : (d.growth_5y||0);
+    const tg = ok(ov.tg) ? ov.tg : (d.terminal_growth||0.035);
+    if(!(r > tg)) return null;
     let fcf = baseFcf, pvSum = 0;
-    for(let t=1;t<=5;t++){ fcf *= (1+(d.growth_5y||0)); pvSum += fcf/Math.pow(1+r,t); }
-    const term = (fcf*(1+d.terminal_growth))/(r-d.terminal_growth);
+    for(let t=1;t<=5;t++){ fcf *= (1+g5); pvSum += fcf/Math.pow(1+r,t); }
+    const term = (fcf*(1+tg))/(r-tg);
     const pvTerm = term/Math.pow(1+r,5);
     const ev = pvSum+pvTerm, equity = ev-(netDebt||0);
-    return { fair:equity/shares, ev, equity, pvSum, pvTerm, shares, r, g:d.growth_5y, tg:d.terminal_growth, netDebt };
+    return { fair:equity/shares, ev, equity, pvSum, pvTerm, shares, r, g:g5, tg, netDebt };
   }
 
   // DDM 2-tahap (Gordon). base_dps di-override sesuai basis terpilih.
+  // Growth & terminal growth bisa di-override slider.
   function cmpDDM(m, r, baseDps){
     if(!m || !m.applicable) return null;
     if(!ok(baseDps) || baseDps<=0) return null;
-    if(!(r > m.terminal_growth)) return null;
+    const ov = _cmpOverrides || {};
+    const g5 = ok(ov.g5) ? ov.g5 : (m.growth_5y||0);
+    const tg = ok(ov.tg) ? ov.tg : (m.terminal_growth||0.035);
+    if(!(r > tg)) return null;
     let dps = baseDps, pvSum = 0;
-    for(let t=1;t<=5;t++){ dps *= (1+(m.growth_5y||0)); pvSum += dps/Math.pow(1+r,t); }
-    const term = (dps*(1+m.terminal_growth))/(r-m.terminal_growth);
+    for(let t=1;t<=5;t++){ dps *= (1+g5); pvSum += dps/Math.pow(1+r,t); }
+    const term = (dps*(1+tg))/(r-tg);
     const pvTerm = term/Math.pow(1+r,5);
-    return { fair:pvSum+pvTerm, pvSum, pvTerm, r, g:m.growth_5y, tg:m.terminal_growth, baseDps };
+    return { fair:pvSum+pvTerm, pvSum, pvTerm, r, g:g5, tg, baseDps };
   }
 
   // Verdict: ±15% dari harga.
@@ -10241,7 +10275,7 @@ body.vl-maxing{overflow:hidden}
     const a=(state.raw&&state.raw.assumptions)||{}, am=fy.avg_multiples||{}, win=String(state.win);
     const eps=bi.eps, bvps=bi.bvps, sps=bi.sps, g5=bi.g5;
     const fund=state.fundamentals&&state.fundamentals[stock.code];
-    const tg=ok(a.terminal_growth)?a.terminal_growth:0.035;
+    const tg=ok((_cmpOverrides||{}).tg)?_cmpOverrides.tg:(ok(a.terminal_growth)?a.terminal_growth:0.035);
     const list=[];
     const add=(o)=>{ if(o){ if(!ok(o.fair)||o.fair<=0) o.fair=null; list.push(o); } };
 
@@ -10342,6 +10376,57 @@ body.vl-maxing{overflow:hidden}
     const consMos=mosOf(median);
 
     let h='';
+
+    // ── Slider panel: adjustable WACC/discount rate parameters ──
+    const ov=_cmpOverrides||{};
+    const dcfData=v.dcf||{}, ddmData=v.ddm||{};
+    const aGlobal=(state.raw&&state.raw.assumptions)||{};
+    const defRf=wc.rf, defErp=wc.erp, defBeta=wc.beta;
+    const defG5=ok(ov.g5)?ov.g5:(ok(dcfData.growth_5y)?dcfData.growth_5y:(aGlobal.default_fcf_growth||0.08));
+    const defTg=ok(ov.tg)?ov.tg:(ok(dcfData.terminal_growth)?dcfData.terminal_growth:(aGlobal.terminal_growth||0.035));
+    const curRf=(ok(ov.rf)?ov.rf:defRf)*100, curErp=(ok(ov.erp)?ov.erp:defErp)*100;
+    const curBeta=ok(ov.beta)?ov.beta:defBeta;
+    const curG5=(ok(ov.g5)?ov.g5:defG5)*100, curTg=(ok(ov.tg)?ov.tg:defTg)*100;
+    const yrs=annualYears(s);
+    const dataYrsWarn=yrs.length<5;
+
+    h+='<div class="vl-slider-panel">';
+    h+='<div class="vl-slider-hdr" onclick="vlToggleSliders()">';
+    h+='<span class="vl-slider-title">⚙️ Atur Asumsi Valuasi (WACC & Pertumbuhan)</span>';
+    h+='<span class="vl-slider-arrow" id="vlSliderArrow">▼</span>';
+    h+='</div>';
+    h+='<div class="vl-slider-body" id="vlSliderBody">';
+
+    // Risk-Free Rate
+    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Risk-Free Rate (Rf)</span><span class="val" id="vlSldRfVal">'+curRf.toFixed(1)+'%</span></div>';
+    h+='<input type="range" class="vl-sld" id="vlSldRf" min="4" max="10" step="0.1" value="'+curRf.toFixed(1)+'" oninput="vlSldChange(\'rf\',this.value)">';
+    h+='<div class="vl-sld-info">Suku bunga bebas risiko (obligasi pemerintah/SBN). Makin tinggi, makin besar diskonto sehingga nilai wajar turun. Default: yield SBN 10 tahun Indonesia.</div></div>';
+
+    // Equity Risk Premium
+    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Equity Risk Premium (ERP)</span><span class="val" id="vlSldErpVal">'+curErp.toFixed(1)+'%</span></div>';
+    h+='<input type="range" class="vl-sld" id="vlSldErp" min="5" max="12" step="0.1" value="'+curErp.toFixed(1)+'" oninput="vlSldChange(\'erp\',this.value)">';
+    h+='<div class="vl-sld-info">Premi risiko yang diminta investor untuk berinvestasi di saham vs aset bebas risiko. Makin tinggi, makin tinggi tingkat pengembalian yang diharapkan.</div></div>';
+
+    // Beta
+    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Beta (\u03B2)</span><span class="val" id="vlSldBetaVal">'+curBeta.toFixed(2)+'</span></div>';
+    h+='<input type="range" class="vl-sld" id="vlSldBeta" min="0.5" max="3.0" step="0.01" value="'+curBeta.toFixed(2)+'" oninput="vlSldChange(\'beta\',this.value)">';
+    h+='<div class="vl-sld-info">Ukuran volatilitas saham relatif terhadap pasar (IHSG). Beta > 1 = lebih volatil dari pasar. Makin tinggi beta, makin tinggi cost of equity.</div></div>';
+
+    // Growth 1-5 Tahun
+    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Pertumbuhan 1-5 Tahun</span><span class="val" id="vlSldG5Val">'+curG5.toFixed(1)+'%</span></div>';
+    h+='<input type="range" class="vl-sld" id="vlSldG5" min="0" max="30" step="0.5" value="'+curG5.toFixed(1)+'" oninput="vlSldChange(\'g5\',this.value)">';
+    h+='<div class="vl-sld-info">Laju pertumbuhan arus kas/dividen pada fase awal (tahun 1-5). Ini fase high-growth sebelum bisnis matang. Digunakan oleh DCF & DDM.</div></div>';
+
+    // Terminal Growth 5-10 Tahun (perpetuity)
+    h+='<div class="vl-sld-row"><div class="vl-sld-lbl"><span class="nm">Terminal Growth (5-10 Tahun ke \u221E)</span><span class="val" id="vlSldTgVal">'+curTg.toFixed(1)+'%</span></div>';
+    h+='<input type="range" class="vl-sld" id="vlSldTg" min="1" max="6" step="0.1" value="'+curTg.toFixed(1)+'" oninput="vlSldChange(\'tg\',this.value)">';
+    h+='<div class="vl-sld-info">Laju pertumbuhan jangka panjang setelah tahun ke-5 hingga selamanya (terminal perpetuity). Umumnya ≤ pertumbuhan PDB nominal. Mempengaruhi DCF, DDM, FCF Gordon.</div></div>';
+
+    if(dataYrsWarn) h+='<div class="vl-sld-warn">\u26A0\uFE0F Data historis < 5 tahun (tersedia '+yrs.length+' tahun) — proyeksi pertumbuhan kurang reliable.</div>';
+
+    h+='<div style="margin-top:10px;text-align:right"><button class="vl-basis-btn" onclick="vlResetSliders()">Reset ke Default</button></div>';
+    h+='</div></div>';
+
     h+='<div class="vl-cmp-basis"><span class="lab">Basis Data</span>'+
        '<div class="vl-basis" style="margin:0">'+
          '<button class="vl-basis-btn'+(bi.key==='current'?' active':'')+'" onclick="vlSetCmpBasis(\'current\')">Tahun Berjalan (Q1)</button>'+
@@ -10389,10 +10474,242 @@ body.vl-maxing{overflow:hidden}
     h+='</tbody></table></div>';
     h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar ÷ harga − 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 − harga ÷ nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>Tahun Berjalan (Q1)</strong> = Q1 disetahunkan (×4), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>—</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar ≥ +15% di atas harga, <strong>Mahal</strong> bila ≤ −15%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
 
+    // ── Chart Harga Bulanan ──
+    h+='<div class="vl-cmp-chart-card" style="margin-top:18px"><div class="hd">Harga Bulanan Historis — '+s.code+'</div>';
+    h+='<div style="position:relative;height:220px"><canvas id="vlCmpPriceChart"></canvas></div></div>';
+
+    // ── Chart Valuasi Historis ──
+    h+='<div class="vl-cmp-chart-card" style="margin-top:18px"><div class="hd">Akurasi Valuasi Historis — Nilai Wajar vs Harga Aktual</div>';
+    if(yrs.length<5) h+='<div class="vl-sld-warn" style="margin-bottom:8px">\u26A0\uFE0F Data historis < 5 tahun — akurasi belum bisa dinilai.</div>';
+    h+='<div style="position:relative;height:280px"><canvas id="vlCmpValChart"></canvas></div>';
+    h+='<div class="vl-cmp-val-legend" id="vlCmpValLegend"></div></div>';
+
     host.innerHTML=h;
+
+    // Render charts after DOM insertion
+    renderCmpPriceChart(s);
+    renderCmpValChart(s, wc, bi, methods);
   }
 
-  // Popup penjelasan metode / WACC.
+  // ── Chart: Harga Bulanan ──
+  function renderCmpPriceChart(stock){
+    if(_cmpPriceChart){ _cmpPriceChart.destroy(); _cmpPriceChart=null; }
+    const canvas=document.getElementById('vlCmpPriceChart'); if(!canvas) return;
+    const ctx=canvas.getContext('2d');
+    const ph=state.priceHist||[];
+    const code=stock.code;
+    let data=ph.map(r=>({label:r.label||r.date||'', price:r[code]})).filter(x=>ok(x.price)&&x.price>0);
+    if(!data.length) return;
+    // Replace/append last with live price
+    const lv=state.live&&state.live[code];
+    if(lv&&ok(lv.price)&&lv.price>0){
+      data[data.length-1].price=lv.price;
+    }
+    const labels=data.map(d=>{ const p=d.label.split('/'); return (p.length>=3)?p[0]+'/'+p[2].slice(-2):d.label; });
+    const prices=data.map(d=>d.price);
+    const ct=getCmpChartTheme();
+    _cmpPriceChart=new Chart(ctx,{
+      type:'line',
+      data:{labels, datasets:[{
+        label:'Harga '+code,
+        data:prices,
+        borderColor:ct.linePrice,
+        borderWidth:2,
+        pointRadius:0,
+        pointHoverRadius:4,
+        tension:0.25,
+        fill:true,
+        backgroundColor:ct.fillPrice
+      }]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},tooltip:{
+          backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,
+          titleColor:ct.tooltipTitle,bodyColor:ct.tooltipText,padding:8,cornerRadius:8,
+          callbacks:{label:function(item){return 'Rp '+Math.round(item.raw).toLocaleString('id-ID');}}
+        }},
+        scales:{
+          x:{ticks:{color:ct.tick,font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:12},grid:{color:ct.grid}},
+          y:{ticks:{color:ct.tick,font:{size:9,family:'IBM Plex Mono'},callback:function(v){return 'Rp'+Math.round(v).toLocaleString('id-ID');}},grid:{color:ct.grid}}
+        }
+      }
+    });
+  }
+
+  // ── Chart: Valuasi Historis per Metode per Tahun + Konsensus + Harga ──
+  function renderCmpValChart(stock, wc, bi, currentMethods){
+    if(_cmpValChart){ _cmpValChart.destroy(); _cmpValChart=null; }
+    const canvas=document.getElementById('vlCmpValChart'); if(!canvas) return;
+    const ctx=canvas.getContext('2d');
+    const v=stock.valuation||{}, fy=v.five_year||{};
+    const am=fy.avg_multiples||{}, win=String(state.win);
+    const aGlobal=(state.raw&&state.raw.assumptions)||{};
+    const dcfD=v.dcf||{}, ddmD=v.ddm||{};
+    const tgVal=ok(dcfD.terminal_growth)?dcfD.terminal_growth:(aGlobal.terminal_growth||0.035);
+    const g5Dcf=ok(dcfD.growth_5y)?dcfD.growth_5y:0.08;
+    const g5Ddm=ok(ddmD.growth_5y)?ddmD.growth_5y:0.08;
+    const yrs=annualYears(stock);
+    const code=stock.code;
+
+    // Compute per-year fair values
+    const methodDefs=[
+      {key:'dcf',name:'DCF',color:'#00bcd4'},
+      {key:'ddm',name:'DDM',color:'#ab47bc'},
+      {key:'graham',name:'Graham',color:'#ff9800'},
+      {key:'pbv',name:'PBV',color:'#4caf50'},
+      {key:'per',name:'PER',color:'#2196f3'},
+      {key:'psr',name:'PSR',color:'#f44336'},
+      {key:'epv',name:'EPV',color:'#cddc39'}
+    ];
+
+    const seriesData={}; methodDefs.forEach(m=>{seriesData[m.key]=[];});
+    const hargaData=[], consData=[];
+
+    yrs.forEach(yr=>{
+      const ay=(stock.annual&&stock.annual[yr])||{};
+      const eps=ay.eps, bvps=ay.bvps, sps=ay.sps;
+      const shares=ay.shares||1;
+      const priceYr=ay.price;
+      hargaData.push(ok(priceYr)?priceYr:null);
+
+      // DCF: use year's fcf
+      let dcfFair=null;
+      if(dcfD.applicable&&ok(ay.fcf)&&ok(shares)&&shares>0&&wc.wacc>tgVal){
+        let fcf=ay.fcf,pvS=0;
+        for(let t=1;t<=5;t++){fcf*=(1+g5Dcf);pvS+=fcf/Math.pow(1+wc.wacc,t);}
+        const trm=(fcf*(1+tgVal))/(wc.wacc-tgVal);
+        const pvT=trm/Math.pow(1+wc.wacc,5);
+        const ev=pvS+pvT, eq=ev-((ay.net_debt!=null?ay.net_debt:0)||0);
+        dcfFair=eq/shares; if(dcfFair<=0) dcfFair=null;
+      }
+      seriesData.dcf.push(dcfFair);
+
+      // DDM: use year's dps
+      let ddmFair=null;
+      if(ddmD.applicable&&ok(ay.dps)&&ay.dps>0&&wc.coe>tgVal){
+        let dps=ay.dps,pvS=0;
+        for(let t=1;t<=5;t++){dps*=(1+g5Ddm);pvS+=dps/Math.pow(1+wc.coe,t);}
+        const trm=(dps*(1+tgVal))/(wc.coe-tgVal);
+        const pvT=trm/Math.pow(1+wc.coe,5);
+        ddmFair=pvS+pvT; if(ddmFair<=0) ddmFair=null;
+      }
+      seriesData.ddm.push(ddmFair);
+
+      // Graham
+      seriesData.graham.push((ok(eps)&&eps>0&&ok(bvps)&&bvps>0)?Math.sqrt(22.5*eps*bvps):null);
+
+      // PBV
+      const pbvM=(am.pbv||{})[win];
+      seriesData.pbv.push((ok(pbvM)&&ok(bvps)&&bvps>0)?pbvM*bvps:null);
+
+      // PER
+      const perM=(am.per||{})[win];
+      seriesData.per.push((ok(perM)&&ok(eps)&&eps>0)?perM*eps:null);
+
+      // PSR
+      const psrM=(am.psr||{})[win];
+      seriesData.psr.push((ok(psrM)&&ok(sps)&&sps>0)?psrM*sps:null);
+
+      // EPV
+      seriesData.epv.push((ok(eps)&&eps>0&&wc.wacc>0)?eps/wc.wacc:null);
+
+      // Konsensus median per tahun
+      const vals=[dcfFair,seriesData.ddm[seriesData.ddm.length-1],seriesData.graham[seriesData.graham.length-1],
+        seriesData.pbv[seriesData.pbv.length-1],seriesData.per[seriesData.per.length-1],
+        seriesData.psr[seriesData.psr.length-1],seriesData.epv[seriesData.epv.length-1]
+      ].filter(x=>ok(x)&&x>0).sort((a,b)=>a-b);
+      let med=null;
+      if(vals.length){const mi=Math.floor(vals.length/2); med=vals.length%2?vals[mi]:(vals[mi-1]+vals[mi])/2;}
+      consData.push(med);
+    });
+
+    // Append current year data point using live price and current methods
+    const livePrice=effLast(stock).price;
+    // Replace last harga with live if available
+    if(ok(livePrice)&&livePrice>0&&hargaData.length>0) hargaData[hargaData.length-1]=livePrice;
+
+    // Use current computed method values for last point
+    if(currentMethods&&currentMethods.length){
+      const curByKey={}; currentMethods.forEach(m=>{curByKey[m.key]=m.fair;});
+      methodDefs.forEach(md=>{
+        if(ok(curByKey[md.key])&&curByKey[md.key]>0) seriesData[md.key][seriesData[md.key].length-1]=curByKey[md.key];
+      });
+      // Recompute last consensus
+      const lastVals=methodDefs.map(md=>seriesData[md.key][seriesData[md.key].length-1]).filter(x=>ok(x)&&x>0).sort((a,b)=>a-b);
+      if(lastVals.length){const mi=Math.floor(lastVals.length/2); consData[consData.length-1]=lastVals.length%2?lastVals[mi]:(lastVals[mi-1]+lastVals[mi])/2;}
+    }
+
+    const labels=yrs.slice();
+    const ct=getCmpChartTheme();
+
+    const datasets=[];
+    methodDefs.forEach(md=>{
+      datasets.push({
+        label:md.name, data:seriesData[md.key], borderColor:md.color, borderWidth:1.5,
+        pointRadius:2, pointHoverRadius:4, tension:0.3, fill:false, spanGaps:true
+      });
+    });
+    // Konsensus (median) - dashed thick
+    datasets.push({
+      label:'Konsensus (Median)', data:consData, borderColor:'#ffd700', borderWidth:2.5,
+      borderDash:[6,3], pointRadius:0, pointHoverRadius:4, tension:0.3, fill:false, spanGaps:true
+    });
+    // Harga aktual - white/bold
+    datasets.push({
+      label:'Harga Aktual', data:hargaData, borderColor:ct.linePrice, borderWidth:2.5,
+      pointRadius:2, pointHoverRadius:4, tension:0.25, fill:false, spanGaps:true
+    });
+
+    _cmpValChart=new Chart(ctx,{
+      type:'line',
+      data:{labels, datasets},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,
+            titleColor:ct.tooltipTitle,bodyColor:ct.tooltipText,padding:10,cornerRadius:8,
+            callbacks:{label:function(item){
+              const v=item.raw; if(!ok(v)) return null;
+              return item.dataset.label+': Rp '+Math.round(v).toLocaleString('id-ID');
+            }}
+          }
+        },
+        scales:{
+          x:{ticks:{color:ct.tick,font:{size:9},maxRotation:45,autoSkip:true},grid:{color:ct.grid}},
+          y:{ticks:{color:ct.tick,font:{size:9,family:'IBM Plex Mono'},callback:function(v){return 'Rp'+Math.round(v).toLocaleString('id-ID');}},grid:{color:ct.grid}}
+        }
+      }
+    });
+
+    // Render legend below chart
+    const legendEl=document.getElementById('vlCmpValLegend');
+    if(legendEl){
+      let lg='';
+      methodDefs.forEach(md=>{lg+='<span class="vl-val-lgd-item"><i style="background:'+md.color+'"></i>'+md.name+'</span>';});
+      lg+='<span class="vl-val-lgd-item"><i style="background:#ffd700;border-style:dashed"></i>Konsensus (Median)</span>';
+      lg+='<span class="vl-val-lgd-item"><i style="background:'+ct.linePrice+'"></i>Harga Aktual</span>';
+      legendEl.innerHTML=lg;
+    }
+  }
+
+  // Chart theme helper
+  function getCmpChartTheme(){
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    return {
+      linePrice: isDark?'#e0e0e0':'#333',
+      fillPrice: isDark?'rgba(224,224,224,0.08)':'rgba(51,51,51,0.06)',
+      tick: isDark?'#999':'#666',
+      grid: isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)',
+      tooltipBg: isDark?'#1e1e1e':'#fff',
+      tooltipBorder: isDark?'#333':'#ddd',
+      tooltipTitle: isDark?'#fff':'#000',
+      tooltipText: isDark?'#ccc':'#333'
+    };
+  }
   window.vlMethodInfo=function(key){
     const box=document.getElementById('vlMethodModalBody'); if(!box) return;
     const md=document.getElementById('vlMethodModal');
@@ -10427,6 +10744,26 @@ body.vl-maxing{overflow:hidden}
   };
   window.vlCloseMethod=function(){ const md=document.getElementById('vlMethodModal'); if(md) md.classList.remove('show'); };
   window.vlSetCmpBasis=function(b){ _cmpBasis = (b==='current') ? 'current' : 'year'; renderCompare(); };
+
+  // ── Slider handlers ──
+  window.vlSldChange=function(key, val){
+    const v=parseFloat(val);
+    if(key==='rf'){ _cmpOverrides.rf=v/100; document.getElementById('vlSldRfVal').textContent=v.toFixed(1)+'%'; }
+    else if(key==='erp'){ _cmpOverrides.erp=v/100; document.getElementById('vlSldErpVal').textContent=v.toFixed(1)+'%'; }
+    else if(key==='beta'){ _cmpOverrides.beta=v; document.getElementById('vlSldBetaVal').textContent=v.toFixed(2); }
+    else if(key==='g5'){ _cmpOverrides.g5=v/100; document.getElementById('vlSldG5Val').textContent=v.toFixed(1)+'%'; }
+    else if(key==='tg'){ _cmpOverrides.tg=v/100; document.getElementById('vlSldTgVal').textContent=v.toFixed(1)+'%'; }
+    renderCompare();
+  };
+  window.vlResetSliders=function(){ _cmpOverrides={}; renderCompare(); };
+  window.vlToggleSliders=function(){
+    const body=document.getElementById('vlSliderBody');
+    const arrow=document.getElementById('vlSliderArrow');
+    if(!body) return;
+    const open=body.style.display!=='none';
+    body.style.display=open?'none':'block';
+    if(arrow) arrow.textContent=open?'\u25B6':'\u25BC';
+  };
   /* ── Render penuh untuk emiten/window aktif ── */
   function renderAll(){
     const s = curStock(); if(!s) return;
