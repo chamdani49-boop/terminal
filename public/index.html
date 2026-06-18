@@ -9084,30 +9084,32 @@ body.vl-maxing{overflow:hidden}
             </div>
           </div>
         </div>
-        <div class="card" style="margin:14px 0">
-          <div class="card-title">Rincian 3 Sub-Model (window aktif)</div>
-          <div class="vl-tw">
-            <table class="vl-table">
-              <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
-              <tbody id="vlSubModelBody"></tbody>
-            </table>
+        <div class="vl-grid2">
+          <div class="card">
+            <div class="card-title">Rincian 3 Sub-Model (window aktif)</div>
+            <div class="vl-tw">
+              <table class="vl-table">
+                <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
+                <tbody id="vlSubModelBody"></tbody>
+              </table>
+            </div>
+            <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
           </div>
-          <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
-        </div>
-        <div class="card" style="margin:14px 0">
-          <div class="card-title">Margin of Safety per Sub-Model (window aktif)</div>
-          <div style="position:relative;width:100%;height:210px"><canvas id="vlMos"></canvas></div>
-          <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
-        </div>
-        <div class="card" style="margin:14px 0">
-          <div class="card-title">Rata-rata Multiple Historis per Window</div>
-          <div class="vl-tw">
-            <table class="vl-table">
-              <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
-              <tbody id="vlMultBody"></tbody>
-            </table>
+          <div class="card">
+            <div class="card-title">Margin of Safety per Sub-Model (window aktif)</div>
+            <div style="position:relative;width:100%;height:210px"><canvas id="vlMos"></canvas></div>
+            <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
           </div>
-          <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
+          <div class="card">
+            <div class="card-title">Rata-rata Multiple Historis per Window</div>
+            <div class="vl-tw">
+              <table class="vl-table">
+                <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
+                <tbody id="vlMultBody"></tbody>
+              </table>
+            </div>
+            <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
+          </div>
         </div>
       </div>
 
