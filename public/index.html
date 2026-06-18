@@ -11772,10 +11772,10 @@ body.vl-maxing{overflow:hidden}
     const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
     const basis = _ujBasis || ('Y'+latest);
     if(basis==='current'){
-      // Sumber otoritatif: harga Q1 dari Excel (D2) via valuation.json
-      const qp = stock && stock.q1 && stock.q1.price;
-      if(ok(qp) && qp > 0) return qp;
-      // Fallback: price_history
+      // TTM (annualized/Q1) → Last Price = harga penutupan 31 Mar tahun
+      // TTM (akhir periode laporan tahunan), MENGIKUTI TANGGAL KUARTAL seperti
+      // template Excel (kolom harga = 3/31, sama dgn basis 'Annual' mode kuartal).
+      // mis. fiscalYear 2025 → close 3/31/2026 = 3.500. Fallback ke live bila kosong.
       const fy = ujFiscalYear();
       const p = ok(fy) ? ujPriceOn('3/31/'+(fy+1)) : null;
       return ok(p) && p>0 ? p : null;
