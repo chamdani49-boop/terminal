@@ -9490,12 +9490,12 @@ body.vl-maxing{overflow:hidden}
     <!-- ===== TAB: RINGKASAN ===== -->
     <div id="vl-tab-overview" class="vl-tc active">
 
-      <!-- ── PROYEKSI HARGA (UTAMA) — basis-driven: Tahun Berjalan / 2025 ── -->
+      <!-- ── PROYEKSI HARGA (UTAMA) — basis-driven: TTM / Tahun Berjalan ── -->
       <div id="vlProjMsg"></div>
       <div id="vlProjBody">
         <div class="card" style="margin-bottom:14px">
           <div class="card-title">🎯 Proyeksi Harga 5 Tahun</div>
-          <div class="vl-proj-sub">Skenario imbal hasil dari harga beli basis <b id="vlProjScope">Tahun Berjalan</b> — angka menyesuaikan basis yang dipilih (beda dengan snapshot model di atas).</div>
+          <div class="vl-proj-sub">Skenario imbal hasil dari harga beli basis <b id="vlProjScope">TTM</b> — angka menyesuaikan basis yang dipilih (beda dengan snapshot model di atas).</div>
           <div class="vl-basis" id="vlProjBasis" style="margin-bottom:14px"></div>
           <div class="vl-kpis vl-kpis-proj" style="margin-bottom:0">
             <div class="vl-kpi vl-kpi-key"><div class="l">🛡️ Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
@@ -10237,7 +10237,11 @@ body.vl-maxing{overflow:hidden}
     if(_projBasis!=='current' && !yrs.some(function(y){ return 'Y'+y===_projBasis; })) _projBasis = 'current';
     projBasisButtons(s);
     const scopeEl = document.getElementById('vlProjScope');
-    const basisLabel = (_projBasis==='current') ? 'Tahun Berjalan Q1' : _projBasis.replace(/^Y/,'');
+    // TTM label dinamis: "TTM Q<n> <tahun berjalan>"
+    const _ttmQ = (function(){ let q=(s&&s.q_label)?String(s.q_label).trim():''; if(!q)q='Q1'; if(!/^q/i.test(q)){const n=q.replace(/[^0-9]/g,'');q='Q'+(n||'1');} return q.toUpperCase(); })();
+    const _ttmYr = (function(){ const fy=ujFiscalYear(); return ok(fy)?fy+1:new Date().getFullYear(); })();
+    const _ttmLabel = 'TTM '+_ttmQ+' '+_ttmYr;
+    const basisLabel = (_projBasis==='current') ? _ttmLabel : _projBasis.replace(/^Y/,'');
     if(scopeEl) scopeEl.textContent = basisLabel;
     const chartBasisLbl = document.getElementById('vlChartBasisLabel');
     if(chartBasisLbl) chartBasisLbl.textContent = '· basis ' + basisLabel;
@@ -10281,9 +10285,9 @@ body.vl-maxing{overflow:hidden}
     const tb = document.getElementById('vlProjTableBody');
     if(tb){
       const basisPrice = pc._last || 0;
-      const basisLabel = pc._isCurrent ? 'Thn Berjalan' : (_projBasis.replace(/^Y/,''));
+      const basisLabel = pc._isCurrent ? _ttmLabel : (_projBasis.replace(/^Y/,''));
 
-      // Header info (mirip Mesin Valuasi: "KODE Sekarang X · [ACTUAL] 12M YYYY · X / +XX%")
+      // Header info (mirip Mesin Valuasi: "KODE Sekarang X · [ACTUAL] TTM Qn YYYY · X / +XX%")
       const thdr = document.getElementById('vlProjTableHeader');
       if(thdr){
         const chg = (ok(livePrice)&&ok(basisPrice)&&basisPrice>0) ? ((livePrice/basisPrice-1)*100) : null;
@@ -10291,14 +10295,14 @@ body.vl-maxing{overflow:hidden}
           '<span style="font-size:14px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:var(--text)">'+s.code+'</span>'+
           '<span style="font-size:12px;color:var(--text2)">Sekarang <strong style="color:var(--text)">'+fmtRp(livePrice)+'</strong></span>'+
           '<span class="vl-badge '+(ok(chg)&&chg>=0?'vl-up':'vl-dn')+'" style="font-size:11px">ACTUAL</span>'+
-          '<span style="font-size:12px;color:var(--text2)">12M '+basisLabel+' · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
+          '<span style="font-size:12px;color:var(--text2)">'+basisLabel+' · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
           (ok(chg)?'<span class="'+(chg>=0?'vl-pos':'vl-neg')+'" style="font-size:14px;font-weight:800">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
           '</div>';
       }
 
-      // Update header kolom tabel (vs 12M <tahun>)
+      // Update header kolom tabel (vs TTM <kuartal> <tahun>)
       const thRow = tb.closest('table').querySelector('thead tr');
-      if(thRow) thRow.innerHTML = '<th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs 12M '+basisLabel+')</th>';
+      if(thRow) thRow.innerHTML = '<th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs '+basisLabel+')</th>';
 
       let rows = years.map((yr,i)=>{
         const pt = pc.potensi[i];
@@ -11344,7 +11348,7 @@ body.vl-maxing{overflow:hidden}
         '<table class="vl-mini">'+
         row('% (vs Sekarang)','potensi ÷ harga live − 1 (keuntungan jika beli di harga sekarang)')+
         row('Potensi Price','harga target per tahun = harga basis × (1 + combine × n)')+
-        row('% (vs 12M / Basis)','potensi ÷ harga basis − 1 (keuntungan jika beli di harga basis)')+
+        row('% (vs Basis)','potensi ÷ harga basis − 1 (keuntungan jika beli di harga basis)')+
         row('Margin of Safety (kiri)','1 − harga live ÷ potensi tahun ke-5 (diskon harga live vs target)')+
         row('Margin of Safety (kanan)','1 − harga basis ÷ potensi tahun ke-5 (diskon harga basis vs target)')+
         '</table>'+
