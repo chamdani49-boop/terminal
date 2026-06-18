@@ -9892,7 +9892,7 @@ body.vl-maxing{overflow:hidden}
     mk('vlRev', { type:'bar', data:{ labels:lab('vlRev'), datasets:[
       { label:'Pendapatan (M)', data:A('vlRev',a=>d9(a.total_revenue)), backgroundColor:COL.blue, borderRadius:4, yAxisID:'y' },
       { label:'Laba Bersih (M)', data:A('vlRev',a=>d9(a.net_income)), backgroundColor:COL.green, borderRadius:4, yAxisID:'y' },
-      { label:'Harga (Rp)', data:A('vlRev',a=>a.price), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+      { label:'Harga (Rp)', data:A('vlRev',a=>a.price), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
     ]}, options:{...base, plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}}, scales:{
       y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
@@ -9957,7 +9957,7 @@ body.vl-maxing{overflow:hidden}
       if(anchorIdx>=0){ projCol[anchorIdx]=COL.purple; projRad[anchorIdx]=3; }
       const allv = histVals.concat(pm.potensi).filter(ok); const minY = allv.length ? Math.min(...allv)*0.9 : 0;
       const ds = [
-        { label:'Harga Saham', data:histData, borderColor:COL.orange, backgroundColor:'rgba(217,119,6,.10)', fill:true, pointRadius:0, borderWidth:2, tension:.25 },
+        { label:'Harga Saham', data:histData, borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:0, borderWidth:2, tension:.25 },
         { label:'Proyeksi Valuasi 5Th', data:projData, borderColor:COL.orange, backgroundColor:'transparent', borderDash:[6,4], fill:false, spanGaps:true, borderWidth:2.5, tension:.12,
           pointRadius:projRad, pointHoverRadius:7, pointBackgroundColor:projCol, pointBorderColor:'#fff', pointBorderWidth:1.5 }
       ];
@@ -10526,7 +10526,7 @@ body.vl-maxing{overflow:hidden}
     mk('ujC1', { type:'bar', data:{ labels:lab('ujC1'), datasets:[
       { label:'Pendapatan (Rp juta)', data:A('ujC1',a=>ok(a.total_revenue)?a.total_revenue/1e6:null), backgroundColor:COL.blue, borderRadius:3, yAxisID:'y' },
       { label:'Laba Bersih (Rp juta)', data:A('ujC1',a=>ok(a.net_income)?a.net_income/1e6:null), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
-      { label:'Last Price', data:A('ujC1',a=>a.price), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
+      { label:'Last Price', data:A('ujC1',a=>a.price), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
     ]}, options:{...base, plugins:tipP(), scales:{
       y:{ ticks:{...TICK, callback:v=>'Rp'+(v/1e6).toFixed(0)+'T'}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
@@ -10540,7 +10540,7 @@ body.vl-maxing{overflow:hidden}
     mk('ujC2', { type:'bar', data:{ labels:lab('ujC2'), datasets:[
       { label:'Laba%', data:grow, backgroundColor:COL.blue, borderRadius:3, yAxisID:'y' },
       { label:'ROE', data:A('ujC2',a=>a.roe), backgroundColor:COL.green, borderRadius:3, yAxisID:'y' },
-      { label:'Last Price', data:A('ujC2',a=>a.price), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
+      { label:'Last Price', data:A('ujC2',a=>a.price), type:'line', borderColor:COL.pink, backgroundColor:COL.pink, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.3 }
     ]}, options:{...base, plugins:tipP(), scales:{
       y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID },
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
