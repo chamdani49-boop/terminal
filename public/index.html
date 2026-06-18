@@ -8734,7 +8734,453 @@ loadData();
 
 /* Grid + chart — sinkron dgn .dash-grid gap */
 .vl-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
-.vl-chart{position:relative;width:100%;height:220px}
+/* ═══ VALUASI DASHBOARD GRID — Premium Fintech ═══ */
+.vl-grid4{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:18px;
+  margin-bottom:24px;
+}
+
+/* --- Base card --- */
+.vl-grid4 .bb-panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  transition:transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  position:relative;
+}
+.vl-grid4 .bb-panel:hover{
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb, var(--accent) 50%, var(--border));
+  box-shadow:0 8px 32px color-mix(in srgb, var(--accent) 18%, transparent), 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* --- Panel headers (no accent bar) --- */
+.vl-grid4 .bb-panel-header{
+  padding:16px 20px 12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  position:relative;
+}
+/* Thin gradient line below header */
+.vl-grid4 .bb-panel-header::after{
+  content:"";
+  position:absolute;
+  bottom:0;
+  left:20px;
+  right:20px;
+  height:1px;
+  background:linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, transparent 100%);
+  opacity:0.4;
+}
+
+/* --- Title: default (chart panels) --- */
+.vl-grid4 .bb-panel-title{
+  font-size:14px;
+  font-weight:600;
+  color:var(--text);
+  letter-spacing:0;
+  margin:0;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+
+/* --- Title: table panels (has .vl-tw) use uppercase condensed --- */
+.vl-grid4 .bb-panel:has(.vl-tw) .bb-panel-title{
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  color:var(--text2);
+}
+
+/* --- Panel body --- */
+.vl-grid4 .bb-panel-body{
+  padding:18px 20px 20px;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+/* --- Chart panels: gradient background --- */
+.vl-grid4 .bb-panel:has(.vl-chart),
+.vl-grid4 .bb-panel:has(.vl-chart-wrap){
+  background:linear-gradient(160deg, var(--card) 0%, color-mix(in srgb, var(--bg3) 12%, var(--card)) 100%);
+}
+
+/* --- Chart containers --- */
+.vl-grid4 .bb-panel .vl-chart{
+  height:240px;
+  position:relative;
+  width:100%;
+  margin-bottom:8px;
+}
+.vl-grid4 .bb-panel .vl-chart-wrap{
+  position:relative;
+  width:100%;
+  height:250px;
+  margin-bottom:8px;
+}
+
+/* ─── SUB-MODEL PANEL (first wide = hero panel) ─── */
+.vl-grid4 .bb-panel-wide:first-child{
+  background:linear-gradient(165deg, var(--card) 0%, color-mix(in srgb, var(--bg3) 18%, var(--card)) 100%);
+  border-top:none;
+  border-radius:14px;
+  position:relative;
+  box-shadow:0 4px 24px color-mix(in srgb, var(--accent) 10%, transparent), inset 0 1px 0 0 color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.vl-grid4 .bb-panel-wide:first-child::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  border-radius:14px 14px 0 0;
+}
+.vl-grid4 .bb-panel-wide:first-child .bb-panel-header::after{
+  opacity:0.6;
+  background:linear-gradient(90deg, var(--accent) 0%, var(--accent2) 40%, var(--accent3) 70%, transparent 100%);
+}
+.vl-grid4 .bb-panel-wide:first-child .bb-panel-title{
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:1.2px;
+  background:linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  color:transparent;
+}
+
+/* ─── EQUITY & BOOK VALUE (last wide panel) ─── */
+.vl-grid4 .bb-panel-wide:last-child{
+  border-top:2px solid var(--accent2);
+  background:linear-gradient(160deg, var(--card) 0%, color-mix(in srgb, var(--accent2) 5%, var(--card)) 100%);
+}
+.vl-grid4 .bb-panel-wide:last-child .bb-panel-header::after{
+  background:linear-gradient(90deg, var(--accent2) 0%, color-mix(in srgb, var(--accent2) 40%, transparent) 60%, transparent 100%);
+  opacity:0.5;
+}
+.vl-grid4 .bb-panel-wide:last-child .bb-panel-title{
+  font-size:14px;
+  font-weight:600;
+  color:var(--accent2);
+  text-transform:none;
+  letter-spacing:0;
+}
+
+/* --- Legend (subtle, integrated) --- */
+.vl-grid4 .bb-panel .vl-legend{
+  display:flex;
+  gap:14px;
+  margin-top:12px;
+  flex-wrap:wrap;
+  padding-top:8px;
+  border-top:none;
+  opacity:0.78;
+}
+.vl-grid4 .bb-panel .vl-leg{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-size:11px;
+  color:var(--text3);
+  font-weight:600;
+}
+.vl-grid4 .bb-panel .vl-dot{
+  width:12px;
+  height:4px;
+  border-radius:2px;
+  flex-shrink:0;
+}
+
+/* --- Notes (flush, low-profile) --- */
+.vl-grid4 .bb-panel .vl-note{
+  font-size:10.5px;
+  margin-top:6px;
+  color:var(--text3);
+  line-height:1.5;
+  font-style:italic;
+  opacity:0.6;
+}
+
+/* --- Info box (refined, no border-left bar) --- */
+.vl-grid4 .bb-panel .vl-info{
+  font-size:12px;
+  margin-top:14px;
+  padding:12px 16px;
+  background:color-mix(in srgb, var(--bg2) 80%, var(--card));
+  border:1px solid var(--border2);
+  border-left:none;
+  border-radius:10px;
+  color:var(--text2);
+  line-height:1.6;
+  position:relative;
+  overflow:hidden;
+}
+.vl-grid4 .bb-panel .vl-info::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg, var(--accent), var(--accent2), transparent);
+  opacity:0.5;
+}
+.vl-grid4 .bb-panel .vl-info strong{color:var(--text);font-weight:700}
+
+/* ─── Dashboard table overrides ─── */
+.vl-grid4 .bb-panel .vl-tw{
+  border-radius:8px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.vl-grid4 .bb-panel .vl-table{
+  font-size:12px;
+  min-width:auto;
+  width:100%;
+  border-collapse:collapse;
+}
+.vl-grid4 .bb-panel .vl-table thead th{
+  padding:10px 12px;
+  font-size:11px;
+  font-weight:800;
+  background:var(--bg3);
+  border-bottom:1px solid var(--border);
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  color:var(--text2);
+  text-align:right;
+  white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;
+}
+.vl-grid4 .bb-panel .vl-table thead th:first-child{text-align:left}
+.vl-grid4 .bb-panel .vl-table tbody td{
+  padding:9px 12px;
+  font-size:12px;
+  border-bottom:1px solid var(--border2);
+  font-family:'IBM Plex Mono',monospace;
+  font-variant-numeric:tabular-nums;
+  text-align:right;
+  color:var(--text);
+  transition:background 0.15s ease, border-color 0.15s ease;
+}
+.vl-grid4 .bb-panel .vl-table tbody td:first-child{
+  text-align:left;
+  color:var(--text2);
+  font-weight:600;
+  font-size:11px;
+  border-left:2px solid transparent;
+  transition:border-color 0.15s ease;
+}
+.vl-grid4 .bb-panel .vl-table tbody tr:nth-child(even){
+  background:color-mix(in srgb, var(--bg3) 25%, transparent);
+}
+.vl-grid4 .bb-panel .vl-table tbody tr:hover td{
+  background:color-mix(in srgb, var(--accent) 8%, var(--bg3));
+}
+.vl-grid4 .bb-panel .vl-table tbody tr:hover td:first-child{
+  border-left-color:var(--accent);
+}
+.vl-grid4 .bb-panel .vl-table tbody tr.vl-row-active td{
+  background:color-mix(in srgb, var(--accent) 14%, var(--bg2));
+  font-weight:700;
+}
+.vl-grid4 .bb-panel .vl-table tbody tr.vl-row-active td:first-child{
+  border-left-color:var(--accent);
+}
+
+/* Sub-Model table: enhanced row hover */
+.vl-grid4 .bb-panel-wide:first-child .vl-table tbody tr:hover td{
+  background:color-mix(in srgb, var(--accent) 12%, var(--bg3));
+}
+
+/* --- Detail button in Sub-Model panel header --- */
+.vl-detail-btn{
+  margin-left:auto;
+  padding:5px 12px;
+  font-size:11px;
+  font-weight:700;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:color-mix(in srgb, var(--accent) 12%, var(--bg2));
+  color:var(--accent);
+  cursor:pointer;
+  transition:background 0.2s, border-color 0.2s, transform 0.15s;
+  white-space:nowrap;
+}
+.vl-detail-btn:hover{
+  background:color-mix(in srgb, var(--accent) 24%, var(--bg2));
+  border-color:var(--accent);
+  transform:scale(1.04);
+}
+
+/* --- Modal overlay & box --- */
+.vl-modal-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:rgba(0,0,0,0.65);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  animation:vlFadeIn 0.2s ease;
+}
+.vl-modal-overlay.active{display:flex}
+@keyframes vlFadeIn{from{opacity:0}to{opacity:1}}
+.vl-modal-box{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  width:100%;
+  max-width:560px;
+  max-height:85vh;
+  overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+  animation:vlSlideUp 0.25s ease;
+}
+@keyframes vlSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.vl-modal-header{
+  display:flex;
+  align-items:center;
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  position:sticky;
+  top:0;
+  background:var(--card);
+  z-index:1;
+  border-radius:16px 16px 0 0;
+}
+.vl-modal-title{
+  font-size:14px;
+  font-weight:700;
+  color:var(--text);
+  letter-spacing:0.3px;
+}
+.vl-modal-close{
+  margin-left:auto;
+  background:none;
+  border:none;
+  font-size:22px;
+  color:var(--text2);
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:6px;
+  transition:background 0.15s, color 0.15s;
+  line-height:1;
+}
+.vl-modal-close:hover{
+  background:color-mix(in srgb, var(--accent) 15%, var(--bg2));
+  color:var(--text);
+}
+.vl-modal-body{
+  padding:20px;
+}
+.vl-modal-section{
+  margin-bottom:20px;
+}
+.vl-modal-section:last-child{margin-bottom:0}
+.vl-modal-subtitle{
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--text2);
+  margin:0 0 12px 0;
+}
+/* Modal inner chart/table inherit styles from bb-panel */
+.vl-modal-body .vl-chart-wrap{
+  position:relative;
+  width:100%;
+  height:180px;
+  margin-bottom:8px;
+}
+.vl-modal-body .vl-tw{
+  border-radius:8px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.vl-modal-body .vl-table{
+  font-size:12px;
+  min-width:auto;
+  width:100%;
+  border-collapse:collapse;
+}
+.vl-modal-body .vl-table thead th{
+  padding:10px 12px;
+  font-size:11px;
+  font-weight:800;
+  background:var(--bg3);
+  border-bottom:1px solid var(--border);
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  color:var(--text2);
+  text-align:right;
+  white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;
+}
+.vl-modal-body .vl-table thead th:first-child{text-align:left}
+.vl-modal-body .vl-table tbody td{
+  padding:9px 12px;
+  font-size:12px;
+  border-bottom:1px solid var(--border2);
+  font-family:'IBM Plex Mono',monospace;
+  font-variant-numeric:tabular-nums;
+  text-align:right;
+  color:var(--text);
+}
+.vl-modal-body .vl-table tbody td:first-child{
+  text-align:left;
+  color:var(--text2);
+  font-weight:600;
+  font-size:11px;
+}
+.vl-modal-body .vl-table tbody tr:nth-child(even){
+  background:color-mix(in srgb, var(--bg3) 25%, transparent);
+}
+.vl-modal-body .vl-info{
+  font-size:11px;
+  margin-top:10px;
+  padding:10px 14px;
+  background:color-mix(in srgb, var(--bg2) 80%, var(--card));
+  border:1px solid var(--border2);
+  border-radius:8px;
+  color:var(--text2);
+  line-height:1.5;
+}
+.vl-modal-body .vl-info strong{color:var(--text);font-weight:700}
+.vl-modal-body .vl-note{
+  font-size:10.5px;
+  margin-top:6px;
+  color:var(--text3);
+  line-height:1.5;
+  font-style:italic;
+  opacity:0.6;
+}
+@media(max-width:600px){
+  .vl-modal-overlay{padding:12px}
+  .vl-modal-box{max-width:100%;max-height:90vh;border-radius:12px}
+  .vl-modal-body .vl-chart-wrap{height:150px}
+}
+
+/* --- Full-width panels --- */
+.vl-grid4 .bb-panel-wide{grid-column:span 2}
+
+/* --- Responsive --- */
+@media(max-width:900px){
+  .vl-grid4{grid-template-columns:1fr}
+  .vl-grid4 .bb-panel-wide{grid-column:span 1}
+  .vl-grid4 .bb-panel:hover{transform:none}
+}
+.vl-chart{position:relative;width:100%;height:240px}
 .vl-chart-tall{position:relative;width:100%;height:240px}
 .vl-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
 .vl-leg{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);font-weight:600}
@@ -8749,6 +9195,8 @@ loadData();
 .vl-table tbody td:first-child{text-align:left;color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:12px}
 .vl-table tbody tr:nth-child(even){background:var(--bg2)}
 .vl-table tbody tr:hover td{background:var(--bg3)}
+.vl-live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-left:6px;vertical-align:middle;animation:vlLivePulse 1.5s infinite}
+@keyframes vlLivePulse{0%,100%{opacity:1;box-shadow:0 0 0 0 var(--green)}50%{opacity:.4;box-shadow:0 0 0 3px rgba(0,200,100,.15)}}
 .vl-chg-up{font-size:10px;color:var(--green);display:block;margin-top:2px;font-family:'Plus Jakarta Sans',sans-serif}
 .vl-chg-dn{font-size:10px;color:var(--red);display:block;margin-top:2px;font-family:'Plus Jakarta Sans',sans-serif}
 
@@ -8757,11 +9205,11 @@ loadData();
 .vl-basis-btn{padding:9px 18px;border-radius:var(--radius-pill);border:1px solid var(--border);cursor:pointer;font-size:14px;font-weight:700;background:var(--card);color:var(--text2);font-family:inherit;transition:all .2s}
 .vl-basis-btn:hover{color:var(--accent);border-color:var(--accent)}
 .vl-basis-btn.active{border-color:transparent;background:var(--grad);color:#fff;box-shadow:0 6px 20px rgba(109,40,217,.25)}
-.vl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
-.vl-kpi{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 14px;text-align:center}
-.vl-kpi .l{font-size:11px;color:var(--text2);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
-.vl-kpi .v{font-size:18px;font-weight:700;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;color:var(--text)}
-.vl-kpi .d{font-size:11px;margin-top:3px;font-weight:600}
+.vl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:16px}
+.vl-kpi{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 10px;text-align:center}
+.vl-kpi .l{font-size:10px;color:var(--text2);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.vl-kpi .v{font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;color:var(--text)}
+.vl-kpi .d{font-size:10px;margin-top:2px;font-weight:600}
 
 /* Info box */
 .vl-info{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0;padding:13px 15px;font-size:13px;color:var(--text2);line-height:1.7;margin-top:12px}
@@ -8892,7 +9340,93 @@ loadData();
 #page-valuasi .card.vl-max{position:fixed;inset:12px;z-index:9998;margin:0;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.5)}
 #page-valuasi .card.vl-max .vl-chart,#page-valuasi .card.vl-max .vl-chart-tall,#page-valuasi .card.vl-max .uj-chart{height:calc(100vh - 150px)}
 #page-valuasi .card.vl-max canvas{max-height:calc(100vh - 150px)}
+#page-valuasi .vl-cmp-duo .card.vl-max{position:fixed;inset:12px;z-index:9998;width:auto!important;height:auto!important;grid-column:1/-1}
+#page-valuasi .vl-cmp-duo .card.vl-max canvas{height:calc(100vh - 180px)!important}
+#page-valuasi .vl-cmp-duo .card.vl-max .vl-ff{max-height:calc(100vh - 180px);overflow-y:auto}
+#page-valuasi .vl-cmp-duo .card.vl-max .vl-cmp-canvas-wrap{height:calc(100vh - 180px)}
+#page-valuasi .vl-cmp-duo .card.vl-max .vl-cmp-canvas-wrap canvas{height:100%!important}
 body.vl-maxing{overflow:hidden}
+
+/* ════════════ DIFERENSIASI GRUP KARTU (Ringkasan vs Proyeksi) ════════════
+   Dua grup kartu (snapshot model fundamental vs skenario per-basis) tadinya
+   memakai label sama sehingga terlihat duplikat. Tambahkan konteks scope +
+   ikon + deskripsi agar masing-masing jelas, informatif, dan profesional. */
+/* Header kecil di atas grup kartu hero — beri konteks scope */
+#page-valuasi .vl-sec-hd{display:flex;align-items:center;gap:10px;margin:0 2px 11px;flex-wrap:wrap}
+#page-valuasi .vl-sec-hd .t{font-size:12px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--text)}
+#page-valuasi .vl-sec-hd .chip{font-size:10.5px;font-weight:700;color:var(--text2);background:var(--bg2);border:1px solid var(--border);padding:3px 11px;border-radius:var(--radius-pill);letter-spacing:.3px;white-space:nowrap}
+#page-valuasi .vl-sec-hd .line{flex:1;height:1px;background:var(--border);min-width:20px}
+
+/* Sub-judul kartu proyeksi — jelaskan basis aktif (beda dgn snapshot di atas) */
+#page-valuasi .vl-proj-sub{font-size:11.5px;color:var(--text3);font-weight:500;line-height:1.55;margin:-8px 0 14px}
+#page-valuasi .vl-proj-sub b{color:var(--accent);font-weight:800}
+
+/* KPI proyeksi: ikon + deskripsi + hover; highlight metrik kunci (MoS & FV) */
+#page-valuasi .vl-kpis-proj .vl-kpi{transition:transform .15s ease,border-color .15s ease}
+#page-valuasi .vl-kpis-proj .vl-kpi:hover{transform:translateY(-2px);border-color:var(--accent)}
+#page-valuasi .vl-kpis-proj .vl-kpi .l{display:flex;align-items:center;justify-content:center;gap:5px}
+#page-valuasi .vl-kpis-proj .vl-kpi .d{color:var(--text3);font-weight:500;line-height:1.4;margin-top:4px}
+#page-valuasi .vl-kpis-proj .vl-kpi-key{background:var(--bg3);border-top-width:3px}
+
+/* ════════════════════════════════════════════════════════════════════
+   COMPACT TERMINAL HEADER — redesign minimalis (Bloomberg-like)
+   Merapatkan toolbar, banner, header emiten & kartu ringkasan agar hemat
+   ruang vertikal, padat, dan profesional. CSS-only, scoped #page-valuasi.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* — TOOLBAR: satu baris rapat, label inline di kiri kontrol — */
+#page-valuasi .vl-toolbar{padding:8px 13px;gap:9px 22px;align-items:center;margin-bottom:10px;border-radius:9px}
+#page-valuasi .vl-toolbar .vl-tb-group{flex-direction:row;align-items:center;gap:10px}
+#page-valuasi .vl-tb-label{font-size:9.5px;letter-spacing:.9px;color:var(--text3);white-space:nowrap;margin:0}
+#page-valuasi .vl-select{padding:6px 30px 6px 11px;font-size:12.5px;min-width:196px;border-radius:7px}
+/* Window jadi segmented control rapat (track + tombol di dalam) */
+#page-valuasi .vl-win{gap:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:2px}
+#page-valuasi .vl-win .vl-basis-btn{padding:5px 13px;font-size:11.5px;border:none;background:none;border-radius:6px;color:var(--text2);box-shadow:none}
+#page-valuasi .vl-win .vl-basis-btn:hover{color:var(--text);border-color:transparent}
+#page-valuasi .vl-win .vl-basis-btn.active{background:var(--accent);color:#fff;box-shadow:none}
+
+/* — BANNER: strip tipis selaras panel terminal (bukan gradient mencolok) — */
+#page-valuasi #vlBanner{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;padding:7px 13px;font-size:11px;line-height:1.45;margin-bottom:11px;color:var(--text3)}
+#page-valuasi #vlBanner strong{font-weight:700}
+
+/* — HEADER EMITEN: bar padat, sejajar tengah — */
+#page-valuasi .vl-head{padding:11px 16px;margin-bottom:12px;gap:12px;align-items:center}
+#page-valuasi .vl-logo{width:40px;height:40px;font-size:11px;border-radius:8px}
+#page-valuasi .vl-name{font-size:18px;letter-spacing:1px}
+#page-valuasi .vl-tag{font-size:9px;padding:2px 8px;margin-left:6px}
+#page-valuasi .vl-sub{font-size:11px;margin-top:1px}
+#page-valuasi .vl-head-right{gap:14px 16px;align-items:center}
+#page-valuasi .vl-price{font-size:25px}
+#page-valuasi .vl-price-meta{font-size:10px;margin-top:1px}
+#page-valuasi .vl-badge{font-size:10px;padding:2px 8px}
+#page-valuasi .vl-mktcap .l{font-size:9px}
+#page-valuasi .vl-mktcap .v{font-size:13px}
+#page-valuasi .vl-mos{padding:7px 14px;min-width:104px;border-radius:9px}
+#page-valuasi .vl-mos .v{font-size:18px}
+#page-valuasi .vl-mos .l,#page-valuasi .vl-mos .d{font-size:9.5px}
+
+/* — SECTION HEADER ringkasan: rapat — */
+#page-valuasi .vl-sec-hd{margin:0 2px 8px}
+
+/* — KARTU RINGKASAN: padat, tanpa emoji besar (kesan data terminal) — */
+#page-valuasi .vl-mcs{gap:8px}
+#page-valuasi .vl-mc{padding:10px 14px;border-radius:9px}
+#page-valuasi .vl-mc .i{display:none}
+#page-valuasi .vl-mc .l{font-size:9.5px;letter-spacing:.7px;margin-bottom:4px}
+#page-valuasi .vl-mc .v{font-size:18px}
+#page-valuasi .vl-mc .s{font-size:10px;margin-top:2px}
+
+@media(max-width:760px){
+  #page-valuasi .vl-toolbar .vl-tb-group{flex-direction:column;align-items:flex-start;gap:6px}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BLOOMBERG TERMINAL PANEL — color coding helpers
+   ════════════════════════════════════════════════════════════════════ */
+.vl-grid4 .bb-panel .vl-table .vl-val-pos{color:var(--green)}
+.vl-grid4 .bb-panel .vl-table .vl-val-neg{color:var(--red)}
+.vl-grid4 .bb-panel .vl-table .vl-val-hl{color:var(--yellow)}
 </style>
 
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
@@ -8928,7 +9462,7 @@ body.vl-maxing{overflow:hidden}
         <select id="vlStockSel" class="vl-select" onchange="vlSelectStock(this.value)"></select>
       </div>
       <div class="vl-tb-group">
-        <label class="vl-tb-label">Window Rata-rata Multiple</label>
+        <label class="vl-tb-label">Window Rata-rata Multiple <button class="vl-iq" onclick="vlMethodInfo('window')" style="vertical-align:middle">i</button></label>
         <div class="vl-win" id="vlWinBtns">
           <button class="vl-basis-btn" data-win="3"  onclick="vlSetWindow(3)">3 Th</button>
           <button class="vl-basis-btn" data-win="5"  onclick="vlSetWindow(5)">5 Th</button>
@@ -8946,38 +9480,38 @@ body.vl-maxing{overflow:hidden}
     <!-- HEADER EMITEN (dinamis — diisi JS) -->
     <div class="vl-head" id="vlHead"></div>
 
-    <!-- METRIC CARDS (dinamis — diisi JS) -->
-    <div class="vl-mcs" id="vlCards"></div>
-
     <!-- TABS -->
     <div class="vl-tabs" role="tablist">
       <button class="vl-tab active" role="tab" onclick="vlSwitchTab('overview',this)">📊 Ringkasan</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('fundamental',this)">📋 Fundamental</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('dividen',this)">💸 Dividen</button>
-      <button class="vl-tab" role="tab" onclick="vlSwitchTab('ttm',this)">📐 Multiples</button>
+      <button class="vl-tab" role="tab" onclick="vlSwitchTab('metode',this)">⚖️ Perbandingan</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('uji',this)">🔬 Mesin Valuasi</button>
     </div>
 
     <!-- ===== TAB: RINGKASAN ===== -->
     <div id="vl-tab-overview" class="vl-tc active">
 
-      <!-- ── PROYEKSI HARGA (UTAMA) — basis-driven: Tahun Berjalan / 2025 ── -->
+      <!-- ── PROYEKSI HARGA (UTAMA) — basis-driven: TTM dinamis ── -->
       <div id="vlProjMsg"></div>
       <div id="vlProjBody">
         <div class="card" style="margin-bottom:14px">
           <div class="card-title">🎯 Proyeksi Harga 5 Tahun</div>
+          <div class="vl-proj-sub">Skenario imbal hasil dari harga beli basis <b id="vlProjScope">TTM</b> — angka menyesuaikan basis yang dipilih (beda dengan snapshot model di atas).</div>
           <div class="vl-basis" id="vlProjBasis" style="margin-bottom:14px"></div>
-          <div class="vl-kpis" style="margin-bottom:0">
-            <div class="vl-kpi"><div class="l">Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
-            <div class="vl-kpi"><div class="l">CAGR 5 Tahun</div><div class="v" id="vlKpiCagr" style="color:var(--accent2)">-</div></div>
-            <div class="vl-kpi"><div class="l">Dividen Yield</div><div class="v" id="vlKpiDy" style="color:var(--accent)">-</div></div>
-            <div class="vl-kpi"><div class="l">Combine Return</div><div class="v" id="vlKpiComb" style="color:var(--green)">-</div></div>
-            <div class="vl-kpi"><div class="l">Future Value</div><div class="v" id="vlKpiFv">-</div></div>
+          <div class="vl-kpis vl-kpis-proj" style="margin-bottom:0">
+            <div class="vl-kpi vl-kpi-key"><div class="l">🛡️ Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
+            <div class="vl-kpi"><div class="l">📈 CAGR 5 Tahun</div><div class="v" id="vlKpiCagr" style="color:var(--accent2)">-</div><div class="d">Pertumbuhan harga / th</div></div>
+            <div class="vl-kpi"><div class="l">💰 Dividen Yield</div><div class="v" id="vlKpiDy" style="color:var(--accent)">-</div><div class="d">Imbal hasil dividen / th</div></div>
+            <div class="vl-kpi"><div class="l">🎯 Combine Return</div><div class="v" id="vlKpiComb" style="color:var(--green)">-</div><div class="d">Capital gain + dividen</div></div>
+            <div class="vl-kpi vl-kpi-key"><div class="l">🪙 Future Value</div><div class="v" id="vlKpiFv">-</div><div class="d">Total apresiasi 5 th</div></div>
+            <div class="vl-kpi"><div class="l">📤 DPR</div><div class="v" id="vlKpiDpr">-</div><div class="d">Dividen payout ratio</div></div>
+            <div class="vl-kpi"><div class="l">⏱️ Th. Balik Modal</div><div class="v" id="vlKpiTbm">-</div><div class="d">Tahun (= PER)</div></div>
           </div>
         </div>
         <div class="vl-grid2">
           <div class="card">
-            <div class="card-title">Harga Saham — Bulanan / Harian</div>
+            <div class="card-title">Harga Saham — Bulanan / Harian <span id="vlChartBasisLabel" style="font-weight:600;color:var(--accent);text-transform:none;letter-spacing:0"></span></div>
             <div class="vl-seg" id="vlChartMode">
               <button type="button" class="on" data-m="proyeksi" onclick="vlSetChartMode('proyeksi')">📈 Bulanan</button>
               <button type="button" data-m="harian" onclick="vlSetChartMode('harian')">🕯️ Harian</button>
@@ -8987,79 +9521,119 @@ body.vl-maxing{overflow:hidden}
             <div class="vl-legend" id="vlProjLegend" style="margin-top:10px">
               <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Harga Saham (historis → live)</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target Valuasi 5Th</div>
+              <button class="vl-iq" onclick="vlMethodInfo('chartproj')" style="margin-left:8px">i</button>
             </div>
             <div class="vl-legend" id="vlHarianLegend" style="margin-top:10px;display:none">
               <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Candle naik</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#e11d48"></div>Candle turun</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>Harga Live</div>
               <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>Proyeksi Target 5Th</div>
+              <button class="vl-iq" onclick="vlMethodInfo('chartharian')" style="margin-left:8px">i</button>
             </div>
-            <div class="vl-info" id="vlProjInfo" style="margin-top:8px">Garis ungu = <strong>harga saham</strong> (riwayat → titik terakhir = harga <strong>live</strong>). Oranye putus-putus = <strong>proyeksi target</strong> valuasi 5Th (basis terpilih); <strong>hijau</strong> = target tercapai. Tombol rentang mengatur lookback.</div>
-            <div class="vl-info" id="vlHarianInfo" style="margin-top:8px;display:none">Memuat data harian…</div>
           </div>
           <div class="card">
-            <div class="card-title">Tabel Proyeksi G&amp;L per Tahun</div>
+            <div class="card-title">Tabel Proyeksi G&amp;L per Tahun <button class="vl-iq" onclick="vlMethodInfo('projgl')" style="vertical-align:middle;margin-left:8px">i</button></div>
+            <div id="vlProjTableHeader" style="margin-bottom:10px"></div>
             <div class="vl-tw">
-              <table class="vl-table"><thead><tr><th>Tahun</th><th>Harga Potensi</th><th>G&amp;L</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
+              <table class="vl-table"><thead><tr><th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs Basis)</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
             </div>
-            <div class="vl-info" style="margin-top:10px"><strong>G&amp;L</strong> = Gain &amp; Loss vs harga acuan basis (belum termasuk dividen).</div>
           </div>
         </div>
-        <div class="card" style="margin:14px 0">
-          <div class="card-title">Rincian 3 Sub-Model (window aktif)</div>
-          <div class="vl-tw">
-            <table class="vl-table">
-              <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
-              <tbody id="vlSubModelBody"></tbody>
-            </table>
+        <div class="vl-grid4">
+          <!-- Panel 1: Sub-Model Breakdown (wide) -->
+          <div class="bb-panel bb-panel-wide">
+            <div class="bb-panel-header">
+              <div class="bb-panel-title" id="vlSubModelTitle">Sub-Model Breakdown &middot; Window 5 Th</div>
+              <button class="vl-detail-btn" onclick="vlOpenMultModal()" title="Lihat Detail MoS & Multiples">&#x1F4CA; Detail</button>
+            </div>
+            <div class="bb-panel-body">
+              <div class="vl-tw">
+                <table class="vl-table">
+                  <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
+                  <tbody id="vlSubModelBody"></tbody>
+                </table>
+              </div>
+              <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
+            </div>
           </div>
-          <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
-        </div>
-      </div>
 
-      <div class="vl-grid2">
-        <div class="card">
-          <div class="card-title">Pendapatan &amp; Laba Bersih (Miliar Rp)</div>
-          <div class="vl-chart"><canvas id="vlRev"></canvas></div>
-          <div class="vl-legend">
-            <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Pendapatan</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Laba Bersih</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga Saham</div>
+          <!-- Modal: Margin of Safety + Historical Multiples -->
+          <div class="vl-modal-overlay" id="vlMultModal" onclick="vlCloseMultModal(event)">
+            <div class="vl-modal-box" onclick="event.stopPropagation()">
+              <div class="vl-modal-header">
+                <span class="vl-modal-title">Detail Multiples &amp; Margin of Safety</span>
+                <button class="vl-modal-close" onclick="vlCloseMultModal()">&times;</button>
+              </div>
+              <div class="vl-modal-body">
+                <!-- MoS Chart -->
+                <div class="vl-modal-section">
+                  <h4 class="vl-modal-subtitle">Margin of Safety</h4>
+                  <div class="vl-chart-wrap"><canvas id="vlMos"></canvas></div>
+                  <div class="vl-info"><strong>MoS</strong> = seberapa murah vs nilai wajar. <strong>&ge;30%</strong> ideal, 20-30% cukup, &lt;20% hati-hati.</div>
+                </div>
+                <!-- Historical Multiples Table -->
+                <div class="vl-modal-section">
+                  <h4 class="vl-modal-subtitle">Historical Multiples</h4>
+                  <div class="vl-tw">
+                    <table class="vl-table">
+                      <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
+                      <tbody id="vlMultBody"></tbody>
+                    </table>
+                  </div>
+                  <p class="vl-note">Baris ditandai = window aktif untuk model 5-tahun.</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="card">
-          <div class="card-title">ROE Tahunan &amp; Margin Laba (%)</div>
-          <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
-          <div class="vl-legend">
-            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>ROE Tahunan</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin Laba %</div>
+          <!-- Panel 4: Revenue & Net Income -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">Revenue & Net Income</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart"><canvas id="vlRev"></canvas></div>
+              <div class="vl-legend">
+                <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Pendapatan</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Laba Bersih</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-title">Rasio Valuasi Tahunan — PBV · PER · PSR</div>
-        <div style="position:relative;width:100%;height:200px"><canvas id="vlRatio"></canvas></div>
-        <div class="vl-legend" style="margin-top:10px">
-          <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV (Price/Book)</div>
-          <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>PER (Price/Earnings)</div>
-          <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>PSR (Price/Sales)</div>
-        </div>
-      </div>
-      <div class="vl-grid2">
-        <div class="card">
-          <div class="card-title">EPS &amp; SPS Tahunan (Rp)</div>
-          <div class="vl-chart"><canvas id="vlEps"></canvas></div>
-          <div class="vl-legend">
-            <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS (Laba/Saham)</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>SPS (Penjualan/Saham)</div>
+          <!-- Panel 5: ROE & Margin -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">ROE & Profit Margin</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
+              <div class="vl-legend">
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>ROE</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin %</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Harga</div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Ekuitas &amp; Book Value</div>
-          <div class="vl-chart"><canvas id="vlEquity"></canvas></div>
-          <div class="vl-legend">
-            <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas (Miliar Rp)</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Book Value</div>
+          <!-- Panel 6: Valuation Ratios -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">Valuation Ratios</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart"><canvas id="vlRatio"></canvas></div>
+              <div class="vl-legend">
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>PER</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>PSR</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>BVPS</div>
+              </div>
+            </div>
+          </div>
+          <!-- Panel 7: EPS, SPS, Ekuitas & Book Value (single canvas) -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">EPS &middot; SPS &middot; Ekuitas &middot; Book Value</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart" style="height:220px"><canvas id="vlEps"></canvas></div>
+              <div class="vl-legend">
+                <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>SPS</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas (M)</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Book Value</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -9075,7 +9649,7 @@ body.vl-maxing{overflow:hidden}
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong>Thn Berjalan</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
+        <p class="vl-note">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong class="vl-ttm-note">TTM</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
       </div>
     </div>
 
@@ -9109,25 +9683,6 @@ body.vl-maxing{overflow:hidden}
           </div>
           <div class="vl-info" id="vlDivNote"><strong>💡 Catatan:</strong> Yield dihitung dari DPS terbaru dibagi harga beli yang dimasukkan. Tahun balik modal = harga beli ÷ DPS terbaru.</div>
         </div>
-      </div>
-    </div>
-
-    <!-- ===== TAB: MULTIPLES (avg multiples + MoS sub-model) ===== -->
-    <div id="vl-tab-ttm" class="vl-tc">
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-title">Margin of Safety per Sub-Model (window aktif)</div>
-        <div style="position:relative;width:100%;height:210px"><canvas id="vlMos"></canvas></div>
-        <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Rata-rata Multiple Historis per Window</div>
-        <div class="vl-tw">
-          <table class="vl-table">
-            <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
-            <tbody id="vlMultBody"></tbody>
-          </table>
-        </div>
-        <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
       </div>
     </div>
 
@@ -9202,7 +9757,7 @@ body.vl-maxing{overflow:hidden}
       <div class="card" style="margin-bottom:14px">
         <div class="card-title">🔬 Mesin Valuasi — Skenario Multi-Basis (pondasi rumus valuasi, tervalidasi vs Excel)</div>
         <div class="uj-controls">
-          <span class="uj-note-inline">Last Price valuasi: <strong id="ujLastInfo">live</strong> · basis <strong>Tahun Berjalan</strong> memakai harga close <strong>31 Mar</strong> (mengikuti tanggal kuartal, sesuai Excel), bukan harga live.</span>
+          <span class="uj-note-inline">Last Price valuasi: <strong id="ujLastInfo">live</strong> · basis <strong class="vl-ttm-note">TTM</strong> memakai harga close <strong>31 Mar</strong> (mengikuti tanggal kuartal, sesuai Excel), bukan harga live.</span>
         </div>
         <div class="uj-controls" style="margin-top:8px">
           <span class="vl-tb-label" style="margin-right:4px">Basis Data</span>
@@ -9218,7 +9773,129 @@ body.vl-maxing{overflow:hidden}
         <div class="card"><div class="card-title">Laba% &amp; ROE (Tahunan) + Harga</div><div class="uj-chart"><canvas id="ujC2"></canvas></div></div>
         <div class="card"><div class="card-title">PBV · PER · PSR + Book Value</div><div class="uj-chart"><canvas id="ujC3"></canvas></div></div>
       </div>
-      <p class="vl-note" style="margin-top:12px">Panel <strong>Mesin Valuasi</strong> ini adalah pondasi rumus mesin: bila ada sel yang berbeda dengan Excel, itu menandakan perbedaan input data atau metodologi yang perlu disetel. Basis dapat diganti Kuartal/Tahunan/Tahun Berjalan.</p>
+      <p class="vl-note" style="margin-top:12px">Panel <strong>Mesin Valuasi</strong> ini adalah pondasi rumus mesin: bila ada sel yang berbeda dengan Excel, itu menandakan perbedaan input data atau metodologi yang perlu disetel. Basis dapat diganti Kuartal/Tahunan/<span class="vl-ttm-note">TTM</span>.</p>
+    </div>
+
+    <!-- ===== TAB: PERBANDINGAN METODE VALUASI ===== -->
+    <style>
+    /* ── PERBANDINGAN METODE VALUASI (scoped) ── */
+    #page-valuasi #vl-tab-metode .vl-cmp-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(208px,1fr));gap:10px;margin-bottom:12px}
+    #page-valuasi .vl-cmp-basis{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    #page-valuasi .vl-cmp-basis .lab{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text2)}
+    #page-valuasi .vl-cmp-basis .src{font-size:10.5px;color:var(--text3);font-weight:600}
+    #page-valuasi .vl-cmp-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px 15px;position:relative}
+    [data-theme="dark"] #page-valuasi .vl-cmp-card{box-shadow:0 0 0 1px var(--border) inset}
+    #page-valuasi .vl-cmp-card .l{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    #page-valuasi .vl-cmp-card .l .sub,#page-valuasi .vl-cmp-card .sub{font-size:10px;font-weight:600;color:var(--text3);text-transform:none;letter-spacing:0}
+    #page-valuasi .vl-cmp-card .v{font-size:23px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--text);line-height:1.05}
+    #page-valuasi .vl-cmp-verd{font-size:11px;color:var(--text2);margin-top:6px;font-weight:600}
+    #page-valuasi .vl-cmp-tally{display:flex;gap:6px;flex-wrap:wrap}
+    #page-valuasi .vl-cmp-tally .t{font-size:11px;font-weight:800;padding:3px 9px;border-radius:var(--radius-pill)}
+    #page-valuasi .vl-cmp-tally .t.cheap,#page-valuasi .vl-vchip.cheap{background:var(--green-bg);color:var(--green)}
+    #page-valuasi .vl-cmp-tally .t.fair,#page-valuasi .vl-vchip.fair{background:var(--yellow-bg);color:var(--yellow)}
+    #page-valuasi .vl-cmp-tally .t.exp,#page-valuasi .vl-vchip.exp{background:var(--red-bg);color:var(--red)}
+    #page-valuasi .vl-vchip{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:var(--radius-pill);letter-spacing:.2px}
+    #page-valuasi .vl-vchip.na{background:var(--bg2);color:var(--text3)}
+    #page-valuasi .vl-pos{color:var(--green);font-weight:700}
+    #page-valuasi .vl-neg{color:var(--red);font-weight:700}
+    #page-valuasi .vl-iq{width:17px;height:17px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-weight:700;font-style:italic;cursor:pointer;line-height:15px;padding:0;font-family:Georgia,'Times New Roman',serif;transition:all .15s;flex-shrink:0}
+    #page-valuasi .vl-iq:hover{border-color:var(--accent);color:var(--accent)}
+    /* range bar */
+    #page-valuasi .vl-cmp-range{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px 12px}
+    #page-valuasi .vl-cmp-range .hd{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:14px}
+    #page-valuasi .vl-cmp-track{position:relative;height:10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin:0 4px}
+    #page-valuasi .vl-cmp-track .band{position:absolute;top:-1px;bottom:-1px;background:var(--green-bg);border:1px solid var(--green);border-radius:6px;opacity:.55}
+    #page-valuasi .vl-cmp-track .mark{position:absolute;top:-5px;width:2px;height:20px;transform:translateX(-1px)}
+    #page-valuasi .vl-cmp-track .mark.median{background:var(--accent)}
+    #page-valuasi .vl-cmp-track .mark.price{background:var(--text);width:3px}
+    #page-valuasi .vl-cmp-track .mark.price::after{content:"";position:absolute;top:-5px;left:50%;transform:translateX(-50%);border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--text)}
+    #page-valuasi .vl-cmp-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:10.5px;color:var(--text2);font-weight:600}
+    #page-valuasi .vl-cmp-legend i{display:inline-block;width:12px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+    #page-valuasi .vl-cmp-legend i.band{background:var(--green-bg);border:1px solid var(--green)}
+    #page-valuasi .vl-cmp-legend i.median{background:var(--accent);width:3px;height:12px}
+    #page-valuasi .vl-cmp-legend i.price{background:var(--text);width:3px;height:12px}
+    /* football field — bar nilai wajar per metode */
+    #page-valuasi .vl-ff{position:relative;padding-top:16px}
+    #page-valuasi .vl-ff-row{position:relative;display:grid;grid-template-columns:100px 1fr;align-items:center;height:22px;margin:6px 0}
+    #page-valuasi .vl-ff-row .lab{font-size:10px;font-weight:800;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px;letter-spacing:.2px}
+    #page-valuasi .vl-ff-row .trk{position:relative;height:100%;display:flex;align-items:center;border-left:1px solid var(--border)}
+    #page-valuasi .vl-ff-row .bar{position:absolute;left:0;top:3px;bottom:3px;border-radius:0 4px 4px 0;min-width:2px;opacity:.9}
+    #page-valuasi .vl-ff-row .bar.cheap{background:var(--green)}
+    #page-valuasi .vl-ff-row .bar.fair{background:var(--yellow)}
+    #page-valuasi .vl-ff-row .bar.exp{background:var(--red)}
+    #page-valuasi .vl-ff-row .bar.na{background:var(--border)}
+    #page-valuasi .vl-ff-row .amt{position:absolute;right:6px;font-size:10.5px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--text);z-index:2}
+    #page-valuasi .vl-ff-line{position:absolute;top:0;bottom:0;z-index:3;pointer-events:none}
+    #page-valuasi .vl-ff-line.price{width:2px;background:var(--text)}
+    #page-valuasi .vl-ff-line.price span{position:absolute;top:-3px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;color:var(--text);white-space:nowrap;background:var(--card);padding:0 4px;border-radius:3px}
+    #page-valuasi .vl-ff-line.median{width:0;border-left:2px dashed var(--accent)}
+    #page-valuasi .vl-cmp-legend i.sw{width:12px;height:9px;border-radius:2px}
+    #page-valuasi .vl-cmp-legend i.sw.cheap{background:var(--green)}
+    #page-valuasi .vl-cmp-legend i.sw.fair{background:var(--yellow)}
+    #page-valuasi .vl-cmp-legend i.sw.exp{background:var(--red)}
+    #page-valuasi .vl-cmp-x{font-size:10px;color:var(--text3);font-weight:600}
+    #page-valuasi .vl-cmp-tbl td:nth-child(3){font-weight:800}
+    /* modal popup */
+    #page-valuasi .vl-modal{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px}
+    #page-valuasi .vl-modal.show{display:flex}
+    #page-valuasi .vl-modal-box{background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:440px;width:100%;padding:20px 22px;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.45);max-height:85vh;overflow:auto}
+    #page-valuasi .vl-modal-box h3{font-size:15px;margin:0 0 8px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    #page-valuasi .vl-modal-box h3 .grp{font-size:10px;font-weight:700;background:var(--bg2);color:var(--accent);padding:2px 8px;border-radius:var(--radius-pill);text-transform:uppercase}
+    #page-valuasi .vl-modal-box p{font-size:12.5px;color:var(--text2);line-height:1.6;margin:0 0 12px}
+    #page-valuasi .vl-modal-x{position:absolute;top:12px;right:12px;width:26px;height:26px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);border-radius:7px;cursor:pointer;font-size:12px;line-height:1}
+    #page-valuasi .vl-modal-x:hover{border-color:var(--accent);color:var(--accent)}
+    #page-valuasi .vl-mini{width:100%;border-collapse:collapse;font-size:12px}
+    #page-valuasi .vl-mini td{padding:6px 8px;border-bottom:1px solid var(--border)}
+    #page-valuasi .vl-mini td:first-child{color:var(--text2)}
+    #page-valuasi .vl-mini td:last-child{text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--text);font-weight:600}
+    /* ── SLIDER PANEL ── */
+    #page-valuasi .vl-slider-panel{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+    #page-valuasi .vl-slider-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none}
+    #page-valuasi .vl-slider-hdr:hover{background:var(--bg2)}
+    #page-valuasi .vl-slider-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)}
+    #page-valuasi .vl-slider-arrow{font-size:10px;color:var(--text3);transition:transform .2s}
+    #page-valuasi .vl-slider-body{padding:6px 16px 16px;border-top:1px solid var(--border)}
+    #page-valuasi .vl-sld-row{margin-bottom:12px}
+    #page-valuasi .vl-sld-lbl{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+    #page-valuasi .vl-sld-lbl .nm{font-size:11px;font-weight:700;color:var(--text)}
+    #page-valuasi .vl-sld-lbl .val{font-size:12px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--accent);min-width:52px;text-align:right}
+    #page-valuasi .vl-sld{width:100%;height:6px;-webkit-appearance:none;appearance:none;background:var(--bg2);border:1px solid var(--border);border-radius:4px;outline:none;cursor:pointer}
+    #page-valuasi .vl-sld::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--card);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+    #page-valuasi .vl-sld::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--card);cursor:pointer}
+    #page-valuasi .vl-sld-info{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.4;font-weight:500}
+    #page-valuasi .vl-sld-risk{font-size:10px;margin-left:6px;font-weight:600}
+    #page-valuasi .vl-sld-warn{font-size:11px;color:var(--yellow);font-weight:700;margin-top:8px;padding:6px 10px;background:var(--yellow-bg);border-radius:6px}
+    /* ── CHART CARDS ── */
+    #page-valuasi .vl-cmp-chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px 14px}
+    #page-valuasi .vl-cmp-chart-card .hd{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:12px}
+    #page-valuasi .vl-cmp-val-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:10px;font-weight:600;color:var(--text2)}
+    #page-valuasi .vl-val-lgd-item{display:flex;align-items:center;gap:4px}
+    #page-valuasi .vl-val-lgd-item i{display:inline-block;width:14px;height:4px;border-radius:2px;border:1px solid transparent}
+    /* ── Discount Rate card (compact slider) ── */
+    #page-valuasi .vl-dr-card .vl-sld{margin:4px 0 2px}
+    #page-valuasi .vl-dr-row{display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap}
+    #page-valuasi .vl-dr-lbl{font-size:10px;font-weight:700;color:var(--text2)}
+    #page-valuasi .vl-dr-val{font-size:12px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--accent)}
+    #page-valuasi .vl-dr-sub{font-size:10px;color:var(--text2);margin-top:4px;font-weight:600}
+    /* ── 2-column grid: football field + chart ── */
+    #page-valuasi .vl-cmp-duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+    @media(max-width:760px){#page-valuasi .vl-cmp-duo{grid-template-columns:1fr}}
+    #page-valuasi .vl-cmp-duo>.vl-cmp-range,#page-valuasi .vl-cmp-duo>.vl-cmp-chart-card{position:relative}
+    </style>
+    <div id="vl-tab-metode" class="vl-tc">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">⚖️ Perbandingan Metode Valuasi — Nilai Wajar per Pendekatan</div>
+        <div class="vl-proj-sub" style="margin:-8px 0 0">Membandingkan estimasi nilai wajar dari beragam metode (DCF, DDM, Graham, FCF, PBV, PER, PSR, Earnings Power, PEG) terhadap harga pasar. WACC memakai beta dari data Dashboard. Klik <strong>i</strong> untuk penjelasan tiap metode.</div>
+      </div>
+      <div id="vlCmpBody"></div>
+    </div>
+
+    <!-- popup penjelasan metode (GLOBAL — di luar tab agar selalu accessible) -->
+    <div class="vl-modal" id="vlMethodModal" onclick="vlCloseMethod()">
+      <div class="vl-modal-box" onclick="event.stopPropagation()">
+        <button class="vl-modal-x" onclick="vlCloseMethod()" aria-label="Tutup">✕</button>
+        <div id="vlMethodModalBody"></div>
+      </div>
     </div>
 
     <div class="vl-note" style="margin-top:18px;text-align:center" id="vlFootNote">
@@ -9256,6 +9933,8 @@ body.vl-maxing{overflow:hidden}
     raw:null,    // valuation.json
     live:null,   // data.json .live (sheet live) → harga realtime
     priceHist:null, // data.json .price_history → harga historis bulanan (utk Uji Data)
+    stats:null,  // data.json .stats → beta dsb (utk WACC, digabung dgn dashboard)
+    fundamentals:null, // data.json .fundamentals → shares, der, per, pbv
     code:null,   // kode emiten aktif
     win:5,       // window rata-rata multiple aktif (3/5/7/10)
     model:null,  // hasil hitung ulang model 5-tahun (client-side)
@@ -9333,7 +10012,7 @@ body.vl-maxing{overflow:hidden}
     }
 
     const inp   = fy.inputs || {};
-    // Growth blend: 80% tren 5 tahun + 20% tahun berjalan.
+    // Growth blend: 80% tren 5 tahun + 20% TTM.
     const g_bv  = 0.8*(inp.roe_5y||0)        + 0.2*(inp.roe_annual||0);
     const g_eps = 0.8*(inp.eps_growth_5y||0) + 0.2*(inp.eps_growth_annual||0);
     const g_sps = 0.8*(inp.sps_growth_5y||0) + 0.2*(inp.sps_growth_annual||0);
@@ -9445,11 +10124,6 @@ body.vl-maxing{overflow:hidden}
           '<div class="l" style="margin-top:4px">Tahun Data</div>'+
           '<div style="font-size:13px;font-weight:700;color:var(--text)">'+(ly||'-')+'</div>'+
         '</div>'+
-        '<div class="vl-mos" style="background:transparent;border-color:'+ms.col+'">'+
-          '<div class="l" style="color:'+ms.col+'">Margin of Safety</div>'+
-          '<div class="v" style="color:'+ms.col+'">'+(mosApplicable ? mosPct.toFixed(2)+'%' : '—')+'</div>'+
-          '<div class="d" style="color:'+ms.col+'">'+ms.txt+'</div>'+
-        '</div>'+
       '</div>';
   }
 
@@ -9474,6 +10148,8 @@ body.vl-maxing{overflow:hidden}
       {i:'⏱️',l:'Th. Balik Modal',v:fmtX(payback),s:'Dari dividen saja',c:'var(--text)'},
     ];
     el.innerHTML = cards.map(c=>'<div class="vl-mc"><div class="i">'+c.i+'</div><div class="l">'+c.l+'</div><div class="v" style="color:'+c.c+'">'+c.v+'</div><div class="s">'+c.s+'</div></div>').join('');
+    const sc = document.getElementById('vlCardsScope');
+    if(sc) sc.textContent = 'Model fundamental · window '+state.win+' Th';
   }
 
   function renderFund(){
@@ -9482,10 +10158,10 @@ body.vl-maxing{overflow:hidden}
     const tbody = document.querySelector('#vlFundTable tbody');
     if(!head || !tbody) return;
     const yearsDesc = annualYears(s).slice().reverse();   // terbaru → terlama (…→2008)
-    // Kolom LENGKAP & dibalik: Q1 + Tahun Berjalan (Q1×4) + semua tahun (apa adanya).
+    // Kolom LENGKAP & dibalik: Q1 + TTM dinamis (Q1x4) + semua tahun (apa adanya).
     const cols = [];
     if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'Q1',           a:s.q1 });
-    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:'Thn Berjalan', a:s.annualized });
+    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:vlTtmLabel(s),  a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
     const rows = [
@@ -9505,22 +10181,29 @@ body.vl-maxing{overflow:hidden}
     const fmtByT = (val,t)=> t==='rp'?fmtRp(val) : t==='m'?fmtM(val) : t==='pct'?fmtPct(val) : fmtD2(val);
     // Referensi perubahan (▲▼) = tahun TERLAMA (kolom paling kanan); badge hanya utk kolom tahun.
     const refKey = yearsDesc.length ? yearsDesc[yearsDesc.length-1] : null;
+    const _livePx = effLast(s).price;
     tbody.innerHTML = rows.map(r=>{
       const ref = refKey ? r.f(s.annual[refKey]||{}) : null;
       const cells = cols.map(c=>{
-        const val = r.f(c.a);
+        let val = r.f(c.a);
+        let liveDot = '';
+        // Harga di kolom TTM: pakai harga LIVE + indikator titik berkedip
+        if(r.label==='Harga (Rp)' && c.key==='tb' && ok(_livePx) && _livePx>0){
+          val = _livePx;
+          liveDot = '<span class="vl-live-dot"></span>';
+        }
         let chg='';
         if(/^\d{4}$/.test(c.key) && c.key!==refKey && ok(ref) && ref!==0 && ok(val)){
           const cc = (val-ref)/Math.abs(ref)*100;
           chg = '<span class="'+(cc>=0?'vl-chg-up':'vl-chg-dn')+'">'+(cc>=0?'▲':'▼')+' '+Math.abs(cc).toFixed(1)+'%</span>';
         }
-        return '<td><span style="font-weight:700">'+fmtByT(val,r.t)+'</span>'+chg+'</td>';
+        return '<td><span style="font-weight:700">'+fmtByT(val,r.t)+'</span>'+liveDot+chg+'</td>';
       }).join('');
       return '<tr><td>'+r.label+'</td>'+cells+'</tr>';
     }).join('');
   }
 
-  let _projBasis = 'current';   // basis proyeksi Ringkasan: 'current'=Tahun Berjalan | 'Y<latest>'=2025
+  let _projBasis = 'current';   // basis proyeksi Ringkasan: 'current'=TTM | 'Y<latest>'=2025
   // Hitung proyeksi utk basis tertentu memakai mesin yg sama dgn tab Mesin Valuasi
   // (vlUjiCalc + ujBasisInputs/ujBasisPrice). _ujBasis di-set sementara lalu dipulihkan.
   function projComputeFor(s, win, basis){
@@ -9536,17 +10219,38 @@ body.vl-maxing{overflow:hidden}
   }
   function projBasisButtons(s){
     const el = document.getElementById('vlProjBasis'); if(!el) return;
-    const yrs = annualYears(s); const latest = yrs[yrs.length-1];
-    const opts = [{key:'current',label:'Tahun Berjalan'},{key:'Y'+latest,label:String(latest)}];
-    el.innerHTML = opts.map(o=>'<button class="vl-basis-btn'+(_projBasis===o.key?' active':'')+'" onclick="vlSetProjBasis(\''+o.key+'\')">'+o.label+'</button>').join('');
+    const bdef = ujDataBases(s);
+    const activeBasis = _projBasis || 'current';
+    let html = bdef.buttons.map(function(b){
+      const act = (b.key===activeBasis) ? ' active' : '';
+      const tag = b.tag ? ' <span style="font-size:9px;font-weight:800;opacity:.7">'+b.tag+'</span>' : '';
+      return '<button class="vl-basis-btn'+act+'" onclick="vlSetProjBasis(\''+b.key+'\')">'+b.label+tag+'</button>';
+    }).join('');
+    if(bdef.moreYears && bdef.moreYears.length){
+      const inDrop = bdef.moreYears.some(function(y){ return 'Y'+y===activeBasis; });
+      const opts = bdef.moreYears.map(function(y){ return '<option value="Y'+y+'"'+(activeBasis==='Y'+y?' selected':'')+'>'+y+'</option>'; }).join('');
+      html += '<select class="vl-basis-btn'+(inDrop?' active':'')+'" onchange="vlSetProjBasis(this.value)" title="Tahun lebih lama">'+
+                '<option value="">'+(inDrop?activeBasis.slice(1):'Tahun lain \u25BE')+'</option>'+opts+
+              '</select>';
+    }
+    el.innerHTML = html;
   }
   window.vlSetProjBasis = function(b){ _projBasis = b; renderProjection(); buildCharts(); if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); }); };
 
   function renderProjection(){
     const s = curStock(); if(!s) return;
     const yrs = annualYears(s); const latest = yrs[yrs.length-1];
-    if(_projBasis!=='current' && _projBasis!=='Y'+latest) _projBasis = 'current';
+    if(_projBasis!=='current' && !yrs.some(function(y){ return 'Y'+y===_projBasis; })) _projBasis = 'current';
     projBasisButtons(s);
+    const scopeEl = document.getElementById('vlProjScope');
+    // TTM label dinamis: "TTM Q<n> <tahun>"
+    const _ttmQ = (function(){ let q=(s&&s.q_label)?String(s.q_label).trim():''; if(!q)q='Q1'; if(!/^q/i.test(q)){const n=q.replace(/[^0-9]/g,'');q='Q'+(n||'1');} return q.toUpperCase(); })();
+    const _ttmYr = (function(){ const fy=ujFiscalYear(); return ok(fy)?fy+1:new Date().getFullYear(); })();
+    const _ttmLabel = 'TTM '+_ttmQ+' '+_ttmYr;
+    const basisLabel = (_projBasis==='current') ? _ttmLabel : _projBasis.replace(/^Y/,'');
+    if(scopeEl) scopeEl.textContent = basisLabel;
+    const chartBasisLbl = document.getElementById('vlChartBasisLabel');
+    if(chartBasisLbl) chartBasisLbl.textContent = '· basis ' + basisLabel;
     const msg = document.getElementById('vlProjMsg');
     const body = document.getElementById('vlProjBody');
     const fy = ((s.valuation||{}).five_year)||{};
@@ -9560,8 +10264,11 @@ body.vl-maxing{overflow:hidden}
     if(body) body.style.display='';
     const pc = projComputeFor(s, state.win, _projBasis);
     state.projModel = pc;
-    if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv'].forEach(id=>setK(id,'—')); return; }
-    const mosPct = pc.margin_of_safety*100; const ms = mosStyle(mosPct);
+    if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
+    const livePrice = effLast(s).price;
+    const target5y = (Array.isArray(pc.potensi) && pc.potensi.length>=5 && ok(pc.potensi[4])) ? pc.potensi[4] : null;
+    const mosPct = (ok(livePrice) && livePrice>0 && ok(target5y) && target5y>0) ? (1 - livePrice/target5y)*100 : (pc.margin_of_safety||0)*100;
+    const ms = mosStyle(mosPct);
     setK('vlKpiMos', mosPct.toFixed(2)+'%', ms.col);
     const md = document.getElementById('vlKpiMosDesc'); if(md){ md.textContent=ms.txt; md.style.color=ms.col; }
     setK('vlKpiCagr', fmtPct(pc.cagr*100));
@@ -9569,13 +10276,62 @@ body.vl-maxing{overflow:hidden}
     setK('vlKpiComb', fmtPct(pc.combine*100));
     setK('vlKpiFv',   fmtPct(pc.future_value*100));
 
+    // DPR, Th. Balik Modal (= PER dari harga basis ÷ EPS basis)
+    const dpr2 = pc.dpr_win!=null ? pc.dpr_win*100 : null;
+    // EPS dan harga mengikuti basis terpilih (pc.eps dari vlUjiCalc = per-share recalc)
+    const eps2 = ok(pc.eps) ? pc.eps : null;
+    const priceBasis = pc._last || effLast(s).price;
+    const tbm2 = (ok(eps2)&&eps2>0&&ok(priceBasis)) ? priceBasis/eps2 : null;
+
+    setK('vlKpiDpr', ok(dpr2)?fmtPct(dpr2):'—');
+    setK('vlKpiTbm', ok(tbm2)?tbm2.toFixed(2)+'×':'—');
+
     const startYr = pc._startYr; const shift = 1;   // proyeksi mulai tahun depan basis (2026..2030)
     const years = [0,1,2,3,4].map(i=> startYr ? (startYr+shift+i) : ('T+'+(i+1)));
     const tb = document.getElementById('vlProjTableBody');
-    if(tb) tb.innerHTML = years.map((yr,i)=>{
-      const pt = pc.potensi[i]; const gl = (pc.basis>0 && ok(pt)) ? (pt/pc.basis-1)*100 : null;
-      return '<tr><td style="font-weight:700;color:var(--text)">'+yr+'</td><td><strong>'+fmtRp(pt)+'</strong></td><td><span class="'+badgeCls(gl)+'">'+fmtGl(gl)+'</span></td></tr>';
-    }).join('');
+    if(tb){
+      const basisPrice = pc._last || 0;
+      const basisLabel = pc._isCurrent ? _ttmLabel : (_projBasis.replace(/^Y/,''));
+
+      // Header info (mirip Mesin Valuasi: "KODE Sekarang X · [ACTUAL] TTM Qn YYYY · X / +XX%")
+      const thdr = document.getElementById('vlProjTableHeader');
+      if(thdr){
+        const chg = (ok(livePrice)&&ok(basisPrice)&&basisPrice>0) ? ((livePrice/basisPrice-1)*100) : null;
+        thdr.innerHTML = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+          '<span style="font-size:14px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:var(--text)">'+s.code+'</span>'+
+          '<span style="font-size:12px;color:var(--text2)">Sekarang <strong style="color:var(--text)">'+fmtRp(livePrice)+'</strong></span>'+
+          '<span class="vl-badge '+(ok(chg)&&chg>=0?'vl-up':'vl-dn')+'" style="font-size:11px">ACTUAL</span>'+
+          '<span style="font-size:12px;color:var(--text2)">'+basisLabel+' · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
+          (ok(chg)?'<span class="'+(chg>=0?'vl-pos':'vl-neg')+'" style="font-size:14px;font-weight:800">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
+          '</div>';
+      }
+
+      // Update header kolom tabel (vs TTM <kuartal> <tahun>)
+      const thRow = tb.closest('table').querySelector('thead tr');
+      if(thRow) thRow.innerHTML = '<th>% (vs Sekarang)</th><th>Potensi Price</th><th>Tahun</th><th>Potensi Price</th><th>% (vs '+basisLabel+')</th>';
+
+      let rows = years.map((yr,i)=>{
+        const pt = pc.potensi[i];
+        const glLive = (livePrice>0 && ok(pt)) ? (pt/livePrice-1)*100 : null;
+        const glBasis = (basisPrice>0 && ok(pt)) ? (pt/basisPrice-1)*100 : null;
+        return '<tr>'+
+          '<td><span class="'+badgeCls(glLive)+'">'+fmtGl(glLive)+'</span></td>'+
+          '<td><strong>'+fmtRp(pt)+'</strong></td>'+
+          '<td style="font-weight:700;color:var(--text);text-align:center">'+yr+'</td>'+
+          '<td><strong>'+fmtRp(pt)+'</strong></td>'+
+          '<td><span class="'+badgeCls(glBasis)+'">'+fmtGl(glBasis)+'</span></td>'+
+          '</tr>';
+      }).join('');
+      // Baris MoS (bawah)
+      const mosVsLive = (ok(livePrice)&&livePrice>0&&ok(pc.potensi[4])&&pc.potensi[4]>0) ? (1-livePrice/pc.potensi[4])*100 : null;
+      const mosVsBasis = (ok(basisPrice)&&basisPrice>0&&ok(pc.potensi[4])&&pc.potensi[4]>0) ? (1-basisPrice/pc.potensi[4])*100 : null;
+      rows += '<tr style="border-top:2px solid var(--border)">'+
+        '<td><span class="'+badgeCls(mosVsLive)+'"><strong>'+fmtGl(mosVsLive)+'</strong></span></td>'+
+        '<td colspan="3" style="text-align:center;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.5px">Margin of Safety</td>'+
+        '<td><span class="'+badgeCls(mosVsBasis)+'"><strong>'+fmtGl(mosVsBasis)+'</strong></span></td>'+
+        '</tr>';
+      tb.innerHTML = rows;
+    }
 
     const sb = document.getElementById('vlSubModelBody');
     if(sb){
@@ -9639,7 +10395,7 @@ body.vl-maxing{overflow:hidden}
     const n = parseInt(vlRange,10);
     return (n>0 && all.length>n) ? all.slice(-n) : all;
   }
-  // Titik "Q" = TAHUN BERJALAN (TTM / annualized Q1×4) untuk GRAFIK.
+  // Titik "Q" = TTM (annualized Q1x4) untuk GRAFIK.
   // Harga & rasio (PBV/PER/PSR/Yield) memakai HARGA LIVE (sheet live), BUKAN close
   // kuartal — supaya terlihat posisi harga sekarang mahal/murah. KHUSUS visual chart;
   // mesin valuasi & tabel tidak memakai ini.
@@ -9662,18 +10418,18 @@ body.vl-maxing{overflow:hidden}
       psr: (ok(sps)&&sps>0)   ? live/sps  : null,
     };
   }
-  // Label titik tahun berjalan utk chart: "<kuartal sheet> TTM <tahun berjalan>".
+  // Label titik TTM utk chart: "TTM <kuartal sheet> <tahun>".
   // Kuartal diambil dari valuation.json (sel D1 Excel: Q1/Q2/Q3); fallback 'Q1'.
-  // Tahun berjalan = fiscalYear+1 (mis. 2025 → 2026), fallback tahun kalender.
+  // Tahun = fiscalYear+1 (mis. 2025 → 2026), fallback tahun kalender.
   function vlTtmLabel(s){
     let q = (s && s.q_label) ? String(s.q_label).trim() : '';
     if(!q) q = 'Q1';
     if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
     const fy = ujFiscalYear();
     const yr = ok(fy) ? fy+1 : new Date().getFullYear();
-    return q.toUpperCase()+' TTM '+yr;
+    return 'TTM '+q.toUpperCase()+' '+yr;
   }
-  // Tooltip utk chart ber-garis harga: di titik "Q" (tahun berjalan), JUDUL popup =
+  // Tooltip utk chart ber-garis harga: di titik "Q" (TTM), JUDUL popup =
   // "Last Price (live)" — bukan "Q.. TTM .." — karena nilai harga = harga live terakhir.
   function vlTipPrice(qLbl){
     return {
@@ -9727,8 +10483,9 @@ body.vl-maxing{overflow:hidden}
     const b=card.querySelector('.vl-maxbtn'); if(b){ b.textContent= on?'✕':'⛶'; b.title= on?'Tutup':'Perbesar'; }
     setTimeout(()=>{
       charts.concat(ujCharts).forEach(c=>{ try{ c.resize(); }catch(e){} });
+      if(_cmpValChart){ try{ _cmpValChart.resize(); }catch(e){} }
       if(_harianChart){ try{ const w=document.getElementById('vlHarianWrap'); if(w) _harianChart.applyOptions({width:w.clientWidth,height:w.clientHeight}); }catch(e){} }
-    }, 70);
+    }, 150);
   };
 
   /* ── CHART HARIAN + SMC (Smart Money Concept) — candlestick dari ohlc.json ── */
@@ -9739,8 +10496,8 @@ body.vl-maxing{overflow:hidden}
     document.querySelectorAll('#vlChartMode button').forEach(b=> b.classList.toggle('on', b.getAttribute('data-m')===_vlChartMode));
     const proj = _vlChartMode==='proyeksi';
     const show=(id,on)=>{ const el=document.getElementById(id); if(el) el.style.display = on?'':'none'; };
-    show('vlProjBox',proj); show('vlProjLegend',proj); show('vlProjInfo',proj);
-    show('vlHarianWrap',!proj); show('vlHarianLegend',!proj); show('vlHarianInfo',!proj);
+    show('vlProjBox',proj); show('vlProjLegend',proj);
+    show('vlHarianWrap',!proj); show('vlHarianLegend',!proj);
     if(proj){ buildCharts(); } else { requestAnimationFrame(function(){ vlRenderHarian(); }); }
   };
   async function vlRenderHarian(){
@@ -9786,20 +10543,26 @@ body.vl-maxing{overflow:hidden}
     try{
       const pm=state.projModel;
       if(pm && pm.applicable && data.length){
-        // Anchor proyeksi sesuai BASIS (sama logika dgn chart Bulanan/Valuasi 5Th):
-        //  - Tahun Berjalan → akhir kuartal berjalan (Maret <tahun berjalan>)
-        //  - basis 2025     → awal Januari <tahun berjalan>
+        // Anchor proyeksi sesuai BASIS:
+        //  - TTM → akhir kuartal (Maret <tahun>)
+        //  - Basis tahun penuh (mis. Y2021) → akhir tahun basis (Desember)
         const fyr=ujFiscalYear(); const qYear=ok(fyr)?fyr+1:new Date().getFullYear();
+        const basisYr = pm._startYr || qYear;
         let anchor=null;
-        if(pm._isCurrent){ for(const d of data){ if(d.time.slice(0,7)===qYear+'-03') anchor={time:d.time,value:d.close}; } }   // candle Maret terakhir
-        else { for(const d of data){ if(d.time.slice(0,7)===qYear+'-01'){ anchor={time:d.time,value:d.close}; break; } } }      // candle Januari pertama
+        if(pm._isCurrent){
+          for(const d of data){ if(d.time.slice(0,7)===qYear+'-03') anchor={time:d.time,value:d.close}; }
+        } else {
+          // Cari candle terdekat dgn akhir tahun basis
+          for(const d of data){ if(d.time.slice(0,7)===basisYr+'-12') anchor={time:d.time,value:d.close}; }
+          if(!anchor){ for(const d of data){ if(d.time.slice(0,7)===(basisYr+1)+'-01'){ anchor={time:d.time,value:d.close}; break; } } }
+        }
         if(!anchor) anchor={ time:data[data.length-1].time, value:(ok(liveP)&&liveP>0?liveP:data[data.length-1].close) };
-        const ay=parseInt(anchor.time.slice(0,4),10)||qYear;
+        const ay = pm._startYr || (parseInt(anchor.time.slice(0,4),10)||qYear);
         const pjData=[anchor]; const tmarkers=[];
-        for(let i=0;i<5;i++){ if(ok(pm.potensi[i])){ const tt=(ay+i)+'-12-31'; pjData.push({ time:tt, value:pm.potensi[i] });
+        for(let i=0;i<5;i++){ if(ok(pm.potensi[i])){ const tgtYr=ay+1+i; const tt=tgtYr+'-12-31'; pjData.push({ time:tt, value:pm.potensi[i] });
           const reached = ok(hiAll) && pm.potensi[i]<=hiAll;
-          tmarkers.push({ time:tt, position:'aboveBar', color: reached?'#16a34a':'#d97706', shape:'circle', text:(ay+i)+(reached?' ✓':'') });
-          tgtMap[tt]={ y:(ay+i), reached:reached }; } }
+          tmarkers.push({ time:tt, position:'aboveBar', color: reached?'#16a34a':'#d97706', shape:'circle', text:String(tgtYr)+(reached?' ✓':'') });
+          tgtMap[tt]={ y:tgtYr, reached:reached }; } }
         if(pjData.length>1){
           projSeries=chart.addLineSeries({ color:'#d97706', lineWidth:2, lineStyle:LightweightCharts.LineStyle.Dashed, pointMarkersVisible:false, lastValueVisible:false, priceLineVisible:false });
           projSeries.setData(pjData);
@@ -9858,7 +10621,7 @@ body.vl-maxing{overflow:hidden}
     const d9 = v => ok(v) ? v/1e9 : null;
     const mk = (id,cfg)=>{ const cv=document.getElementById(id); if(cv) charts.push(new Chart(cv,cfg)); };
     // Per-grafik: label & data mengikuti range (3/5/7/10/All) yg dipilih di toolbar tiap chart.
-    // Titik terakhir = "Q" (tahun berjalan TTM); accessor sama → harga/rasio "Q" otomatis LIVE.
+    // Titik terakhir = "Q" (TTM); accessor sama → harga/rasio "Q" otomatis LIVE.
     const qpt = vlTtmPoint(s);
     const qLbl = qpt ? vlTtmLabel(s) : null;
     const lab = id => { vlEnsureRangeBar(id); const ys=vlChartYears(s,id); return qLbl ? [...ys, qLbl] : ys; };
@@ -9878,32 +10641,31 @@ body.vl-maxing{overflow:hidden}
       y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 2. ROE & Margin Laba (%)
+    // 2. ROE & Margin Laba (%) + Harga
     mk('vlRoe', { type:'line', data:{ labels:lab('vlRoe'), datasets:[
-      { label:'ROE (%)', data:A('vlRoe',a=>a.roe), borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
-      { label:'Margin %', data:A('vlRoe',a=>(a.total_revenue?a.net_income/a.total_revenue*100:null)), borderColor:COL.blue, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
-    ]}, options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
+      { label:'ROE (%)', data:A('vlRoe',a=>a.roe), borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35, yAxisID:'y' },
+      { label:'Margin %', data:A('vlRoe',a=>(a.total_revenue?a.net_income/a.total_revenue*100:null)), borderColor:COL.blue, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35, yAxisID:'y' },
+      { label:'Harga (Rp)', data:A('vlRoe',a=>a.price), borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    ]}, options:{...base, plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}}, scales:{ y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID }, y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} }, x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 3. Rasio PBV/PER/PSR tahunan
+    // 3. Rasio PBV/PER/PSR tahunan + Book Value
     mk('vlRatio', { type:'bar', data:{ labels:lab('vlRatio'), datasets:[
-      { label:'PBV', data:A('vlRatio',a=>a.pbv), backgroundColor:COL.purple, borderRadius:3 },
-      { label:'PER', data:A('vlRatio',a=>a.per), backgroundColor:COL.blue,   borderRadius:3 },
-      { label:'PSR', data:A('vlRatio',a=>a.psr), backgroundColor:COL.pink,   borderRadius:3 }
-    ]}, options:{...base, scales:{ y:{ ticks:TICK, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
+      { label:'PBV', data:A('vlRatio',a=>a.pbv), backgroundColor:COL.purple, borderRadius:3, yAxisID:'y' },
+      { label:'PER', data:A('vlRatio',a=>a.per), backgroundColor:COL.blue,   borderRadius:3, yAxisID:'y' },
+      { label:'PSR', data:A('vlRatio',a=>a.psr), backgroundColor:COL.pink,   borderRadius:3, yAxisID:'y' },
+      { label:'Book Value (Rp)', data:A('vlRatio',a=>a.bvps), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    ]}, options:{...base, plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}}, scales:{ y:{ ticks:TICK, grid:GRID }, y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} }, x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 4. EPS / SPS
-    mk('vlEps', { type:'line', data:{ labels:lab('vlEps'), datasets:[
-      { label:'EPS', data:A('vlEps',a=>a.eps), borderColor:COL.blue, backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
-      { label:'SPS', data:A('vlEps',a=>a.sps), borderColor:COL.pink, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
-    ]}, options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
-
-    // 5. Ekuitas (Miliar) + Book Value
-    mk('vlEquity', { type:'bar', data:{ labels:lab('vlEquity'), datasets:[
-      { label:'Ekuitas (M)', data:A('vlEquity',a=>d9(a.total_equity)), backgroundColor:COL.purpleSoft, borderRadius:4, yAxisID:'y' },
-      { label:'Book Value', data:A('vlEquity',a=>a.bvps), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    // 4. EPS / SPS / Ekuitas / Book Value (combined, dual Y-axis)
+    mk('vlEps', { type:'bar', data:{ labels:lab('vlEps'), datasets:[
+      { label:'Ekuitas (M)', data:A('vlEps',a=>d9(a.total_equity)), backgroundColor:COL.purpleSoft, borderRadius:4, yAxisID:'y2', order:2 },
+      { label:'EPS', data:A('vlEps',a=>a.eps), type:'line', borderColor:COL.blue, backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35, yAxisID:'y', order:1 },
+      { label:'SPS', data:A('vlEps',a=>a.sps), type:'line', borderColor:COL.pink, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35, yAxisID:'y', order:1 },
+      { label:'Book Value', data:A('vlEps',a=>a.bvps), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, borderWidth:2.5, yAxisID:'yBv', tension:.35, order:0 }
     ]}, options:{...base, scales:{
-      y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
-      y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:{display:false} },
+      y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID, title:{display:true, text:'EPS / SPS (Rp)', color:'var(--text2)', font:{size:9}} },
+      y2:{ position:'right', ticks:{...TICK, callback:v=>v.toFixed(0)+'M'}, grid:{display:false}, title:{display:true, text:'Ekuitas (M)', color:'var(--text2)', font:{size:9}} },
+      yBv:{ position:'right', display:false },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
     // 6. Chart utama Ringkasan: Proyeksi (line) — dibangun hanya saat mode 'proyeksi'.
@@ -9919,23 +10681,79 @@ body.vl-maxing{overflow:hidden}
       const liveP = effLast(s).price;
       if(ok(liveP)&&liveP>0&&hist.length) hist[hist.length-1] = { lab:hist[hist.length-1].lab, p:liveP };
       const histVals = hist.map(x=>x.p);
-      // Anchor proyeksi = tanggal basis pada garis historis (kuartal vs Januari).
+      // Anchor proyeksi = titik cabang di garis historis sesuai basis terpilih:
+      // - TTM → akhir kuartal (3/31/<tahun>)
+      // - Basis tahun penuh (mis. Y2021) → akhir tahun basis (12/31/<basisYear>)
       const fyr = ujFiscalYear(); const qYear = ok(fyr) ? fyr+1 : (new Date().getFullYear());
-      const anchorLab = pm._isCurrent ? ('3/31/'+qYear) : ('1/31/'+qYear);
+      let anchorLab;
+      if(pm._isCurrent){
+        anchorLab = '3/31/'+qYear;
+      } else {
+        // Basis tahun penuh: anchor di akhir tahun basis (price_history labels format "M/DD/YYYY")
+        const basisYr = pm._startYr || qYear;
+        anchorLab = '12/31/'+basisYr;
+        // Fallback: coba format lain
+        if(hist.findIndex(x=>x.lab===anchorLab)<0) anchorLab = '12/30/'+basisYr;
+        if(hist.findIndex(x=>x.lab===anchorLab)<0) anchorLab = '1/31/'+(basisYr+1);
+      }
       let anchorIdx = hist.findIndex(x=>x.lab===anchorLab);
-      if(anchorIdx<0) anchorIdx = hist.length-1;            // fallback: sambung dari titik terakhir
-      const labels   = [...hist.map(x=>x.lab), ...tYears];
-      const histData = [...histVals, null,null,null,null,null];
+      if(anchorIdx<0){
+        // Fallback: cari titik terdekat dengan tahun basis
+        const byr = pm._startYr || qYear;
+        const targetDate = new Date(byr, 11, 31).getTime();
+        let bestDist = Infinity;
+        hist.forEach((x,i)=>{
+          const parts = x.lab.split('/');
+          if(parts.length>=3){ const d=new Date(parseInt(parts[2]),parseInt(parts[0])-1,parseInt(parts[1])).getTime(); const dist=Math.abs(d-targetDate); if(dist<bestDist){bestDist=dist;anchorIdx=i;}}
+        });
+        if(anchorIdx<0) anchorIdx = hist.length-1;
+      }
+      // Sisipkan target proyeksi PADA POSISI yang sesuai di array historis.
+      // Target yang sudah LEWAT (ada di data historis) → sisipkan di posisi tsb.
+      // Target yang masih di MASA DEPAN (belum ada di hist) → append di akhir.
+      const labels = hist.map(x=>x.lab);
+      const histData = histVals.slice();
       const proj = new Array(hist.length).fill(null);
-      if(anchorIdx>=0 && hist[anchorIdx]) proj[anchorIdx] = hist[anchorIdx].p;   // cabang dari harga basis
-      const projData = [...proj, ...pm.potensi];
+      if(anchorIdx>=0 && hist[anchorIdx]) proj[anchorIdx] = hist[anchorIdx].p;
+
+      // Tentukan tahun terakhir di data historis
+      const lastHistDate = hist.length>0 ? hist[hist.length-1].lab : '';
+      const lastHistParts = lastHistDate.split('/');
+      const lastHistYear = lastHistParts.length>=3 ? parseInt(lastHistParts[2],10) : 9999;
+      const lastHistMonth = lastHistParts.length>=3 ? parseInt(lastHistParts[0],10) : 12;
+
+      for(let i=0;i<5;i++){
+        const tgtYr = startYr+1+i;
+        // Target di masa depan (tahun > tahun terakhir data, atau tahun sama tapi bulan belum)
+        const isFuture = tgtYr > lastHistYear || (tgtYr === lastHistYear && lastHistMonth < 12);
+        
+        if(!isFuture){
+          // Target sudah dilalui data historis → cari posisi di hist
+          const tgtLab = '12/31/'+tgtYr;
+          let idx = hist.findIndex(x=>x.lab===tgtLab);
+          if(idx<0){
+            const tgtDate = new Date(tgtYr,11,31).getTime();
+            let bd=Infinity;
+            hist.forEach((x,j)=>{ const p=x.lab.split('/'); if(p.length>=3){ const d=new Date(parseInt(p[2]),parseInt(p[0])-1,parseInt(p[1])).getTime(); const dist=Math.abs(d-tgtDate); if(dist<bd){bd=dist;idx=j;}}});
+          }
+          if(idx>=0 && ok(pm.potensi[i])){
+            proj[idx] = pm.potensi[i];
+          }
+        } else {
+          // Target di masa depan → append
+          labels.push(String(tgtYr));
+          histData.push(null);
+          proj.push(ok(pm.potensi[i])?pm.potensi[i]:null);
+        }
+      }
+
       // Target tercapai? bandingkan dgn harga tertinggi yg pernah dicapai.
       const hiAll = Math.max.apply(null, ph.map(r=>r[s.code]).filter(ok).concat(ok(liveP)?[liveP]:[]));
-      const reached = pm.potensi.map(t=> ok(t)&&ok(hiAll)&&t<=hiAll);
-      const projCol = [...new Array(hist.length).fill('rgba(0,0,0,0)'), ...reached.map(r=> r?COL.green:COL.orange)];
-      const projRad = [...new Array(hist.length).fill(0), ...reached.map(()=>5)];
-      if(anchorIdx>=0){ projCol[anchorIdx]=COL.purple; projRad[anchorIdx]=3; }
-      const allv = histVals.concat(pm.potensi).filter(ok); const minY = allv.length ? Math.min(...allv)*0.9 : 0;
+      const reached = proj.map((v,i2)=> (i2!==anchorIdx && ok(v) && v>0 && ok(hiAll) && v<=hiAll));
+      const projCol = proj.map((v,i2)=> i2===anchorIdx?COL.purple : (!ok(v)||v<=0)?'rgba(0,0,0,0)' : reached[i2]?COL.green:COL.orange);
+      const projRad = proj.map((v,i2)=> i2===anchorIdx?3 : (ok(v)&&v>0)?5:0);
+      const projData = proj;
+      const allv = histData.concat(projData).filter(ok); const minY = allv.length ? Math.min(...allv)*0.9 : 0;
       const ds = [
         { label:'Harga Saham', data:histData, borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:0, borderWidth:2, tension:.25 },
         { label:'Proyeksi Valuasi 5Th', data:projData, borderColor:COL.orange, backgroundColor:'transparent', borderDash:[6,4], fill:false, spanGaps:true, borderWidth:2.5, tension:.12,
@@ -9959,30 +10777,738 @@ body.vl-maxing{overflow:hidden}
       y2:{ position:'right', ticks:{...TICK, callback:v=>v+'%'}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 8. MoS sub-model (window aktif)
+    // 8. MoS sub-model (window aktif) — skip jika modal hidden, render saat modal dibuka
     {
-      const keys=['pbv','per','psr']; const names={pbv:'PBV',per:'PER',psr:'PSR'};
-      let labs, data;
-      if(m.applicable){
-        labs = keys.map(k=>names[k]);
-        data = keys.map(k=> m.submodels[k].applicable ? m.submodels[k].mos*100 : null);
-      } else { labs=['—']; data=[null]; }
-      const cols = data.map(v=> !ok(v)?COL.purpleSoft : v>=30?COL.green : v>=20?COL.orange : COL.pink);
-      mk('vlMos', { type:'bar', data:{ labels:labs, datasets:[
-        { label:'Margin of Safety (%)', data:data, backgroundColor:cols, borderRadius:5 }
-      ]}, options:{...base, indexAxis:'y',
-        scales:{ x:{ ticks:{...TICK, callback:v=>v+'%'}, grid:GRID }, y:{ ticks:{...TICK, font:{size:12}}, grid:{display:false} } },
-        plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{ label:ctx=>' MoS: '+(ok(ctx.parsed.x)?ctx.parsed.x.toFixed(2):'-')+'%' }}}
-      }});
+      const modal = document.getElementById('vlMultModal');
+      if(modal && modal.classList.contains('active')){
+        const keys=['pbv','per','psr']; const names={pbv:'PBV',per:'PER',psr:'PSR'};
+        let labs, data;
+        if(m.applicable){
+          labs = keys.map(k=>names[k]);
+          data = keys.map(k=> m.submodels[k].applicable ? m.submodels[k].mos*100 : null);
+        } else { labs=['—']; data=[null]; }
+        const cols = data.map(v=> !ok(v)?COL.purpleSoft : v>=30?COL.green : v>=20?COL.orange : COL.pink);
+        mk('vlMos', { type:'bar', data:{ labels:labs, datasets:[
+          { label:'Margin of Safety (%)', data:data, backgroundColor:cols, borderRadius:5 }
+        ]}, options:{...base, indexAxis:'y',
+          scales:{ x:{ ticks:{...TICK, callback:v=>v+'%'}, grid:GRID }, y:{ ticks:{...TICK, font:{size:12}}, grid:{display:false} } },
+          plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{ label:ctx=>' MoS: '+(ok(ctx.parsed.x)?ctx.parsed.x.toFixed(2):'-')+'%' }}}
+        }});
+      }
     }
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     PERBANDINGAN METODE VALUASI — DCF, DDM, Graham, FCF, PBV, PER, PSR,
+     Earnings Power (EPS÷WACC) & PEG. WACC digabung dgn beta dari Dashboard
+     (data.json .stats[code].beta). Menghasilkan nilai wajar per metode +
+     verdict Murah/Wajar/Mahal + popup penjelasan. Mesin lama tak diubah.
+  ════════════════════════════════════════════════════════════════ */
+  let _cmpData = {};     // key -> objek metode (utk popup)
+  let _cmpWacc = null;   // simpan WACC terakhir (utk popup WACC)
+  let _cmpBasis = 'year';// basis data: 'current' (Q1 annualized) atau 'year' (tahun penuh terakhir)
+  let _cmpOverrides = {};// user slider overrides: rf, erp, beta, g5, tg
+  let _cmpValChart = null;   // Chart.js instance valuasi historis
+
+  // WACC: CAPM + bobot utang. Beta diambil dari Dashboard bila ada. Overrides dari slider.
+  function cmpWacc(stock){
+    const w = (stock.valuation && stock.valuation.wacc) || {};
+    const a = (state.raw && state.raw.assumptions) || {};
+    const ov = _cmpOverrides || {};
+    const rf  = ok(w.risk_free) ? w.risk_free : (a.risk_free!=null?a.risk_free:0.068);
+    const erp = ok(w.equity_risk_premium) ? w.equity_risk_premium : (a.equity_risk_premium!=null?a.equity_risk_premium:0.075);
+    const db  = state.stats && state.stats[stock.code];
+    const dbBeta = (db && ok(db.beta)) ? db.beta : null;
+    const beta = ok(dbBeta) ? dbBeta : (ok(w.beta)?w.beta:1);
+    const coe  = rf + beta*erp;
+    const we   = ok(w.weight_equity) ? w.weight_equity : 1;
+    const wd   = ok(w.weight_debt)   ? w.weight_debt   : 0;
+    const kdAfter = ok(w.cost_of_debt_after_tax) ? w.cost_of_debt_after_tax : 0;
+    const waccCalc = we*coe + wd*kdAfter;
+    // If user overrides wacc directly via slider, use that for both wacc and coe
+    const wacc = ok(ov.wacc) ? ov.wacc : waccCalc;
+    const coeEff = ok(ov.wacc) ? ov.wacc : coe;
+    return { rf, erp, beta, betaSrc: ok(dbBeta)?'Dashboard':'model', coe:coeEff, we, wd, kd:w.cost_of_debt, kdAfter, tax:w.tax_rate_effective, wacc };
+  }
+
+  // Hitung growth fase 1-5 dari data keuangan aktual (bukan flat default).
+  // DCF: prefer FCF CAGR 5y (bila positif), fallback blend EPS+SPS growth.
+  // DDM: DPS growth 5y, fallback EPS growth × DPR.
+  // Terminal (fase 6-10): separuh fase awal, dibatasi min 2% maks 6%.
+  function cmpGrowth(stock, bi){
+    const v=stock.valuation||{}, fy=v.five_year||{}, inp=fy.inputs||{};
+    const a=(state.raw&&state.raw.assumptions)||{};
+
+    // FCF CAGR 5y (dari annual data, kalau tersedia)
+    let fcfCagr=null;
+    const yrs=annualYears(stock);
+    if(yrs.length>=6){
+      const ly=yrs[yrs.length-1], fy5=yrs[yrs.length-6];
+      const fcfNow=(stock.annual[ly]||{}).fcf, fcf5=(stock.annual[fy5]||{}).fcf;
+      if(ok(fcfNow)&&fcfNow>0&&ok(fcf5)&&fcf5>0) fcfCagr=Math.pow(fcfNow/fcf5,1/5)-1;
+    }
+
+    // Blend EPS+SPS growth (dari inputs Excel): 60% EPS + 40% SPS
+    const epsG=ok(inp.eps_growth_5y)?inp.eps_growth_5y:0;
+    const spsG=ok(inp.sps_growth_5y)?inp.sps_growth_5y:0;
+    const blendG = 0.6*epsG + 0.4*spsG;
+
+    // DCF growth: prefer FCF CAGR (langsung dari arus kas), fallback blend EPS+SPS
+    // Dibatasi maks 30% (konservatif) dan min 2%
+    let dcfG = ok(fcfCagr) ? fcfCagr : blendG;
+    dcfG = Math.max(0.02, Math.min(0.30, dcfG));
+
+    // DDM growth: DPS growth 5y (dari inputs), fallback EPS growth × DPR
+    const dpr=ok(inp.dpr)?inp.dpr:0.3;
+    let ddmG = ok(bi.g5) ? bi.g5 : (epsG * dpr > 0 ? epsG : 0);
+    // Cap DDM growth (dividen growth umumnya lebih konservatif)
+    ddmG = Math.max(0.01, Math.min(0.20, ddmG));
+
+    // Terminal growth (fase 6-10 → ∞): default 3.5% (PDB riil Indonesia ~5%, dikurangi
+    // margin keamanan). Bisa di-override via slider. Separuh growth hanya sbg referensi.
+    const defTg = ok(a.terminal_growth)?a.terminal_growth:0.035;
+    const dcfTg = defTg;
+    const ddmTg = defTg;
+
+    return { dcfG, ddmG, dcfTg, ddmTg, fcfCagr, blendG, epsG, spsG, defTg, src: ok(fcfCagr)?'FCF CAGR 5y':'blend EPS+SPS growth 5y' };
+  }
+
+  // DCF 2-tahap (FCFF). Growth dari cmpGrowth (data aktual), bisa di-override slider.
+  function cmpDCF(d, r, baseFcf, netDebt, shares, gi){
+    if(!d || !d.applicable) return null;
+    if(!ok(baseFcf) || !ok(shares) || shares<=0) return null;
+    const ov = _cmpOverrides || {};
+    const g5 = ok(ov.g5) ? ov.g5 : (gi&&gi.dcfG!=null ? gi.dcfG : (d.growth_5y||0));
+    const tg = ok(ov.tg) ? ov.tg : (gi&&gi.dcfTg!=null ? gi.dcfTg : (d.terminal_growth||0.035));
+    if(!(r > tg)) return null;
+    let fcf = baseFcf, pvSum = 0;
+    for(let t=1;t<=5;t++){ fcf *= (1+g5); pvSum += fcf/Math.pow(1+r,t); }
+    const term = (fcf*(1+tg))/(r-tg);
+    const pvTerm = term/Math.pow(1+r,5);
+    const ev = pvSum+pvTerm, equity = ev-(netDebt||0);
+    return { fair:equity/shares, ev, equity, pvSum, pvTerm, shares, r, g:g5, tg, netDebt };
+  }
+
+  // DDM 2-tahap (Gordon). Growth dari cmpGrowth (data aktual), bisa di-override slider.
+  function cmpDDM(m, r, baseDps, gi){
+    if(!m || !m.applicable) return null;
+    if(!ok(baseDps) || baseDps<=0) return null;
+    const ov = _cmpOverrides || {};
+    const g5 = ok(ov.g5) ? ov.g5 : (gi&&gi.ddmG!=null ? gi.ddmG : (m.growth_5y||0));
+    const tg = ok(ov.tg) ? ov.tg : (gi&&gi.ddmTg!=null ? gi.ddmTg : (m.terminal_growth||0.035));
+    if(!(r > tg)) return null;
+    let dps = baseDps, pvSum = 0;
+    for(let t=1;t<=5;t++){ dps *= (1+g5); pvSum += dps/Math.pow(1+r,t); }
+    const term = (dps*(1+tg))/(r-tg);
+    const pvTerm = term/Math.pow(1+r,5);
+    return { fair:pvSum+pvTerm, pvSum, pvTerm, r, g:g5, tg, baseDps };
+  }
+
+  // Verdict: ±15% dari harga.
+  function cmpVerdict(fair, price){
+    if(!ok(fair)||!ok(price)||price<=0||fair<=0) return null;
+    const up = fair/price - 1;
+    if(up >= 0.15)  return { up, label:'Murah', cls:'cheap' };
+    if(up <= -0.15) return { up, label:'Mahal', cls:'exp' };
+    return { up, label:'Wajar', cls:'fair' };
+  }
+
+  // Ambil per-share & arus kas berdasarkan basis terpilih.
+  function cmpBasis(stock, basis){
+    const v=stock.valuation||{}, fy=v.five_year||{}, inp=fy.inputs||{};
+    const yrs=annualYears(stock), ly=yrs[yrs.length-1];
+    if(basis==='current'){
+      const o=stock.annualized||{};
+      return { key:'current', label:vlTtmLabel(stock), yr:ly,
+        eps:o.eps, bvps:o.bvps, sps:o.sps, g5:o.eps_growth_5y,
+        dps:o.dps, fcf:o.fcf, netDebt:o.net_debt, shares:o.shares,
+        note:'data TTM — Q1 disetahunkan (x4)' };
+    }
+    const ay=(stock.annual&&stock.annual[ly])||{};
+    return { key:'year', label:String(ly), yr:ly,
+      eps:ok(inp.eps)?inp.eps:ay.eps, bvps:ok(inp.bvps)?inp.bvps:ay.bvps, sps:ok(inp.sps)?inp.sps:ay.sps,
+      g5:ok(inp.eps_growth_5y)?inp.eps_growth_5y:ay.eps_growth_5y,
+      dps:(v.ddm&&ok(v.ddm.base_dps))?v.ddm.base_dps:ay.dps,
+      fcf:(v.dcf&&ok(v.dcf.base_fcf))?v.dcf.base_fcf:ay.fcf,
+      netDebt:(v.dcf&&ok(v.dcf.net_debt))?v.dcf.net_debt:ay.net_debt,
+      shares:ay.shares, note:'data tahun penuh terakhir ('+ly+')' };
+  }
+
+  // Susun daftar metode + nilai wajar. Semua metode selalu tampil; '—' bila
+  // tak bisa dihitung pada basis terpilih (mis. FCF/laba negatif di Q1).
+  function cmpMethods(stock, price, wc, bi){
+    const v=stock.valuation||{}, fy=v.five_year||{};
+    const a=(state.raw&&state.raw.assumptions)||{}, am=fy.avg_multiples||{}, win=String(state.win);
+    const eps=bi.eps, bvps=bi.bvps, sps=bi.sps, g5=bi.g5;
+    const fund=state.fundamentals&&state.fundamentals[stock.code];
+    const tg=ok((_cmpOverrides||{}).tg)?_cmpOverrides.tg:(ok(a.terminal_growth)?a.terminal_growth:0.035);
+    const list=[];
+    const add=(o)=>{ if(o){ if(!ok(o.fair)||o.fair<=0) o.fair=null; list.push(o); } };
+
+    // 1) DCF (FCFF 2-tahap)
+    const gi=cmpGrowth(stock, bi);
+    const dcf=cmpDCF(v.dcf, wc.wacc, bi.fcf, bi.netDebt, bi.shares, gi);
+    add({key:'dcf',name:'DCF (Arus Kas)',grp:'Intrinsik',fair:dcf?dcf.fair:null,cons:true,
+      short:'Discounted Cash Flow: arus kas bebas perusahaan diproyeksi 5 tahun lalu didiskonto dengan WACC, ditambah nilai terminal (Gordon), dikurangi utang bersih. Growth fase 1-5 dihitung dari data keuangan aktual ('+gi.src+'), bukan asumsi flat.',
+      rows:[['FCF dasar',fmtMrp(bi.fcf)],['Growth 1-5 Th ('+gi.src+')',fmtPct(gi.dcfG*100)],['Terminal growth',fmtPct(gi.dcfTg*100)],['WACC',fmtPct(wc.wacc*100)],['Net debt',fmtMrp(bi.netDebt)]]});
+
+    // 2) DDM
+    const ddm=cmpDDM(v.ddm, wc.coe, bi.dps, gi);
+    add({key:'ddm',name:'DDM (Dividen)',grp:'Intrinsik',fair:ddm?ddm.fair:null,cons:true,
+      short:'Dividend Discount Model: proyeksi dividen 5 tahun + terminal Gordon, didiskonto dengan cost of equity. Growth dividen dari data aktual emiten.',
+      rows:[['DPS dasar',fmtRp(bi.dps)],['Growth dividen 1-5 Th',fmtPct(gi.ddmG*100)],['Terminal growth',fmtPct(gi.ddmTg*100)],['Cost of equity',fmtPct(wc.coe*100)]]});
+
+    // 3) Graham Number
+    add({key:'graham',name:'Graham Number',grp:'Intrinsik',fair:(ok(eps)&&eps>0&&ok(bvps)&&bvps>0)?Math.sqrt(22.5*eps*bvps):null,cons:true,
+      short:'Rumus Benjamin Graham: √(22,5 × EPS × BVPS). Angka 22,5 = PER 15 × PBV 1,5. Batas atas harga wajar yang konservatif untuk saham value.',
+      rows:[['EPS',fmtRp(eps)],['BVPS',fmtRp(bvps)],['Faktor','22,5 (PER 15 × PBV 1,5)']]});
+
+    // 4) FCF (kapitalisasi Gordon 1-tahap)
+    let fcfFair=null;
+    if(ok(bi.fcf)&&ok(bi.shares)&&bi.shares>0&&wc.wacc>tg){ const ev=bi.fcf*(1+tg)/(wc.wacc-tg); fcfFair=(ev-(bi.netDebt||0))/bi.shares; }
+    add({key:'fcf',name:'FCF (Yield)',grp:'Intrinsik',fair:fcfFair,cons:true,
+      short:'Kapitalisasi arus kas bebas tanpa fase pertumbuhan eksplisit (Gordon 1-tahap): FCF×(1+g)/(WACC−g), dikurangi utang bersih. Versi lebih konservatif dari DCF.',
+      rows:[['FCF dasar',fmtMrp(bi.fcf)],['Terminal growth',fmtPct(tg*100)],['WACC',fmtPct(wc.wacc*100)],['Net debt',fmtMrp(bi.netDebt)]]});
+
+    // 5) PBV (rata-rata historis × BVPS)
+    const pbvM=(am.pbv||{})[win];
+    add({key:'pbv',name:'PBV (Rata² '+win+'Th)',grp:'Relatif',fair:(ok(pbvM)&&ok(bvps))?pbvM*bvps:null,cons:true,
+      short:'Harga wajar = rata-rata PBV historis ('+win+' tahun) × nilai buku per saham (BVPS) pada basis terpilih. Mengasumsikan saham kembali ke valuasi rata-ratanya.',
+      rows:[['Rata² PBV '+win+'Th',fmtX(pbvM)],['BVPS',fmtRp(bvps)],['PBV sekarang',ok(fund&&fund.pbv)?fmtX(fund.pbv):'-']]});
+
+    // 6) PER (rata-rata historis × EPS)
+    const perM=(am.per||{})[win];
+    add({key:'per',name:'PER (Rata² '+win+'Th)',grp:'Relatif',fair:(ok(perM)&&ok(eps))?perM*eps:null,cons:true,
+      short:'Harga wajar = rata-rata PER historis ('+win+' tahun) × laba per saham (EPS) pada basis terpilih. Sensitif terhadap outlier laba; bandingkan dengan metode lain.',
+      rows:[['Rata² PER '+win+'Th',fmtX(perM)],['EPS',fmtRp(eps)],['PER sekarang',ok(fund&&fund.per)?fmtX(fund.per):'-']]});
+
+    // 7) PSR (rata-rata historis × SPS)
+    const psrM=(am.psr||{})[win];
+    add({key:'psr',name:'PSR (Rata² '+win+'Th)',grp:'Relatif',fair:(ok(psrM)&&ok(sps))?psrM*sps:null,cons:true,
+      short:'Harga wajar = rata-rata Price-to-Sales historis ('+win+' tahun) × penjualan per saham (SPS) pada basis terpilih. Berguna saat laba fluktuatif/negatif.',
+      rows:[['Rata² PSR '+win+'Th',fmtX(psrM)],['SPS',fmtRp(sps)]]});
+
+    // 8) Earnings Power (EPS ÷ WACC)
+    add({key:'epv',name:'Earnings Power (EPS)',grp:'Intrinsik',fair:(ok(eps)&&eps>0)?eps/wc.wacc:null,cons:true,
+      short:'Earnings Power Value: laba per saham dikapitalisasi TANPA pertumbuhan = EPS ÷ WACC. Memberi nilai "lantai" berdasarkan kemampuan laba saat ini.',
+      rows:[['EPS',fmtRp(eps)],['WACC',fmtPct(wc.wacc*100)]]});
+
+    // 9) PEG (justified, dibatasi) — informatif, di luar konsensus
+    let pegFair=null, pegExtra=null, pegRows=[['EPS',fmtRp(eps)]];
+    if(ok(eps)&&eps>0&&ok(g5)&&g5>0){
+      const gpct=g5*100, curPER=price/eps, justPER=Math.max(5,Math.min(gpct,25)), peg=curPER/gpct;
+      pegFair=eps*justPER; pegExtra='PEG '+(ok(peg)?peg.toFixed(2):'-');
+      pegRows=[['EPS',fmtRp(eps)],['Pertumbuhan laba 5Th',fmtPct(gpct)],['PER sekarang',fmtX(curPER)],['Justified PER (maks 25)',fmtX(justPER)],['PEG sekarang',ok(peg)?peg.toFixed(2):'-']];
+    }
+    add({key:'peg',name:'PEG (Growth)',grp:'Relatif',fair:pegFair,cons:false,extra:pegExtra,
+      short:'Price/Earnings-to-Growth. Menurut Peter Lynch, PER yang wajar ≈ laju pertumbuhan laba (PEG=1). Justified PER dibatasi maksimal 25× agar konservatif. PEG < 1 = murah, > 2 = mahal. Bersifat informatif (tidak masuk konsensus).',
+      rows:pegRows});
+
+    return list;
+  }
+
+  function renderCompare(){
+    const host=document.getElementById('vlCmpBody'); if(!host) return;
+    const s=curStock(); if(!s){ host.innerHTML=''; return; }
+    const v=s.valuation||{};
+    if(!v.five_year || !v.five_year.applicable){
+      host.innerHTML='<div class="vl-msg">Perbandingan metode belum tersedia untuk emiten ini (model fundamental belum berlaku).</div>';
+      _cmpData={}; return;
+    }
+    const price=effLast(s).price;
+    const wc=cmpWacc(s); _cmpWacc=wc;
+    const bi=cmpBasis(s, _cmpBasis);
+    const methods=cmpMethods(s, price, wc, bi);
+    _cmpData={};
+    methods.forEach(m=>{ m.verdict=cmpVerdict(m.fair, price); _cmpData[m.key]=m; });
+
+    // konsensus = median nilai wajar metode cons:true
+    const cons=methods.filter(m=>m.cons&&ok(m.fair)).map(m=>m.fair).sort((a,b)=>a-b);
+    let median=null,lo=null,hi=null;
+    if(cons.length){ lo=cons[0]; hi=cons[cons.length-1]; const mid=Math.floor(cons.length/2);
+      median = cons.length%2 ? cons[mid] : (cons[mid-1]+cons[mid])/2; }
+    const cv=cmpVerdict(median, price);
+
+    const top=Math.max(price, hi||price)*1.08;
+    const sc=x=> ok(x)&&top>0 ? Math.max(0,Math.min(100,x/top*100)) : 0;
+
+    const nCheap=methods.filter(m=>m.verdict&&m.verdict.cls==='cheap').length;
+    const nFair =methods.filter(m=>m.verdict&&m.verdict.cls==='fair').length;
+    const nExp  =methods.filter(m=>m.verdict&&m.verdict.cls==='exp').length;
+
+    const chip=(vd)=> vd ? '<span class="vl-vchip '+vd.cls+'">'+vd.label+'</span>' : '<span class="vl-vchip na">-</span>';
+    const upTxt=(vd)=> vd ? '<span class="'+(vd.up>=0?'vl-pos':'vl-neg')+'">'+(vd.up>=0?'+':'')+(vd.up*100).toFixed(1)+'%</span>' : '-';
+    const mosOf=(fair)=> (ok(fair)&&fair>0&&ok(price)) ? (1-price/fair) : null;
+    const mosTxt=(fair)=>{ const mv=mosOf(fair); return mv==null ? '<span style="color:var(--text3)">—</span>' : '<span class="'+(mv>=0?'vl-pos':'vl-neg')+'">'+(mv>=0?'+':'')+(mv*100).toFixed(1)+'%</span>'; };
+    const consMos=mosOf(median);
+
+    let h='';
+
+    // ── Slider panel: adjustable WACC/discount rate parameters ──
+    const ov=_cmpOverrides||{};
+    const dcfData=v.dcf||{}, ddmData=v.ddm||{};
+    const aGlobal=(state.raw&&state.raw.assumptions)||{};
+    const giSlider=cmpGrowth(s, cmpBasis(s, _cmpBasis));
+    const defG5=giSlider.dcfG;
+    const defTg=ok(ov.tg)?ov.tg:giSlider.dcfTg;
+    const curTg=(ok(ov.tg)?ov.tg:giSlider.dcfTg)*100;
+    const yrs=annualYears(s);
+    const dataYrsWarn=yrs.length<5;
+
+    // (Slider panel removed — sliders now inline in Discount Rate card below)
+    const curWaccPct=(wc.wacc*100);
+    const waccRisk=(v2)=>v2<=10?'Konservatif':v2<=13?'Moderat':v2<=16?'Agresif':'Sangat Agresif';
+
+    h+='<div class="vl-cmp-basis"><span class="lab">Basis Data</span>'+
+       '<div class="vl-basis" style="margin:0">'+
+         '<button class="vl-basis-btn'+(bi.key==='current'?' active':'')+'" onclick="vlSetCmpBasis(\'current\')">'+vlTtmLabel(s)+'</button>'+
+         '<button class="vl-basis-btn'+(bi.key==='year'?' active':'')+'" onclick="vlSetCmpBasis(\'year\')">'+bi.yr+'</button>'+
+       '</div><span class="src">'+bi.note+'</span></div>';
+    h+='<div class="vl-cmp-top">';
+    h+='<div class="vl-cmp-card"><div class="l">Konsensus Nilai Wajar <span class="sub">· median '+cons.length+' metode</span></div>'+
+       '<div class="v">'+fmtRp(median)+'</div><div class="vl-cmp-verd">'+chip(cv)+' '+upTxt(cv)+' vs harga '+fmtRp(price)+'</div>'+
+       '<div class="sub" style="margin-top:5px">Margin of Safety median: '+mosTxt(median)+'</div></div>';
+    h+='<div class="vl-cmp-card"><div class="l">Sebaran Penilaian</div>'+
+       '<div class="vl-cmp-tally"><span class="t cheap">'+nCheap+' Murah</span><span class="t fair">'+nFair+' Wajar</span><span class="t exp">'+nExp+' Mahal</span></div>'+
+       '<div class="sub" style="margin-top:7px">Rentang wajar '+fmtRp(lo)+' – '+fmtRp(hi)+'</div></div>';
+    h+='<div class="vl-cmp-card"><div class="l">WACC / Discount Rate <button class="vl-iq" onclick="vlMethodInfo(\'wacc\')">i</button></div>'+
+       '<div class="v" id="vlSldWaccVal">'+fmtPct(curWaccPct)+'</div>'+
+       '<div class="sub" style="margin-top:4px">\u03B2 '+fmtD2(wc.beta)+' ('+wc.betaSrc+') \xB7 CoE '+fmtPct(wc.coe*100)+'</div>'+
+       '<input type="range" class="vl-sld" id="vlSldWacc" min="8" max="25" step="0.1" value="'+curWaccPct.toFixed(1)+'" oninput="vlSldChange(\'wacc\',this.value)" style="margin-top:8px">'+
+       '<div class="vl-dr-sub" style="margin-top:4px"><span class="vl-sld-risk" id="vlSldWaccRisk">'+waccRisk(curWaccPct)+'</span> <button class="vl-basis-btn" style="font-size:9px;padding:2px 8px;margin-left:6px" onclick="vlResetSliders()">Reset</button></div></div>';
+    h+='<div class="vl-cmp-card"><div class="l">Terminal Growth <button class="vl-iq" onclick="vlMethodInfo(\'tg\')">i</button></div>'+
+       '<div class="v" id="vlSldTgVal">'+curTg.toFixed(1)+'%</div>'+
+       '<div class="sub" style="margin-top:4px">Pertumbuhan jangka panjang (setelah Th ke-5)</div>'+
+       '<input type="range" class="vl-sld" id="vlSldTg" min="1" max="6" step="0.1" value="'+curTg.toFixed(1)+'" oninput="vlSldChange(\'tg\',this.value)" style="margin-top:8px">'+
+       (dataYrsWarn?'<div class="vl-sld-warn" style="font-size:9.5px;margin-top:6px;padding:4px 8px">\u26A0\uFE0F Data < 5 tahun</div>':'')+'</div>';
+    h+='</div>';
+
+    // football field + chart: 2-column grid
+    h+='<div class="vl-cmp-duo">';
+
+    // football field: bar nilai wajar tiap metode + garis harga & median
+    const frac=x=> (ok(x)&&top>0) ? Math.max(0,Math.min(1,x/top)) : 0;
+    h+='<div class="vl-cmp-range card"><button class="vl-maxbtn" onclick="vlToggleMax(this.parentElement)" title="Perbesar">\u26F6</button><div class="hd">Nilai Wajar per Metode vs Harga</div>';
+    h+='<div class="vl-ff">';
+    h+='<div class="vl-ff-line price" style="left:calc(100px + (100% - 100px) * '+frac(price)+')"><span>Harga '+fmtRp(price)+'</span></div>';
+    if(ok(median)) h+='<div class="vl-ff-line median" style="left:calc(100px + (100% - 100px) * '+frac(median)+')"></div>';
+    methods.forEach(m=>{
+      const cls=m.verdict?m.verdict.cls:'na';
+      const shortName=m.name.replace(/\s*\(.*?\)/,'').replace(/\s+Number/,'');
+      h+='<div class="vl-ff-row"><span class="lab" title="'+m.name+'">'+shortName+'</span>'+
+         '<div class="trk">'+(m.fair!=null?'<span class="bar '+cls+'" style="width:'+sc(m.fair)+'%"></span>':'')+
+         '<span class="amt">'+(m.fair!=null?fmtRp(m.fair):'—')+'</span></div></div>';
+    });
+    h+='</div>';
+    h+='<div class="vl-cmp-legend" style="margin-top:12px"><span><i class="price"></i>Harga '+fmtRp(price)+'</span><span><i class="median"></i>Median '+fmtRp(median)+'</span><span><i class="sw cheap"></i>Murah</span><span><i class="sw fair"></i>Wajar</span><span><i class="sw exp"></i>Mahal</span></div></div>';
+
+    // ── Chart Harga vs Nilai Wajar Historis (side-by-side with football field) ──
+    h+='<div class="vl-cmp-chart-card card"><button class="vl-maxbtn" onclick="vlToggleMax(this.parentElement)" title="Perbesar">\u26F6</button><div class="hd">\uD83D\uDCCA Harga vs Nilai Wajar Historis \u2014 '+s.code+'</div>';
+    if(yrs.length<5) h+='<div class="vl-sld-warn" style="margin-bottom:8px">\u26A0\uFE0F Data historis < 5 tahun \u2014 akurasi belum bisa dinilai.</div>';
+    h+='<div style="position:relative;height:280px" class="vl-cmp-canvas-wrap"><canvas id="vlCmpValChart"></canvas></div>';
+    h+='<div class="vl-cmp-val-legend" id="vlCmpValLegend"></div></div>';
+
+    h+='</div>'; // close .vl-cmp-duo
+
+    // tabel detail
+    h+='<div class="vl-tw" style="margin-top:14px"><table class="vl-table vl-cmp-tbl"><thead><tr>'+
+       '<th>Metode</th><th style="text-align:left">Jenis</th><th>Nilai Wajar</th><th>Potensi</th><th>Margin of Safety</th><th>Status</th><th></th></tr></thead><tbody>';
+    methods.forEach(m=>{
+      h+='<tr><td>'+m.name+(m.extra?' <span class="vl-cmp-x">\xB7 '+m.extra+'</span>':'')+(m.cons?'':' <span class="vl-cmp-x">*</span>')+'</td>'+
+         '<td style="text-align:left;color:var(--text3)">'+m.grp+'</td>'+
+         '<td>'+(m.fair!=null?fmtRp(m.fair):'<span style="color:var(--text3)">\u2014</span>')+'</td>'+
+         '<td>'+upTxt(m.verdict)+'</td>'+
+         '<td>'+mosTxt(m.fair)+'</td>'+
+         '<td>'+chip(m.verdict)+'</td>'+
+         '<td style="text-align:center"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button></td></tr>';
+    });
+    h+='</tbody></table></div>';
+    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlTtmLabel(s)+'</strong> = Q1 disetahunkan (\xD74), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
+
+    host.innerHTML=h;
+
+    // Render chart after DOM insertion
+    renderCmpValChart(s, wc, bi, methods);
+  }
+
+
+  // ── Chart: Valuasi Historis per Metode per Tahun + Konsensus + Harga ──
+  function renderCmpValChart(stock, wc, bi, currentMethods){
+    if(_cmpValChart){ _cmpValChart.destroy(); _cmpValChart=null; }
+    const canvas=document.getElementById('vlCmpValChart'); if(!canvas) return;
+    const ctx=canvas.getContext('2d');
+    const v=stock.valuation||{}, fy=v.five_year||{};
+    const am=fy.avg_multiples||{}, win=String(state.win);
+    const aGlobal=(state.raw&&state.raw.assumptions)||{};
+    const dcfD=v.dcf||{}, ddmD=v.ddm||{};
+    const tgVal=ok(dcfD.terminal_growth)?dcfD.terminal_growth:(aGlobal.terminal_growth||0.035);
+    const g5Dcf=ok(dcfD.growth_5y)?dcfD.growth_5y:0.08;
+    const g5Ddm=ok(ddmD.growth_5y)?ddmD.growth_5y:0.08;
+    const yrs=annualYears(stock);
+    const code=stock.code;
+
+    // Compute per-year fair values
+    const methodDefs=[
+      {key:'dcf',name:'DCF',color:'#00bcd4'},
+      {key:'ddm',name:'DDM',color:'#ab47bc'},
+      {key:'graham',name:'Graham',color:'#ff9800'},
+      {key:'pbv',name:'PBV',color:'#4caf50'},
+      {key:'per',name:'PER',color:'#2196f3'},
+      {key:'psr',name:'PSR',color:'#f44336'},
+      {key:'epv',name:'EPV',color:'#cddc39'}
+    ];
+
+    const seriesData={}; methodDefs.forEach(m=>{seriesData[m.key]=[];});
+    const hargaData=[], consData=[];
+    const labels=yrs.slice();
+
+    yrs.forEach(yr=>{
+      const ay=(stock.annual&&stock.annual[yr])||{};
+      const eps=ay.eps, bvps=ay.bvps, sps=ay.sps;
+      const shares=ay.shares||1;
+      const priceYr=ay.price;
+      hargaData.push(ok(priceYr)?priceYr:null);
+
+      // DCF: use year's fcf
+      let dcfFair=null;
+      if(dcfD.applicable&&ok(ay.fcf)&&ok(shares)&&shares>0&&wc.wacc>tgVal){
+        let fcf=ay.fcf,pvS=0;
+        for(let t=1;t<=5;t++){fcf*=(1+g5Dcf);pvS+=fcf/Math.pow(1+wc.wacc,t);}
+        const trm=(fcf*(1+tgVal))/(wc.wacc-tgVal);
+        const pvT=trm/Math.pow(1+wc.wacc,5);
+        const ev=pvS+pvT, eq=ev-((ay.net_debt!=null?ay.net_debt:0)||0);
+        dcfFair=eq/shares; if(dcfFair<=0) dcfFair=null;
+      }
+      seriesData.dcf.push(dcfFair);
+
+      // DDM: use year's dps
+      let ddmFair=null;
+      if(ddmD.applicable&&ok(ay.dps)&&ay.dps>0&&wc.coe>tgVal){
+        let dps=ay.dps,pvS=0;
+        for(let t=1;t<=5;t++){dps*=(1+g5Ddm);pvS+=dps/Math.pow(1+wc.coe,t);}
+        const trm=(dps*(1+tgVal))/(wc.coe-tgVal);
+        const pvT=trm/Math.pow(1+wc.coe,5);
+        ddmFair=pvS+pvT; if(ddmFair<=0) ddmFair=null;
+      }
+      seriesData.ddm.push(ddmFair);
+
+      // Graham
+      seriesData.graham.push((ok(eps)&&eps>0&&ok(bvps)&&bvps>0)?Math.sqrt(22.5*eps*bvps):null);
+
+      // PBV
+      const pbvM=(am.pbv||{})[win];
+      seriesData.pbv.push((ok(pbvM)&&ok(bvps)&&bvps>0)?pbvM*bvps:null);
+
+      // PER
+      const perM=(am.per||{})[win];
+      seriesData.per.push((ok(perM)&&ok(eps)&&eps>0)?perM*eps:null);
+
+      // PSR
+      const psrM=(am.psr||{})[win];
+      seriesData.psr.push((ok(psrM)&&ok(sps)&&sps>0)?psrM*sps:null);
+
+      // EPV
+      seriesData.epv.push((ok(eps)&&eps>0&&wc.wacc>0)?eps/wc.wacc:null);
+
+      // Konsensus median per tahun
+      const vals=[dcfFair,seriesData.ddm[seriesData.ddm.length-1],seriesData.graham[seriesData.graham.length-1],
+        seriesData.pbv[seriesData.pbv.length-1],seriesData.per[seriesData.per.length-1],
+        seriesData.psr[seriesData.psr.length-1],seriesData.epv[seriesData.epv.length-1]
+      ].filter(x=>ok(x)&&x>0).sort((a,b)=>a-b);
+      let med=null;
+      if(vals.length){const mi=Math.floor(vals.length/2); med=vals.length%2?vals[mi]:(vals[mi-1]+vals[mi])/2;}
+      consData.push(med);
+    });
+
+    // Append TTM (Q1 annualized) sebagai titik terakhir
+    const livePrice=effLast(stock).price;
+    const ann=stock.annualized||{};
+    if(ann && Object.keys(ann).length){
+      const qLabel=(stock.q_label||'Q1')+' TTM';
+      labels.push(qLabel);
+      hargaData.push(ok(livePrice)&&livePrice>0 ? livePrice : null);
+
+      // Hitung valuasi dari data annualized
+      const aEps=ann.eps, aBvps=ann.bvps, aSps=ann.sps, aFcf=ann.fcf, aDps=ann.dps;
+      const aShares=ann.shares||1, aNetDebt=ann.net_debt||0;
+
+      let aDcf=null;
+      if(dcfD.applicable&&ok(aFcf)&&aFcf>0&&ok(aShares)&&aShares>0&&wc.wacc>tgVal){
+        let fcf=aFcf,pvS=0;for(let t=1;t<=5;t++){fcf*=(1+g5Dcf);pvS+=fcf/Math.pow(1+wc.wacc,t);}
+        const trm=(fcf*(1+tgVal))/(wc.wacc-tgVal); const pvT=trm/Math.pow(1+wc.wacc,5);
+        aDcf=(pvS+pvT-aNetDebt)/aShares; if(aDcf<=0) aDcf=null;
+      }
+      seriesData.dcf.push(aDcf);
+
+      let aDdm=null;
+      if(ddmD.applicable&&ok(aDps)&&aDps>0&&wc.coe>tgVal){
+        let dps=aDps,pvS=0;for(let t=1;t<=5;t++){dps*=(1+g5Ddm);pvS+=dps/Math.pow(1+wc.coe,t);}
+        const trm=(dps*(1+tgVal))/(wc.coe-tgVal); aDdm=pvS+trm/Math.pow(1+wc.coe,5); if(aDdm<=0) aDdm=null;
+      }
+      seriesData.ddm.push(aDdm);
+      seriesData.graham.push((ok(aEps)&&aEps>0&&ok(aBvps)&&aBvps>0)?Math.sqrt(22.5*aEps*aBvps):null);
+      const pbvM2=(am.pbv||{})[win]; seriesData.pbv.push((ok(pbvM2)&&ok(aBvps)&&aBvps>0)?pbvM2*aBvps:null);
+      const perM2=(am.per||{})[win]; seriesData.per.push((ok(perM2)&&ok(aEps)&&aEps>0)?perM2*aEps:null);
+      const psrM2=(am.psr||{})[win]; seriesData.psr.push((ok(psrM2)&&ok(aSps)&&aSps>0)?psrM2*aSps:null);
+      seriesData.epv.push((ok(aEps)&&aEps>0&&wc.wacc>0)?aEps/wc.wacc:null);
+
+      const qVals=methodDefs.map(md=>seriesData[md.key][seriesData[md.key].length-1]).filter(x=>ok(x)&&x>0).sort((a,b)=>a-b);
+      let qMed=null; if(qVals.length){const mi=Math.floor(qVals.length/2); qMed=qVals.length%2?qVals[mi]:(qVals[mi-1]+qVals[mi])/2;}
+      consData.push(qMed);
+    } else {
+      // Fallback: replace last with live price
+      if(ok(livePrice)&&livePrice>0&&hargaData.length>0) hargaData[hargaData.length-1]=livePrice;
+    }
+
+    // Override last point with current computed method values if available
+    if(currentMethods&&currentMethods.length){
+      const curByKey={}; currentMethods.forEach(m=>{curByKey[m.key]=m.fair;});
+      methodDefs.forEach(md=>{
+        if(ok(curByKey[md.key])&&curByKey[md.key]>0) seriesData[md.key][seriesData[md.key].length-1]=curByKey[md.key];
+      });
+      const lastVals=methodDefs.map(md=>seriesData[md.key][seriesData[md.key].length-1]).filter(x=>ok(x)&&x>0).sort((a,b)=>a-b);
+      if(lastVals.length){const mi=Math.floor(lastVals.length/2); consData[consData.length-1]=lastVals.length%2?lastVals[mi]:(lastVals[mi-1]+lastVals[mi])/2;}
+    }
+
+    const ct=getCmpChartTheme();
+
+    const datasets=[];
+    methodDefs.forEach(md=>{
+      datasets.push({
+        label:md.name, data:seriesData[md.key], borderColor:md.color, borderWidth:1.5,
+        pointRadius:2, pointHoverRadius:4, tension:0.3, fill:false, spanGaps:true
+      });
+    });
+    // Konsensus (median) - dashed thick
+    datasets.push({
+      label:'Konsensus (Median)', data:consData, borderColor:'#ffd700', borderWidth:2.5,
+      borderDash:[6,3], pointRadius:0, pointHoverRadius:4, tension:0.3, fill:false, spanGaps:true
+    });
+    // Harga aktual - white/bold
+    datasets.push({
+      label:'Harga Aktual', data:hargaData, borderColor:ct.linePrice, borderWidth:2.5,
+      pointRadius:2, pointHoverRadius:4, tension:0.25, fill:false, spanGaps:true
+    });
+
+    _cmpValChart=new Chart(ctx,{
+      type:'line',
+      data:{labels, datasets},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,
+            titleColor:ct.tooltipTitle,bodyColor:ct.tooltipText,padding:10,cornerRadius:8,
+            callbacks:{label:function(item){
+              const v=item.raw; if(!ok(v)) return null;
+              return item.dataset.label+': Rp '+Math.round(v).toLocaleString('id-ID');
+            }}
+          }
+        },
+        scales:{
+          x:{ticks:{color:ct.tick,font:{size:9},maxRotation:45,autoSkip:true},grid:{color:ct.grid}},
+          y:{ticks:{color:ct.tick,font:{size:9,family:'IBM Plex Mono'},callback:function(v){return 'Rp'+Math.round(v).toLocaleString('id-ID');}},grid:{color:ct.grid}}
+        }
+      }
+    });
+
+    // Render legend below chart
+    const legendEl=document.getElementById('vlCmpValLegend');
+    if(legendEl){
+      let lg='';
+      methodDefs.forEach(md=>{lg+='<span class="vl-val-lgd-item"><i style="background:'+md.color+'"></i>'+md.name+'</span>';});
+      lg+='<span class="vl-val-lgd-item"><i style="background:#ffd700;border-style:dashed"></i>Konsensus (Median)</span>';
+      lg+='<span class="vl-val-lgd-item"><i style="background:'+ct.linePrice+'"></i>Harga Aktual</span>';
+      legendEl.innerHTML=lg;
+    }
+  }
+
+  // Chart theme helper
+  function getCmpChartTheme(){
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    return {
+      linePrice: isDark?'#e0e0e0':'#333',
+      fillPrice: isDark?'rgba(224,224,224,0.08)':'rgba(51,51,51,0.06)',
+      tick: isDark?'#999':'#666',
+      grid: isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)',
+      tooltipBg: isDark?'#1e1e1e':'#fff',
+      tooltipBorder: isDark?'#333':'#ddd',
+      tooltipTitle: isDark?'#fff':'#000',
+      tooltipText: isDark?'#ccc':'#333'
+    };
+  }
+  window.vlMethodInfo=function(key){
+    const box=document.getElementById('vlMethodModalBody'); if(!box) return;
+    const md=document.getElementById('vlMethodModal');
+    const s=curStock(); const price=s?effLast(s).price:null;
+    const row=(a,b)=>'<tr><td>'+a+'</td><td>'+b+'</td></tr>';
+    let h='';
+    if(key==='projgl'){
+      h='<h3>Tabel Proyeksi G&L</h3>'+
+        '<p>Tabel ini menampilkan <strong>potensi harga</strong> saham di tiap tahun proyeksi berdasarkan model valuasi (basis terpilih).</p>'+
+        '<table class="vl-mini">'+
+        row('% (vs Sekarang)','potensi ÷ harga live − 1 (keuntungan jika beli di harga sekarang)')+
+        row('Potensi Price','harga target per tahun = harga basis × (1 + combine × n)')+
+        row('% (vs Basis)','potensi ÷ harga basis − 1 (keuntungan jika beli di harga basis)')+
+        row('Margin of Safety (kiri)','1 − harga live ÷ potensi tahun ke-5 (diskon harga live vs target)')+
+        row('Margin of Safety (kanan)','1 − harga basis ÷ potensi tahun ke-5 (diskon harga basis vs target)')+
+        '</table>'+
+        '<p style="margin-top:8px;color:var(--text3);font-size:11px">MoS positif = harga masih di bawah target (aman). MoS negatif = harga sudah di atas target (mahal). Semakin tinggi MoS, semakin besar margin keamanan.</p>';
+      box.innerHTML=h; if(md) md.classList.add('show'); return;
+    }
+    if(key==='chartproj'){
+      h='<h3>Chart Harga Bulanan + Proyeksi</h3>'+
+        '<p><strong>Garis ungu</strong> = harga saham historis bulanan (dari sheet price history). Titik terakhir = harga live dari sheet.</p>'+
+        '<p><strong>Garis oranye putus-putus</strong> = proyeksi target valuasi 5 tahun ke depan berdasarkan basis terpilih. Titik bercabang dari harga basis pada tanggal yang sesuai.</p>'+
+        '<p><strong>Titik hijau</strong> = target yang sudah tercapai (harga pernah mencapai level target tersebut).</p>'+
+        '<p><strong>Tombol rentang (3Th/5/7/10/All)</strong> mengatur berapa tahun ke belakang data harga ditampilkan.</p>';
+      box.innerHTML=h; if(md) md.classList.add('show'); return;
+    }
+    if(key==='chartharian'){
+      h='<h3>Chart Harian (Candlestick)</h3>'+
+        '<p><strong>Candlestick</strong> menampilkan harga harian (Open/High/Low/Close). Hijau = harga naik, merah = harga turun.</p>'+
+        '<p><strong>Garis ungu</strong> = harga live terakhir.</p>'+
+        '<p><strong>Garis oranye putus-putus</strong> = overlay proyeksi target valuasi 5 tahun (basis terpilih).</p>'+
+        '<p><strong>Titik hijau</strong> = target sudah tercapai. Hover untuk detail OHLC + target.</p>';
+      box.innerHTML=h; if(md) md.classList.add('show'); return;
+    }
+    if(key==='window'){
+      h ='<h3>Window Rata-rata Multiple</h3>'+
+         '<p>Tombol <strong>3 / 5 / 7 / 10 Th</strong> menentukan <strong>berapa tahun ke belakang</strong> data rasio valuasi dirata-rata.</p>'+
+         '<p>Contoh: <strong>5 Th</strong> = rata-rata PBV, PER, PSR, dan DPR dari 5 tahun terakhir.</p>'+
+         '<h4 style="margin-top:10px">Apa yang berubah saat ganti window?</h4>'+
+         '<table class="vl-mini">'+
+         row('Rata-rata PBV/PER/PSR','Dihitung ulang sesuai jumlah tahun yang dipilih')+
+         row('Rata-rata DPR','Ikut menyesuaikan')+
+         row('Target harga 5 tahun','Berubah (per-share × multiple baru)')+
+         row('Combine Return & CAGR','Berubah mengikuti target harga baru')+
+         row('Dividen Yield','Berubah (DPR baru × EPS ÷ harga)')+
+         row('Margin of Safety','Berubah mengikuti target baru')+
+         row('Nilai Wajar (PBV/PER/PSR)','Berubah di tab Perbandingan')+
+         '</table>'+
+         '<h4 style="margin-top:10px">Kapan pakai yang mana?</h4>'+
+         '<table class="vl-mini">'+
+         row('<strong>3 Th</strong>','Sensitif ke kondisi terbaru. Cocok untuk emiten yang berubah cepat (turnaround, re-rating).')+
+         row('<strong>5 Th (default)</strong>','Keseimbangan antara terbaru dan stabil. Paling umum dipakai analis.')+
+         row('<strong>7 Th</strong>','Mencakup 1 siklus ekonomi. Lebih halus, kurang sensitif.')+
+         row('<strong>10 Th</strong>','Paling konservatif. Mencakup beberapa siklus. Cocok untuk emiten stabil jangka panjang.')+
+         '</table>'+
+         '<p style="margin-top:10px;color:var(--text3);font-size:11px">Window lebih pendek = lebih responsif terhadap perubahan terbaru. Window lebih panjang = lebih stabil karena merata-rata lebih banyak data historis. Pilih sesuai karakteristik emiten.</p>';
+      box.innerHTML=h; if(md) md.classList.add('show'); return;
+    }
+    if(key==='wacc'){
+      const w=_cmpWacc||{};
+      const s2=curStock(), v2=s2&&s2.valuation||{}, dcf2=v2.dcf||{}, aG2=(state.raw&&state.raw.assumptions)||{};
+      const gi2=cmpGrowth(s2, cmpBasis(s2, _cmpBasis));
+      const g5Info=gi2.dcfG;
+      h ='<h3>WACC / Discount Rate <span class="grp">Biaya Modal</span></h3>'+
+         '<p>Nilai default <strong>bukan asumsi sembarangan</strong> — dihitung secara profesional dari data aktual: beta saham (dari Dashboard), risk-free rate (yield SBN), equity risk premium, cost of debt, dan struktur modal emiten. Anda bisa meng-override via slider untuk simulasi skenario.</p>'+
+         '<table class="vl-mini">'+
+         row('Risk-free / Rf (SBN)',fmtPct((w.rf||0)*100))+
+         row('Equity Risk Premium (ERP)',fmtPct((w.erp||0)*100))+
+         row('Beta \u03B2 ('+(w.betaSrc||'-')+')',fmtD2(w.beta))+
+         row('Cost of equity = Rf + \u03B2\u00D7ERP',fmtPct((w.coe||0)*100))+
+         row('Cost of debt (stlh pajak)',fmtPct((w.kdAfter||0)*100))+
+         row('Bobot ekuitas / utang',fmtPct((w.we||0)*100)+' / '+fmtPct((w.wd||0)*100))+
+         row('<strong>WACC (computed)</strong>','<strong>'+fmtPct((w.wacc||0)*100)+'</strong>')+
+         '</table>'+
+         '<h4 style="margin-top:12px">Profil Discount Rate</h4>'+
+         '<table class="vl-mini">'+
+         row('8% – 10%','Konservatif — emiten mapan, arus kas stabil, posisi dominan')+
+         row('11% – 13%','Moderat — emiten mid-cap, prospek baik, volatilitas sedang')+
+         row('14% – 16%','Agresif — emiten siklikal, turnaround, atau leverage tinggi')+
+         row('> 16%','Sangat Agresif — high-risk, belum proven, atau distressed')+
+         '</table>'+
+         '<h4 style="margin-top:12px">Pertumbuhan (dari data keuangan aktual)</h4>'+
+         '<table class="vl-mini">'+
+         row('Growth 1-5 Tahun (fase awal, dari data)',fmtPct(g5Info*100)+' ('+gi2.src+')')+
+         row('Growth 1-5 Tahun DDM',fmtPct(gi2.ddmG*100))+
+         row('Terminal Growth 6-10 Th → ∞',fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:gi2.dcfTg)*100)+' (default 3.5%)')+
+         '</table>'+
+         '<p style="margin-top:8px;color:var(--text3);font-size:12px"><strong>Growth</strong> = pertumbuhan arus kas/laba fase awal (tahun 1-5), dihitung dari data keuangan aktual emiten (bukan flat). <strong>Terminal Growth</strong> = pertumbuhan jangka panjang setelah fase awal (tahun 6-10 → selamanya), default 3.5% (pertumbuhan ekonomi riil Indonesia dikurangi margin keamanan). Keduanya berbeda: growth mencerminkan momentum bisnis saat ini, terminal growth = pertumbuhan abadi yang konservatif.</p>';
+    } else if(key==='tg'){
+      const w=_cmpWacc||{};
+      const s2=curStock(), v2=s2&&s2.valuation||{}, dcf2=v2.dcf||{}, aG2=(state.raw&&state.raw.assumptions)||{};
+      const gi3=cmpGrowth(s2, cmpBasis(s2, _cmpBasis));
+      const curTgPct=(ok(_cmpOverrides.tg)?_cmpOverrides.tg:gi3.dcfTg)*100;
+      const g5Info2=gi3.dcfG;
+      h ='<h3>Terminal Growth <span class="grp">Pertumbuhan Jangka Panjang</span></h3>'+
+         '<p>Laju pertumbuhan arus kas/dividen <strong>setelah tahun ke-5 hingga selamanya</strong> (terminal perpetuity). Dipakai di DCF, DDM, dan FCF Gordon. Default <strong>3.5%</strong> — disesuaikan dengan pertumbuhan ekonomi riil Indonesia jangka panjang (~5%) dikurangi margin keamanan.</p>'+
+         '<table class="vl-mini">'+
+         row('<strong>Terminal Growth saat ini</strong>','<strong>'+curTgPct.toFixed(1)+'%</strong>')+
+         row('Growth 1-5 Tahun DCF (dari data aktual)',fmtPct(gi3.dcfG*100)+' ('+gi3.src+')')+
+         row('Growth 1-5 Tahun DDM',fmtPct(gi3.ddmG*100))+
+         row('Default Terminal Growth','3.5% (PDB riil Indonesia - margin)')+
+         '</table>'+
+         '<h4 style="margin-top:12px">Panduan umum Terminal Growth</h4>'+
+         '<table class="vl-mini">'+
+         row('1% – 2%','Bisnis matang / stagnan, pasar jenuh')+
+         row('2.5% – 4%','Pertumbuhan selaras PDB nominal Indonesia')+
+         row('4% – 6%','Emiten dgn moat kuat, sektor bertumbuh')+
+         '</table>'+
+         '<p style="margin-top:8px;color:var(--text3);font-size:12px">Umumnya terminal growth harus < WACC. Makin tinggi terminal growth, makin tinggi nilai wajar (semakin optimis). Geser slider untuk simulasi skenario.</p>';
+    } else if(key==='dr'){
+      const w=_cmpWacc||{};
+      const curW=ok(_cmpOverrides.wacc)?_cmpOverrides.wacc:w.wacc;
+      const curPct=(curW||0)*100;
+      h ='<h3>Discount Rate <span class="grp">Keterangan Risiko</span></h3>'+
+         '<p>Profil discount rate (WACC) yang dipakai:</p>'+
+         '<table class="vl-mini">'+
+         row('<strong>8% – 10%</strong>','Konservatif — emiten mapan, arus kas stabil, posisi dominan')+
+         row('<strong>11% – 13%</strong>','Moderat — emiten mid-cap, prospek baik, volatilitas sedang')+
+         row('<strong>14% – 16%</strong>','Agresif — emiten siklikal, turnaround, atau leverage tinggi')+
+         row('<strong>> 16%</strong>','Sangat Agresif — high-risk, belum proven, atau distressed')+
+         '</table>'+
+         '<p style="margin-top:10px">Saat ini WACC = <strong>'+curPct.toFixed(1)+'%</strong> '+(curPct<=10?'\uD83D\uDFE2 Risiko Rendah':curPct<=13?'\uD83D\uDFE1 Risiko Menengah':'\uD83D\uDD34 Risiko Tinggi')+'</p>'+
+         '<p style="color:var(--text3);font-size:11px">Default dihitung otomatis: Rf '+fmtPct((w.rf||0)*100)+' + \u03B2 '+fmtD2(w.beta)+' \xD7 ERP '+fmtPct((w.erp||0)*100)+' = CoE '+fmtPct((w.coe||0)*100)+'. Geser slider untuk simulasi. Terminal growth ('+fmtPct((ok(_cmpOverrides.tg)?_cmpOverrides.tg:(w.tg||0.035))*100)+') bawaan dari model Excel.</p>';
+    } else {
+      const m=_cmpData[key];
+      if(!m){ box.innerHTML='<p>Info tidak tersedia.</p>'; if(md) md.classList.add('show'); return; }
+      h ='<h3>'+m.name+' <span class="grp">'+m.grp+'</span></h3><p>'+m.short+'</p><table class="vl-mini">';
+      (m.rows||[]).forEach(r=>{ h+=row(r[0],r[1]); });
+      h+=row('<strong>Nilai wajar</strong>','<strong>'+(m.fair!=null?fmtRp(m.fair):'— (tak terhitung pd basis ini)')+'</strong>');
+      if(m.verdict) h+=row('Vs harga '+fmtRp(price), '<span class="vl-vchip '+m.verdict.cls+'">'+m.verdict.label+'</span> '+(m.verdict.up>=0?'+':'')+(m.verdict.up*100).toFixed(1)+'%');
+      if(m.fair!=null && m.fair>0 && ok(price)){ const mv=1-price/m.fair; h+=row('Margin of Safety','<span class="'+(mv>=0?'vl-pos':'vl-neg')+'">'+(mv>=0?'+':'')+(mv*100).toFixed(1)+'%</span>'); }
+      h+='</table>';
+    }
+    box.innerHTML=h;
+    if(md) md.classList.add('show');
+  };
+  window.vlCloseMethod=function(){ const md=document.getElementById('vlMethodModal'); if(md) md.classList.remove('show'); };
+  window.vlSetCmpBasis=function(b){ _cmpBasis = (b==='current') ? 'current' : 'year'; renderCompare(); };
+
+  // ── Slider handlers ──
+  window.vlSldChange=function(key, val){
+    const v=parseFloat(val);
+    if(key==='wacc'){
+      _cmpOverrides.wacc=v/100;
+      document.getElementById('vlSldWaccVal').textContent=v.toFixed(1)+'%';
+      const rEl=document.getElementById('vlSldWaccRisk');
+      if(rEl) rEl.textContent=v<=10?'Konservatif':v<=13?'Moderat':v<=16?'Agresif':'Sangat Agresif';
+    }
+    else if(key==='tg'){ _cmpOverrides.tg=v/100; document.getElementById('vlSldTgVal').textContent=v.toFixed(1)+'%'; }
+    renderCompare();
+  };
+  window.vlResetSliders=function(){ _cmpOverrides={}; renderCompare(); };
+  // Update semua elemen .vl-ttm-note dgn label TTM dinamis (TTM Q<n> <tahun>)
+  function vlUpdateTtmNotes(){
+    const s = curStock(); if(!s) return;
+    const lbl = vlTtmLabel(s);
+    document.querySelectorAll('.vl-ttm-note').forEach(function(el){ el.textContent = lbl; });
+  }
+
+  window.vlToggleSliders=function(){}; // panel removed, kept as no-op
   /* ── Render penuh untuk emiten/window aktif ── */
   function renderAll(){
     const s = curStock(); if(!s) return;
     state.model = computeModel(s, state.win);
     renderBanner(); renderHead(); renderCards(); renderFund();
     renderProjection(); renderDividen(); renderMultiples();
+    renderCompare();
+    vlUpdateSubModelTitle();
+    vlUpdateTtmNotes();
     // Set default harga kalkulator = harga terakhir, lalu hitung.
     const ci = document.getElementById('vlCalcPrice');
     if(ci){ const lp = Math.round(effLast(s).price); if(lp>0) ci.value = lp; }
@@ -10003,6 +11529,7 @@ body.vl-maxing{overflow:hidden}
     state.live = Object.assign({}, state.live||{}, live);
     try{
       renderHead(); renderCards(); renderProjection();
+      renderCompare();
       buildCharts(); buildUjiCharts(); vlEnsureMaxBtns();
       if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
       if(window.vlCalcYield) window.vlCalcYield();
@@ -10041,8 +11568,64 @@ body.vl-maxing{overflow:hidden}
   window.vlSetWindow = function(win){
     state.win = Number(win) || 5;
     setWinButtons();
+    vlUpdateSubModelTitle();
     if(state.raw) renderAll();
   };
+
+  /* ── Sub-Model title update (reflects active window) ── */
+  function vlUpdateSubModelTitle(){
+    const el = document.getElementById('vlSubModelTitle');
+    if(el) el.textContent = 'Sub-Model Breakdown \u00B7 Window ' + state.win + ' Th';
+  }
+
+  /* ── Modal: Multiples detail popup ── */
+  window.vlOpenMultModal = function(){
+    const ov = document.getElementById('vlMultModal');
+    if(ov){
+      ov.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      // Re-render table data
+      renderMultiples();
+      // Rebuild MoS chart: destroy existing and re-create since canvas was in hidden modal
+      setTimeout(function(){
+        const idx = charts.findIndex(function(c){ return c.canvas && c.canvas.id === 'vlMos'; });
+        if(idx >= 0){ try{ charts[idx].destroy(); charts.splice(idx,1); }catch(e){} }
+        var cv = document.getElementById('vlMos');
+        if(cv && typeof Chart !== 'undefined'){
+          var m = state.model || {};
+          var T = themeColors();
+          var TICK = { font:{ size:10 }, color:T.tick };
+          var GRID = { color:T.grid };
+          var base = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'rgba(26,15,60,.94)', titleFont:{size:11}, bodyFont:{size:11}, padding:10, cornerRadius:8 } } };
+          var keys=['pbv','per','psr']; var names={pbv:'PBV',per:'PER',psr:'PSR'};
+          var labs, data;
+          if(m.applicable){
+            labs = keys.map(function(k){return names[k]});
+            data = keys.map(function(k){ return m.submodels[k].applicable ? m.submodels[k].mos*100 : null; });
+          } else { labs=['\u2014']; data=[null]; }
+          var cols = data.map(function(v){ return !ok(v)?COL.purpleSoft : v>=30?COL.green : v>=20?COL.orange : COL.pink; });
+          charts.push(new Chart(cv, { type:'bar', data:{ labels:labs, datasets:[
+            { label:'Margin of Safety (%)', data:data, backgroundColor:cols, borderRadius:5 }
+          ]}, options:{...base, indexAxis:'y',
+            scales:{ x:{ ticks:{...TICK, callback:function(v){return v+'%'}}, grid:GRID }, y:{ ticks:{...TICK, font:{size:12}}, grid:{display:false} } },
+            plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{ label:function(ctx){ return ' MoS: '+(ok(ctx.parsed.x)?ctx.parsed.x.toFixed(2):'-')+'%'; }}}}
+          }}));
+        }
+      }, 50);
+    }
+  };
+  window.vlCloseMultModal = function(evt){
+    if(evt && evt.target !== evt.currentTarget) return;
+    const ov = document.getElementById('vlMultModal');
+    if(ov) ov.classList.remove('active');
+    document.body.style.overflow = '';
+  };
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      const ov = document.getElementById('vlMultModal');
+      if(ov && ov.classList.contains('active')) window.vlCloseMultModal();
+    }
+  });
 
   /* ── Switch tab ── */
   window.vlSwitchTab = function(id, el){
@@ -10071,6 +11654,8 @@ body.vl-maxing{overflow:hidden}
         const data = await fetchJson([DATA_LOCAL_URL, DATA_CDN_URL]);
         state.live = (data && data.live) ? data.live : null;
         state.priceHist = (data && Array.isArray(data.price_history)) ? data.price_history : null;
+        state.stats = (data && data.stats) ? data.stats : null;
+        state.fundamentals = (data && data.fundamentals) ? data.fundamentals : null;
       }catch(e){ state.live = null; }   // harga live opsional
       state.code = pickDefaultCode();
       populateStockSelect();
@@ -10102,7 +11687,7 @@ body.vl-maxing{overflow:hidden}
   let _ujLastSel = 'live';                 // 'live' | 'Q1'..'Annual' | 'custom'
   let _ujLastCustom = null;                // angka custom dari user (kalau dipilih)
   let _ujRamp = 'combine';                 // 'combine' | 'combineDiv' — ramp Potensi Price
-  let _ujBasis = null;                     // basis data periode: null=tahun annual terbaru, 'current'=tahun berjalan(Q1), 'Y2024' dst
+  let _ujBasis = null;                     // basis data periode: null=tahun annual terbaru, 'current'=TTM(Q1), 'Y2024' dst
   let _ujOvr = {};                         // override input per emiten: {ANTM:{eps:311.58,...}}
   let _ujOvrOpen = false;                  // panel override expand state
   const ujCharts = [];                     // chart Uji Data (terpisah)
@@ -10110,12 +11695,18 @@ body.vl-maxing{overflow:hidden}
   const ujP  = v => ok(v) ? v.toFixed(2)+'%' : '–';
   const ujG  = v => ok(v) ? '<span class="'+(v>=0?'uj-pos':'uj-neg')+'">'+v.toFixed(2)+'%</span>' : '–';
 
-  // Daftar basis data periode utk sebuah emiten: Tahun Berjalan (Q1) + tahun penuh
+  // Daftar basis data periode utk sebuah emiten: TTM dinamis + tahun penuh
   // (4 tahun terakhir sbg tombol cepat + sisanya di dropdown).
   function ujDataBases(stock){
     const yrs = annualYears(stock);                 // ascending
     const latest = yrs[yrs.length-1];
-    const buttons = [{ key:'current', label:'Tahun Berjalan', tag:'Q1' }];
+    const ttmLabel = vlTtmLabel(stock);
+    // Ambil kuartal utk tag
+    let q = (stock && stock.q_label) ? String(stock.q_label).trim() : '';
+    if(!q) q = 'Q1';
+    if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
+    q = q.toUpperCase();
+    const buttons = [{ key:'current', label: ttmLabel, tag:q }];
     yrs.slice(-4).reverse().forEach(y=> buttons.push({ key:'Y'+y, year:y, label:y }));
     const moreYears = yrs.slice(0, -4).reverse();   // tahun lebih lama, terbaru dulu di dropdown
     return { buttons, moreYears, latest, defKey:'Y'+latest };
@@ -10131,7 +11722,7 @@ body.vl-maxing{overflow:hidden}
     return Math.pow(cur/ago, 1/5) - 1;
   }
 
-  // Input fundamental sesuai basis data terpilih (tahun berjalan / tahun penuh).
+  // Input fundamental sesuai basis data terpilih (TTM / tahun penuh).
   // Untuk past-year, per-share dihitung ulang dgn shares_LATEST (sama spt template
   // Excel pemilik): EPS = net_income/shares_LATEST, BVPS = total_equity/shares_LATEST,
   // SPS = total_revenue/shares_LATEST. Ini menjamin metode konsisten antar tahun.
@@ -10145,7 +11736,7 @@ body.vl-maxing{overflow:hidden}
     // Basis = tahun annual terbaru → pakai fy.inputs apa adanya (override otoritatif menang).
     if(basis === 'Y'+latest) return { inp: (fy.inputs||{}), label: latest+' (terbaru)' };
     let period, prev, label, year;
-    if(basis==='current'){ period=stock.annualized; prev=stock.annual[latest]; label='Tahun Berjalan · Q1'; year=parseInt(latest,10); }
+    if(basis==='current'){ period=stock.annualized; prev=stock.annual[latest]; label=vlTtmLabel(stock); year=parseInt(latest,10); }
     else { const y=basis.slice(1); period=stock.annual[y]; const i=yrs.indexOf(y); prev=(i>0)?stock.annual[yrs[i-1]]:null; label=y; year=parseInt(y,10); }
     if(!period) return { inp:(fy.inputs||{}), label: latest+' (terbaru)' };
     const sharesLatest = (stock.annual[latest]||{}).shares;
@@ -10175,14 +11766,14 @@ body.vl-maxing{overflow:hidden}
   }
 
   // Harga basis: ikut TAHUN basis. Klik basis "2025" → harga = annual.2025.price
-  // (sama spt kolom "12M 2025" di Excel valuasi). Basis 'current' (Tahun Berjalan/Q1)
+  // (sama spt kolom "12M 2025" di Excel valuasi). Basis 'current' (TTM/Q1)
   // → null = pakai harga live. Override custom Last Price tetap menang di atas semuanya.
   function ujBasisPrice(stock){
     const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
     const basis = _ujBasis || ('Y'+latest);
     if(basis==='current'){
-      // Tahun Berjalan (annualized/Q1) → Last Price = harga penutupan 31 Mar tahun
-      // berjalan (akhir periode laporan tahunan), MENGIKUTI TANGGAL KUARTAL seperti
+      // TTM (annualized/Q1) → Last Price = harga penutupan 31 Mar tahun
+      // TTM (akhir periode laporan tahunan), MENGIKUTI TANGGAL KUARTAL seperti
       // template Excel (kolom harga = 3/31, sama dgn basis 'Annual' mode kuartal).
       // mis. fiscalYear 2025 → close 3/31/2026 = 3.500. Fallback ke live bila kosong.
       const fy = ujFiscalYear();
@@ -10312,7 +11903,7 @@ body.vl-maxing{overflow:hidden}
     }
     if(msg) msg.innerHTML='';
 
-    // ── Render tombol Basis Data (Tahun Berjalan·Q1 + 4 tahun terakhir + dropdown utk tahun lainnya) ──
+    // ── Render tombol Basis Data (TTM dinamis + 4 tahun terakhir + dropdown utk tahun lainnya) ──
     const bdef = ujDataBases(s);
     const activeBasis = _ujBasis || bdef.defKey;
     const bbEl=document.getElementById('ujBasisBtns');
@@ -10354,9 +11945,9 @@ body.vl-maxing{overflow:hidden}
     const pc = vlUjiCalc(s, win, primaryLast);
     const cmb = pc.applicable ? pc.combine : null;       // ramp Potensi = Combine
     const startYr = ujBasisStartYear(s);
-    // Label tahun proyeksi. Untuk basis "Tahun Berjalan" (current): 12M annual
-    // tahun berjalan BELUM muncul, jadi proyeksi dimulai dari TAHUN SEKARANG
-    // (startYr) — bukan startYr+1. Untuk basis tahun penuh, T+1 = tahun setelah basis.
+    // Label tahun proyeksi. Untuk basis TTM (current): 12M annual
+    // TTM BELUM muncul, jadi proyeksi dimulai dari TAHUN SEKARANG
+    // (startYr) -- bukan startYr+1. Untuk basis tahun penuh, T+1 = tahun setelah basis.
     const projShift = (_ujBasis === 'current') ? 0 : 1;
     const years = [0,1,2,3,4].map(i=> startYr? (startYr+projShift+i) : ('T+'+(i+1)));
 
@@ -10365,7 +11956,7 @@ body.vl-maxing{overflow:hidden}
     // Mengikuti tombol Tahun: ganti tahun → refPrice & label ikut berubah.
     const refPrice = primaryLast;
     const refLabel = (_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0) ? 'Custom'
-                   : (_ujBasis==='current' ? 'Tahun Berjalan'
+                   : (_ujBasis==='current' ? vlTtmLabel(s)
                    : (ok(basisPrice) ? ('12M '+startYr) : 'Live'));
     const chgAct = (refPrice>0) ? (livePrice/refPrice-1)*100 : null;
 
@@ -10668,7 +12259,7 @@ body.vl-maxing{overflow:hidden}
     renderUji();
   };
 
-  // Pilih basis data periode (Tahun Berjalan·Q1 / tahun penuh).
+  // Pilih basis data periode (TTM/Q1 / tahun penuh).
   window.vlUjiSetBasis = function(key){
     _ujBasis = key || null;
     renderUji();
