@@ -8734,56 +8734,85 @@ loadData();
 
 /* Grid + chart — sinkron dgn .dash-grid gap */
 .vl-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
-/* ═══ VALUASI DASHBOARD GRID ═══ */
+/* ═══ VALUASI DASHBOARD GRID — Premium Fintech ═══ */
 .vl-grid4{
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  gap:16px;
-  margin-bottom:20px;
+  gap:18px;
+  margin-bottom:24px;
 }
+
+/* --- Base card --- */
 .vl-grid4 .bb-panel{
   background:var(--card);
   border:1px solid var(--border);
-  border-radius:12px;
+  border-radius:14px;
   overflow:hidden;
   display:flex;
   flex-direction:column;
-  transition:border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  position:relative;
 }
 .vl-grid4 .bb-panel:hover{
-  border-color:var(--accent);
-  box-shadow:0 4px 20px rgba(109,40,217,0.15);
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb, var(--accent) 50%, var(--border));
+  box-shadow:0 8px 32px rgba(109,40,217,0.18), 0 2px 8px rgba(0,0,0,0.12);
 }
+
+/* --- Panel headers (no accent bar) --- */
 .vl-grid4 .bb-panel-header{
-  padding:14px 18px;
-  border-bottom:1px solid var(--border);
+  padding:16px 20px 12px;
   display:flex;
   align-items:center;
   gap:8px;
+  position:relative;
 }
-.vl-grid4 .bb-panel-header::before{
+/* Thin gradient line below header */
+.vl-grid4 .bb-panel-header::after{
   content:"";
-  display:block;
-  width:4px;
-  height:16px;
-  border-radius:2px;
-  background:var(--accent);
-  flex-shrink:0;
+  position:absolute;
+  bottom:0;
+  left:20px;
+  right:20px;
+  height:1px;
+  background:linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, transparent 100%);
+  opacity:0.4;
 }
+
+/* --- Title: default (chart panels) --- */
 .vl-grid4 .bb-panel-title{
-  font-size:13px;
-  font-weight:700;
+  font-size:14px;
+  font-weight:600;
   color:var(--text);
-  letter-spacing:0.3px;
+  letter-spacing:0;
   margin:0;
   font-family:'Plus Jakarta Sans',sans-serif;
 }
+
+/* --- Title: table panels (has .vl-tw) use uppercase condensed --- */
+.vl-grid4 .bb-panel:has(.vl-tw) .bb-panel-title{
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  color:var(--text2);
+}
+
+/* --- Panel body --- */
 .vl-grid4 .bb-panel-body{
-  padding:18px 20px;
+  padding:18px 20px 20px;
   flex:1;
   display:flex;
   flex-direction:column;
 }
+
+/* --- Chart panels: gradient background --- */
+.vl-grid4 .bb-panel:has(.vl-chart),
+.vl-grid4 .bb-panel:has(.vl-chart-wrap){
+  background:linear-gradient(160deg, var(--card) 0%, color-mix(in srgb, var(--bg3) 12%, var(--card)) 100%);
+}
+
+/* --- Chart containers --- */
 .vl-grid4 .bb-panel .vl-chart{
   height:240px;
   position:relative;
@@ -8796,20 +8825,71 @@ loadData();
   height:250px;
   margin-bottom:8px;
 }
+
+/* ─── SUB-MODEL PANEL (first wide = hero panel) ─── */
+.vl-grid4 .bb-panel-wide:first-child{
+  background:linear-gradient(165deg, var(--card) 0%, color-mix(in srgb, var(--bg3) 18%, var(--card)) 100%);
+  border-top:none;
+  border-radius:14px;
+  position:relative;
+  box-shadow:0 4px 24px rgba(109,40,217,0.10), inset 0 1px 0 0 rgba(196,163,255,0.12);
+}
+.vl-grid4 .bb-panel-wide:first-child::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  border-radius:14px 14px 0 0;
+}
+.vl-grid4 .bb-panel-wide:first-child .bb-panel-header::after{
+  opacity:0.6;
+  background:linear-gradient(90deg, var(--accent) 0%, var(--accent2) 40%, var(--accent3) 70%, transparent 100%);
+}
+.vl-grid4 .bb-panel-wide:first-child .bb-panel-title{
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:1.2px;
+  background:linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* ─── EQUITY & BOOK VALUE (last wide panel) ─── */
+.vl-grid4 .bb-panel-wide:last-child{
+  border-top:2px solid var(--accent2);
+  background:linear-gradient(160deg, var(--card) 0%, color-mix(in srgb, var(--accent2) 5%, var(--card)) 100%);
+}
+.vl-grid4 .bb-panel-wide:last-child .bb-panel-header::after{
+  background:linear-gradient(90deg, var(--accent2) 0%, color-mix(in srgb, var(--accent2) 40%, transparent) 60%, transparent 100%);
+  opacity:0.5;
+}
+.vl-grid4 .bb-panel-wide:last-child .bb-panel-title{
+  font-size:14px;
+  font-weight:600;
+  color:var(--accent2);
+  text-transform:none;
+  letter-spacing:0;
+}
+
+/* --- Legend (subtle, integrated) --- */
 .vl-grid4 .bb-panel .vl-legend{
   display:flex;
-  gap:12px;
-  margin-top:10px;
+  gap:14px;
+  margin-top:12px;
   flex-wrap:wrap;
   padding-top:8px;
-  border-top:1px solid var(--border2);
+  border-top:none;
+  opacity:0.78;
 }
 .vl-grid4 .bb-panel .vl-leg{
   display:flex;
   align-items:center;
-  gap:6px;
-  font-size:12px;
-  color:var(--text2);
+  gap:5px;
+  font-size:11px;
+  color:var(--text3);
   font-weight:600;
 }
 .vl-grid4 .bb-panel .vl-dot{
@@ -8818,26 +8898,42 @@ loadData();
   border-radius:2px;
   flex-shrink:0;
 }
+
+/* --- Notes (flush, low-profile) --- */
 .vl-grid4 .bb-panel .vl-note{
-  font-size:11px;
-  margin-top:10px;
+  font-size:10.5px;
+  margin-top:6px;
   color:var(--text3);
   line-height:1.5;
   font-style:italic;
+  opacity:0.6;
 }
+
+/* --- Info box (refined, no border-left bar) --- */
 .vl-grid4 .bb-panel .vl-info{
   font-size:12px;
-  margin-top:12px;
-  padding:10px 14px;
-  background:var(--bg2);
+  margin-top:14px;
+  padding:12px 16px;
+  background:color-mix(in srgb, var(--bg2) 80%, var(--card));
   border:1px solid var(--border2);
-  border-left:3px solid var(--accent);
-  border-radius:0 8px 8px 0;
+  border-left:none;
+  border-radius:10px;
   color:var(--text2);
   line-height:1.6;
+  position:relative;
+  overflow:hidden;
+}
+.vl-grid4 .bb-panel .vl-info::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg, var(--accent), var(--accent2), transparent);
+  opacity:0.5;
 }
 .vl-grid4 .bb-panel .vl-info strong{color:var(--text);font-weight:700}
-/* Dashboard table overrides */
+
+/* ─── Dashboard table overrides ─── */
 .vl-grid4 .bb-panel .vl-tw{
   border-radius:8px;
   overflow:hidden;
@@ -8871,27 +8967,46 @@ loadData();
   font-variant-numeric:tabular-nums;
   text-align:right;
   color:var(--text);
+  transition:background 0.15s ease, border-color 0.15s ease;
 }
 .vl-grid4 .bb-panel .vl-table tbody td:first-child{
   text-align:left;
   color:var(--text2);
   font-weight:600;
   font-size:11px;
+  border-left:2px solid transparent;
+  transition:border-color 0.15s ease;
 }
 .vl-grid4 .bb-panel .vl-table tbody tr:nth-child(even){
-  background:color-mix(in srgb, var(--bg3) 30%, transparent);
+  background:color-mix(in srgb, var(--bg3) 25%, transparent);
 }
-.vl-grid4 .bb-panel .vl-table tbody tr:hover td{background:var(--bg3)}
+.vl-grid4 .bb-panel .vl-table tbody tr:hover td{
+  background:color-mix(in srgb, var(--accent) 8%, var(--bg3));
+}
+.vl-grid4 .bb-panel .vl-table tbody tr:hover td:first-child{
+  border-left-color:var(--accent);
+}
 .vl-grid4 .bb-panel .vl-table tbody tr.vl-row-active td{
-  background:color-mix(in srgb, var(--accent) 12%, var(--bg2));
+  background:color-mix(in srgb, var(--accent) 14%, var(--bg2));
   font-weight:700;
 }
-/* Full-width panels */
+.vl-grid4 .bb-panel .vl-table tbody tr.vl-row-active td:first-child{
+  border-left-color:var(--accent);
+}
+
+/* Sub-Model table: enhanced row hover */
+.vl-grid4 .bb-panel-wide:first-child .vl-table tbody tr:hover td{
+  background:color-mix(in srgb, var(--accent) 12%, var(--bg3));
+}
+
+/* --- Full-width panels --- */
 .vl-grid4 .bb-panel-wide{grid-column:span 2}
-/* Responsive dashboard grid */
+
+/* --- Responsive --- */
 @media(max-width:900px){
   .vl-grid4{grid-template-columns:1fr}
   .vl-grid4 .bb-panel-wide{grid-column:span 1}
+  .vl-grid4 .bb-panel:hover{transform:none}
 }
 .vl-chart{position:relative;width:100%;height:240px}
 .vl-chart-tall{position:relative;width:100%;height:240px}
