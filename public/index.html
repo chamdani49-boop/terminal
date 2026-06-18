@@ -9405,6 +9405,24 @@ body.vl-maxing{overflow:hidden}
 .vl-grid4 .bb-panel .vl-table .vl-val-pos{color:var(--green)}
 .vl-grid4 .bb-panel .vl-table .vl-val-neg{color:var(--red)}
 .vl-grid4 .bb-panel .vl-table .vl-val-hl{color:var(--yellow)}
+
+/* ── Insight chip (additive) ── */
+.vl-insight-chip{
+  background:transparent;
+  border:1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  color:var(--accent);
+  font-size:11px;
+  padding:2px 8px;
+  border-radius:10px;
+  cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  line-height:1.4;
+  margin-left:auto;
+  transition:border-color .2s;
+}
+.vl-insight-chip:hover{
+  border-color:var(--accent);
+}
 </style>
 
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
@@ -9564,7 +9582,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <!-- Panel 4: Revenue & Net Income -->
           <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">Revenue & Net Income</div></div>
+            <div class="bb-panel-header"><div class="bb-panel-title">Revenue & Net Income</div><button class="vl-insight-chip" onclick="vlShowInsight('rev')">&#128161; Insight</button></div>
             <div class="bb-panel-body">
               <div class="vl-chart"><canvas id="vlRev"></canvas></div>
               <div class="vl-legend">
@@ -9576,7 +9594,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <!-- Panel 5: ROE & Margin -->
           <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">ROE & Profit Margin</div></div>
+            <div class="bb-panel-header"><div class="bb-panel-title">ROE & Profit Margin</div><button class="vl-insight-chip" onclick="vlShowInsight('roe')">&#128161; Insight</button></div>
             <div class="bb-panel-body">
               <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
               <div class="vl-legend">
@@ -9588,7 +9606,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <!-- Panel 6: Valuation Ratios -->
           <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">Valuation Ratios</div></div>
+            <div class="bb-panel-header"><div class="bb-panel-title">Valuation Ratios</div><button class="vl-insight-chip" onclick="vlShowInsight('ratio')">&#128161; Insight</button></div>
             <div class="bb-panel-body">
               <div class="vl-chart"><canvas id="vlRatio"></canvas></div>
               <div class="vl-legend">
@@ -9601,7 +9619,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <!-- Panel 7: EPS, SPS, Ekuitas & Book Value (single canvas) -->
           <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">EPS &middot; SPS &middot; Ekuitas &middot; Book Value</div></div>
+            <div class="bb-panel-header"><div class="bb-panel-title">EPS &middot; SPS &middot; Ekuitas &middot; Book Value</div><button class="vl-insight-chip" onclick="vlShowInsight('eps')">&#128161; Insight</button></div>
             <div class="bb-panel-body">
               <div class="vl-chart" style="height:220px"><canvas id="vlEps"></canvas></div>
               <div class="vl-legend">
@@ -11435,6 +11453,126 @@ body.vl-maxing{overflow:hidden}
   window.vlCloseMethod=function(){ const md=document.getElementById('vlMethodModal'); if(md) md.classList.remove('show'); };
   window.vlSetCmpBasis=function(b){ _cmpBasis = (b==='current') ? 'current' : 'year'; renderCompare(); };
 
+  /* ── Insight popup per chart panel ── */
+  var _vlInsights = {};
+
+  function vlGenerateInsights(){
+    _vlInsights = {};
+    const s = curStock(); if(!s) return;
+    const yrs = annualYears(s);
+    if(yrs.length < 2) return;
+    const ann = s.annual;
+    const n = yrs.length;
+    const first = ann[yrs[0]] || {};
+    const last  = ann[yrs[n-1]] || {};
+
+    // Helper: CAGR
+    function cagr(vEnd, vStart, periods){
+      if(!ok(vEnd)||!ok(vStart)||vStart<=0||periods<=0) return null;
+      return (Math.pow(vEnd/vStart, 1/periods) - 1) * 100;
+    }
+
+    // === Revenue & Net Income ===
+    (function(){
+      var lines = [];
+      var revCagr = cagr(last.total_revenue, first.total_revenue, n-1);
+      var niCagr  = cagr(last.net_income, first.net_income, n-1);
+      if(ok(revCagr)) lines.push('CAGR Pendapatan '+n+' tahun: <b>'+(revCagr>=0?'+':'')+revCagr.toFixed(1)+'%</b> per tahun.');
+      if(ok(niCagr))  lines.push('CAGR Laba Bersih: <b>'+(niCagr>=0?'+':'')+niCagr.toFixed(1)+'%</b> per tahun.');
+      // Margin trend
+      var margins = yrs.map(function(y){ var a=ann[y]||{}; return (ok(a.net_income)&&ok(a.total_revenue)&&a.total_revenue>0) ? a.net_income/a.total_revenue*100 : null; });
+      var validM = margins.filter(function(v){return ok(v);});
+      if(validM.length>=2){
+        var mFirst = validM[0], mLast = validM[validM.length-1];
+        var diff = mLast - mFirst;
+        if(Math.abs(diff)>1) lines.push('Margin laba '+(diff>0?'<b>meningkat</b>':'<b>menurun</b>')+' dari '+mFirst.toFixed(1)+'% ke '+mLast.toFixed(1)+'%.');
+        else lines.push('Margin laba relatif stabil di sekitar '+mLast.toFixed(1)+'%.');
+      }
+      // Detect loss
+      var losses = yrs.filter(function(y){ return ok((ann[y]||{}).net_income) && ann[y].net_income<0; });
+      if(losses.length>0) lines.push('Terdapat <b>rugi bersih</b> di '+losses.length+' tahun ('+losses.join(', ')+').');
+      _vlInsights.rev = lines.join('<br>');
+    })();
+
+    // === ROE & Profit Margin ===
+    (function(){
+      var lines = [];
+      var roes = yrs.map(function(y){ return (ann[y]||{}).roe; }).filter(function(v){return ok(v);});
+      if(roes.length>=2){
+        var avg = roes.reduce(function(a,b){return a+b;},0)/roes.length;
+        var rFirst = roes[0], rLast = roes[roes.length-1];
+        lines.push('Rata-rata ROE '+n+' tahun: <b>'+avg.toFixed(1)+'%</b>.');
+        if(rLast > avg*1.1) lines.push('ROE terakhir ('+rLast.toFixed(1)+'%) <b>di atas</b> rata-rata.');
+        else if(rLast < avg*0.9) lines.push('ROE terakhir ('+rLast.toFixed(1)+'%) <b>di bawah</b> rata-rata.');
+        else lines.push('ROE terakhir ('+rLast.toFixed(1)+'%) mendekati rata-rata.');
+        var trend = rLast - rFirst;
+        if(trend > 3) lines.push('Tren ROE <b>naik</b> signifikan selama periode.');
+        else if(trend < -3) lines.push('Tren ROE <b>turun</b> signifikan selama periode.');
+      }
+      // Margin vs average
+      var margins = yrs.map(function(y){ var a=ann[y]||{}; return (ok(a.net_income)&&ok(a.total_revenue)&&a.total_revenue>0) ? a.net_income/a.total_revenue*100 : null; }).filter(function(v){return ok(v);});
+      if(margins.length>=2){
+        var mAvg = margins.reduce(function(a,b){return a+b;},0)/margins.length;
+        var mLast = margins[margins.length-1];
+        if(mLast > mAvg*1.15) lines.push('Profit margin terakhir ('+mLast.toFixed(1)+'%) <b>ekspansi</b> vs rata-rata ('+mAvg.toFixed(1)+'%).');
+        else if(mLast < mAvg*0.85) lines.push('Profit margin terakhir ('+mLast.toFixed(1)+'%) <b>kompresi</b> vs rata-rata ('+mAvg.toFixed(1)+'%).');
+      }
+      _vlInsights.roe = lines.join('<br>');
+    })();
+
+    // === Valuation Ratios ===
+    (function(){
+      var lines = [];
+      var pbvs = yrs.map(function(y){ return (ann[y]||{}).pbv; }).filter(function(v){return ok(v)&&v>0;});
+      var pers = yrs.map(function(y){ return (ann[y]||{}).per; }).filter(function(v){return ok(v)&&v>0;});
+      var psrs = yrs.map(function(y){ return (ann[y]||{}).psr; }).filter(function(v){return ok(v)&&v>0;});
+      function assess(arr, label){
+        if(arr.length<2) return;
+        var avg = arr.reduce(function(a,b){return a+b;},0)/arr.length;
+        var cur = arr[arr.length-1];
+        var pct = ((cur-avg)/avg)*100;
+        if(pct > 20) lines.push(label+' terakhir ('+cur.toFixed(2)+') <b>di atas</b> rata-rata historis ('+avg.toFixed(2)+') - relatif <b>mahal</b>.');
+        else if(pct < -20) lines.push(label+' terakhir ('+cur.toFixed(2)+') <b>di bawah</b> rata-rata historis ('+avg.toFixed(2)+') - relatif <b>murah</b>.');
+        else lines.push(label+' terakhir ('+cur.toFixed(2)+') mendekati rata-rata historis ('+avg.toFixed(2)+').');
+      }
+      assess(pbvs, 'PBV');
+      assess(pers, 'PER');
+      assess(psrs, 'PSR');
+      if(lines.length===0) lines.push('Data rasio valuasi tidak cukup untuk analisis.');
+      _vlInsights.ratio = lines.join('<br>');
+    })();
+
+    // === EPS / SPS / Ekuitas / Book Value ===
+    (function(){
+      var lines = [];
+      var epsCagr = cagr(last.eps, first.eps, n-1);
+      var spsCagr = cagr(last.sps, first.sps, n-1);
+      var bvCagr  = cagr(last.bvps, first.bvps, n-1);
+      if(ok(epsCagr)) lines.push('CAGR EPS '+n+' tahun: <b>'+(epsCagr>=0?'+':'')+epsCagr.toFixed(1)+'%</b> per tahun.');
+      if(ok(spsCagr)) lines.push('CAGR SPS: <b>'+(spsCagr>=0?'+':'')+spsCagr.toFixed(1)+'%</b> per tahun.');
+      if(ok(bvCagr))  lines.push('Pertumbuhan Book Value: <b>'+(bvCagr>=0?'+':'')+bvCagr.toFixed(1)+'%</b> per tahun.');
+      // EPS vs SPS growth comparison
+      if(ok(epsCagr) && ok(spsCagr)){
+        if(epsCagr > spsCagr + 2) lines.push('EPS tumbuh lebih cepat dari SPS - menunjukkan <b>efisiensi meningkat</b>.');
+        else if(spsCagr > epsCagr + 2) lines.push('SPS tumbuh lebih cepat dari EPS - margin bisa <b>tertekan</b>.');
+      }
+      // Equity trend
+      var eqs = yrs.map(function(y){ return (ann[y]||{}).total_equity; }).filter(function(v){return ok(v);});
+      if(eqs.length>=2 && eqs[eqs.length-1] < eqs[eqs.length-2]) lines.push('Ekuitas terakhir <b>menurun</b> dari tahun sebelumnya.');
+      if(lines.length===0) lines.push('Data EPS/SPS/BV tidak cukup untuk analisis.');
+      _vlInsights.eps = lines.join('<br>');
+    })();
+  }
+
+  window.vlShowInsight = function(key){
+    var box = document.getElementById('vlMethodModalBody'); if(!box) return;
+    var md  = document.getElementById('vlMethodModal');
+    var titles = { rev:'Revenue & Net Income', roe:'ROE & Profit Margin', ratio:'Valuation Ratios', eps:'EPS / SPS / Ekuitas / Book Value' };
+    var content = _vlInsights[key] || 'Insight belum tersedia. Pilih emiten terlebih dahulu.';
+    box.innerHTML = '<h3 style="margin:0 0 12px;font-size:15px;color:var(--accent);">&#128161; Insight: '+(titles[key]||key)+'</h3><p style="margin:0;line-height:1.7;font-size:13px;color:var(--text);">'+content+'</p>';
+    if(md) md.classList.add('show');
+  };
+
   // ── Slider handlers ──
   window.vlSldChange=function(key, val){
     const v=parseFloat(val);
@@ -11469,6 +11607,7 @@ body.vl-maxing{overflow:hidden}
     const ci = document.getElementById('vlCalcPrice');
     if(ci){ const lp = Math.round(effLast(s).price); if(lp>0) ci.value = lp; }
     buildCharts();
+    vlGenerateInsights();
     vlEnsureMaxBtns();
     window.vlCalcYield();
     vlGajiPrefill();
@@ -11485,7 +11624,7 @@ body.vl-maxing{overflow:hidden}
     try{
       renderHead(); renderCards(); renderProjection();
       renderCompare();
-      buildCharts(); vlEnsureMaxBtns();
+      buildCharts(); vlGenerateInsights(); vlEnsureMaxBtns();
       if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
       if(window.vlCalcYield) window.vlCalcYield();
       if(window.vlCalcGaji) vlGajiPrefill();
