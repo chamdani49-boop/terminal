@@ -8734,6 +8734,16 @@ loadData();
 
 /* Grid + chart — sinkron dgn .dash-grid gap */
 .vl-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
+.vl-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.vl-grid4 .card{padding:12px}
+.vl-grid4 .card-title{font-size:11px;margin-bottom:10px}
+.vl-grid4 .vl-chart{height:160px}
+.vl-grid4 .vl-legend{gap:8px;margin-top:8px}
+.vl-grid4 .vl-leg{font-size:11px}
+.vl-grid4 .vl-note{font-size:10px;margin-top:6px}
+.vl-grid4 .vl-info{font-size:11px;margin-top:8px}
+.vl-grid4 .vl-table{font-size:11px}
+.vl-grid4 .vl-tw{font-size:11px}
 .vl-chart{position:relative;width:100%;height:220px}
 .vl-chart-tall{position:relative;width:100%;height:240px}
 .vl-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
@@ -8775,6 +8785,12 @@ loadData();
 
 @media(max-width:700px){
   .vl-grid2{grid-template-columns:1fr}
+}
+@media(max-width:1200px){
+  .vl-grid4{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .vl-grid4{grid-template-columns:1fr}
 }
 @media(max-width:480px){
   .vl-head{flex-direction:column}
@@ -9084,7 +9100,7 @@ body.vl-maxing{overflow:hidden}
             </div>
           </div>
         </div>
-        <div class="vl-grid2">
+        <div class="vl-grid4">
           <div class="card">
             <div class="card-title">Rincian 3 Sub-Model (window aktif)</div>
             <div class="vl-tw">
@@ -9097,7 +9113,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <div class="card">
             <div class="card-title">Margin of Safety per Sub-Model (window aktif)</div>
-            <div style="position:relative;width:100%;height:210px"><canvas id="vlMos"></canvas></div>
+            <div style="position:relative;width:100%;height:160px"><canvas id="vlMos"></canvas></div>
             <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
           </div>
           <div class="card">
@@ -9110,54 +9126,49 @@ body.vl-maxing{overflow:hidden}
             </div>
             <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
           </div>
-        </div>
-      </div>
-
-      <div class="vl-grid2">
-        <div class="card">
-          <div class="card-title">Pendapatan &amp; Laba Bersih (Miliar Rp)</div>
-          <div class="vl-chart"><canvas id="vlRev"></canvas></div>
-          <div class="vl-legend">
-            <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Pendapatan</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Laba Bersih</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga Saham</div>
+          <div class="card">
+            <div class="card-title">Pendapatan &amp; Laba Bersih (Miliar Rp)</div>
+            <div class="vl-chart"><canvas id="vlRev"></canvas></div>
+            <div class="vl-legend">
+              <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Pendapatan</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Laba Bersih</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga Saham</div>
+            </div>
           </div>
-        </div>
-        <div class="card">
-          <div class="card-title">ROE Tahunan &amp; Margin Laba (%)</div>
-          <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
-          <div class="vl-legend">
-            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>ROE Tahunan</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin Laba %</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Harga Saham</div>
+          <div class="card">
+            <div class="card-title">ROE Tahunan &amp; Margin Laba (%)</div>
+            <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
+            <div class="vl-legend">
+              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>ROE Tahunan</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin Laba %</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Harga Saham</div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-title">Rasio Valuasi Tahunan — PBV · PER · PSR</div>
-        <div style="position:relative;width:100%;height:200px"><canvas id="vlRatio"></canvas></div>
-        <div class="vl-legend" style="margin-top:10px">
-          <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV (Price/Book)</div>
-          <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>PER (Price/Earnings)</div>
-          <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>PSR (Price/Sales)</div>
-          <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Book Value (BVPS)</div>
-        </div>
-      </div>
-      <div class="vl-grid2">
-        <div class="card">
-          <div class="card-title">EPS &amp; SPS Tahunan (Rp)</div>
-          <div class="vl-chart"><canvas id="vlEps"></canvas></div>
-          <div class="vl-legend">
-            <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS (Laba/Saham)</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>SPS (Penjualan/Saham)</div>
+          <div class="card">
+            <div class="card-title">Rasio Valuasi Tahunan — PBV · PER · PSR</div>
+            <div style="position:relative;width:100%;height:160px"><canvas id="vlRatio"></canvas></div>
+            <div class="vl-legend" style="margin-top:10px">
+              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV (Price/Book)</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>PER (Price/Earnings)</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>PSR (Price/Sales)</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Book Value (BVPS)</div>
+            </div>
           </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Ekuitas &amp; Book Value</div>
-          <div class="vl-chart"><canvas id="vlEquity"></canvas></div>
-          <div class="vl-legend">
-            <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas (Miliar Rp)</div>
-            <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Book Value</div>
+          <div class="card">
+            <div class="card-title">EPS &amp; SPS Tahunan (Rp)</div>
+            <div class="vl-chart"><canvas id="vlEps"></canvas></div>
+            <div class="vl-legend">
+              <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS (Laba/Saham)</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>SPS (Penjualan/Saham)</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Ekuitas &amp; Book Value</div>
+            <div class="vl-chart"><canvas id="vlEquity"></canvas></div>
+            <div class="vl-legend">
+              <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas (Miliar Rp)</div>
+              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Book Value</div>
+            </div>
           </div>
         </div>
       </div>
