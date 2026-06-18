@@ -9603,9 +9603,9 @@ body.vl-maxing{overflow:hidden}
             <div class="bb-panel-body">
               <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
               <div class="vl-legend">
-                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>ROE</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#d97706"></div>ROE</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin %</div>
-                <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Harga</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga</div>
               </div>
             </div>
           </div>
@@ -9615,10 +9615,11 @@ body.vl-maxing{overflow:hidden}
             <div class="bb-panel-body">
               <div class="vl-chart"><canvas id="vlRatio"></canvas></div>
               <div class="vl-legend">
-                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#06b6d4"></div>PBV</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>PER</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>PSR</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>BVPS</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga</div>
               </div>
             </div>
           </div>
@@ -9631,7 +9632,8 @@ body.vl-maxing{overflow:hidden}
                 <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>SPS</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas (M)</div>
-                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Book Value</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Book Value</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga</div>
               </div>
             </div>
           </div>
@@ -9927,7 +9929,7 @@ body.vl-maxing{overflow:hidden}
   const DATA_LOCAL_URL= 'data.json';
 
   // Palet warna konsisten dgn modul lama.
-  const COL = { blue:'#2563eb', green:'#059669', purple:'#6d28d9', pink:'#db2777', orange:'#d97706', purpleSoft:'#8b7eb8' };
+  const COL = { blue:'#2563eb', green:'#059669', purple:'#6d28d9', pink:'#db2777', orange:'#d97706', purpleSoft:'#8b7eb8', cyan:'#06b6d4' };
 
   const state = {
     raw:null,    // valuation.json
@@ -10643,29 +10645,32 @@ body.vl-maxing{overflow:hidden}
 
     // 2. ROE & Margin Laba (%) + Harga
     mk('vlRoe', { type:'line', data:{ labels:lab('vlRoe'), datasets:[
-      { label:'ROE (%)', data:A('vlRoe',a=>a.roe), borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35, yAxisID:'y' },
+      { label:'ROE (%)', data:A('vlRoe',a=>a.roe), borderColor:COL.orange, backgroundColor:'rgba(217,119,6,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35, yAxisID:'y' },
       { label:'Margin %', data:A('vlRoe',a=>(a.total_revenue?a.net_income/a.total_revenue*100:null)), borderColor:COL.blue, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35, yAxisID:'y' },
-      { label:'Harga (Rp)', data:A('vlRoe',a=>a.price), borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+      { label:'Harga (Rp)', data:A('vlRoe',a=>a.price), borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
     ]}, options:{...base, plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}}, scales:{ y:{ ticks:{...TICK, callback:v=>v.toFixed(0)+'%'}, grid:GRID }, y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} }, x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 3. Rasio PBV/PER/PSR tahunan + Book Value
+    // 3. Rasio PBV/PER/PSR tahunan + Book Value + Harga
     mk('vlRatio', { type:'bar', data:{ labels:lab('vlRatio'), datasets:[
-      { label:'PBV', data:A('vlRatio',a=>a.pbv), backgroundColor:COL.purple, borderRadius:3, yAxisID:'y' },
+      { label:'PBV', data:A('vlRatio',a=>a.pbv), backgroundColor:COL.cyan, borderRadius:3, yAxisID:'y' },
       { label:'PER', data:A('vlRatio',a=>a.per), backgroundColor:COL.blue,   borderRadius:3, yAxisID:'y' },
       { label:'PSR', data:A('vlRatio',a=>a.psr), backgroundColor:COL.pink,   borderRadius:3, yAxisID:'y' },
-      { label:'Book Value (Rp)', data:A('vlRatio',a=>a.bvps), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+      { label:'Book Value (Rp)', data:A('vlRatio',a=>a.bvps), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 },
+      { label:'Harga (Rp)', data:A('vlRatio',a=>a.price), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
     ]}, options:{...base, plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}}, scales:{ y:{ ticks:TICK, grid:GRID }, y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} }, x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 4. EPS / SPS / Ekuitas / Book Value (combined, dual Y-axis)
+    // 4. EPS / SPS / Ekuitas / Book Value / Harga (combined, dual Y-axis)
     mk('vlEps', { type:'bar', data:{ labels:lab('vlEps'), datasets:[
       { label:'Ekuitas (M)', data:A('vlEps',a=>d9(a.total_equity)), backgroundColor:COL.purpleSoft, borderRadius:4, yAxisID:'y2', order:2 },
       { label:'EPS', data:A('vlEps',a=>a.eps), type:'line', borderColor:COL.blue, backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35, yAxisID:'y', order:1 },
       { label:'SPS', data:A('vlEps',a=>a.sps), type:'line', borderColor:COL.pink, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35, yAxisID:'y', order:1 },
-      { label:'Book Value', data:A('vlEps',a=>a.bvps), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, borderWidth:2.5, yAxisID:'yBv', tension:.35, order:0 }
+      { label:'Book Value', data:A('vlEps',a=>a.bvps), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, borderWidth:2.5, yAxisID:'yBv', tension:.35, order:1 },
+      { label:'Harga (Rp)', data:A('vlEps',a=>a.price), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'yPrice', tension:.35, order:0 }
     ]}, options:{...base, scales:{
       y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID, title:{display:true, text:'EPS / SPS (Rp)', color:'var(--text2)', font:{size:9}} },
       y2:{ position:'right', ticks:{...TICK, callback:v=>v.toFixed(0)+'M'}, grid:{display:false}, title:{display:true, text:'Ekuitas (M)', color:'var(--text2)', font:{size:9}} },
       yBv:{ position:'right', display:false },
+      yPrice:{ position:'right', display:false },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
     // 6. Chart utama Ringkasan: Proyeksi (line) — dibangun hanya saat mode 'proyeksi'.
