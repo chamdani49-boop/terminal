@@ -11511,6 +11511,21 @@ body.vl-maxing{overflow:hidden}
       // Detect loss
       var losses = yrs.filter(function(y){ return ok((ann[y]||{}).net_income) && ann[y].net_income<0; });
       if(losses.length>0) lines.push('Terdapat <b>rugi bersih</b> di '+losses.length+' tahun ('+losses.join(', ')+').');
+      // Price vs Fundamental divergence
+      var priceCagr = cagr(last.price, first.price, n-1);
+      if(ok(priceCagr) && (ok(revCagr) || ok(niCagr))){
+        lines.push('<br><b>Harga vs Fundamental:</b>');
+        lines.push('CAGR Harga '+n+' tahun: <b>'+(priceCagr>=0?'+':'')+priceCagr.toFixed(1)+'%</b> per tahun.');
+        if(priceCagr < -3 && ok(revCagr) && revCagr > 0 && ok(niCagr) && niCagr > 0){
+          lines.push('<b>ANOMALI:</b> harga turun '+priceCagr.toFixed(1)+'% tapi pendapatan naik +'+revCagr.toFixed(1)+'% dan laba naik +'+niCagr.toFixed(1)+'% &rarr; <b>potensi salah harga / murah</b>.');
+        } else if(priceCagr < -3 && ok(revCagr) && revCagr > 0){
+          lines.push('<b>ANOMALI:</b> harga turun '+priceCagr.toFixed(1)+'% tapi pendapatan tetap naik +'+revCagr.toFixed(1)+'% &rarr; <b>potensi undervalued</b>.');
+        } else if(ok(revCagr) && ok(niCagr) && priceCagr > 0 && revCagr > 0 && niCagr > 0 && Math.abs(priceCagr - revCagr) < 5 && Math.abs(priceCagr - niCagr) < 5){
+          lines.push('Harga, pendapatan, dan laba tumbuh seimbang &rarr; <b>tren sehat</b>.');
+        } else if(ok(revCagr) && ok(niCagr) && priceCagr > revCagr + 10 && priceCagr > niCagr + 10){
+          lines.push('Harga naik jauh lebih cepat (+'+priceCagr.toFixed(1)+'%) dibanding fundamental (rev +'+revCagr.toFixed(1)+'%, laba +'+niCagr.toFixed(1)+'%) &rarr; <b>valuasi stretched / mahal</b>.');
+        }
+      }
       _vlInsights.rev = lines.join('<br>');
     })();
 
@@ -11537,6 +11552,17 @@ body.vl-maxing{overflow:hidden}
         if(mLast > mAvg*1.15) lines.push('Profit margin terakhir ('+mLast.toFixed(1)+'%) <b>ekspansi</b> vs rata-rata ('+mAvg.toFixed(1)+'%).');
         else if(mLast < mAvg*0.85) lines.push('Profit margin terakhir ('+mLast.toFixed(1)+'%) <b>kompresi</b> vs rata-rata ('+mAvg.toFixed(1)+'%).');
       }
+      // ROE vs Price divergence
+      if(roes.length>=2){
+        var roeAvg = roes.reduce(function(a,b){return a+b;},0)/roes.length;
+        var roeLast = roes[roes.length-1];
+        var priceCagrRoe = cagr(last.price, first.price, n-1);
+        if(ok(priceCagrRoe) && priceCagrRoe < -5 && roeLast >= roeAvg*0.9 && roeLast >= 10){
+          lines.push('<br><b>ROE konsisten tinggi ('+roeLast.toFixed(1)+'%) tapi harga turun '+priceCagrRoe.toFixed(1)+'%</b> &rarr; valuasi menarik.');
+        } else if(ok(priceCagrRoe) && priceCagrRoe < -5 && roeLast >= 12){
+          lines.push('<br>ROE masih '+roeLast.toFixed(1)+'% (solid) tapi harga terkoreksi '+priceCagrRoe.toFixed(1)+'% &rarr; <b>peluang value</b>.');
+        }
+      }
       _vlInsights.roe = lines.join('<br>');
     })();
 
@@ -11558,6 +11584,27 @@ body.vl-maxing{overflow:hidden}
       assess(pbvs, 'PBV');
       assess(pers, 'PER');
       assess(psrs, 'PSR');
+      // Summary count murah vs mahal
+      var murahCount = 0, mahalCount = 0;
+      function countAssess(arr, label){
+        if(arr.length<2) return;
+        var avg = arr.reduce(function(a,b){return a+b;},0)/arr.length;
+        var cur = arr[arr.length-1];
+        var pct = ((cur-avg)/avg)*100;
+        if(pct > 20) mahalCount++;
+        else if(pct < -20) murahCount++;
+      }
+      countAssess(pbvs, 'PBV'); countAssess(pers, 'PER'); countAssess(psrs, 'PSR');
+      if(murahCount + mahalCount > 0){
+        lines.push('<br><b>Ringkasan:</b> '+murahCount+' metrik di bawah rata-rata (murah), '+mahalCount+' metrik di atas rata-rata (mahal).');
+        if(murahCount >= 2 && mahalCount === 0) lines.push('<b>Mayoritas rasio menunjukkan valuasi murah</b> vs historis.');
+        else if(mahalCount >= 2 && murahCount === 0) lines.push('<b>Mayoritas rasio menunjukkan valuasi mahal</b> vs historis.');
+      }
+      // Price vs historical valuation
+      var priceCagrRatio = cagr(last.price, first.price, n-1);
+      if(ok(priceCagrRatio) && priceCagrRatio < -10 && murahCount >= 2){
+        lines.push('<b>Harga turun signifikan dan rasio valuasi murah</b> &rarr; potensi mispriced.');
+      }
       if(lines.length===0) lines.push('Data rasio valuasi tidak cukup untuk analisis.');
       _vlInsights.ratio = lines.join('<br>');
     })();
@@ -11579,6 +11626,18 @@ body.vl-maxing{overflow:hidden}
       // Equity trend
       var eqs = yrs.map(function(y){ return (ann[y]||{}).total_equity; }).filter(function(v){return ok(v);});
       if(eqs.length>=2 && eqs[eqs.length-1] < eqs[eqs.length-2]) lines.push('Ekuitas terakhir <b>menurun</b> dari tahun sebelumnya.');
+      // EPS vs Price divergence
+      var priceCagrEps = cagr(last.price, first.price, n-1);
+      if(ok(epsCagr) && ok(priceCagrEps)){
+        if(epsCagr > 3 && priceCagrEps < -3){
+          lines.push('<br><b>ANOMALI:</b> EPS naik +'+epsCagr.toFixed(1)+'% per tahun tapi harga turun '+priceCagrEps.toFixed(1)+'% &rarr; <b>market belum menghargai pertumbuhan earning</b>.');
+        } else if(priceCagrEps > epsCagr + 15){
+          lines.push('<br>Harga naik (+'+priceCagrEps.toFixed(1)+'%) jauh lebih cepat dari EPS (+'+epsCagr.toFixed(1)+'%) &rarr; <b>valuasi sudah premium</b>.');
+        }
+      }
+      if(ok(bvCagr) && ok(priceCagrEps) && bvCagr > 5 && priceCagrEps < -5){
+        lines.push('Book value tumbuh +'+bvCagr.toFixed(1)+'% tapi harga turun '+priceCagrEps.toFixed(1)+'% &rarr; <b>PBV semakin murah</b>.');
+      }
       if(lines.length===0) lines.push('Data EPS/SPS/BV tidak cukup untuk analisis.');
       _vlInsights.eps = lines.join('<br>');
     })();
