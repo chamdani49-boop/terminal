@@ -10189,8 +10189,8 @@ body.vl-maxing{overflow:hidden}
       const cells = cols.map(c=>{
         let val = r.f(c.a);
         let liveDot = '';
-        // Harga di kolom TTM + kuartal: pakai harga LIVE + indikator titik berkedip
-        if(r.label==='Harga (Rp)' && (c.key==='tb'||c.key==='q1'||c.key==='q2'||c.key==='q3'||c.key==='q4') && ok(_livePx) && _livePx>0){
+        // Harga di kolom TTM: pakai harga LIVE + indikator titik berkedip
+        if(r.label==='Harga (Rp)' && c.key==='tb' && ok(_livePx) && _livePx>0){
           val = _livePx;
           liveDot = '<span class="vl-live-dot"></span>';
         }
