@@ -9661,6 +9661,31 @@ body.vl-maxing{overflow:hidden}
           <div class="vl-info" id="vlDivNote"><strong>💡 Catatan:</strong> Yield dihitung dari DPS terbaru dibagi harga beli yang dimasukkan. Tahun balik modal = harga beli ÷ DPS terbaru.</div>
         </div>
       </div>
+      <!-- ── Gaji dari Dividen ── -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">Gaji dari Dividen</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px">
+          <div>
+            <label class="vl-label">Harga Saham (Rp)</label>
+            <input id="vlGajiPrice" type="number" value="0" min="1" class="vl-input" oninput="vlCalcGaji()">
+          </div>
+          <div>
+            <label class="vl-label">Ingin Gaji Per Bulan (Rp)</label>
+            <input id="vlGajiTarget" type="number" value="0" min="0" class="vl-input" oninput="vlCalcGaji()">
+          </div>
+          <div>
+            <label class="vl-label">DPS / Dividen Per Tahun (Rp)</label>
+            <input id="vlGajiDps" type="number" value="0" min="0" class="vl-input" oninput="vlCalcGaji()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px">
+          <div class="vl-kpi"><div class="l">Gaji Per Tahun</div><div class="v" id="vlGajiTahun" style="font-size:16px;color:var(--accent)">-</div></div>
+          <div class="vl-kpi"><div class="l">Yield Dividen</div><div class="v" id="vlGajiYield" style="font-size:16px;color:var(--accent)">-</div></div>
+          <div class="vl-kpi"><div class="l">Budget Beli Saham</div><div class="v" id="vlGajiBudget" style="font-size:16px;color:var(--green)">-</div></div>
+          <div class="vl-kpi"><div class="l">Lot Dibutuhkan</div><div class="v" id="vlGajiLot" style="font-size:16px;color:var(--yellow)">-</div></div>
+        </div>
+        <div class="vl-info"><strong>💡 Info:</strong> Hitung berapa modal dan lot saham yang dibutuhkan agar dividen tahunan bisa menjadi "gaji" bulanan sesuai target.</div>
+      </div>
     </div>
 
 
@@ -10272,6 +10297,50 @@ body.vl-maxing{overflow:hidden}
     if(y)   y.textContent   = (ok(dps)&&dps>0&&hp>0) ? (dps/hp*100).toFixed(2)+'%' : '-';
     if(tbm) tbm.textContent = (ok(dps)&&dps>0&&hp>0) ? (hp/dps).toFixed(2)+'×' : '-';
   };
+
+  /* ── Kalkulator Gaji dari Dividen ── */
+  window.vlCalcGaji = function(){
+    const s = curStock(); if(!s) return;
+    const ly = latestYear(s); const dpsData = (s.annual[ly]||{}).dps;
+    const e = effLast(s);
+
+    // Ambil nilai dari input (gunakan default jika kosong/nol)
+    const elPrice = document.getElementById('vlGajiPrice');
+    const elTarget = document.getElementById('vlGajiTarget');
+    const elDps = document.getElementById('vlGajiDps');
+
+    let harga = parseFloat(elPrice && elPrice.value);
+    if(!ok(harga) || harga<=0) harga = e.price;
+    let gajiBulan = parseFloat(elTarget && elTarget.value);
+    let dps = parseFloat(elDps && elDps.value);
+    if(!ok(dps) || dps<=0) dps = dpsData;
+
+    // Hitung hasil
+    const gajiTahun = (ok(gajiBulan) && gajiBulan>0) ? gajiBulan * 12 : 0;
+    const yieldPct = (ok(dps) && dps>0 && ok(harga) && harga>0) ? (dps/harga*100) : 0;
+    const budget = (ok(gajiTahun) && gajiTahun>0 && ok(dps) && dps>0 && ok(harga) && harga>0)
+      ? (gajiTahun / dps) * harga : 0;
+    const lot = (budget>0 && ok(harga) && harga>0) ? budget / (harga * 100) : 0;
+
+    // Render hasil
+    const set = (id,t)=>{const el=document.getElementById(id);if(el)el.textContent=t;};
+    set('vlGajiTahun', gajiTahun>0 ? fmtRp(gajiTahun) : '-');
+    set('vlGajiYield', yieldPct>0 ? yieldPct.toFixed(2)+'%' : '-');
+    set('vlGajiBudget', budget>0 ? fmtRp(budget) : '-');
+    set('vlGajiLot', lot>0 ? Math.ceil(lot).toLocaleString('id-ID')+' lot' : '-');
+  };
+
+  /* Prefill default values for Gaji dari Dividen calculator */
+  function vlGajiPrefill(){
+    const s = curStock(); if(!s) return;
+    const ly = latestYear(s); const dps = (s.annual[ly]||{}).dps;
+    const e = effLast(s);
+    const elPrice = document.getElementById('vlGajiPrice');
+    const elDps = document.getElementById('vlGajiDps');
+    if(elPrice && ok(e.price) && e.price>0) elPrice.value = Math.round(e.price);
+    if(elDps && ok(dps) && dps>0) elDps.value = Math.round(dps);
+    window.vlCalcGaji();
+  }
 
   /* ── Range chart per-grafik (3/5/7/10/All tahun) — hanya tampilan, tak ubah model ── */
   const VL_RANGES = ['3','5','7','10','all'];
@@ -11402,6 +11471,7 @@ body.vl-maxing{overflow:hidden}
     buildCharts();
     vlEnsureMaxBtns();
     window.vlCalcYield();
+    vlGajiPrefill();
     // Kalau chart utama sedang mode Harian (SMC), render ulang utk emiten baru.
     if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
   }
@@ -11418,6 +11488,7 @@ body.vl-maxing{overflow:hidden}
       buildCharts(); vlEnsureMaxBtns();
       if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
       if(window.vlCalcYield) window.vlCalcYield();
+      if(window.vlCalcGaji) vlGajiPrefill();
     }catch(e){ console.warn('[valuasi] vlApplyLive gagal:', e&&e.message); }
   };
 
