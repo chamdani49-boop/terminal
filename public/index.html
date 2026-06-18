@@ -8734,16 +8734,86 @@ loadData();
 
 /* Grid + chart — sinkron dgn .dash-grid gap */
 .vl-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
-.vl-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
-.vl-grid4 .card{padding:12px}
-.vl-grid4 .card-title{font-size:11px;margin-bottom:10px}
-.vl-grid4 .vl-chart{height:160px}
-.vl-grid4 .vl-legend{gap:8px;margin-top:8px}
-.vl-grid4 .vl-leg{font-size:11px}
-.vl-grid4 .vl-note{font-size:10px;margin-top:6px}
-.vl-grid4 .vl-info{font-size:11px;margin-top:8px}
-.vl-grid4 .vl-table{font-size:11px}
-.vl-grid4 .vl-tw{font-size:11px}
+/* ═══ BLOOMBERG TERMINAL GRID ═══ */
+.vl-grid4{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.vl-grid4 .bb-panel{
+  background:color-mix(in srgb, var(--bg2) 80%, var(--bg));
+  border:1px solid var(--border2);
+  border-radius:2px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.vl-grid4 .bb-panel-header{
+  background:var(--bg3);
+  padding:6px 10px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:6px;
+}
+.vl-grid4 .bb-panel-header::before{
+  content:"";display:block;width:3px;height:10px;background:var(--accent);flex-shrink:0;
+}
+.vl-grid4 .bb-panel-title{
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--text2);
+  font-family:'IBM Plex Mono',monospace;
+  line-height:1;margin:0;
+}
+.vl-grid4 .bb-panel-body{padding:8px 10px;flex:1;display:flex;flex-direction:column}
+.vl-grid4 .bb-panel .vl-chart{height:145px;position:relative;width:100%}
+.vl-grid4 .bb-panel .vl-chart-wrap{position:relative;width:100%;height:155px}
+.vl-grid4 .bb-panel .vl-legend{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.vl-grid4 .bb-panel .vl-leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);font-weight:600}
+.vl-grid4 .bb-panel .vl-dot{width:10px;height:3px;border-radius:1px;flex-shrink:0}
+.vl-grid4 .bb-panel .vl-note{font-size:9px;margin-top:6px;color:var(--text3);line-height:1.4;font-style:italic}
+.vl-grid4 .bb-panel .vl-info{
+  font-size:10px;margin-top:8px;padding:6px 8px;
+  background:color-mix(in srgb, var(--bg) 50%, transparent);
+  border:1px solid var(--border2);border-left:2px solid var(--accent);
+  border-radius:0 2px 2px 0;color:var(--text2);line-height:1.5;
+}
+.vl-grid4 .bb-panel .vl-info strong{color:var(--text);font-weight:700}
+/* Bloomberg table overrides */
+.vl-grid4 .bb-panel .vl-tw{
+  border-radius:2px;overflow:hidden;
+  border:1px solid var(--border2);font-size:11px;
+}
+.vl-grid4 .bb-panel .vl-table{font-size:11px;min-width:auto;width:100%;border-collapse:collapse}
+.vl-grid4 .bb-panel .vl-table thead th{
+  padding:5px 8px;font-size:9.5px;font-weight:800;
+  background:var(--bg3);border-bottom:1px solid var(--border);
+  letter-spacing:.6px;text-transform:uppercase;
+  color:var(--text2);text-align:right;white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;
+}
+.vl-grid4 .bb-panel .vl-table thead th:first-child{text-align:left}
+.vl-grid4 .bb-panel .vl-table tbody td{
+  padding:4px 8px;font-size:11px;
+  border-bottom:1px solid color-mix(in srgb, var(--border2) 60%, transparent);
+  font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
+  text-align:right;color:var(--text);
+}
+.vl-grid4 .bb-panel .vl-table tbody td:first-child{
+  text-align:left;color:var(--text2);font-weight:600;font-size:10px;
+}
+.vl-grid4 .bb-panel .vl-table tbody tr:nth-child(even){
+  background:color-mix(in srgb, var(--bg3) 30%, transparent);
+}
+.vl-grid4 .bb-panel .vl-table tbody tr:hover td{background:var(--bg3)}
+.vl-grid4 .bb-panel .vl-table tbody tr.vl-row-active td{
+  background:color-mix(in srgb, var(--accent) 12%, var(--bg2));
+  font-weight:700;
+}
+/* Span 2 cols for sub-model table */
+.vl-grid4 .bb-panel-wide{grid-column:span 2}
+/* Responsive Bloomberg grid */
+@media(max-width:1200px){
+  .vl-grid4{grid-template-columns:repeat(2,1fr)}
+  .vl-grid4 .bb-panel-wide{grid-column:span 2}
+}
+@media(max-width:600px){
+  .vl-grid4{grid-template-columns:1fr}
+  .vl-grid4 .bb-panel-wide{grid-column:span 1}
+}
 .vl-chart{position:relative;width:100%;height:220px}
 .vl-chart-tall{position:relative;width:100%;height:240px}
 .vl-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
@@ -8785,12 +8855,6 @@ loadData();
 
 @media(max-width:700px){
   .vl-grid2{grid-template-columns:1fr}
-}
-@media(max-width:1200px){
-  .vl-grid4{grid-template-columns:repeat(2,1fr)}
-}
-@media(max-width:600px){
-  .vl-grid4{grid-template-columns:1fr}
 }
 @media(max-width:480px){
   .vl-head{flex-direction:column}
@@ -8990,141 +9054,11 @@ body.vl-maxing{overflow:hidden}
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   COMBINED CARD — Premium fintech panel (3 sections in 1 card)
-   Scoped to .vl-combined-card inside #page-valuasi .vl-grid4
+   BLOOMBERG TERMINAL PANEL — color coding helpers
    ════════════════════════════════════════════════════════════════════ */
-
-/* -- Card spans 2 columns & has premium gradient top accent -- */
-#page-valuasi .vl-grid4 .vl-combined-card{
-  grid-column:span 2;
-  padding:0;
-  border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  overflow:hidden;
-  position:relative;
-  background:var(--card);
-}
-#page-valuasi .vl-grid4 .vl-combined-card::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--grad);z-index:1;
-}
-
-/* -- Main card header area -- */
-#page-valuasi .vl-combined-card .vl-combined-header{
-  padding:18px 22px 14px;
-  border-bottom:1px solid var(--border);
-  background:var(--card);
-}
-#page-valuasi .vl-combined-card .vl-combined-title{
-  font-family:'DM Serif Display',serif;
-  font-size:18px;font-weight:400;color:var(--text);
-  margin:0 0 4px;letter-spacing:.2px;line-height:1.3;
-}
-#page-valuasi .vl-combined-card .vl-combined-desc{
-  font-size:11px;color:var(--text3);font-weight:500;
-  letter-spacing:.2px;line-height:1.4;
-}
-
-/* -- Card body container -- */
-#page-valuasi .vl-combined-card .vl-combined-body{
-  padding:16px 20px 20px;
-  display:flex;flex-direction:column;gap:16px;
-}
-
-/* -- Section panels -- */
-#page-valuasi .vl-combined-card .vl-section{
-  background:var(--bg2);
-  border:1px solid var(--border2);
-  border-radius:var(--radius);
-  padding:16px 18px;
-  position:relative;
-}
-[data-theme="dark"] #page-valuasi .vl-combined-card .vl-section{
-  background:color-mix(in srgb, var(--bg2) 60%, transparent);
-  border-color:var(--border);
-}
-
-/* -- Section title -- */
-#page-valuasi .vl-combined-card .vl-section-title{
-  display:flex;align-items:center;gap:8px;
-  font-size:11px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.9px;color:var(--text2);
-  margin:0 0 12px;padding:0;
-  background:none;border:none;border-left:none;
-  line-height:1.3;
-}
-#page-valuasi .vl-combined-card .vl-section-title::before{
-  content:"";display:inline-block;
-  width:3px;height:14px;border-radius:2px;
-  background:var(--accent);flex-shrink:0;
-}
-
-/* -- Override card-title reset inside combined card -- */
-#page-valuasi .vl-grid4 .vl-combined-card .card-title{display:none}
-
-/* -- Table overrides for combined card (compact + premium) -- */
-#page-valuasi .vl-combined-card .vl-tw{
-  border-radius:10px;overflow:hidden;
-  border:1px solid var(--border2);
-}
-#page-valuasi .vl-combined-card .vl-table{
-  font-size:12px;min-width:auto;
-}
-#page-valuasi .vl-combined-card .vl-table thead th{
-  padding:9px 11px;font-size:10px;
-  background:var(--bg3);border-bottom:1px solid var(--border);
-  letter-spacing:.7px;
-}
-#page-valuasi .vl-combined-card .vl-table tbody td{
-  padding:8px 11px;font-size:12px;
-  border-bottom:1px solid var(--border2);
-  transition:background .12s ease;
-}
-#page-valuasi .vl-combined-card .vl-table tbody tr:last-child td{border-bottom:none}
-#page-valuasi .vl-combined-card .vl-table tbody tr:hover td{background:var(--bg3)}
-#page-valuasi .vl-combined-card .vl-table tbody tr.vl-row-active td{
-  background:color-mix(in srgb, var(--accent) 8%, var(--bg2));
-  font-weight:700;
-}
-[data-theme="dark"] #page-valuasi .vl-combined-card .vl-table tbody tr.vl-row-active td{
-  background:color-mix(in srgb, var(--accent) 15%, var(--bg2));
-}
-
-/* -- Chart section (MoS) -- */
-#page-valuasi .vl-combined-card .vl-section-chart{
-  padding:16px 18px 14px;
-}
-#page-valuasi .vl-combined-card .vl-chart-wrap{
-  position:relative;width:100%;height:180px;
-  margin-top:4px;
-}
-
-/* -- Info box inside combined card -- */
-#page-valuasi .vl-combined-card .vl-info{
-  font-size:11px;padding:10px 13px;margin-top:10px;
-  border-radius:8px;border-left-width:3px;
-  background:color-mix(in srgb, var(--bg2) 70%, transparent);
-  line-height:1.6;
-}
-
-/* -- Note inside combined card -- */
-#page-valuasi .vl-combined-card .vl-note{
-  font-size:10px;color:var(--text3);
-  margin-top:8px;font-weight:400;
-  font-style:italic;line-height:1.5;
-}
-
-/* -- Responsive: combined card -- */
-@media(max-width:1200px){
-  #page-valuasi .vl-grid4 .vl-combined-card{grid-column:1/-1}
-}
-@media(max-width:600px){
-  #page-valuasi .vl-combined-card .vl-combined-header{padding:14px 16px 12px}
-  #page-valuasi .vl-combined-card .vl-combined-title{font-size:16px}
-  #page-valuasi .vl-combined-card .vl-combined-body{padding:12px 14px 16px;gap:12px}
-  #page-valuasi .vl-combined-card .vl-section{padding:12px 14px}
-  #page-valuasi .vl-combined-card .vl-chart-wrap{height:150px}
-}
+.vl-grid4 .bb-panel .vl-table .vl-val-pos{color:var(--green)}
+.vl-grid4 .bb-panel .vl-table .vl-val-neg{color:var(--red)}
+.vl-grid4 .bb-panel .vl-table .vl-val-hl{color:var(--yellow)}
 </style>
 
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
@@ -9238,81 +9172,97 @@ body.vl-maxing{overflow:hidden}
           </div>
         </div>
         <div class="vl-grid4">
-          <div class="card vl-combined-card">
-            <div class="vl-combined-header">
-              <div class="vl-combined-title">Analisis Model Valuasi</div>
-              <div class="vl-combined-desc">Rincian sub-model, margin of safety, dan multiple historis untuk window aktif</div>
-            </div>
-            <div class="vl-combined-body">
-              <div class="vl-section">
-                <div class="vl-section-title">Rincian 3 Sub-Model (window aktif)</div>
-                <div class="vl-tw">
-                  <table class="vl-table">
-                    <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
-                    <tbody id="vlSubModelBody"></tbody>
-                  </table>
-                </div>
-                <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
+          <!-- Panel 1: Sub-Model Breakdown (wide) -->
+          <div class="bb-panel bb-panel-wide">
+            <div class="bb-panel-header"><div class="bb-panel-title">Sub-Model Breakdown</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-tw">
+                <table class="vl-table">
+                  <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
+                  <tbody id="vlSubModelBody"></tbody>
+                </table>
               </div>
-              <div class="vl-section vl-section-chart">
-                <div class="vl-section-title">Margin of Safety per Sub-Model</div>
-                <div class="vl-chart-wrap"><canvas id="vlMos"></canvas></div>
-                <div class="vl-info"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>&ge;30% = ideal</strong>, 20-30% = cukup aman, &lt;20% = hati-hati.</div>
+              <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
+            </div>
+          </div>
+          <!-- Panel 2: Margin of Safety -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">Margin of Safety</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart-wrap"><canvas id="vlMos"></canvas></div>
+              <div class="vl-info"><strong>MoS</strong> = seberapa murah vs nilai wajar. <strong>&ge;30%</strong> ideal, 20-30% cukup, &lt;20% hati-hati.</div>
+            </div>
+          </div>
+          <!-- Panel 3: Historical Multiples -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">Historical Multiples</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-tw">
+                <table class="vl-table">
+                  <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
+                  <tbody id="vlMultBody"></tbody>
+                </table>
               </div>
-              <div class="vl-section">
-                <div class="vl-section-title">Rata-rata Multiple Historis per Window</div>
-                <div class="vl-tw">
-                  <table class="vl-table">
-                    <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
-                    <tbody id="vlMultBody"></tbody>
-                  </table>
-                </div>
-                <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
+              <p class="vl-note">Baris ditandai = window aktif untuk model 5-tahun.</p>
+            </div>
+          </div>
+          <!-- Panel 4: Revenue & Net Income -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">Revenue & Net Income</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart"><canvas id="vlRev"></canvas></div>
+              <div class="vl-legend">
+                <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Pendapatan</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Laba Bersih</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga</div>
               </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-title">Pendapatan &amp; Laba Bersih (Miliar Rp)</div>
-            <div class="vl-chart"><canvas id="vlRev"></canvas></div>
-            <div class="vl-legend">
-              <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Pendapatan</div>
-              <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Laba Bersih</div>
-              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga Saham</div>
+          <!-- Panel 5: ROE & Margin -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">ROE & Profit Margin</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
+              <div class="vl-legend">
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>ROE</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin %</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Harga</div>
+              </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-title">ROE Tahunan &amp; Margin Laba (%)</div>
-            <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
-            <div class="vl-legend">
-              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>ROE Tahunan</div>
-              <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin Laba %</div>
-              <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Harga Saham</div>
+          <!-- Panel 6: Valuation Ratios -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">Valuation Ratios</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart"><canvas id="vlRatio"></canvas></div>
+              <div class="vl-legend">
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>PER</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>PSR</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>BVPS</div>
+              </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-title">Rasio Valuasi Tahunan — PBV · PER · PSR</div>
-            <div style="position:relative;width:100%;height:160px"><canvas id="vlRatio"></canvas></div>
-            <div class="vl-legend" style="margin-top:10px">
-              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9"></div>PBV (Price/Book)</div>
-              <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>PER (Price/Earnings)</div>
-              <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>PSR (Price/Sales)</div>
-              <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Book Value (BVPS)</div>
+          <!-- Panel 7: EPS & SPS -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">EPS & SPS Annual</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart"><canvas id="vlEps"></canvas></div>
+              <div class="vl-legend">
+                <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>SPS</div>
+              </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-title">EPS &amp; SPS Tahunan (Rp)</div>
-            <div class="vl-chart"><canvas id="vlEps"></canvas></div>
-            <div class="vl-legend">
-              <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS (Laba/Saham)</div>
-              <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>SPS (Penjualan/Saham)</div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-title">Ekuitas &amp; Book Value</div>
-            <div class="vl-chart"><canvas id="vlEquity"></canvas></div>
-            <div class="vl-legend">
-              <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas (Miliar Rp)</div>
-              <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Book Value</div>
+          <!-- Panel 8: Equity & Book Value -->
+          <div class="bb-panel">
+            <div class="bb-panel-header"><div class="bb-panel-title">Equity & Book Value</div></div>
+            <div class="bb-panel-body">
+              <div class="vl-chart"><canvas id="vlEquity"></canvas></div>
+              <div class="vl-legend">
+                <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Book Value</div>
+              </div>
             </div>
           </div>
         </div>
