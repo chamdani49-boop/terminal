@@ -8756,7 +8756,7 @@ loadData();
 .vl-grid4 .bb-panel:hover{
   transform:translateY(-2px);
   border-color:color-mix(in srgb, var(--accent) 50%, var(--border));
-  box-shadow:0 8px 32px rgba(109,40,217,0.18), 0 2px 8px rgba(0,0,0,0.12);
+  box-shadow:0 8px 32px color-mix(in srgb, var(--accent) 18%, transparent), 0 2px 8px rgba(0,0,0,0.12);
 }
 
 /* --- Panel headers (no accent bar) --- */
@@ -8832,7 +8832,7 @@ loadData();
   border-top:none;
   border-radius:14px;
   position:relative;
-  box-shadow:0 4px 24px rgba(109,40,217,0.10), inset 0 1px 0 0 rgba(196,163,255,0.12);
+  box-shadow:0 4px 24px color-mix(in srgb, var(--accent) 10%, transparent), inset 0 1px 0 0 color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .vl-grid4 .bb-panel-wide:first-child::before{
   content:"";
@@ -8855,6 +8855,7 @@ loadData();
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
   background-clip:text;
+  color:transparent;
 }
 
 /* ─── EQUITY & BOOK VALUE (last wide panel) ─── */
