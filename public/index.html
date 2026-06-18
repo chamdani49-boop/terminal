@@ -11772,12 +11772,12 @@ body.vl-maxing{overflow:hidden}
     const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
     const basis = _ujBasis || ('Y'+latest);
     if(basis==='current'){
-      // TTM (annualized/Q1) → Last Price = harga penutupan 31 Mar tahun
-      // TTM (akhir periode laporan tahunan), MENGIKUTI TANGGAL KUARTAL seperti
-      // template Excel (kolom harga = 3/31, sama dgn basis 'Annual' mode kuartal).
-      // mis. fiscalYear 2025 → close 3/31/2026 = 3.500. Fallback ke live bila kosong.
+      // Harga akhir kuartal efektif per saham (dari stock.q_label).
+      // Q1→3/31, Q2→6/30, Q3→9/30, Q4→12/31. Default Q1 jika kosong.
+      const qMap = {Q1:'3/31/',Q2:'6/30/',Q3:'9/30/',Q4:'12/31/'};
+      const prefix = qMap[stock.q_label] || '3/31/';
       const fy = ujFiscalYear();
-      const p = ok(fy) ? ujPriceOn('3/31/'+(fy+1)) : null;
+      const p = ok(fy) ? ujPriceOn(prefix+(fy+1)) : null;
       return ok(p) && p>0 ? p : null;
     }
     const y = basis.slice(1);
