@@ -9939,7 +9939,7 @@ body.vl-maxing{overflow:hidden}
     const mult = fy.avg_multiples || {};
 
     if(!fy.applicable){
-      return { applicable:false, reason:fy.reason||'Model 5-tahun belum tersedia.', last:last, win:win, avg_multiples:mult };
+      return { applicable:false, reason:fy.reason||'Model 5-tahun belum tersedia.', last:last, win:win, avg_multiples:mult, data_years:fy.data_years||null, fallback_used:fy.fallback_used||false };
     }
 
     const inp   = fy.inputs || {};
@@ -10004,6 +10004,8 @@ body.vl-maxing{overflow:hidden}
       target_price_5y: price_targets[4].target_price,
       potential_pct: price_targets[4].gl_pct,
       avg_multiples: mult,
+      data_years: fy.data_years || null,
+      fallback_used: fy.fallback_used || false,
     };
   }
 
@@ -10195,6 +10197,14 @@ body.vl-maxing{overflow:hidden}
     if(body) body.style.display='';
     const pc = projComputeFor(s, state.win, _projBasis);
     state.projModel = pc;
+    // Warning jika data_years < window yang dipilih
+    const _dataYrs = fy.data_years || 0;
+    const _fbUsed = fy.fallback_used || false;
+    if(fy.applicable && _dataYrs > 0 && _dataYrs < state.win){
+      const warnTxt = '\u26A0\uFE0F Data historis hanya '+_dataYrs+' tahun \u2014 proyeksi window '+state.win+' tahun menggunakan data terbatas ('+_dataYrs+' tahun). Gunakan sebagai estimasi kasar.'+
+        (_fbUsed ? ' Growth rate dihitung dari CAGR data yang tersedia (bukan rata-rata 5 tahun dari Excel).' : '');
+      if(msg) msg.innerHTML = '<div class="vl-sld-warn" style="margin-bottom:12px;font-size:11px">'+warnTxt+'</div>';
+    }
     if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
     const livePrice = effLast(s).price;
     const target5y = (Array.isArray(pc.potensi) && pc.potensi.length>=5 && ok(pc.potensi[4])) ? pc.potensi[4] : null;
@@ -10989,6 +10999,15 @@ body.vl-maxing{overflow:hidden}
       host.innerHTML='<div class="vl-msg">Perbandingan metode belum tersedia untuk emiten ini (model fundamental belum berlaku).</div>';
       _cmpData={}; return;
     }
+    // Warning jika data_years < window yang dipilih
+    const _cmpDataYrs = (v.five_year && v.five_year.data_years) || 0;
+    const _cmpFb = (v.five_year && v.five_year.fallback_used) || false;
+    let _cmpWarnHtml = '';
+    if(_cmpDataYrs > 0 && _cmpDataYrs < state.win){
+      const _cwTxt = '\u26A0\uFE0F Data historis hanya '+_cmpDataYrs+' tahun \u2014 proyeksi window '+state.win+' tahun menggunakan data terbatas ('+_cmpDataYrs+' tahun). Gunakan sebagai estimasi kasar.'+
+        (_cmpFb ? ' Growth rate dihitung dari CAGR data yang tersedia (bukan rata-rata 5 tahun dari Excel).' : '');
+      _cmpWarnHtml = '<div class="vl-sld-warn" style="margin-bottom:12px;font-size:11px">'+_cwTxt+'</div>';
+    }
     const price=effLast(s).price;
     const wc=cmpWacc(s); _cmpWacc=wc;
     const bi=cmpBasis(s, _cmpBasis);
@@ -11027,7 +11046,7 @@ body.vl-maxing{overflow:hidden}
     const defTg=ok(ov.tg)?ov.tg:giSlider.dcfTg;
     const curTg=(ok(ov.tg)?ov.tg:giSlider.dcfTg)*100;
     const yrs=annualYears(s);
-    const dataYrsWarn=yrs.length<5;
+    const dataYrsWarn=yrs.length<state.win;
 
     // (Slider panel removed — sliders now inline in Discount Rate card below)
     const curWaccPct=(wc.wacc*100);
@@ -11038,6 +11057,7 @@ body.vl-maxing{overflow:hidden}
          '<button class="vl-basis-btn'+(bi.key==='current'?' active':'')+'" onclick="vlSetCmpBasis(\'current\')">'+vlTtmLabel(s)+'</button>'+
          '<button class="vl-basis-btn'+(bi.key==='year'?' active':'')+'" onclick="vlSetCmpBasis(\'year\')">'+bi.yr+'</button>'+
        '</div><span class="src">'+bi.note+'</span></div>';
+    h+=_cmpWarnHtml;
     h+='<div class="vl-cmp-top">';
     h+='<div class="vl-cmp-card"><div class="l">Konsensus Nilai Wajar <span class="sub">· median '+cons.length+' metode</span></div>'+
        '<div class="v">'+fmtRp(median)+'</div><div class="vl-cmp-verd">'+chip(cv)+' '+upTxt(cv)+' vs harga '+fmtRp(price)+'</div>'+
@@ -11054,7 +11074,7 @@ body.vl-maxing{overflow:hidden}
        '<div class="v" id="vlSldTgVal">'+curTg.toFixed(1)+'%</div>'+
        '<div class="sub" style="margin-top:4px">Pertumbuhan jangka panjang (setelah Th ke-5)</div>'+
        '<input type="range" class="vl-sld" id="vlSldTg" min="1" max="6" step="0.1" value="'+curTg.toFixed(1)+'" oninput="vlSldChange(\'tg\',this.value)" style="margin-top:8px">'+
-       (dataYrsWarn?'<div class="vl-sld-warn" style="font-size:9.5px;margin-top:6px;padding:4px 8px">\u26A0\uFE0F Data < 5 tahun</div>':'')+'</div>';
+       (dataYrsWarn?'<div class="vl-sld-warn" style="font-size:9.5px;margin-top:6px;padding:4px 8px">\u26A0\uFE0F Data < '+state.win+' tahun</div>':'')+'</div>';
     h+='</div>';
 
     // football field + chart: 2-column grid
