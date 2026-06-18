@@ -9030,7 +9030,6 @@ body.vl-maxing{overflow:hidden}
       <button class="vl-tab active" role="tab" onclick="vlSwitchTab('overview',this)">📊 Ringkasan</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('fundamental',this)">📋 Fundamental</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('dividen',this)">💸 Dividen</button>
-      <button class="vl-tab" role="tab" onclick="vlSwitchTab('ttm',this)">📐 Multiples</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('metode',this)">⚖️ Perbandingan</button>
       <button class="vl-tab" role="tab" onclick="vlSwitchTab('uji',this)">🔬 Mesin Valuasi</button>
     </div>
@@ -9094,6 +9093,21 @@ body.vl-maxing{overflow:hidden}
             </table>
           </div>
           <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
+        </div>
+        <div class="card" style="margin:14px 0">
+          <div class="card-title">Margin of Safety per Sub-Model (window aktif)</div>
+          <div style="position:relative;width:100%;height:210px"><canvas id="vlMos"></canvas></div>
+          <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
+        </div>
+        <div class="card" style="margin:14px 0">
+          <div class="card-title">Rata-rata Multiple Historis per Window</div>
+          <div class="vl-tw">
+            <table class="vl-table">
+              <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
+              <tbody id="vlMultBody"></tbody>
+            </table>
+          </div>
+          <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
         </div>
       </div>
 
@@ -9191,25 +9205,6 @@ body.vl-maxing{overflow:hidden}
           </div>
           <div class="vl-info" id="vlDivNote"><strong>💡 Catatan:</strong> Yield dihitung dari DPS terbaru dibagi harga beli yang dimasukkan. Tahun balik modal = harga beli ÷ DPS terbaru.</div>
         </div>
-      </div>
-    </div>
-
-    <!-- ===== TAB: MULTIPLES (avg multiples + MoS sub-model) ===== -->
-    <div id="vl-tab-ttm" class="vl-tc">
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-title">Margin of Safety per Sub-Model (window aktif)</div>
-        <div style="position:relative;width:100%;height:210px"><canvas id="vlMos"></canvas></div>
-        <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Rata-rata Multiple Historis per Window</div>
-        <div class="vl-tw">
-          <table class="vl-table">
-            <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
-            <tbody id="vlMultBody"></tbody>
-          </table>
-        </div>
-        <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
       </div>
     </div>
 
