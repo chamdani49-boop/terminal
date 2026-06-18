@@ -9564,7 +9564,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <!-- Panel 4: Revenue & Net Income -->
           <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">Revenue & Net Income</div><button class="vl-insight-chip" onclick="vlShowInsight('rev')"><span class="ic-dot"></span>Insight</button></div>
+            <div class="bb-panel-header"><div class="bb-panel-title">Revenue & Net Income</div></div>
             <div class="bb-panel-body">
               <div class="vl-chart"><canvas id="vlRev"></canvas></div>
               <div class="vl-legend">
@@ -9576,7 +9576,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <!-- Panel 5: ROE & Margin -->
           <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">ROE & Profit Margin</div><button class="vl-insight-chip" onclick="vlShowInsight('roe')"><span class="ic-dot"></span>Insight</button></div>
+            <div class="bb-panel-header"><div class="bb-panel-title">ROE & Profit Margin</div></div>
             <div class="bb-panel-body">
               <div class="vl-chart"><canvas id="vlRoe"></canvas></div>
               <div class="vl-legend">
@@ -9588,7 +9588,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <!-- Panel 6: Valuation Ratios -->
           <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">Valuation Ratios</div><button class="vl-insight-chip" onclick="vlShowInsight('ratio')"><span class="ic-dot"></span>Insight</button></div>
+            <div class="bb-panel-header"><div class="bb-panel-title">Valuation Ratios</div></div>
             <div class="bb-panel-body">
               <div class="vl-chart"><canvas id="vlRatio"></canvas></div>
               <div class="vl-legend">
@@ -9601,7 +9601,7 @@ body.vl-maxing{overflow:hidden}
           </div>
           <!-- Panel 7: EPS, SPS, Ekuitas & Book Value (single canvas) -->
           <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">EPS &middot; SPS &middot; Ekuitas &middot; Book Value</div><button class="vl-insight-chip" onclick="vlShowInsight('eps')"><span class="ic-dot"></span>Insight</button></div>
+            <div class="bb-panel-header"><div class="bb-panel-title">EPS &middot; SPS &middot; Ekuitas &middot; Book Value</div></div>
             <div class="bb-panel-body">
               <div class="vl-chart" style="height:220px"><canvas id="vlEps"></canvas></div>
               <div class="vl-legend">
@@ -9713,11 +9713,6 @@ body.vl-maxing{overflow:hidden}
     #page-valuasi .vl-neg{color:var(--red);font-weight:700}
     #page-valuasi .vl-iq{width:17px;height:17px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-weight:700;font-style:italic;cursor:pointer;line-height:15px;padding:0;font-family:Georgia,'Times New Roman',serif;transition:all .15s;flex-shrink:0}
     #page-valuasi .vl-iq:hover{border-color:var(--accent);color:var(--accent)}
-    /* insight chip */
-    #page-valuasi .vl-insight-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:var(--radius-pill);border:1px solid var(--border);background:var(--bg2);color:var(--accent);font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;line-height:16px;white-space:nowrap;flex-shrink:0}
-    #page-valuasi .vl-insight-chip:hover{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 12%, var(--bg2));box-shadow:0 0 8px rgba(139,126,184,.25)}
-    #page-valuasi .vl-insight-chip .ic-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:icPulse 2s infinite}
-    @keyframes icPulse{0%,100%{opacity:1}50%{opacity:.4}}
     /* range bar */
     #page-valuasi .vl-cmp-range{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px 12px}
     #page-valuasi .vl-cmp-range .hd{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:14px}
@@ -10760,188 +10755,6 @@ body.vl-maxing{overflow:hidden}
   }
 
   /* ════════════════════════════════════════════════════════════════
-     INSIGHT OTOMATIS PER CHART PANEL — Analisa tren, CAGR, anomali
-     dari data fundamental. Ditampilkan via popup saat chip diklik.
-  ════════════════════════════════════════════════════════════════ */
-  let _vlInsights = {};   // key: rev|roe|ratio|eps -> string HTML insight
-
-  function vlGenerateInsights(){
-    _vlInsights = {};
-    const s = curStock(); if(!s) return;
-    const yrs = annualYears(s);
-    if(!yrs.length) return;
-    const ann = s.annual || {};
-    const n = yrs.length;
-    const first = ann[yrs[0]] || {};
-    const last  = ann[yrs[n-1]] || {};
-    const qpt = vlTtmPoint(s);
-    const cur = qpt || last;
-    const livePrice = effLast(s).price;
-
-    // Helper: hitung CAGR
-    function cagr(start, end, years){ if(!ok(start)||!ok(end)||start<=0||end<=0||years<=0) return null; return (Math.pow(end/start, 1/years)-1)*100; }
-    // Helper: rata-rata array (filter valid)
-    function avg(arr){ const v=arr.filter(ok); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; }
-    // Helper: format persen
-    function fp(v){ return ok(v) ? v.toFixed(1)+'%' : '-'; }
-    // Helper: format angka ringkas
-    function fn(v){ if(!ok(v)) return '-'; if(Math.abs(v)>=1e12) return (v/1e12).toFixed(1)+'T'; if(Math.abs(v)>=1e9) return (v/1e9).toFixed(1)+'M'; if(Math.abs(v)>=1e6) return (v/1e6).toFixed(1)+'Jt'; return v.toFixed(0); }
-    function fx(v){ return ok(v) ? v.toFixed(1)+'x' : '-'; }
-
-    // ─── 1. Revenue & Net Income ───
-    (function(){
-      const pts = [];
-      const revFirst = first.total_revenue;
-      const revLast = cur.total_revenue;
-      const niFirst = first.net_income;
-      const niLast = cur.net_income;
-      const revCagr = cagr(revFirst, revLast, n>1?n-1:1);
-      const niCagr = cagr(Math.abs(niFirst), Math.abs(niLast), n>1?n-1:1);
-      // Margin tren
-      const marginFirst = (ok(revFirst)&&revFirst>0&&ok(niFirst)) ? niFirst/revFirst*100 : null;
-      const marginLast = (ok(revLast)&&revLast>0&&ok(niLast)) ? niLast/revLast*100 : null;
-
-      if(ok(revCagr)){
-        if(revCagr > 15) pts.push('Pendapatan tumbuh kuat (CAGR '+fp(revCagr)+' selama '+n+'th)');
-        else if(revCagr > 5) pts.push('Pendapatan tumbuh moderat (CAGR '+fp(revCagr)+')');
-        else if(revCagr > 0) pts.push('Pendapatan tumbuh lambat (CAGR '+fp(revCagr)+')');
-        else pts.push('Pendapatan menurun (CAGR '+fp(revCagr)+') &#8594; bisnis menyusut');
-      }
-      if(ok(niCagr) && ok(revCagr)){
-        if(revCagr > 10 && niCagr < 3) pts.push('Revenue naik tapi laba stagnan &#8594; margin tergerus');
-        else if(niCagr > revCagr + 5) pts.push('Laba tumbuh lebih cepat dari revenue &#8594; margin ekspansi');
-        else if(Math.abs(niCagr - revCagr) <= 5 && niCagr > 5) pts.push('Revenue & Laba keduanya tumbuh konsisten &#8594; bisnis sehat');
-      }
-      if(ok(marginFirst) && ok(marginLast)){
-        const mDiff = marginLast - marginFirst;
-        if(mDiff < -10) pts.push('Net margin turun dari '+fp(marginFirst)+' ke '+fp(marginLast)+' &#8594; profitabilitas memburuk');
-        else if(mDiff > 10) pts.push('Net margin naik dari '+fp(marginFirst)+' ke '+fp(marginLast)+' &#8594; efisiensi membaik');
-      }
-      // Cek laba rugi
-      if(ok(niLast) && niLast < 0) pts.push('&#9888; Perusahaan mencatat <strong>rugi bersih</strong> di periode terakhir');
-
-      _vlInsights.rev = pts.length ? pts.join('<br>') : 'Data tidak cukup untuk menghasilkan insight.';
-    })();
-
-    // ─── 2. ROE & Profit Margin ───
-    (function(){
-      const pts = [];
-      const roeArr = yrs.map(y=> (ann[y]||{}).roe).filter(ok);
-      const roeFirst = roeArr.length ? roeArr[0] : null;
-      const roeLast = roeArr.length ? roeArr[roeArr.length-1] : null;
-      const roeAvg = avg(roeArr);
-      const marginArr = yrs.map(y=>{ const a=ann[y]||{}; return (ok(a.total_revenue)&&a.total_revenue>0&&ok(a.net_income)) ? a.net_income/a.total_revenue*100 : null; }).filter(ok);
-      const marginAvg = avg(marginArr);
-      const marginLast = marginArr.length ? marginArr[marginArr.length-1] : null;
-
-      if(ok(roeAvg)){
-        if(roeAvg >= 15) pts.push('ROE rata-rata '+fp(roeAvg)+' &#8594; perusahaan efisien menggunakan modal');
-        else if(roeAvg >= 8) pts.push('ROE rata-rata '+fp(roeAvg)+' &#8594; cukup efisien');
-        else pts.push('ROE rata-rata '+fp(roeAvg)+' &#8594; efisiensi modal rendah');
-      }
-      if(ok(roeFirst) && ok(roeLast)){
-        const diff = roeLast - roeFirst;
-        if(diff < -8) pts.push('ROE turun dari '+fp(roeFirst)+' ke '+fp(roeLast)+' &#8594; efisiensi modal memburuk');
-        else if(diff > 8) pts.push('ROE naik dari '+fp(roeFirst)+' ke '+fp(roeLast)+' &#8594; efisiensi membaik');
-        else if(roeAvg >= 15) pts.push('ROE stabil di atas 15% &#8594; konsisten efisien');
-      }
-      if(ok(marginAvg) && ok(marginLast)){
-        if(marginLast < marginAvg * 0.7) pts.push('Margin saat ini ('+fp(marginLast)+') di bawah rata-rata ('+fp(marginAvg)+') &#8594; tekanan profitabilitas');
-        else if(marginLast > marginAvg * 1.3) pts.push('Margin saat ini ('+fp(marginLast)+') di atas rata-rata &#8594; kondisi sangat baik');
-      }
-
-      _vlInsights.roe = pts.length ? pts.join('<br>') : 'Data tidak cukup untuk menghasilkan insight.';
-    })();
-
-    // ─── 3. Valuation Ratios ───
-    (function(){
-      const pts = [];
-      const pbvArr = yrs.map(y=> (ann[y]||{}).pbv).filter(ok);
-      const perArr = yrs.map(y=> (ann[y]||{}).per).filter(ok);
-      const psrArr = yrs.map(y=> (ann[y]||{}).psr).filter(ok);
-      const pbvAvg = avg(pbvArr);
-      const perAvg = avg(perArr);
-      const psrAvg = avg(psrArr);
-      // Nilai saat ini (dari TTM atau tahun terakhir)
-      const pbvCur = ok(cur.pbv) ? cur.pbv : (pbvArr.length ? pbvArr[pbvArr.length-1] : null);
-      const perCur = ok(cur.per) ? cur.per : (perArr.length ? perArr[perArr.length-1] : null);
-      const psrCur = ok(cur.psr) ? cur.psr : (psrArr.length ? psrArr[psrArr.length-1] : null);
-
-      if(ok(pbvCur) && ok(pbvAvg) && pbvAvg > 0){
-        const ratio = pbvCur / pbvAvg;
-        if(ratio > 1.4) pts.push('PBV saat ini ('+fx(pbvCur)+') jauh di atas rata-rata '+n+'th ('+fx(pbvAvg)+') &#8594; harga relatif mahal');
-        else if(ratio < 0.7) pts.push('PBV saat ini ('+fx(pbvCur)+') di bawah rata-rata ('+fx(pbvAvg)+') &#8594; valuasi menarik');
-        else pts.push('PBV saat ini ('+fx(pbvCur)+') dekat rata-rata ('+fx(pbvAvg)+') &#8594; valuasi wajar');
-      }
-      if(ok(perCur) && ok(perAvg) && perAvg > 0){
-        const ratio = perCur / perAvg;
-        if(ratio > 1.4) pts.push('PER saat ini ('+fx(perCur)+') di atas rata-rata ('+fx(perAvg)+') &#8594; relatif mahal');
-        else if(ratio < 0.7) pts.push('PER saat ini ('+fx(perCur)+') di bawah rata-rata ('+fx(perAvg)+') &#8594; valuasi menarik');
-      }
-      if(ok(psrCur) && ok(psrAvg) && psrAvg > 0){
-        const ratio = psrCur / psrAvg;
-        if(ratio > 1.5) pts.push('PSR saat ini ('+fx(psrCur)+') tinggi vs rata-rata ('+fx(psrAvg)+')');
-      }
-      // Cek PER negatif
-      if(ok(perCur) && perCur < 0) pts.push('&#9888; PER negatif &#8594; perusahaan sedang rugi');
-
-      _vlInsights.ratio = pts.length ? pts.join('<br>') : 'Valuasi rasio dalam rentang normal.';
-    })();
-
-    // ─── 4. EPS / SPS / Ekuitas / Book Value ───
-    (function(){
-      const pts = [];
-      const epsFirst = first.eps;
-      const epsLast = cur.eps;
-      const spsFirst = first.sps;
-      const spsLast = cur.sps;
-      const bvFirst = first.bvps;
-      const bvLast = cur.bvps;
-      const epsCagr = cagr(Math.abs(epsFirst), Math.abs(epsLast), n>1?n-1:1);
-      const spsCagr = cagr(Math.abs(spsFirst), Math.abs(spsLast), n>1?n-1:1);
-      const bvCagr = cagr(Math.abs(bvFirst), Math.abs(bvLast), n>1?n-1:1);
-
-      if(ok(epsCagr)){
-        if(epsCagr > 15) pts.push('EPS tumbuh kuat (CAGR '+fp(epsCagr)+') &#8594; laba per saham meningkat pesat');
-        else if(epsCagr > 5) pts.push('EPS tumbuh moderat (CAGR '+fp(epsCagr)+')');
-        else if(epsCagr < 0) pts.push('EPS menurun (CAGR '+fp(epsCagr)+') &#8594; laba per saham menyusut');
-      }
-      if(ok(epsCagr) && ok(spsCagr)){
-        if(epsCagr > spsCagr + 10) pts.push('EPS tumbuh jauh lebih cepat dari SPS &#8594; margin ekspansi signifikan');
-        else if(spsCagr > epsCagr + 10) pts.push('SPS tumbuh lebih cepat dari EPS &#8594; margin tertekan');
-      }
-      if(ok(bvCagr)){
-        if(bvCagr > 10) pts.push('Book Value naik konsisten (CAGR '+fp(bvCagr)+') &#8594; fundamental menguat');
-        else if(bvCagr > 0) pts.push('Book Value tumbuh stabil (CAGR '+fp(bvCagr)+')');
-        else pts.push('Book Value menurun &#8594; ekuitas tergerus');
-      }
-      // Cek ekuitas
-      const eqArr = yrs.map(y=> (ann[y]||{}).total_equity).filter(ok);
-      if(eqArr.length >= 2){
-        const eqCagr = cagr(eqArr[0], eqArr[eqArr.length-1], eqArr.length-1);
-        if(ok(eqCagr) && eqCagr > 12) pts.push('Ekuitas tumbuh '+fp(eqCagr)+'/th &#8594; akumulasi kekayaan kuat');
-      }
-
-      _vlInsights.eps = pts.length ? pts.join('<br>') : 'Data tidak cukup untuk menghasilkan insight.';
-    })();
-  }
-
-  window.vlShowInsight = function(key){
-    const box = document.getElementById('vlMethodModalBody'); if(!box) return;
-    const md = document.getElementById('vlMethodModal');
-    const titles = { rev:'Revenue & Net Income', roe:'ROE & Profit Margin', ratio:'Valuation Ratios', eps:'EPS / SPS / Ekuitas / Book Value' };
-    const s = curStock();
-    const code = s ? s.code : '';
-    const text = _vlInsights[key] || 'Belum ada data untuk dianalisa.';
-    let h = '<h3 style="margin:0 0 12px;font-size:15px;color:var(--accent)">&#128161; Insight: '+titles[key]+'</h3>';
-    if(code) h += '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">Emiten: <strong>'+code+'</strong></div>';
-    h += '<div style="font-size:13px;line-height:1.7;color:var(--text)">'+text+'</div>';
-    h += '<p style="margin-top:14px;font-size:10px;color:var(--text3)">Insight digenerate otomatis dari data historis. Bukan rekomendasi investasi.</p>';
-    box.innerHTML = h;
-    if(md) md.classList.add('show');
-  };
-
-  /* ════════════════════════════════════════════════════════════════
      PERBANDINGAN METODE VALUASI — DCF, DDM, Graham, FCF, PBV, PER, PSR,
      Earnings Power (EPS÷WACC) & PEG. WACC digabung dgn beta dari Dashboard
      (data.json .stats[code].beta). Menghasilkan nilai wajar per metode +
@@ -11656,7 +11469,6 @@ body.vl-maxing{overflow:hidden}
     const ci = document.getElementById('vlCalcPrice');
     if(ci){ const lp = Math.round(effLast(s).price); if(lp>0) ci.value = lp; }
     buildCharts();
-    vlGenerateInsights();
     vlEnsureMaxBtns();
     window.vlCalcYield();
     vlGajiPrefill();
@@ -11673,7 +11485,7 @@ body.vl-maxing{overflow:hidden}
     try{
       renderHead(); renderCards(); renderProjection();
       renderCompare();
-      buildCharts(); vlGenerateInsights(); vlEnsureMaxBtns();
+      buildCharts(); vlEnsureMaxBtns();
       if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
       if(window.vlCalcYield) window.vlCalcYield();
       if(window.vlCalcGaji) vlGajiPrefill();
