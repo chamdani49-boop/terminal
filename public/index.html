@@ -9490,7 +9490,7 @@ body.vl-maxing{overflow:hidden}
     <!-- ===== TAB: RINGKASAN ===== -->
     <div id="vl-tab-overview" class="vl-tc active">
 
-      <!-- ── PROYEKSI HARGA (UTAMA) — basis-driven: TTM / Tahun Berjalan ── -->
+      <!-- ── PROYEKSI HARGA (UTAMA) — basis-driven: TTM dinamis ── -->
       <div id="vlProjMsg"></div>
       <div id="vlProjBody">
         <div class="card" style="margin-bottom:14px">
@@ -9647,7 +9647,7 @@ body.vl-maxing{overflow:hidden}
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong>Thn Berjalan</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
+        <p class="vl-note">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong class="vl-ttm-note">TTM</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
       </div>
     </div>
 
@@ -9755,7 +9755,7 @@ body.vl-maxing{overflow:hidden}
       <div class="card" style="margin-bottom:14px">
         <div class="card-title">🔬 Mesin Valuasi — Skenario Multi-Basis (pondasi rumus valuasi, tervalidasi vs Excel)</div>
         <div class="uj-controls">
-          <span class="uj-note-inline">Last Price valuasi: <strong id="ujLastInfo">live</strong> · basis <strong>Tahun Berjalan</strong> memakai harga close <strong>31 Mar</strong> (mengikuti tanggal kuartal, sesuai Excel), bukan harga live.</span>
+          <span class="uj-note-inline">Last Price valuasi: <strong id="ujLastInfo">live</strong> · basis <strong class="vl-ttm-note">TTM</strong> memakai harga close <strong>31 Mar</strong> (mengikuti tanggal kuartal, sesuai Excel), bukan harga live.</span>
         </div>
         <div class="uj-controls" style="margin-top:8px">
           <span class="vl-tb-label" style="margin-right:4px">Basis Data</span>
@@ -9771,7 +9771,7 @@ body.vl-maxing{overflow:hidden}
         <div class="card"><div class="card-title">Laba% &amp; ROE (Tahunan) + Harga</div><div class="uj-chart"><canvas id="ujC2"></canvas></div></div>
         <div class="card"><div class="card-title">PBV · PER · PSR + Book Value</div><div class="uj-chart"><canvas id="ujC3"></canvas></div></div>
       </div>
-      <p class="vl-note" style="margin-top:12px">Panel <strong>Mesin Valuasi</strong> ini adalah pondasi rumus mesin: bila ada sel yang berbeda dengan Excel, itu menandakan perbedaan input data atau metodologi yang perlu disetel. Basis dapat diganti Kuartal/Tahunan/Tahun Berjalan.</p>
+      <p class="vl-note" style="margin-top:12px">Panel <strong>Mesin Valuasi</strong> ini adalah pondasi rumus mesin: bila ada sel yang berbeda dengan Excel, itu menandakan perbedaan input data atau metodologi yang perlu disetel. Basis dapat diganti Kuartal/Tahunan/<span class="vl-ttm-note">TTM</span>.</p>
     </div>
 
     <!-- ===== TAB: PERBANDINGAN METODE VALUASI ===== -->
@@ -10010,7 +10010,7 @@ body.vl-maxing{overflow:hidden}
     }
 
     const inp   = fy.inputs || {};
-    // Growth blend: 80% tren 5 tahun + 20% tahun berjalan.
+    // Growth blend: 80% tren 5 tahun + 20% TTM.
     const g_bv  = 0.8*(inp.roe_5y||0)        + 0.2*(inp.roe_annual||0);
     const g_eps = 0.8*(inp.eps_growth_5y||0) + 0.2*(inp.eps_growth_annual||0);
     const g_sps = 0.8*(inp.sps_growth_5y||0) + 0.2*(inp.sps_growth_annual||0);
@@ -10156,10 +10156,10 @@ body.vl-maxing{overflow:hidden}
     const tbody = document.querySelector('#vlFundTable tbody');
     if(!head || !tbody) return;
     const yearsDesc = annualYears(s).slice().reverse();   // terbaru → terlama (…→2008)
-    // Kolom LENGKAP & dibalik: Q1 + Tahun Berjalan (Q1×4) + semua tahun (apa adanya).
+    // Kolom LENGKAP & dibalik: Q1 + TTM dinamis (Q1x4) + semua tahun (apa adanya).
     const cols = [];
     if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'Q1',           a:s.q1 });
-    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:'Thn Berjalan', a:s.annualized });
+    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:vlTtmLabel(s),  a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
     const rows = [
@@ -10194,7 +10194,7 @@ body.vl-maxing{overflow:hidden}
     }).join('');
   }
 
-  let _projBasis = 'current';   // basis proyeksi Ringkasan: 'current'=Tahun Berjalan | 'Y<latest>'=2025
+  let _projBasis = 'current';   // basis proyeksi Ringkasan: 'current'=TTM | 'Y<latest>'=2025
   // Hitung proyeksi utk basis tertentu memakai mesin yg sama dgn tab Mesin Valuasi
   // (vlUjiCalc + ujBasisInputs/ujBasisPrice). _ujBasis di-set sementara lalu dipulihkan.
   function projComputeFor(s, win, basis){
@@ -10234,7 +10234,7 @@ body.vl-maxing{overflow:hidden}
     if(_projBasis!=='current' && !yrs.some(function(y){ return 'Y'+y===_projBasis; })) _projBasis = 'current';
     projBasisButtons(s);
     const scopeEl = document.getElementById('vlProjScope');
-    // TTM label dinamis: "TTM Q<n> <tahun berjalan>"
+    // TTM label dinamis: "TTM Q<n> <tahun>"
     const _ttmQ = (function(){ let q=(s&&s.q_label)?String(s.q_label).trim():''; if(!q)q='Q1'; if(!/^q/i.test(q)){const n=q.replace(/[^0-9]/g,'');q='Q'+(n||'1');} return q.toUpperCase(); })();
     const _ttmYr = (function(){ const fy=ujFiscalYear(); return ok(fy)?fy+1:new Date().getFullYear(); })();
     const _ttmLabel = 'TTM '+_ttmQ+' '+_ttmYr;
@@ -10386,7 +10386,7 @@ body.vl-maxing{overflow:hidden}
     const n = parseInt(vlRange,10);
     return (n>0 && all.length>n) ? all.slice(-n) : all;
   }
-  // Titik "Q" = TAHUN BERJALAN (TTM / annualized Q1×4) untuk GRAFIK.
+  // Titik "Q" = TTM (annualized Q1x4) untuk GRAFIK.
   // Harga & rasio (PBV/PER/PSR/Yield) memakai HARGA LIVE (sheet live), BUKAN close
   // kuartal — supaya terlihat posisi harga sekarang mahal/murah. KHUSUS visual chart;
   // mesin valuasi & tabel tidak memakai ini.
@@ -10409,18 +10409,18 @@ body.vl-maxing{overflow:hidden}
       psr: (ok(sps)&&sps>0)   ? live/sps  : null,
     };
   }
-  // Label titik tahun berjalan utk chart: "<kuartal sheet> TTM <tahun berjalan>".
+  // Label titik TTM utk chart: "TTM <kuartal sheet> <tahun>".
   // Kuartal diambil dari valuation.json (sel D1 Excel: Q1/Q2/Q3); fallback 'Q1'.
-  // Tahun berjalan = fiscalYear+1 (mis. 2025 → 2026), fallback tahun kalender.
+  // Tahun = fiscalYear+1 (mis. 2025 → 2026), fallback tahun kalender.
   function vlTtmLabel(s){
     let q = (s && s.q_label) ? String(s.q_label).trim() : '';
     if(!q) q = 'Q1';
     if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
     const fy = ujFiscalYear();
     const yr = ok(fy) ? fy+1 : new Date().getFullYear();
-    return q.toUpperCase()+' TTM '+yr;
+    return 'TTM '+q.toUpperCase()+' '+yr;
   }
-  // Tooltip utk chart ber-garis harga: di titik "Q" (tahun berjalan), JUDUL popup =
+  // Tooltip utk chart ber-garis harga: di titik "Q" (TTM), JUDUL popup =
   // "Last Price (live)" — bukan "Q.. TTM .." — karena nilai harga = harga live terakhir.
   function vlTipPrice(qLbl){
     return {
@@ -10535,7 +10535,7 @@ body.vl-maxing{overflow:hidden}
       const pm=state.projModel;
       if(pm && pm.applicable && data.length){
         // Anchor proyeksi sesuai BASIS:
-        //  - Tahun Berjalan → akhir kuartal berjalan (Maret <tahun berjalan>)
+        //  - TTM → akhir kuartal (Maret <tahun>)
         //  - Basis tahun penuh (mis. Y2021) → akhir tahun basis (Desember)
         const fyr=ujFiscalYear(); const qYear=ok(fyr)?fyr+1:new Date().getFullYear();
         const basisYr = pm._startYr || qYear;
@@ -10612,7 +10612,7 @@ body.vl-maxing{overflow:hidden}
     const d9 = v => ok(v) ? v/1e9 : null;
     const mk = (id,cfg)=>{ const cv=document.getElementById(id); if(cv) charts.push(new Chart(cv,cfg)); };
     // Per-grafik: label & data mengikuti range (3/5/7/10/All) yg dipilih di toolbar tiap chart.
-    // Titik terakhir = "Q" (tahun berjalan TTM); accessor sama → harga/rasio "Q" otomatis LIVE.
+    // Titik terakhir = "Q" (TTM); accessor sama → harga/rasio "Q" otomatis LIVE.
     const qpt = vlTtmPoint(s);
     const qLbl = qpt ? vlTtmLabel(s) : null;
     const lab = id => { vlEnsureRangeBar(id); const ys=vlChartYears(s,id); return qLbl ? [...ys, qLbl] : ys; };
@@ -10673,7 +10673,7 @@ body.vl-maxing{overflow:hidden}
       if(ok(liveP)&&liveP>0&&hist.length) hist[hist.length-1] = { lab:hist[hist.length-1].lab, p:liveP };
       const histVals = hist.map(x=>x.p);
       // Anchor proyeksi = titik cabang di garis historis sesuai basis terpilih:
-      // - Tahun Berjalan → akhir kuartal (3/31/<tahunBerjalan>)
+      // - TTM → akhir kuartal (3/31/<tahun>)
       // - Basis tahun penuh (mis. Y2021) → akhir tahun basis (12/31/<basisYear>)
       const fyr = ujFiscalYear(); const qYear = ok(fyr) ? fyr+1 : (new Date().getFullYear());
       let anchorLab;
@@ -10910,10 +10910,10 @@ body.vl-maxing{overflow:hidden}
     const yrs=annualYears(stock), ly=yrs[yrs.length-1];
     if(basis==='current'){
       const o=stock.annualized||{};
-      return { key:'current', label:'Tahun Berjalan (Q1)', yr:ly,
+      return { key:'current', label:vlTtmLabel(stock), yr:ly,
         eps:o.eps, bvps:o.bvps, sps:o.sps, g5:o.eps_growth_5y,
         dps:o.dps, fcf:o.fcf, netDebt:o.net_debt, shares:o.shares,
-        note:'data tahun berjalan — Q1 disetahunkan (×4)' };
+        note:'data TTM — Q1 disetahunkan (x4)' };
     }
     const ay=(stock.annual&&stock.annual[ly])||{};
     return { key:'year', label:String(ly), yr:ly,
@@ -11052,7 +11052,7 @@ body.vl-maxing{overflow:hidden}
 
     h+='<div class="vl-cmp-basis"><span class="lab">Basis Data</span>'+
        '<div class="vl-basis" style="margin:0">'+
-         '<button class="vl-basis-btn'+(bi.key==='current'?' active':'')+'" onclick="vlSetCmpBasis(\'current\')">Tahun Berjalan (Q1)</button>'+
+         '<button class="vl-basis-btn'+(bi.key==='current'?' active':'')+'" onclick="vlSetCmpBasis(\'current\')">'+vlTtmLabel(s)+'</button>'+
          '<button class="vl-basis-btn'+(bi.key==='year'?' active':'')+'" onclick="vlSetCmpBasis(\'year\')">'+bi.yr+'</button>'+
        '</div><span class="src">'+bi.note+'</span></div>';
     h+='<div class="vl-cmp-top">';
@@ -11114,7 +11114,7 @@ body.vl-maxing{overflow:hidden}
          '<td style="text-align:center"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button></td></tr>';
     });
     h+='</tbody></table></div>';
-    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>Tahun Berjalan (Q1)</strong> = Q1 disetahunkan (\xD74), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
+    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlTtmLabel(s)+'</strong> = Q1 disetahunkan (\xD74), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
 
     host.innerHTML=h;
 
@@ -11211,7 +11211,7 @@ body.vl-maxing{overflow:hidden}
       consData.push(med);
     });
 
-    // Append tahun berjalan (Q1 annualized) sebagai titik terakhir
+    // Append TTM (Q1 annualized) sebagai titik terakhir
     const livePrice=effLast(stock).price;
     const ann=stock.annualized||{};
     if(ann && Object.keys(ann).length){
@@ -11483,6 +11483,13 @@ body.vl-maxing{overflow:hidden}
     renderCompare();
   };
   window.vlResetSliders=function(){ _cmpOverrides={}; renderCompare(); };
+  // Update semua elemen .vl-ttm-note dgn label TTM dinamis (TTM Q<n> <tahun>)
+  function vlUpdateTtmNotes(){
+    const s = curStock(); if(!s) return;
+    const lbl = vlTtmLabel(s);
+    document.querySelectorAll('.vl-ttm-note').forEach(function(el){ el.textContent = lbl; });
+  }
+
   window.vlToggleSliders=function(){}; // panel removed, kept as no-op
   /* ── Render penuh untuk emiten/window aktif ── */
   function renderAll(){
@@ -11492,6 +11499,7 @@ body.vl-maxing{overflow:hidden}
     renderProjection(); renderDividen(); renderMultiples();
     renderCompare();
     vlUpdateSubModelTitle();
+    vlUpdateTtmNotes();
     // Set default harga kalkulator = harga terakhir, lalu hitung.
     const ci = document.getElementById('vlCalcPrice');
     if(ci){ const lp = Math.round(effLast(s).price); if(lp>0) ci.value = lp; }
@@ -11670,7 +11678,7 @@ body.vl-maxing{overflow:hidden}
   let _ujLastSel = 'live';                 // 'live' | 'Q1'..'Annual' | 'custom'
   let _ujLastCustom = null;                // angka custom dari user (kalau dipilih)
   let _ujRamp = 'combine';                 // 'combine' | 'combineDiv' — ramp Potensi Price
-  let _ujBasis = null;                     // basis data periode: null=tahun annual terbaru, 'current'=tahun berjalan(Q1), 'Y2024' dst
+  let _ujBasis = null;                     // basis data periode: null=tahun annual terbaru, 'current'=TTM(Q1), 'Y2024' dst
   let _ujOvr = {};                         // override input per emiten: {ANTM:{eps:311.58,...}}
   let _ujOvrOpen = false;                  // panel override expand state
   const ujCharts = [];                     // chart Uji Data (terpisah)
@@ -11678,12 +11686,18 @@ body.vl-maxing{overflow:hidden}
   const ujP  = v => ok(v) ? v.toFixed(2)+'%' : '–';
   const ujG  = v => ok(v) ? '<span class="'+(v>=0?'uj-pos':'uj-neg')+'">'+v.toFixed(2)+'%</span>' : '–';
 
-  // Daftar basis data periode utk sebuah emiten: Tahun Berjalan (Q1) + tahun penuh
+  // Daftar basis data periode utk sebuah emiten: TTM dinamis + tahun penuh
   // (4 tahun terakhir sbg tombol cepat + sisanya di dropdown).
   function ujDataBases(stock){
     const yrs = annualYears(stock);                 // ascending
     const latest = yrs[yrs.length-1];
-    const buttons = [{ key:'current', label:'Tahun Berjalan', tag:'Q1' }];
+    const ttmLabel = vlTtmLabel(stock);
+    // Ambil kuartal utk tag
+    let q = (stock && stock.q_label) ? String(stock.q_label).trim() : '';
+    if(!q) q = 'Q1';
+    if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
+    q = q.toUpperCase();
+    const buttons = [{ key:'current', label: ttmLabel, tag:q }];
     yrs.slice(-4).reverse().forEach(y=> buttons.push({ key:'Y'+y, year:y, label:y }));
     const moreYears = yrs.slice(0, -4).reverse();   // tahun lebih lama, terbaru dulu di dropdown
     return { buttons, moreYears, latest, defKey:'Y'+latest };
@@ -11699,7 +11713,7 @@ body.vl-maxing{overflow:hidden}
     return Math.pow(cur/ago, 1/5) - 1;
   }
 
-  // Input fundamental sesuai basis data terpilih (tahun berjalan / tahun penuh).
+  // Input fundamental sesuai basis data terpilih (TTM / tahun penuh).
   // Untuk past-year, per-share dihitung ulang dgn shares_LATEST (sama spt template
   // Excel pemilik): EPS = net_income/shares_LATEST, BVPS = total_equity/shares_LATEST,
   // SPS = total_revenue/shares_LATEST. Ini menjamin metode konsisten antar tahun.
@@ -11713,7 +11727,7 @@ body.vl-maxing{overflow:hidden}
     // Basis = tahun annual terbaru → pakai fy.inputs apa adanya (override otoritatif menang).
     if(basis === 'Y'+latest) return { inp: (fy.inputs||{}), label: latest+' (terbaru)' };
     let period, prev, label, year;
-    if(basis==='current'){ period=stock.annualized; prev=stock.annual[latest]; label='Tahun Berjalan · Q1'; year=parseInt(latest,10); }
+    if(basis==='current'){ period=stock.annualized; prev=stock.annual[latest]; label=vlTtmLabel(stock); year=parseInt(latest,10); }
     else { const y=basis.slice(1); period=stock.annual[y]; const i=yrs.indexOf(y); prev=(i>0)?stock.annual[yrs[i-1]]:null; label=y; year=parseInt(y,10); }
     if(!period) return { inp:(fy.inputs||{}), label: latest+' (terbaru)' };
     const sharesLatest = (stock.annual[latest]||{}).shares;
@@ -11743,14 +11757,14 @@ body.vl-maxing{overflow:hidden}
   }
 
   // Harga basis: ikut TAHUN basis. Klik basis "2025" → harga = annual.2025.price
-  // (sama spt kolom "12M 2025" di Excel valuasi). Basis 'current' (Tahun Berjalan/Q1)
+  // (sama spt kolom "12M 2025" di Excel valuasi). Basis 'current' (TTM/Q1)
   // → null = pakai harga live. Override custom Last Price tetap menang di atas semuanya.
   function ujBasisPrice(stock){
     const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
     const basis = _ujBasis || ('Y'+latest);
     if(basis==='current'){
-      // Tahun Berjalan (annualized/Q1) → Last Price = harga penutupan 31 Mar tahun
-      // berjalan (akhir periode laporan tahunan), MENGIKUTI TANGGAL KUARTAL seperti
+      // TTM (annualized/Q1) → Last Price = harga penutupan 31 Mar tahun
+      // TTM (akhir periode laporan tahunan), MENGIKUTI TANGGAL KUARTAL seperti
       // template Excel (kolom harga = 3/31, sama dgn basis 'Annual' mode kuartal).
       // mis. fiscalYear 2025 → close 3/31/2026 = 3.500. Fallback ke live bila kosong.
       const fy = ujFiscalYear();
@@ -11880,7 +11894,7 @@ body.vl-maxing{overflow:hidden}
     }
     if(msg) msg.innerHTML='';
 
-    // ── Render tombol Basis Data (Tahun Berjalan·Q1 + 4 tahun terakhir + dropdown utk tahun lainnya) ──
+    // ── Render tombol Basis Data (TTM dinamis + 4 tahun terakhir + dropdown utk tahun lainnya) ──
     const bdef = ujDataBases(s);
     const activeBasis = _ujBasis || bdef.defKey;
     const bbEl=document.getElementById('ujBasisBtns');
@@ -11922,9 +11936,9 @@ body.vl-maxing{overflow:hidden}
     const pc = vlUjiCalc(s, win, primaryLast);
     const cmb = pc.applicable ? pc.combine : null;       // ramp Potensi = Combine
     const startYr = ujBasisStartYear(s);
-    // Label tahun proyeksi. Untuk basis "Tahun Berjalan" (current): 12M annual
-    // tahun berjalan BELUM muncul, jadi proyeksi dimulai dari TAHUN SEKARANG
-    // (startYr) — bukan startYr+1. Untuk basis tahun penuh, T+1 = tahun setelah basis.
+    // Label tahun proyeksi. Untuk basis TTM (current): 12M annual
+    // TTM BELUM muncul, jadi proyeksi dimulai dari TAHUN SEKARANG
+    // (startYr) -- bukan startYr+1. Untuk basis tahun penuh, T+1 = tahun setelah basis.
     const projShift = (_ujBasis === 'current') ? 0 : 1;
     const years = [0,1,2,3,4].map(i=> startYr? (startYr+projShift+i) : ('T+'+(i+1)));
 
@@ -11933,7 +11947,7 @@ body.vl-maxing{overflow:hidden}
     // Mengikuti tombol Tahun: ganti tahun → refPrice & label ikut berubah.
     const refPrice = primaryLast;
     const refLabel = (_ujLastSel==='custom' && ok(_ujLastCustom) && _ujLastCustom>0) ? 'Custom'
-                   : (_ujBasis==='current' ? 'Tahun Berjalan'
+                   : (_ujBasis==='current' ? vlTtmLabel(s)
                    : (ok(basisPrice) ? ('12M '+startYr) : 'Live'));
     const chgAct = (refPrice>0) ? (livePrice/refPrice-1)*100 : null;
 
@@ -12236,7 +12250,7 @@ body.vl-maxing{overflow:hidden}
     renderUji();
   };
 
-  // Pilih basis data periode (Tahun Berjalan·Q1 / tahun penuh).
+  // Pilih basis data periode (TTM/Q1 / tahun penuh).
   window.vlUjiSetBasis = function(key){
     _ujBasis = key || null;
     renderUji();
