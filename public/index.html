@@ -9079,7 +9079,7 @@ body.vl-maxing{overflow:hidden}
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong>TTM Q1 2026</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
+        <p class="vl-note" id="vlFundNote">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong>TTM Q1</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
       </div>
     </div>
 
@@ -9486,10 +9486,11 @@ body.vl-maxing{overflow:hidden}
     const tbody = document.querySelector('#vlFundTable tbody');
     if(!head || !tbody) return;
     const yearsDesc = annualYears(s).slice().reverse();   // terbaru → terlama (…→2008)
-    // Kolom LENGKAP & dibalik: Q1 + Tahun Berjalan (Q1×4) + semua tahun (apa adanya).
+    // Kolom LENGKAP & dibalik: Kuartal + Tahun Berjalan (Qx×4) + semua tahun (apa adanya).
     const cols = [];
-    if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'Q1',           a:s.q1 });
-    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:'TTM Q1 2026',  a:s.annualized });
+    const qLbl = (s.q_label || 'Q1').toUpperCase();
+    if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:qLbl,           a:s.q1 });
+    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:vlTtmLabel(s),  a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
     const rows = [
@@ -9528,6 +9529,13 @@ body.vl-maxing{overflow:hidden}
       }).join('');
       return '<tr><td>'+r.label+'</td>'+cells+'</tr>';
     }).join('');
+    // Update catatan dinamis di bawah tabel
+    const noteEl = document.getElementById('vlFundNote');
+    if(noteEl){
+      const ttmLbl = vlTtmLabel(s);
+      const qL = (s.q_label || 'Q1').toUpperCase();
+      noteEl.innerHTML = 'Kolom lengkap & dibalik: <strong>'+qL+'</strong> · <strong>'+ttmLbl+'</strong> ('+qL+'×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.';
+    }
   }
 
   let _projBasis = 'current';   // basis proyeksi Ringkasan: 'current'=Tahun Berjalan | 'Y<latest>'=2025
