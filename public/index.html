@@ -9620,18 +9620,15 @@ body.vl-maxing{overflow:hidden}
               </div>
             </div>
           </div>
-          <!-- Panel 7: EPS, SPS & Book Value (combined) -->
+          <!-- Panel 7: EPS, SPS, Ekuitas & Book Value (single canvas) -->
           <div class="bb-panel">
             <div class="bb-panel-header"><div class="bb-panel-title">EPS &middot; SPS &middot; Ekuitas &middot; Book Value</div></div>
             <div class="bb-panel-body">
-              <div class="vl-chart" style="height:190px"><canvas id="vlEps"></canvas></div>
+              <div class="vl-chart" style="height:220px"><canvas id="vlEps"></canvas></div>
               <div class="vl-legend">
                 <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>EPS</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#db2777"></div>SPS</div>
-              </div>
-              <div class="vl-chart" style="height:190px;margin-top:12px"><canvas id="vlEquity"></canvas></div>
-              <div class="vl-legend">
-                <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas</div>
+                <div class="vl-leg"><div class="vl-dot" style="background:#8b7eb8"></div>Ekuitas (M)</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Book Value</div>
               </div>
             </div>
@@ -10650,19 +10647,16 @@ body.vl-maxing{overflow:hidden}
       { label:'Book Value (Rp)', data:A('vlRatio',a=>a.bvps), type:'line', borderColor:COL.orange, backgroundColor:COL.orange, pointRadius:4, pointHoverRadius:6, borderWidth:2.5, yAxisID:'y2', tension:.35 }
     ]}, options:{...base, plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:vlTipPrice(qLbl)}}, scales:{ y:{ ticks:TICK, grid:GRID }, y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v}, grid:{display:false} }, x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 4. EPS / SPS
-    mk('vlEps', { type:'line', data:{ labels:lab('vlEps'), datasets:[
-      { label:'EPS', data:A('vlEps',a=>a.eps), borderColor:COL.blue, backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35 },
-      { label:'SPS', data:A('vlEps',a=>a.sps), borderColor:COL.pink, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35 }
-    ]}, options:{...base, scales:{ y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID }, x:{ ticks:TICK, grid:{display:false} } }} });
-
-    // 5. Ekuitas (Miliar) + Book Value
-    mk('vlEquity', { type:'bar', data:{ labels:lab('vlEquity'), datasets:[
-      { label:'Ekuitas (M)', data:A('vlEquity',a=>d9(a.total_equity)), backgroundColor:COL.purpleSoft, borderRadius:4, yAxisID:'y' },
-      { label:'Book Value', data:A('vlEquity',a=>a.bvps), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, borderWidth:2.5, yAxisID:'y2', tension:.35 }
+    // 4. EPS / SPS / Ekuitas / Book Value (combined, dual Y-axis)
+    mk('vlEps', { type:'bar', data:{ labels:lab('vlEps'), datasets:[
+      { label:'Ekuitas (M)', data:A('vlEps',a=>d9(a.total_equity)), backgroundColor:COL.purpleSoft, borderRadius:4, yAxisID:'y2', order:2 },
+      { label:'EPS', data:A('vlEps',a=>a.eps), type:'line', borderColor:COL.blue, backgroundColor:'rgba(37,99,235,.10)', fill:true, pointRadius:4, borderWidth:2.5, tension:.35, yAxisID:'y', order:1 },
+      { label:'SPS', data:A('vlEps',a=>a.sps), type:'line', borderColor:COL.pink, backgroundColor:'transparent', pointRadius:3, borderWidth:2, borderDash:[5,3], tension:.35, yAxisID:'y', order:1 },
+      { label:'Book Value', data:A('vlEps',a=>a.bvps), type:'line', borderColor:COL.purple, backgroundColor:COL.purple, pointRadius:4, borderWidth:2.5, yAxisID:'yBv', tension:.35, order:0 }
     ]}, options:{...base, scales:{
-      y:{ ticks:{...TICK, callback:v=>v+'M'}, grid:GRID },
-      y2:{ position:'right', ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:{display:false} },
+      y:{ ticks:{...TICK, callback:v=>'Rp'+v.toFixed(0)}, grid:GRID, title:{display:true, text:'EPS / SPS (Rp)', color:'var(--text2)', font:{size:9}} },
+      y2:{ position:'right', ticks:{...TICK, callback:v=>v.toFixed(0)+'M'}, grid:{display:false}, title:{display:true, text:'Ekuitas (M)', color:'var(--text2)', font:{size:9}} },
+      yBv:{ position:'right', display:false },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
     // 6. Chart utama Ringkasan: Proyeksi (line) — dibangun hanya saat mode 'proyeksi'.
