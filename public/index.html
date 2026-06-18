@@ -8988,6 +8988,143 @@ body.vl-maxing{overflow:hidden}
 @media(max-width:760px){
   #page-valuasi .vl-toolbar .vl-tb-group{flex-direction:column;align-items:flex-start;gap:6px}
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   COMBINED CARD — Premium fintech panel (3 sections in 1 card)
+   Scoped to .vl-combined-card inside #page-valuasi .vl-grid4
+   ════════════════════════════════════════════════════════════════════ */
+
+/* -- Card spans 2 columns & has premium gradient top accent -- */
+#page-valuasi .vl-grid4 .vl-combined-card{
+  grid-column:span 2;
+  padding:0;
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  position:relative;
+  background:var(--card);
+}
+#page-valuasi .vl-grid4 .vl-combined-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--grad);z-index:1;
+}
+
+/* -- Main card header area -- */
+#page-valuasi .vl-combined-card .vl-combined-header{
+  padding:18px 22px 14px;
+  border-bottom:1px solid var(--border);
+  background:var(--card);
+}
+#page-valuasi .vl-combined-card .vl-combined-title{
+  font-family:'DM Serif Display',serif;
+  font-size:18px;font-weight:400;color:var(--text);
+  margin:0 0 4px;letter-spacing:.2px;line-height:1.3;
+}
+#page-valuasi .vl-combined-card .vl-combined-desc{
+  font-size:11px;color:var(--text3);font-weight:500;
+  letter-spacing:.2px;line-height:1.4;
+}
+
+/* -- Card body container -- */
+#page-valuasi .vl-combined-card .vl-combined-body{
+  padding:16px 20px 20px;
+  display:flex;flex-direction:column;gap:16px;
+}
+
+/* -- Section panels -- */
+#page-valuasi .vl-combined-card .vl-section{
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  position:relative;
+}
+[data-theme="dark"] #page-valuasi .vl-combined-card .vl-section{
+  background:color-mix(in srgb, var(--bg2) 60%, transparent);
+  border-color:var(--border);
+}
+
+/* -- Section title -- */
+#page-valuasi .vl-combined-card .vl-section-title{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.9px;color:var(--text2);
+  margin:0 0 12px;padding:0;
+  background:none;border:none;border-left:none;
+  line-height:1.3;
+}
+#page-valuasi .vl-combined-card .vl-section-title::before{
+  content:"";display:inline-block;
+  width:3px;height:14px;border-radius:2px;
+  background:var(--accent);flex-shrink:0;
+}
+
+/* -- Override card-title reset inside combined card -- */
+#page-valuasi .vl-grid4 .vl-combined-card .card-title{display:none}
+
+/* -- Table overrides for combined card (compact + premium) -- */
+#page-valuasi .vl-combined-card .vl-tw{
+  border-radius:10px;overflow:hidden;
+  border:1px solid var(--border2);
+}
+#page-valuasi .vl-combined-card .vl-table{
+  font-size:12px;min-width:auto;
+}
+#page-valuasi .vl-combined-card .vl-table thead th{
+  padding:9px 11px;font-size:10px;
+  background:var(--bg3);border-bottom:1px solid var(--border);
+  letter-spacing:.7px;
+}
+#page-valuasi .vl-combined-card .vl-table tbody td{
+  padding:8px 11px;font-size:12px;
+  border-bottom:1px solid var(--border2);
+  transition:background .12s ease;
+}
+#page-valuasi .vl-combined-card .vl-table tbody tr:last-child td{border-bottom:none}
+#page-valuasi .vl-combined-card .vl-table tbody tr:hover td{background:var(--bg3)}
+#page-valuasi .vl-combined-card .vl-table tbody tr.vl-row-active td{
+  background:color-mix(in srgb, var(--accent) 8%, var(--bg2));
+  font-weight:700;
+}
+[data-theme="dark"] #page-valuasi .vl-combined-card .vl-table tbody tr.vl-row-active td{
+  background:color-mix(in srgb, var(--accent) 15%, var(--bg2));
+}
+
+/* -- Chart section (MoS) -- */
+#page-valuasi .vl-combined-card .vl-section-chart{
+  padding:16px 18px 14px;
+}
+#page-valuasi .vl-combined-card .vl-chart-wrap{
+  position:relative;width:100%;height:180px;
+  margin-top:4px;
+}
+
+/* -- Info box inside combined card -- */
+#page-valuasi .vl-combined-card .vl-info{
+  font-size:11px;padding:10px 13px;margin-top:10px;
+  border-radius:8px;border-left-width:3px;
+  background:color-mix(in srgb, var(--bg2) 70%, transparent);
+  line-height:1.6;
+}
+
+/* -- Note inside combined card -- */
+#page-valuasi .vl-combined-card .vl-note{
+  font-size:10px;color:var(--text3);
+  margin-top:8px;font-weight:400;
+  font-style:italic;line-height:1.5;
+}
+
+/* -- Responsive: combined card -- */
+@media(max-width:1200px){
+  #page-valuasi .vl-grid4 .vl-combined-card{grid-column:1/-1}
+}
+@media(max-width:600px){
+  #page-valuasi .vl-combined-card .vl-combined-header{padding:14px 16px 12px}
+  #page-valuasi .vl-combined-card .vl-combined-title{font-size:16px}
+  #page-valuasi .vl-combined-card .vl-combined-body{padding:12px 14px 16px;gap:12px}
+  #page-valuasi .vl-combined-card .vl-section{padding:12px 14px}
+  #page-valuasi .vl-combined-card .vl-chart-wrap{height:150px}
+}
 </style>
 
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
@@ -9101,26 +9238,38 @@ body.vl-maxing{overflow:hidden}
           </div>
         </div>
         <div class="vl-grid4">
-          <div class="card">
-            <div class="card-title">Rincian 3 Sub-Model (window aktif)</div>
-            <div class="vl-tw">
-              <table class="vl-table">
-                <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
-                <tbody id="vlSubModelBody"></tbody>
-              </table>
+          <div class="card vl-combined-card">
+            <div class="vl-combined-header">
+              <div class="vl-combined-title">Analisis Model Valuasi</div>
+              <div class="vl-combined-desc">Rincian sub-model, margin of safety, dan multiple historis untuk window aktif</div>
             </div>
-            <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
-            <div class="card-title" style="margin-top:14px">Margin of Safety per Sub-Model (window aktif)</div>
-            <div style="position:relative;width:100%;height:160px"><canvas id="vlMos"></canvas></div>
-            <div class="vl-info" style="margin-top:10px"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>≥30% = ideal</strong>, 20–30% = cukup aman, &lt;20% = hati-hati.</div>
-            <div class="card-title" style="margin-top:14px">Rata-rata Multiple Historis per Window</div>
-            <div class="vl-tw">
-              <table class="vl-table">
-                <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
-                <tbody id="vlMultBody"></tbody>
-              </table>
+            <div class="vl-combined-body">
+              <div class="vl-section">
+                <div class="vl-section-title">Rincian 3 Sub-Model (window aktif)</div>
+                <div class="vl-tw">
+                  <table class="vl-table">
+                    <thead><tr><th>Sub-Model</th><th>Growth</th><th>Multiple</th><th>Target 5Th</th><th>CAGR</th><th>MoS</th></tr></thead>
+                    <tbody id="vlSubModelBody"></tbody>
+                  </table>
+                </div>
+                <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
+              </div>
+              <div class="vl-section vl-section-chart">
+                <div class="vl-section-title">Margin of Safety per Sub-Model</div>
+                <div class="vl-chart-wrap"><canvas id="vlMos"></canvas></div>
+                <div class="vl-info"><strong>Margin of Safety</strong> mengukur seberapa "murah" harga saham dibanding nilai wajar tiap sub-model. <strong>&ge;30% = ideal</strong>, 20-30% = cukup aman, &lt;20% = hati-hati.</div>
+              </div>
+              <div class="vl-section">
+                <div class="vl-section-title">Rata-rata Multiple Historis per Window</div>
+                <div class="vl-tw">
+                  <table class="vl-table">
+                    <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
+                    <tbody id="vlMultBody"></tbody>
+                  </table>
+                </div>
+                <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
+              </div>
             </div>
-            <p class="vl-note">Baris yang ditandai = window aktif yang dipakai untuk perhitungan model 5-tahun.</p>
           </div>
           <div class="card">
             <div class="card-title">Pendapatan &amp; Laba Bersih (Miliar Rp)</div>
