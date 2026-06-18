@@ -9000,6 +9000,177 @@ loadData();
   background:color-mix(in srgb, var(--accent) 12%, var(--bg3));
 }
 
+/* --- Detail button in Sub-Model panel header --- */
+.vl-detail-btn{
+  margin-left:auto;
+  padding:5px 12px;
+  font-size:11px;
+  font-weight:700;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:color-mix(in srgb, var(--accent) 12%, var(--bg2));
+  color:var(--accent);
+  cursor:pointer;
+  transition:background 0.2s, border-color 0.2s, transform 0.15s;
+  white-space:nowrap;
+}
+.vl-detail-btn:hover{
+  background:color-mix(in srgb, var(--accent) 24%, var(--bg2));
+  border-color:var(--accent);
+  transform:scale(1.04);
+}
+
+/* --- Modal overlay & box --- */
+.vl-modal-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:rgba(0,0,0,0.65);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  animation:vlFadeIn 0.2s ease;
+}
+.vl-modal-overlay.active{display:flex}
+@keyframes vlFadeIn{from{opacity:0}to{opacity:1}}
+.vl-modal-box{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  width:100%;
+  max-width:560px;
+  max-height:85vh;
+  overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+  animation:vlSlideUp 0.25s ease;
+}
+@keyframes vlSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.vl-modal-header{
+  display:flex;
+  align-items:center;
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  position:sticky;
+  top:0;
+  background:var(--card);
+  z-index:1;
+  border-radius:16px 16px 0 0;
+}
+.vl-modal-title{
+  font-size:14px;
+  font-weight:700;
+  color:var(--text);
+  letter-spacing:0.3px;
+}
+.vl-modal-close{
+  margin-left:auto;
+  background:none;
+  border:none;
+  font-size:22px;
+  color:var(--text2);
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:6px;
+  transition:background 0.15s, color 0.15s;
+  line-height:1;
+}
+.vl-modal-close:hover{
+  background:color-mix(in srgb, var(--accent) 15%, var(--bg2));
+  color:var(--text);
+}
+.vl-modal-body{
+  padding:20px;
+}
+.vl-modal-section{
+  margin-bottom:20px;
+}
+.vl-modal-section:last-child{margin-bottom:0}
+.vl-modal-subtitle{
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--text2);
+  margin:0 0 12px 0;
+}
+/* Modal inner chart/table inherit styles from bb-panel */
+.vl-modal-body .vl-chart-wrap{
+  position:relative;
+  width:100%;
+  height:180px;
+  margin-bottom:8px;
+}
+.vl-modal-body .vl-tw{
+  border-radius:8px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.vl-modal-body .vl-table{
+  font-size:12px;
+  min-width:auto;
+  width:100%;
+  border-collapse:collapse;
+}
+.vl-modal-body .vl-table thead th{
+  padding:10px 12px;
+  font-size:11px;
+  font-weight:800;
+  background:var(--bg3);
+  border-bottom:1px solid var(--border);
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  color:var(--text2);
+  text-align:right;
+  white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;
+}
+.vl-modal-body .vl-table thead th:first-child{text-align:left}
+.vl-modal-body .vl-table tbody td{
+  padding:9px 12px;
+  font-size:12px;
+  border-bottom:1px solid var(--border2);
+  font-family:'IBM Plex Mono',monospace;
+  font-variant-numeric:tabular-nums;
+  text-align:right;
+  color:var(--text);
+}
+.vl-modal-body .vl-table tbody td:first-child{
+  text-align:left;
+  color:var(--text2);
+  font-weight:600;
+  font-size:11px;
+}
+.vl-modal-body .vl-table tbody tr:nth-child(even){
+  background:color-mix(in srgb, var(--bg3) 25%, transparent);
+}
+.vl-modal-body .vl-info{
+  font-size:11px;
+  margin-top:10px;
+  padding:10px 14px;
+  background:color-mix(in srgb, var(--bg2) 80%, var(--card));
+  border:1px solid var(--border2);
+  border-radius:8px;
+  color:var(--text2);
+  line-height:1.5;
+}
+.vl-modal-body .vl-info strong{color:var(--text);font-weight:700}
+.vl-modal-body .vl-note{
+  font-size:10.5px;
+  margin-top:6px;
+  color:var(--text3);
+  line-height:1.5;
+  font-style:italic;
+  opacity:0.6;
+}
+@media(max-width:600px){
+  .vl-modal-overlay{padding:12px}
+  .vl-modal-box{max-width:100%;max-height:90vh;border-radius:12px}
+  .vl-modal-body .vl-chart-wrap{height:150px}
+}
+
 /* --- Full-width panels --- */
 .vl-grid4 .bb-panel-wide{grid-column:span 2}
 
@@ -9369,7 +9540,10 @@ body.vl-maxing{overflow:hidden}
         <div class="vl-grid4">
           <!-- Panel 1: Sub-Model Breakdown (wide) -->
           <div class="bb-panel bb-panel-wide">
-            <div class="bb-panel-header"><div class="bb-panel-title">Sub-Model Breakdown</div></div>
+            <div class="bb-panel-header">
+              <div class="bb-panel-title" id="vlSubModelTitle">Sub-Model Breakdown &middot; Window 5 Th</div>
+              <button class="vl-detail-btn" onclick="vlOpenMultModal()" title="Lihat Detail MoS & Multiples">&#x1F4CA; Detail</button>
+            </div>
             <div class="bb-panel-body">
               <div class="vl-tw">
                 <table class="vl-table">
@@ -9380,25 +9554,33 @@ body.vl-maxing{overflow:hidden}
               <p class="vl-note">PBV pakai BVPS · PER pakai EPS · PSR pakai SPS. Bobot blend: PBV 50% · PER 40% · PSR 10%.</p>
             </div>
           </div>
-          <!-- Panel 2: Margin of Safety -->
-          <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">Margin of Safety</div></div>
-            <div class="bb-panel-body">
-              <div class="vl-chart-wrap"><canvas id="vlMos"></canvas></div>
-              <div class="vl-info"><strong>MoS</strong> = seberapa murah vs nilai wajar. <strong>&ge;30%</strong> ideal, 20-30% cukup, &lt;20% hati-hati.</div>
-            </div>
-          </div>
-          <!-- Panel 3: Historical Multiples -->
-          <div class="bb-panel">
-            <div class="bb-panel-header"><div class="bb-panel-title">Historical Multiples</div></div>
-            <div class="bb-panel-body">
-              <div class="vl-tw">
-                <table class="vl-table">
-                  <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
-                  <tbody id="vlMultBody"></tbody>
-                </table>
+
+          <!-- Modal: Margin of Safety + Historical Multiples -->
+          <div class="vl-modal-overlay" id="vlMultModal" onclick="vlCloseMultModal(event)">
+            <div class="vl-modal-box" onclick="event.stopPropagation()">
+              <div class="vl-modal-header">
+                <span class="vl-modal-title">Detail Multiples &amp; Margin of Safety</span>
+                <button class="vl-modal-close" onclick="vlCloseMultModal()">&times;</button>
               </div>
-              <p class="vl-note">Baris ditandai = window aktif untuk model 5-tahun.</p>
+              <div class="vl-modal-body">
+                <!-- MoS Chart -->
+                <div class="vl-modal-section">
+                  <h4 class="vl-modal-subtitle">Margin of Safety</h4>
+                  <div class="vl-chart-wrap"><canvas id="vlMos"></canvas></div>
+                  <div class="vl-info"><strong>MoS</strong> = seberapa murah vs nilai wajar. <strong>&ge;30%</strong> ideal, 20-30% cukup, &lt;20% hati-hati.</div>
+                </div>
+                <!-- Historical Multiples Table -->
+                <div class="vl-modal-section">
+                  <h4 class="vl-modal-subtitle">Historical Multiples</h4>
+                  <div class="vl-tw">
+                    <table class="vl-table">
+                      <thead><tr><th>Window</th><th>PBV</th><th>PER</th><th>PSR</th><th>DPR</th></tr></thead>
+                      <tbody id="vlMultBody"></tbody>
+                    </table>
+                  </div>
+                  <p class="vl-note">Baris ditandai = window aktif untuk model 5-tahun.</p>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Panel 4: Revenue & Net Income -->
@@ -10594,21 +10776,24 @@ body.vl-maxing{overflow:hidden}
       y2:{ position:'right', ticks:{...TICK, callback:v=>v+'%'}, grid:{display:false} },
       x:{ ticks:TICK, grid:{display:false} } }} });
 
-    // 8. MoS sub-model (window aktif)
+    // 8. MoS sub-model (window aktif) — skip jika modal hidden, render saat modal dibuka
     {
-      const keys=['pbv','per','psr']; const names={pbv:'PBV',per:'PER',psr:'PSR'};
-      let labs, data;
-      if(m.applicable){
-        labs = keys.map(k=>names[k]);
-        data = keys.map(k=> m.submodels[k].applicable ? m.submodels[k].mos*100 : null);
-      } else { labs=['—']; data=[null]; }
-      const cols = data.map(v=> !ok(v)?COL.purpleSoft : v>=30?COL.green : v>=20?COL.orange : COL.pink);
-      mk('vlMos', { type:'bar', data:{ labels:labs, datasets:[
-        { label:'Margin of Safety (%)', data:data, backgroundColor:cols, borderRadius:5 }
-      ]}, options:{...base, indexAxis:'y',
-        scales:{ x:{ ticks:{...TICK, callback:v=>v+'%'}, grid:GRID }, y:{ ticks:{...TICK, font:{size:12}}, grid:{display:false} } },
-        plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{ label:ctx=>' MoS: '+(ok(ctx.parsed.x)?ctx.parsed.x.toFixed(2):'-')+'%' }}}
-      }});
+      const modal = document.getElementById('vlMultModal');
+      if(modal && modal.classList.contains('active')){
+        const keys=['pbv','per','psr']; const names={pbv:'PBV',per:'PER',psr:'PSR'};
+        let labs, data;
+        if(m.applicable){
+          labs = keys.map(k=>names[k]);
+          data = keys.map(k=> m.submodels[k].applicable ? m.submodels[k].mos*100 : null);
+        } else { labs=['—']; data=[null]; }
+        const cols = data.map(v=> !ok(v)?COL.purpleSoft : v>=30?COL.green : v>=20?COL.orange : COL.pink);
+        mk('vlMos', { type:'bar', data:{ labels:labs, datasets:[
+          { label:'Margin of Safety (%)', data:data, backgroundColor:cols, borderRadius:5 }
+        ]}, options:{...base, indexAxis:'y',
+          scales:{ x:{ ticks:{...TICK, callback:v=>v+'%'}, grid:GRID }, y:{ ticks:{...TICK, font:{size:12}}, grid:{display:false} } },
+          plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{ label:ctx=>' MoS: '+(ok(ctx.parsed.x)?ctx.parsed.x.toFixed(2):'-')+'%' }}}
+        }});
+      }
     }
   }
 
@@ -11314,6 +11499,7 @@ body.vl-maxing{overflow:hidden}
     renderBanner(); renderHead(); renderCards(); renderFund();
     renderProjection(); renderDividen(); renderMultiples();
     renderCompare();
+    vlUpdateSubModelTitle();
     // Set default harga kalkulator = harga terakhir, lalu hitung.
     const ci = document.getElementById('vlCalcPrice');
     if(ci){ const lp = Math.round(effLast(s).price); if(lp>0) ci.value = lp; }
@@ -11373,8 +11559,64 @@ body.vl-maxing{overflow:hidden}
   window.vlSetWindow = function(win){
     state.win = Number(win) || 5;
     setWinButtons();
+    vlUpdateSubModelTitle();
     if(state.raw) renderAll();
   };
+
+  /* ── Sub-Model title update (reflects active window) ── */
+  function vlUpdateSubModelTitle(){
+    const el = document.getElementById('vlSubModelTitle');
+    if(el) el.textContent = 'Sub-Model Breakdown \u00B7 Window ' + state.win + ' Th';
+  }
+
+  /* ── Modal: Multiples detail popup ── */
+  window.vlOpenMultModal = function(){
+    const ov = document.getElementById('vlMultModal');
+    if(ov){
+      ov.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      // Re-render table data
+      renderMultiples();
+      // Rebuild MoS chart: destroy existing and re-create since canvas was in hidden modal
+      setTimeout(function(){
+        const idx = charts.findIndex(function(c){ return c.canvas && c.canvas.id === 'vlMos'; });
+        if(idx >= 0){ try{ charts[idx].destroy(); charts.splice(idx,1); }catch(e){} }
+        var cv = document.getElementById('vlMos');
+        if(cv && typeof Chart !== 'undefined'){
+          var m = state.model || {};
+          var T = themeColors();
+          var TICK = { font:{ size:10 }, color:T.tick };
+          var GRID = { color:T.grid };
+          var base = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'rgba(26,15,60,.94)', titleFont:{size:11}, bodyFont:{size:11}, padding:10, cornerRadius:8 } } };
+          var keys=['pbv','per','psr']; var names={pbv:'PBV',per:'PER',psr:'PSR'};
+          var labs, data;
+          if(m.applicable){
+            labs = keys.map(function(k){return names[k]});
+            data = keys.map(function(k){ return m.submodels[k].applicable ? m.submodels[k].mos*100 : null; });
+          } else { labs=['\u2014']; data=[null]; }
+          var cols = data.map(function(v){ return !ok(v)?COL.purpleSoft : v>=30?COL.green : v>=20?COL.orange : COL.pink; });
+          charts.push(new Chart(cv, { type:'bar', data:{ labels:labs, datasets:[
+            { label:'Margin of Safety (%)', data:data, backgroundColor:cols, borderRadius:5 }
+          ]}, options:{...base, indexAxis:'y',
+            scales:{ x:{ ticks:{...TICK, callback:function(v){return v+'%'}}, grid:GRID }, y:{ ticks:{...TICK, font:{size:12}}, grid:{display:false} } },
+            plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{ label:function(ctx){ return ' MoS: '+(ok(ctx.parsed.x)?ctx.parsed.x.toFixed(2):'-')+'%'; }}}}
+          }}));
+        }
+      }, 50);
+    }
+  };
+  window.vlCloseMultModal = function(evt){
+    if(evt && evt.target !== evt.currentTarget) return;
+    const ov = document.getElementById('vlMultModal');
+    if(ov) ov.classList.remove('active');
+    document.body.style.overflow = '';
+  };
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      const ov = document.getElementById('vlMultModal');
+      if(ov && ov.classList.contains('active')) window.vlCloseMultModal();
+    }
+  });
 
   /* ── Switch tab ── */
   window.vlSwitchTab = function(id, el){
