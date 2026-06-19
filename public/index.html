@@ -9289,9 +9289,6 @@ loadData();
 #page-valuasi .vl-kpi{border-radius:9px;border:1px solid var(--border);border-top:2px solid var(--accent);background:var(--bg2)}
 #page-valuasi .vl-kpi .l{font-size:10px;letter-spacing:.7px}
 
-/* ── INFO BANNER — selaras token ── */
-#page-valuasi #vlBanner{border-radius:var(--radius)}
-
 
 
 /* ── RANGE TOOLBAR per-chart (3Th/5/7/10/All) ── */
@@ -9340,6 +9337,10 @@ body.vl-maxing{overflow:hidden}
 #page-valuasi .vl-proj-sub{font-size:11.5px;color:var(--text3);font-weight:500;line-height:1.55;margin:-8px 0 14px}
 #page-valuasi .vl-proj-sub b{color:var(--accent);font-weight:800}
 
+/* Proj row mobile wrapper: on desktop, hide MoS card, show basis normally */
+#page-valuasi .vl-proj-row-mob{display:block}
+#page-valuasi .vl-proj-row-mob .vl-kpi-mos-card{display:none}
+
 /* KPI proyeksi: ikon + deskripsi + hover; highlight metrik kunci (MoS & FV) */
 #page-valuasi .vl-kpis-proj .vl-kpi{transition:transform .15s ease,border-color .15s ease}
 #page-valuasi .vl-kpis-proj .vl-kpi:hover{transform:translateY(-2px);border-color:var(--accent)}
@@ -9364,10 +9365,6 @@ body.vl-maxing{overflow:hidden}
 #page-valuasi .vl-win .vl-basis-btn:hover{color:var(--text);border-color:transparent}
 #page-valuasi .vl-win .vl-basis-btn.active{background:var(--accent);color:#fff;box-shadow:none}
 
-/* — BANNER: strip tipis selaras panel terminal (bukan gradient mencolok) — */
-#page-valuasi #vlBanner{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);
-  border-radius:0 8px 8px 0;padding:7px 13px;font-size:11px;line-height:1.45;margin-bottom:11px;color:var(--text3)}
-#page-valuasi #vlBanner strong{font-weight:700}
 
 /* — HEADER EMITEN: bar padat, sejajar tengah — */
 #page-valuasi .vl-head{padding:11px 16px;margin-bottom:12px;gap:12px;align-items:center}
@@ -9428,6 +9425,174 @@ body.vl-maxing{overflow:hidden}
 
 </style>
 
+<!-- Responsive mobile valuasi (320-600px) -->
+<style>
+/* === VALUASI MOBILE 600px === */
+@media(max-width:600px){
+  #page-valuasi .vl-wrap{padding:0 10px}
+  #page-valuasi .vl-head{flex-direction:column;align-items:flex-start;text-align:left;gap:6px;padding:8px 12px;margin-bottom:8px}
+  #page-valuasi .vl-tic{display:flex;flex-direction:row;align-items:center;gap:8px;justify-content:flex-start}
+  #page-valuasi .vl-head-right{flex-direction:column;align-items:flex-start;width:100%;gap:7px}
+  #page-valuasi .vl-mktcap{display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:3px 5px;text-align:left}
+  #page-valuasi .vl-mktcap .l{margin-top:0!important;font-size:8px;letter-spacing:.2px}
+  #page-valuasi .vl-mktcap .v{font-size:11px}
+  #page-valuasi .vl-mktcap .v + .l{margin-left:11px}
+  #page-valuasi .vl-name{font-size:13px;letter-spacing:.5px}
+  #page-valuasi .vl-sub{font-size:9px}
+  #page-valuasi .vl-price{font-size:20px}
+  #page-valuasi .vl-price-meta{font-size:8px;opacity:.5}
+  #page-valuasi .vl-badge{font-size:9px;padding:1px 6px}
+  #page-valuasi .vl-mos{padding:4px 10px;min-width:auto;border-radius:7px}
+  #page-valuasi .vl-mos .v{font-size:14px}
+  #page-valuasi .vl-mos .l,#page-valuasi .vl-mos .d{font-size:8px}
+  /* Chart projection - lebih compact */
+  #page-valuasi .vl-chart-tall{height:180px}
+  #page-valuasi #vlHarianWrap{height:180px!important}
+  #page-valuasi .vl-legend{gap:8px;margin-top:6px}
+  #page-valuasi .vl-leg{font-size:10px;gap:4px}
+  #page-valuasi .vl-dot{width:10px;height:3px}
+  #page-valuasi .card-title{font-size:11px;text-transform:none;letter-spacing:0;font-weight:700}
+  #page-valuasi .vl-grid2 .card-title{font-size:10px;text-transform:none;letter-spacing:0;font-weight:700}
+  #page-valuasi .vl-rng{position:relative;z-index:5;gap:1px;padding:2px;border-radius:6px;margin-bottom:6px}
+  #page-valuasi .vl-rng button{padding:3px 7px;font-size:9px;min-height:22px;border-radius:4px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;letter-spacing:0}
+  #page-valuasi .vl-proj-sub{font-size:9px;line-height:1.3;margin:-4px 0 8px;opacity:.7}
+  #page-valuasi .vl-seg{gap:1px;padding:2px;border-radius:6px}
+  #page-valuasi .vl-seg button{font-size:9px;padding:3px 8px;border-radius:4px;letter-spacing:0}
+  #page-valuasi .vl-mcs{grid-template-columns:repeat(2,1fr);gap:8px}
+  #page-valuasi .vl-mc{padding:9px 11px}
+  #page-valuasi .vl-mc .v{font-size:15px}
+  #page-valuasi .vl-mc .l{font-size:9px}
+  #page-valuasi .vl-qstrip-row{grid-template-columns:repeat(2,1fr)}
+  #page-valuasi .vl-tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  #page-valuasi .vl-tabs::-webkit-scrollbar{height:0}
+  #page-valuasi .vl-tab{padding:6px 10px;font-size:10.5px}
+  #page-valuasi .vl-grid4{grid-template-columns:1fr;gap:12px}
+  #page-valuasi .vl-grid4 .bb-panel-body{padding:14px 16px}
+  #page-valuasi .vl-toolbar{flex-direction:column;align-items:stretch;gap:10px;padding:10px 12px}
+  #page-valuasi .vl-select{width:100%;min-width:auto}
+  #page-valuasi .vl-table{font-size:9px;min-width:0}
+  #page-valuasi .vl-table thead th{font-size:8px;padding:4px 5px;white-space:nowrap}
+  #page-valuasi .vl-table tbody td{font-size:9px;padding:5px 5px;white-space:nowrap}
+  #page-valuasi .vl-tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #page-valuasi #vlProjTable{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #page-valuasi #vlProjTableHeader{font-size:9px}
+  #page-valuasi #vlProjTableHeader span{font-size:8.5px!important}
+  #page-valuasi #vlProjTableHeader strong{font-size:9px!important}
+  #page-valuasi #vlProjTableHeader .vl-badge{font-size:7.5px!important;padding:1px 5px}
+  #page-valuasi .vl-kpis{grid-template-columns:repeat(2,1fr)}
+  /* Proyeksi: basis dropdown + MoS side by side, then 3-col KPI grid */
+  #page-valuasi .vl-basis-select{width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;appearance:auto}
+  #page-valuasi .vl-basis-select:focus{border-color:var(--accent);outline:none}
+  #page-valuasi #vlProjBody > .card{display:flex;flex-direction:column}
+  #page-valuasi .vl-proj-row-mob{display:flex;gap:10px;align-items:stretch;margin-bottom:12px}
+  #page-valuasi .vl-proj-row-mob .vl-basis{flex:1;min-width:0;margin-bottom:0!important;display:flex;align-items:center}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card{flex:1;min-width:0;background:color-mix(in srgb, var(--accent) 8%, var(--card));border:1.5px solid color-mix(in srgb, var(--accent) 30%, transparent);border-radius:10px;padding:10px 12px;text-align:center;display:flex;flex-direction:column;justify-content:center}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card .l{font-size:9.5px;color:var(--text3);font-weight:600;margin-bottom:4px}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card .v{font-size:18px;font-weight:800;color:var(--accent)}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card .d{font-size:9px;color:var(--text3);margin-top:3px}
+  #page-valuasi .vl-kpis-proj{grid-template-columns:repeat(3,1fr)!important;gap:8px!important}
+  #page-valuasi .vl-kpis-proj .vl-kpi-key:first-child{display:none}
+  #page-valuasi .vl-kpis-proj .vl-kpi{padding:8px 6px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .l{font-size:9px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .v{font-size:14px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .d{font-size:8.5px}
+  #page-valuasi .vl-cmp-top{grid-template-columns:1fr}
+  #page-valuasi .vl-modal-overlay{padding:12px}
+  #page-valuasi .vl-modal-box{max-height:90vh;border-radius:12px}
+  #page-valuasi .vl-grid4 .bb-panel .vl-chart,#page-valuasi .vl-grid4 .bb-panel .vl-chart-wrap{height:200px}
+  #page-valuasi .vl-ff-row{grid-template-columns:70px 1fr}
+  #page-valuasi .vl-ff-row .lab{font-size:9px}
+  #page-valuasi .vl-win{flex-wrap:wrap}
+  #page-valuasi .vl-win .vl-basis-btn{font-size:10.5px;padding:5px 10px}
+  #page-valuasi .vl-slider-body{padding:6px 12px 14px}
+  #page-valuasi .vl-cmp-card .v{font-size:19px}
+  #page-valuasi .vl-kpi .v{font-size:16px}
+  #page-valuasi .vl-grid4 .bb-panel:hover{transform:none}
+  #page-valuasi .vl-detail-btn{font-size:10px;padding:4px 9px}
+  /* Notes & info text - kecil tapi terbaca penuh di mobile (tidak terpotong) */
+  #page-valuasi .vl-note{font-size:10px!important;line-height:1.55;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;overflow-wrap:anywhere;opacity:.72;margin-top:8px}
+  #page-valuasi .vl-info{font-size:9px!important;padding:6px 8px!important;margin-top:8px}
+  #page-valuasi .vl-grid4 .bb-panel .vl-note{font-size:10px;line-height:1.55;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;overflow-wrap:anywhere;opacity:.72}
+  #page-valuasi .vl-grid4 .bb-panel .vl-info{font-size:9px;padding:6px 8px}
+  #page-valuasi .vl-grid4 .bb-panel-wide .bb-panel-title{font-size:10px}
+  /* Warning messages */
+  #page-valuasi .vl-msg{font-size:9px;padding:10px 12px;line-height:1.5}
+  /* Overflow scroll agar konten tidak terpotong */
+  #page-valuasi .vl-grid2 .card{overflow-x:auto;overflow-y:visible}
+  #page-valuasi .vl-kpis-proj{overflow-x:auto}
+  #page-valuasi .vl-qstrip-row{overflow-x:auto}
+  /* Grid2 gap lebih rapat */
+  #page-valuasi .vl-grid2{gap:10px}
+  /* Card padding sedikit lebih rapat */
+  #page-valuasi .vl-grid2 .card{padding:12px 14px}
+}
+
+/* === VALUASI MOBILE 480px === */
+@media(max-width:480px){
+  #page-valuasi .vl-wrap{padding:0 4px}
+  #page-valuasi .vl-price{font-size:18px}
+  #page-valuasi .vl-mos{padding:3px 8px;min-width:auto}
+  #page-valuasi .vl-mos .v{font-size:13px}
+  #page-valuasi .vl-mos .l,#page-valuasi .vl-mos .d{font-size:7.5px}
+  #page-valuasi .vl-mc .v{font-size:13px}
+  #page-valuasi .vl-mc .l{font-size:8px}
+  #page-valuasi .vl-tab{padding:6px 9px;font-size:10px}
+  #page-valuasi .vl-grid4 .bb-panel .vl-chart,#page-valuasi .vl-grid4 .bb-panel .vl-chart-wrap{height:170px}
+  #page-valuasi .vl-grid4 .bb-panel-body{padding:10px 12px}
+  #page-valuasi .vl-table thead th{font-size:7.5px;padding:3px 4px}
+  #page-valuasi .vl-table tbody td{font-size:8.5px;padding:4px 4px}
+  #page-valuasi .vl-grid4 .bb-panel-header{padding:10px 12px 8px}
+  #page-valuasi .vl-grid4 .bb-panel-title{font-size:11px}
+  #page-valuasi .vl-head{padding:6px 10px;gap:4px}
+  #page-valuasi .vl-logo{width:28px;height:28px;font-size:9px}
+  #page-valuasi .vl-name{font-size:12px}
+  #page-valuasi .vl-sub{font-size:8px}
+  #page-valuasi .vl-price-meta{font-size:7px;opacity:.4}
+  #page-valuasi .vl-mktcap .v{font-size:10px}
+  #page-valuasi .vl-mktcap .l{font-size:7px}
+  /* Chart projection - lebih kecil di HP kecil */
+  #page-valuasi .vl-chart-tall{height:150px}
+  #page-valuasi #vlHarianWrap{height:150px!important}
+  #page-valuasi .vl-leg{font-size:8px}
+  #page-valuasi .vl-legend{gap:6px;margin-top:4px}
+  #page-valuasi .vl-dot{width:8px;height:2px}
+  #page-valuasi .card-title{font-size:10px}
+  #page-valuasi .vl-grid2 .card-title{font-size:9px}
+  #page-valuasi .vl-proj-sub{font-size:8px;margin:-2px 0 6px}
+  #page-valuasi .vl-rng button{padding:2px 6px;font-size:8px;min-height:20px}
+  #page-valuasi .vl-seg button{font-size:8px;padding:2px 7px}
+  #page-valuasi .vl-qstrip{padding:10px 12px}
+  #page-valuasi .vl-qi .p{font-size:12px}
+  #page-valuasi .card{border-radius:8px}
+  #page-valuasi .vl-kpi{padding:8px 6px}
+  #page-valuasi .vl-kpi .l{font-size:9px}
+  #page-valuasi .vl-kpi .v{font-size:14px}
+  #page-valuasi .vl-kpi .d{font-size:9px}
+  #page-valuasi .vl-info{font-size:8px!important;padding:5px 7px!important}
+  #page-valuasi .vl-note{font-size:9.5px!important;line-height:1.5}
+  #page-valuasi #vlProjTableHeader{font-size:8px}
+  #page-valuasi #vlProjTableHeader span{font-size:7.5px!important}
+  #page-valuasi #vlProjTableHeader strong{font-size:8px!important}
+  #page-valuasi #vlProjTableHeader .vl-badge{font-size:7px!important;padding:1px 4px}
+  #page-valuasi .vl-msg{font-size:8px;padding:8px 10px}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card .v{font-size:15px}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card{padding:6px 8px}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card .l{font-size:8px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .v{font-size:12px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .l{font-size:8px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .d{font-size:7.5px}
+}
+
+/* === VALUASI MOBILE 360px (hp sangat kecil) === */
+@media(max-width:360px){
+  #page-valuasi .vl-mcs{grid-template-columns:1fr}
+  #page-valuasi .vl-kpis{grid-template-columns:1fr}
+  #page-valuasi .vl-kpis-proj{grid-template-columns:repeat(2,1fr)!important}
+  #page-valuasi .vl-proj-row-mob{flex-direction:column}
+  #page-valuasi .vl-price{font-size:20px}
+}
+</style>
+
 <!-- ═══ PAGE 4: VALUASI SAHAM ═══ -->
 <div class="page" id="page-valuasi">
   <div class="vl-wrap">
@@ -9471,10 +9636,6 @@ body.vl-maxing{overflow:hidden}
       </div>
     </div>
 
-    <!-- INFO BANNER (dinamis — diisi JS dgn sumber data & harga) -->
-    <div class="info-banner" id="vlBanner">
-      🧮 <strong>Valuasi Saham</strong> — Analisa fundamental, proyeksi harga &amp; margin of safety. Memuat data…
-    </div>
 
     <!-- HEADER EMITEN (dinamis — diisi JS) -->
     <div class="vl-head" id="vlHead"></div>
@@ -9496,7 +9657,10 @@ body.vl-maxing{overflow:hidden}
         <div class="card" style="margin-bottom:14px">
           <div class="card-title">🎯 Proyeksi Harga 5 Tahun</div>
           <div class="vl-proj-sub">Skenario imbal hasil dari harga beli basis <b id="vlProjScope">TTM</b> — angka menyesuaikan basis yang dipilih (beda dengan snapshot model di atas).</div>
-          <div class="vl-basis" id="vlProjBasis" style="margin-bottom:14px"></div>
+          <div class="vl-proj-row-mob" id="vlProjRowMob">
+            <div class="vl-basis" id="vlProjBasis" style="margin-bottom:14px"></div>
+            <div class="vl-kpi-mos-card"><div class="l">🛡️ Margin of Safety</div><div class="v" id="vlKpiMosMob">-</div><div class="d" id="vlKpiMosDescMob">-</div></div>
+          </div>
           <div class="vl-kpis vl-kpis-proj" style="margin-bottom:0">
             <div class="vl-kpi vl-kpi-key"><div class="l">🛡️ Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
             <div class="vl-kpi"><div class="l">📈 CAGR 5 Tahun</div><div class="v" id="vlKpiCagr" style="color:var(--accent2)">-</div><div class="d">Pertumbuhan harga / th</div></div>
@@ -10014,15 +10178,6 @@ body.vl-maxing{overflow:hidden}
   }
 
   /* ════════════ RENDER ════════════ */
-  function renderBanner(){
-    const el = document.getElementById('vlBanner'); if(!el) return;
-    const s = curStock(); if(!s) return;
-    const e = effLast(s);
-    const srcTxt = e.source==='live' ? 'live (sheet)' : (e.source||'-');
-    el.innerHTML = '🧮 <strong>Valuasi Saham</strong> — Analisa fundamental, proyeksi harga &amp; margin of safety. '+
-      'Sumber: <strong>valuation.json</strong> · harga: <strong>'+srcTxt+'</strong>'+
-      (state.raw.generated_at ? (' · data per '+String(state.raw.generated_at).slice(0,10)) : '');
-  }
 
   function renderHead(){
     const el = document.getElementById('vlHead'); if(!el) return;
@@ -10158,6 +10313,20 @@ body.vl-maxing{overflow:hidden}
     const el = document.getElementById('vlProjBasis'); if(!el) return;
     const bdef = ujDataBases(s);
     const activeBasis = _projBasis || 'current';
+    // Mobile: render as single <select> dropdown (all years in one list)
+    var isMobile = window.innerWidth <= 600;
+    if(isMobile){
+      var allOpts = bdef.buttons.map(function(b){
+        return '<option value="'+b.key+'"'+(b.key===activeBasis?' selected':'')+'>'+b.label+(b.tag?' ('+b.tag+')':'')+'</option>';
+      });
+      if(bdef.moreYears && bdef.moreYears.length){
+        bdef.moreYears.forEach(function(y){
+          allOpts.push('<option value="Y'+y+'"'+('Y'+y===activeBasis?' selected':'')+'>'+y+'</option>');
+        });
+      }
+      el.innerHTML = '<select class="vl-basis-select" onchange="vlSetProjBasis(this.value)">'+allOpts.join('')+'</select>';
+      return;
+    }
     let html = bdef.buttons.map(function(b){
       const act = (b.key===activeBasis) ? ' active' : '';
       const tag = b.tag ? ' <span style="font-size:9px;font-weight:800;opacity:.7">'+b.tag+'</span>' : '';
@@ -10209,13 +10378,15 @@ body.vl-maxing{overflow:hidden}
         (_fbUsed ? ' Growth rate dihitung dari CAGR data yang tersedia (bukan rata-rata 5 tahun dari Excel).' : '');
       if(msg) msg.innerHTML = '<div class="vl-sld-warn" style="margin-bottom:12px;font-size:11px">'+warnTxt+'</div>';
     }
-    if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
+    if(!pc.applicable){ ['vlKpiMos','vlKpiMosMob','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
     const livePrice = effLast(s).price;
     const target5y = (Array.isArray(pc.potensi) && pc.potensi.length>=5 && ok(pc.potensi[4])) ? pc.potensi[4] : null;
     const mosPct = (ok(livePrice) && livePrice>0 && ok(target5y) && target5y>0) ? (1 - livePrice/target5y)*100 : (pc.margin_of_safety||0)*100;
     const ms = mosStyle(mosPct);
     setK('vlKpiMos', mosPct.toFixed(2)+'%', ms.col);
     const md = document.getElementById('vlKpiMosDesc'); if(md){ md.textContent=ms.txt; md.style.color=ms.col; }
+    setK('vlKpiMosMob', mosPct.toFixed(2)+'%', ms.col);
+    const mdMob = document.getElementById('vlKpiMosDescMob'); if(mdMob){ mdMob.textContent=ms.txt; mdMob.style.color=ms.col; }
     setK('vlKpiCagr', fmtPct(pc.cagr*100));
     setK('vlKpiDy',   fmtPct(pc.dividend_yield*100));
     setK('vlKpiComb', fmtPct(pc.combine*100));
@@ -10242,12 +10413,12 @@ body.vl-maxing{overflow:hidden}
       const thdr = document.getElementById('vlProjTableHeader');
       if(thdr){
         const chg = (ok(livePrice)&&ok(basisPrice)&&basisPrice>0) ? ((livePrice/basisPrice-1)*100) : null;
-        thdr.innerHTML = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
-          '<span style="font-size:14px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:var(--text)">'+s.code+'</span>'+
-          '<span style="font-size:12px;color:var(--text2)">Sekarang <strong style="color:var(--text)">'+fmtRp(livePrice)+'</strong></span>'+
-          '<span class="vl-badge '+(ok(chg)&&chg>=0?'vl-up':'vl-dn')+'" style="font-size:11px">ACTUAL</span>'+
-          '<span style="font-size:12px;color:var(--text2)">'+basisLabel+' · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
-          (ok(chg)?'<span class="'+(chg>=0?'vl-pos':'vl-neg')+'" style="font-size:14px;font-weight:800">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
+        thdr.innerHTML = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap">'+
+          '<span style="font-size:11px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:var(--text)">'+s.code+'</span>'+
+          '<span style="font-size:9px;color:var(--text2)">Sekarang <strong style="color:var(--text)">'+fmtRp(livePrice)+'</strong></span>'+
+          '<span class="vl-badge '+(ok(chg)&&chg>=0?'vl-up':'vl-dn')+'" style="font-size:8px">ACTUAL</span>'+
+          '<span style="font-size:9px;color:var(--text2)">'+basisLabel+' · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
+          (ok(chg)?'<span class="'+(chg>=0?'vl-pos':'vl-neg')+'" style="font-size:10px;font-weight:800">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
           '</div>';
       }
 
@@ -10661,7 +10832,7 @@ body.vl-maxing{overflow:hidden}
 
     // 6. Chart utama Ringkasan: Proyeksi (line) — dibangun hanya saat mode 'proyeksi'.
     //    (Mode 'harian' pakai candlestick SMC via vlRenderHarian di card yg sama.)
-    vlEnsureRangeBar('vlProj');
+    // Range bar tidak ditampilkan di chart proyeksi (punya toggle Bulanan/Harian sendiri)
     const pm = state.projModel;
     if(_vlChartMode==='proyeksi' && pm && pm.applicable){
       const startYr = pm._startYr;
@@ -10756,7 +10927,7 @@ body.vl-maxing{overflow:hidden}
             if(/proyeksi/i.test(ctx.dataset.label||'')){ const j=ctx.dataIndex-hist.length; if(j>=0) return ' Target '+tYears[j]+': '+rp+(reached[j]?'  ✓ tercapai':''); return ' Basis: '+rp; }
             return ' Harga: '+rp; } }}},
         scales:{ y:{ min:minY, ticks:{...TICK, callback:v=>'Rp'+Math.round(v).toLocaleString('id-ID')}, grid:GRID },
-                 x:{ ticks:{...TICK, maxRotation:0, autoSkip:true, maxTicksLimit:9}, grid:{display:false} } }} });
+                 x:{ ticks:{...TICK, maxRotation:0, autoSkip:true, maxTicksLimit:7, callback:function(val,idx){var l=this.getLabelForValue(val);if(!l)return l;var p=l.split('/');if(p.length>=3){var mm=parseInt(p[0],10);var yy=String(p[2]).slice(-2);return mm+'/'+yy;}return l;}}, grid:{display:false} } }} });
     }
 
     // 7. Dividen per saham (tahunan) + yield
@@ -11769,7 +11940,7 @@ body.vl-maxing{overflow:hidden}
   function renderAll(){
     const s = curStock(); if(!s) return;
     state.model = computeModel(s, state.win);
-    renderBanner(); renderHead(); renderCards(); renderFund();
+    renderHead(); renderCards(); renderFund();
     renderProjection(); renderDividen(); renderMultiples();
     renderCompare();
     vlUpdateSubModelTitle();
@@ -11905,8 +12076,7 @@ body.vl-maxing{overflow:hidden}
 
   function showError(msg){
     state.error = true;
-    const b = document.getElementById('vlBanner');
-    if(b) b.innerHTML = '⚠️ <strong>Gagal memuat data valuasi.</strong> '+(msg||'')+' — coba muat ulang halaman.';
+    console.error('Valuasi error:', msg||'');
   }
 
   // Init: fetch valuation.json + (opsional) data.json untuk harga live.
