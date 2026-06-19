@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-16T16:59:00.131933+00:00",
+  "generated_at": "2026-06-18T17:29:14.080606+00:00",
   "source_files": [
     "valuation-batch-01.xlsx"
   ],
@@ -247,11 +247,20 @@
         "sector": "Energy",
         "industry": "Coal",
         "is_financial": false,
-        "last_price": 8275,
+        "last_price": 8050,
         "price_source": "live",
         "five_year": {
-          "applicable": false,
-          "reason": "Data 5-tahun belum lengkap (kemungkinan emiten baru listing). Input hilang: ROE 5th/tahunan, EPS growth 5th/tahunan, Sales growth 5th/tahunan",
+          "applicable": true,
+          "method": "Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%); FutureValue=blendAnnual+divYield; Potensi=Last×(1+Combine×n)",
+          "base_year": "2025",
+          "last_price": 8050,
+          "avg_window_used": 5,
+          "avg_windows_available": [
+            3,
+            5,
+            7,
+            10
+          ],
           "avg_multiples": {
             "pbv": {
               "3": 0.7767,
@@ -277,19 +286,186 @@
               "7": 0.0576,
               "10": 0.0576
             }
-          }
+          },
+          "inputs": {
+            "eps": 1608.59,
+            "sps": 0.6303290115532735,
+            "bvps": 7157.79,
+            "roe_annual": 0.1594,
+            "roe_5y": 0.0139,
+            "eps_growth_annual": -0.3473,
+            "eps_growth_5y": 0.0185,
+            "sps_growth_annual": -0.0769,
+            "sps_growth_5y": 0.0342,
+            "dpr": 0.0576,
+            "data_years": 5,
+            "fallback_used": true
+          },
+          "submodels": {
+            "pbv": {
+              "key": "pbv",
+              "applicable": true,
+              "growth": 0.043,
+              "multiple": 0.466,
+              "projection": [
+                {
+                  "year": 1,
+                  "value": 7465.52,
+                  "price_target": 3478.93
+                },
+                {
+                  "year": 2,
+                  "value": 7786.48,
+                  "price_target": 3628.5
+                },
+                {
+                  "year": 3,
+                  "value": 8121.24,
+                  "price_target": 3784.5
+                },
+                {
+                  "year": 4,
+                  "value": 8470.4,
+                  "price_target": 3947.21
+                },
+                {
+                  "year": 5,
+                  "value": 8834.56,
+                  "price_target": 4116.91
+                }
+              ],
+              "target_5y": 4117,
+              "gl_5y": -0.4886,
+              "annual": -0.0977,
+              "cagr": 0.0342,
+              "mos": -0.9554
+            },
+            "per": {
+              "key": "per",
+              "applicable": true,
+              "growth": -0.0546,
+              "multiple": 1.556,
+              "projection": [
+                {
+                  "year": 1,
+                  "value": 1520.7,
+                  "price_target": 2366.2
+                },
+                {
+                  "year": 2,
+                  "value": 1437.61,
+                  "price_target": 2236.91
+                },
+                {
+                  "year": 3,
+                  "value": 1359.06,
+                  "price_target": 2114.69
+                },
+                {
+                  "year": 4,
+                  "value": 1284.8,
+                  "price_target": 1999.14
+                },
+                {
+                  "year": 5,
+                  "value": 1214.6,
+                  "price_target": 1889.91
+                }
+              ],
+              "target_5y": 1890,
+              "gl_5y": -0.7652,
+              "annual": -0.153,
+              "cagr": -0.044,
+              "mos": -3.2595
+            },
+            "psr": {
+              "key": "psr",
+              "applicable": true,
+              "growth": 0.012,
+              "multiple": 0.29,
+              "projection": [
+                {
+                  "year": 1,
+                  "value": 0.64,
+                  "price_target": 0.18
+                },
+                {
+                  "year": 2,
+                  "value": 0.65,
+                  "price_target": 0.19
+                },
+                {
+                  "year": 3,
+                  "value": 0.65,
+                  "price_target": 0.19
+                },
+                {
+                  "year": 4,
+                  "value": 0.66,
+                  "price_target": 0.19
+                },
+                {
+                  "year": 5,
+                  "value": 0.67,
+                  "price_target": 0.19
+                }
+              ],
+              "target_5y": 0,
+              "gl_5y": -1.0,
+              "annual": -0.2,
+              "cagr": 0.0092,
+              "mos": -42367.4211
+            }
+          },
+          "future_value": -0.1185,
+          "cagr": 0.0004,
+          "combine": -0.0591,
+          "dividend_yield": 0.0115,
+          "margin_of_safety": -4238.5236,
+          "price_targets": [
+            {
+              "year": 1,
+              "target_price": 7575,
+              "gl_pct": -5.91
+            },
+            {
+              "year": 2,
+              "target_price": 7099,
+              "gl_pct": -11.81
+            },
+            {
+              "year": 3,
+              "target_price": 6624,
+              "gl_pct": -17.72
+            },
+            {
+              "year": 4,
+              "target_price": 6148,
+              "gl_pct": -23.62
+            },
+            {
+              "year": 5,
+              "target_price": 5673,
+              "gl_pct": -29.53
+            }
+          ],
+          "target_price_5y": 5673,
+          "potential_pct": -29.53,
+          "override_applied": null,
+          "data_years": 5,
+          "fallback_used": true
         },
         "wacc": {
           "risk_free": 0.068,
           "equity_risk_premium": 0.075,
-          "beta": 2.12,
-          "cost_of_equity": 0.227,
+          "beta": 2.13,
+          "cost_of_equity": 0.2277,
           "cost_of_debt": 0.0,
           "cost_of_debt_after_tax": 0.0,
           "tax_rate_effective": 0.1954,
           "weight_equity": 0.8635,
           "weight_debt": 0.1365,
-          "wacc": 0.196
+          "wacc": 0.1967
         },
         "dcf": {
           "applicable": true,
@@ -299,42 +475,42 @@
           "growth_5y": 0.08,
           "growth_5y_source": "PLACEHOLDER (menunggu rumus proyeksi 5 th pemilik)",
           "terminal_growth": 0.035,
-          "wacc": 0.196,
+          "wacc": 0.1967,
           "projected_fcf": [
             {
               "year": 1,
               "fcf": 9667080000000,
-              "pv": 8082842809365
+              "pv": 8078114815743
             },
             {
               "year": 2,
               "fcf": 10440446400000,
-              "pv": 7298888155613
+              "pv": 7290351801623
             },
             {
               "year": 3,
               "fcf": 11275682112000,
-              "pv": 6590969237510
+              "pv": 6579409998958
             },
             {
               "year": 4,
               "fcf": 12177736680960,
-              "pv": 5951711351598
+              "pv": 5937797943407
             },
             {
               "year": 5,
               "fcf": 13151955615437,
-              "pv": 5374455066660
+              "pv": 5358754724559
             }
           ],
-          "pv_fcf_sum": 33298866620747,
-          "pv_terminal": 34550068285675,
-          "enterprise_value": 67848934906422,
+          "pv_fcf_sum": 33244429284290,
+          "pv_terminal": 34300007049587,
+          "enterprise_value": 67544436333877,
           "net_debt": -1258000000000,
-          "equity_value": 69106934906422,
-          "fair_value_per_share": 8871.24,
-          "current_price": 8275,
-          "upside_pct": 7.21,
+          "equity_value": 68802436333877,
+          "fair_value_per_share": 8832.15,
+          "current_price": 8050,
+          "upside_pct": 9.72,
           "caveats": []
         },
         "ddm": {
@@ -345,42 +521,44 @@
           "growth_5y": 0.1135,
           "growth_5y_source": "g = ROE × (1 − payout) [berkelanjutan]",
           "terminal_growth": 0.035,
-          "cost_of_equity": 0.227,
+          "cost_of_equity": 0.2277,
           "projected_dps": [
             {
               "year": 1,
               "dps": 1115.05,
-              "pv": 908.76
+              "pv": 908.25
             },
             {
               "year": 2,
               "dps": 1241.61,
-              "pv": 824.7
+              "pv": 823.76
             },
             {
               "year": 3,
               "dps": 1382.52,
-              "pv": 748.41
+              "pv": 747.13
             },
             {
               "year": 4,
               "dps": 1539.43,
-              "pv": 679.18
+              "pv": 677.63
             },
             {
               "year": 5,
               "dps": 1714.15,
-              "pv": 616.35
+              "pv": 614.59
             }
           ],
-          "pv_dividends_sum": 3777.4,
-          "pv_terminal": 3322.5,
-          "fair_value_per_share": 7099.9,
-          "current_price": 8275,
-          "upside_pct": -14.2,
+          "pv_dividends_sum": 3771.35,
+          "pv_terminal": 3301.01,
+          "fair_value_per_share": 7072.36,
+          "current_price": 8050,
+          "upside_pct": -12.14,
           "caveats": []
         },
-        "notes": []
+        "notes": [
+          "AADI: five_year menggunakan fallback CAGR (data_years=5, bukan dari Excel 5y field)"
+        ]
       }
     },
     "AALI": {
@@ -993,13 +1171,13 @@
         "sector": "Consumer Non-Cyclicals",
         "industry": "Agricultural Products",
         "is_financial": false,
-        "last_price": 6100,
+        "last_price": 6200,
         "price_source": "live",
         "five_year": {
           "applicable": true,
           "method": "Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%); FutureValue=blendAnnual+divYield; Potensi=Last×(1+Combine×n)",
           "base_year": "2025",
-          "last_price": 6100,
+          "last_price": 6200,
           "avg_window_used": 5,
           "avg_windows_available": [
             3,
@@ -1038,12 +1216,14 @@
             "sps": 14924.295833333334,
             "bvps": 12238.94,
             "roe_annual": 0.0623,
-            "roe_5y": 0.24156411083270468,
+            "roe_5y": 0.2416,
             "eps_growth_annual": 0.2825,
-            "eps_growth_5y": 0.12053921746837615,
+            "eps_growth_5y": 0.1205,
             "sps_growth_annual": 0.3135,
-            "sps_growth_5y": 0.08786476877550542,
-            "dpr": 0.4798
+            "sps_growth_5y": 0.0879,
+            "dpr": 0.4798,
+            "data_years": 18,
+            "fallback_used": false
           },
           "submodels": {
             "pbv": {
@@ -1079,10 +1259,10 @@
                 }
               ],
               "target_5y": 20832,
-              "gl_5y": 2.4151,
-              "annual": 0.483,
+              "gl_5y": 2.3601,
+              "annual": 0.472,
               "cagr": 0.1614,
-              "mos": 0.7072
+              "mos": 0.7024
             },
             "per": {
               "key": "per",
@@ -1117,10 +1297,10 @@
                 }
               ],
               "target_5y": 15913,
-              "gl_5y": 1.6087,
-              "annual": 0.3217,
+              "gl_5y": 1.5667,
+              "annual": 0.3133,
               "cagr": 0.1206,
-              "mos": 0.6167
+              "mos": 0.6104
             },
             "psr": {
               "key": "psr",
@@ -1155,47 +1335,49 @@
                 }
               ],
               "target_5y": 17610,
-              "gl_5y": 1.8869,
-              "annual": 0.3774,
+              "gl_5y": 1.8403,
+              "annual": 0.3681,
               "cagr": 0.1051,
-              "mos": 0.6536
+              "mos": 0.6479
             }
           },
-          "future_value": 0.4681,
+          "future_value": 0.4573,
           "cagr": 0.1394,
-          "combine": 0.3038,
-          "dividend_yield": 0.0601,
-          "margin_of_safety": 0.6656,
+          "combine": 0.2984,
+          "dividend_yield": 0.0592,
+          "margin_of_safety": 0.6602,
           "price_targets": [
             {
               "year": 1,
-              "target_price": 7953,
-              "gl_pct": 30.38
+              "target_price": 8050,
+              "gl_pct": 29.84
             },
             {
               "year": 2,
-              "target_price": 9806,
-              "gl_pct": 60.75
+              "target_price": 9900,
+              "gl_pct": 59.68
             },
             {
               "year": 3,
-              "target_price": 11659,
-              "gl_pct": 91.13
+              "target_price": 11750,
+              "gl_pct": 89.51
             },
             {
               "year": 4,
-              "target_price": 13512,
-              "gl_pct": 121.5
+              "target_price": 13600,
+              "gl_pct": 119.35
             },
             {
               "year": 5,
-              "target_price": 15365,
-              "gl_pct": 151.88
+              "target_price": 15450,
+              "gl_pct": 149.19
             }
           ],
-          "target_price_5y": 15365,
-          "potential_pct": 151.88,
-          "override_applied": null
+          "target_price_5y": 15450,
+          "potential_pct": 149.19,
+          "override_applied": null,
+          "data_years": 18,
+          "fallback_used": false
         },
         "wacc": {
           "risk_free": 0.068,
@@ -1251,8 +1433,8 @@
           "net_debt": -4704000000000,
           "equity_value": 38390269453674,
           "fair_value_per_share": 19994.93,
-          "current_price": 6100,
-          "upside_pct": 227.79,
+          "current_price": 6200,
+          "upside_pct": 222.5,
           "caveats": []
         },
         "ddm": {
@@ -1294,8 +1476,8 @@
           "pv_dividends_sum": 1602.99,
           "pv_terminal": 2035.11,
           "fair_value_per_share": 3638.1,
-          "current_price": 6100,
-          "upside_pct": -40.36,
+          "current_price": 6200,
+          "upside_pct": -41.32,
           "caveats": []
         },
         "notes": []
@@ -1911,13 +2093,13 @@
         "sector": "Basic Materials",
         "industry": "Metals & Minerals",
         "is_financial": false,
-        "last_price": 3130,
+        "last_price": 3170,
         "price_source": "live",
         "five_year": {
           "applicable": true,
           "method": "Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%); FutureValue=blendAnnual+divYield; Potensi=Last×(1+Combine×n)",
           "base_year": "2025",
-          "last_price": 3130,
+          "last_price": 3170,
           "avg_window_used": 5,
           "avg_windows_available": [
             3,
@@ -1961,7 +2143,9 @@
             "eps_growth_5y": 0.4437,
             "sps_growth_annual": 0.2233,
             "sps_growth_5y": 0.2533,
-            "dpr": 0.7141
+            "dpr": 0.7141,
+            "data_years": 18,
+            "fallback_used": false
           },
           "submodels": {
             "pbv": {
@@ -1997,10 +2181,10 @@
                 }
               ],
               "target_5y": 9821,
-              "gl_5y": 2.1375,
-              "annual": 0.4275,
+              "gl_5y": 2.098,
+              "annual": 0.4196,
               "cagr": 0.2309,
-              "mos": 0.6813
+              "mos": 0.6772
             },
             "per": {
               "key": "per",
@@ -2035,10 +2219,10 @@
                 }
               ],
               "target_5y": 39645,
-              "gl_5y": 11.6661,
-              "annual": 2.3332,
+              "gl_5y": 11.5062,
+              "annual": 2.3012,
               "cagr": 0.4201,
-              "mos": 0.921
+              "mos": 0.92
             },
             "psr": {
               "key": "psr",
@@ -2073,46 +2257,46 @@
                 }
               ],
               "target_5y": 13505,
-              "gl_5y": 3.3147,
-              "annual": 0.6629,
+              "gl_5y": 3.2602,
+              "annual": 0.652,
               "cagr": 0.1934,
-              "mos": 0.7682
+              "mos": 0.7653
             }
           },
-          "future_value": 1.2844,
+          "future_value": 1.2657,
           "cagr": 0.3028,
-          "combine": 0.7936,
-          "dividend_yield": 0.0711,
-          "margin_of_safety": 0.7859,
+          "combine": 0.7842,
+          "dividend_yield": 0.0702,
+          "margin_of_safety": 0.7831,
           "price_targets": [
             {
               "year": 1,
-              "target_price": 5614,
-              "gl_pct": 79.36
+              "target_price": 5656,
+              "gl_pct": 78.42
             },
             {
               "year": 2,
-              "target_price": 8098,
-              "gl_pct": 158.72
+              "target_price": 8142,
+              "gl_pct": 156.85
             },
             {
               "year": 3,
-              "target_price": 10582,
-              "gl_pct": 238.09
+              "target_price": 10628,
+              "gl_pct": 235.27
             },
             {
               "year": 4,
-              "target_price": 13066,
-              "gl_pct": 317.45
+              "target_price": 13114,
+              "gl_pct": 313.7
             },
             {
               "year": 5,
-              "target_price": 15550,
-              "gl_pct": 396.81
+              "target_price": 15600,
+              "gl_pct": 392.12
             }
           ],
-          "target_price_5y": 15550,
-          "potential_pct": 396.81,
+          "target_price_5y": 15600,
+          "potential_pct": 392.12,
           "override_applied": {
             "source": "Sheet final ANTM 2025 (Last Price 3150). Per-share = Profit/Equity/Sales / Shares (24.030 jt). Diverifikasi cocok 100% dgn rumus sheet (Combine 78.89%, MoS 78.45%).",
             "note": "sps_growth_5y = 25.33% (BUKAN 97.65%; nilai 97.65% di file template lama adalah typo). g_sps = 0.8*25.33% + 0.2*22.33% = 24.73% sesuai sel 'SPS Growth' di sheet.",
@@ -2135,7 +2319,9 @@
               "psr"
             ],
             "window": 5
-          }
+          },
+          "data_years": 18,
+          "fallback_used": false
         },
         "wacc": {
           "risk_free": 0.068,
@@ -2191,8 +2377,8 @@
           "net_debt": -3450000000000,
           "equity_value": 33967941415648,
           "fair_value_per_share": 1413.56,
-          "current_price": 3130,
-          "upside_pct": -54.84,
+          "current_price": 3170,
+          "upside_pct": -55.41,
           "caveats": []
         },
         "ddm": {
@@ -2234,8 +2420,8 @@
           "pv_dividends_sum": 722.49,
           "pv_terminal": 651.32,
           "fair_value_per_share": 1373.81,
-          "current_price": 3130,
-          "upside_pct": -56.11,
+          "current_price": 3170,
+          "upside_pct": -56.66,
           "caveats": []
         },
         "notes": [
@@ -2853,13 +3039,13 @@
         "sector": "Financials",
         "industry": "Banks",
         "is_financial": true,
-        "last_price": 6275,
+        "last_price": 6075,
         "price_source": "live",
         "five_year": {
           "applicable": true,
           "method": "Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%); FutureValue=blendAnnual+divYield; Potensi=Last×(1+Combine×n)",
           "base_year": "2025",
-          "last_price": 6275,
+          "last_price": 6075,
           "avg_window_used": 5,
           "avg_windows_available": [
             3,
@@ -2898,12 +3084,14 @@
             "sps": 961.8166693705386,
             "bvps": 2283.24,
             "roe_annual": 0.209,
-            "roe_5y": 0.044769182268443286,
+            "roe_5y": 0.0448,
             "eps_growth_annual": 0.0493,
-            "eps_growth_5y": -0.15763072062784456,
+            "eps_growth_5y": -0.1576,
             "sps_growth_annual": 0.0514,
-            "sps_growth_5y": -0.21300231504963796,
-            "dpr": 0.6536
+            "sps_growth_5y": -0.213,
+            "dpr": 0.6536,
+            "data_years": 18,
+            "fallback_used": false
           },
           "submodels": {
             "pbv": {
@@ -2939,10 +3127,10 @@
                 }
               ],
               "target_5y": 14646,
-              "gl_5y": 1.334,
-              "annual": 0.2668,
+              "gl_5y": 1.4109,
+              "annual": 0.2822,
               "cagr": 0.0616,
-              "mos": 0.5716
+              "mos": 0.5852
             },
             "per": {
               "key": "per",
@@ -2977,10 +3165,10 @@
                 }
               ],
               "target_5y": 5907,
-              "gl_5y": -0.0587,
-              "annual": -0.0117,
+              "gl_5y": -0.0277,
+              "annual": -0.0055,
               "cagr": -0.0941,
-              "mos": -0.0624
+              "mos": -0.0285
             },
             "psr": {
               "key": "psr",
@@ -3015,47 +3203,49 @@
                 }
               ],
               "target_5y": 4277,
-              "gl_5y": -0.3184,
-              "annual": -0.0637,
+              "gl_5y": -0.296,
+              "annual": -0.0592,
               "cagr": -0.1303,
-              "mos": -0.4672
+              "mos": -0.4205
             }
           },
-          "future_value": 0.171,
+          "future_value": 0.1832,
           "cagr": -0.0199,
-          "combine": 0.0755,
-          "dividend_yield": 0.0486,
-          "margin_of_safety": 0.2141,
+          "combine": 0.0817,
+          "dividend_yield": 0.0502,
+          "margin_of_safety": 0.2392,
           "price_targets": [
             {
               "year": 1,
-              "target_price": 6749,
-              "gl_pct": 7.55
+              "target_price": 6571,
+              "gl_pct": 8.17
             },
             {
               "year": 2,
-              "target_price": 7223,
-              "gl_pct": 15.11
+              "target_price": 7067,
+              "gl_pct": 16.33
             },
             {
               "year": 3,
-              "target_price": 7697,
-              "gl_pct": 22.66
+              "target_price": 7563,
+              "gl_pct": 24.5
             },
             {
               "year": 4,
-              "target_price": 8171,
-              "gl_pct": 30.22
+              "target_price": 8059,
+              "gl_pct": 32.66
             },
             {
               "year": 5,
-              "target_price": 8645,
-              "gl_pct": 37.77
+              "target_price": 8555,
+              "gl_pct": 40.83
             }
           ],
-          "target_price_5y": 8645,
-          "potential_pct": 37.77,
-          "override_applied": null
+          "target_price_5y": 8555,
+          "potential_pct": 40.83,
+          "override_applied": null,
+          "data_years": 18,
+          "fallback_used": false
         },
         "wacc": {
           "risk_free": 0.068,
@@ -3112,8 +3302,8 @@
           "pv_dividends_sum": 1388.71,
           "pv_terminal": 2660.57,
           "fair_value_per_share": 4049.28,
-          "current_price": 6275,
-          "upside_pct": -35.47,
+          "current_price": 6075,
+          "upside_pct": -33.35,
           "caveats": []
         },
         "notes": []
@@ -3729,13 +3919,13 @@
         "sector": "Financials",
         "industry": "Banks",
         "is_financial": true,
-        "last_price": 2990,
+        "last_price": 2960,
         "price_source": "live",
         "five_year": {
           "applicable": true,
           "method": "Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%); FutureValue=blendAnnual+divYield; Potensi=Last×(1+Combine×n)",
           "base_year": "2025",
-          "last_price": 2990,
+          "last_price": 2960,
           "avg_window_used": 5,
           "avg_windows_available": [
             3,
@@ -3774,12 +3964,14 @@
             "sps": 1370.9644233306942,
             "bvps": 2138.0,
             "roe_annual": 0.1791,
-            "roe_5y": 0.10503435974065045,
+            "roe_5y": 0.105,
             "eps_growth_annual": -0.0549,
-            "eps_growth_5y": 0.19837992627176715,
+            "eps_growth_5y": 0.1984,
             "sps_growth_annual": 0.0427,
-            "sps_growth_5y": 0.03560358627703519,
-            "dpr": 0.8598
+            "sps_growth_5y": 0.0356,
+            "dpr": 0.8598,
+            "data_years": 18,
+            "fallback_used": false
           },
           "submodels": {
             "pbv": {
@@ -3815,10 +4007,10 @@
                 }
               ],
               "target_5y": 8366,
-              "gl_5y": 1.7981,
-              "annual": 0.3596,
+              "gl_5y": 1.8265,
+              "annual": 0.3653,
               "cagr": 0.0948,
-              "mos": 0.6426
+              "mos": 0.6462
             },
             "per": {
               "key": "per",
@@ -3853,10 +4045,10 @@
                 }
               ],
               "target_5y": 10307,
-              "gl_5y": 2.4473,
-              "annual": 0.4895,
+              "gl_5y": 2.4822,
+              "annual": 0.4964,
               "cagr": 0.1165,
-              "mos": 0.7099
+              "mos": 0.7128
             },
             "psr": {
               "key": "psr",
@@ -3891,47 +4083,49 @@
                 }
               ],
               "target_5y": 6308,
-              "gl_5y": 1.1096,
-              "annual": 0.2219,
+              "gl_5y": 1.1309,
+              "annual": 0.2262,
               "cagr": 0.0295,
-              "mos": 0.526
+              "mos": 0.5307
             }
           },
-          "future_value": 0.5053,
+          "future_value": 0.5124,
           "cagr": 0.0969,
-          "combine": 0.3011,
-          "dividend_yield": 0.1075,
-          "margin_of_safety": 0.6579,
+          "combine": 0.3047,
+          "dividend_yield": 0.1086,
+          "margin_of_safety": 0.6613,
           "price_targets": [
             {
               "year": 1,
-              "target_price": 3890,
-              "gl_pct": 30.11
+              "target_price": 3862,
+              "gl_pct": 30.47
             },
             {
               "year": 2,
-              "target_price": 4791,
-              "gl_pct": 60.22
+              "target_price": 4764,
+              "gl_pct": 60.94
             },
             {
               "year": 3,
-              "target_price": 5691,
-              "gl_pct": 90.33
+              "target_price": 5666,
+              "gl_pct": 91.4
             },
             {
               "year": 4,
-              "target_price": 6591,
-              "gl_pct": 120.45
+              "target_price": 6567,
+              "gl_pct": 121.87
             },
             {
               "year": 5,
-              "target_price": 7492,
-              "gl_pct": 150.56
+              "target_price": 7469,
+              "gl_pct": 152.34
             }
           ],
-          "target_price_5y": 7492,
-          "potential_pct": 150.56,
-          "override_applied": null
+          "target_price_5y": 7469,
+          "potential_pct": 152.34,
+          "override_applied": null,
+          "data_years": 18,
+          "fallback_used": false
         },
         "wacc": {
           "risk_free": 0.068,
@@ -3988,8 +4182,8 @@
           "pv_dividends_sum": 1192.62,
           "pv_terminal": 1581.07,
           "fair_value_per_share": 2773.69,
-          "current_price": 2990,
-          "upside_pct": -7.23,
+          "current_price": 2960,
+          "upside_pct": -6.29,
           "caveats": []
         },
         "notes": []
