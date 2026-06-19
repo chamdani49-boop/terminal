@@ -11502,17 +11502,19 @@ body.vl-maxing{overflow:hidden}
       var headline='', headlineType='', verdict='', details=[];
       var revCagr = cagr(last.total_revenue, first.total_revenue, n-1);
       var niCagr  = cagr(last.net_income, first.net_income, n-1);
-      var priceCagr = cagr(last.price, first.price, n-1);
+      var liveP = effLast(s).price;
+      var priceCagr = cagr(ok(liveP)&&liveP>0 ? liveP : last.price, first.price, n-1);
       // Peak-price anomaly detection: check if price dropped significantly from its peak within the window
       var prices = yrs.map(function(y){ return (ann[y]||{}).price; }).filter(function(v){ return ok(v); });
+      if(ok(liveP)&&liveP>0) prices.push(liveP);
       var peakPrice = prices.length>0 ? Math.max.apply(null, prices) : null;
-      var currentPrice = prices.length>0 ? prices[prices.length-1] : null;
+      var currentPrice = ok(liveP)&&liveP>0 ? liveP : (prices.length>0 ? prices[prices.length-1] : null);
       var dropFromPeak = (ok(peakPrice)&&ok(currentPrice)&&peakPrice>0) ? (currentPrice - peakPrice) / peakPrice * 100 : null;
 
-      if(ok(dropFromPeak)&&dropFromPeak<-30&&ok(revCagr)&&revCagr>0&&ok(niCagr)&&niCagr>-5){
+      if(ok(dropFromPeak)&&dropFromPeak<-20&&ok(revCagr)&&revCagr>0&&ok(niCagr)&&niCagr>-5){
         headline='HARGA TERJUN DARI PUNCAK, FUNDAMENTAL MASIH SOLID'; headlineType='bullish';
         verdict='Bisnisnya masih oke (pendapatan naik, laba gak collapse), tapi harganya sudah turun '+Math.abs(Math.round(dropFromPeak))+'% dari puncak. Ini biasanya tanda saham lagi diskon besar.';
-      } else if(ok(dropFromPeak)&&dropFromPeak<-30&&ok(revCagr)&&revCagr>0){
+      } else if(ok(dropFromPeak)&&dropFromPeak<-20&&ok(revCagr)&&revCagr>0){
         headline='HARGA TERJUN DARI PUNCAK TAPI PENDAPATAN NAIK'; headlineType='bullish';
         verdict='Harga anjlok '+Math.abs(Math.round(dropFromPeak))+'% tapi bisnisnya masih jalan. Artinya harga sekarang bisa jadi kemurahan karena market terlalu panik.';
       } else if(ok(priceCagr)&&ok(revCagr)&&priceCagr<-10&&revCagr>2&&ok(niCagr)&&niCagr>-3){
@@ -11577,7 +11579,8 @@ body.vl-maxing{overflow:hidden}
     (function(){
       var headline='', headlineType='', verdict='', details=[];
       var roes = yrs.map(function(y){ return (ann[y]||{}).roe; }).filter(function(v){return ok(v);});
-      var priceCagrRoe = cagr(last.price, first.price, n-1);
+      var livePRoe = effLast(s).price;
+      var priceCagrRoe = cagr(ok(livePRoe)&&livePRoe>0 ? livePRoe : last.price, first.price, n-1);
       if(roes.length>=2){
         var avg = roes.reduce(function(a,b){return a+b;},0)/roes.length;
         var rFirst = roes[0], rLast = roes[roes.length-1];
@@ -11620,7 +11623,8 @@ body.vl-maxing{overflow:hidden}
       var pbvs = yrs.map(function(y){ return (ann[y]||{}).pbv; }).filter(function(v){return ok(v)&&v>0;});
       var pers = yrs.map(function(y){ return (ann[y]||{}).per; }).filter(function(v){return ok(v)&&v>0;});
       var psrs = yrs.map(function(y){ return (ann[y]||{}).psr; }).filter(function(v){return ok(v)&&v>0;});
-      var priceCagrR = cagr(last.price, first.price, n-1);
+      var livePR = effLast(s).price;
+      var priceCagrR = cagr(ok(livePR)&&livePR>0 ? livePR : last.price, first.price, n-1);
       var murahCount=0, mahalCount=0;
       function cnt(arr){ if(arr.length<2) return; var avg=arr.reduce(function(a,b){return a+b;},0)/arr.length; var cur=arr[arr.length-1]; var pct=((cur-avg)/avg)*100; if(pct>20)mahalCount++; else if(pct<-20)murahCount++; }
       cnt(pbvs); cnt(pers); cnt(psrs);
@@ -11661,7 +11665,8 @@ body.vl-maxing{overflow:hidden}
       var epsCagr = cagr(last.eps, first.eps, n-1);
       var spsCagr = cagr(last.sps, first.sps, n-1);
       var bvCagr  = cagr(last.bvps, first.bvps, n-1);
-      var priceCagrE = cagr(last.price, first.price, n-1);
+      var livePE = effLast(s).price;
+      var priceCagrE = cagr(ok(livePE)&&livePE>0 ? livePE : last.price, first.price, n-1);
       if(ok(epsCagr)&&ok(priceCagrE)&&epsCagr>3&&priceCagrE<-10){
         headline='EPS NAIK TERUS TAPI HARGA MALAH TERJUN'; headlineType='bullish';
         verdict='Laba per saham naik terus, artinya kamu sebagai pemegang saham makin untung tiap tahun. Tapi harga malah turun, jadi saham ini makin murah dibanding labanya.';
