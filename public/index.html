@@ -10160,9 +10160,11 @@ body.vl-maxing{overflow:hidden}
     const tbody = document.querySelector('#vlFundTable tbody');
     if(!head || !tbody) return;
     const yearsDesc = annualYears(s).slice().reverse();   // terbaru → terlama (…→2008)
-    // Kolom LENGKAP & dibalik: Q1 + TTM dinamis (Q1x4) + semua tahun (apa adanya).
+    // Kolom LENGKAP & dibalik: Q1–Q4 dinamis + TTM dinamis (Q1x4) + semua tahun (apa adanya).
     const cols = [];
-    if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'Q1',           a:s.q1 });
+    ['q1','q2','q3','q4'].forEach(function(qk,i){
+      if(s[qk] && Object.keys(s[qk]).length) cols.push({ key:qk, label:qk==='q1'?(s.q_label||'Q1').toUpperCase():'Q'+(i+1), a:s[qk] });
+    });
     if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:vlTtmLabel(s),  a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';

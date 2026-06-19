@@ -129,9 +129,12 @@ def read_workbook(path):
 
 def parse_sheet(name, grid):
     col_period = {col: clean_period_label(grid.get((LABEL_ROW, col))) for col in range(9, 27)}
-    q1, annualized, annual = {}, {}, {}
+    q1, q2, q3, q4, annualized, annual = {}, {}, {}, {}, {}, {}
     for row, field in ROW_METRICS.items():
         q1[field] = to_number(grid.get((row, 4)))           # D
+        q2[field] = to_number(grid.get((row, 5)))           # E
+        q3[field] = to_number(grid.get((row, 6)))           # F
+        q4[field] = to_number(grid.get((row, 7)))           # G
         annualized[field] = to_number(grid.get((row, 8)))   # H
         for col in range(9, 27):                            # I..Z
             period = col_period.get(col)
@@ -139,7 +142,7 @@ def parse_sheet(name, grid):
                 annual.setdefault(period, {})[field] = to_number(grid.get((row, col)))
     code_in_sheet = grid.get((1, 3))
     q_label = grid.get((1, 4))   # sel D1 = penanda kuartal tahun berjalan (Q1/Q2/Q3)
-    return {
+    result = {
         'code': name.strip().upper(),
         'code_in_sheet': (str(code_in_sheet).strip().upper() if code_in_sheet else None),
         'q_label': (str(q_label).strip() if q_label else None),
@@ -147,6 +150,13 @@ def parse_sheet(name, grid):
         'annualized': annualized,   # = Q1 x 4 (run-rate, BUKAN TTM) — sesuai keputusan: dipakai apa adanya
         'annual': annual,
     }
+    if any(v is not None for v in q2.values()):
+        result['q2'] = q2
+    if any(v is not None for v in q3.values()):
+        result['q3'] = q3
+    if any(v is not None for v in q4.values()):
+        result['q4'] = q4
+    return result
 
 
 # ════════════════════════════ MESIN VALUASI ═════════════════════════════════
