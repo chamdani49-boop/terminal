@@ -11513,65 +11513,65 @@ body.vl-maxing{overflow:hidden}
 
       if(ok(dropFromPeak)&&dropFromPeak<-30&&ok(revCagr)&&revCagr>0&&ok(niCagr)&&niCagr>-5){
         headline='HARGA TERJUN DARI PUNCAK, FUNDAMENTAL MASIH SOLID'; headlineType='bullish';
-        verdict='Harga turun '+Math.abs(Math.round(dropFromPeak))+'% dari puncaknya, tapi pendapatan masih tumbuh dan laba tidak collapse. Anomali harga vs fundamental - potensi mispriced.';
+        verdict='Bisnisnya masih oke (pendapatan naik, laba gak collapse), tapi harganya sudah turun '+Math.abs(Math.round(dropFromPeak))+'% dari puncak. Ini biasanya tanda saham lagi diskon besar.';
       } else if(ok(dropFromPeak)&&dropFromPeak<-30&&ok(revCagr)&&revCagr>0){
         headline='HARGA TERJUN DARI PUNCAK TAPI PENDAPATAN NAIK'; headlineType='bullish';
-        verdict='Harga anjlok '+Math.abs(Math.round(dropFromPeak))+'% dari puncak di window ini, padahal pendapatan masih tumbuh. Cek apakah market over-react.';
+        verdict='Harga anjlok '+Math.abs(Math.round(dropFromPeak))+'% tapi bisnisnya masih jalan. Artinya harga sekarang bisa jadi kemurahan karena market terlalu panik.';
       } else if(ok(priceCagr)&&ok(revCagr)&&priceCagr<-10&&revCagr>2&&ok(niCagr)&&niCagr>-3){
         headline='HARGA TERJUN TAPI FUNDAMENTAL SOLID'; headlineType='bullish';
-        verdict='Potensi salah harga (mispriced). Fundamental masih solid tapi market menghargai terlalu rendah.';
+        verdict='Harga sekarang kemungkinan kemurahan. Bisnis masih jalan bagus, tapi market belum ngasih harga yang pantas. Seperti barang bagus lagi obral.';
       } else if(ok(priceCagr)&&ok(revCagr)&&priceCagr<-5&&revCagr>0&&ok(niCagr)&&niCagr>0){
         headline='HARGA TURUN, PENDAPATAN & LABA MASIH NAIK'; headlineType='bullish';
-        verdict='Fundamental tetap tumbuh walau harga terkoreksi. Ada peluang value.';
+        verdict='Bisnisnya masih tumbuh, tapi harga sudah turun. Artinya kamu bisa dapat saham ini lebih murah dari sebelumnya, padahal kinerjanya tetap bagus.';
       } else if(ok(priceCagr)&&ok(revCagr)&&priceCagr<-3&&revCagr>0){
         headline='HARGA MELEMAH TAPI PENDAPATAN TETAP TUMBUH'; headlineType='bullish';
-        verdict='Pendapatan masih naik meski harga turun. Perlu pantau apakah koreksi berlanjut.';
+        verdict='Pendapatan masih naik tapi harga mulai turun. Artinya harga sekarang mulai lebih menarik dibanding sebelumnya. Pantau terus, bisa jadi peluang.';
       } else if(ok(priceCagr)&&ok(revCagr)&&ok(niCagr)&&priceCagr>revCagr+10&&priceCagr>niCagr+10){
         headline='HARGA NAIK JAUH LEBIH CEPAT DARI FUNDAMENTAL'; headlineType='bearish';
-        verdict='Valuasi stretched. Harga naik tanpa ditopang pertumbuhan fundamental setara.';
+        verdict='Harga sekarang kemungkinan kemahalan. Harga naik terlalu cepat dibanding pertumbuhan bisnisnya. Kalau kamu beli sekarang, kamu bayar premium tinggi.';
       } else if(ok(revCagr)&&ok(niCagr)&&revCagr<-3&&niCagr<-5){
         headline='FUNDAMENTAL MENURUN: PENDAPATAN & LABA TURUN'; headlineType='bearish';
-        verdict='Bisnis sedang melemah. Koreksi harga bisa jadi wajar.';
+        verdict='Bisnisnya lagi gak bagus. Pendapatan dan laba sama-sama turun. Kalau harga ikut turun, itu wajar karena memang bisnisnya melemah.';
       } else if(ok(revCagr)&&ok(niCagr)&&ok(priceCagr)&&priceCagr>0&&revCagr>0&&niCagr>0&&Math.abs(priceCagr-revCagr)<7){
         headline='TREN SEHAT: HARGA SEJALAN DENGAN FUNDAMENTAL'; headlineType='neutral';
-        verdict='Pertumbuhan seimbang antara harga dan fundamental.';
+        verdict='Harga sekarang wajar. Harga naik sejalan dengan pertumbuhan bisnisnya, jadi gak kemurahan tapi juga gak kemahalan.';
       } else if(ok(revCagr)&&revCagr>5){
-        headline='PENDAPATAN TUMBUH KUAT '+n+' TAHUN TERAKHIR'; headlineType='neutral'; verdict='';
+        headline='PENDAPATAN TUMBUH KUAT '+n+' TAHUN TERAKHIR'; headlineType='neutral'; verdict='Bisnisnya tumbuh bagus. Harga sekarang tergantung seberapa market sudah menghargai pertumbuhan ini.';
       } else { headline='Revenue & Net Income: '+n+' Tahun'; headlineType=''; verdict=''; }
       // Describe revenue trend in plain language
       if(ok(revCagr)){
-        if(revCagr>8) details.push('Lihat di chart: <b>Pendapatan naik terus</b> '+n+' tahun terakhir, pertumbuhan kuat.');
-        else if(revCagr>2) details.push('Pendapatan <b>konsisten naik</b> '+n+' tahun terakhir, meski tidak agresif.');
-        else if(revCagr>-2) details.push('Pendapatan <b>stagnan</b> — hampir tidak tumbuh selama '+n+' tahun.');
-        else details.push('Pendapatan <b>menurun</b> selama '+n+' tahun terakhir. Bisnis menyusut.');
+        if(revCagr>8) details.push('Coba lihat di chart: batang <b>pendapatan naik terus</b> '+n+' tahun terakhir. Artinya bisnis ini berkembang, makin banyak uang masuk.');
+        else if(revCagr>2) details.push('Pendapatan <b>konsisten naik</b> walau pelan. Bisnis jalan stabil, gak eksplosif tapi juga gak mengkhawatirkan.');
+        else if(revCagr>-2) details.push('Pendapatan <b>hampir gak tumbuh</b> selama '+n+' tahun. Bisnis jalan di tempat, gak berkembang.');
+        else details.push('Pendapatan <b>malah turun</b> selama '+n+' tahun. Ini sinyal bisnisnya lagi bermasalah.');
       }
       // Describe net income trend
       if(ok(niCagr)){
-        if(niCagr>8) details.push('Laba bersih <b>tumbuh kencang</b> — mesin uang makin besar.');
-        else if(niCagr>2) details.push('Laba bersih <b>masih naik</b>, walau pertumbuhannya melambat.');
-        else if(niCagr>-2) details.push('Laba bersih <b>flat</b> — tidak naik tapi juga tidak turun signifikan.');
-        else details.push('Laba bersih <b>turun</b>. Perlu dicek apakah sementara atau tren.');
+        if(niCagr>8) details.push('Laba bersih <b>naik kencang</b>. Artinya perusahaan makin jago cari untung, dan kamu sebagai investor ikut dapat manfaatnya.');
+        else if(niCagr>2) details.push('Laba bersih <b>masih naik</b>, walau gak eksplosif. Yang penting masih positif.');
+        else if(niCagr>-2) details.push('Laba bersih <b>flat</b>. Gak naik tapi gak turun juga. Bisnis gak kemana-mana.');
+        else details.push('Laba bersih <b>turun</b>. Ini artinya perusahaan makin susah cari untung. Hati-hati.');
       }
       // Describe price vs fundamental
       if(ok(priceCagr)&&ok(revCagr)){
-        if(priceCagr<-10&&revCagr>0) details.push('Yang menarik: <b>harga anjlok padahal pendapatan masih naik</b>. Market terlalu pesimis?');
-        else if(priceCagr>revCagr+10) details.push('Yang perlu diperhatikan: <b>harga naik jauh lebih cepat dari pendapatan</b>. Hati-hati.');
-        else if(priceCagr<-3&&revCagr>0) details.push('Harga turun tapi pendapatan masih naik — <b>ada gap antara harga dan bisnis</b>.');
+        if(priceCagr<-10&&revCagr>0) details.push('Perhatikan: <b>harga turun padahal pendapatan masih naik</b>. Ini bisa jadi kesempatan kalau kamu yakin bisnisnya tetap bagus ke depan.');
+        else if(priceCagr>revCagr+10) details.push('Hati-hati: <b>harga naik jauh lebih cepat dari pendapatan</b>. Artinya kamu bayar mahal untuk bisnis yang pertumbuhannya biasa saja.');
+        else if(priceCagr<-3&&revCagr>0) details.push('Harga turun tapi pendapatan masih naik. <b>Ada gap antara harga dan kinerja bisnis</b>, bisa jadi peluang.');
       }
       // Peak-price drop context
       if(ok(dropFromPeak)&&dropFromPeak<-30){
-        details.push('Harga sekarang <b>turun '+Math.abs(Math.round(dropFromPeak))+'% dari puncaknya</b> dalam window ini. Puncak tertinggi: Rp'+Math.round(peakPrice).toLocaleString()+', sekarang: Rp'+Math.round(currentPrice).toLocaleString()+'.');
+        details.push('Fakta menarik: harga sekarang <b>turun '+Math.abs(Math.round(dropFromPeak))+'% dari harga tertingginya</b>. Dulu pernah Rp'+Math.round(peakPrice).toLocaleString()+', sekarang cuma Rp'+Math.round(currentPrice).toLocaleString()+'.');
       }
       // Margins in plain language
       var margins = yrs.map(function(y){ var a=ann[y]||{}; return (ok(a.net_income)&&ok(a.total_revenue)&&a.total_revenue>0)?a.net_income/a.total_revenue*100:null; });
       var validM = margins.filter(function(v){return ok(v);});
       if(validM.length>=2){ var mF=validM[0],mL=validM[validM.length-1],diff=mL-mF;
-        if(diff>3) details.push('Margin laba <b>membaik</b> — dulu '+mF.toFixed(0)+'%, sekarang '+mL.toFixed(0)+'%. Bisnis makin efisien.');
-        else if(diff<-3) details.push('Margin laba <b>menyusut</b> — dulu '+mF.toFixed(0)+'%, sekarang '+mL.toFixed(0)+'%. Perlu dicek apakah karena ekspansi atau efisiensi turun.');
-        else details.push('Margin laba <b>stabil</b> di kisaran '+mL.toFixed(0)+'%.');
+        if(diff>3) details.push('Margin laba <b>membaik</b> (dulu '+mF.toFixed(0)+'%, sekarang '+mL.toFixed(0)+'%). Artinya dari setiap Rp100 pendapatan, sekarang lebih banyak yang jadi untung.');
+        else if(diff<-3) details.push('Margin laba <b>menyusut</b> (dulu '+mF.toFixed(0)+'%, sekarang '+mL.toFixed(0)+'%). Biaya naik lebih cepat dari pendapatan.');
+        else details.push('Margin laba <b>stabil</b> di kisaran '+mL.toFixed(0)+'%. Konsisten, gak banyak berubah.');
       }
       var losses = yrs.filter(function(y){ return ok((ann[y]||{}).net_income)&&ann[y].net_income<0; });
-      if(losses.length>0) details.push('Ada <b>tahun rugi</b> ('+losses.join(', ')+') — cek apakah kejadian satu kali atau berulang.');
+      if(losses.length>0) details.push('Catatan: ada <b>tahun rugi</b> ('+losses.join(', ')+'). Cek apakah itu kejadian luar biasa atau masalah berulang.');
       _vlInsights.rev={headline:headline,headlineType:headlineType,verdict:verdict,details:details.join('<br>')};
     })();
 
@@ -11585,32 +11585,32 @@ body.vl-maxing{overflow:hidden}
         var rFirst = roes[0], rLast = roes[roes.length-1];
         if(ok(priceCagrRoe)&&priceCagrRoe<-10&&rLast>=12){
           headline='ROE TINGGI '+rLast.toFixed(1)+'% TAPI HARGA TERJUN'; headlineType='bullish';
-          verdict='Bisnis masih sangat profitable (ROE '+rLast.toFixed(1)+'%) tapi market menghukum harganya. Peluang beli.';
+          verdict='Perusahaan ini masih jago cari untung (ROE '+rLast.toFixed(1)+'%), tapi harganya lagi murah banget. Seperti barang branded lagi diskon gede.';
         } else if(ok(priceCagrRoe)&&priceCagrRoe<-5&&rLast>=avg*0.9&&rLast>=10){
           headline='ROE KONSISTEN SOLID, HARGA TERKOREKSI'; headlineType='bullish';
-          verdict='Kualitas bisnis terjaga (ROE stabil) tapi harga diskon. Valuasi menarik.';
+          verdict='Perusahaan tetap pintar cari untung, tapi harga lagi turun. Artinya kamu bisa dapat saham perusahaan bagus di harga lebih murah dari biasanya.';
         } else if(rLast<8&&rLast<avg*0.7){
           headline='ROE ANJLOK KE '+rLast.toFixed(1)+'% (PROFITABILITAS MENURUN)'; headlineType='bearish';
-          verdict='Efisiensi bisnis menurun signifikan. Perlu investigasi penyebab.';
+          verdict='Perusahaan makin susah cari untung. Kalau ini berlanjut, harga bisa turun lebih dalam karena bisnisnya memang kurang bagus.';
         } else if(rLast>avg*1.2&&rLast>15){
           headline='ROE TINGGI '+rLast.toFixed(1)+'% - BISNIS SANGAT EFISIEN'; headlineType='neutral';
-          verdict='Perusahaan menghasilkan return ekuitas yang sangat baik.';
+          verdict='Perusahaan ini sangat pintar pakai modal untuk menghasilkan laba. ROE tinggi biasanya bikin harga saham naik jangka panjang.';
         } else { headline='ROE Rata-rata: '+avg.toFixed(1)+'%'; headlineType=''; verdict=''; }
-        details.push('Rata-rata ROE '+n+' tahun: <b>'+avg.toFixed(1)+'%</b>.');
-        if(rLast>=15) details.push('ROE terakhir <b>'+rLast.toFixed(1)+'%</b> — bisnis sangat efisien menghasilkan profit dari modal.');
-        else if(rLast>=10) details.push('ROE terakhir <b>'+rLast.toFixed(1)+'%</b> — cukup baik, bisnis bisa menghasilkan.');
-        else details.push('ROE terakhir <b>'+rLast.toFixed(1)+'%</b> — rendah, bisnis kurang efisien pakai modal.');
+        details.push('ROE itu ukuran seberapa pintar perusahaan pakai uang pemegang saham untuk cari untung. Rata-rata '+n+' tahun: <b>'+avg.toFixed(1)+'%</b>.');
+        if(rLast>=15) details.push('ROE terakhir <b>'+rLast.toFixed(1)+'%</b>. Ini bagus banget. Artinya dari setiap Rp100 modal, perusahaan bisa hasilkan Rp'+rLast.toFixed(0)+' laba. Kalau ROE segini tapi harga turun, itu kayak barang bagus lagi obral.');
+        else if(rLast>=10) details.push('ROE terakhir <b>'+rLast.toFixed(1)+'%</b>. Cukup baik, perusahaan masih bisa menghasilkan.');
+        else details.push('ROE terakhir <b>'+rLast.toFixed(1)+'%</b>. Rendah, artinya perusahaan kurang efisien pakai modal. Harga murah di saham ROE rendah belum tentu berarti diskon.');
         var trend = rLast - rFirst;
-        if(trend>3) details.push('Tren ROE <b>membaik</b> — perusahaan makin pintar pakai modal.');
-        else if(trend<-3) details.push('Tren ROE <b>menurun</b> — efisiensi penggunaan modal melemah.');
+        if(trend>3) details.push('Tren ROE <b>naik</b>. Perusahaan makin pintar cari untung dari waktu ke waktu. Ini sinyal positif buat harga jangka panjang.');
+        else if(trend<-3) details.push('Tren ROE <b>turun</b>. Perusahaan makin susah cari untung. Ini bisa bikin harga terus tertekan.');
       }
       var margins = yrs.map(function(y){ var a=ann[y]||{}; return (ok(a.net_income)&&ok(a.total_revenue)&&a.total_revenue>0)?a.net_income/a.total_revenue*100:null; }).filter(function(v){return ok(v);});
       if(margins.length>=2){
         var mAvg = margins.reduce(function(a,b){return a+b;},0)/margins.length;
         var mLast = margins[margins.length-1];
-        if(mLast>mAvg*1.15) details.push('Profit margin <b>lagi tinggi</b> ('+mLast.toFixed(0)+'%) — di atas rata-rata biasanya. Bisnis lagi prime.');
-        else if(mLast<mAvg*0.85) details.push('Profit margin <b>lagi rendah</b> ('+mLast.toFixed(0)+'%) — di bawah biasanya. Ada tekanan biaya?');
-        else details.push('Profit margin stabil di ~'+mLast.toFixed(0)+'%, sesuai rata-rata historis.');
+        if(mLast>mAvg*1.15) details.push('Profit margin lagi <b>di atas rata-rata</b> ('+mLast.toFixed(0)+'%). Bisnis lagi prime, tiap Rp pendapatan menghasilkan lebih banyak laba.');
+        else if(mLast<mAvg*0.85) details.push('Profit margin lagi <b>di bawah biasanya</b> ('+mLast.toFixed(0)+'%). Ada tekanan biaya, untungnya menyusut.');
+        else details.push('Profit margin stabil di ~'+mLast.toFixed(0)+'%. Konsisten, gak ada kejutan.');
       }
       if(!headline){ headline='ROE & Margin: '+n+' Tahun'; headlineType=''; }
       _vlInsights.roe={headline:headline,headlineType:headlineType,verdict:verdict,details:details.join('<br>')};
@@ -11628,29 +11628,31 @@ body.vl-maxing{overflow:hidden}
       cnt(pbvs); cnt(pers); cnt(psrs);
       if(ok(priceCagrR)&&priceCagrR<-10&&murahCount>=2){
         headline='VALUASI DI BAWAH RATA-RATA HISTORIS - MURAH!'; headlineType='bullish';
-        verdict='Mayoritas rasio valuasi menunjukkan saham diperdagangkan di bawah rata-rata historis. Potensi mispriced.';
+        verdict='Dibanding harga historisnya, sekarang saham ini lagi murah. Kamu beli aset dan laba perusahaan ini dengan harga lebih rendah dari biasanya. Ini bisa jadi kesempatan.';
       } else if(murahCount>=2&&mahalCount===0){
         headline='SEMUA RASIO VALUASI TUNJUKKAN MURAH'; headlineType='bullish';
-        verdict='PBV, PER, PSR semuanya di bawah rata-rata historis. Market pricing-in terlalu negatif?';
+        verdict='Semua indikator bilang harga sekarang murah dibanding biasanya. Artinya market lagi pesimis sama saham ini, padahal secara angka masih oke.';
       } else if(mahalCount>=2&&murahCount===0){
         headline='VALUASI PREMIUM - RASIO DI ATAS RATA-RATA'; headlineType='bearish';
-        verdict='Saham diperdagangkan di atas rata-rata historis. Hati-hati entry di harga tinggi.';
+        verdict='Dibanding harga historisnya, sekarang saham ini lagi mahal. Kamu bayar lebih untuk setiap rupiah aset dan laba. Hati-hati beli di harga premium.';
       } else if(murahCount>=1&&mahalCount===0){
         headline='VALUASI CENDERUNG MURAH VS HISTORIS'; headlineType='bullish';
-        verdict='Beberapa metrik valuasi di bawah rata-rata historis.';
+        verdict='Beberapa indikator bilang harga sekarang di bawah rata-rata. Artinya harga mulai menarik dibanding biasanya.';
       } else if(mahalCount>=1&&murahCount===0){
         headline='VALUASI CENDERUNG MAHAL VS HISTORIS'; headlineType='bearish';
-        verdict='Beberapa metrik valuasi di atas rata-rata historis.';
+        verdict='Beberapa indikator bilang harga sekarang di atas rata-rata. Artinya kamu perlu bayar lebih mahal dari biasanya untuk saham ini.';
       } else {
         headline='VALUASI WAJAR (SESUAI HISTORIS)'; headlineType='neutral';
-        verdict='Rasio valuasi mendekati rata-rata historis.';
+        verdict='Harga sekarang wajar. Gak terlalu murah, gak terlalu mahal dibanding rata-rata historisnya.';
       }
-      function asd(arr,label){ if(arr.length<2) return; var avg=arr.reduce(function(a,b){return a+b;},0)/arr.length; var cur=arr[arr.length-1]; var pct=((cur-avg)/avg)*100;
-        if(pct>20) details.push(label+' sekarang <b>'+cur.toFixed(1)+'x</b> — biasanya '+avg.toFixed(1)+'x. <b>Lebih mahal</b> dari biasanya.');
-        else if(pct<-20) details.push(label+' sekarang <b>'+cur.toFixed(1)+'x</b> — biasanya '+avg.toFixed(1)+'x. <b>Lebih murah</b> dari biasanya.');
-        else details.push(label+' sekarang <b>'+cur.toFixed(1)+'x</b> — wajar, dekat rata-rata historis ('+avg.toFixed(1)+'x).');
+      function asd(arr,label,penjelasan){ if(arr.length<2) return; var avg=arr.reduce(function(a,b){return a+b;},0)/arr.length; var cur=arr[arr.length-1]; var pct=((cur-avg)/avg)*100;
+        if(pct>20) details.push(label+' sekarang <b>'+cur.toFixed(1)+'x</b> (biasanya '+avg.toFixed(1)+'x). <b>Lebih mahal</b> dari biasanya. '+penjelasan);
+        else if(pct<-20) details.push(label+' sekarang <b>'+cur.toFixed(1)+'x</b> (biasanya '+avg.toFixed(1)+'x). <b>Lebih murah</b> dari biasanya. '+penjelasan);
+        else details.push(label+' sekarang <b>'+cur.toFixed(1)+'x</b>, wajar (rata-rata '+avg.toFixed(1)+'x). '+penjelasan);
       }
-      asd(pbvs,'PBV'); asd(pers,'PER'); asd(psrs,'PSR');
+      asd(pbvs,'PBV','PBV rendah artinya kamu beli aset perusahaan lebih murah dari biasanya.');
+      asd(pers,'PER','PER rendah artinya kamu bayar lebih sedikit untuk setiap rupiah laba.');
+      asd(psrs,'PSR','PSR rendah artinya kamu bayar lebih murah per rupiah pendapatan.');
       if(details.length===0) details.push('Data rasio valuasi tidak cukup untuk analisis.');
       _vlInsights.ratio={headline:headline,headlineType:headlineType,verdict:verdict,details:details.join('<br>')};
     })();
@@ -11664,53 +11666,53 @@ body.vl-maxing{overflow:hidden}
       var priceCagrE = cagr(last.price, first.price, n-1);
       if(ok(epsCagr)&&ok(priceCagrE)&&epsCagr>3&&priceCagrE<-10){
         headline='EPS NAIK TERUS TAPI HARGA MALAH TERJUN'; headlineType='bullish';
-        verdict='Earning tumbuh tapi market belum menghargai. PE semakin murah setiap tahun.';
+        verdict='Laba per saham naik terus, artinya kamu sebagai pemegang saham makin untung tiap tahun. Tapi harga malah turun, jadi saham ini makin murah dibanding labanya.';
       } else if(ok(epsCagr)&&ok(priceCagrE)&&epsCagr>0&&priceCagrE<-5){
         headline='EARNING MASIH TUMBUH, HARGA MALAH TURUN'; headlineType='bullish';
-        verdict='Pertumbuhan EPS tidak tercermin di harga. Market sedang overlook saham ini.';
+        verdict='Laba per saham masih naik tapi harga turun. Artinya kamu bisa dapat lebih banyak laba per rupiah yang kamu investasikan sekarang dibanding dulu.';
       } else if(ok(priceCagrE)&&ok(epsCagr)&&priceCagrE>epsCagr+15){
         headline='HARGA NAIK JAUH LEBIH CEPAT DARI EARNING'; headlineType='bearish';
-        verdict='Valuasi sudah premium. Harga outpace fundamental earning.';
+        verdict='Harga sekarang kemungkinan kemahalan. Harga naik jauh lebih cepat dari pertumbuhan labanya. Kamu bayar premium tinggi untuk laba yang pertumbuhannya biasa saja.';
       } else if(ok(bvCagr)&&ok(priceCagrE)&&bvCagr>5&&priceCagrE<-5){
         headline='BOOK VALUE NAIK TERUS, HARGA MALAH TURUN'; headlineType='bullish';
-        verdict='Ekuitas terus tumbuh tapi PBV semakin murah. Aset bersih naik, harga diskon.';
+        verdict='Kekayaan bersih perusahaan naik terus, tapi harga turun. Artinya kamu bisa beli aset perusahaan ini lebih murah dari sebelumnya. Harga sekarang di bawah nilai asetnya.';
       } else if(ok(epsCagr)&&epsCagr>8){
         headline='EPS TUMBUH KUAT '+n+' TAHUN TERAKHIR'; headlineType='neutral';
-        verdict='Pertumbuhan earning sangat baik.';
+        verdict='Laba per saham naik kencang. Artinya kamu sebagai pemegang saham makin untung tiap tahun. Bagus, tinggal cek apakah harga sudah mencerminkan pertumbuhan ini.';
       } else if(ok(epsCagr)&&epsCagr<-5){
         headline='EPS MENURUN - EARNING TERTEKAN'; headlineType='bearish';
-        verdict='Profitabilitas per saham menurun. Perlu cek: margin turun atau dilusi?';
+        verdict='Laba per saham turun, artinya kamu sebagai pemegang saham kurang untung tiap tahun. Kalau harga ikut turun, itu wajar. Kalau harga belum turun, hati-hati.';
       } else { headline='EPS & Book Value: '+n+' Tahun'; headlineType=''; verdict=''; }
       // Describe EPS trend in plain language
       if(ok(epsCagr)){
-        if(epsCagr>8) details.push('Laba per saham (EPS) <b>naik terus</b> — pemegang saham makin untung tiap tahun.');
-        else if(epsCagr>2) details.push('EPS <b>masih naik</b>, tapi pertumbuhannya pelan.');
-        else if(epsCagr>-2) details.push('EPS <b>flat</b> — tidak tumbuh tapi juga tidak turun.');
-        else details.push('EPS <b>menurun</b> — earning per saham makin kecil. Kurang bagus.');
+        if(epsCagr>8) details.push('Laba per saham (EPS) <b>naik terus</b>. Simpelnya: tiap lembar saham yang kamu pegang menghasilkan lebih banyak uang tiap tahun.');
+        else if(epsCagr>2) details.push('EPS <b>masih naik</b> pelan. Kamu tetap makin untung tiap tahun, walau gak eksplosif.');
+        else if(epsCagr>-2) details.push('EPS <b>flat</b>. Untung per saham gak naik gak turun. Biasa saja.');
+        else details.push('EPS <b>turun</b>. Artinya tiap lembar saham yang kamu pegang menghasilkan lebih sedikit uang. Kurang bagus.');
       }
       // Describe SPS trend
       if(ok(spsCagr)){
-        if(spsCagr>5) details.push('Pendapatan per saham (SPS) <b>tumbuh baik</b> — top line berkembang.');
-        else if(spsCagr<-2) details.push('Pendapatan per saham <b>menyusut</b>.');
+        if(spsCagr>5) details.push('Pendapatan per saham (SPS) <b>tumbuh baik</b>. Bisnis berkembang, makin banyak uang masuk per saham.');
+        else if(spsCagr<-2) details.push('Pendapatan per saham <b>menyusut</b>. Bisnis mengecil per saham yang kamu pegang.');
       }
       // Describe Book Value trend
       if(ok(bvCagr)){
-        if(bvCagr>5) details.push('Book value per saham <b>naik</b> — kekayaan bersih perusahaan bertambah.');
-        else if(bvCagr<-2) details.push('Book value <b>turun</b> — aset bersih perusahaan menyusut. Waspada.');
-        else details.push('Book value stabil, tidak banyak perubahan.');
+        if(bvCagr>5) details.push('Book value per saham <b>naik</b>. Artinya kekayaan bersih perusahaan per saham bertambah. Semakin tebal "isi" di balik sahammu.');
+        else if(bvCagr<-2) details.push('Book value <b>turun</b>. Kekayaan bersih per saham menyusut. "Isi" di balik sahammu makin tipis.');
+        else details.push('Book value stabil. Kekayaan bersih perusahaan per saham gak banyak berubah.');
       }
       // Price vs EPS context
       if(ok(epsCagr)&&ok(priceCagrE)){
-        if(epsCagr>0&&priceCagrE<-5) details.push('Hal menarik: <b>EPS naik tapi harga malah turun</b> — PE jadi makin murah tiap tahun.');
-        else if(priceCagrE>epsCagr+15) details.push('Yang perlu diperhatikan: <b>harga naik jauh lebih cepat dari earning</b> — valuasi stretched.');
+        if(epsCagr>0&&priceCagrE<-5) details.push('Yang menarik: <b>EPS naik tapi harga malah turun</b>. Artinya setiap tahun kamu dapat lebih banyak laba per rupiah yang kamu bayar. Saham makin "murah" secara fundamental.');
+        else if(priceCagrE>epsCagr+15) details.push('Hati-hati: <b>harga naik jauh lebih cepat dari laba</b>. Kamu bayar makin mahal untuk laba yang pertumbuhannya biasa. Risiko koreksi tinggi.');
       }
       // EPS vs SPS efficiency
       if(ok(epsCagr)&&ok(spsCagr)){
-        if(epsCagr>spsCagr+2) details.push('EPS tumbuh lebih cepat dari pendapatan — <b>efisiensi meningkat</b>, margin membaik.');
-        else if(spsCagr>epsCagr+2) details.push('Pendapatan naik tapi laba tidak ikut — <b>margin tertekan</b>.');
+        if(epsCagr>spsCagr+2) details.push('EPS naik lebih cepat dari pendapatan. <b>Perusahaan makin efisien</b>, bisa ubah pendapatan jadi laba lebih banyak.');
+        else if(spsCagr>epsCagr+2) details.push('Pendapatan naik tapi laba gak ikut. <b>Margin tertekan</b>, biaya naik lebih cepat.');
       }
       var eqs = yrs.map(function(y){ return (ann[y]||{}).total_equity; }).filter(function(v){return ok(v);});
-      if(eqs.length>=2&&eqs[eqs.length-1]<eqs[eqs.length-2]) details.push('Ekuitas terakhir <b>turun</b> dari tahun sebelumnya — ada dividen besar atau writeoff?');
+      if(eqs.length>=2&&eqs[eqs.length-1]<eqs[eqs.length-2]) details.push('Ekuitas terakhir <b>turun</b> dari tahun sebelumnya. Bisa karena dividen besar atau writeoff. Cek lebih lanjut.');
       if(details.length===0) details.push('Data belum cukup untuk analisis lebih dalam.');
       _vlInsights.eps={headline:headline,headlineType:headlineType,verdict:verdict,details:details.join('<br>')};
     })();
@@ -11733,7 +11735,7 @@ body.vl-maxing{overflow:hidden}
     html+='<div style="font-size:14px;font-weight:900;color:'+hColor+';letter-spacing:.3px;line-height:1.4;">'+ins.headline+'</div>';
     if(ins.verdict) html+='<div style="font-size:12.5px;color:var(--text);margin-top:6px;line-height:1.5;font-weight:500;">'+ins.verdict+'</div>';
     html+='</div>';
-    html+='<div style="font-size:11px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Apa yang terlihat di chart</div>';
+    html+='<div style="font-size:11px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Apa artinya buat kamu?</div>';
     html+='<p style="margin:0;line-height:1.8;font-size:12.5px;color:var(--text);">'+ins.details+'</p>';
     box.innerHTML=html;
     if(md) md.classList.add('show');
