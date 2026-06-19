@@ -10408,12 +10408,12 @@ body.vl-maxing{overflow:hidden}
       const thdr = document.getElementById('vlProjTableHeader');
       if(thdr){
         const chg = (ok(livePrice)&&ok(basisPrice)&&basisPrice>0) ? ((livePrice/basisPrice-1)*100) : null;
-        thdr.innerHTML = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
-          '<span style="font-size:14px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:var(--text)">'+s.code+'</span>'+
-          '<span style="font-size:12px;color:var(--text2)">Sekarang <strong style="color:var(--text)">'+fmtRp(livePrice)+'</strong></span>'+
-          '<span class="vl-badge '+(ok(chg)&&chg>=0?'vl-up':'vl-dn')+'" style="font-size:11px">ACTUAL</span>'+
-          '<span style="font-size:12px;color:var(--text2)">'+basisLabel+' · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
-          (ok(chg)?'<span class="'+(chg>=0?'vl-pos':'vl-neg')+'" style="font-size:14px;font-weight:800">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
+        thdr.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+          '<span style="font-size:12px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:var(--text)">'+s.code+'</span>'+
+          '<span style="font-size:10px;color:var(--text2)">Sekarang <strong style="color:var(--text)">'+fmtRp(livePrice)+'</strong></span>'+
+          '<span class="vl-badge '+(ok(chg)&&chg>=0?'vl-up':'vl-dn')+'" style="font-size:9px">ACTUAL</span>'+
+          '<span style="font-size:10px;color:var(--text2)">'+basisLabel+' · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
+          (ok(chg)?'<span class="'+(chg>=0?'vl-pos':'vl-neg')+'" style="font-size:12px;font-weight:800">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
           '</div>';
       }
 
