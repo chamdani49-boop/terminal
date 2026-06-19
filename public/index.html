@@ -9289,9 +9289,6 @@ loadData();
 #page-valuasi .vl-kpi{border-radius:9px;border:1px solid var(--border);border-top:2px solid var(--accent);background:var(--bg2)}
 #page-valuasi .vl-kpi .l{font-size:10px;letter-spacing:.7px}
 
-/* ── INFO BANNER — selaras token ── */
-#page-valuasi #vlBanner{border-radius:var(--radius)}
-
 
 
 /* ── RANGE TOOLBAR per-chart (3Th/5/7/10/All) ── */
@@ -9364,10 +9361,6 @@ body.vl-maxing{overflow:hidden}
 #page-valuasi .vl-win .vl-basis-btn:hover{color:var(--text);border-color:transparent}
 #page-valuasi .vl-win .vl-basis-btn.active{background:var(--accent);color:#fff;box-shadow:none}
 
-/* — BANNER: strip tipis selaras panel terminal (bukan gradient mencolok) — */
-#page-valuasi #vlBanner{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);
-  border-radius:0 8px 8px 0;padding:7px 13px;font-size:11px;line-height:1.45;margin-bottom:11px;color:var(--text3)}
-#page-valuasi #vlBanner strong{font-weight:700}
 
 /* — HEADER EMITEN: bar padat, sejajar tengah — */
 #page-valuasi .vl-head{padding:11px 16px;margin-bottom:12px;gap:12px;align-items:center}
@@ -9491,7 +9484,6 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-kpi .v{font-size:14px}
   #page-valuasi .vl-kpi .d{font-size:9px}
   #page-valuasi .vl-info{font-size:11px;padding:8px 10px}
-  #page-valuasi #vlBanner{font-size:10px;padding:6px 10px}
 }
 
 /* === VALUASI MOBILE 360px (hp sangat kecil) === */
@@ -9545,10 +9537,6 @@ body.vl-maxing{overflow:hidden}
       </div>
     </div>
 
-    <!-- INFO BANNER (dinamis — diisi JS dgn sumber data & harga) -->
-    <div class="info-banner" id="vlBanner">
-      🧮 <strong>Valuasi Saham</strong> — Analisa fundamental, proyeksi harga &amp; margin of safety. Memuat data…
-    </div>
 
     <!-- HEADER EMITEN (dinamis — diisi JS) -->
     <div class="vl-head" id="vlHead"></div>
@@ -10088,15 +10076,6 @@ body.vl-maxing{overflow:hidden}
   }
 
   /* ════════════ RENDER ════════════ */
-  function renderBanner(){
-    const el = document.getElementById('vlBanner'); if(!el) return;
-    const s = curStock(); if(!s) return;
-    const e = effLast(s);
-    const srcTxt = e.source==='live' ? 'live (sheet)' : (e.source||'-');
-    el.innerHTML = '🧮 <strong>Valuasi Saham</strong> — Analisa fundamental, proyeksi harga &amp; margin of safety. '+
-      'Sumber: <strong>valuation.json</strong> · harga: <strong>'+srcTxt+'</strong>'+
-      (state.raw.generated_at ? (' · data per '+String(state.raw.generated_at).slice(0,10)) : '');
-  }
 
   function renderHead(){
     const el = document.getElementById('vlHead'); if(!el) return;
@@ -11843,7 +11822,7 @@ body.vl-maxing{overflow:hidden}
   function renderAll(){
     const s = curStock(); if(!s) return;
     state.model = computeModel(s, state.win);
-    renderBanner(); renderHead(); renderCards(); renderFund();
+    renderHead(); renderCards(); renderFund();
     renderProjection(); renderDividen(); renderMultiples();
     renderCompare();
     vlUpdateSubModelTitle();
@@ -11979,8 +11958,7 @@ body.vl-maxing{overflow:hidden}
 
   function showError(msg){
     state.error = true;
-    const b = document.getElementById('vlBanner');
-    if(b) b.innerHTML = '⚠️ <strong>Gagal memuat data valuasi.</strong> '+(msg||'')+' — coba muat ulang halaman.';
+    console.error('Valuasi error:', msg||'');
   }
 
   // Init: fetch valuation.json + (opsional) data.json untuk harga live.
