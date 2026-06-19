@@ -10447,6 +10447,7 @@ body.vl-maxing{overflow:hidden}
   window.vlSetChartRange=function(r){
     vlRange=String(r);
     buildCharts();
+    vlGenerateInsights();
     if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
   };
 
@@ -11479,7 +11480,7 @@ body.vl-maxing{overflow:hidden}
   function vlGenerateInsights(){
     _vlInsights = {};
     const s = curStock(); if(!s) return;
-    const yrs = annualYears(s);
+    const yrs = vlChartYears(s, 'vlRev');
     if(yrs.length < 2) return;
     const ann = s.annual;
     const n = yrs.length;
