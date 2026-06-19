@@ -9337,6 +9337,10 @@ body.vl-maxing{overflow:hidden}
 #page-valuasi .vl-proj-sub{font-size:11.5px;color:var(--text3);font-weight:500;line-height:1.55;margin:-8px 0 14px}
 #page-valuasi .vl-proj-sub b{color:var(--accent);font-weight:800}
 
+/* Proj row mobile wrapper: on desktop, hide MoS card, show basis normally */
+#page-valuasi .vl-proj-row-mob{display:block}
+#page-valuasi .vl-proj-row-mob .vl-kpi-mos-card{display:none}
+
 /* KPI proyeksi: ikon + deskripsi + hover; highlight metrik kunci (MoS & FV) */
 #page-valuasi .vl-kpis-proj .vl-kpi{transition:transform .15s ease,border-color .15s ease}
 #page-valuasi .vl-kpis-proj .vl-kpi:hover{transform:translateY(-2px);border-color:var(--accent)}
@@ -9443,7 +9447,22 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-select{width:100%;min-width:auto}
   #page-valuasi .vl-table thead th,#page-valuasi .vl-table tbody td{padding:7px 9px;font-size:11px}
   #page-valuasi .vl-kpis{grid-template-columns:repeat(2,1fr)}
-  #page-valuasi .vl-kpis-proj{grid-template-columns:repeat(2,1fr)}
+  /* Proyeksi: basis dropdown + MoS side by side, then 3-col KPI grid */
+  #page-valuasi .vl-basis-select{width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;appearance:auto}
+  #page-valuasi .vl-basis-select:focus{border-color:var(--accent);outline:none}
+  #page-valuasi #vlProjBody > .card{display:flex;flex-direction:column}
+  #page-valuasi .vl-proj-row-mob{display:flex;gap:10px;align-items:stretch;margin-bottom:12px}
+  #page-valuasi .vl-proj-row-mob .vl-basis{flex:1;min-width:0;margin-bottom:0!important;display:flex;align-items:center}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card{flex:1;min-width:0;background:color-mix(in srgb, var(--accent) 8%, var(--card));border:1.5px solid color-mix(in srgb, var(--accent) 30%, transparent);border-radius:10px;padding:10px 12px;text-align:center;display:flex;flex-direction:column;justify-content:center}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card .l{font-size:9.5px;color:var(--text3);font-weight:600;margin-bottom:4px}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card .v{font-size:18px;font-weight:800;color:var(--accent)}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card .d{font-size:9px;color:var(--text3);margin-top:3px}
+  #page-valuasi .vl-kpis-proj{grid-template-columns:repeat(3,1fr)!important;gap:8px!important}
+  #page-valuasi .vl-kpis-proj .vl-kpi-key:first-child{display:none}
+  #page-valuasi .vl-kpis-proj .vl-kpi{padding:8px 6px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .l{font-size:9px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .v{font-size:14px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .d{font-size:8.5px}
   #page-valuasi .vl-cmp-top{grid-template-columns:1fr}
   #page-valuasi .vl-modal-overlay{padding:12px}
   #page-valuasi .vl-modal-box{max-height:90vh;border-radius:12px}
@@ -9484,12 +9503,19 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-kpi .v{font-size:14px}
   #page-valuasi .vl-kpi .d{font-size:9px}
   #page-valuasi .vl-info{font-size:11px;padding:8px 10px}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card .v{font-size:16px}
+  #page-valuasi .vl-proj-row-mob .vl-kpi-mos-card{padding:8px 10px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .v{font-size:12px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .l{font-size:8px}
+  #page-valuasi .vl-kpis-proj .vl-kpi .d{font-size:7.5px}
 }
 
 /* === VALUASI MOBILE 360px (hp sangat kecil) === */
 @media(max-width:360px){
   #page-valuasi .vl-mcs{grid-template-columns:1fr}
   #page-valuasi .vl-kpis{grid-template-columns:1fr}
+  #page-valuasi .vl-kpis-proj{grid-template-columns:repeat(2,1fr)!important}
+  #page-valuasi .vl-proj-row-mob{flex-direction:column}
   #page-valuasi .vl-price{font-size:20px}
 }
 </style>
@@ -9558,7 +9584,10 @@ body.vl-maxing{overflow:hidden}
         <div class="card" style="margin-bottom:14px">
           <div class="card-title">🎯 Proyeksi Harga 5 Tahun</div>
           <div class="vl-proj-sub">Skenario imbal hasil dari harga beli basis <b id="vlProjScope">TTM</b> — angka menyesuaikan basis yang dipilih (beda dengan snapshot model di atas).</div>
-          <div class="vl-basis" id="vlProjBasis" style="margin-bottom:14px"></div>
+          <div class="vl-proj-row-mob" id="vlProjRowMob">
+            <div class="vl-basis" id="vlProjBasis" style="margin-bottom:14px"></div>
+            <div class="vl-kpi-mos-card"><div class="l">🛡️ Margin of Safety</div><div class="v" id="vlKpiMosMob">-</div><div class="d" id="vlKpiMosDescMob">-</div></div>
+          </div>
           <div class="vl-kpis vl-kpis-proj" style="margin-bottom:0">
             <div class="vl-kpi vl-kpi-key"><div class="l">🛡️ Margin of Safety</div><div class="v" id="vlKpiMos">-</div><div class="d" id="vlKpiMosDesc">-</div></div>
             <div class="vl-kpi"><div class="l">📈 CAGR 5 Tahun</div><div class="v" id="vlKpiCagr" style="color:var(--accent2)">-</div><div class="d">Pertumbuhan harga / th</div></div>
@@ -10211,6 +10240,20 @@ body.vl-maxing{overflow:hidden}
     const el = document.getElementById('vlProjBasis'); if(!el) return;
     const bdef = ujDataBases(s);
     const activeBasis = _projBasis || 'current';
+    // Mobile: render as single <select> dropdown (all years in one list)
+    var isMobile = window.innerWidth <= 600;
+    if(isMobile){
+      var allOpts = bdef.buttons.map(function(b){
+        return '<option value="'+b.key+'"'+(b.key===activeBasis?' selected':'')+'>'+b.label+(b.tag?' ('+b.tag+')':'')+'</option>';
+      });
+      if(bdef.moreYears && bdef.moreYears.length){
+        bdef.moreYears.forEach(function(y){
+          allOpts.push('<option value="Y'+y+'"'+('Y'+y===activeBasis?' selected':'')+'>'+y+'</option>');
+        });
+      }
+      el.innerHTML = '<select class="vl-basis-select" onchange="vlSetProjBasis(this.value)">'+allOpts.join('')+'</select>';
+      return;
+    }
     let html = bdef.buttons.map(function(b){
       const act = (b.key===activeBasis) ? ' active' : '';
       const tag = b.tag ? ' <span style="font-size:9px;font-weight:800;opacity:.7">'+b.tag+'</span>' : '';
@@ -10262,13 +10305,15 @@ body.vl-maxing{overflow:hidden}
         (_fbUsed ? ' Growth rate dihitung dari CAGR data yang tersedia (bukan rata-rata 5 tahun dari Excel).' : '');
       if(msg) msg.innerHTML = '<div class="vl-sld-warn" style="margin-bottom:12px;font-size:11px">'+warnTxt+'</div>';
     }
-    if(!pc.applicable){ ['vlKpiMos','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
+    if(!pc.applicable){ ['vlKpiMos','vlKpiMosMob','vlKpiCagr','vlKpiDy','vlKpiComb','vlKpiFv','vlKpiDpr','vlKpiTbm'].forEach(id=>setK(id,'—')); return; }
     const livePrice = effLast(s).price;
     const target5y = (Array.isArray(pc.potensi) && pc.potensi.length>=5 && ok(pc.potensi[4])) ? pc.potensi[4] : null;
     const mosPct = (ok(livePrice) && livePrice>0 && ok(target5y) && target5y>0) ? (1 - livePrice/target5y)*100 : (pc.margin_of_safety||0)*100;
     const ms = mosStyle(mosPct);
     setK('vlKpiMos', mosPct.toFixed(2)+'%', ms.col);
     const md = document.getElementById('vlKpiMosDesc'); if(md){ md.textContent=ms.txt; md.style.color=ms.col; }
+    setK('vlKpiMosMob', mosPct.toFixed(2)+'%', ms.col);
+    const mdMob = document.getElementById('vlKpiMosDescMob'); if(mdMob){ mdMob.textContent=ms.txt; mdMob.style.color=ms.col; }
     setK('vlKpiCagr', fmtPct(pc.cagr*100));
     setK('vlKpiDy',   fmtPct(pc.dividend_yield*100));
     setK('vlKpiComb', fmtPct(pc.combine*100));
