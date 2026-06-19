@@ -395,6 +395,66 @@ def five_year_valuation(stock, last_price, warn, override=None):
     eps_g_5y = latest_annual(stock, 'eps_growth_5y')[0]
     sps_g_5y = latest_annual(stock, 'sps_growth_5y')[0]
 
+    # ── Fallback CAGR: hitung dari data annual jika field 5y dari Excel = None ──
+    # Untuk emiten baru yang belum punya histori 5 tahun di Excel, kita hitung
+    # CAGR dari data annual yang tersedia (minimal 3 tahun).
+    fallback_used = False
+    # Hitung data_years: jumlah tahun annual yang punya minimal eps atau bvps non-None
+    annual_years_with_data = []
+    for yr in sorted(stock['annual'].keys()):
+        yd = stock['annual'][yr]
+        if yd.get('bvps') is not None or yd.get('eps') is not None or yd.get('sps') is not None:
+            annual_years_with_data.append(yr)
+    data_years = len(annual_years_with_data)
+
+    if data_years >= 3:
+        # Fallback ROE 5y: CAGR of BVPS
+        if roe_5y is None:
+            bvps_pairs = [(yr, stock['annual'][yr].get('bvps')) for yr in annual_years_with_data
+                          if stock['annual'][yr].get('bvps') is not None]
+            if len(bvps_pairs) >= 3:
+                bvps_first = bvps_pairs[0][1]
+                bvps_last = bvps_pairs[-1][1]
+                n_periods = len(bvps_pairs) - 1
+                if bvps_first > 0 and bvps_last > 0:
+                    roe_5y = (bvps_last / bvps_first) ** (1.0 / n_periods) - 1
+                    fallback_used = True
+
+        # Fallback EPS growth 5y: CAGR of EPS (hanya jika earliest & latest > 0)
+        if eps_g_5y is None:
+            eps_pairs = [(yr, stock['annual'][yr].get('eps')) for yr in annual_years_with_data
+                         if stock['annual'][yr].get('eps') is not None]
+            if len(eps_pairs) >= 3:
+                eps_first = eps_pairs[0][1]
+                eps_last = eps_pairs[-1][1]
+                n_periods = len(eps_pairs) - 1
+                if eps_first > 0 and eps_last > 0:
+                    eps_g_5y = (eps_last / eps_first) ** (1.0 / n_periods) - 1
+                    fallback_used = True
+
+        # Fallback SPS growth 5y: CAGR of SPS (hanya jika earliest & latest > 0)
+        if sps_g_5y is None:
+            sps_pairs = [(yr, stock['annual'][yr].get('sps')) for yr in annual_years_with_data
+                         if stock['annual'][yr].get('sps') is not None]
+            if len(sps_pairs) >= 3:
+                sps_first = sps_pairs[0][1]
+                sps_last = sps_pairs[-1][1]
+                n_periods = len(sps_pairs) - 1
+                if sps_first > 0 and sps_last > 0:
+                    sps_g_5y = (sps_last / sps_first) ** (1.0 / n_periods) - 1
+                    fallback_used = True
+
+        # Fallback roe_ann: jika None, ambil dari data annual roe terbaru
+        if roe_ann is None:
+            roe_raw, _ = latest_annual(stock, 'roe')
+            if roe_raw is not None:
+                roe_ann = roe_raw / 100.0
+                fallback_used = True
+
+    if fallback_used:
+        warn.append(f"{stock.get('code','?')}: five_year menggunakan fallback CAGR "
+                    f"(data_years={data_years}, bukan dari Excel 5y field)")
+
     # Rata-rata multiples & DPR untuk SEMUA window (3/5/7/10), pakai default utk hitung.
     windows = ASSUMPTIONS['avg_windows']
     avg_multiples = {
@@ -482,6 +542,8 @@ def five_year_valuation(stock, last_price, warn, override=None):
         return {'applicable': False,
                 'reason': 'Data 5-tahun belum lengkap (kemungkinan emiten baru listing). '
                           'Input hilang: ' + ', '.join(missing),
+                'data_years': data_years,
+                'fallback_used': fallback_used,
                 'avg_multiples': avg_multiples}
 
     blend_annual = sum(bw[m['key']] * m['annual'] for m in avail) / wsum
@@ -514,9 +576,14 @@ def five_year_valuation(stock, last_price, warn, override=None):
         'inputs': {
             'eps': eps_LY, 'sps': sps_LY, 'bvps': bvps_LY,
             'roe_annual': round(roe_ann, 4) if roe_ann is not None else None,
-            'roe_5y': roe_5y, 'eps_growth_annual': round(eps_g_ann, 4) if eps_g_ann is not None else None,
-            'eps_growth_5y': eps_g_5y, 'sps_growth_annual': round(sps_g_ann, 4) if sps_g_ann is not None else None,
-            'sps_growth_5y': sps_g_5y, 'dpr': round(dpr, 4) if dpr is not None else None,
+            'roe_5y': round(roe_5y, 4) if roe_5y is not None else None,
+            'eps_growth_annual': round(eps_g_ann, 4) if eps_g_ann is not None else None,
+            'eps_growth_5y': round(eps_g_5y, 4) if eps_g_5y is not None else None,
+            'sps_growth_annual': round(sps_g_ann, 4) if sps_g_ann is not None else None,
+            'sps_growth_5y': round(sps_g_5y, 4) if sps_g_5y is not None else None,
+            'dpr': round(dpr, 4) if dpr is not None else None,
+            'data_years': data_years,
+            'fallback_used': fallback_used,
         },
         'submodels': {'pbv': m_pbv, 'per': m_per, 'psr': m_psr},
         'future_value': round(future_value, 4),
@@ -528,6 +595,8 @@ def five_year_valuation(stock, last_price, warn, override=None):
         'target_price_5y': price_targets[-1]['target_price'],
         'potential_pct': price_targets[-1]['gl_pct'],
         'override_applied': override_meta,
+        'data_years': data_years,
+        'fallback_used': fallback_used,
     }
 
 
