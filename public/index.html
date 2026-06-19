@@ -9430,10 +9430,10 @@ body.vl-maxing{overflow:hidden}
 /* === VALUASI MOBILE 600px === */
 @media(max-width:600px){
   #page-valuasi .vl-wrap{padding:0 10px}
-  #page-valuasi .vl-head{flex-direction:column;align-items:center;text-align:center;gap:8px}
-  #page-valuasi .vl-tic{display:flex;flex-direction:row;align-items:center;gap:10px;justify-content:center}
-  #page-valuasi .vl-head-right{flex-direction:column;align-items:center;width:100%;gap:6px}
-  #page-valuasi .vl-mktcap{display:flex;flex-direction:row;align-items:center;gap:10px;text-align:center}
+  #page-valuasi .vl-head{flex-direction:column;align-items:flex-start;text-align:left;gap:8px}
+  #page-valuasi .vl-tic{display:flex;flex-direction:row;align-items:center;gap:10px;justify-content:flex-start}
+  #page-valuasi .vl-head-right{flex-direction:column;align-items:flex-start;width:100%;gap:6px}
+  #page-valuasi .vl-mktcap{display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left}
   #page-valuasi .vl-mktcap .l{margin-top:0!important}
   #page-valuasi .vl-price{font-size:24px}
   /* Chart projection - lebih compact */
@@ -9443,6 +9443,9 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-leg{font-size:10px;gap:4px}
   #page-valuasi .vl-dot{width:10px;height:3px}
   #page-valuasi .card-title{font-size:13px}
+  #page-valuasi .vl-grid2 .card-title{font-size:11px;text-transform:none;letter-spacing:0;font-weight:700}
+  #page-valuasi .vl-rng{position:relative;z-index:5}
+  #page-valuasi .vl-rng button{padding:6px 12px;font-size:11px;min-height:30px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   #page-valuasi .vl-proj-sub{font-size:11px}
   #page-valuasi .vl-seg button{font-size:11px;padding:6px 12px}
   #page-valuasi .vl-mcs{grid-template-columns:repeat(2,1fr);gap:8px}
@@ -10870,7 +10873,7 @@ body.vl-maxing{overflow:hidden}
             if(/proyeksi/i.test(ctx.dataset.label||'')){ const j=ctx.dataIndex-hist.length; if(j>=0) return ' Target '+tYears[j]+': '+rp+(reached[j]?'  ✓ tercapai':''); return ' Basis: '+rp; }
             return ' Harga: '+rp; } }}},
         scales:{ y:{ min:minY, ticks:{...TICK, callback:v=>'Rp'+Math.round(v).toLocaleString('id-ID')}, grid:GRID },
-                 x:{ ticks:{...TICK, maxRotation:0, autoSkip:true, maxTicksLimit:9}, grid:{display:false} } }} });
+                 x:{ ticks:{...TICK, maxRotation:0, autoSkip:true, maxTicksLimit:9, callback:function(val,idx){var l=this.getLabelForValue(val);if(!l)return l;var p=l.split('/');return p.length>=3?p[2]:l;}}, grid:{display:false} } }} });
     }
 
     // 7. Dividen per saham (tahunan) + yield
