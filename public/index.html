@@ -12102,7 +12102,10 @@ body.vl-maxing{overflow:hidden}
     }
     const s = state.raw.stocks[state.code];
     const sector = s && s.valuation && s.valuation.sector ? s.valuation.sector : '';
-    inp.value = state.code + (sector?' · '+sector:'');
+    // Input dibiarkan KOSONG; saham terpilih ditampilkan sbg placeholder.
+    // Jadi user tinggal mengetik tanpa perlu hapus teks lama dulu.
+    inp.value = '';
+    inp.placeholder = state.code + (sector?' · '+sector:'');
   }
   function vlFilterStockDrop(q){
     const drop = document.getElementById('vlStockDrop'); if(!drop) return;
@@ -12140,12 +12143,7 @@ body.vl-maxing{overflow:hidden}
     inp.addEventListener('focus', ()=>{ inp.select(); });
     inp.addEventListener('input', ()=>{
       const q = inp.value.trim();
-      // Saat input sama persis dgn label terpilih (mis. "AADI · Energy"),
-      // anggap belum ada query baru → jangan buka dropdown.
-      const cur = state.raw && state.raw.stocks[state.code];
-      const sector = cur && cur.valuation && cur.valuation.sector ? cur.valuation.sector : '';
-      const selectedLabel = state.code + (sector?' · '+sector:'');
-      if(!q || q === selectedLabel){ vlCloseStockDrop(); return; }
+      if(!q){ vlCloseStockDrop(); return; }
       vlFilterStockDrop(q);
       vlOpenStockDrop();
     });
