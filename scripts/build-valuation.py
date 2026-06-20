@@ -549,10 +549,18 @@ def five_year_valuation(stock, last_price, warn, override=None):
                 'fallback_used': fallback_used,
                 'avg_multiples': avg_multiples}
 
-    blend_annual = sum(bw[m['key']] * m['annual'] for m in avail) / wsum
-    cagr_blend   = sum(bw[m['key']] * m['cagr'] for m in avail) / wsum
-    mos_blend    = sum(bw[m['key']] * m['mos'] for m in avail if m['mos'] is not None) / wsum
-    div_yield = (dpr * eps_LY / last_price) if (dpr is not None and eps_LY is not None) else 0.0
+    # Blend per-metric: filter sub-model yg metriknya None & re-normalize bobotnya.
+    # (Misal CAGR di salah satu sub-model None karena base/proyeksi non-positif.)
+    def _blend(field):
+        valid = [m for m in avail if m.get(field) is not None]
+        if not valid: return None
+        wsum_v = sum(bw[m['key']] for m in valid)
+        if wsum_v == 0: return None
+        return sum(bw[m['key']] * m[field] for m in valid) / wsum_v
+    blend_annual = _blend('annual') or 0.0
+    cagr_blend   = _blend('cagr')   or 0.0
+    mos_blend    = _blend('mos')
+    div_yield = (dpr * eps_LY / last_price) if (dpr is not None and eps_LY is not None and last_price is not None and last_price > 0) else 0.0
     # Future Value = blend annual G&L + dividend yield (sesuai rumus Excel pemilik).
     future_value = blend_annual + div_yield
     combine = (future_value + cagr_blend) / 2
@@ -561,10 +569,11 @@ def five_year_valuation(stock, last_price, warn, override=None):
     # Future Value = blend Annual + Dividen Yield (sudah di atas), Combine = (FV+CAGR)/2,
     # Potensi(n) = Last × (1 + Combine × n) — ramp pakai COMBINE SAJA.
     price_targets = []
-    for yr in range(1, n + 1):
-        pt = last_price * (1 + combine * yr)
-        price_targets.append({'year': yr, 'target_price': round(pt),
-                              'gl_pct': round((pt - last_price) / last_price * 100, 2)})
+    if last_price is not None and last_price > 0:
+        for yr in range(1, n + 1):
+            pt = last_price * (1 + combine * yr)
+            price_targets.append({'year': yr, 'target_price': round(pt),
+                                  'gl_pct': round((pt - last_price) / last_price * 100, 2)})
 
     if len(avail) < 3:
         warn.append('5y: sub-model tidak lengkap (' +
@@ -651,42 +660,87 @@ def main():
 
     for path in files:
         source_files.append(os.path.basename(path))
-        sheets, read_sheet = read_workbook(path)
+        try:
+            sheets, read_sheet = read_workbook(path)
+        except Exception as e:
+            warnings.append(f"File {os.path.basename(path)}: gagal dibaca ({type(e).__name__}: {e}) — dilewati")
+            continue
         for name, rid in sheets:
-            data = parse_sheet(name, read_sheet(rid))
-            code = data['code']
-            if data['code_in_sheet'] and data['code_in_sheet'] != code:
+            try:
+                data = parse_sheet(name, read_sheet(rid))
+            except Exception as e:
+                warnings.append(f"Sheet '{name}' di {os.path.basename(path)}: parse gagal "
+                                f"({type(e).__name__}: {e}) — dilewati")
+                continue
+            code = data.get('code') or name
+            if data.get('code_in_sheet') and data['code_in_sheet'] != code:
                 warnings.append(f"Sheet '{name}' di {os.path.basename(path)}: nama sheet != C1 "
                                 f"('{code}' vs '{data['code_in_sheet']}')")
             if code in stocks:
                 warnings.append(f"Kode '{code}' duplikat (di {os.path.basename(path)}), data lama ditimpa.")
 
-            info = stock_info.get(code, {})
-            financial = is_financial(info)
-            # Harga realtime dari sheet/live data.json; fallback ke harga Excel (q1).
-            last_price = live_prices.get(code) or data['q1'].get('price')
-            price_is_live = bool(live_prices.get(code))
+            try:
+                info = stock_info.get(code, {})
+                financial = is_financial(info)
+                # Harga realtime dari sheet/live data.json; fallback ke harga Excel (q1).
+                last_price = live_prices.get(code) or data['q1'].get('price')
+                price_is_live = bool(live_prices.get(code))
 
-            warn = []
-            wacc_info = compute_wacc(data, betas.get(code), warn)
-            ke = wacc_info['cost_of_equity']
-            five = five_year_valuation(data, last_price, warn, override=overrides.get(code))
-            dcf = dcf_valuation(data, wacc_info['wacc'], warn, financial=financial, last_price=last_price)
-            ddm = ddm_valuation(data, ke, warn, last_price=last_price)
+                warn = []
+                try:
+                    wacc_info = compute_wacc(data, betas.get(code), warn)
+                except Exception as e:
+                    warn.append(f"WACC error: {type(e).__name__}: {e}")
+                    wacc_info = {'cost_of_equity': None, 'wacc': None, 'note': 'WACC gagal dihitung'}
+                ke = wacc_info.get('cost_of_equity')
+                try:
+                    five = five_year_valuation(data, last_price, warn, override=overrides.get(code))
+                except Exception as e:
+                    warn.append(f"five_year error: {type(e).__name__}: {e}")
+                    five = {'applicable': False, 'reason': f'Error build: {type(e).__name__}: {e}'}
+                try:
+                    dcf = dcf_valuation(data, wacc_info.get('wacc'), warn, financial=financial, last_price=last_price)
+                except Exception as e:
+                    warn.append(f"dcf error: {type(e).__name__}: {e}")
+                    dcf = {'applicable': False, 'reason': f'Error build: {type(e).__name__}: {e}'}
+                try:
+                    ddm = ddm_valuation(data, ke, warn, last_price=last_price)
+                except Exception as e:
+                    warn.append(f"ddm error: {type(e).__name__}: {e}")
+                    ddm = {'applicable': False, 'reason': f'Error build: {type(e).__name__}: {e}'}
 
-            data['valuation'] = {
-                'sector': info.get('sector'),
-                'industry': info.get('industry'),
-                'is_financial': financial,
-                'last_price': last_price,
-                'price_source': 'live' if price_is_live else 'excel',
-                'five_year': five,            # model utama pemilik
-                'wacc': wacc_info,
-                'dcf': dcf,                   # cross-check profesional
-                'ddm': ddm,                   # cross-check profesional
-                'notes': warn,
-            }
-            stocks[code] = data
+                data['valuation'] = {
+                    'sector': info.get('sector'),
+                    'industry': info.get('industry'),
+                    'is_financial': financial,
+                    'last_price': last_price,
+                    'price_source': 'live' if price_is_live else 'excel',
+                    'five_year': five,            # model utama pemilik
+                    'wacc': wacc_info,
+                    'dcf': dcf,                   # cross-check profesional
+                    'ddm': ddm,                   # cross-check profesional
+                    'notes': warn,
+                }
+                stocks[code] = data
+            except Exception as e:
+                warnings.append(f"Saham '{code}': error fatal saat build "
+                                f"({type(e).__name__}: {e}) — dilewati, valuasi diset applicable:false")
+                # Tetap simpan data minimum supaya saham masih kelihatan di UI
+                # (search emiten, info dasar) walau model tidak applicable.
+                if 'valuation' not in data:
+                    data['valuation'] = {
+                        'sector': stock_info.get(code, {}).get('sector'),
+                        'industry': stock_info.get(code, {}).get('industry'),
+                        'is_financial': False,
+                        'last_price': data.get('q1', {}).get('price'),
+                        'price_source': 'excel',
+                        'five_year': {'applicable': False, 'reason': f'Build error: {type(e).__name__}: {e}'},
+                        'wacc': {'wacc': None, 'cost_of_equity': None},
+                        'dcf':  {'applicable': False, 'reason': 'Build error'},
+                        'ddm':  {'applicable': False, 'reason': 'Build error'},
+                        'notes': [f'Build error: {type(e).__name__}: {e}'],
+                    }
+                stocks[code] = data
 
     out = {
         'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
