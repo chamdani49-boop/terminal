@@ -7,6 +7,13 @@
 /valuation.json
   Cache-Control: public, max-age=120, s-maxage=120, stale-while-revalidate=600
 
+# HTML shell — selalu revalidasi agar perubahan langsung tampil setelah deploy
+# (mencegah browser/edge menahan versi index.html lama setelah merge ke main).
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
 # Static assets (the HTML shell) can be cached longer; HTML revalidates
 # instantly via Pages' atomic deploys.
 /*

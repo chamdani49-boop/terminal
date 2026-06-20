@@ -107,6 +107,7 @@ body{
   font-family:'Plus Jakarta Sans',system-ui,sans-serif;
   background:var(--bg);color:var(--text);
   min-height:100vh;
+  min-height:100dvh;
   -webkit-font-smoothing:antialiased;
   /* overflow-x:hidden di body merusak position:fixed di mobile browser —
      pindah ke html agar fixed children (bottom-nav, top-bar) tetap nempel */
@@ -9220,7 +9221,7 @@ loadData();
 .vl-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;outline:none;transition:border-color .2s,box-shadow .2s}
 .vl-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
 .vl-label{font-size:12px;color:var(--text);margin-bottom:7px;display:block;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
-.vl-note{font-size:11px;color:var(--text3);margin-top:10px}
+.vl-note{font-size:10px;color:var(--text3);margin-top:10px;line-height:1.5}
 
 @media(max-width:700px){
   .vl-grid2{grid-template-columns:1fr}
@@ -9437,10 +9438,11 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-mktcap .l{margin-top:0!important;font-size:8px;letter-spacing:.2px}
   #page-valuasi .vl-mktcap .v{font-size:11px}
   #page-valuasi .vl-mktcap .v + .l{margin-left:11px}
-  #page-valuasi .vl-name{font-size:13px;letter-spacing:.5px}
+  #page-valuasi .vl-name{font-size:22px;letter-spacing:.5px;font-weight:800}
   #page-valuasi .vl-sub{font-size:9px}
   #page-valuasi .vl-price{font-size:20px}
   #page-valuasi .vl-price-meta{font-size:8px;opacity:.5}
+  #page-valuasi .vl-price-src{display:none}
   #page-valuasi .vl-badge{font-size:9px;padding:1px 6px}
   #page-valuasi .vl-mos{padding:4px 10px;min-width:auto;border-radius:7px}
   #page-valuasi .vl-mos .v{font-size:14px}
@@ -9545,7 +9547,7 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-grid4 .bb-panel-title{font-size:11px}
   #page-valuasi .vl-head{padding:6px 10px;gap:4px}
   #page-valuasi .vl-logo{width:28px;height:28px;font-size:9px}
-  #page-valuasi .vl-name{font-size:12px}
+  #page-valuasi .vl-name{font-size:20px}
   #page-valuasi .vl-sub{font-size:8px}
   #page-valuasi .vl-price-meta{font-size:7px;opacity:.4}
   #page-valuasi .vl-mktcap .v{font-size:10px}
@@ -9590,6 +9592,7 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-kpis-proj{grid-template-columns:repeat(2,1fr)!important}
   #page-valuasi .vl-proj-row-mob{flex-direction:column}
   #page-valuasi .vl-price{font-size:20px}
+  #page-valuasi .vl-name{font-size:18px}
 }
 </style>
 
@@ -9812,7 +9815,6 @@ body.vl-maxing{overflow:hidden}
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong class="vl-ttm-note">TTM</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
       </div>
     </div>
 
@@ -9998,7 +10000,7 @@ body.vl-maxing{overflow:hidden}
     </div>
 
     <div class="vl-note" style="margin-top:18px;text-align:center" id="vlFootNote">
-      ⚠️ Proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>
+      by <strong>economstock</strong>
     </div>
 
   </div><!-- /vl-wrap -->
@@ -10207,7 +10209,7 @@ body.vl-maxing{overflow:hidden}
       '<div class="vl-head-right">'+
         '<div>'+
           '<div class="vl-price">'+fmtRp(e.price)+'</div>'+
-          '<div class="vl-price-meta">Harga terakhir · '+(e.source==='live'?'live (sheet)':e.source)+'</div>'+
+          '<div class="vl-price-meta vl-price-src">Harga terakhir · '+(e.source==='live'?'live (sheet)':e.source)+'</div>'+
           chgBadge+
         '</div>'+
         '<div class="vl-mktcap">'+
@@ -12097,7 +12099,7 @@ body.vl-maxing{overflow:hidden}
       setWinButtons();
       renderAll();
       const fn = document.getElementById('vlFootNote');
-      if(fn && state.raw.generated_at) fn.innerHTML = '⚠️ Data per '+String(state.raw.generated_at).slice(0,10)+' · proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>';
+      if(fn) fn.innerHTML = 'by <strong>economstock</strong>';
     }catch(e){
       showError(String((e && e.message) || e));
     }finally{
