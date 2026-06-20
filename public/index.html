@@ -12095,7 +12095,6 @@ body.vl-maxing{overflow:hidden}
   function vlOpenStockDrop(){
     const drop = document.getElementById('vlStockDrop'); const wrap = document.getElementById('vlSearchWrap');
     if(!drop) return;
-    vlFilterStockDrop('');
     drop.classList.add('open'); if(wrap) wrap.classList.add('is-open');
   }
   function vlCloseStockDrop(){
@@ -12106,18 +12105,32 @@ body.vl-maxing{overflow:hidden}
   function vlWireStockSearch(){
     const inp = document.getElementById('vlStockSearch'); if(!inp || inp._wired) return;
     inp._wired = true;
-    inp.addEventListener('focus', ()=>{ inp.select(); vlOpenStockDrop(); });
-    inp.addEventListener('input', ()=>{ vlFilterStockDrop(inp.value); const d=document.getElementById('vlStockDrop'); const w=document.getElementById('vlSearchWrap'); if(d) d.classList.add('open'); if(w) w.classList.add('is-open'); });
+    // Focus: select all teks supaya gampang diganti, TAPI tidak buka dropdown
+    // (mirip search header — list muncul hanya setelah user mengetik).
+    inp.addEventListener('focus', ()=>{ inp.select(); });
+    inp.addEventListener('input', ()=>{
+      const q = inp.value.trim();
+      // Saat input sama persis dgn label terpilih (mis. "AADI · Energy"),
+      // anggap belum ada query baru → jangan buka dropdown.
+      const cur = state.raw && state.raw.stocks[state.code];
+      const sector = cur && cur.valuation && cur.valuation.sector ? cur.valuation.sector : '';
+      const selectedLabel = state.code + (sector?' · '+sector:'');
+      if(!q || q === selectedLabel){ vlCloseStockDrop(); return; }
+      vlFilterStockDrop(q);
+      vlOpenStockDrop();
+    });
     inp.addEventListener('blur', ()=> setTimeout(()=>{ vlCloseStockDrop(); vlSyncStockSearchInput(); }, 160));
     inp.addEventListener('keydown', (e)=>{
       const drop = document.getElementById('vlStockDrop'); if(!drop) return;
+      const isOpen = drop.classList.contains('open');
+      if(e.key==='Escape'){ inp.blur(); return; }
+      if(!isOpen) return;   // navigasi keyboard hanya saat dropdown terbuka
       const visible = Array.from(drop.querySelectorAll('.vl-search-item')).filter(it=>it.style.display!=='none');
       if(!visible.length) return;
       let idx = visible.findIndex(it=>it.classList.contains('active'));
       if(e.key==='ArrowDown'){ e.preventDefault(); idx=(idx<0?0:Math.min(visible.length-1, idx+1)); visible.forEach(it=>it.classList.remove('active')); visible[idx].classList.add('active'); visible[idx].scrollIntoView({block:'nearest'}); }
       else if(e.key==='ArrowUp'){ e.preventDefault(); idx=(idx<=0?0:idx-1); visible.forEach(it=>it.classList.remove('active')); visible[idx].classList.add('active'); visible[idx].scrollIntoView({block:'nearest'}); }
       else if(e.key==='Enter'){ e.preventDefault(); const tgt = visible[idx>=0?idx:0]; if(tgt){ window.vlSelectStock(tgt.getAttribute('data-code')); inp.blur(); } }
-      else if(e.key==='Escape'){ inp.blur(); }
     });
   }
   function pickDefaultCode(){
