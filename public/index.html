@@ -9660,6 +9660,9 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-grid4 .bb-panel-body{padding:14px 16px}
   #page-valuasi .vl-toolbar{flex-direction:column;align-items:stretch;gap:10px;padding:10px 12px}
   #page-valuasi .vl-select{width:100%;min-width:auto}
+  /* Window group: label + tombol tahun SEJAJAR satu baris (label dikecilin) */
+  #page-valuasi .vl-toolbar .vl-tb-group:last-child{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap}
+  #page-valuasi .vl-toolbar .vl-tb-group:last-child .vl-tb-label{font-size:8px;line-height:1.2;letter-spacing:.2px;flex:1 1 auto;min-width:0}
   #page-valuasi .vl-table{font-size:9px;min-width:0}
   #page-valuasi .vl-table thead th{font-size:8px;padding:4px 5px;white-space:nowrap}
   #page-valuasi .vl-table tbody td{font-size:9px;padding:5px 5px;white-space:nowrap}
@@ -9704,8 +9707,8 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-cmp-tbl{font-size:11px}
   #page-valuasi .vl-cmp-tbl thead th{font-size:9.5px;padding:7px 7px}
   #page-valuasi .vl-cmp-tbl tbody td{font-size:11px;padding:8px 7px}
-  #page-valuasi .vl-win{flex-wrap:wrap}
-  #page-valuasi .vl-win .vl-basis-btn{font-size:10.5px;padding:5px 10px}
+  #page-valuasi .vl-win{flex-wrap:nowrap;flex-shrink:0;gap:4px}
+  #page-valuasi .vl-win .vl-basis-btn{font-size:9.5px;padding:5px 8px}
   #page-valuasi .vl-slider-body{padding:6px 12px 14px}
   #page-valuasi .vl-cmp-card .v{font-size:19px}
   #page-valuasi .vl-kpi .v{font-size:16px}
