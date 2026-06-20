@@ -1,0 +1,46 @@
+#:schema node_modules/wrangler/config-schema.json
+# ════════════════════════════════════════════════════════════════════════
+# valuation-uploader — Worker untuk upload file Excel valuasi via UI web
+# ════════════════════════════════════════════════════════════════════════
+# Worker ini SEPENUHNYA TERPISAH dari site statis utama (terminal) dan
+# Worker terminal-live. Tujuannya: kasih halaman web sederhana ke pemilik
+# untuk upload/list/hapus file .xlsx di data/valuation/ tanpa harus pakai
+# UI GitHub langsung.
+#
+# Cara kerja:
+#   1. User buka URL Worker → masukin password.
+#   2. Worker tampilin daftar file di data/valuation/ (via GitHub Contents API).
+#   3. User upload .xlsx → Worker commit via GitHub API → workflow
+#      refresh-valuation.yml otomatis trigger → valuation.json di-rebuild.
+#   4. User klik Hapus → Worker DELETE via GitHub API → workflow trigger lagi.
+#
+# Cara deploy:
+#   cd uploader/
+#   npx wrangler deploy
+#
+# Setelah deploy, set rahasia:
+#   npx wrangler secret put GITHUB_TOKEN     # PAT dgn scope: repo
+#   npx wrangler secret put APP_PASSWORD     # password buat login UI
+#
+# URL hasil deploy: https://valuation-uploader.<sub>.workers.dev/
+# (untuk akun chamdani49 → https://valuation-uploader.chamdani49.workers.dev/)
+# ════════════════════════════════════════════════════════════════════════
+
+name = "valuation-uploader"
+main = "src/index.js"
+compatibility_date = "2025-05-01"
+workers_dev = true
+
+# Variabel non-rahasia (boleh ada di repo).
+[vars]
+GITHUB_OWNER  = "chamdani49-boop"
+GITHUB_REPO   = "terminal"
+GITHUB_BRANCH = "main"
+UPLOAD_DIR    = "data/valuation"
+
+# ── Rahasia (JANGAN ditaruh di file ini) ──
+# Set lewat CLI sekali saja:
+#   npx wrangler secret put GITHUB_TOKEN     # GitHub PAT (classic) dgn scope "repo"
+#                                              atau fine-grained PAT dgn izin
+#                                              "Contents: Read & write" di repo terminal
+#   npx wrangler secret put APP_PASSWORD     # password buat login UI uploader
