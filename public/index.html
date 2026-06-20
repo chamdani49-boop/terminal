@@ -9680,7 +9680,11 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi #vlProjTable thead th{font-size:10.5px}
   #page-valuasi #vlProjTable tbody td{font-size:12.5px}
   #page-valuasi #vlProjTable tbody td strong{font-size:13px}
+  /* Pastikan tabel proyeksi muat penuh tanpa scroll kanan-kiri */
+  #page-valuasi #vlProjTable{table-layout:fixed;width:100%;min-width:0}
+  #page-valuasi #vlProjTable thead th,#page-valuasi #vlProjTable tbody td{white-space:normal;word-break:break-word;overflow-wrap:anywhere;padding-left:4px;padding-right:4px}
   #page-valuasi #vlProjTableHeader{font-size:9px}
+  #page-valuasi #vlProjTableHeader > div{flex-wrap:wrap!important;overflow-x:visible!important;white-space:normal!important}
   #page-valuasi #vlProjTableHeader span{font-size:8.5px!important}
   #page-valuasi #vlProjTableHeader strong{font-size:9px!important}
   #page-valuasi #vlProjTableHeader .vl-badge{font-size:7.5px!important;padding:1px 5px}
@@ -9863,8 +9867,11 @@ body.vl-maxing{overflow:hidden}
   #page-dashboard .yoy-table th{font-size:9px;padding:6px 4px}
   #page-dashboard .yoy-table td{font-size:11px;padding:7px 4px}
   #page-dashboard .yoy-label{font-size:10px!important}
-  #page-dashboard .pt-box{padding:11px 8px}
-  #page-dashboard .pt-box .ptl{font-size:9px;letter-spacing:.5px;margin-bottom:4px}
+  #page-dashboard .pt-grid{gap:8px}
+  #page-dashboard .pt-box{padding:9px 7px}
+  #page-dashboard .pt-box .ptl{font-size:8.5px;letter-spacing:.4px;margin-bottom:3px}
+  #page-dashboard .pt-box .ptv{font-size:17px;line-height:1.1;margin-bottom:1px}
+  #page-dashboard .pt-box .ptp{font-size:9.5px;margin-top:2px}
 
   /* ── CONSENSUS ── (layout sudah ditangani; ini hanya rapikan teks) */
   #page-consensus .ov-card-sub{font-size:10px}
@@ -10722,14 +10729,14 @@ body.vl-maxing{overflow:hidden}
           '<span style="font-size:11px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:var(--text)">'+s.code+'</span>'+
           '<span style="font-size:9px;color:var(--text2)">Sekarang <strong style="color:var(--text)">'+fmtRp(livePrice)+'</strong></span>'+
           '<span class="vl-badge '+(ok(chg)&&chg>=0?'vl-up':'vl-dn')+'" style="font-size:8px">ACTUAL</span>'+
-          '<span style="font-size:9px;color:var(--text2)">'+basisLabel+' · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
+          '<span style="font-size:9px;color:var(--text2)">Basis · <strong style="color:var(--text)">'+fmtRp(basisPrice)+'</strong></span>'+
           (ok(chg)?'<span class="'+(chg>=0?'vl-pos':'vl-neg')+'" style="font-size:10px;font-weight:800">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>':'')+
           '</div>';
       }
 
-      // Update header kolom tabel (vs TTM <kuartal> <tahun>)
+      // Update header kolom tabel (label ringkas "Basis" — tanpa teks TTM agar muat tanpa scroll)
       const thRow = tb.closest('table').querySelector('thead tr');
-      if(thRow) thRow.innerHTML = '<th>Tahun</th><th>Potensi Price</th><th>% (vs Sekarang)</th><th>% (vs '+basisLabel+')</th>';
+      if(thRow) thRow.innerHTML = '<th>Tahun</th><th>Potensi Price</th><th>% (vs Sekarang)</th><th>% (vs Basis)</th>';
 
       let rows = years.map((yr,i)=>{
         const pt = pc.potensi[i];
