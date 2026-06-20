@@ -12101,7 +12101,8 @@ body.vl-maxing{overflow:hidden}
     if(!q) q = 'Q1';
     if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
     q = q.toUpperCase();
-    const buttons = [{ key:'current', label: ttmLabel, tag:q }];
+    const yr2 = (ttmLabel.split("'")[1] || '');   // 2 digit tahun (mis. "26") dari vlTtmLabel
+    const buttons = [{ key:'current', label: 'TTM '+q+' '+yr2, tag:'' }];
     yrs.slice(-4).reverse().forEach(y=> buttons.push({ key:'Y'+y, year:y, label:y }));
     const moreYears = yrs.slice(0, -4).reverse();   // tahun lebih lama, terbaru dulu di dropdown
     return { buttons, moreYears, latest, defKey:'Y'+latest };
