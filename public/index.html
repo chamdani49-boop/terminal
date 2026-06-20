@@ -107,6 +107,7 @@ body{
   font-family:'Plus Jakarta Sans',system-ui,sans-serif;
   background:var(--bg);color:var(--text);
   min-height:100vh;
+  min-height:100dvh;
   -webkit-font-smoothing:antialiased;
   /* overflow-x:hidden di body merusak position:fixed di mobile browser —
      pindah ke html agar fixed children (bottom-nav, top-bar) tetap nempel */
@@ -9220,7 +9221,7 @@ loadData();
 .vl-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;outline:none;transition:border-color .2s,box-shadow .2s}
 .vl-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
 .vl-label{font-size:12px;color:var(--text);margin-bottom:7px;display:block;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
-.vl-note{font-size:11px;color:var(--text3);margin-top:10px}
+.vl-note{font-size:10px;color:var(--text3);margin-top:10px;line-height:1.5}
 
 @media(max-width:700px){
   .vl-grid2{grid-template-columns:1fr}
@@ -9812,7 +9813,6 @@ body.vl-maxing{overflow:hidden}
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong class="vl-ttm-note">TTM</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
       </div>
     </div>
 
@@ -9998,7 +9998,7 @@ body.vl-maxing{overflow:hidden}
     </div>
 
     <div class="vl-note" style="margin-top:18px;text-align:center" id="vlFootNote">
-      ⚠️ Proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>
+      by <strong>economstock</strong>
     </div>
 
   </div><!-- /vl-wrap -->
@@ -12097,7 +12097,7 @@ body.vl-maxing{overflow:hidden}
       setWinButtons();
       renderAll();
       const fn = document.getElementById('vlFootNote');
-      if(fn && state.raw.generated_at) fn.innerHTML = '⚠️ Data per '+String(state.raw.generated_at).slice(0,10)+' · proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>';
+      if(fn) fn.innerHTML = 'by <strong>economstock</strong>';
     }catch(e){
       showError(String((e && e.message) || e));
     }finally{
