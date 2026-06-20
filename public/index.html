@@ -721,6 +721,41 @@ select.form-control option{background:var(--card);color:var(--text)}
   #savingQuickContent .qr-val{font-size:12px}
 }
 
+/* Rincian dividen per tahun — kartu kecil di bawah ringkasan (additive).
+   Serasi dgn estetika qr-list; tidak mengubah layout grid yang ada. */
+#savingQuickContent .qr-div-detail{
+  margin-top:12px;border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--bg2);overflow:hidden;
+}
+#savingQuickContent .qr-div-detail-hd{
+  font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--text2);padding:9px 12px;background:var(--bg3);
+  border-bottom:1px solid var(--border);
+}
+#savingQuickContent .qr-div-rows{padding:4px 12px 8px}
+#savingQuickContent .qr-div-line{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:7px 0;border-bottom:1px dashed var(--border);font-size:12px;
+}
+#savingQuickContent .qr-div-line:last-child{border-bottom:none}
+#savingQuickContent .qr-div-yr{
+  font-family:'IBM Plex Mono',monospace;font-weight:800;color:var(--accent2);
+  flex-shrink:0;min-width:42px;
+}
+#savingQuickContent .qr-div-calc{
+  font-size:11px;color:var(--text3);text-align:center;flex:1;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#savingQuickContent .qr-div-amt{
+  font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);
+  font-variant-numeric:tabular-nums;flex-shrink:0;
+}
+@media(max-width:640px){
+  #savingQuickContent .qr-div-detail-hd{font-size:9.5px;padding:8px 10px}
+  #savingQuickContent .qr-div-line{font-size:11px;padding:6px 0}
+  #savingQuickContent .qr-div-calc{font-size:10px}
+}
+
 /* Portfolio table — 8 kolom, paksa min-width supaya horizontal scroll
    di mobile alih-alih squish jadi unreadable. Container `.port-scroll`
    handle scroll dua arah. */
@@ -4200,6 +4235,48 @@ async function loadRecStatus() {
     }
   }
   console.warn('[rec-status] tidak termuat — rating pakai fallback data bulanan');
+}
+
+// ── Data dividen per emiten (dari valuation.json) ───────────────────────
+// Dipakai halaman Simulasi untuk menghitung perolehan dividen historis.
+// Lazy-load + cache. Karena valuation.json di-rebuild otomatis tiap kali
+// file Excel valuasi ditambah/diubah (workflow refresh-valuation), peta
+// dividen ini OTOMATIS bertambah saat emiten baru diupload — tanpa edit kode.
+let VAL_DIV = null;   // { CODE: { byYear:{ '2025':458, ... }, latestDps:Number|null } }
+async function loadValuationDiv() {
+  if (VAL_DIV) return VAL_DIV;
+  const v = Date.now();
+  const urls = [
+    'valuation.json?v=' + v,
+    'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/valuation.json?v=' + v,
+  ];
+  for (const u of urls) {
+    try {
+      const res = await fetch(u, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const j = await res.json();
+      const stocks = (j && j.stocks) || {};
+      const map = {};
+      for (const code of Object.keys(stocks)) {
+        const annual = (stocks[code] && stocks[code].annual) || {};
+        const byYear = {};
+        let latestDps = null, latestYr = -1;
+        for (const yr of Object.keys(annual)) {
+          const d = annual[yr] && annual[yr].dps;
+          if (Number.isFinite(d)) {
+            byYear[yr] = d;
+            const y = parseInt(yr, 10);
+            if (y > latestYr) { latestYr = y; latestDps = d; }
+          }
+        }
+        map[code] = { byYear, latestDps };
+      }
+      VAL_DIV = map;
+      return VAL_DIV;
+    } catch (_) {}
+  }
+  VAL_DIV = {};   // gagal → peta kosong (dividen tampil "belum tersedia", tidak error)
+  return VAL_DIV;
 }
 
 async function loadData() {
@@ -8314,12 +8391,39 @@ function attachMoneyInputFormatters() {
   attach('lumpAmount');
 }
 
-function calculateSaving() {
+async function calculateSaving() {
   const code = document.getElementById('savingStock').value;
   if (!code) { alert('Pilih saham terlebih dahulu!'); return; }
 
   const ph = DATA.price_history;
   const info = DATA.stock_info[code] || {};
+
+  // Peta dividen historis (dps per tahun) — otomatis dari valuation.json.
+  const divMap = await loadValuationDiv();
+  const divInfo = (divMap && divMap[code]) || null;   // null = data dividen belum ada utk emiten ini
+  const dpsByYear = divInfo ? divInfo.byYear : {};
+
+  // Akumulasi dividen: untuk tiap tahun, dividen = unit yang dipegang di akhir
+  // tahun itu × DPS tahun tsb. yearEndUnits[year] = total unit pada bulan
+  // terakhir tahun tsb dalam simulasi (di-overwrite tiap bulan → ttp akhir tahun).
+  function computeDividen(rows) {
+    const yearEndUnits = {};
+    rows.forEach(r => {
+      const yr = String(r.dateStr || '').slice(0, 4);
+      if (yr) yearEndUnits[yr] = r.totalUnit;
+    });
+    const perYear = [];
+    let total = 0;
+    Object.keys(yearEndUnits).sort().forEach(yr => {
+      const dps = dpsByYear[yr];
+      if (Number.isFinite(dps) && dps > 0) {
+        const amt = yearEndUnits[yr] * dps;
+        total += amt;
+        perYear.push({ year: yr, dps, units: yearEndUnits[yr], amount: amt });
+      }
+    });
+    return { total, perYear, available: !!divInfo };
+  }
 
   if (savingMode === 'dca') {
     // Strip non-digit (titik separator ribuan) sebelum parse
@@ -8341,11 +8445,12 @@ function calculateSaving() {
       const nilaiSekarang = totalUnit * price;
       const gl = nilaiSekarang - totalModal;
       const pctGl = totalModal > 0 ? gl / totalModal : 0;
-      rows.push({ label: e.label || e.date, price, unitBeli, totalUnit, modal: totalModal, nilai: nilaiSekarang, gl, pctGl });
+      rows.push({ label: e.label || e.date, dateStr: e.date, price, unitBeli, totalUnit, modal: totalModal, nilai: nilaiSekarang, gl, pctGl });
     });
 
     const last = rows[rows.length-1];
-    showSavingResult(code, rows, last, 'DCA');
+    const dividen = computeDividen(rows);
+    showSavingResult(code, rows, last, 'DCA', dividen);
 
   } else {
     const lumpAmt = parseInt(String(document.getElementById('lumpAmount').value).replace(/[^\d]/g, ''), 10) || 20000000;
@@ -8362,15 +8467,16 @@ function calculateSaving() {
       const nilai = totalUnit * e[code];
       const gl = nilai - actualModal;
       const pctGl = actualModal > 0 ? gl / actualModal : 0;
-      return { label: e.label || e.date, price: e[code], unitBeli: 0, totalUnit, modal: actualModal, nilai, gl, pctGl };
+      return { label: e.label || e.date, dateStr: e.date, price: e[code], unitBeli: 0, totalUnit, modal: actualModal, nilai, gl, pctGl };
     });
 
     const last = rows[rows.length-1];
-    showSavingResult(code, rows, last, 'Lump Sum');
+    const dividen = computeDividen(rows);
+    showSavingResult(code, rows, last, 'Lump Sum', dividen);
   }
 }
 
-function showSavingResult(code, rows, last, mode) {
+function showSavingResult(code, rows, last, mode, dividen) {
   // Tampilkan semua card dulu sebelum render chart
   // (Chart.js butuh canvas visible untuk hitung dimensi)
   document.getElementById('savingQuickResult').style.display = 'block';
@@ -8390,15 +8496,36 @@ function showSavingResult(code, rows, last, mode) {
   const glSign = last.gl >= 0 ? '+' : '';
 
   document.getElementById('savingResultTitle').textContent = `Hasil Simulasi ${mode} · ${code}`;
-  // Layout Ringkasan baru — hero (untung/rugi) + list metrik.
-  // Angka panjang tetap rapi karena value text-align right + tabular-nums.
+
+  // ── Hitung total termasuk dividen ──
+  const div = dividen || { total: 0, perYear: [], available: false };
+  const totalDividen = div.total || 0;
+  const grandTotal = last.nilai + totalDividen;          // nilai capital + dividen
+  const totalGL = grandTotal - last.modal;               // total untung termasuk dividen
+  const totalPct = last.modal > 0 ? totalGL / last.modal : 0;
+  // Baris dividen (hanya tampil bila data dividen emiten tersedia)
+  const divRows = div.available ? `
+      <div class="qr-row qr-row-div">
+        <span class="qr-label">💰 Dividen Diterima</span>
+        <span class="qr-val" style="color:var(--accent)">${rp(totalDividen)}</span>
+      </div>
+      <div class="qr-row qr-row-total">
+        <span class="qr-label">Total + Dividen</span>
+        <span class="qr-val ${totalGL>=0?'up':'dn'}">${rp(grandTotal)}</span>
+      </div>` : `
+      <div class="qr-row">
+        <span class="qr-label">💰 Dividen Diterima</span>
+        <span class="qr-val" style="color:var(--text3);font-size:12px">data belum tersedia</span>
+      </div>`;
+
+  // Layout Ringkasan — hero (untung/rugi capital) + list metrik + detail dividen.
   const heroCls = last.gl >= 0 ? 'profit' : 'loss';
   const pctStr = `${glSign}${(last.pctGl*100).toFixed(2)}%`;
   document.getElementById('savingQuickContent').innerHTML = `
     <div class="qr-hero ${heroCls}">
-      <div class="qr-hero-label">${last.gl >= 0 ? 'Untung Total' : 'Rugi Total'}</div>
+      <div class="qr-hero-label">${last.gl >= 0 ? 'Untung (Capital Gain)' : 'Rugi (Capital)'}</div>
       <div class="qr-hero-value ${glCls}">${glSign}${rp(last.gl)}</div>
-      <div class="qr-hero-pct ${glCls}">${pctStr} return</div>
+      <div class="qr-hero-pct ${glCls}">${pctStr} return harga</div>
     </div>
     <div class="qr-list">
       <div class="qr-row">
@@ -8406,9 +8533,15 @@ function showSavingResult(code, rows, last, mode) {
         <span class="qr-val">${rp(last.modal)}</span>
       </div>
       <div class="qr-row">
-        <span class="qr-label">Nilai Saat Ini</span>
+        <span class="qr-label">Nilai Saham Saat Ini</span>
         <span class="qr-val">${rp(last.nilai)}</span>
       </div>
+      ${divRows}
+      ${div.available ? `
+      <div class="qr-row" style="border-top:1px dashed var(--border);margin-top:2px;padding-top:8px">
+        <span class="qr-label" style="font-weight:800">Total Untung + Dividen</span>
+        <span class="qr-val ${totalGL>=0?'up':'dn'}" style="font-weight:800">${totalGL>=0?'+':''}${rp(totalGL)} (${totalGL>=0?'+':''}${(totalPct*100).toFixed(2)}%)</span>
+      </div>` : ''}
       <div class="qr-row">
         <span class="qr-label">Total Unit</span>
         <span class="qr-val">${last.totalUnit.toLocaleString('id')}</span>
@@ -8422,6 +8555,18 @@ function showSavingResult(code, rows, last, mode) {
         <span class="qr-val">${rows.length} bulan</span>
       </div>
     </div>
+    ${div.available && div.perYear.length ? `
+    <div class="qr-div-detail">
+      <div class="qr-div-detail-hd">Rincian Dividen per Tahun</div>
+      <div class="qr-div-rows">
+        ${div.perYear.map(d => `
+          <div class="qr-div-line">
+            <span class="qr-div-yr">${d.year}</span>
+            <span class="qr-div-calc">${d.units.toLocaleString('id')} lembar × ${rp(d.dps)}</span>
+            <span class="qr-div-amt">${rp(d.amount)}</span>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
   `;
 
   // Chart — render dalam requestAnimationFrame agar canvas sudah visible & punya dimensi
@@ -9638,6 +9783,66 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-kpis-proj{grid-template-columns:repeat(2,1fr)!important}
   #page-valuasi .vl-proj-row-mob{flex-direction:column}
   #page-valuasi .vl-price{font-size:20px}
+}
+</style>
+
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   MINIMALIST MOBILE SKIN — Dashboard, Consensus, Simulasi
+   Menyelaraskan "rasa" minimalis halaman Valuasi (teks kecil & rapi,
+   judul kartu de-emphasized, padding rapat) ke 3 halaman lain.
+   PENTING: HANYA tipografi, padding, margin, gap, radius — TIDAK menyentuh
+   display/grid-template/flex-direction → LAYOUT TIDAK BERUBAH sama sekali.
+   Semua di-scope ke #page-* + di dalam @media mobile → desktop aman total.
+   ════════════════════════════════════════════════════════════════════ */
+@media(max-width:600px){
+  /* — Judul kartu: kecil, tidak uppercase, rapat (gaya Valuasi) — */
+  #page-dashboard .card-title,
+  #page-consensus .card-title,
+  #page-menabung  .card-title{
+    font-size:11px;font-weight:700;letter-spacing:.2px;text-transform:none;
+    margin-bottom:10px;color:var(--text2);
+  }
+
+  /* ── DASHBOARD ── */
+  #page-dashboard{padding-bottom:90px}
+  #page-dashboard .card{padding:13px}
+  #page-dashboard .stat-cell{padding:8px 6px}
+  #page-dashboard .stat-label{font-size:8.5px;letter-spacing:.3px;margin-bottom:3px}
+  #page-dashboard .stat-cell:first-child .stat-label{font-size:11px}
+  #page-dashboard .stat-val{font-size:12px}
+  #page-dashboard .stat-sub{font-size:8px}
+  #page-dashboard .correl-label{font-size:11px}
+  #page-dashboard .correl-val{font-size:12px}
+  #page-dashboard .chart-legend{font-size:10px;gap:10px;margin-bottom:8px}
+  #page-dashboard .legend-dot{width:16px}
+  #page-dashboard .period-tab{padding:5px 9px;font-size:10px}
+  #page-dashboard .analyst-table{font-size:10px}
+  #page-dashboard .analyst-table th{font-size:8.5px;padding:7px 6px}
+  #page-dashboard .analyst-table td{font-size:10px;padding:7px 6px}
+  #page-dashboard .yoy-table{font-size:11px}
+  #page-dashboard .yoy-table th{font-size:9px;padding:6px 4px}
+  #page-dashboard .yoy-table td{font-size:11px;padding:7px 4px}
+  #page-dashboard .yoy-label{font-size:10px!important}
+  #page-dashboard .pt-box{padding:11px 8px}
+  #page-dashboard .pt-box .ptl{font-size:9px;letter-spacing:.5px;margin-bottom:4px}
+
+  /* ── CONSENSUS ── (layout sudah ditangani; ini hanya rapikan teks) */
+  #page-consensus .ov-card-sub{font-size:10px}
+  #page-consensus .ov-card-badge{font-size:10px}
+
+  /* ── SIMULASI / MENABUNG ── (layout sudah ditangani; samakan judul kartu) */
+  #page-menabung .info-banner{font-size:11.5px}
+}
+
+@media(max-width:480px){
+  #page-dashboard .card-title,
+  #page-consensus .card-title,
+  #page-menabung  .card-title{font-size:10px}
+  #page-dashboard .stat-val{font-size:11px}
+  #page-dashboard .stat-label{font-size:8px}
+  #page-dashboard .analyst-table th{font-size:8px}
+  #page-dashboard .analyst-table td{font-size:9.5px}
 }
 </style>
 
