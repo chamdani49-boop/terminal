@@ -10003,10 +10003,6 @@ body.vl-maxing{overflow:hidden}
       </div>
     </div>
 
-    <div class="vl-note" style="margin-top:18px;text-align:center" id="vlFootNote">
-      ⚠️ Proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>
-    </div>
-
   </div><!-- /vl-wrap -->
 </div><!-- /page-valuasi -->
 
@@ -12120,8 +12116,6 @@ body.vl-maxing{overflow:hidden}
       populateStockSelect();
       setWinButtons();
       renderAll();
-      const fn = document.getElementById('vlFootNote');
-      if(fn && state.raw.generated_at) fn.innerHTML = '⚠️ Data per '+String(state.raw.generated_at).slice(0,10)+' · proyeksi bersifat estimasi, bukan rekomendasi investasi · by <strong>economstock</strong>';
     }catch(e){
       showError(String((e && e.message) || e));
     }finally{
