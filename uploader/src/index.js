@@ -244,6 +244,12 @@ async function apiDelete(request, env) {
   const name = url.searchParams.get('name');
   if (!name) return jsonRes({ error: 'Parameter "name" diperlukan' }, 400);
 
+  // Hanya .xlsx yg boleh dihapus. File system seperti overrides.json
+  // dilindungi supaya tidak terhapus tidak sengaja.
+  if (!/\.xlsx$/i.test(name)) {
+    return jsonRes({ error: 'File ini dilindungi (bukan .xlsx). Hanya file .xlsx yang boleh dihapus dari UI ini.' }, 403);
+  }
+
   const list = await ghListDir(env);
   if (list.error) return jsonRes(list, list.status || 500);
   const existing = list.items.find(f => f.name === name);
@@ -311,6 +317,7 @@ const STYLE = `
   .progress.active{display:block}
   .progress > div{height:100%;background:var(--accent);width:0%;transition:width .15s}
   code{background:var(--bg2);padding:1px 6px;border-radius:4px;font-size:12px;font-family:ui-monospace,monospace;color:var(--accent2)}
+  .tag-system{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.8px;background:var(--bg2);color:var(--text3);border:1px solid var(--border);padding:3px 9px;border-radius:var(--radius-pill)}
 </style>
 `;
 
@@ -362,6 +369,8 @@ ${STYLE}
     <strong>Cara pakai:</strong> drag-drop atau klik area di bawah untuk upload <code>.xlsx</code>.
     Setelah upload/hapus berhasil, GitHub Actions <code>refresh-valuation</code> auto-trigger
     dan rebuild <code>valuation.json</code> dalam ~30 detik.
+    <br><br>
+    <strong>Catatan:</strong> File <code>overrides.json</code> dilindungi (label <span class="tag-system">SYSTEM</span>) — berisi override valuasi manual yang dipakai script build, jangan dihapus.
   </div>
 
   <div class="card">
@@ -431,10 +440,14 @@ ${STYLE}
     }
     let h = '<table><thead><tr><th>Nama</th><th>Ukuran</th><th></th></tr></thead><tbody>';
     items.forEach(f=>{
+      const isXlsx = /\\.xlsx$/i.test(f.name);
+      const rightCell = isXlsx
+        ? '<button class="btn btn-danger" data-name="'+escapeAttr(f.name)+'" type="button">Hapus</button>'
+        : '<span class="tag-system" title="File config sistem \u2014 dilindungi dari hapus">SYSTEM</span>';
       h += '<tr>'+
         '<td><a href="'+escapeAttr(f.html_url)+'" target="_blank" rel="noopener">'+escapeHtml(f.name)+'</a></td>'+
         '<td class="size">'+fmtSize(f.size)+'</td>'+
-        '<td class="act"><button class="btn btn-danger" data-name="'+escapeAttr(f.name)+'" type="button">Hapus</button></td>'+
+        '<td class="act">'+rightCell+'</td>'+
       '</tr>';
     });
     h += '</tbody></table>';
