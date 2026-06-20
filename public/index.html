@@ -10191,8 +10191,9 @@ body.vl-maxing{overflow:hidden}
       (shares>=1e9 ? (shares/1e9).toLocaleString('id-ID',{maximumFractionDigits:2})+' miliar lembar'
                    : (shares/1e6).toLocaleString('id-ID',{maximumFractionDigits:0})+' juta lembar');
     const tags = [v.sector, v.industry].filter(Boolean).map(t=>'<span class="vl-tag">'+t+'</span>').join('');
+    const liveDot = (e.source==='live') ? '<span class="vl-live-dot" title="Harga live"></span>' : '';
     const chgBadge = ok(e.change)
-      ? '<div class="vl-price-meta" style="margin-top:3px"><span class="'+(e.change>=0?'vl-badge vl-up':'vl-badge vl-dn')+'">'+(e.change>=0?'+':'')+(e.change*100).toFixed(2)+'%</span></div>' : '';
+      ? '<div class="vl-price-meta" style="margin-top:3px"><span class="'+(e.change>=0?'vl-badge vl-up':'vl-badge vl-dn')+'">'+(e.change>=0?'+':'')+(e.change*100).toFixed(2)+'%</span>'+liveDot+'</div>' : '';
     const mosApplicable = m && m.applicable;
     const mosPct = mosApplicable ? m.margin_of_safety*100 : null;
     const ms = mosApplicable ? mosStyle(mosPct) : { col:'var(--text3)', txt:'belum tersedia' };
@@ -10209,7 +10210,6 @@ body.vl-maxing{overflow:hidden}
       '<div class="vl-head-right">'+
         '<div>'+
           '<div class="vl-price">'+fmtRp(e.price)+'</div>'+
-          '<div class="vl-price-meta">Harga terakhir · '+(e.source==='live'?'live (sheet)':e.source)+'</div>'+
           chgBadge+
         '</div>'+
       '</div>';
