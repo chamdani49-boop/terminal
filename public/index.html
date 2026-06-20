@@ -10916,6 +10916,7 @@ body.vl-maxing{overflow:hidden}
         { label:'Proyeksi Valuasi 5Th', data:projData, borderColor:COL.orange, backgroundColor:'transparent', borderDash:[6,4], fill:false, spanGaps:true, borderWidth:2.5, tension:.12,
           pointRadius:projRad, pointHoverRadius:7, pointBackgroundColor:projCol, pointBorderColor:'#fff', pointBorderWidth:1.5 }
       ];
+      vlEnsureRangeBar('vlProj');
       mk('vlProj', { type:'line', data:{ labels, datasets:ds }, options:{...base,
         plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{
           label:ctx=>{ const v=ctx.parsed.y; if(!ok(v)) return ''; const rp='Rp'+Math.round(v).toLocaleString('id-ID');
