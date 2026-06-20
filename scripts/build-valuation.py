@@ -244,7 +244,7 @@ def dcf_valuation(stock, wacc, warn, financial=False, last_price=None):
     price = last_price or stock['q1'].get('price')
 
     caveats = []
-    if base_fcf is None or shares is None:
+    if base_fcf is None or shares is None or shares <= 0:
         return {'applicable': False, 'reason': 'FCF / jumlah saham tidak tersedia'}
     if base_fcf <= 0:
         caveats.append('FCF dasar negatif/nol → DCF tidak andal untuk emiten ini')
@@ -508,18 +508,21 @@ def five_year_valuation(stock, last_price, warn, override=None):
         return out
 
     def submodel(key, base, g, mult):
-        if base is None or g is None or mult is None:
+        # Mark not-applicable jika input wajib hilang ATAU base/multiple non-positif
+        # (mis. emiten dgn ekuitas/laba/pendapatan ≤0 atau last_price ≤0).
+        if base is None or g is None or mult is None or base <= 0 or mult <= 0 or last_price is None or last_price <= 0:
             return {'key': key, 'applicable': False,
                     'growth': round(g, 4) if g is not None else None,
                     'multiple': mult, 'annual': None, 'cagr': None, 'mos': None}
         proj = project(base, g, mult)
         pt5 = proj[-1]['price_target']
         gl = (pt5 - last_price) / last_price
-        cagr = (proj[4]['value'] / proj[0]['value']) ** (1 / n) - 1
+        v0, v5 = proj[0]['value'], proj[4]['value']
+        cagr = ((v5 / v0) ** (1 / n) - 1) if (v0 and v0 > 0 and v5 and v5 > 0) else None
         mos = 1 - last_price / pt5 if pt5 else None
         return {'key': key, 'applicable': True, 'growth': round(g, 4), 'multiple': round(mult, 4),
                 'projection': proj, 'target_5y': round(pt5), 'gl_5y': round(gl, 4),
-                'annual': round(gl / n, 4), 'cagr': round(cagr, 4),
+                'annual': round(gl / n, 4), 'cagr': round(cagr, 4) if cagr is not None else None,
                 'mos': round(mos, 4) if mos is not None else None}
 
     g_bv  = (0.8 * roe_5y + 0.2 * roe_ann) if (roe_5y is not None and roe_ann is not None) else None
