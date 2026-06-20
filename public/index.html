@@ -12095,6 +12095,11 @@ body.vl-maxing{overflow:hidden}
   }
   function vlSyncStockSearchInput(){
     const inp = document.getElementById('vlStockSearch'); if(!inp || !state.raw) return;
+    if(!state.code || !state.raw.stocks || !state.raw.stocks[state.code]){
+      inp.value = '';
+      inp.placeholder = 'Data emiten belum tersedia — coba refresh halaman';
+      return;
+    }
     const s = state.raw.stocks[state.code];
     const sector = s && s.valuation && s.valuation.sector ? s.valuation.sector : '';
     inp.value = state.code + (sector?' · '+sector:'');
@@ -12159,7 +12164,9 @@ body.vl-maxing{overflow:hidden}
     });
   }
   function pickDefaultCode(){
+    if(!state.raw || !state.raw.stocks) return null;
     const codes = Object.keys(state.raw.stocks);
+    if(!codes.length) return null;
     const firstApplicable = codes.find(c=>{
       const v = state.raw.stocks[c].valuation;
       return v && v.five_year && v.five_year.applicable;
@@ -12265,6 +12272,11 @@ body.vl-maxing{overflow:hidden}
         state.stockInfo = (data && data.stock_info) ? data.stock_info : null;
       }catch(e){ state.live = null; }   // harga live opsional
       state.code = pickDefaultCode();
+      if(!state.code){
+        showError('Data valuasi belum tersedia. Coba refresh halaman dalam beberapa saat (workflow refresh-valuation mungkin sedang berjalan).');
+        state.loading = false;
+        return;
+      }
       populateStockSelect();
       setWinButtons();
       renderAll();
