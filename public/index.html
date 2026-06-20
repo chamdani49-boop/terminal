@@ -9365,6 +9365,39 @@ body.vl-maxing{overflow:hidden}
 #page-valuasi .vl-toolbar .vl-tb-group{flex-direction:row;align-items:center;gap:10px}
 #page-valuasi .vl-tb-label{font-size:9.5px;letter-spacing:.9px;color:var(--text3);white-space:nowrap;margin:0}
 #page-valuasi .vl-select{padding:6px 30px 6px 11px;font-size:12.5px;min-width:196px;border-radius:7px}
+
+/* Search emiten — bergaya pill mirip search header */
+#page-valuasi .vl-search{position:relative;min-width:240px;max-width:360px;flex:0 0 auto}
+#page-valuasi .vl-search input{
+  width:100%;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius-pill);padding:8px 32px 8px 34px;
+  font-size:13px;color:var(--text);font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.5px;
+  outline:none;transition:border-color .18s, box-shadow .18s;
+}
+#page-valuasi .vl-search input::placeholder{color:var(--text3);font-weight:500;font-family:inherit;letter-spacing:0}
+#page-valuasi .vl-search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
+#page-valuasi .vl-search .ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+#page-valuasi .vl-search .caret{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:10px;pointer-events:none;transition:transform .2s}
+#page-valuasi .vl-search.is-open .caret{transform:translateY(-50%) rotate(180deg)}
+#page-valuasi .vl-search-drop{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  max-height:300px;overflow-y:auto;z-index:200;display:none;
+  box-shadow:var(--shadow-card-lg);
+}
+#page-valuasi .vl-search-drop.open{display:block}
+#page-valuasi .vl-search-item{padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s}
+#page-valuasi .vl-search-item:hover,#page-valuasi .vl-search-item.active{background:var(--bg2)}
+#page-valuasi .vl-search-item .code{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:var(--accent);min-width:62px;flex-shrink:0}
+#page-valuasi .vl-search-item .sector{font-size:11px;color:var(--text2);margin-left:auto;flex-shrink:0;background:var(--bg2);padding:3px 10px;border-radius:var(--radius-pill);font-weight:600}
+#page-valuasi .vl-search-empty{padding:14px;text-align:center;color:var(--text3);font-size:12px}
+@media(max-width:600px){
+  #page-valuasi .vl-search{min-width:0;width:100%;max-width:none}
+  #page-valuasi .vl-search input{font-size:12px;padding:7px 28px 7px 30px}
+  #page-valuasi .vl-search .ico{left:10px;font-size:12px}
+  #page-valuasi .vl-search-item .code{min-width:54px;font-size:12px}
+  #page-valuasi .vl-search-item .sector{font-size:10px}
+}
 /* Window jadi segmented control rapat (track + tombol di dalam) */
 #page-valuasi .vl-win{gap:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:2px}
 #page-valuasi .vl-win .vl-basis-btn{padding:5px 13px;font-size:11.5px;border:none;background:none;border-radius:6px;color:var(--text2);box-shadow:none}
@@ -9630,8 +9663,13 @@ body.vl-maxing{overflow:hidden}
     <!-- TOOLBAR (data-driven) -->
     <div class="vl-toolbar">
       <div class="vl-tb-group">
-        <label class="vl-tb-label" for="vlStockSel">Pilih Emiten</label>
-        <select id="vlStockSel" class="vl-select" onchange="vlSelectStock(this.value)"></select>
+        <label class="vl-tb-label" for="vlStockSearch">Pilih Emiten</label>
+        <div class="vl-search" id="vlSearchWrap">
+          <span class="ico">⌕</span>
+          <input type="text" id="vlStockSearch" placeholder="Cari emiten... (TLKM, BBCA, UNVR)" autocomplete="off" spellcheck="false">
+          <span class="caret">▾</span>
+          <div class="vl-search-drop" id="vlStockDrop"></div>
+        </div>
       </div>
       <div class="vl-tb-group">
         <label class="vl-tb-label">Window Rata-rata Multiple <button class="vl-iq" onclick="vlMethodInfo('window')" style="vertical-align:middle">i</button></label>
@@ -12002,12 +12040,85 @@ body.vl-maxing{overflow:hidden}
     });
   }
   function populateStockSelect(){
-    const sel = document.getElementById('vlStockSel'); if(!sel || !state.raw) return;
-    sel.innerHTML = Object.keys(state.raw.stocks).map(c=>{
+    if(!state.raw) return;
+    const drop = document.getElementById('vlStockDrop'); if(!drop) return;
+    const codes = Object.keys(state.raw.stocks);
+    drop.innerHTML = codes.map(c=>{
       const v = (state.raw.stocks[c].valuation)||{};
-      return '<option value="'+c+'">'+c+(v.sector?(' · '+v.sector):'')+'</option>';
+      const sector = v.sector || '';
+      const hay = (c+' '+sector).toLowerCase().replace(/"/g,'&quot;');
+      return '<div class="vl-search-item" data-code="'+c+'" data-search="'+hay+'">'+
+               '<span class="code">'+c+'</span>'+
+               (sector?'<span class="sector">'+sector+'</span>':'')+
+             '</div>';
     }).join('');
-    sel.value = state.code;
+    // Wire dropdown click (sekali)
+    if(!drop._wired){
+      drop._wired = true;
+      drop.addEventListener('mousedown', function(e){
+        const it = e.target.closest('.vl-search-item');
+        if(!it) return;
+        e.preventDefault();   // jaga focus input dulu sebelum blur
+        const inp = document.getElementById('vlStockSearch');
+        window.vlSelectStock(it.getAttribute('data-code'));
+        if(inp) inp.blur();
+        vlCloseStockDrop();
+      });
+    }
+    vlWireStockSearch();
+    vlSyncStockSearchInput();
+  }
+  function vlSyncStockSearchInput(){
+    const inp = document.getElementById('vlStockSearch'); if(!inp || !state.raw) return;
+    const s = state.raw.stocks[state.code];
+    const sector = s && s.valuation && s.valuation.sector ? s.valuation.sector : '';
+    inp.value = state.code + (sector?' · '+sector:'');
+  }
+  function vlFilterStockDrop(q){
+    const drop = document.getElementById('vlStockDrop'); if(!drop) return;
+    const items = drop.querySelectorAll('.vl-search-item');
+    const needle = (q||'').trim().toLowerCase();
+    let shown = 0, firstVisible = null;
+    items.forEach(it=>{
+      const hay = it.getAttribute('data-search')||'';
+      const ok = !needle || hay.indexOf(needle)>=0;
+      it.style.display = ok ? '' : 'none';
+      it.classList.remove('active');
+      if(ok){ shown++; if(!firstVisible) firstVisible = it; }
+    });
+    if(firstVisible) firstVisible.classList.add('active');
+    let empty = drop.querySelector('.vl-search-empty');
+    if(shown===0){
+      if(!empty){ empty=document.createElement('div'); empty.className='vl-search-empty'; empty.textContent='Tidak ada hasil'; drop.appendChild(empty); }
+    } else if(empty){ empty.remove(); }
+  }
+  function vlOpenStockDrop(){
+    const drop = document.getElementById('vlStockDrop'); const wrap = document.getElementById('vlSearchWrap');
+    if(!drop) return;
+    vlFilterStockDrop('');
+    drop.classList.add('open'); if(wrap) wrap.classList.add('is-open');
+  }
+  function vlCloseStockDrop(){
+    const drop = document.getElementById('vlStockDrop'); const wrap = document.getElementById('vlSearchWrap');
+    if(drop) drop.classList.remove('open');
+    if(wrap) wrap.classList.remove('is-open');
+  }
+  function vlWireStockSearch(){
+    const inp = document.getElementById('vlStockSearch'); if(!inp || inp._wired) return;
+    inp._wired = true;
+    inp.addEventListener('focus', ()=>{ inp.select(); vlOpenStockDrop(); });
+    inp.addEventListener('input', ()=>{ vlFilterStockDrop(inp.value); const d=document.getElementById('vlStockDrop'); const w=document.getElementById('vlSearchWrap'); if(d) d.classList.add('open'); if(w) w.classList.add('is-open'); });
+    inp.addEventListener('blur', ()=> setTimeout(()=>{ vlCloseStockDrop(); vlSyncStockSearchInput(); }, 160));
+    inp.addEventListener('keydown', (e)=>{
+      const drop = document.getElementById('vlStockDrop'); if(!drop) return;
+      const visible = Array.from(drop.querySelectorAll('.vl-search-item')).filter(it=>it.style.display!=='none');
+      if(!visible.length) return;
+      let idx = visible.findIndex(it=>it.classList.contains('active'));
+      if(e.key==='ArrowDown'){ e.preventDefault(); idx=(idx<0?0:Math.min(visible.length-1, idx+1)); visible.forEach(it=>it.classList.remove('active')); visible[idx].classList.add('active'); visible[idx].scrollIntoView({block:'nearest'}); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); idx=(idx<=0?0:idx-1); visible.forEach(it=>it.classList.remove('active')); visible[idx].classList.add('active'); visible[idx].scrollIntoView({block:'nearest'}); }
+      else if(e.key==='Enter'){ e.preventDefault(); const tgt = visible[idx>=0?idx:0]; if(tgt){ window.vlSelectStock(tgt.getAttribute('data-code')); inp.blur(); } }
+      else if(e.key==='Escape'){ inp.blur(); }
+    });
   }
   function pickDefaultCode(){
     const codes = Object.keys(state.raw.stocks);
@@ -12021,7 +12132,7 @@ body.vl-maxing{overflow:hidden}
   window.vlSelectStock = function(code){
     if(!state.raw || !state.raw.stocks[code]) return;
     state.code = code;
-    const sel = document.getElementById('vlStockSel'); if(sel) sel.value = code;
+    vlSyncStockSearchInput();
     renderAll();
   };
   window.vlSetWindow = function(win){
