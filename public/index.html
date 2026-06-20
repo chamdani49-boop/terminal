@@ -9438,10 +9438,11 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-mktcap .l{margin-top:0!important;font-size:8px;letter-spacing:.2px}
   #page-valuasi .vl-mktcap .v{font-size:11px}
   #page-valuasi .vl-mktcap .v + .l{margin-left:11px}
-  #page-valuasi .vl-name{font-size:13px;letter-spacing:.5px}
+  #page-valuasi .vl-name{font-size:22px;letter-spacing:.5px;font-weight:800}
   #page-valuasi .vl-sub{font-size:9px}
   #page-valuasi .vl-price{font-size:20px}
   #page-valuasi .vl-price-meta{font-size:8px;opacity:.5}
+  #page-valuasi .vl-price-src{display:none}
   #page-valuasi .vl-badge{font-size:9px;padding:1px 6px}
   #page-valuasi .vl-mos{padding:4px 10px;min-width:auto;border-radius:7px}
   #page-valuasi .vl-mos .v{font-size:14px}
@@ -9546,7 +9547,7 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-grid4 .bb-panel-title{font-size:11px}
   #page-valuasi .vl-head{padding:6px 10px;gap:4px}
   #page-valuasi .vl-logo{width:28px;height:28px;font-size:9px}
-  #page-valuasi .vl-name{font-size:12px}
+  #page-valuasi .vl-name{font-size:20px}
   #page-valuasi .vl-sub{font-size:8px}
   #page-valuasi .vl-price-meta{font-size:7px;opacity:.4}
   #page-valuasi .vl-mktcap .v{font-size:10px}
@@ -9591,6 +9592,7 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-kpis-proj{grid-template-columns:repeat(2,1fr)!important}
   #page-valuasi .vl-proj-row-mob{flex-direction:column}
   #page-valuasi .vl-price{font-size:20px}
+  #page-valuasi .vl-name{font-size:18px}
 }
 </style>
 
@@ -10207,7 +10209,7 @@ body.vl-maxing{overflow:hidden}
       '<div class="vl-head-right">'+
         '<div>'+
           '<div class="vl-price">'+fmtRp(e.price)+'</div>'+
-          '<div class="vl-price-meta">Harga terakhir · '+(e.source==='live'?'live (sheet)':e.source)+'</div>'+
+          '<div class="vl-price-meta vl-price-src">Harga terakhir · '+(e.source==='live'?'live (sheet)':e.source)+'</div>'+
           chgBadge+
         '</div>'+
         '<div class="vl-mktcap">'+
