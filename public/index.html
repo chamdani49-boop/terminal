@@ -10109,9 +10109,12 @@ body.vl-maxing{overflow:hidden}
     return { tick:g('--text2','#6e6490'), grid:isDark?'rgba(255,255,255,.07)':'rgba(26,15,60,.06)' };
   }
 
-  /* ── Fetch JSON dgn fallback (cache:no-store, cache-bust 30 dtk) ── */
+  /* ── Fetch JSON dgn fallback (cache:no-store, cache-bust per-request) ──
+     Catatan: cache-bust dibuat unik per panggilan (Date.now()) supaya CDN
+     edge / Cloudflare Worker assets tidak menyajikan versi basi setelah
+     refresh data baru di backend (workflow refresh-valuation). */
   async function fetchJson(urls){
-    const bust = Math.floor(Date.now()/(30*1000));
+    const bust = Date.now();
     let lastErr = null;
     for(const baseUrl of urls){
       try{
