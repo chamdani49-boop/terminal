@@ -9473,7 +9473,10 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-table thead th{font-size:8px;padding:4px 5px;white-space:nowrap}
   #page-valuasi .vl-table tbody td{font-size:9px;padding:5px 5px;white-space:nowrap}
   #page-valuasi .vl-tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  #page-valuasi #vlProjTable{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #page-valuasi #vlProjTable{display:table;width:100%;min-width:0;overflow:visible}
+  #page-valuasi #vlProjTable thead th:first-child,#page-valuasi #vlProjTable tbody td:first-child{position:static;background:transparent}
+  #page-valuasi #vlProjTable tbody tr:nth-child(even) td:first-child{background:transparent}
+  #page-valuasi #vlProjTable th,#page-valuasi #vlProjTable td{padding:6px 4px}
   #page-valuasi #vlProjTableHeader{font-size:9px}
   #page-valuasi #vlProjTableHeader span{font-size:8.5px!important}
   #page-valuasi #vlProjTableHeader strong{font-size:9px!important}
