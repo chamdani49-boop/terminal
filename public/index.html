@@ -10253,7 +10253,7 @@ body.vl-maxing{overflow:hidden}
     // Kolom LENGKAP & dibalik: Q1 + TTM dinamis (Q1x4) + semua tahun (apa adanya).
     const cols = [];
     if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'Q1',           a:s.q1 });
-    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:vlTtmLabel(s),  a:s.annualized });
+    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:vlTtmLabelFull(s), a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
     const rows = [
@@ -10587,6 +10587,15 @@ body.vl-maxing{overflow:hidden}
     const fy = ujFiscalYear();
     const yr = ok(fy) ? fy+1 : new Date().getFullYear();
     return q.toUpperCase()+"'"+String(yr).slice(2);
+  }
+  // Versi panjang khusus header tabel Fundamental: "TTM Q1 2026" (logika sama spt vlTtmLabel).
+  function vlTtmLabelFull(s){
+    let q = (s && s.q_label) ? String(s.q_label).trim() : '';
+    if(!q) q = 'Q1';
+    if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
+    const fy = ujFiscalYear();
+    const yr = ok(fy) ? fy+1 : new Date().getFullYear();
+    return 'TTM '+q.toUpperCase()+' '+yr;
   }
   // Tooltip utk chart ber-garis harga: di titik "Q" (TTM), JUDUL popup =
   // "Last Price (live)" — bukan "Q.. TTM .." — karena nilai harga = harga live terakhir.
