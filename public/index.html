@@ -2548,9 +2548,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <nav class="nav-tabs">
     <div class="nav-tab" onclick="showPage('pasar');plEnsure()">Pasar Live</div>
     <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
-    <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
-    <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
     <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
+    <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
+    <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
     <!-- Menu Global disembunyikan sementara (banyak baris masih snapshot statis).
          Untuk memunculkan kembali: hapus komentar di bawah ini. -->
     <!-- <div class="nav-tab" onclick="showPage('global');glEnsure()">Global</div> -->
@@ -13062,14 +13062,14 @@ body.vl-maxing{overflow:hidden}
   <button class="bottom-nav-item active" id="bn-dashboard" onclick="showPageMobile('dashboard',this)">
     <span class="bn-icon">📊</span>Dashboard
   </button>
-  <button class="bottom-nav-item" id="bn-menabung" onclick="showPageMobile('menabung',this)">
-    <span class="bn-icon">💰</span>Simulasi
+  <button class="bottom-nav-item" id="bn-valuasi" onclick="showPageMobile('valuasi',this);vlEnsureCharts()">
+    <span class="bn-icon">🧮</span>Valuasi
   </button>
   <button class="bottom-nav-item" id="bn-consensus" onclick="showPageMobile('consensus',this)">
     <span class="bn-icon">🔍</span>Consensus
   </button>
-  <button class="bottom-nav-item" id="bn-valuasi" onclick="showPageMobile('valuasi',this);vlEnsureCharts()">
-    <span class="bn-icon">🧮</span>Valuasi
+  <button class="bottom-nav-item" id="bn-menabung" onclick="showPageMobile('menabung',this)">
+    <span class="bn-icon">💰</span>Simulasi
   </button>
   <!-- Menu Global disembunyikan sementara — hapus komentar untuk memunculkan kembali.
   <button class="bottom-nav-item" id="bn-global" onclick="showPageMobile('global',this);glEnsure()">
