@@ -1036,11 +1036,15 @@ select.form-control option{background:var(--card);color:var(--text)}
   .ov-grid-3{grid-template-columns:1fr 1fr}
 }
 @media(max-width:640px){
-  .ov-kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .ov-kpi{padding:12px 14px}
-  .ov-kpi-value{font-size:20px}
-  .ov-kpi-label{font-size:9px}
-  .ov-kpi-icon{font-size:16px;margin-bottom:5px}
+  .ov-kpi-strip{grid-template-columns:repeat(3,minmax(0,1fr));justify-items:stretch}
+  .ov-kpi-strip .ov-kpi:nth-child(4),
+  .ov-kpi-strip .ov-kpi:nth-child(5){justify-self:center;width:100%;max-width:calc((100% - 12px) / 2)}
+  .ov-kpi-strip .ov-kpi:nth-child(4){grid-column:1/3;margin-left:auto;margin-right:0;max-width:calc(50% - 6px)}
+  .ov-kpi-strip .ov-kpi:nth-child(5){grid-column:2/4;margin-left:0;margin-right:auto;max-width:calc(50% - 6px)}
+  .ov-kpi{padding:11px 12px}
+  .ov-kpi-value{font-size:17px}
+  .ov-kpi-label{font-size:8px}
+  .ov-kpi-icon{font-size:14px;margin-bottom:4px}
   .ov-grid-3{grid-template-columns:1fr}
   .ov-donut-wrap{width:150px;height:150px}
   .ov-sent-body{flex-direction:column;gap:12px}
@@ -9660,6 +9664,9 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-grid4 .bb-panel-body{padding:14px 16px}
   #page-valuasi .vl-toolbar{flex-direction:column;align-items:stretch;gap:10px;padding:10px 12px}
   #page-valuasi .vl-select{width:100%;min-width:auto}
+  /* Window group: label + tombol tahun SEJAJAR satu baris (label dikecilin) */
+  #page-valuasi .vl-toolbar .vl-tb-group:last-child{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap}
+  #page-valuasi .vl-toolbar .vl-tb-group:last-child .vl-tb-label{font-size:8px;line-height:1.2;letter-spacing:.2px;flex:1 1 auto;min-width:0}
   #page-valuasi .vl-table{font-size:9px;min-width:0}
   #page-valuasi .vl-table thead th{font-size:8px;padding:4px 5px;white-space:nowrap}
   #page-valuasi .vl-table tbody td{font-size:9px;padding:5px 5px;white-space:nowrap}
@@ -9693,10 +9700,23 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-modal-overlay{padding:12px}
   #page-valuasi .vl-modal-box{max-height:90vh;border-radius:12px}
   #page-valuasi .vl-grid4 .bb-panel .vl-chart,#page-valuasi .vl-grid4 .bb-panel .vl-chart-wrap{height:200px}
-  #page-valuasi .vl-ff-row{grid-template-columns:70px 1fr}
-  #page-valuasi .vl-ff-row .lab{font-size:9px}
-  #page-valuasi .vl-win{flex-wrap:wrap}
-  #page-valuasi .vl-win .vl-basis-btn{font-size:10.5px;padding:5px 10px}
+  /* ── Perbandingan: list Nilai Wajar per Metode (football field) — minimalis ── */
+  #page-valuasi .vl-ff{padding-top:8px}
+  #page-valuasi .vl-ff-row{grid-template-columns:58px 1fr;height:14px;margin:3px 0}
+  #page-valuasi .vl-ff-row .lab{font-size:7.5px}
+  #page-valuasi .vl-ff-row .bar{top:3px;bottom:3px;border-radius:0 3px 3px 0}
+  #page-valuasi .vl-ff-row .amt{font-size:7.5px;right:2px}
+  #page-valuasi .vl-ff-line.price span{font-size:6.5px;padding:0 2px}
+  #page-valuasi .vl-cmp-range .hd{font-size:8px}
+  #page-valuasi .vl-cmp-legend{font-size:7px;gap:6px;margin-top:6px}
+  #page-valuasi .vl-cmp-legend i{width:7px;height:5px;margin-right:2px}
+  #page-valuasi .vl-cmp-legend i.median,#page-valuasi .vl-cmp-legend i.price{width:2px;height:9px}
+  /* Tabel detail nilai wajar per metode */
+  #page-valuasi .vl-cmp-tbl{font-size:10px}
+  #page-valuasi .vl-cmp-tbl thead th{font-size:8.5px;padding:5px 5px}
+  #page-valuasi .vl-cmp-tbl tbody td{font-size:10px;padding:6px 5px}
+  #page-valuasi .vl-win{flex-wrap:nowrap;flex-shrink:0;gap:4px}
+  #page-valuasi .vl-win .vl-basis-btn{font-size:9.5px;padding:5px 8px}
   #page-valuasi .vl-slider-body{padding:6px 12px 14px}
   #page-valuasi .vl-cmp-card .v{font-size:19px}
   #page-valuasi .vl-kpi .v{font-size:16px}
@@ -9774,6 +9794,13 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-kpis-proj .vl-kpi .v{font-size:12px}
   #page-valuasi .vl-kpis-proj .vl-kpi .l{font-size:8px}
   #page-valuasi .vl-kpis-proj .vl-kpi .d{font-size:7.5px}
+  /* Perbandingan: jaga list minimalis di HP kecil */
+  #page-valuasi .vl-ff-row{grid-template-columns:50px 1fr;height:12px;margin:2px 0}
+  #page-valuasi .vl-ff-row .lab{font-size:6.5px}
+  #page-valuasi .vl-ff-row .amt{font-size:6.5px}
+  #page-valuasi .vl-ff-row .bar{top:2px;bottom:2px}
+  #page-valuasi .vl-cmp-tbl thead th{font-size:8px;padding:4px 4px}
+  #page-valuasi .vl-cmp-tbl tbody td{font-size:9.5px;padding:5px 4px}
 }
 
 /* === VALUASI MOBILE 360px (hp sangat kecil) === */
