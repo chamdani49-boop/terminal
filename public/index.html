@@ -9411,6 +9411,11 @@ body.vl-maxing{overflow:hidden}
 #page-valuasi .vl-name{font-size:26px;letter-spacing:1.2px}
 #page-valuasi .vl-tag{font-size:9px;padding:2px 8px;margin-left:6px}
 #page-valuasi .vl-sub{font-size:11px;margin-top:1px}
+/* Kolom tengah header: nama perusahaan + chip sector/industry/board */
+#page-valuasi .vl-mid{flex:1 1 220px;min-width:180px;max-width:520px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:0 10px;border-left:1px solid var(--border);border-right:1px solid var(--border);align-self:stretch}
+#page-valuasi .vl-mid-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.25;letter-spacing:.2px}
+#page-valuasi .vl-mid-tags{display:flex;flex-wrap:wrap;gap:5px}
+#page-valuasi .vl-mid-tag{display:inline-block;font-size:9.5px;font-weight:700;background:var(--bg2);color:var(--text2);padding:3px 9px;border-radius:var(--radius-pill);text-transform:uppercase;letter-spacing:.6px;border:1px solid var(--border);white-space:nowrap}
 #page-valuasi .vl-head-right{gap:14px 16px;align-items:center}
 #page-valuasi .vl-head-right > div{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
 #page-valuasi .vl-price{font-size:25px;text-align:right}
@@ -9476,6 +9481,7 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi .vl-head-right{flex-direction:column;align-items:flex-end;width:auto;flex-shrink:0;gap:2px;text-align:right}
   #page-valuasi .vl-mktcap-left{margin-top:5px;font-size:9px}
   #page-valuasi .vl-name{font-size:16px;letter-spacing:.6px}
+  #page-valuasi .vl-mid{display:none}
   #page-valuasi .vl-sub{font-size:9px}
   #page-valuasi .vl-price{font-size:20px}
   #page-valuasi .vl-price-meta{font-size:8px;opacity:.5}
@@ -10238,6 +10244,20 @@ body.vl-maxing{overflow:hidden}
     const mosPct = mosApplicable ? m.margin_of_safety*100 : null;
     const ms = mosApplicable ? mosStyle(mosPct) : { col:'var(--text3)', txt:'belum tersedia' };
 
+    // Info perusahaan (nama, sector, industry, board) dari data.json → stock_info.
+    const info = (state.stockInfo && state.stockInfo[s.code]) || {};
+    const compName = info.name || '';
+    const midSector = info.sector || v.sector || '';
+    const midIndustry = info.industry || v.industry || '';
+    const midBoard = info.board ? 'Papan '+info.board : '';
+    const midTags = [midSector, midIndustry, midBoard].filter(Boolean)
+      .map(t=>'<span class="vl-mid-tag">'+t+'</span>').join('');
+    const midBlock = (compName || midTags) ?
+      '<div class="vl-mid">'+
+        (compName ? '<div class="vl-mid-name">'+compName+'</div>' : '')+
+        (midTags ? '<div class="vl-mid-tags">'+midTags+'</div>' : '')+
+      '</div>' : '';
+
     el.innerHTML =
       '<div class="vl-tic">'+
         '<div class="vl-logo">'+s.code+'</div>'+
@@ -10247,6 +10267,7 @@ body.vl-maxing{overflow:hidden}
           '<div class="vl-mktcap-left"><span class="l">Market Cap</span> <span class="v">'+fmtMrp(a.market_cap)+'</span></div>'+
         '</div>'+
       '</div>'+
+      midBlock+
       '<div class="vl-head-right">'+
         '<div>'+
           '<div class="vl-price">'+fmtRp(e.price)+'</div>'+
@@ -12237,6 +12258,7 @@ body.vl-maxing{overflow:hidden}
         state.priceHist = (data && Array.isArray(data.price_history)) ? data.price_history : null;
         state.stats = (data && data.stats) ? data.stats : null;
         state.fundamentals = (data && data.fundamentals) ? data.fundamentals : null;
+        state.stockInfo = (data && data.stock_info) ? data.stock_info : null;
       }catch(e){ state.live = null; }   // harga live opsional
       state.code = pickDefaultCode();
       populateStockSelect();
