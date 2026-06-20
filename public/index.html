@@ -10917,6 +10917,20 @@ body.vl-maxing{overflow:hidden}
           pointRadius:projRad, pointHoverRadius:7, pointBackgroundColor:projCol, pointBorderColor:'#fff', pointBorderWidth:1.5 }
       ];
       vlEnsureRangeBar('vlProj');
+      // Sinkronkan tombol range dgn data tersedia: nonaktifkan opsi yg melebihi
+      // panjang histori bulanan saham ini (mis. emiten baru spt AADI ~1.5th) supaya
+      // tombol aktif selalu cocok dgn yg tampil di chart.
+      (function(){
+        const _bar=document.querySelector('.vl-rng[data-rng="vlProj"]'); if(!_bar) return;
+        const _avail=ph.filter(r=>ok(r[s.code])&&r[s.code]>0).length;
+        const _eff=(vlRange!=='all' && parseInt(vlRange,10)*12>=_avail)?'all':vlRange;
+        _bar.querySelectorAll('button').forEach(b=>{
+          const r=b.getAttribute('data-r');
+          const dis = r!=='all' && parseInt(r,10)*12>=_avail;
+          b.disabled=dis; b.style.opacity=dis?'.3':''; b.style.pointerEvents=dis?'none':'';
+          b.classList.toggle('on', r===_eff);
+        });
+      })();
       mk('vlProj', { type:'line', data:{ labels, datasets:ds }, options:{...base,
         plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{
           label:ctx=>{ const v=ctx.parsed.y; if(!ok(v)) return ''; const rp='Rp'+Math.round(v).toLocaleString('id-ID');
