@@ -9424,6 +9424,20 @@ body.vl-maxing{overflow:hidden}
   border-color:var(--accent);
 }
 
+/* ── Insight inline (di bawah tiap chart) ── */
+.vl-insight-inline{ margin-top:11px; display:flex; flex-direction:column; gap:8px; }
+.vl-insight-inline:empty{ display:none; }
+.vl-ins-head{ border:1.5px solid; border-radius:9px; padding:9px 13px; }
+.vl-ins-title{ font-size:12px; font-weight:900; letter-spacing:.2px; line-height:1.38; text-transform:uppercase; }
+.vl-ins-verdict{ font-size:11.5px; color:var(--text); margin-top:5px; line-height:1.5; font-weight:500; }
+.vl-ins-label{ font-size:9.5px; color:var(--text2); font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+.vl-ins-body{ font-size:11.5px; color:var(--text); line-height:1.7; }
+.vl-ins-body b,.vl-ins-body strong{ font-weight:800; color:var(--text); }
+@media(max-width:600px){
+  #page-valuasi .vl-ins-title{ font-size:11px; }
+  #page-valuasi .vl-ins-verdict{ font-size:11px; }
+  #page-valuasi .vl-ins-body{ font-size:11px; line-height:1.65; }
+}
 
 </style>
 
@@ -9756,7 +9770,7 @@ body.vl-maxing{overflow:hidden}
                 <div class="vl-leg"><div class="vl-dot" style="background:#059669"></div>Laba Bersih</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga</div>
               </div>
-
+              <div class="vl-insight-inline" id="vlIns_rev"></div>
             </div>
           </div>
           <!-- Panel 5: ROE & Margin -->
@@ -9769,6 +9783,7 @@ body.vl-maxing{overflow:hidden}
                 <div class="vl-leg"><div class="vl-dot" style="background:#2563eb"></div>Margin %</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga</div>
               </div>
+              <div class="vl-insight-inline" id="vlIns_roe"></div>
             </div>
           </div>
           <!-- Panel 6: Valuation Ratios -->
@@ -9783,6 +9798,7 @@ body.vl-maxing{overflow:hidden}
                 <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>BVPS</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga</div>
               </div>
+              <div class="vl-insight-inline" id="vlIns_ratio"></div>
             </div>
           </div>
           <!-- Panel 7: EPS, SPS, Ekuitas & Book Value (single canvas) -->
@@ -9797,6 +9813,7 @@ body.vl-maxing{overflow:hidden}
                 <div class="vl-leg"><div class="vl-dot" style="background:#d97706;border-radius:50%"></div>Book Value</div>
                 <div class="vl-leg"><div class="vl-dot" style="background:#6d28d9;border-radius:50%"></div>Harga</div>
               </div>
+              <div class="vl-insight-inline" id="vlIns_eps"></div>
             </div>
           </div>
         </div>
@@ -11666,9 +11683,9 @@ body.vl-maxing{overflow:hidden}
 
   function vlGenerateInsights(){
     _vlInsights = {};
-    const s = curStock(); if(!s) return;
+    const s = curStock(); if(!s){ vlRenderInlineInsights(); return; }
     const yrs = vlChartYears(s, 'vlRev');
-    if(yrs.length < 2) return;
+    if(yrs.length < 2){ vlRenderInlineInsights(); return; }
     const ann = s.annual;
     const n = yrs.length;
     const first = ann[yrs[0]] || {};
@@ -11901,6 +11918,28 @@ body.vl-maxing{overflow:hidden}
       _vlInsights.eps={headline:headline,headlineType:headlineType,verdict:verdict,details:details.join('<br>')};
     })();
 
+    vlRenderInlineInsights();
+  }
+
+  // Render insight inline di bawah tiap chart Ringkasan (rev/roe/ratio/eps).
+  function vlRenderInlineInsights(){
+    var map = { rev:'vlIns_rev', roe:'vlIns_roe', ratio:'vlIns_ratio', eps:'vlIns_eps' };
+    Object.keys(map).forEach(function(key){
+      var el = document.getElementById(map[key]); if(!el) return;
+      var ins = _vlInsights[key];
+      if(!ins || typeof ins!=='object' || !ins.headline){ el.innerHTML=''; return; }
+      var hColor = ins.headlineType==='bullish' ? '#059669' : ins.headlineType==='bearish' ? '#dc2626' : 'var(--accent)';
+      var html = '';
+      html += '<div class="vl-ins-head" style="border-color:color-mix(in srgb,'+hColor+' 38%,transparent);background:color-mix(in srgb,'+hColor+' 9%,transparent);">';
+      html += '<div class="vl-ins-title" style="color:'+hColor+';">'+ins.headline+'</div>';
+      if(ins.verdict) html += '<div class="vl-ins-verdict">'+ins.verdict+'</div>';
+      html += '</div>';
+      if(ins.details){
+        html += '<div class="vl-ins-label">Apa artinya buat kamu?</div>';
+        html += '<div class="vl-ins-body">'+ins.details+'</div>';
+      }
+      el.innerHTML = html;
+    });
   }
 
   window.vlShowInsight = function(key){
