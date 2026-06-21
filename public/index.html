@@ -9684,6 +9684,10 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi #vlProjTableHeader span{font-size:8.5px!important}
   #page-valuasi #vlProjTableHeader strong{font-size:9px!important}
   #page-valuasi #vlProjTableHeader .vl-badge{font-size:7.5px!important;padding:1px 5px}
+  /* Tabel proyeksi: muat penuh di layar sempit tanpa geser horizontal */
+  #page-valuasi #vlProjTable{table-layout:fixed}
+  #page-valuasi #vlProjTable thead th,#page-valuasi #vlProjTable tbody td{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+  #page-valuasi #vlProjTableHeader > div{flex-wrap:wrap!important;overflow-x:visible!important;white-space:normal!important}
   #page-valuasi .vl-kpis{grid-template-columns:repeat(2,1fr)}
   /* Proyeksi: basis dropdown + MoS side by side, then 3-col KPI grid */
   #page-valuasi .vl-basis-select{width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;appearance:auto}
@@ -10712,7 +10716,8 @@ body.vl-maxing{overflow:hidden}
     const tb = document.getElementById('vlProjTableBody');
     if(tb){
       const basisPrice = pc._last || 0;
-      const basisLabel = pc._isCurrent ? _ttmLabel : (_projBasis.replace(/^Y/,''));
+      // Tampilkan label tanpa prefix "TTM " (hanya teks tampilan kolom — logika basis tetap sama)
+      const basisLabel = (pc._isCurrent ? _ttmLabel : (_projBasis.replace(/^Y/,''))).replace(/^TTM\s+/i,'');
 
       // Header info
       const thdr = document.getElementById('vlProjTableHeader');
