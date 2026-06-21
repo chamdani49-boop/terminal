@@ -10200,6 +10200,8 @@ body.vl-maxing{overflow:hidden}
     #page-valuasi .vl-neg{color:var(--red);font-weight:700}
     #page-valuasi .vl-iq{width:17px;height:17px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-weight:700;font-style:italic;cursor:pointer;line-height:15px;padding:0;font-family:Georgia,'Times New Roman',serif;transition:all .15s;flex-shrink:0}
     #page-valuasi .vl-iq:hover{border-color:var(--accent);color:var(--accent)}
+    #page-valuasi .vl-shot{width:17px;height:17px;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;line-height:14px;padding:0;margin-left:5px;transition:all .15s;flex-shrink:0;vertical-align:middle}
+    #page-valuasi .vl-shot:hover{background:var(--accent);color:#fff}
     /* range bar */
     #page-valuasi .vl-cmp-range{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px 12px}
     #page-valuasi .vl-cmp-range .hd{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:14px}
@@ -11640,7 +11642,7 @@ body.vl-maxing{overflow:hidden}
          '<td>'+upTxt(m.verdict)+'</td>'+
          '<td>'+mosTxt(m.fair)+'</td>'+
          '<td>'+chip(m.verdict)+'</td>'+
-         '<td style="text-align:center"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button></td></tr>';
+         '<td style="text-align:center;white-space:nowrap"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button><button class="vl-shot" onclick="vlShotMethod(\''+m.key+'\')" title="Download screenshot — Terminal Economstock">\u2913</button></td></tr>';
     });
     h+='</tbody></table></div>';
     h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlTtmLabel(s)+'</strong> = Q1 disetahunkan (\xD74), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
@@ -11859,6 +11861,105 @@ body.vl-maxing{overflow:hidden}
       tooltipText: isDark?'#ccc':'#333'
     };
   }
+  // ── Download screenshot kartu valuasi per metode (viral loop) — brand "Terminal Economstock" ──
+  // Menggambar kartu PNG via Canvas (tanpa dependensi). Data diambil dari _cmpData hasil render.
+  window.vlShotMethod=function(key){
+    try{
+      const s=curStock(); if(!s) return;
+      const m=(_cmpData||{})[key]; if(!m) return;
+      const price=effLast(s).price;
+      const code=s.code;
+      const name=(typeof plName==='function'?(plName(code)||''):'');
+      const fair=ok(m.fair)?m.fair:null;
+      const vd=m.verdict;
+      const up  = vd ? vd.up*100 : null;                                  // potensi %
+      const mos = (fair!=null && fair>0 && ok(price)) ? (1-price/fair)*100 : null;
+      const status = vd ? vd.label : '—';
+      const cls    = vd ? vd.cls   : 'na';
+      const PAL  = {cheap:'#16c784',fair:'#f5a623',exp:'#ea3943',na:'#8a90b8'};
+      const PALA = {cheap:'rgba(22,199,132,0.16)',fair:'rgba(245,166,35,0.16)',exp:'rgba(234,57,67,0.16)',na:'rgba(138,144,184,0.16)'};
+      const accent = PAL[cls]||PAL.na, accentA = PALA[cls]||PALA.na;
+      const GREEN='#16c784', RED='#ea3943', MUTE='#9aa0c7', LIGHT='#eef0ff';
+      const sgn=(v)=> (v>=0?'+':'')+v.toFixed(1)+'%';
+
+      const W=1080,H=1080;
+      const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+      const x=cv.getContext('2d');
+      const MONO="'IBM Plex Mono',monospace", SANS="Inter,'Segoe UI',Arial,sans-serif";
+      const PAD=84;
+
+      function rr(cx,cy,w,h,r){ x.beginPath(); x.moveTo(cx+r,cy); x.arcTo(cx+w,cy,cx+w,cy+h,r); x.arcTo(cx+w,cy+h,cx,cy+h,r); x.arcTo(cx,cy+h,cx,cy,r); x.arcTo(cx,cy,cx+w,cy,r); x.closePath(); }
+
+      // background
+      const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#15103a'); g.addColorStop(1,'#0a0720');
+      x.fillStyle=g; x.fillRect(0,0,W,H);
+      const rg=x.createRadialGradient(W*0.85,H*0.12,40,W*0.85,H*0.12,560);
+      rg.addColorStop(0,'rgba(124,92,255,0.30)'); rg.addColorStop(1,'rgba(124,92,255,0)');
+      x.fillStyle=rg; x.fillRect(0,0,W,H);
+      x.strokeStyle='rgba(124,92,255,0.35)'; x.lineWidth=2; rr(40,40,W-80,H-80,28); x.stroke();
+
+      // brand header
+      x.fillStyle='#7c5cff'; rr(PAD,96,64,64,16); x.fill();
+      x.fillStyle='#fff'; x.font='800 38px '+SANS; x.textAlign='center'; x.textBaseline='middle';
+      x.fillText('E',PAD+32,130);
+      x.textBaseline='alphabetic'; x.textAlign='left';
+      x.fillStyle=LIGHT; x.font='800 31px '+SANS; x.fillText('TERMINAL ECONOMSTOCK', PAD+84, 124);
+      x.fillStyle=MUTE;  x.font='600 19px '+SANS; x.fillText('Analisis Valuasi Saham', PAD+84, 153);
+      x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,205); x.lineTo(W-PAD,205); x.stroke();
+
+      // stock code + name
+      x.fillStyle='#fff'; x.font='800 104px '+MONO; x.fillText(code, PAD, 318);
+      if(name){ x.fillStyle=MUTE; x.font='500 28px '+SANS; let nm=name; if(nm.length>42) nm=nm.slice(0,40)+'…'; x.fillText(nm, PAD, 358); }
+
+      // status pill (top-right, aligned with code)
+      (function(){
+        const t=status.toUpperCase(); x.font='800 30px '+SANS;
+        const tw=x.measureText(t).width, pw=tw+58, ph=58, py=262, px=W-PAD-pw;
+        x.fillStyle=accentA; rr(px,py,pw,ph,29); x.fill();
+        x.strokeStyle=accent; x.lineWidth=2; rr(px,py,pw,ph,29); x.stroke();
+        x.fillStyle=accent; x.textBaseline='middle'; x.textAlign='center'; x.fillText(t, px+pw/2, py+ph/2+1);
+        x.textBaseline='alphabetic'; x.textAlign='left';
+      })();
+
+      // method name + jenis
+      x.fillStyle='#cdd2f5'; x.font='700 42px '+SANS; x.fillText(m.name, PAD, 462);
+      x.fillStyle=accent;    x.font='700 22px '+SANS; x.fillText('METODE '+String(m.grp||'').toUpperCase(), PAD, 498);
+
+      // nilai wajar
+      x.fillStyle=MUTE;   x.font='700 26px '+SANS; x.fillText('NILAI WAJAR', PAD, 592);
+      x.fillStyle=accent; x.font='800 116px '+MONO; x.fillText(fair!=null?fmtRp(fair):'—', PAD, 706);
+      x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,762); x.lineTo(W-PAD,762); x.stroke();
+
+      // stat columns
+      const cols=[
+        {l:'HARGA SEKARANG', v:ok(price)?fmtRp(price):'—', c:LIGHT},
+        {l:'POTENSI',        v:up!=null?sgn(up):'—',        c:up==null?MUTE:(up>=0?GREEN:RED)},
+        {l:'MARGIN OF SAFETY',v:mos!=null?sgn(mos):'—',     c:mos==null?MUTE:(mos>=0?GREEN:RED)}
+      ];
+      const cw=(W-2*PAD)/3;
+      cols.forEach((c,i)=>{
+        const ccx=PAD+cw*i+cw/2;
+        x.textAlign='center';
+        x.fillStyle=MUTE; x.font='700 21px '+SANS; x.fillText(c.l, ccx, 838);
+        x.fillStyle=c.c;  x.font='800 46px '+MONO; x.fillText(c.v, ccx, 896);
+      });
+      x.textAlign='left';
+      x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,952); x.lineTo(W-PAD,952); x.stroke();
+
+      // footer
+      x.fillStyle=MUTE; x.font='500 22px '+SANS;
+      x.fillText('Estimasi model, bukan rekomendasi investasi.', PAD, 1004);
+      x.fillStyle='#b9a8ff'; x.font='700 24px '+SANS; x.textAlign='right';
+      x.fillText('terminal.economstock', W-PAD, 1004);
+      x.textAlign='left';
+
+      const fname='Economstock_'+code+'_'+String(key).toUpperCase()+'.png';
+      const dl=(url)=>{ const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove(); };
+      if(cv.toBlob){ cv.toBlob(function(b){ if(!b){ dl(cv.toDataURL('image/png')); return; } const u=URL.createObjectURL(b); dl(u); setTimeout(()=>URL.revokeObjectURL(u),3000); },'image/png'); }
+      else { dl(cv.toDataURL('image/png')); }
+    }catch(e){ console.error('vlShotMethod gagal:', e); }
+  };
+
   window.vlMethodInfo=function(key){
     const box=document.getElementById('vlMethodModalBody'); if(!box) return;
     const md=document.getElementById('vlMethodModal');
