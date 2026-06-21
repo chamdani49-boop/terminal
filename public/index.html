@@ -11883,80 +11883,97 @@ body.vl-maxing{overflow:hidden}
       const sgn=(v)=> (v>=0?'+':'')+v.toFixed(1)+'%';
 
       const W=1080,H=1080;
-      const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
-      const x=cv.getContext('2d');
       const MONO="'IBM Plex Mono',monospace", SANS="Inter,'Segoe UI',Arial,sans-serif";
       const PAD=84;
-
-      function rr(cx,cy,w,h,r){ x.beginPath(); x.moveTo(cx+r,cy); x.arcTo(cx+w,cy,cx+w,cy+h,r); x.arcTo(cx+w,cy+h,cx,cy+h,r); x.arcTo(cx,cy+h,cx,cy,r); x.arcTo(cx,cy,cx+w,cy,r); x.closePath(); }
-
-      // background
-      const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#15103a'); g.addColorStop(1,'#0a0720');
-      x.fillStyle=g; x.fillRect(0,0,W,H);
-      const rg=x.createRadialGradient(W*0.85,H*0.12,40,W*0.85,H*0.12,560);
-      rg.addColorStop(0,'rgba(124,92,255,0.30)'); rg.addColorStop(1,'rgba(124,92,255,0)');
-      x.fillStyle=rg; x.fillRect(0,0,W,H);
-      x.strokeStyle='rgba(124,92,255,0.35)'; x.lineWidth=2; rr(40,40,W-80,H-80,28); x.stroke();
-
-      // brand header
-      x.fillStyle='#7c5cff'; rr(PAD,96,64,64,16); x.fill();
-      x.fillStyle='#fff'; x.font='800 38px '+SANS; x.textAlign='center'; x.textBaseline='middle';
-      x.fillText('E',PAD+32,130);
-      x.textBaseline='alphabetic'; x.textAlign='left';
-      x.fillStyle=LIGHT; x.font='800 31px '+SANS; x.fillText('TERMINAL ECONOMSTOCK', PAD+84, 124);
-      x.fillStyle=MUTE;  x.font='600 19px '+SANS; x.fillText('Analisis Valuasi Saham', PAD+84, 153);
-      x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,205); x.lineTo(W-PAD,205); x.stroke();
-
-      // stock code + name
-      x.fillStyle='#fff'; x.font='800 104px '+MONO; x.fillText(code, PAD, 318);
-      if(name){ x.fillStyle=MUTE; x.font='500 28px '+SANS; let nm=name; if(nm.length>42) nm=nm.slice(0,40)+'…'; x.fillText(nm, PAD, 358); }
-
-      // status pill (top-right, aligned with code)
-      (function(){
-        const t=status.toUpperCase(); x.font='800 30px '+SANS;
-        const tw=x.measureText(t).width, pw=tw+58, ph=58, py=262, px=W-PAD-pw;
-        x.fillStyle=accentA; rr(px,py,pw,ph,29); x.fill();
-        x.strokeStyle=accent; x.lineWidth=2; rr(px,py,pw,ph,29); x.stroke();
-        x.fillStyle=accent; x.textBaseline='middle'; x.textAlign='center'; x.fillText(t, px+pw/2, py+ph/2+1);
-        x.textBaseline='alphabetic'; x.textAlign='left';
-      })();
-
-      // method name + jenis
-      x.fillStyle='#cdd2f5'; x.font='700 42px '+SANS; x.fillText(m.name, PAD, 462);
-      x.fillStyle=accent;    x.font='700 22px '+SANS; x.fillText('METODE '+String(m.grp||'').toUpperCase(), PAD, 498);
-
-      // nilai wajar
-      x.fillStyle=MUTE;   x.font='700 26px '+SANS; x.fillText('NILAI WAJAR', PAD, 592);
-      x.fillStyle=accent; x.font='800 116px '+MONO; x.fillText(fair!=null?fmtRp(fair):'—', PAD, 706);
-      x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,762); x.lineTo(W-PAD,762); x.stroke();
-
-      // stat columns
-      const cols=[
-        {l:'HARGA SEKARANG', v:ok(price)?fmtRp(price):'—', c:LIGHT},
-        {l:'POTENSI',        v:up!=null?sgn(up):'—',        c:up==null?MUTE:(up>=0?GREEN:RED)},
-        {l:'MARGIN OF SAFETY',v:mos!=null?sgn(mos):'—',     c:mos==null?MUTE:(mos>=0?GREEN:RED)}
-      ];
-      const cw=(W-2*PAD)/3;
-      cols.forEach((c,i)=>{
-        const ccx=PAD+cw*i+cw/2;
-        x.textAlign='center';
-        x.fillStyle=MUTE; x.font='700 21px '+SANS; x.fillText(c.l, ccx, 838);
-        x.fillStyle=c.c;  x.font='800 46px '+MONO; x.fillText(c.v, ccx, 896);
-      });
-      x.textAlign='left';
-      x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,952); x.lineTo(W-PAD,952); x.stroke();
-
-      // footer
-      x.fillStyle=MUTE; x.font='500 22px '+SANS;
-      x.fillText('Estimasi model, bukan rekomendasi investasi.', PAD, 1004);
-      x.fillStyle='#b9a8ff'; x.font='700 24px '+SANS; x.textAlign='right';
-      x.fillText('terminal.economstock', W-PAD, 1004);
-      x.textAlign='left';
-
       const fname='Economstock_'+code+'_'+String(key).toUpperCase()+'.png';
-      const dl=(url)=>{ const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove(); };
-      if(cv.toBlob){ cv.toBlob(function(b){ if(!b){ dl(cv.toDataURL('image/png')); return; } const u=URL.createObjectURL(b); dl(u); setTimeout(()=>URL.revokeObjectURL(u),3000); },'image/png'); }
-      else { dl(cv.toDataURL('image/png')); }
+
+      function build(logo){
+        const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+        const x=cv.getContext('2d');
+        function rr(cx,cy,w,h,r){ x.beginPath(); x.moveTo(cx+r,cy); x.arcTo(cx+w,cy,cx+w,cy+h,r); x.arcTo(cx+w,cy+h,cx,cy+h,r); x.arcTo(cx,cy+h,cx,cy,r); x.arcTo(cx,cy,cx+w,cy,r); x.closePath(); }
+
+        // background
+        const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#15103a'); g.addColorStop(1,'#0a0720');
+        x.fillStyle=g; x.fillRect(0,0,W,H);
+        const rg=x.createRadialGradient(W*0.85,H*0.12,40,W*0.85,H*0.12,560);
+        rg.addColorStop(0,'rgba(124,92,255,0.30)'); rg.addColorStop(1,'rgba(124,92,255,0)');
+        x.fillStyle=rg; x.fillRect(0,0,W,H);
+        x.strokeStyle='rgba(124,92,255,0.35)'; x.lineWidth=2; rr(40,40,W-80,H-80,28); x.stroke();
+
+        // brand header — logo tile
+        x.fillStyle='#7c5cff'; rr(PAD,96,64,64,16); x.fill();
+        if(logo){
+          x.save(); rr(PAD,96,64,64,16); x.clip();
+          const iw=logo.naturalWidth||logo.width||64, ih=logo.naturalHeight||logo.height||64;
+          const sc=Math.max(64/iw,64/ih), dw=iw*sc, dh=ih*sc;
+          x.drawImage(logo, PAD+(64-dw)/2, 96+(64-dh)/2, dw, dh);
+          x.restore();
+        } else {
+          x.fillStyle='#fff'; x.font='800 38px '+SANS; x.textAlign='center'; x.textBaseline='middle';
+          x.fillText('E',PAD+32,130);
+          x.textBaseline='alphabetic'; x.textAlign='left';
+        }
+        x.textAlign='left'; x.textBaseline='alphabetic';
+        x.fillStyle=LIGHT; x.font='800 31px '+SANS; x.fillText('TERMINAL ECONOMSTOCK', PAD+84, 124);
+        x.fillStyle=MUTE;  x.font='600 19px '+SANS; x.fillText('Analisis Valuasi Saham', PAD+84, 153);
+        x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,205); x.lineTo(W-PAD,205); x.stroke();
+
+        // stock code + name
+        x.fillStyle='#fff'; x.font='800 104px '+MONO; x.fillText(code, PAD, 318);
+        if(name){ x.fillStyle=MUTE; x.font='500 28px '+SANS; let nm=name; if(nm.length>42) nm=nm.slice(0,40)+'…'; x.fillText(nm, PAD, 358); }
+
+        // status pill (top-right, aligned with code)
+        (function(){
+          const t=status.toUpperCase(); x.font='800 30px '+SANS;
+          const tw=x.measureText(t).width, pw=tw+58, ph=58, py=262, px=W-PAD-pw;
+          x.fillStyle=accentA; rr(px,py,pw,ph,29); x.fill();
+          x.strokeStyle=accent; x.lineWidth=2; rr(px,py,pw,ph,29); x.stroke();
+          x.fillStyle=accent; x.textBaseline='middle'; x.textAlign='center'; x.fillText(t, px+pw/2, py+ph/2+1);
+          x.textBaseline='alphabetic'; x.textAlign='left';
+        })();
+
+        // method name + jenis
+        x.fillStyle='#cdd2f5'; x.font='700 42px '+SANS; x.fillText(m.name, PAD, 462);
+        x.fillStyle=accent;    x.font='700 22px '+SANS; x.fillText('METODE '+String(m.grp||'').toUpperCase(), PAD, 498);
+
+        // nilai wajar
+        x.fillStyle=MUTE;   x.font='700 26px '+SANS; x.fillText('NILAI WAJAR', PAD, 592);
+        x.fillStyle=accent; x.font='800 116px '+MONO; x.fillText(fair!=null?fmtRp(fair):'—', PAD, 706);
+        x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,762); x.lineTo(W-PAD,762); x.stroke();
+
+        // stat columns
+        const cols=[
+          {l:'HARGA SEKARANG', v:ok(price)?fmtRp(price):'—', c:LIGHT},
+          {l:'POTENSI',        v:up!=null?sgn(up):'—',        c:up==null?MUTE:(up>=0?GREEN:RED)},
+          {l:'MARGIN OF SAFETY',v:mos!=null?sgn(mos):'—',     c:mos==null?MUTE:(mos>=0?GREEN:RED)}
+        ];
+        const cw=(W-2*PAD)/3;
+        cols.forEach((c,i)=>{
+          const ccx=PAD+cw*i+cw/2;
+          x.textAlign='center';
+          x.fillStyle=MUTE; x.font='700 21px '+SANS; x.fillText(c.l, ccx, 838);
+          x.fillStyle=c.c;  x.font='800 46px '+MONO; x.fillText(c.v, ccx, 896);
+        });
+        x.textAlign='left';
+        x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,952); x.lineTo(W-PAD,952); x.stroke();
+
+        // footer
+        x.fillStyle=MUTE; x.font='500 22px '+SANS;
+        x.fillText('Disclaimer On. Cek Detailnya di:', PAD, 1004);
+        x.fillStyle='#b9a8ff'; x.font='700 24px '+SANS; x.textAlign='right';
+        x.fillText('terminal.economstock', W-PAD, 1004);
+        x.textAlign='left';
+
+        const dl=(url)=>{ const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove(); };
+        if(cv.toBlob){ cv.toBlob(function(b){ if(!b){ dl(cv.toDataURL('image/png')); return; } const u=URL.createObjectURL(b); dl(u); setTimeout(()=>URL.revokeObjectURL(u),3000); },'image/png'); }
+        else { dl(cv.toDataURL('image/png')); }
+      }
+
+      // muat logo (same-origin) lalu render; fallback ke huruf "E" bila gagal
+      const logo=new Image();
+      logo.onload =function(){ build(logo); };
+      logo.onerror=function(){ build(null); };
+      logo.src='icon.png';
     }catch(e){ console.error('vlShotMethod gagal:', e); }
   };
 
