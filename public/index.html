@@ -1052,9 +1052,11 @@ select.form-control option{background:var(--card);color:var(--text)}
   .ov-kpi-label{font-size:8px}
   .ov-kpi-icon{font-size:14px;margin-bottom:4px}
   .ov-grid-3{grid-template-columns:1fr}
-  .ov-donut-wrap{width:150px;height:150px}
-  .ov-sent-body{flex-direction:column;gap:12px}
-  .ov-donut-center-value{font-size:20px}
+  /* Market Sentiment versi HP: donut di KIRI, legenda di sampingnya (satu baris) —
+     hemat ruang kosong & tidak perlu digeser. */
+  .ov-donut-wrap{width:130px;height:130px}
+  .ov-sent-body{flex-direction:row;align-items:center;justify-content:flex-start;gap:13px}
+  .ov-donut-center-value{font-size:18px}
   .ov-trend-wrap{height:160px}
   .ov-date-filter{padding:8px 10px;gap:5px}
   .ov-date-label{font-size:10px;width:100%;margin-bottom:2px}
