@@ -440,9 +440,12 @@ body.is-mobile-device .view-toggle{display:inline-flex}
 /* ── CHART ── */
 .chart-wrap{position:relative;height:340px}
 @media(max-width:700px){.chart-wrap{height:260px}}
-.chart-legend{display:flex;gap:18px;margin-bottom:10px;font-size:13px;flex-wrap:wrap}
-.legend-item{display:flex;align-items:center;gap:8px;color:var(--text);font-weight:600}
-.legend-dot{width:24px;height:4px;border-radius:2px}
+.chart-legend{display:flex;gap:20px;margin-bottom:10px;font-size:13.5px;flex-wrap:wrap;align-items:center}
+.legend-item{display:flex;align-items:center;gap:9px;color:var(--text);font-weight:700;letter-spacing:.2px}
+.legend-dot{width:22px;height:5px;border-radius:3px}
+/* Panel chart dashboard — tampilan terminal: sudut lebih membulat + panel gelap halus */
+.card-chart{border-radius:var(--radius-lg)}
+[data-theme="dark"] .card-chart{background:linear-gradient(160deg,#150d3a 0%,#0e0826 100%);border-color:#2c1f63}
 
 /* ── YOY ANALYSIS ── */
 .yoy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -2089,19 +2092,20 @@ select.form-control option{background:var(--card);color:var(--text)}
 /* Banner di menu Consensus — diperbesar 2x (4px → 8px) untuk semua ukuran layar */
 #page-consensus .info-banner{font-size:8px;padding:5px 10px;gap:5px;line-height:1.3}
 
-.period-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.period-tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .period-tab{
-  padding:7px 18px;font-size:13px;font-weight:700;
+  padding:8px 20px;font-size:13px;font-weight:700;
   border:1px solid var(--border);border-radius:var(--radius-pill);
-  cursor:pointer;color:var(--text2);transition:all .15s;
-  font-family:'IBM Plex Mono',monospace;
-  background:var(--card);
-  letter-spacing:.5px;
+  cursor:pointer;color:var(--text2);transition:all .18s;
+  font-family:inherit;
+  background:transparent;
+  letter-spacing:.3px;
 }
-.period-tab:hover{border-color:var(--accent);color:var(--accent)}
+.period-tab:hover{border-color:var(--accent);color:var(--text)}
 .period-tab.active{
-  background:var(--grad);color:#fff;border-color:transparent;
-  box-shadow:0 4px 12px rgba(109,40,217,.22);
+  background:linear-gradient(135deg,#c4a3ff 0%,#f0abfc 100%);
+  color:#1a0f3c;border-color:transparent;font-weight:800;
+  box-shadow:0 6px 18px rgba(196,163,255,.30);
 }
 
 /* ── REC RATING BARS (Bareksa-style) ── */
@@ -2605,8 +2609,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <div class="card card-chart">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
           <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:#e11d48;height:4px"></div>IHSG</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#6d28d9;height:5px"></div><span id="legendStock">TLKM</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f4626a;height:5px"></div>IHSG</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6;height:5px"></div><span id="legendStock">TLKM</span></div>
             <div class="legend-item"><div class="legend-dot" style="background:repeating-linear-gradient(90deg,var(--accent3) 0,var(--accent3) 6px,transparent 6px,transparent 11px);height:4px"></div><strong style="color:var(--accent3)">Linear Trend</strong><button type="button" class="info-btn" aria-label="Info tren linier" onclick="showInfoModal('Cara Baca Tren Linier','Gunakan chart <strong>ALL</strong> untuk melihat data histori secara menyeluruh dan lengkap.<br><br>&bull; Jika harga saham berada <strong>jauh di bawah</strong> tren linier, maka masuk <span style=&quot;color:var(--green);font-weight:700&quot;>zona akumulasi</span>.<br><br>&bull; Jika harga saham berada <strong>jauh di atas</strong> tren liniernya, maka masuk <span style=&quot;color:var(--red);font-weight:700&quot;>zona distribusi</span>.<br><br>&bull; Jika harga saham berada <strong>di dekat</strong> tren linier, gunakan kalkulasi <strong>Target Price Blueprint Economstock</strong> untuk mencari area <span style=&quot;color:var(--green);font-weight:700&quot;>buy</span> dan <span style=&quot;color:var(--red);font-weight:700&quot;>sell</span> secara profesional.')">?</button></div>
           </div>
           <div class="period-tabs">
@@ -6434,11 +6438,11 @@ function renderChart(code) {
     data: {
       labels,
       datasets: [
-        { label:'IHSG', data: ihsgNorm, borderColor:'#e11d48', borderWidth:2.2, pointRadius:0, tension:.3, fill:false },
-        { label: code, data: stockNorm, borderColor:'#6d28d9', borderWidth:2.8, pointRadius:0, tension:.3,
+        { label:'IHSG', data: ihsgNorm, borderColor:'#f4626a', borderWidth:2.4, pointRadius:0, tension:.35, fill:false },
+        { label: code, data: stockNorm, borderColor:'#8b5cf6', borderWidth:3, pointRadius:0, tension:.35,
           fill: true, backgroundColor: (ctx) => {
             const g = ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
-            g.addColorStop(0,'rgba(109,40,217,0.22)'); g.addColorStop(1,'rgba(109,40,217,0)'); return g;
+            g.addColorStop(0,'rgba(139,92,246,0.24)'); g.addColorStop(1,'rgba(139,92,246,0)'); return g;
           }
         },
         { label:'Linear Trend', data: trendFull,
@@ -6505,8 +6509,8 @@ function renderChart(code) {
         }
       },
       scales:{
-        x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'},maxTicksLimit:12}},
-        y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'}},
+        x:{grid:{color:'rgba(150,140,205,0.10)'},ticks:{color:ct.ticks,font:{size:12,weight:'600'},maxTicksLimit:12}},
+        y:{grid:{color:'rgba(150,140,205,0.10)'},ticks:{color:ct.ticks,font:{size:12,weight:'600'}},
            title:{display:true,text:'Index (Base=100)',color:ct.ticks,font:{size:12,weight:'700'}}}
       }
     }
