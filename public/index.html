@@ -2080,8 +2080,8 @@ select.form-control option{background:var(--card);color:var(--text)}
   display:flex;align-items:center;gap:5px;font-weight:600;line-height:1.3;
 }
 .info-banner strong{color:var(--accent);font-weight:800}
-/* Pastikan banner di menu Consensus benar-benar kecil (tahan terhadap override apa pun) */
-#page-consensus .info-banner{font-size:4px;padding:5px 10px;gap:5px;line-height:1.3}
+/* Banner di menu Consensus — diperbesar 2x (4px → 8px) untuk semua ukuran layar */
+#page-consensus .info-banner{font-size:8px;padding:5px 10px;gap:5px;line-height:1.3}
 
 .period-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .period-tab{
@@ -9684,6 +9684,10 @@ body.vl-maxing{overflow:hidden}
   #page-valuasi #vlProjTableHeader span{font-size:8.5px!important}
   #page-valuasi #vlProjTableHeader strong{font-size:9px!important}
   #page-valuasi #vlProjTableHeader .vl-badge{font-size:7.5px!important;padding:1px 5px}
+  /* Tabel proyeksi: muat penuh di layar sempit tanpa geser horizontal */
+  #page-valuasi #vlProjTable{table-layout:fixed}
+  #page-valuasi #vlProjTable thead th,#page-valuasi #vlProjTable tbody td{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+  #page-valuasi #vlProjTableHeader > div{flex-wrap:wrap!important;overflow-x:visible!important;white-space:normal!important}
   #page-valuasi .vl-kpis{grid-template-columns:repeat(2,1fr)}
   /* Proyeksi: basis dropdown + MoS side by side, then 3-col KPI grid */
   #page-valuasi .vl-basis-select{width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;appearance:auto}
@@ -9953,7 +9957,7 @@ body.vl-maxing{overflow:hidden}
       <div id="vlProjBody">
         <div class="card" style="margin-bottom:14px">
           <div class="card-title">🎯 Proyeksi Harga 5 Tahun</div>
-          <div class="vl-proj-sub">Skenario imbal hasil dari harga beli basis <b id="vlProjScope">TTM</b> — angka menyesuaikan basis yang dipilih (beda dengan snapshot model di atas).</div>
+          <div class="vl-proj-sub">Skenario imbal hasil dari harga beli basis <b id="vlProjScope">TTM</b> — angka menyesuaikan basis yang dipilih.</div>
           <div class="vl-proj-row-mob" id="vlProjRowMob">
             <div class="vl-basis" id="vlProjBasis" style="margin-bottom:14px"></div>
             <div class="vl-kpi-mos-card"><div class="l">🛡️ Margin of Safety</div><div class="v" id="vlKpiMosMob">-</div><div class="d" id="vlKpiMosDescMob">-</div></div>
@@ -10277,6 +10281,20 @@ body.vl-maxing{overflow:hidden}
     #page-valuasi .vl-cmp-duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
     @media(max-width:760px){#page-valuasi .vl-cmp-duo{grid-template-columns:1fr}}
     #page-valuasi .vl-cmp-duo>.vl-cmp-range,#page-valuasi .vl-cmp-duo>.vl-cmp-chart-card{position:relative}
+
+    /* ── Layar besar: isi konten 3 kartu agar mengisi ruang kosong & rapi (tidak ubah logika) ── */
+    @media(min-width:761px){
+      /* Konsensus Nilai Wajar + Sebaran Penilaian: sebar konten vertikal mengisi tinggi kartu */
+      #page-valuasi #vl-tab-metode .vl-cmp-top>.vl-cmp-card:nth-child(1),
+      #page-valuasi #vl-tab-metode .vl-cmp-top>.vl-cmp-card:nth-child(2){
+        display:flex;flex-direction:column;justify-content:space-between;
+      }
+      /* "Nilai Wajar per Metode vs Harga": baris bar tumbuh memenuhi tinggi kartu */
+      #page-valuasi .vl-cmp-duo>.vl-cmp-range{display:flex;flex-direction:column}
+      #page-valuasi .vl-cmp-duo>.vl-cmp-range .vl-ff{flex:1 1 auto;display:flex;flex-direction:column;justify-content:space-between}
+      #page-valuasi .vl-cmp-duo>.vl-cmp-range .vl-ff-row{flex:1 1 auto;height:auto;min-height:18px}
+      #page-valuasi .vl-cmp-duo>.vl-cmp-range .vl-ff-row .amt{top:50%;transform:translateY(-50%)}
+    }
     </style>
     <div id="vl-tab-metode" class="vl-tc">
       <div class="card" style="margin-bottom:14px">
@@ -10712,7 +10730,8 @@ body.vl-maxing{overflow:hidden}
     const tb = document.getElementById('vlProjTableBody');
     if(tb){
       const basisPrice = pc._last || 0;
-      const basisLabel = pc._isCurrent ? _ttmLabel : (_projBasis.replace(/^Y/,''));
+      // Tampilkan label tanpa prefix "TTM " (hanya teks tampilan kolom — logika basis tetap sama)
+      const basisLabel = (pc._isCurrent ? _ttmLabel : (_projBasis.replace(/^Y/,''))).replace(/^TTM\s+/i,'');
 
       // Header info
       const thdr = document.getElementById('vlProjTableHeader');
