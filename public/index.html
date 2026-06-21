@@ -11868,6 +11868,8 @@ body.vl-maxing{overflow:hidden}
       const s=curStock(); if(!s) return;
       const m=(_cmpData||{})[key]; if(!m) return;
       const price=effLast(s).price;
+      const biSel=cmpBasis(s,_cmpBasis);
+      const basisLabel=(_cmpBasis==='current') ? vlTtmLabelFull(s) : ('Annual '+biSel.yr); // dinamis ikut basis (Q1/Q2.., tahun ikut data)
       const code=s.code;
       const name=(typeof plName==='function'?(plName(code)||''):'');
       const fair=ok(m.fair)?m.fair:null;
@@ -11935,6 +11937,17 @@ body.vl-maxing{overflow:hidden}
         // method name + jenis
         x.fillStyle='#cdd2f5'; x.font='700 42px '+SANS; x.fillText(m.name, PAD, 462);
         x.fillStyle=accent;    x.font='700 22px '+SANS; x.fillText('METODE '+String(m.grp||'').toUpperCase(), PAD, 498);
+
+        // basis data (dinamis) — pill di kanan sejajar nama metode
+        (function(){
+          const t='BASIS · '+String(basisLabel).toUpperCase();
+          x.font='700 22px '+SANS;
+          const tw=x.measureText(t).width, pw=tw+44, ph=46, py=438, px=W-PAD-pw;
+          x.fillStyle='rgba(255,255,255,0.05)'; rr(px,py,pw,ph,23); x.fill();
+          x.strokeStyle='rgba(185,168,255,0.45)'; x.lineWidth=2; rr(px,py,pw,ph,23); x.stroke();
+          x.fillStyle='#b9a8ff'; x.textBaseline='middle'; x.textAlign='center'; x.fillText(t, px+pw/2, py+ph/2+1);
+          x.textBaseline='alphabetic'; x.textAlign='left';
+        })();
 
         // nilai wajar
         x.fillStyle=MUTE;   x.font='700 26px '+SANS; x.fillText('NILAI WAJAR', PAD, 592);
