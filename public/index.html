@@ -2104,6 +2104,19 @@ select.form-control option{background:var(--card);color:var(--text)}
   box-shadow:0 4px 12px rgba(109,40,217,.22);
 }
 
+/* ── Chart dashboard versi HP (≤700px): susun seperti tampilan "mode desktop" —
+   legend (kiri) & tombol periode (kanan) DIPAKSA tetap satu baris (di HP biasa
+   keduanya menumpuk jadi 2 baris). Ukuran dikompakkan agar muat di layar HP.
+   Warna pill/garis/grid TIDAK diubah (identik dengan main). ── */
+@media(max-width:700px){
+  .card-chart > div:first-child{flex-wrap:nowrap!important;gap:6px}
+  .card-chart .chart-legend{gap:9px;font-size:10.5px;flex-wrap:nowrap;min-width:0;flex-shrink:1;overflow:hidden}
+  .card-chart .chart-legend .legend-item{gap:5px;white-space:nowrap}
+  .card-chart .chart-legend .legend-dot{width:16px}
+  .card-chart .period-tabs{flex-wrap:nowrap;flex-shrink:0;gap:4px;margin-bottom:0}
+  .card-chart .period-tab{padding:6px 11px;font-size:11px;letter-spacing:.3px}
+}
+
 /* ── REC RATING BARS (Bareksa-style) ── */
 .rec-rating{
   display:inline-flex;gap:2px;align-items:center;
