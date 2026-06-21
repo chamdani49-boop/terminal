@@ -2104,6 +2104,21 @@ select.form-control option{background:var(--card);color:var(--text)}
   box-shadow:0 4px 12px rgba(109,40,217,.22);
 }
 
+/* ── Chart dashboard versi HP (≤700px): poles UI sesuai referensi.
+   Hanya elemen tampilan (pill periode, legend, panel) — warna garis/grid/data
+   TIDAK diubah (tetap warna dasar). Desktop/layar besar tidak terpengaruh. ── */
+@media(max-width:700px){
+  .chart-legend{gap:20px;font-size:13.5px;align-items:center}
+  .legend-item{gap:9px;font-weight:700;letter-spacing:.2px}
+  .legend-dot{width:22px;height:5px;border-radius:3px}
+  .card-chart{border-radius:var(--radius-lg)}
+  [data-theme="dark"] .card-chart{background:linear-gradient(160deg,#150d3a 0%,#0e0826 100%);border-color:#2c1f63}
+  .period-tabs{gap:8px}
+  .period-tab{padding:8px 20px;font-family:inherit;background:transparent;letter-spacing:.3px}
+  .period-tab:hover{color:var(--text)}
+  .period-tab.active{background:linear-gradient(135deg,#c4a3ff 0%,#f0abfc 100%);color:#1a0f3c;font-weight:800;box-shadow:0 6px 18px rgba(196,163,255,.30)}
+}
+
 /* ── REC RATING BARS (Bareksa-style) ── */
 .rec-rating{
   display:inline-flex;gap:2px;align-items:center;
