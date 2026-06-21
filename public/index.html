@@ -166,6 +166,12 @@ a{color:inherit;text-decoration:none}
 .search-item .sname{font-size:13px;color:var(--text);font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .search-item .sector{font-size:11px;color:var(--text2);margin-left:auto;flex-shrink:0;background:var(--bg2);padding:3px 10px;border-radius:var(--radius-pill);font-weight:600}
 
+/* Chip saham terpilih di Simulasi (pengganti opsi <select> aktif) */
+.saving-picked{display:flex;align-items:center;gap:9px;margin-top:9px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px}
+.saving-picked .code{font-family:'IBM Plex Mono',monospace;font-weight:800;color:var(--accent);font-size:14px;flex-shrink:0}
+.saving-picked .nm{font-size:12.5px;color:var(--text2);font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.saving-picked .tag{margin-left:auto;flex-shrink:0;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+
 .nav-tabs{display:flex;gap:6px;margin-left:auto;align-items:center}
 .nav-tab{
   padding:9px 18px;font-size:14px;font-weight:700;border-radius:var(--radius-pill);
@@ -2778,9 +2784,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
           <div class="form-group">
             <label class="form-label">Pilih Saham</label>
-            <select class="form-control" id="savingStock">
-              <option value="">-- Pilih Saham --</option>
-            </select>
+            <input type="hidden" id="savingStock">
+            <div class="saving-stock-wrap" style="position:relative">
+              <input type="text" class="form-control" id="savingStockSearch" placeholder="Ketik kode / nama saham, mis. BBCA" autocomplete="off">
+              <div class="search-drop" id="savingStockDrop"></div>
+            </div>
+            <div id="savingStockPicked" class="saving-picked" style="display:none"></div>
           </div>
 
           <div class="form-group">
@@ -8342,15 +8351,113 @@ function setSavingMode(mode, btn) {
   document.getElementById('lumpFields').style.display = mode === 'lump' ? 'block' : 'none';
 }
 
+// ── Pilih Saham (Simulasi): ketik kode/nama → cari dari SEMUA saham yang punya
+// price history (bukan cuma watchlist), pilih → input otomatis kosong, kode
+// tersimpan di hidden #savingStock + chip "savingStockPicked". Logika simulasi
+// (calculateSaving) tetap membaca #savingStock.value seperti semula.
+let _savingCodes = [];          // [{code,name,sector}] saham yang bisa disimulasikan
+let _savingSearchItems = [];
+let _savingSearchActive = -1;
+
 function buildSavingStockList() {
-  const sel = document.getElementById('savingStock');
-  const wl = DATA.watchlist;
-  sel.innerHTML = '<option value="">-- Pilih Saham --</option>' +
-    wl.map(c => {
-      const info = DATA.stock_info[c] || {};
-      return `<option value="${c}">${c} - ${info.name || c}</option>`;
-    }).join('');
-  sel.value = 'TLKM';
+  // Kumpulkan semua kode yang punya data harga (>0) di price_history → sinkron universe
+  const ph = (DATA && DATA.price_history) || [];
+  const have = new Set();
+  ph.forEach(e => { for (const k in e) { if (k === 'date' || k === 'label') continue; if (Number.isFinite(e[k]) && e[k] > 0) have.add(k); } });
+
+  const list = (DATA && Array.isArray(DATA.stock_list)) ? DATA.stock_list : [];
+  const seen = new Set();
+  _savingCodes = [];
+  list.forEach(s => {
+    if (s.code && have.has(s.code) && !seen.has(s.code)) {
+      seen.add(s.code);
+      _savingCodes.push({ code: s.code, name: s.name || '', sector: s.sector || '' });
+    }
+  });
+  // Kode yang punya harga tapi tak ada di stock_list → tetap masukkan (nama dari stock_info)
+  have.forEach(c => {
+    if (!seen.has(c)) {
+      seen.add(c);
+      const info = (DATA.stock_info && DATA.stock_info[c]) || {};
+      _savingCodes.push({ code: c, name: info.name || c, sector: info.sector || '' });
+    }
+  });
+  _savingCodes.sort((a, b) => a.code.localeCompare(b.code));
+
+  wireSavingSearch();
+
+  // Default pilih TLKM bila ada, jika tidak ambil yang pertama
+  const def = _savingCodes.some(s => s.code === 'TLKM') ? 'TLKM'
+            : (_savingCodes[0] && _savingCodes[0].code) || '';
+  if (def) savingPickStock(def);
+}
+
+function wireSavingSearch() {
+  const inp = document.getElementById('savingStockSearch');
+  const drop = document.getElementById('savingStockDrop');
+  if (!inp || !drop || inp._wired) return;
+  inp._wired = true;
+  inp.addEventListener('input', () => { _savingSearchActive = -1; savingSearchRender(); });
+  inp.addEventListener('focus', () => { savingSearchRender(); });
+  inp.addEventListener('keydown', savingSearchKey);
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.saving-stock-wrap')) drop.classList.remove('open');
+  });
+}
+
+function savingSearchList(qRaw) {
+  const q = (qRaw || '').trim().toUpperCase();
+  const out = [];
+  for (const s of _savingCodes) {
+    if (!q || s.code.includes(q) || (s.name && s.name.toUpperCase().includes(q))) {
+      out.push(s);
+      if (out.length >= 14) break;
+    }
+  }
+  return out;
+}
+
+function savingSearchRender() {
+  const inp = document.getElementById('savingStockSearch');
+  const drop = document.getElementById('savingStockDrop');
+  if (!inp || !drop) return;
+  _savingSearchItems = savingSearchList(inp.value);
+  if (!_savingSearchItems.length) { drop.classList.remove('open'); drop.innerHTML = ''; return; }
+  drop.innerHTML = _savingSearchItems.map((s, i) =>
+    `<div class="search-item${i === _savingSearchActive ? ' active' : ''}" onmousedown="event.preventDefault();savingPickStock('${s.code}')">` +
+      `<span class="code">${s.code}</span>` +
+      `<span class="sname">${s.name}</span>` +
+      (s.sector ? `<span class="sector">${s.sector}</span>` : '') +
+    `</div>`).join('');
+  drop.classList.add('open');
+}
+
+function savingSearchKey(evt) {
+  const drop = document.getElementById('savingStockDrop');
+  const open = drop && drop.classList.contains('open') && _savingSearchItems.length;
+  if (evt.key === 'ArrowDown' && open) { evt.preventDefault(); _savingSearchActive = Math.min(_savingSearchItems.length - 1, _savingSearchActive + 1); savingSearchRender(); }
+  else if (evt.key === 'ArrowUp' && open) { evt.preventDefault(); _savingSearchActive = Math.max(0, _savingSearchActive - 1); savingSearchRender(); }
+  else if (evt.key === 'Enter') {
+    if (open) { evt.preventDefault(); const pick = _savingSearchItems[_savingSearchActive >= 0 ? _savingSearchActive : 0]; if (pick) savingPickStock(pick.code); }
+  } else if (evt.key === 'Escape') { drop.classList.remove('open'); }
+}
+
+function savingPickStock(code) {
+  code = (code || '').toUpperCase();
+  const hid = document.getElementById('savingStock');
+  if (hid) hid.value = code;                         // dipakai calculateSaving()
+  const info = (DATA.stock_info && DATA.stock_info[code]) || {};
+  const name = info.name || (typeof plName === 'function' ? plName(code) : '') || code;
+  const picked = document.getElementById('savingStockPicked');
+  if (picked) {
+    picked.style.display = '';
+    picked.innerHTML = `<span class="code">${code}</span><span class="nm">${name}</span><span class="tag">terpilih</span>`;
+  }
+  const inp = document.getElementById('savingStockSearch');
+  if (inp) inp.value = '';                            // auto-kosongkan kolom ketik
+  const drop = document.getElementById('savingStockDrop');
+  if (drop) { drop.classList.remove('open'); drop.innerHTML = ''; }
+  _savingSearchActive = -1;
 }
 
 function buildDateOptions() {
