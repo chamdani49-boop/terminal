@@ -166,6 +166,12 @@ a{color:inherit;text-decoration:none}
 .search-item .sname{font-size:13px;color:var(--text);font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .search-item .sector{font-size:11px;color:var(--text2);margin-left:auto;flex-shrink:0;background:var(--bg2);padding:3px 10px;border-radius:var(--radius-pill);font-weight:600}
 
+/* Chip saham terpilih di Simulasi (pengganti opsi <select> aktif) */
+.saving-picked{display:flex;align-items:center;gap:9px;margin-top:9px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px}
+.saving-picked .code{font-family:'IBM Plex Mono',monospace;font-weight:800;color:var(--accent);font-size:14px;flex-shrink:0}
+.saving-picked .nm{font-size:12.5px;color:var(--text2);font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.saving-picked .tag{margin-left:auto;flex-shrink:0;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+
 .nav-tabs{display:flex;gap:6px;margin-left:auto;align-items:center}
 .nav-tab{
   padding:9px 18px;font-size:14px;font-weight:700;border-radius:var(--radius-pill);
@@ -1046,9 +1052,11 @@ select.form-control option{background:var(--card);color:var(--text)}
   .ov-kpi-label{font-size:8px}
   .ov-kpi-icon{font-size:14px;margin-bottom:4px}
   .ov-grid-3{grid-template-columns:1fr}
-  .ov-donut-wrap{width:150px;height:150px}
-  .ov-sent-body{flex-direction:column;gap:12px}
-  .ov-donut-center-value{font-size:20px}
+  /* Market Sentiment versi HP: donut di KIRI, legenda di sampingnya (satu baris) —
+     hemat ruang kosong & tidak perlu digeser. */
+  .ov-donut-wrap{width:130px;height:130px}
+  .ov-sent-body{flex-direction:row;align-items:center;justify-content:flex-start;gap:13px}
+  .ov-donut-center-value{font-size:18px}
   .ov-trend-wrap{height:160px}
   .ov-date-filter{padding:8px 10px;gap:5px}
   .ov-date-label{font-size:10px;width:100%;margin-bottom:2px}
@@ -2098,6 +2106,19 @@ select.form-control option{background:var(--card);color:var(--text)}
   box-shadow:0 4px 12px rgba(109,40,217,.22);
 }
 
+/* ── Chart dashboard versi HP (≤700px): susun seperti tampilan "mode desktop" —
+   legend (kiri) & tombol periode (kanan) DIPAKSA tetap satu baris (di HP biasa
+   keduanya menumpuk jadi 2 baris). Ukuran dikompakkan agar muat di layar HP.
+   Warna pill/garis/grid TIDAK diubah (identik dengan main). ── */
+@media(max-width:700px){
+  .card-chart > div:first-child{flex-wrap:nowrap!important;gap:6px}
+  .card-chart .chart-legend{gap:9px;font-size:10.5px;flex-wrap:nowrap;min-width:0;flex-shrink:1;overflow:hidden}
+  .card-chart .chart-legend .legend-item{gap:5px;white-space:nowrap}
+  .card-chart .chart-legend .legend-dot{width:16px}
+  .card-chart .period-tabs{flex-wrap:nowrap;flex-shrink:0;gap:4px;margin-bottom:0}
+  .card-chart .period-tab{padding:6px 11px;font-size:11px;letter-spacing:.3px}
+}
+
 /* ── REC RATING BARS (Bareksa-style) ── */
 .rec-rating{
   display:inline-flex;gap:2px;align-items:center;
@@ -2778,9 +2799,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
           <div class="form-group">
             <label class="form-label">Pilih Saham</label>
-            <select class="form-control" id="savingStock">
-              <option value="">-- Pilih Saham --</option>
-            </select>
+            <input type="hidden" id="savingStock">
+            <div class="saving-stock-wrap" style="position:relative">
+              <input type="text" class="form-control" id="savingStockSearch" placeholder="Ketik kode / nama saham, mis. BBCA" autocomplete="off">
+              <div class="search-drop" id="savingStockDrop"></div>
+            </div>
+            <div id="savingStockPicked" class="saving-picked" style="display:none"></div>
           </div>
 
           <div class="form-group">
@@ -8342,15 +8366,113 @@ function setSavingMode(mode, btn) {
   document.getElementById('lumpFields').style.display = mode === 'lump' ? 'block' : 'none';
 }
 
+// ── Pilih Saham (Simulasi): ketik kode/nama → cari dari SEMUA saham yang punya
+// price history (bukan cuma watchlist), pilih → input otomatis kosong, kode
+// tersimpan di hidden #savingStock + chip "savingStockPicked". Logika simulasi
+// (calculateSaving) tetap membaca #savingStock.value seperti semula.
+let _savingCodes = [];          // [{code,name,sector}] saham yang bisa disimulasikan
+let _savingSearchItems = [];
+let _savingSearchActive = -1;
+
 function buildSavingStockList() {
-  const sel = document.getElementById('savingStock');
-  const wl = DATA.watchlist;
-  sel.innerHTML = '<option value="">-- Pilih Saham --</option>' +
-    wl.map(c => {
-      const info = DATA.stock_info[c] || {};
-      return `<option value="${c}">${c} - ${info.name || c}</option>`;
-    }).join('');
-  sel.value = 'TLKM';
+  // Kumpulkan semua kode yang punya data harga (>0) di price_history → sinkron universe
+  const ph = (DATA && DATA.price_history) || [];
+  const have = new Set();
+  ph.forEach(e => { for (const k in e) { if (k === 'date' || k === 'label') continue; if (Number.isFinite(e[k]) && e[k] > 0) have.add(k); } });
+
+  const list = (DATA && Array.isArray(DATA.stock_list)) ? DATA.stock_list : [];
+  const seen = new Set();
+  _savingCodes = [];
+  list.forEach(s => {
+    if (s.code && have.has(s.code) && !seen.has(s.code)) {
+      seen.add(s.code);
+      _savingCodes.push({ code: s.code, name: s.name || '', sector: s.sector || '' });
+    }
+  });
+  // Kode yang punya harga tapi tak ada di stock_list → tetap masukkan (nama dari stock_info)
+  have.forEach(c => {
+    if (!seen.has(c)) {
+      seen.add(c);
+      const info = (DATA.stock_info && DATA.stock_info[c]) || {};
+      _savingCodes.push({ code: c, name: info.name || c, sector: info.sector || '' });
+    }
+  });
+  _savingCodes.sort((a, b) => a.code.localeCompare(b.code));
+
+  wireSavingSearch();
+
+  // Default pilih TLKM bila ada, jika tidak ambil yang pertama
+  const def = _savingCodes.some(s => s.code === 'TLKM') ? 'TLKM'
+            : (_savingCodes[0] && _savingCodes[0].code) || '';
+  if (def) savingPickStock(def);
+}
+
+function wireSavingSearch() {
+  const inp = document.getElementById('savingStockSearch');
+  const drop = document.getElementById('savingStockDrop');
+  if (!inp || !drop || inp._wired) return;
+  inp._wired = true;
+  inp.addEventListener('input', () => { _savingSearchActive = -1; savingSearchRender(); });
+  inp.addEventListener('focus', () => { savingSearchRender(); });
+  inp.addEventListener('keydown', savingSearchKey);
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.saving-stock-wrap')) drop.classList.remove('open');
+  });
+}
+
+function savingSearchList(qRaw) {
+  const q = (qRaw || '').trim().toUpperCase();
+  const out = [];
+  for (const s of _savingCodes) {
+    if (!q || s.code.includes(q) || (s.name && s.name.toUpperCase().includes(q))) {
+      out.push(s);
+      if (out.length >= 14) break;
+    }
+  }
+  return out;
+}
+
+function savingSearchRender() {
+  const inp = document.getElementById('savingStockSearch');
+  const drop = document.getElementById('savingStockDrop');
+  if (!inp || !drop) return;
+  _savingSearchItems = savingSearchList(inp.value);
+  if (!_savingSearchItems.length) { drop.classList.remove('open'); drop.innerHTML = ''; return; }
+  drop.innerHTML = _savingSearchItems.map((s, i) =>
+    `<div class="search-item${i === _savingSearchActive ? ' active' : ''}" onmousedown="event.preventDefault();savingPickStock('${s.code}')">` +
+      `<span class="code">${s.code}</span>` +
+      `<span class="sname">${s.name}</span>` +
+      (s.sector ? `<span class="sector">${s.sector}</span>` : '') +
+    `</div>`).join('');
+  drop.classList.add('open');
+}
+
+function savingSearchKey(evt) {
+  const drop = document.getElementById('savingStockDrop');
+  const open = drop && drop.classList.contains('open') && _savingSearchItems.length;
+  if (evt.key === 'ArrowDown' && open) { evt.preventDefault(); _savingSearchActive = Math.min(_savingSearchItems.length - 1, _savingSearchActive + 1); savingSearchRender(); }
+  else if (evt.key === 'ArrowUp' && open) { evt.preventDefault(); _savingSearchActive = Math.max(0, _savingSearchActive - 1); savingSearchRender(); }
+  else if (evt.key === 'Enter') {
+    if (open) { evt.preventDefault(); const pick = _savingSearchItems[_savingSearchActive >= 0 ? _savingSearchActive : 0]; if (pick) savingPickStock(pick.code); }
+  } else if (evt.key === 'Escape') { drop.classList.remove('open'); }
+}
+
+function savingPickStock(code) {
+  code = (code || '').toUpperCase();
+  const hid = document.getElementById('savingStock');
+  if (hid) hid.value = code;                         // dipakai calculateSaving()
+  const info = (DATA.stock_info && DATA.stock_info[code]) || {};
+  const name = info.name || (typeof plName === 'function' ? plName(code) : '') || code;
+  const picked = document.getElementById('savingStockPicked');
+  if (picked) {
+    picked.style.display = '';
+    picked.innerHTML = `<span class="code">${code}</span><span class="nm">${name}</span><span class="tag">terpilih</span>`;
+  }
+  const inp = document.getElementById('savingStockSearch');
+  if (inp) inp.value = '';                            // auto-kosongkan kolom ketik
+  const drop = document.getElementById('savingStockDrop');
+  if (drop) { drop.classList.remove('open'); drop.innerHTML = ''; }
+  _savingSearchActive = -1;
 }
 
 function buildDateOptions() {
@@ -10200,6 +10322,8 @@ body.vl-maxing{overflow:hidden}
     #page-valuasi .vl-neg{color:var(--red);font-weight:700}
     #page-valuasi .vl-iq{width:17px;height:17px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-weight:700;font-style:italic;cursor:pointer;line-height:15px;padding:0;font-family:Georgia,'Times New Roman',serif;transition:all .15s;flex-shrink:0}
     #page-valuasi .vl-iq:hover{border-color:var(--accent);color:var(--accent)}
+    #page-valuasi .vl-shot{width:17px;height:17px;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;line-height:14px;padding:0;margin-left:5px;transition:all .15s;flex-shrink:0;vertical-align:middle}
+    #page-valuasi .vl-shot:hover{background:var(--accent);color:#fff}
     /* range bar */
     #page-valuasi .vl-cmp-range{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px 12px}
     #page-valuasi .vl-cmp-range .hd{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:14px}
@@ -11640,7 +11764,7 @@ body.vl-maxing{overflow:hidden}
          '<td>'+upTxt(m.verdict)+'</td>'+
          '<td>'+mosTxt(m.fair)+'</td>'+
          '<td>'+chip(m.verdict)+'</td>'+
-         '<td style="text-align:center"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button></td></tr>';
+         '<td style="text-align:center;white-space:nowrap"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button><button class="vl-shot" onclick="vlShotMethod(\''+m.key+'\')" title="Download screenshot — Terminal Economstock">\u2913</button></td></tr>';
     });
     h+='</tbody></table></div>';
     h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlTtmLabel(s)+'</strong> = Q1 disetahunkan (\xD74), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
@@ -11859,6 +11983,135 @@ body.vl-maxing{overflow:hidden}
       tooltipText: isDark?'#ccc':'#333'
     };
   }
+  // ── Download screenshot kartu valuasi per metode (viral loop) — brand "Terminal Economstock" ──
+  // Menggambar kartu PNG via Canvas (tanpa dependensi). Data diambil dari _cmpData hasil render.
+  window.vlShotMethod=function(key){
+    try{
+      const s=curStock(); if(!s) return;
+      const m=(_cmpData||{})[key]; if(!m) return;
+      const price=effLast(s).price;
+      const biSel=cmpBasis(s,_cmpBasis);
+      const basisLabel=(_cmpBasis==='current') ? vlTtmLabelFull(s) : ('Annual '+biSel.yr); // dinamis ikut basis (Q1/Q2.., tahun ikut data)
+      const code=s.code;
+      const name=(typeof plName==='function'?(plName(code)||''):'');
+      const fair=ok(m.fair)?m.fair:null;
+      const vd=m.verdict;
+      const up  = vd ? vd.up*100 : null;                                  // potensi %
+      const mos = (fair!=null && fair>0 && ok(price)) ? (1-price/fair)*100 : null;
+      const status = vd ? vd.label : '—';
+      const cls    = vd ? vd.cls   : 'na';
+      const PAL  = {cheap:'#16c784',fair:'#f5a623',exp:'#ea3943',na:'#8a90b8'};
+      const PALA = {cheap:'rgba(22,199,132,0.16)',fair:'rgba(245,166,35,0.16)',exp:'rgba(234,57,67,0.16)',na:'rgba(138,144,184,0.16)'};
+      const accent = PAL[cls]||PAL.na, accentA = PALA[cls]||PALA.na;
+      const GREEN='#16c784', RED='#ea3943', MUTE='#9aa0c7', LIGHT='#eef0ff';
+      const sgn=(v)=> (v>=0?'+':'')+v.toFixed(1)+'%';
+
+      const W=1080,H=1080;
+      const MONO="'IBM Plex Mono',monospace", SANS="Inter,'Segoe UI',Arial,sans-serif";
+      const PAD=84;
+      const fname='Economstock_'+code+'_'+String(key).toUpperCase()+'.png';
+
+      function build(logo){
+        const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+        const x=cv.getContext('2d');
+        function rr(cx,cy,w,h,r){ x.beginPath(); x.moveTo(cx+r,cy); x.arcTo(cx+w,cy,cx+w,cy+h,r); x.arcTo(cx+w,cy+h,cx,cy+h,r); x.arcTo(cx,cy+h,cx,cy,r); x.arcTo(cx,cy,cx+w,cy,r); x.closePath(); }
+
+        // background
+        const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#15103a'); g.addColorStop(1,'#0a0720');
+        x.fillStyle=g; x.fillRect(0,0,W,H);
+        const rg=x.createRadialGradient(W*0.85,H*0.12,40,W*0.85,H*0.12,560);
+        rg.addColorStop(0,'rgba(124,92,255,0.30)'); rg.addColorStop(1,'rgba(124,92,255,0)');
+        x.fillStyle=rg; x.fillRect(0,0,W,H);
+        x.strokeStyle='rgba(124,92,255,0.35)'; x.lineWidth=2; rr(40,40,W-80,H-80,28); x.stroke();
+
+        // brand header — logo tile
+        x.fillStyle='#7c5cff'; rr(PAD,96,64,64,16); x.fill();
+        if(logo){
+          x.save(); rr(PAD,96,64,64,16); x.clip();
+          const iw=logo.naturalWidth||logo.width||64, ih=logo.naturalHeight||logo.height||64;
+          const sc=Math.max(64/iw,64/ih), dw=iw*sc, dh=ih*sc;
+          x.drawImage(logo, PAD+(64-dw)/2, 96+(64-dh)/2, dw, dh);
+          x.restore();
+        } else {
+          x.fillStyle='#fff'; x.font='800 38px '+SANS; x.textAlign='center'; x.textBaseline='middle';
+          x.fillText('E',PAD+32,130);
+          x.textBaseline='alphabetic'; x.textAlign='left';
+        }
+        x.textAlign='left'; x.textBaseline='alphabetic';
+        x.fillStyle=LIGHT; x.font='800 31px '+SANS; x.fillText('TERMINAL ECONOMSTOCK', PAD+84, 124);
+        x.fillStyle=MUTE;  x.font='600 19px '+SANS; x.fillText('Analisis Valuasi Saham', PAD+84, 153);
+        x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,205); x.lineTo(W-PAD,205); x.stroke();
+
+        // stock code + name
+        x.fillStyle='#fff'; x.font='800 104px '+MONO; x.fillText(code, PAD, 318);
+        if(name){ x.fillStyle=MUTE; x.font='500 28px '+SANS; let nm=name; if(nm.length>42) nm=nm.slice(0,40)+'…'; x.fillText(nm, PAD, 358); }
+
+        // status pill (top-right, aligned with code)
+        (function(){
+          const t=status.toUpperCase(); x.font='800 30px '+SANS;
+          const tw=x.measureText(t).width, pw=tw+58, ph=58, py=262, px=W-PAD-pw;
+          x.fillStyle=accentA; rr(px,py,pw,ph,29); x.fill();
+          x.strokeStyle=accent; x.lineWidth=2; rr(px,py,pw,ph,29); x.stroke();
+          x.fillStyle=accent; x.textBaseline='middle'; x.textAlign='center'; x.fillText(t, px+pw/2, py+ph/2+1);
+          x.textBaseline='alphabetic'; x.textAlign='left';
+        })();
+
+        // method name + jenis
+        x.fillStyle='#cdd2f5'; x.font='700 42px '+SANS; x.fillText(m.name, PAD, 462);
+        x.fillStyle=accent;    x.font='700 22px '+SANS; x.fillText('METODE '+String(m.grp||'').toUpperCase(), PAD, 498);
+
+        // basis data (dinamis) — pill di kanan sejajar nama metode
+        (function(){
+          const t='BASIS · '+String(basisLabel).toUpperCase();
+          x.font='700 22px '+SANS;
+          const tw=x.measureText(t).width, pw=tw+44, ph=46, py=438, px=W-PAD-pw;
+          x.fillStyle='rgba(255,255,255,0.05)'; rr(px,py,pw,ph,23); x.fill();
+          x.strokeStyle='rgba(185,168,255,0.45)'; x.lineWidth=2; rr(px,py,pw,ph,23); x.stroke();
+          x.fillStyle='#b9a8ff'; x.textBaseline='middle'; x.textAlign='center'; x.fillText(t, px+pw/2, py+ph/2+1);
+          x.textBaseline='alphabetic'; x.textAlign='left';
+        })();
+
+        // nilai wajar
+        x.fillStyle=MUTE;   x.font='700 26px '+SANS; x.fillText('NILAI WAJAR', PAD, 592);
+        x.fillStyle=accent; x.font='800 116px '+MONO; x.fillText(fair!=null?fmtRp(fair):'—', PAD, 706);
+        x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,762); x.lineTo(W-PAD,762); x.stroke();
+
+        // stat columns
+        const cols=[
+          {l:'HARGA SEKARANG', v:ok(price)?fmtRp(price):'—', c:LIGHT},
+          {l:'POTENSI',        v:up!=null?sgn(up):'—',        c:up==null?MUTE:(up>=0?GREEN:RED)},
+          {l:'MARGIN OF SAFETY',v:mos!=null?sgn(mos):'—',     c:mos==null?MUTE:(mos>=0?GREEN:RED)}
+        ];
+        const cw=(W-2*PAD)/3;
+        cols.forEach((c,i)=>{
+          const ccx=PAD+cw*i+cw/2;
+          x.textAlign='center';
+          x.fillStyle=MUTE; x.font='700 21px '+SANS; x.fillText(c.l, ccx, 838);
+          x.fillStyle=c.c;  x.font='800 46px '+MONO; x.fillText(c.v, ccx, 896);
+        });
+        x.textAlign='left';
+        x.strokeStyle='rgba(255,255,255,0.08)'; x.lineWidth=2; x.beginPath(); x.moveTo(PAD,952); x.lineTo(W-PAD,952); x.stroke();
+
+        // footer
+        x.fillStyle=MUTE; x.font='500 22px '+SANS;
+        x.fillText('Disclaimer On. Cek Detailnya di:', PAD, 1004);
+        x.fillStyle='#b9a8ff'; x.font='700 24px '+SANS; x.textAlign='right';
+        x.fillText('terminal.economstock', W-PAD, 1004);
+        x.textAlign='left';
+
+        const dl=(url)=>{ const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove(); };
+        if(cv.toBlob){ cv.toBlob(function(b){ if(!b){ dl(cv.toDataURL('image/png')); return; } const u=URL.createObjectURL(b); dl(u); setTimeout(()=>URL.revokeObjectURL(u),3000); },'image/png'); }
+        else { dl(cv.toDataURL('image/png')); }
+      }
+
+      // muat logo (same-origin) lalu render; fallback ke huruf "E" bila gagal
+      const logo=new Image();
+      logo.onload =function(){ build(logo); };
+      logo.onerror=function(){ build(null); };
+      logo.src='icon.png';
+    }catch(e){ console.error('vlShotMethod gagal:', e); }
+  };
+
   window.vlMethodInfo=function(key){
     const box=document.getElementById('vlMethodModalBody'); if(!box) return;
     const md=document.getElementById('vlMethodModal');
