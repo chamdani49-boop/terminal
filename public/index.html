@@ -2104,21 +2104,6 @@ select.form-control option{background:var(--card);color:var(--text)}
   box-shadow:0 4px 12px rgba(109,40,217,.22);
 }
 
-/* ── UI chart dashboard versi HP saja (≤700px) — desktop/layar besar tetap default ── */
-@media(max-width:700px){
-  .chart-legend{gap:20px;font-size:13.5px;align-items:center}
-  .legend-item{gap:9px;font-weight:700;letter-spacing:.2px}
-  .legend-dot{width:22px;height:5px;border-radius:3px}
-  .chart-legend .legend-item:nth-child(1) .legend-dot{background:#f4626a!important;height:5px!important}
-  .chart-legend .legend-item:nth-child(2) .legend-dot{background:#8b5cf6!important;height:5px!important}
-  .card-chart{border-radius:var(--radius-lg)}
-  [data-theme="dark"] .card-chart{background:linear-gradient(160deg,#150d3a 0%,#0e0826 100%);border-color:#2c1f63}
-  .period-tabs{gap:8px}
-  .period-tab{padding:8px 20px;font-family:inherit;background:transparent;letter-spacing:.3px}
-  .period-tab:hover{color:var(--text)}
-  .period-tab.active{background:linear-gradient(135deg,#c4a3ff 0%,#f0abfc 100%);color:#1a0f3c;font-weight:800;box-shadow:0 6px 18px rgba(196,163,255,.30)}
-}
-
 /* ── REC RATING BARS (Bareksa-style) ── */
 .rec-rating{
   display:inline-flex;gap:2px;align-items:center;
@@ -6443,19 +6428,17 @@ function renderChart(code) {
     }
   };
 
-  const _cm = () => (window.matchMedia ? window.matchMedia('(max-width:700px)').matches : (window.innerWidth <= 700));
   mainChartInstance = new Chart(ctx, {
     type: 'line',
     plugins: [consensusDotLabel],
     data: {
       labels,
       datasets: [
-        { label:'IHSG', data: ihsgNorm, borderColor:()=>_cm()?'#f4626a':'#e11d48', borderWidth:2.2, pointRadius:0, tension:.3, fill:false },
-        { label: code, data: stockNorm, borderColor:()=>_cm()?'#8b5cf6':'#6d28d9', borderWidth:2.8, pointRadius:0, tension:.3,
+        { label:'IHSG', data: ihsgNorm, borderColor:'#e11d48', borderWidth:2.2, pointRadius:0, tension:.3, fill:false },
+        { label: code, data: stockNorm, borderColor:'#6d28d9', borderWidth:2.8, pointRadius:0, tension:.3,
           fill: true, backgroundColor: (ctx) => {
             const g = ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
-            const mob=_cm();
-            g.addColorStop(0, mob?'rgba(139,92,246,0.24)':'rgba(109,40,217,0.22)'); g.addColorStop(1, mob?'rgba(139,92,246,0)':'rgba(109,40,217,0)'); return g;
+            g.addColorStop(0,'rgba(109,40,217,0.22)'); g.addColorStop(1,'rgba(109,40,217,0)'); return g;
           }
         },
         { label:'Linear Trend', data: trendFull,
@@ -6522,8 +6505,8 @@ function renderChart(code) {
         }
       },
       scales:{
-        x:{grid:{color:()=>_cm()?'rgba(150,140,205,0.10)':ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'},maxTicksLimit:12}},
-        y:{grid:{color:()=>_cm()?'rgba(150,140,205,0.10)':ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'}},
+        x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'},maxTicksLimit:12}},
+        y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'}},
            title:{display:true,text:'Index (Base=100)',color:ct.ticks,font:{size:12,weight:'700'}}}
       }
     }
