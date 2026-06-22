@@ -45,7 +45,7 @@ export async function handleAdminApi(request, env, url) {
       if (path === '/api/admin/users/extend') {
         const days = parseInt(body.days || '0', 10);
         if (!days || days < 1) return badRequest('days harus > 0');
-        const sub = await adminExtendDays(env, email, days);
+        const sub = await adminExtendDays(env, email, days, body.plan);
         return json({ ok: true, sub });
       }
       if (path === '/api/admin/users/suspend') {

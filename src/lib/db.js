@@ -100,11 +100,11 @@ export async function listUsersWithSub(env) {
   });
 }
 
-export async function adminExtendDays(env, email, days) {
+export async function adminExtendDays(env, email, days, planOverride) {
   const u = await getUserByEmail(env, email);
   if (!u) throw new Error('User tidak ditemukan');
   const latest = await getLatestSubscription(env, u.id);
-  const plan = latest ? latest.plan : '6bulan';
+  const plan = planOverride || (latest ? latest.plan : 'custom');
   return activateSubscription(env, u.id, plan, days, 'admin', null);
 }
 
