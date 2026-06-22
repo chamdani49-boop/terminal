@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-06-22T02:45:35+00:00",
+"generated_at": "2026-06-22T03:00:44+00:00",
 "count": 80,
 "items": [
 {
@@ -25,6 +25,12 @@
 "link": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNd1VxVlcwWklyZzBnQk1Bc21IeXVzYVBiS3YteFlINHRmOGIwVjM5ZXM3czZMWF9IbVo0U2FrZHJRZkFfU0U4UHNBWk1RajlzbkEwTkEzWm1ReFJYcjFIWTNxeENWSzBjRWN4Z240OWJwQVd1Wlp1amljVmJjVGhPRVZTZGt5WDNQMkZXN184ZTFwUUktc2c2SEIycml6M0ZIT2tFRzFaNFAyWk9xN0w0eGNWOFhuejBK?oc=5",
 "source": "Bisnis.com",
 "ts": 1782094976
+},
+{
+"title": "Awal Perdagangan, IHSG Naik 0,44% ke 6.204,563 Berkat Saham-Saham Ini",
+"link": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQTWlhSXRielNLTVpWanh5WWNsN2tZN2ZHQ1FhQjdJRGlJS0hNcHBnZm16Rzl0b19rRkF4bV90VVV1QWlYT2RueXhlTTk3RlNOWUtBQjdhX1hsV3ZXckFWQTBXTHliOG9pVHZTMDZYWmtwWXVCdjB4cjRDNkZ0WVJJVDhEeEcxZS1oTjF6dHptbk41QQ?oc=5",
+"source": "Stockwatch",
+"ts": 1782094937
 },
 {
 "title": "IHSG Dibuka Melesat 0,65%, Lompatan Melanda Sejumlah Saham Ini",
@@ -73,6 +79,12 @@
 "link": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPY3BySTVKUFh2c2Iza0ZkZ3IycTFRMVItWWotcVJDWmZwdWc4dUhQcDVhUWl0NkVXY2R4NVRCNGVkdWtwRWRkMkJzSnkwWElOWXlqZERHTG9WX1pKQnZFdDF1UzZ5Vjd0dHdObjdmS1VUaFZlekxnWVd0TGpkMDFaRmtMclA3NjMx?oc=5",
 "source": "Kontan",
 "ts": 1782092954
+},
+{
+"title": "PLN Kurang 18 Juta Ton Batu Bara, Bahlil Sebut Bukan Tugas ESDM",
+"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPZTlGVzE3cWhBeTRXaHVvU2pxTllrNUFheTNFdWRIeTVDNWZfU3A3aG5hM2ZYTzgtVTJFcExzd0pOMTRHNnRIM2tRbmExaHgtNlZ6TDJ6VmY2N1lLSVNNLU1uWE5HdnNEX2hleFV1QWYteU9BTzdsU1c5UkRuRUs0UmxtQnRzdmJCOWZ1ODF2NGV2bjM1eUN0Q3hPNFl5SHpDS3ZEdGJiSlNFSWJ3eHNkeFU2ak0?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1782092400
 },
 {
 "title": "Daftar Bunga Deposito Terbaru BRI,BNI & Mandiri per 22 Juni 2026",
@@ -285,6 +297,12 @@
 "ts": 1782076505
 },
 {
+"title": "Berita dengan Tags \"Selisih Nilai Tukar\"",
+"link": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1hbnJWbkUxZmdxZUpJVHRQUVJQR3pMZDhHM0JDb3B0YUMwQnNsSXlTbTN0MU5tV3pIX21Jb2dseXJtZmJoVWR6TXFYZGdZeGcwcjN6RTNVSTJjTnI4a05Z?oc=5",
+"source": "EmitenNews",
+"ts": 1782075544
+},
+{
 "title": "Wow! Lamine Yamal Hanya Butuh 10 Menit Cetak Gol di Debut Starter Piala Dunia",
 "link": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNQzI3eVlBZTlQVWVJUGRZY01yNzFiTlIzZVV4ZkVMRDNZMTNSVFp6ZWlBV3dOMVUzajhVUjRoNXBHVGxyM0FHMVJ2TEFOWE11OEpCVmw3Q2J0eno4YXI3Tjc4aEplMlNad0doSHF2Q0hadXdNcHJjRUQ3R0tpbl9NYTdmOUhDaHNpbk1TX19URHFQellkcFAyaFY2VVlUdk9IaVY5UDFfdVlvbkZZakYtVWpsMWtUUlFGUVE?oc=5",
 "source": "InvestorTrust",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxQc3RrVzg4enFCUGhrbW55YTRENlJTSXJxNml3dDRXSVNHQVhFSDFtTHVkYjl6dkVSUmRVRU1ELWlwSmlIREJFTnByeWtFcXZEV0FhQ1AzUUN1VHhTN1MydGRHUms5ZF9QSTdSQWthV0g0aW9oYVJJZXNCSVpId1B0T2JvMENSUmRhSXFIdHhPbjJubDNXbzNJa2ItUlBEc05QR0I2MG9vY3czb0pDajVtQXMtMWM4U1XSAa8BQVVfeXFMTWF1VkVOT2hfd2s2TXQ4SFZ2aEdpTmwzZXpNcjd6LWRSNEFLQ1l5QmpZRVYybWMySFZNT1M3Q3dPdWJ4YlFTZW85dnI2SGJ2anlhX2R5VkxqUmRMb1M2ZHlfSTVpeV9VTllORTZZaDF3TW1KdVNTMzMyeDRJMXJCMnFBa0xjTXNnYXpUeHFyLXFTQ0NZR1RzM3lXU3h3bl9LZ3lYVnkyNC10bWpPdUI1bw?oc=5",
 "source": "Kontan",
 "ts": 1782031888
-},
-{
-"title": "OJK Terbitkan Daftar 101 Fintech Lending Berizin",
-"link": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPWnVwUlVQUzJNY3dVVHY2NEF2T0p4VlpkYl90VVUxX2RpZExNbnhVR2lIRERNNE1tV1FOeXF1Y05lbXN6c0M1TXdOMFpNaTRzb0d3bDFJNkxMZG1ya00wcDN5TktXTnZVakdFQzlIRlVvdlNxTVl5OVBqTDJ2cGtiY0gwSjhBYUhGVFJJ?oc=5",
-"source": "InvestorTrust",
-"ts": 1782031321
-},
-{
-"title": "IHSG Potensi Uji Level 6.545, Cermati Saham EMAS, ESSA hingga GGRM",
-"link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNYUF0MmZTZ0NkMWs0ZE1JMlpaejFnejhDbkxRYzNFYzZ0UmFjQm5zU3JOR2ZRQlpMd3hheUI0WWRjV01qLVlYMVVob2tkUzNxdGhadXF2aHhYYmdNSnlaU0dyd28wUGpJeUh5OVdTeTNOWkpfVnFTeS1fc19zbW9uTFdGUW1PV3o3a2toUUFwS1k4dF9xRF9nS0k3dEN2N0FmcEZ3WkFST05BbmlXUWk2dDlMUFUtUQ?oc=5",
-"source": "Bisnis.com",
-"ts": 1782029320
-},
-{
-"title": "MSCI Pertahankan Indonesia di Emerging Market, Sentimen Reksadana Berpotensi Membaik",
-"link": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOaVhRMkdQMDVsbS11cGlLa0I3aUl3NlIydENLT2t4VmI3d3dnNWhZNzh0bDY4a3BIbFVSb2QzWFJQUU1JSTc5bUJBZ2ZxWTJWb0Mza2hNMm81MS1wem9DcERIRlpMYlViX05XOEM3ZmdIYlRWa09wdEw4eWZQWkU3MWV4S3ZrcmplV09WcWZfckFlbjhCWXUyajl6SVFWQTMybkNENEQtV3ZrY0VEQm5zNFBNOUNqX1ZIdGFz0gGzAUFVX3lxTE03dXUyWHdlaDhYMDJIQ2FfQUItcHRickx2Zy1zbkxSMWVuc1ZENWNxWVhGazJxZVM1bnIyak96aDN4eDlIWER3S1E1UzJXUy1hcjJIN3BOUnVMOGNGZ1ByT3ZHSUdnOHZFbE43dzRzdllxN0xxZGRVVWtOejJWdW41WnJjNHl5cjBDYk9iQTh0eG1iR1ZvUWM3eWxVaU9MV2tUakpWY21JMkJDS2RZc0R3LWpn?oc=5",
-"source": "Kontan",
-"ts": 1782029315
 }
 ]
 }
