@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-06-22T17:30:40+00:00",
+"generated_at": "2026-06-22T17:45:39+00:00",
 "count": 80,
 "items": [
 {
@@ -75,10 +75,22 @@
 "ts": 1782131561
 },
 {
+"title": "Global Sukses Digital (DOSS) Bagi Dividen Rp5,173 Miliar, Investor Dapat Rp3 per Saham",
+"link": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxPaDdtd1EybmFnU2NZQkFTX1ZkekdRN0lIWTROdGhEQ3pxNGJzekEzczl3YjRYT3hIeGF0SFBIeWxFOEtVZDI3M0JFTzVIVmc0WGUyMjNJazh4MW9Mcm5yTFoyR2IySTBFdWRGWmxXTWI5MHRjc3Y5Z2tneFBmVks4YS0tNlQwQ1JveUpzbnBjZTdYalNlakp2RFRNZkhiNi1fVXJlTHB6eHc?oc=5",
+"source": "Stockwatch",
+"ts": 1782128526
+},
+{
 "title": "Gelar IPO, Nitrasanata Dharma (JECX) Pasang Harga Rp1.200-Rp1400 per Saham",
 "link": "https://news.google.com/rss/articles/CBMimgFBVV95cUxNLXR2ZXAwWERXR0J6dV81djVvU2xJR19TalhmSkZSZi1KSnVUWkRPQTFXLVNyRS16dURKRHJkU0lBeFJkUFJfc3BPMEtxQkJPNUx5NTlZNC1qUl9IaUhtRk5fUnJ0enhJSnNRZkFrcy00cGRobzZlX1JYZDFiMi01Vm94NWxjd0xlRlVYOHZKQ25lU1hNZnVwRjhR?oc=5",
 "source": "Stockwatch",
 "ts": 1782128263
+},
+{
+"title": "Menanti Keputusan MSCI, Rupiah Melemah ke Rp 17.843 per Dolar AS",
+"link": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPdXAtQ3hTTG1nMUNkSy1WSDI5b0V2bGVSNHpSQlZBSGM5V0JpbGtpNDkwRVU3akpEeXE2bmZRSmY4ZDJkak1QdEMtM2ZURVVtbGNNb3V4bF9FRFZtd0QxVjlzZnVtZnNrWXdvaUJreXljbGR6amdXNFBPVDg4bXo1ZzRGYlZjZHZaWWo1UVk0WWZjcEJRek11NDZ4U0paQmfSAZcBQVVfeXFMTTIxNVNhSkZ0Z2hWcFFVdkI0S1JzRHJ2UEFaYk9uLVhwUy1hU1lwb004eEktRzhLV0t0RDlIZ3hkSnRjM2k2eTRzZXNkNExCT0k0cUZlX0tnd2lKanYtdFR6Z01manJ1akVMbjQxWWZSZVJnWE1mMll1VkllRTVDUE4zR3hsWGdrSkVNSFFjaGNlNHVhV1ZUSQ?oc=5",
+"source": "Kontan",
+"ts": 1782127379
 },
 {
 "title": "Trimegah Sekuritas (TRIM) Siapkan Rp150,54 Miliar untuk Lunasi Obligasi Jatuh Tempo",
@@ -133,6 +145,12 @@
 "link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxOX3phNENtNzJ1TGRJdS14dEtDZ09GenZpREpUejBxMzhsSllremVpYTAydER0UHVPcW5WdVBNQUh4UWs5TTV4WmtIZ2E0MkZDZll6Y000ZktxMmJYX2hnR2p6TGZudGxvbXd1SkEyWW50ejZZSmc2TTZoc3phYXB3VnZqb3dkY2tqMTdia0pqYldtcHBqSUJlajJreENQR0VRbnF4X2gwSnhtWmZLRkhKQjE4OXpLY0t3eC1XckFzR1hNZkI2V2c?oc=5",
 "source": "Bisnis.com",
 "ts": 1782123275
+},
+{
+"title": "Akar Inti Teknologi dan Nusanet Dorong Digitalisasi Lapangan",
+"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxNVkJ0cmJQcV9fTDRJLWVObnJIVVhjbXV6UXVscy1QUHF1YnkwVVVKd3NhTFpPTEI3ekxRVVVPVDQybXpsQlJpTGxxVjlGZV9IRm9SOUktVlU5WENRR25nRk94U3U4SWFkeUMzWWtFdmhmem9GWW1ieWppNUg0dXh4ZEtQT05yWktkanZ2VmdieFZJVXg3MFk2OXNtT09ucEVkajZpZ2cySURYN1pEVTlHeU9n?oc=5",
+"source": "Bisnis.com",
+"ts": 1782123053
 },
 {
 "title": "Siap-Siap! Clipan Finance Bagi Dividen Rp199,226 Miliar, Investor Wajib Catat Cum Date",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxPYWpoWHVhUWF6MzRHSVNVanpHV0VIX20wV2haSlNmMkM3b0lvUXN4Sm90Q0NhT0EzVV82WkExaWJkbTRmX1F6eUNORXZIVTRvTkpEWTdFZnRjcWpRNFNnT1ZXZ2NEdVdVeV9xMHNzekVlQ3BRNk9FSHB6V2NscmhMRXJwV1lpMXB2T3JNNzZGWnJZeUNSdC1aOTZ1U3hwUTBXUUx2MjJvUGhzLWg4Qnk2Y0MwQ1Vsdnd6aF80NW9McmRLN3RGSFHSAcsBQVVfeXFMUGxmS0ppWVdQeWc1WW4wS0prcFotWFo0aVhRNVFYbUg2WjYwZTZmZXZPSE56akRBaDA0X1E5dzMtVFJZRjJZMmd1MS1EY3B4TjExWnJkRXdHTWRpMUdDVTJIWlNfbGZsUnpseUtjYmJLMVBpOGJQakxIN1VCR2EzTTNRb2YyNnF1UVFpTi1qZm9PQzlFWFhlUVpyNVZvUXBwV2wwdDJ1WUhHOHUtY1YzU1loUzAwV3lPbWpOZEdpRVJqcVJoUWtwMEVMT2s?oc=5",
 "source": "CNBC Indonesia",
 "ts": 1782099309
-},
-{
-"title": "Perkuat Ekosistem Digital, KrediOne Tekankan Kolaborasi Regulator hingga Industri",
-"link": "https://news.google.com/rss/articles/CBMi0AFBVV95cUxPbDktQ2xBRENzeEhxanlSeUdTeEt2ajdhb0o2ZHcxUXdDT0FwYXN2TFdTbHZia21qN3ROWVVlZ3dWemhLNE40RXpDMF9JbU1iSW12U3I0WmlUTjRaUDJ5SGRWMDFjSGFHeFhud1ZtbFBBM1pCRDlZVUhwVzlra1BHQ0JpcVl0TXJXTDhkcXYzQlAxdmNFVUk2NG5qRXBTUkV0T1VoMTR4bVFiQ2FKM3ZZM3E1Slg2SVJkTkU3LTNyYm1jVGdseW9QeDhMRUZUTlg4?oc=5",
-"source": "Bisnis.com",
-"ts": 1782099257
-},
-{
-"title": "Tensi Geopolitik Mendingin, Prospek Harga Gandum Dunia Melandai?",
-"link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQTTIxcFpoeHVWeUk0dkx2ckIxclRuMXVKaFJaVFYzam5LcmtWMXhUQnZaTVdfdUxocU9haVBkMzlXNzE0MC1RUjB5Z0h5YkdRSzVXY09Xc2ptc1dROVhsdUdPUTZlNHlrcWpRUVpscVBldWNDQXZTSFBDWVlRN09udWJ0MzVlMENHOXRTVXgtT2JrNlZVS0hPeVR5QlM1YzJsSmZXUGx2QXNVeXdhSnl2b3hqbzVnZw?oc=5",
-"source": "Bisnis.com",
-"ts": 1782099000
-},
-{
-"title": "Kurs Dolar AS BCA, BRI, Mandiri, dan BNI Hari Ini Senin (22/6)",
-"link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQNVNaUFZuM3hRa1JfWHZVQlh0YlNGSUp4aTBPZ3YyS3JQbHlBREZ4bXhFb2Q3Qnh0Z0IxNEE2dGxvZEZObno2c1hyOUtEUmI3dUs1d3BvZ3VjZEMydUc5SWQtcldqaUp2Tk5jd05PRTh0QkpnREpiR3doQ3pFN2h6X01rYVBRcWlkNFI2bFhqRUFWUjEzeDJwZjZReS1GM0kxS0xBVTRGcEtWUVVsd3Nv?oc=5",
-"source": "Bisnis.com",
-"ts": 1782098844
 }
 ]
 }
