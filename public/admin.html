@@ -90,6 +90,32 @@ tbody tr:hover{background:var(--bg2)}
 .empty{padding:40px;text-align:center;color:var(--text2);font-size:14px;display:none}
 .demo-note{margin-top:18px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--text2);line-height:1.6}
 .demo-note b{color:var(--text)}
+
+/* MOBILE */
+@media(max-width:680px){
+  .top-bar{padding:0 12px;gap:8px}
+  .logo{font-size:17px}
+  .logo span{display:none}
+  .badge-admin{display:none}
+  .btn-uploader{padding:9px 12px;gap:0}
+  .btn-uploader .up-txt{display:none}
+  .btn-uploader .up-ico{font-size:17px}
+  .wrap{padding:22px 14px 60px}
+  .page-title{font-size:20px}
+  .page-sub{font-size:13px;margin-bottom:18px}
+  .stats{gap:12px;margin-bottom:20px}
+  .stat{padding:14px}
+  .stat .lbl{font-size:11px}
+  .stat .val{font-size:21px}
+  .toolbar{gap:10px}
+  .search{min-width:0;flex:1 1 100%}
+  .filter{flex:1}
+  .table-scroll{-webkit-overflow-scrolling:touch}
+  thead th,tbody td{padding:12px 12px}
+}
+@media(max-width:400px){
+  .stats{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -97,7 +123,7 @@ tbody tr:hover{background:var(--bg2)}
   <a class="logo" href="/">economstock<span>TERMINAL</span></a>
   <span class="badge-admin">Admin</span>
   <div class="top-spacer"></div>
-  <button class="btn-uploader" id="uploaderBtn" title="Buka halaman upload valuasi">📤 Buka Uploader Valuasi</button>
+  <button class="btn-uploader" id="uploaderBtn" title="Buka halaman upload valuasi"><span class="up-ico">📤</span><span class="up-txt">Buka Uploader Valuasi</span></button>
   <button class="icon-btn" id="themeBtn" title="Ganti tema" aria-label="Ganti tema">🌙</button>
 </header>
 
