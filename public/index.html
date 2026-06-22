@@ -3365,7 +3365,9 @@ async function loadOhlcAll() {
     // kode terakhir. Kalau lokal didahulukan, candle terbaru (mis. hari ini /
     // kemarin) tidak pernah muncul walau workflow sudah jalan. Sama persis
     // dengan strategi data.json (CDN-first) yang memang selalu fresh.
-    for (const base of [OHLC_CDN_URL, OHLC_LOCAL_URL]) {
+    // PAYWALL: HANYA same-origin (ter-gate Worker terminal). Fallback jsDelivr
+    // dimatikan supaya ohlc.json tidak bocor lewat CDN repo publik.
+    for (const base of [OHLC_LOCAL_URL]) {
       try {
         const res = await fetch(`${base}?v=${bust}`, { cache: 'no-cache' });
         if (!res.ok) continue;
@@ -4308,11 +4310,51 @@ async function loadValuationDiv() {
   return VAL_DIV;
 }
 
+// ═══════════════════════════════════════════
+// PAYWALL — auth guard + token akses feed live
+// ═══════════════════════════════════════════
+let _liveToken = null, _liveTokenExp = 0;
+window.__ES_IS_ADMIN = false;
+
+// Pastikan user login + langganan aktif sebelum memuat dashboard.
+// Server tetap melindungi data (Worker balas 402); ini untuk UX redirect.
+async function _ensureAccess() {
+  try {
+    const r = await fetch('/api/me', { cache: 'no-store' });
+    const j = await r.json();
+    if (!j || !j.authenticated) { location.replace('/login'); return false; }
+    window.__ES_IS_ADMIN = !!j.is_admin;
+    const active = j.subscription && j.subscription.active;
+    if (!active && !j.is_admin) { location.replace('/billing'); return false; }
+    return true;
+  } catch (e) {
+    // Endpoint error → jangan kunci user; data tetap dilindungi server.
+    return true;
+  }
+}
+
+// Token singkat (HMAC, 15 mnt) untuk mengakses Worker live lintas-domain.
+async function _getLiveToken(force = false) {
+  const t = Math.floor(Date.now() / 1000);
+  if (!force && _liveToken && (_liveTokenExp - t) > 60) return _liveToken;
+  try {
+    const r = await fetch('/api/live-token', { cache: 'no-store' });
+    if (!r.ok) { _liveToken = null; return null; }
+    const j = await r.json();
+    if (j && j.token) { _liveToken = j.token; _liveTokenExp = j.exp || 0; return _liveToken; }
+  } catch (_) {}
+  _liveToken = null;
+  return null;
+}
+function _withToken(url) {
+  if (!_liveToken) return url;
+  return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(_liveToken);
+}
+
 async function loadData() {
   const v = Math.floor(Date.now() / CACHE_BUST_MS);
   const sources = [
     { url: DATA_LOCAL_URL + '?v=' + v, label: 'same-origin'  },
-    { url: DATA_CDN_URL   + '?v=' + v, label: 'jsDelivr CDN' },
   ];
 
   for (const src of sources) {
@@ -4361,7 +4403,6 @@ async function _pollLiveData() {
   const v = Date.now();
   const sources = [
     { url: DATA_LOCAL_URL + '?v=' + v },
-    { url: DATA_CDN_URL   + '?v=' + v },
   ];
 
   let json = null;
@@ -4558,7 +4599,9 @@ async function _pollLiveFeed(force = false) {
     // URL stabil (TANPA cache-bust) → Cloudflare CDN melayani dari edge cache
     // (max-age=60) tanpa meng-invoke Worker untuk mayoritas request. Data maks
     // ~60 dtk lebih lama — tidak terasa (sheet update ~5 mnt).
-    const res = await fetch(LIVE_FEED_URL, { cache: 'default' });
+    const tok = await _getLiveToken();
+    if (!tok) return;  // langganan habis di tengah sesi → hentikan overlay live
+    const res = await fetch(_withToken(LIVE_FEED_URL), { cache: 'default' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if (!json || json.ok !== true || !json.live) throw new Error('payload live tidak valid');
@@ -4664,7 +4707,9 @@ async function _pollConsensusFeed() {
   if (typeof document !== 'undefined' && document.hidden) return;
   try {
     // URL stabil (tanpa cache-bust) → dilayani edge cache Worker, hemat invoke.
-    const res = await fetch(CONSENSUS_FEED_URL, { cache: 'default' });
+    const tok = await _getLiveToken();
+    if (!tok) return;
+    const res = await fetch(_withToken(CONSENSUS_FEED_URL), { cache: 'default' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if (!json || json.ok !== true || !json.consensus_slim) throw new Error('payload konsensus tidak valid');
@@ -4714,7 +4759,9 @@ async function _pollHistoryFeed() {
   if (!HISTORY_FEED_URL) return;
   if (typeof document !== 'undefined' && document.hidden) return;
   try {
-    const res = await fetch(HISTORY_FEED_URL, { cache: 'default' });
+    const tok = await _getLiveToken();
+    if (!tok) return;
+    const res = await fetch(_withToken(HISTORY_FEED_URL), { cache: 'default' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if (!json || json.ok !== true || !Array.isArray(json.price_history)) throw new Error('payload history tidak valid');
@@ -8920,7 +8967,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
-loadData();
+(async () => {
+  const ok = await _ensureAccess();
+  if (ok) loadData();
+})();
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════
@@ -12776,9 +12826,9 @@ body.vl-maxing{overflow:hidden}
     if(state.loading || state.raw) return;
     state.loading = true;
     try{
-      state.raw = await fetchJson([VAL_LOCAL_URL, VAL_CDN_URL]);
+      state.raw = await fetchJson([VAL_LOCAL_URL]);
       try{
-        const data = await fetchJson([DATA_LOCAL_URL, DATA_CDN_URL]);
+        const data = await fetchJson([DATA_LOCAL_URL]);
         state.live = (data && data.live) ? data.live : null;
         state.priceHist = (data && Array.isArray(data.price_history)) ? data.price_history : null;
         state.stats = (data && data.stats) ? data.stats : null;

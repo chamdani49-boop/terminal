@@ -10,7 +10,7 @@
 // terproteksi memerlukan langganan aktif. Untuk meng-gate file statis
 // (data.json dll), tambahkan path-nya ke run_worker_first di wrangler.toml.
 // ═════════════════════════════════════════════════════════════════════════
-import { json, redirect, serverError, now } from './lib/util.js';
+import { json, redirect, serverError, now, b64urlEncode, hmacSign } from './lib/util.js';
 import { getSession, clearSessionCookieHeader } from './lib/session.js';
 import { googleStart, googleCallback, emailRequest, emailVerify } from './lib/auth.js';
 import { checkout, webhook } from './lib/mayar.js';
@@ -69,6 +69,9 @@ function isProtected(path) {
 async function hasActiveSub(request, env) {
   const session = await getSession(request, env);
   if (!session) return false;
+  // Admin selalu boleh (untuk pengelolaan & pengujian, walau tanpa langganan).
+  const admins = (env.ADMIN_EMAILS || '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+  if (admins.includes((session.email || '').toLowerCase())) return true;
   try {
     const sub = await getActiveSubscription(env, session.uid);
     return !!sub;
@@ -105,6 +108,27 @@ async function handleApi(request, env, url) {
       is_admin: admins.includes((session.email || '').toLowerCase()),
       subscription: sub,
     });
+  }
+
+  // ── Token akses feed live (Worker terminal-live, lintas-domain) ──
+  // Hanya diberikan ke user dengan langganan aktif (atau admin). Token HMAC
+  // singkat (15 mnt) yang diverifikasi Worker terminal-live tanpa perlu D1.
+  if (path === '/api/live-token' && method === 'GET') {
+    const session = await getSession(request, env);
+    if (!session) return json({ error: 'unauthenticated' }, 401);
+    const admins = (env.ADMIN_EMAILS || '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+    const isAdmin = admins.includes((session.email || '').toLowerCase());
+    let allowed = isAdmin;
+    if (!allowed) {
+      try { allowed = !!(await getActiveSubscription(env, session.uid)); } catch { allowed = false; }
+    }
+    if (!allowed) return json({ error: 'no_sub' }, 402);
+    const secret = env.LIVE_TOKEN_SECRET;
+    if (!secret) return json({ error: 'LIVE_TOKEN_SECRET belum di-set di Worker terminal' }, 500);
+    const exp = now() + 900; // 15 menit
+    const payloadB64 = b64urlEncode(JSON.stringify({ scope: 'live', exp }));
+    const sig = await hmacSign(secret, payloadB64);
+    return json({ token: `${payloadB64}.${sig}`, exp });
   }
 
   // ── Checkout & webhook Mayar ──

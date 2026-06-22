@@ -29,12 +29,12 @@ compatibility_date = "2025-05-01"
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/api/*", "/data.json", "/valuation.json", "/ohlc.json", "/macro.json", "/insights.json", "/headlines.json", "/dashboard"]
 
 # Variabel non-rahasia (boleh publik). Rahasia (SESSION_SECRET, GOOGLE_*,
-# MAYAR_*, RESEND_API_KEY) di-set via `wrangler secret put` / dashboard.
+# MAYAR_*, LIVE_TOKEN_SECRET, RESEND_API_KEY) di-set via dashboard / `wrangler secret put`.
 [vars]
-GATING_ENABLED = "false"
+GATING_ENABLED = "true"
 APP_URL = "https://terminal.economstock.com"
 # Daftar email admin, dipisah koma. Mis: "chamdani49@gmail.com"
 ADMIN_EMAILS = "chamdani49@gmail.com"
