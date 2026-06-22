@@ -40,6 +40,9 @@ export async function handleAdminApi(request, env, url) {
     try { body = await request.json(); } catch { return badRequest('Body tidak valid'); }
     const email = (body.email || '').trim().toLowerCase();
     if (!email) return badRequest('Email wajib diisi');
+    if ((path === '/api/admin/users/delete' || path === '/api/admin/users/suspend') && isAdmin(env, email)) {
+      return forbidden('Akun admin tidak bisa dihapus atau di-suspend');
+    }
 
     try {
       if (path === '/api/admin/users/extend') {

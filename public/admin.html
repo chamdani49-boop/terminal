@@ -47,12 +47,22 @@ a{color:inherit;text-decoration:none}
 .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
 .btn-back{display:inline-flex;align-items:center;font-size:13px;font-weight:600;color:var(--text2);padding:9px 14px;border-radius:var(--radius-pill);border:1px solid var(--border);background:var(--bg2);white-space:nowrap}
 .btn-back:hover{border-color:var(--accent);color:var(--accent)}
-/* Menu pilih durasi perpanjangan */
-.ext-menu{position:absolute;z-index:500;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-card-lg);padding:6px;display:none;min-width:140px}
-.ext-menu.open{display:block}
-.ext-menu .ext-title{font-size:11px;color:var(--text2);padding:6px 10px 5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.ext-opt{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;border-radius:6px;cursor:pointer}
-.ext-opt:hover{background:var(--bg2);color:var(--accent)}
+/* Modal perpanjangan */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,5,33,.55);display:none;align-items:center;justify-content:center;z-index:600;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card-lg);padding:24px;width:100%;max-width:360px}
+.modal-title{font-size:17px;font-weight:800;margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:18px;word-break:break-all}
+.modal-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:7px}
+.modal-select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-family:inherit;font-size:14px;outline:none;cursor:pointer}
+.modal-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.modal-btn{flex:1;padding:11px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.modal-btn.cancel{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+.modal-btn.cancel:hover{border-color:var(--accent);color:var(--accent)}
+.modal-btn.ok{background:var(--grad);color:#fff;border:none}
+.modal-btn.ok:hover{filter:brightness(1.07)}
+.admin-tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--text2);background:var(--bg2);border:1px solid var(--border);padding:5px 12px;border-radius:var(--radius-pill)}
 
 .wrap{max-width:1140px;margin:0 auto;padding:28px 20px 80px}
 .page-title{font-size:24px;font-weight:800;margin-bottom:4px;letter-spacing:-.3px}
@@ -219,16 +229,26 @@ tbody tr:hover{background:var(--bg2)}
   </div>
 </main>
 
-<!-- Menu pilih durasi perpanjangan (muncul saat klik 🔁) -->
-<div class="ext-menu" id="extMenu">
-  <div class="ext-title">Perpanjang</div>
-  <button class="ext-opt" data-days="1">1 Hari</button>
-  <button class="ext-opt" data-days="3">3 Hari</button>
-  <button class="ext-opt" data-days="7">7 Hari</button>
-  <button class="ext-opt" data-days="30">1 Bulan</button>
-  <button class="ext-opt" data-days="90" data-plan="3bulan">3 Bulan</button>
-  <button class="ext-opt" data-days="182" data-plan="6bulan">6 Bulan</button>
-  <button class="ext-opt" data-days="365" data-plan="tahunan">1 Tahun</button>
+<!-- Modal pilih durasi perpanjangan -->
+<div class="modal-overlay" id="extModal">
+  <div class="modal">
+    <div class="modal-title">Perpanjang Langganan</div>
+    <div class="modal-sub" id="extModalEmail">—</div>
+    <label class="modal-label" for="extSelect">Pilih durasi</label>
+    <select id="extSelect" class="modal-select">
+      <option value="1">1 Hari</option>
+      <option value="3">3 Hari</option>
+      <option value="7">7 Hari</option>
+      <option value="30">1 Bulan</option>
+      <option value="90" data-plan="3bulan">3 Bulan</option>
+      <option value="182" data-plan="6bulan">6 Bulan</option>
+      <option value="365" data-plan="tahunan">1 Tahun</option>
+    </select>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="extCancel">Batal</button>
+      <button class="modal-btn ok" id="extConfirm">Perpanjang</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -286,7 +306,7 @@ async function loadUsers(){
     if(r.ok){
       var d=await r.json();
       if(d&&d.users){
-        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,status:u.status};});
+        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,status:u.status,is_admin:u.is_admin};});
         LIVE=true;
         document.getElementById('demoNote').style.display='none';
       }
@@ -350,6 +370,14 @@ function render(){
     var planCls=u.paket==='tahunan'?'plan12':'plan6';
     var stLabel={aktif:'🟢 Aktif',expired:'🔴 Kedaluwarsa',suspended:'⛔ Suspended',no_sub:'⚪ Belum langganan'}[u.status]||u.status;
     var stCls=u.status==='no_sub'?'expired':u.status;
+    var actionsCell = u.is_admin
+      ? '<td><span class="admin-tag">🔒 Admin</span></td>'
+      : '<td><div class="actions">'+
+          '<button class="act" data-act="edit"      title="Edit nama">✏️</button>'+
+          '<button class="act" data-act="perpanjang" title="Perpanjang">🔁</button>'+
+          '<button class="act" data-act="suspend"    title="Suspend / Aktifkan">⛔</button>'+
+          '<button class="act danger" data-act="hapus" title="Hapus">🗑️</button>'+
+        '</div></td>';
     var tr=document.createElement('tr');
     tr.innerHTML=
       '<td class="u-email">'+u.email+'</td>'+
@@ -357,16 +385,11 @@ function render(){
       '<td><span class="pill '+planCls+'">'+(PLAN_LABEL[u.paket]||u.paket)+'</span></td>'+
       '<td class="mono">'+fmtDate(u.berakhir)+'</td>'+
       '<td><span class="pill '+stCls+'">'+stLabel+'</span></td>'+
-      '<td><div class="actions">'+
-        '<button class="act" data-act="edit"      title="Edit nama">✏️</button>'+
-        '<button class="act" data-act="perpanjang" title="Perpanjang">🔁</button>'+
-        '<button class="act" data-act="suspend"    title="Suspend / Aktifkan">⛔</button>'+
-        '<button class="act danger" data-act="hapus" title="Hapus">🗑️</button>'+
-      '</div></td>';
+      actionsCell;
     tr.querySelectorAll('.act').forEach(function(b){
-      b.addEventListener('click',function(ev){
+      b.addEventListener('click',function(){
         var act=b.getAttribute('data-act');
-        if(act==='perpanjang'){ ev.stopPropagation(); openExtendMenu(u.email, b); }
+        if(act==='perpanjang'){ openExtendModal(u.email); }
         else { doAction(act, u.email); }
       });
     });
@@ -378,41 +401,36 @@ function render(){
 document.getElementById('searchInp').addEventListener('input',render);
 document.getElementById('filterSel').addEventListener('change',render);
 
-// ── Menu perpanjangan (pilih durasi) ──
+// ── Modal perpanjangan (pilih durasi via dropdown) ──
 var _extEmail=null;
-var extMenu=document.getElementById('extMenu');
-function openExtendMenu(email, btn){
+var extModal=document.getElementById('extModal');
+function openExtendModal(email){
   if(!LIVE){
     alert('Perpanjang '+email+'\n\n(Mode demo — aktif setelah login admin & data asli termuat.)');
     return;
   }
   _extEmail=email;
-  var rect=btn.getBoundingClientRect();
-  extMenu.classList.add('open');
-  var mw=extMenu.offsetWidth;
-  var left=window.scrollX+rect.right-mw;
-  if(left<window.scrollX+8) left=window.scrollX+8;
-  extMenu.style.left=left+'px';
-  extMenu.style.top=(window.scrollY+rect.bottom+6)+'px';
+  document.getElementById('extModalEmail').textContent=email;
+  document.getElementById('extSelect').value='30';
+  extModal.classList.add('open');
 }
-extMenu.querySelectorAll('.ext-opt').forEach(function(opt){
-  opt.addEventListener('click',async function(){
-    var days=parseInt(opt.getAttribute('data-days'),10);
-    var plan=opt.getAttribute('data-plan')||'';
-    var label=opt.textContent.trim();
-    extMenu.classList.remove('open');
-    if(!_extEmail)return;
-    if(!confirm('Perpanjang '+_extEmail+' selama '+label+'?'))return;
-    try{
-      var body={email:_extEmail,days:days};
-      if(plan) body.plan=plan;
-      await postAdmin('/api/admin/users/extend',body);
-      await loadUsers();
-    }catch(e){alert('Gagal: '+(e.message||e));}
-  });
-});
-document.addEventListener('click',function(e){
-  if(extMenu.classList.contains('open') && !extMenu.contains(e.target)) extMenu.classList.remove('open');
+function closeExtendModal(){ extModal.classList.remove('open'); _extEmail=null; }
+document.getElementById('extCancel').addEventListener('click',closeExtendModal);
+extModal.addEventListener('click',function(e){ if(e.target===extModal) closeExtendModal(); });
+document.getElementById('extConfirm').addEventListener('click',async function(){
+  if(!_extEmail)return;
+  var sel=document.getElementById('extSelect');
+  var opt=sel.options[sel.selectedIndex];
+  var days=parseInt(sel.value,10);
+  var plan=opt.getAttribute('data-plan')||'';
+  var email=_extEmail;
+  try{
+    var body={email:email,days:days};
+    if(plan) body.plan=plan;
+    await postAdmin('/api/admin/users/extend',body);
+    closeExtendModal();
+    await loadUsers();
+  }catch(e){alert('Gagal: '+(e.message||e));}
 });
 
 // ── Panel penggunaan / kuota Worker ──

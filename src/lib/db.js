@@ -75,6 +75,7 @@ export async function txnAlreadyProcessed(env, txnId) {
 
 // ── ADMIN: daftar user + langganan terbaru ──
 export async function listUsersWithSub(env) {
+  const admins = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
   const { results } = await db(env).prepare(`
     SELECT u.id, u.email, u.name, u.created_at,
            s.plan AS plan, s.status AS sub_status, s.expires_at AS expires_at
@@ -96,6 +97,7 @@ export async function listUsersWithSub(env) {
       paket: r.plan || '-',
       berakhir: r.expires_at || null,
       status,
+      is_admin: admins.includes((r.email || '').toLowerCase()),
     };
   });
 }
