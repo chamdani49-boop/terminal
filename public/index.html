@@ -2635,6 +2635,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
       <div class="acct-row"><span class="acct-label">Paket</span><span class="acct-val" id="acctPlan">—</span></div>
       <div class="acct-row"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
+      <a class="acct-action" id="acctAdminLink" href="/admin" style="display:none">⚙️ Dashboard Admin</a>
       <a class="acct-action" href="/billing">↻ Perpanjang / Billing</a>
       <a class="acct-action danger" href="/api/auth/logout">⎋ Logout</a>
     </div>
@@ -4428,8 +4429,10 @@ function _renderAccount(p) {
   set('acctName', name);
   set('acctEmail', p.email || '');
   set('acctTip', p.email || '');
+  const adm = document.getElementById('acctAdminLink');
+  if (adm) adm.style.display = p.is_admin ? 'block' : 'none';
   const sub = p.subscription;
-  const planMap = { '6bulan': '6 Bulan', 'tahunan': 'Tahunan' };
+  const planMap = { '3bulan': '3 Bulan', '6bulan': '6 Bulan', 'tahunan': 'Tahunan' };
   const stEl = document.getElementById('acctStatus');
   if (sub && sub.active) {
     if (stEl) { stEl.textContent = 'Aktif'; stEl.className = 'acct-val badge-aktif'; }

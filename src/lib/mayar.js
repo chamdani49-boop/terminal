@@ -12,17 +12,20 @@ import { ensureUser, activateSubscription, txnAlreadyProcessed } from './db.js';
 // Map plan -> jumlah hari (dari vars)
 function planDays(env, plan) {
   if (plan === 'tahunan') return parseInt(env.PLAN_DAYS_TAHUNAN || '365', 10);
+  if (plan === '3bulan') return parseInt(env.PLAN_DAYS_3BULAN || '90', 10);
   return parseInt(env.PLAN_DAYS_6BULAN || '182', 10);
 }
 
 // ── CHECKOUT: arahkan user ke halaman bayar Mayar ──
 export async function checkout(request, env, url) {
   const plan = url.searchParams.get('plan');
-  if (plan !== '6bulan' && plan !== 'tahunan') return json({ error: 'Paket tidak valid' }, 400);
+  if (!['3bulan', '6bulan', 'tahunan'].includes(plan)) return json({ error: 'Paket tidak valid' }, 400);
 
-  const link = plan === 'tahunan' ? env.MAYAR_LINK_TAHUNAN : env.MAYAR_LINK_6BULAN;
+  const link = plan === 'tahunan' ? env.MAYAR_LINK_TAHUNAN
+    : plan === '3bulan' ? env.MAYAR_LINK_3BULAN
+      : env.MAYAR_LINK_6BULAN;
   if (!link) {
-    return json({ error: 'Pembayaran belum dikonfigurasi. Set MAYAR_LINK_6BULAN / MAYAR_LINK_TAHUNAN.' }, 503);
+    return json({ error: 'Pembayaran belum dikonfigurasi untuk paket ini.' }, 503);
   }
 
   // Sertakan email user (kalau sudah login) agar checkout terhubung ke akun.
@@ -86,8 +89,10 @@ export async function webhook(request, env) {
   let plan = null;
   if (productId && env.MAYAR_PRODUCT_TAHUNAN && productId == env.MAYAR_PRODUCT_TAHUNAN) plan = 'tahunan';
   else if (productId && env.MAYAR_PRODUCT_6BULAN && productId == env.MAYAR_PRODUCT_6BULAN) plan = '6bulan';
+  else if (productId && env.MAYAR_PRODUCT_3BULAN && productId == env.MAYAR_PRODUCT_3BULAN) plan = '3bulan';
   else if (amount >= 1500000) plan = 'tahunan';
-  else if (amount >= 500000) plan = '6bulan';
+  else if (amount >= 850000) plan = '6bulan';
+  else if (amount >= 400000) plan = '3bulan';
 
   if (!plan) return json({ error: `Paket tidak dikenali (product=${productId}, amount=${amount})` }, 400);
 

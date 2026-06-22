@@ -39,6 +39,7 @@ APP_URL = "https://terminal.economstock.com"
 # Daftar email admin, dipisah koma. Mis: "chamdani49@gmail.com"
 ADMIN_EMAILS = "chamdani49@gmail.com"
 # Durasi paket (hari)
+PLAN_DAYS_3BULAN = "90"
 PLAN_DAYS_6BULAN = "182"
 PLAN_DAYS_TAHUNAN = "365"
 
