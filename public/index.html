@@ -207,6 +207,43 @@ a{color:inherit;text-decoration:none}
 .view-toggle:hover{color:var(--accent);border-color:var(--accent);transform:scale(1.08)}
 body.is-mobile-device .view-toggle{display:inline-flex}
 
+/* ── ACCOUNT WIDGET (avatar bulat + dropdown) ── */
+.acct-wrap{position:relative;margin-left:4px;display:none}
+.acct-btn{
+  width:36px;height:36px;border-radius:50%;border:none;
+  background:var(--grad);color:#fff;cursor:pointer;font-size:14px;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;text-transform:uppercase;
+  transition:transform .2s, box-shadow .2s;line-height:1;
+}
+.acct-btn:hover{transform:scale(1.08);box-shadow:0 0 0 3px rgba(109,40,217,.18)}
+.acct-tip{
+  position:absolute;top:calc(100% + 8px);right:0;white-space:nowrap;
+  background:var(--text);color:var(--card);font-size:11px;font-weight:600;
+  padding:5px 10px;border-radius:6px;opacity:0;pointer-events:none;
+  transform:translateY(-4px);transition:opacity .15s, transform .15s;z-index:300;
+}
+.acct-wrap:hover .acct-tip{opacity:.95;transform:translateY(0)}
+.acct-wrap.menu-open .acct-tip{display:none}
+.acct-menu{
+  position:absolute;top:calc(100% + 8px);right:0;width:248px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  box-shadow:var(--shadow-card-lg);padding:14px;display:none;z-index:300;
+}
+.acct-menu.open{display:block}
+.acct-head{display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:8px;border-bottom:1px solid var(--border)}
+.acct-avatar{width:40px;height:40px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;text-transform:uppercase;flex-shrink:0}
+.acct-id{overflow:hidden}
+.acct-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-email{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0}
+.acct-label{color:var(--text2)}
+.acct-val{color:var(--text);font-weight:600}
+.acct-val.badge-aktif{color:#059669}
+.acct-val.badge-expired{color:#dc2626}
+.acct-action{display:block;text-align:center;margin-top:8px;padding:9px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;border:1px solid var(--border);color:var(--text);transition:background .15s,border-color .15s,color .15s}
+.acct-action:hover{background:var(--bg2);border-color:var(--accent);color:var(--accent)}
+.acct-action.danger:hover{border-color:#dc2626;color:#dc2626}
+
 /* ── STOCK TICKER (running sideways, mirror of rupiah-monitor pattern) ── */
 .stock-ticker{
   position:sticky;top:var(--header-h);z-index:90;
@@ -2584,6 +2621,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
     <span id="themeIcon">☀</span>
   </button>
+  <div class="acct-wrap" id="acctWrap">
+    <button class="acct-btn" id="acctBtn" type="button" aria-label="Akun"><span id="acctInitial">·</span></button>
+    <div class="acct-tip" id="acctTip"></div>
+    <div class="acct-menu" id="acctMenu">
+      <div class="acct-head">
+        <div class="acct-avatar" id="acctAvatar">·</div>
+        <div class="acct-id">
+          <div class="acct-name" id="acctName">—</div>
+          <div class="acct-email" id="acctEmail">—</div>
+        </div>
+      </div>
+      <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
+      <div class="acct-row"><span class="acct-label">Paket</span><span class="acct-val" id="acctPlan">—</span></div>
+      <div class="acct-row"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
+      <a class="acct-action" href="/billing">↻ Perpanjang / Billing</a>
+      <a class="acct-action danger" href="/api/auth/logout">⎋ Logout</a>
+    </div>
+  </div>
 </header>
 
 <!-- STOCK TICKER (running sideways — click an item to load its detail) -->
@@ -4326,6 +4381,8 @@ async function _ensureAccess() {
     window.__ES_IS_ADMIN = !!j.is_admin;
     const active = j.subscription && j.subscription.active;
     if (!active && !j.is_admin) { location.replace('/billing'); return false; }
+    window.__ES_PROFILE = j;
+    try { _renderAccount(j); } catch (_) {}
     return true;
   } catch (e) {
     // Endpoint error → jangan kunci user; data tetap dilindungi server.
@@ -4349,6 +4406,61 @@ async function _getLiveToken(force = false) {
 function _withToken(url) {
   if (!_liveToken) return url;
   return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(_liveToken);
+}
+
+// ── Widget akun (avatar + dropdown) ──
+function _fmtDateID(ts) {
+  if (!ts) return '—';
+  try { return new Date(ts * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  catch (_) { return '—'; }
+}
+let _acctWired = false;
+function _renderAccount(p) {
+  if (!p || !p.authenticated) return;
+  const wrap = document.getElementById('acctWrap');
+  if (!wrap) return;
+  wrap.style.display = 'inline-block';
+  const name = p.name || (p.email ? p.email.split('@')[0] : 'Akun');
+  const initial = ((name || '?').trim().charAt(0) || '?').toUpperCase();
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('acctInitial', initial);
+  set('acctAvatar', initial);
+  set('acctName', name);
+  set('acctEmail', p.email || '');
+  set('acctTip', p.email || '');
+  const sub = p.subscription;
+  const planMap = { '6bulan': '6 Bulan', 'tahunan': 'Tahunan' };
+  const stEl = document.getElementById('acctStatus');
+  if (sub && sub.active) {
+    if (stEl) { stEl.textContent = 'Aktif'; stEl.className = 'acct-val badge-aktif'; }
+    set('acctPlan', planMap[sub.plan] || sub.plan || '—');
+    set('acctExpiry', _fmtDateID(sub.expires_at));
+  } else if (p.is_admin) {
+    if (stEl) { stEl.textContent = 'Admin'; stEl.className = 'acct-val'; }
+    set('acctPlan', '—'); set('acctExpiry', '—');
+  } else if (sub) {
+    if (stEl) { stEl.textContent = 'Kedaluwarsa'; stEl.className = 'acct-val badge-expired'; }
+    set('acctPlan', planMap[sub.plan] || sub.plan || '—');
+    set('acctExpiry', _fmtDateID(sub.expires_at));
+  } else {
+    if (stEl) { stEl.textContent = 'Belum berlangganan'; stEl.className = 'acct-val badge-expired'; }
+    set('acctPlan', '—'); set('acctExpiry', '—');
+  }
+  if (!_acctWired) {
+    _acctWired = true;
+    const btn = document.getElementById('acctBtn');
+    const menu = document.getElementById('acctMenu');
+    if (btn && menu) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = menu.classList.toggle('open');
+        wrap.classList.toggle('menu-open', open);
+      });
+      document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) { menu.classList.remove('open'); wrap.classList.remove('menu-open'); }
+      });
+    }
+  }
 }
 
 async function loadData() {
