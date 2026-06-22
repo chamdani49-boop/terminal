@@ -31,6 +31,10 @@ export async function handleAdminApi(request, env, url) {
     return json({ ok: true, users, admin: session.email });
   }
 
+  if (path === '/api/admin/usage' && request.method === 'GET') {
+    return adminUsage(env);
+  }
+
   if (request.method === 'POST') {
     let body;
     try { body = await request.json(); } catch { return badRequest('Body tidak valid'); }
@@ -63,4 +67,80 @@ export async function handleAdminApi(request, env, url) {
   }
 
   return json({ error: 'Not found' }, 404);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Usage / kuota Worker — dibaca dari Cloudflare GraphQL Analytics.
+// Plan (free/paid) dideteksi OTOMATIS via subscriptions API; bisa di-override
+// dengan variabel WORKERS_PLAN ("free"/"paid"). Limit menyesuaikan plan:
+//   free  → 100.000 request / HARI
+//   paid  → 10.000.000 request / BULAN
+// Butuh: CF_API_TOKEN (secret, scope Account Analytics:Read) + CF_ACCOUNT_ID.
+// ─────────────────────────────────────────────────────────────────────────
+function usageLinks(acc) {
+  const base = acc ? `https://dash.cloudflare.com/${acc}` : 'https://dash.cloudflare.com';
+  return {
+    metricsTerminal: `${base}/workers/services/view/terminal/production/metrics`,
+    metricsLive: `${base}/workers/services/view/terminal-live/production/metrics`,
+    plans: `${base}/workers/plans`,
+  };
+}
+
+async function detectPaid(env) {
+  try {
+    const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/subscriptions`, {
+      headers: { Authorization: `Bearer ${env.CF_API_TOKEN}` },
+    });
+    const d = await r.json();
+    if (d && d.success && Array.isArray(d.result)) {
+      return d.result.some((s) => {
+        const blob = JSON.stringify(s || {}).toLowerCase();
+        return blob.includes('workers') && blob.includes('paid');
+      });
+    }
+  } catch (_) { /* abaikan → anggap free */ }
+  return false;
+}
+
+async function adminUsage(env) {
+  const acc = env.CF_ACCOUNT_ID;
+  const token = env.CF_API_TOKEN;
+  const links = usageLinks(acc);
+  if (!acc || !token) return json({ ok: true, configured: false, links });
+
+  const d0 = new Date();
+  const todayStart = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth(), d0.getUTCDate())).toISOString();
+  const monthStart = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth(), 1)).toISOString();
+  const query = `query U($acc:String!,$d:Time!,$m:Time!){viewer{accounts(filter:{accountTag:$acc}){`
+    + `today:workersInvocationsAdaptive(limit:10000,filter:{datetime_geq:$d}){sum{requests}}`
+    + `month:workersInvocationsAdaptive(limit:10000,filter:{datetime_geq:$m}){sum{requests}}`
+    + `}}}`;
+
+  let today = 0, month = 0, apiErr = null;
+  try {
+    const r = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables: { acc, d: todayStart, m: monthStart } }),
+    });
+    const d = await r.json();
+    const a = d && d.data && d.data.viewer && d.data.viewer.accounts && d.data.viewer.accounts[0];
+    if (a) {
+      today = (a.today || []).reduce((s, n) => s + ((n.sum && n.sum.requests) || 0), 0);
+      month = (a.month || []).reduce((s, n) => s + ((n.sum && n.sum.requests) || 0), 0);
+    }
+    if (d && d.errors && d.errors.length) apiErr = d.errors[0].message;
+  } catch (e) { apiErr = e.message || String(e); }
+
+  // Resolusi plan: env override → deteksi otomatis → default free.
+  let plan = (env.WORKERS_PLAN || '').toLowerCase();
+  if (plan !== 'free' && plan !== 'paid') plan = (await detectPaid(env)) ? 'paid' : 'free';
+
+  const basis = plan === 'paid' ? 'month' : 'day';
+  const limit = plan === 'paid' ? 10000000 : 100000;
+  const used = basis === 'month' ? month : today;
+  const pct = limit ? Math.min(100, Math.round((used / limit) * 1000) / 10) : 0;
+  const status = pct >= 90 ? 'red' : (pct >= 70 ? 'yellow' : 'green');
+
+  return json({ ok: true, configured: true, plan, today, month, used, limit, basis, pct, status, apiErr, links });
 }
