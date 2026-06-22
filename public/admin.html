@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Economstock Terminal</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f2ff;--bg2:#ede9fe;--bg3:#e2dcf5;--card:#ffffff;
+  --border:#d4ccf0;--border2:#e2dcf5;
+  --accent:#6d28d9;--accent2:#2563eb;--accent3:#db2777;
+  --green:#059669;--green-bg:#ecfdf5;--red:#e11d48;--red-bg:#fff1f2;--yellow:#d97706;--yellow-bg:#fef3c7;
+  --text:#1a0f3c;--text2:#6e6490;--text3:#a49cc0;
+  --grad:linear-gradient(135deg,#6d28d9 0%,#2563eb 100%);
+  --shadow-card:0 4px 20px rgba(109,40,217,.08);
+  --shadow-card-lg:0 8px 40px rgba(109,40,217,.14);
+  --radius:14px;--radius-lg:20px;--radius-pill:999px;
+}
+[data-theme="dark"]{
+  --bg:#0a0521;--bg2:#1a1145;--bg3:#261975;--card:#1f1450;
+  --border:#4a3590;--border2:#322180;
+  --accent:#c4a3ff;--accent2:#93c5fd;--accent3:#f0abfc;
+  --green:#4ade80;--green-bg:rgba(74,222,128,.15);--red:#fb7185;--red-bg:rgba(251,113,133,.15);--yellow:#fbbf24;--yellow-bg:rgba(251,191,36,.15);
+  --text:#f4f2ff;--text2:#c4b8e8;--text3:#8b7eb8;
+  --grad:linear-gradient(135deg,#c4a3ff 0%,#93c5fd 100%);
+  --shadow-card:0 4px 20px rgba(0,0,0,.4);--shadow-card-lg:0 8px 40px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+*,*::before,*::after{transition:background-color .25s ease,border-color .25s ease,color .25s ease}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+/* HEADER */
+.top-bar{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.logo{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:20px;letter-spacing:.5px;white-space:nowrap;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo span{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;color:var(--text2);-webkit-text-fill-color:var(--text2);margin-left:6px}
+.badge-admin{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#fff;background:var(--accent3);padding:4px 10px;border-radius:var(--radius-pill)}
+.top-spacer{flex:1}
+.btn-uploader{display:flex;align-items:center;gap:8px;background:var(--grad);color:#fff;font-family:inherit;font-size:13px;font-weight:700;padding:10px 16px;border:none;border-radius:var(--radius-pill);cursor:pointer;box-shadow:var(--shadow-card);white-space:nowrap}
+.btn-uploader:hover{filter:brightness(1.08)}
+.icon-btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);width:38px;height:38px;border-radius:var(--radius-pill);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.wrap{max-width:1140px;margin:0 auto;padding:28px 20px 80px}
+.page-title{font-size:24px;font-weight:800;margin-bottom:4px;letter-spacing:-.3px}
+.page-sub{font-size:14px;color:var(--text2);margin-bottom:24px}
+
+/* STAT CARDS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
+@media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-card)}
+.stat .lbl{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.stat .val{font-size:26px;font-weight:800;letter-spacing:-.5px}
+.stat .val.green{color:var(--green)}.stat .val.red{color:var(--red)}.stat .val.accent{color:var(--accent)}
+
+/* TOOLBAR */
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}
+.search{flex:1;min-width:200px;position:relative}
+.search input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-pill);padding:11px 16px 11px 40px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
+.search .ico{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px}
+.filter{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-pill);padding:11px 16px;color:var(--text);font-family:inherit;font-size:14px;cursor:pointer;outline:none}
+
+/* TABLE */
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);overflow:hidden}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+thead th{text-align:left;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);padding:14px 16px;border-bottom:1px solid var(--border);background:var(--bg2);white-space:nowrap}
+tbody td{padding:14px 16px;border-bottom:1px solid var(--border2);font-size:14px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg2)}
+.u-email{font-weight:600}
+.u-name{color:var(--text2)}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 12px;border-radius:var(--radius-pill);white-space:nowrap}
+.pill.plan6{background:var(--bg3);color:var(--accent)}
+.pill.plan12{background:rgba(37,99,235,.12);color:var(--accent2)}
+.pill.aktif{background:var(--green-bg);color:var(--green)}
+.pill.expired{background:var(--red-bg);color:var(--red)}
+.pill.suspended{background:var(--yellow-bg);color:var(--yellow)}
+.actions{display:flex;gap:6px;white-space:nowrap}
+.act{width:32px;height:32px;border-radius:9px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.act:hover{border-color:var(--accent);color:var(--accent)}
+.act.danger:hover{border-color:var(--red);color:var(--red)}
+
+.empty{padding:40px;text-align:center;color:var(--text2);font-size:14px;display:none}
+.demo-note{margin-top:18px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--text2);line-height:1.6}
+.demo-note b{color:var(--text)}
+</style>
+</head>
+<body>
+<header class="top-bar">
+  <a class="logo" href="/">economstock<span>TERMINAL</span></a>
+  <span class="badge-admin">Admin</span>
+  <div class="top-spacer"></div>
+  <button class="btn-uploader" id="uploaderBtn" title="Buka halaman upload valuasi">📤 Buka Uploader Valuasi</button>
+  <button class="icon-btn" id="themeBtn" title="Ganti tema" aria-label="Ganti tema">🌙</button>
+</header>
+
+<main class="wrap">
+  <h1 class="page-title">Dashboard Admin</h1>
+  <p class="page-sub">Kelola pengguna &amp; status langganan Economstock Terminal.</p>
+
+  <!-- RINGKASAN -->
+  <section class="stats">
+    <div class="stat"><div class="lbl">👥 Total User</div><div class="val mono" id="stTotal">0</div></div>
+    <div class="stat"><div class="lbl">🟢 Aktif</div><div class="val green mono" id="stAktif">0</div></div>
+    <div class="stat"><div class="lbl">🔴 Kedaluwarsa</div><div class="val red mono" id="stExpired">0</div></div>
+    <div class="stat"><div class="lbl">💰 Estimasi Pendapatan</div><div class="val accent mono" id="stRevenue">Rp 0</div></div>
+  </section>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search"><span class="ico">🔍</span><input id="searchInp" type="text" placeholder="Cari email atau nama…"></div>
+    <select class="filter" id="filterSel">
+      <option value="all">Semua status</option>
+      <option value="aktif">Aktif</option>
+      <option value="expired">Kedaluwarsa</option>
+      <option value="suspended">Suspended</option>
+    </select>
+  </div>
+
+  <!-- TABEL -->
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th><th>Nama</th><th>Paket</th><th>Berakhir</th><th>Status</th><th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="emptyMsg">Tidak ada user yang cocok dengan pencarian.</div>
+  </div>
+
+  <div class="demo-note">
+    ⚠️ <b>Mode demo (data dummy).</b> Tabel ini menampilkan contoh data. Setelah database (Cloudflare D1) &amp; autentikasi diaktifkan, data user asli akan tampil di sini, dan tombol aksi (edit / perpanjang / suspend / hapus) akan terhubung ke backend.
+  </div>
+</main>
+
+<script>
+var UPLOADER_URL='https://valuation-uploader.chamdani49.workers.dev/';
+
+// Tema
+(function(){
+  var saved=localStorage.getItem('theme');
+  var dark=saved? saved==='dark' : window.matchMedia('(prefers-color-scheme:dark)').matches;
+  setTheme(dark);
+  document.getElementById('themeBtn').addEventListener('click',function(){
+    setTheme(document.documentElement.getAttribute('data-theme')!=='dark');
+  });
+  function setTheme(isDark){
+    document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
+    localStorage.setItem('theme',isDark?'dark':'light');
+    document.getElementById('themeBtn').textContent=isDark?'☀️':'🌙';
+  }
+})();
+
+// Tombol uploader
+document.getElementById('uploaderBtn').addEventListener('click',function(){
+  window.open(UPLOADER_URL,'_blank','noopener');
+});
+
+// Data dummy
+var USERS=[
+  {email:'budi.santoso@gmail.com', nama:'Budi Santoso',   paket:'tahunan', berakhir:'2027-03-14', status:'aktif'},
+  {email:'siti.aminah@yahoo.com',  nama:'Siti Aminah',    paket:'6bulan',  berakhir:'2026-09-30', status:'aktif'},
+  {email:'andre.wijaya@gmail.com', nama:'Andre Wijaya',   paket:'6bulan',  berakhir:'2026-05-02', status:'expired'},
+  {email:'dewi.lestari@outlook.com',nama:'Dewi Lestari',  paket:'tahunan', berakhir:'2026-12-21', status:'aktif'},
+  {email:'rudi.hartono@gmail.com', nama:'Rudi Hartono',   paket:'6bulan',  berakhir:'2026-04-18', status:'suspended'},
+  {email:'maya.putri@gmail.com',   nama:'Maya Putri',     paket:'tahunan', berakhir:'2027-01-09', status:'aktif'},
+  {email:'eko.prasetyo@gmail.com', nama:'Eko Prasetyo',   paket:'6bulan',  berakhir:'2026-02-28', status:'expired'},
+];
+var PRICE={'6bulan':997000,'tahunan':1750000};
+var PLAN_LABEL={'6bulan':'6 Bulan','tahunan':'Tahunan'};
+
+function fmtDate(s){var d=new Date(s+'T00:00:00');return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});}
+function fmtRp(n){return 'Rp '+n.toLocaleString('id-ID');}
+
+function renderStats(){
+  var total=USERS.length;
+  var aktif=USERS.filter(u=>u.status==='aktif').length;
+  var expired=USERS.filter(u=>u.status==='expired').length;
+  var revenue=USERS.filter(u=>u.status==='aktif').reduce((s,u)=>s+(PRICE[u.paket]||0),0);
+  document.getElementById('stTotal').textContent=total;
+  document.getElementById('stAktif').textContent=aktif;
+  document.getElementById('stExpired').textContent=expired;
+  document.getElementById('stRevenue').textContent=fmtRp(revenue);
+}
+
+function render(){
+  var q=document.getElementById('searchInp').value.trim().toLowerCase();
+  var f=document.getElementById('filterSel').value;
+  var rows=USERS.filter(function(u){
+    var matchQ=!q || u.email.toLowerCase().includes(q) || u.nama.toLowerCase().includes(q);
+    var matchF=f==='all' || u.status===f;
+    return matchQ && matchF;
+  });
+  var tb=document.getElementById('tbody');
+  tb.innerHTML='';
+  rows.forEach(function(u){
+    var planCls=u.paket==='tahunan'?'plan12':'plan6';
+    var stLabel={aktif:'🟢 Aktif',expired:'🔴 Kedaluwarsa',suspended:'⛔ Suspended'}[u.status];
+    var tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td class="u-email">'+u.email+'</td>'+
+      '<td class="u-name">'+u.nama+'</td>'+
+      '<td><span class="pill '+planCls+'">'+PLAN_LABEL[u.paket]+'</span></td>'+
+      '<td class="mono">'+fmtDate(u.berakhir)+'</td>'+
+      '<td><span class="pill '+u.status+'">'+stLabel+'</span></td>'+
+      '<td><div class="actions">'+
+        '<button class="act" data-act="edit"      title="Edit">✏️</button>'+
+        '<button class="act" data-act="perpanjang" title="Perpanjang">🔁</button>'+
+        '<button class="act" data-act="suspend"    title="Suspend / Aktifkan">⛔</button>'+
+        '<button class="act danger" data-act="hapus" title="Hapus">🗑️</button>'+
+      '</div></td>';
+    tr.querySelectorAll('.act').forEach(function(b){
+      b.addEventListener('click',function(){
+        alert('Aksi: '+b.getAttribute('data-act').toUpperCase()+'\nUser: '+u.email+'\n\n(Mode demo — aksi akan terhubung ke backend setelah database & auth aktif.)');
+      });
+    });
+    tb.appendChild(tr);
+  });
+  document.getElementById('emptyMsg').style.display=rows.length?'none':'block';
+}
+
+document.getElementById('searchInp').addEventListener('input',render);
+document.getElementById('filterSel').addEventListener('change',render);
+renderStats();
+render();
+</script>
+</body>
+</html>
