@@ -166,12 +166,25 @@ a{color:inherit;text-decoration:none}
 })();
 document.getElementById('yr').textContent=new Date().getFullYear();
 
-// Placeholder tombol bayar — akan diisi link Mayar saat integrasi aktif
+// Tombol bayar → minta URL checkout dari Worker (Mayar)
 document.querySelectorAll('.btn-pay').forEach(function(b){
-  b.addEventListener('click',function(){
-    var url=b.getAttribute('data-mayar');
-    if(url){ window.location.href=url; return; }
-    alert('Paket: '+b.getAttribute('data-plan')+'\n\nIntegrasi pembayaran Mayar.id belum diaktifkan.\nTombol ini akan otomatis mengarah ke halaman pembayaran setelah API key & produk Mayar disiapkan.');
+  b.addEventListener('click',async function(){
+    var plan=b.getAttribute('data-plan');
+    var original=b.textContent;
+    b.disabled=true;b.textContent='Memproses…';
+    try{
+      var r=await fetch('/api/checkout?plan='+encodeURIComponent(plan),{headers:{'Accept':'application/json'}});
+      var d=await r.json().catch(function(){return {};});
+      if(r.ok && d.url){ window.location.href=d.url; return; }
+      if(r.status===503){
+        alert('Pembayaran Mayar belum diaktifkan.\n\nAdmin perlu mengisi MAYAR_LINK_'+(plan==='tahunan'?'TAHUNAN':'6BULAN')+' (lihat docs/AUTH_SETUP.md). Setelah itu tombol ini langsung mengarah ke halaman pembayaran.');
+      } else {
+        alert(d.error||'Gagal memproses pembayaran. Coba lagi.');
+      }
+    }catch(e){
+      alert('Kesalahan jaringan. Coba lagi.');
+    }
+    b.disabled=false;b.textContent=original;
   });
 });
 </script>

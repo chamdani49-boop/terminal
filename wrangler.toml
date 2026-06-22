@@ -1,24 +1,49 @@
 #:schema node_modules/wrangler/config-schema.json
 # ════════════════════════════════════════════════════════════════════════
-# ROOT wrangler.toml — deploy site statis sebagai Cloudflare Worker (Static Assets)
+# ROOT wrangler.toml — Worker "terminal"
 #
-# CF project "terminal" terhubung ke repo via Git dan menjalankan
-# `npx wrangler deploy` setiap push ke main. Tanpa config ini, command tsb
-# gagal dengan error:
-#   "Missing entry-point to Worker script or to assets directory"
+# Sebelumnya: murni static assets (folder public/).
+# Sekarang: Worker script (src/index.js) + static assets, untuk mendukung
+# login, langganan berbayar (Mayar), dan dashboard admin.
 #
-# Config di bawah memberi tahu wrangler untuk men-deploy folder `public/`
-# sebagai static assets (tanpa perlu script Worker / `main`). File statis
-# (index.html, data.json, ohlc.json, _headers) langsung di-serve dari edge.
-#
-# Worker `terminal-live` (folder worker/) adalah proyek TERPISAH — di-deploy
-# manual via `wrangler deploy` dari dalam folder tersebut.
+# AMAN untuk situs live:
+#   - `run_worker_first = ["/api/*"]` → Worker HANYA dijalankan untuk route
+#     /api/*. Semua file lain (index.html, data.json, ohlc.json, dst) tetap
+#     dilayani LANGSUNG sebagai static asset seperti sebelumnya — tanpa
+#     melewati Worker. Jadi performa & perilaku situs publik tidak berubah.
+#   - Feature flag GATING_ENABLED=false → gate langganan belum aktif. Situs
+#     tetap terbuka untuk semua sampai auth+billing siap & flag dinyalakan.
+#   - Binding D1 sengaja DIKOMENTARI sampai database dibuat (lihat
+#     docs/AUTH_SETUP.md). Kalau di-uncomment dengan database_id palsu,
+#     `wrangler deploy` akan GAGAL dan menghentikan deploy data.json. Jadi:
+#     buat D1 dulu, isi id-nya, baru uncomment.
 # ════════════════════════════════════════════════════════════════════════
 
 name = "terminal"
+main = "src/index.js"
 compatibility_date = "2025-05-01"
 
 # Static Assets — serve folder public/ sebagai situs statis.
-# `_headers` & `_redirects` di public/ tetap didukung (sama seperti Pages).
+# `binding = "ASSETS"` memungkinkan Worker mengambil file via env.ASSETS.fetch().
+# `run_worker_first` membatasi eksekusi Worker hanya ke /api/* (hemat & aman).
 [assets]
 directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+# Variabel non-rahasia (boleh publik). Rahasia (SESSION_SECRET, GOOGLE_*,
+# MAYAR_*, RESEND_API_KEY) di-set via `wrangler secret put` / dashboard.
+[vars]
+GATING_ENABLED = "false"
+APP_URL = "https://terminal.economstock.com"
+# Daftar email admin, dipisah koma. Mis: "chamdani49@gmail.com"
+ADMIN_EMAILS = "chamdani49@gmail.com"
+# Durasi paket (hari)
+PLAN_DAYS_6BULAN = "182"
+PLAN_DAYS_TAHUNAN = "365"
+
+# ── Database D1 ──
+[[d1_databases]]
+binding = "DB"
+database_name = "terminal-db"
+database_id = "d943f1cd-77fc-4929-87d4-0e526357968b"

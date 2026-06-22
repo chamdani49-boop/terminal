@@ -139,7 +139,7 @@ tbody tr:hover{background:var(--bg2)}
     <div class="empty" id="emptyMsg">Tidak ada user yang cocok dengan pencarian.</div>
   </div>
 
-  <div class="demo-note">
+  <div class="demo-note" id="demoNote">
     ⚠️ <b>Mode demo (data dummy).</b> Tabel ini menampilkan contoh data. Setelah database (Cloudflare D1) &amp; autentikasi diaktifkan, data user asli akan tampil di sini, dan tombol aksi (edit / perpanjang / suspend / hapus) akan terhubung ke backend.
   </div>
 </main>
@@ -167,7 +167,7 @@ document.getElementById('uploaderBtn').addEventListener('click',function(){
   window.open(UPLOADER_URL,'_blank','noopener');
 });
 
-// Data dummy
+// Data dummy (dipakai sebagai fallback bila API/D1 belum siap)
 var USERS=[
   {email:'budi.santoso@gmail.com', nama:'Budi Santoso',   paket:'tahunan', berakhir:'2027-03-14', status:'aktif'},
   {email:'siti.aminah@yahoo.com',  nama:'Siti Aminah',    paket:'6bulan',  berakhir:'2026-09-30', status:'aktif'},
@@ -177,11 +177,38 @@ var USERS=[
   {email:'maya.putri@gmail.com',   nama:'Maya Putri',     paket:'tahunan', berakhir:'2027-01-09', status:'aktif'},
   {email:'eko.prasetyo@gmail.com', nama:'Eko Prasetyo',   paket:'6bulan',  berakhir:'2026-02-28', status:'expired'},
 ];
+var LIVE=false; // true jika data dari API
 var PRICE={'6bulan':997000,'tahunan':1750000};
-var PLAN_LABEL={'6bulan':'6 Bulan','tahunan':'Tahunan'};
+var PLAN_LABEL={'6bulan':'6 Bulan','tahunan':'Tahunan','-':'—'};
+var PLAN_DAYS={'6bulan':182,'tahunan':365};
 
-function fmtDate(s){var d=new Date(s+'T00:00:00');return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});}
+function fmtDate(v){
+  if(v==null||v==='-')return '—';
+  var d;
+  if(typeof v==='number'){ d=new Date(v*1000); }       // epoch detik dari API
+  else { d=new Date(v+'T00:00:00'); }                   // 'YYYY-MM-DD' dummy
+  if(isNaN(d))return '—';
+  return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+}
 function fmtRp(n){return 'Rp '+n.toLocaleString('id-ID');}
+
+// Ambil data asli dari API admin; kalau gagal, pakai dummy.
+async function loadUsers(){
+  try{
+    var r=await fetch('/api/admin/users',{headers:{'Accept':'application/json'}});
+    if(r.ok){
+      var d=await r.json();
+      if(d&&d.users){
+        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,status:u.status};});
+        LIVE=true;
+        document.getElementById('demoNote').style.display='none';
+      }
+    } else if(r.status===401||r.status===403){
+      document.getElementById('demoNote').innerHTML='🔒 <b>Belum login sebagai admin.</b> Menampilkan data contoh. <a href="/login?next=/admin" style="color:var(--accent)">Masuk sebagai admin</a> untuk melihat data asli.';
+    }
+  }catch(e){/* offline / D1 belum siap → tetap pakai dummy */}
+  renderStats();render();
+}
 
 function renderStats(){
   var total=USERS.length;
@@ -194,11 +221,44 @@ function renderStats(){
   document.getElementById('stRevenue').textContent=fmtRp(revenue);
 }
 
+async function doAction(act,email){
+  if(!LIVE){
+    alert('Aksi: '+act.toUpperCase()+'\nUser: '+email+'\n\n(Mode demo — aksi akan terhubung ke backend setelah login admin & D1 aktif.)');
+    return;
+  }
+  try{
+    if(act==='hapus'){
+      if(!confirm('Hapus user '+email+'? Tindakan ini permanen.'))return;
+      await postAdmin('/api/admin/users/delete',{email:email});
+    } else if(act==='suspend'){
+      var u=USERS.find(x=>x.email===email);
+      var to=u&&u.status==='suspended'?'active':'suspended';
+      await postAdmin('/api/admin/users/suspend',{email:email,status:to});
+    } else if(act==='perpanjang'){
+      var u2=USERS.find(x=>x.email===email);
+      var days=PLAN_DAYS[u2&&u2.paket]||182;
+      if(!confirm('Perpanjang '+email+' selama '+days+' hari?'))return;
+      await postAdmin('/api/admin/users/extend',{email:email,days:days});
+    } else if(act==='edit'){
+      var nm=prompt('Nama baru untuk '+email+':',(USERS.find(x=>x.email===email)||{}).nama||'');
+      if(nm==null)return;
+      await postAdmin('/api/admin/users/edit',{email:email,name:nm});
+    }
+    await loadUsers();
+  }catch(e){alert('Gagal: '+(e.message||e));}
+}
+async function postAdmin(url,body){
+  var r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var d=await r.json().catch(function(){return {};});
+  if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+  return d;
+}
+
 function render(){
   var q=document.getElementById('searchInp').value.trim().toLowerCase();
   var f=document.getElementById('filterSel').value;
   var rows=USERS.filter(function(u){
-    var matchQ=!q || u.email.toLowerCase().includes(q) || u.nama.toLowerCase().includes(q);
+    var matchQ=!q || u.email.toLowerCase().includes(q) || (u.nama||'').toLowerCase().includes(q);
     var matchF=f==='all' || u.status===f;
     return matchQ && matchF;
   });
@@ -206,24 +266,23 @@ function render(){
   tb.innerHTML='';
   rows.forEach(function(u){
     var planCls=u.paket==='tahunan'?'plan12':'plan6';
-    var stLabel={aktif:'🟢 Aktif',expired:'🔴 Kedaluwarsa',suspended:'⛔ Suspended'}[u.status];
+    var stLabel={aktif:'🟢 Aktif',expired:'🔴 Kedaluwarsa',suspended:'⛔ Suspended',no_sub:'⚪ Belum langganan'}[u.status]||u.status;
+    var stCls=u.status==='no_sub'?'expired':u.status;
     var tr=document.createElement('tr');
     tr.innerHTML=
       '<td class="u-email">'+u.email+'</td>'+
-      '<td class="u-name">'+u.nama+'</td>'+
-      '<td><span class="pill '+planCls+'">'+PLAN_LABEL[u.paket]+'</span></td>'+
+      '<td class="u-name">'+(u.nama||'—')+'</td>'+
+      '<td><span class="pill '+planCls+'">'+(PLAN_LABEL[u.paket]||u.paket)+'</span></td>'+
       '<td class="mono">'+fmtDate(u.berakhir)+'</td>'+
-      '<td><span class="pill '+u.status+'">'+stLabel+'</span></td>'+
+      '<td><span class="pill '+stCls+'">'+stLabel+'</span></td>'+
       '<td><div class="actions">'+
-        '<button class="act" data-act="edit"      title="Edit">✏️</button>'+
+        '<button class="act" data-act="edit"      title="Edit nama">✏️</button>'+
         '<button class="act" data-act="perpanjang" title="Perpanjang">🔁</button>'+
         '<button class="act" data-act="suspend"    title="Suspend / Aktifkan">⛔</button>'+
         '<button class="act danger" data-act="hapus" title="Hapus">🗑️</button>'+
       '</div></td>';
     tr.querySelectorAll('.act').forEach(function(b){
-      b.addEventListener('click',function(){
-        alert('Aksi: '+b.getAttribute('data-act').toUpperCase()+'\nUser: '+u.email+'\n\n(Mode demo — aksi akan terhubung ke backend setelah database & auth aktif.)');
-      });
+      b.addEventListener('click',function(){doAction(b.getAttribute('data-act'),u.email);});
     });
     tb.appendChild(tr);
   });
@@ -234,6 +293,7 @@ document.getElementById('searchInp').addEventListener('input',render);
 document.getElementById('filterSel').addEventListener('change',render);
 renderStats();
 render();
+loadUsers();
 </script>
 </body>
 </html>
