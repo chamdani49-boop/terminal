@@ -88,6 +88,26 @@ tbody tr:hover{background:var(--bg2)}
 .act.danger:hover{border-color:var(--red);color:var(--red)}
 
 .empty{padding:40px;text-align:center;color:var(--text2);font-size:14px;display:none}
+
+/* USAGE PANEL */
+.usage-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);padding:20px;margin-bottom:26px}
+.usage-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.usage-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+.plan-badge{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 10px;border-radius:var(--radius-pill);background:var(--bg3);color:var(--accent)}
+.plan-badge.paid{background:var(--green-bg);color:var(--green)}
+.usage-links{display:flex;gap:8px;flex-wrap:wrap}
+.ulink{font-size:12px;font-weight:600;padding:7px 12px;border-radius:var(--radius-pill);border:1px solid var(--border);color:var(--text2);background:var(--bg2);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.ulink:hover{border-color:var(--accent);color:var(--accent)}
+.usage-body{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:14px}
+.usage-lbl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.usage-val{font-size:22px;font-weight:800}
+.gauge{height:10px;border-radius:999px;background:var(--bg3);overflow:hidden}
+.gauge-fill{height:100%;width:0;border-radius:999px;background:var(--green);transition:width .5s}
+.gauge-fill.yellow{background:var(--yellow)}
+.gauge-fill.red{background:var(--red)}
+.usage-note{font-size:12px;color:var(--text2);margin-top:10px;line-height:1.55}
+.usage-note code{background:var(--bg2);padding:1px 6px;border-radius:5px;font-size:11px}
+@media(max-width:680px){.usage-body{grid-template-columns:1fr;gap:10px}}
 .demo-note{margin-top:18px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--text2);line-height:1.6}
 .demo-note b{color:var(--text)}
 
@@ -137,6 +157,21 @@ tbody tr:hover{background:var(--bg2)}
     <div class="stat"><div class="lbl">🟢 Aktif</div><div class="val green mono" id="stAktif">0</div></div>
     <div class="stat"><div class="lbl">🔴 Kedaluwarsa</div><div class="val red mono" id="stExpired">0</div></div>
     <div class="stat"><div class="lbl">💰 Estimasi Pendapatan</div><div class="val accent mono" id="stRevenue">Rp 0</div></div>
+  </section>
+
+  <!-- PENGGUNAAN / KUOTA WORKER -->
+  <section class="usage-card" id="usageCard">
+    <div class="usage-head">
+      <div class="usage-title">📈 Penggunaan Worker <span class="plan-badge" id="planBadge">—</span></div>
+      <div class="usage-links" id="usageLinks"></div>
+    </div>
+    <div class="usage-body" id="usageBody">
+      <div><div class="usage-lbl">Request hari ini</div><div class="usage-val mono" id="usToday">—</div></div>
+      <div><div class="usage-lbl">Request bulan ini</div><div class="usage-val mono" id="usMonth">—</div></div>
+      <div><div class="usage-lbl" id="usLimitLbl">Limit</div><div class="usage-val mono" id="usLimit">—</div></div>
+    </div>
+    <div class="gauge"><div class="gauge-fill" id="gaugeFill"></div></div>
+    <div class="usage-note" id="usageNote">Memuat data penggunaan…</div>
   </section>
 
   <!-- TOOLBAR -->
@@ -317,9 +352,54 @@ function render(){
 
 document.getElementById('searchInp').addEventListener('input',render);
 document.getElementById('filterSel').addEventListener('change',render);
+
+// ── Panel penggunaan / kuota Worker ──
+async function loadUsage(){
+  var card=document.getElementById('usageCard');
+  try{
+    var r=await fetch('/api/admin/usage',{headers:{'Accept':'application/json'}});
+    if(!r.ok){ card.style.display='none'; return; }
+    var d=await r.json();
+    if(d.links){
+      var L=d.links;
+      document.getElementById('usageLinks').innerHTML=
+        '<a class="ulink" target="_blank" rel="noopener" href="'+L.metricsTerminal+'">📊 Metrics terminal</a>'+
+        '<a class="ulink" target="_blank" rel="noopener" href="'+L.metricsLive+'">📊 Metrics live</a>'+
+        '<a class="ulink" target="_blank" rel="noopener" href="'+L.plans+'">⬆️ Kelola / Upgrade plan</a>';
+    }
+    if(!d.configured){
+      document.getElementById('planBadge').textContent='—';
+      document.getElementById('usageBody').style.display='none';
+      document.querySelector('#usageCard .gauge').style.display='none';
+      document.getElementById('usageNote').innerHTML='⚙️ <b>Panel penggunaan belum aktif.</b> Set <code>CF_API_TOKEN</code> &amp; <code>CF_ACCOUNT_ID</code> di Worker <code>terminal</code> untuk menampilkan angka request real-time. (Tombol link di atas tetap bisa dipakai.)';
+      return;
+    }
+    var paid=d.plan==='paid';
+    var pb=document.getElementById('planBadge');
+    pb.textContent=paid?'PAID':'FREE';
+    pb.className='plan-badge'+(paid?' paid':'');
+    document.getElementById('usToday').textContent=Number(d.today||0).toLocaleString('id-ID');
+    document.getElementById('usMonth').textContent=Number(d.month||0).toLocaleString('id-ID');
+    document.getElementById('usLimitLbl').textContent=paid?'Limit / bulan':'Limit / hari';
+    document.getElementById('usLimit').textContent=Number(d.limit||0).toLocaleString('id-ID');
+    var g=document.getElementById('gaugeFill');
+    g.style.width=(d.pct||0)+'%';
+    g.className='gauge-fill'+(d.status==='red'?' red':(d.status==='yellow'?' yellow':''));
+    var basisTxt=paid?'bulan ini':'hari ini';
+    var icon=d.status==='red'?'🔴':(d.status==='yellow'?'🟡':'🟢');
+    var note=icon+' Terpakai <b>'+(d.pct||0)+'%</b> dari kuota '+basisTxt+' ('+Number(d.used||0).toLocaleString('id-ID')+' / '+Number(d.limit||0).toLocaleString('id-ID')+' request).';
+    if(d.status==='red') note+=' Mendekati limit — pertimbangkan upgrade.';
+    else if(d.status==='green') note+=' Aman.';
+    note+=' <span style="color:var(--text3)">Plan terdeteksi otomatis; bisa di-override via variabel <code>WORKERS_PLAN</code>.</span>';
+    if(d.apiErr) note+='<br>⚠️ <span style="color:var(--yellow)">Catatan API: '+d.apiErr+'</span>';
+    document.getElementById('usageNote').innerHTML=note;
+  }catch(e){ card.style.display='none'; }
+}
+
 renderStats();
 render();
 loadUsers();
+loadUsage();
 </script>
 </body>
 </html>
