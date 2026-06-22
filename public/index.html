@@ -4170,6 +4170,30 @@ const CACHE_BUST_MS  = 30 * 1000;        // 30 detik window
 let   _lastGeneratedAt = null;           // timestamp data.json yang sedang tampil
 let   _pollTimer       = null;           // handle setInterval
 
+// ── Cache lokal (localStorage): render INSTAN saat buka dashboard/valuasi ──
+// Data ter-gate selalu di-fetch no-store → loading terasa lama tiap buka.
+// Solusi sisi-klien: simpan payload sukses terakhir di localStorage, lalu
+// render duluan dari cache saat halaman dibuka (muncul instan), sambil
+// revalidasi versi fresh di background (stale-while-revalidate).
+window.__ESC_CACHE_PREFIX = 'esc:cache:';
+window.__ESC_CACHE_TTL_MS = 24 * 3600 * 1000;   // anggap basi setelah 24 jam
+window.escCacheRead = function (key) {
+  try {
+    const raw = localStorage.getItem(window.__ESC_CACHE_PREFIX + key);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || !obj.t || (Date.now() - obj.t) > window.__ESC_CACHE_TTL_MS) return null;
+    return obj.d;
+  } catch (_) { return null; }
+};
+window.escCacheWrite = function (key, data) {
+  try { localStorage.setItem(window.__ESC_CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), d: data })); }
+  catch (_) { /* quota penuh / mode privat → abaikan */ }
+};
+window.escCacheClear = function (key) {
+  try { localStorage.removeItem(window.__ESC_CACHE_PREFIX + key); } catch (_) {}
+};
+
 // ── Live FEED real-time (via Cloudflare Worker `terminal-live`) ─────────
 // Worker fetch Live Sheet LANGSUNG dari Google tiap request (bypass cron
 // GitHub Actions yang sering delay 30–60 mnt). Frontend overlay hasilnya ke
@@ -4467,6 +4491,35 @@ function _renderAccount(p) {
 }
 
 async function loadData() {
+  // ── 1) Render INSTAN dari cache lokal (kalau ada) ──────────────────────
+  // Tampilkan data terakhir yang tersimpan supaya dashboard langsung muncul,
+  // lalu revalidasi versi fresh di background (tidak nunggu network).
+  let _booted = false;
+  const _cached = window.escCacheRead('data');
+  if (_cached && _cached.price_history && _cached.stats) {
+    try {
+      DATA = _sanitizeData(_cached);
+      _lastGeneratedAt = (_cached._meta || {}).generated_at || null;
+      const _rc = window.escCacheRead('rec');
+      if (_rc && _rc.recs) REC_STATUS = _rc.recs;
+      init();
+      _startLivePolling();
+      _startLiveFeedPolling();
+      _startConsensusFeedPolling();
+      _startHistoryFeedPolling();
+      _booted = true;
+      console.info('[data] render instan dari cache lokal; revalidasi fresh di background…');
+      // Revalidasi data.json segera (smart-patch, tidak rebuild penuh)
+      _pollLiveData();
+      // rec-status fresh di background → perbarui cache
+      loadRecStatus().then(() => { try { window.escCacheWrite('rec', { recs: REC_STATUS }); } catch (_) {} });
+      return;
+    } catch (e) {
+      console.warn('[data] gagal boot dari cache:', e && e.message); _booted = false;
+    }
+  }
+
+  // ── 2) Tidak ada cache (atau gagal) → load normal dari network ─────────
   const v = Math.floor(Date.now() / CACHE_BUST_MS);
   const sources = [
     { url: DATA_LOCAL_URL + '?v=' + v, label: 'same-origin'  },
@@ -4475,9 +4528,16 @@ async function loadData() {
   for (const src of sources) {
     try {
       const res = await fetch(src.url, { cache: 'no-store' });
+      // Langganan tidak aktif / belum login → bersihkan cache supaya data
+      // ter-gate tidak tertinggal di perangkat.
+      if (res.status === 401 || res.status === 402) {
+        window.escCacheClear('data'); window.escCacheClear('rec');
+        throw new Error('gated ' + res.status);
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (!json || !json.price_history || !json.stats) throw new Error('payload tidak valid');
+      window.escCacheWrite('data', json);   // simpan untuk render instan berikutnya
       DATA = _sanitizeData(json);
       _lastGeneratedAt = (json._meta || {}).generated_at || null;
       try {
@@ -4490,6 +4550,7 @@ async function loadData() {
       // Load rec-status (release price + hit target harian) SEBELUM init()
       // supaya semua tabel & modal pakai rating berbasis data harian.
       await loadRecStatus();
+      try { window.escCacheWrite('rec', { recs: REC_STATUS }); } catch (_) {}
       init();
       _startLivePolling();  // mulai polling setelah initial load berhasil
       _startLiveFeedPolling();  // mulai live feed real-time (Worker)
@@ -4500,9 +4561,11 @@ async function loadData() {
       console.warn(`[data] ${src.label} fetch gagal:`, e.message || e);
     }
   }
-  document.querySelector('.loading').innerHTML =
-    '⚠️ Gagal memuat data dari CDN dan same-origin. Cek koneksi internet, ' +
-    'atau apakah workflow "Refresh data" sudah pernah jalan.';
+  if (!_booted) {
+    document.querySelector('.loading').innerHTML =
+      '⚠️ Gagal memuat data dari CDN dan same-origin. Cek koneksi internet, ' +
+      'atau apakah workflow "Refresh data" sudah pernah jalan.';
+  }
 }
 
 // ── Polling engine ─────────────────────────────────────────────────────
@@ -4541,6 +4604,7 @@ async function _pollLiveData() {
 
   console.info(`[poll] Data updated: ${_lastGeneratedAt} → ${newGenAt}`);
   _lastGeneratedAt = newGenAt;
+  try { window.escCacheWrite('data', json); } catch (_) {}   // jaga cache tetap fresh
 
   // ── Smooth patch: update DATA dan hanya re-render komponen live ──────
   // TIDAK re-render seluruh halaman → tidak ada flicker/scroll jump.
@@ -12941,7 +13005,26 @@ body.vl-maxing{overflow:hidden}
     if(state.loading || state.raw) return;
     state.loading = true;
     try{
-      state.raw = await fetchJson([VAL_LOCAL_URL]);
+      // ── 1) Render INSTAN dari cache valuasi (kalau ada) ──
+      const cVal = (window.escCacheRead && window.escCacheRead('val')) || null;
+      if(cVal && cVal.stocks){
+        try{
+          state.raw = cVal;
+          const cData = window.escCacheRead('data');
+          if(cData){
+            state.live = (cData && cData.live) ? cData.live : null;
+            state.priceHist = (cData && Array.isArray(cData.price_history)) ? cData.price_history : null;
+            state.stats = (cData && cData.stats) ? cData.stats : null;
+            state.fundamentals = (cData && cData.fundamentals) ? cData.fundamentals : null;
+            state.stockInfo = (cData && cData.stock_info) ? cData.stock_info : null;
+          }
+          state.code = pickDefaultCode();
+          if(state.code){ populateStockSelect(); setWinButtons(); renderAll(); }
+        }catch(_){ }
+      }
+      // ── 2) Revalidasi versi fresh dari network ──
+      const fresh = await fetchJson([VAL_LOCAL_URL]);
+      if(fresh && fresh.stocks){ try{ window.escCacheWrite && window.escCacheWrite('val', fresh); }catch(_){} state.raw = fresh; }
       try{
         const data = await fetchJson([DATA_LOCAL_URL]);
         state.live = (data && data.live) ? data.live : null;
@@ -12949,7 +13032,7 @@ body.vl-maxing{overflow:hidden}
         state.stats = (data && data.stats) ? data.stats : null;
         state.fundamentals = (data && data.fundamentals) ? data.fundamentals : null;
         state.stockInfo = (data && data.stock_info) ? data.stock_info : null;
-      }catch(e){ state.live = null; }   // harga live opsional
+      }catch(e){ /* harga live opsional → pertahankan nilai dari cache */ }
       state.code = pickDefaultCode();
       if(!state.code){
         showError('Data valuasi belum tersedia. Coba refresh halaman dalam beberapa saat (workflow refresh-valuation mungkin sedang berjalan).');

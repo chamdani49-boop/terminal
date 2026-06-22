@@ -54,6 +54,20 @@ export default {
         }
       }
 
+      // ──────── Cache privat untuk data JSON ter-gate ────────
+      // Data ter-gate (data.json, valuation.json, dll) sebelumnya selalu
+      // di-fetch ulang tanpa cache → dashboard & valuasi terasa lama saat
+      // dibuka / saat pindah antar halaman. Tambah header cache PRIVAT
+      // (per-browser, bukan CDN publik karena data berbayar) dengan
+      // stale-while-revalidate: browser boleh memakai salinan lokal dulu
+      // (muncul instan) sambil revalidasi versi baru di latar belakang.
+      if (isProtected(path) && path.endsWith('.json')) {
+        const assetRes = await env.ASSETS.fetch(request);
+        const r = new Response(assetRes.body, assetRes);
+        r.headers.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=600');
+        return r;
+      }
+
       // default: serahkan ke static assets
       return env.ASSETS.fetch(request);
     } catch (e) {
