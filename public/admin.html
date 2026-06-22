@@ -43,6 +43,8 @@ a{color:inherit;text-decoration:none}
 .top-spacer{flex:1}
 .btn-uploader{display:flex;align-items:center;gap:8px;background:var(--grad);color:#fff;font-family:inherit;font-size:13px;font-weight:700;padding:10px 16px;border:none;border-radius:var(--radius-pill);cursor:pointer;box-shadow:var(--shadow-card);white-space:nowrap}
 .btn-uploader:hover{filter:brightness(1.08)}
+.btn-parse{background:var(--bg2);color:var(--accent);border:1px solid var(--border);box-shadow:none}
+.btn-parse:hover{filter:none;background:var(--bg3);border-color:var(--accent)}
 .icon-btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);width:38px;height:38px;border-radius:var(--radius-pill);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
 .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
 .btn-back{display:inline-flex;align-items:center;font-size:13px;font-weight:600;color:var(--text2);padding:9px 14px;border-radius:var(--radius-pill);border:1px solid var(--border);background:var(--bg2);white-space:nowrap}
@@ -108,24 +110,25 @@ tbody tr:hover{background:var(--bg2)}
 .empty{padding:40px;text-align:center;color:var(--text2);font-size:14px;display:none}
 
 /* USAGE PANEL */
-.usage-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);padding:20px;margin-bottom:26px}
-.usage-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px}
-.usage-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
-.plan-badge{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 10px;border-radius:var(--radius-pill);background:var(--bg3);color:var(--accent)}
+.usage-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);padding:16px 18px;margin-bottom:26px}
+.usage-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.usage-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px}
+.plan-badge{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:var(--radius-pill);background:var(--bg3);color:var(--accent)}
 .plan-badge.paid{background:var(--green-bg);color:var(--green)}
-.usage-links{display:flex;gap:8px;flex-wrap:wrap}
-.ulink{font-size:12px;font-weight:600;padding:7px 12px;border-radius:var(--radius-pill);border:1px solid var(--border);color:var(--text2);background:var(--bg2);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.usage-links{display:flex;gap:7px;flex-wrap:wrap}
+.ulink{font-size:11px;font-weight:600;padding:6px 11px;border-radius:var(--radius-pill);border:1px solid var(--border);color:var(--text2);background:var(--bg2);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
 .ulink:hover{border-color:var(--accent);color:var(--accent)}
-.usage-body{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:14px}
-.usage-lbl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-.usage-val{font-size:22px;font-weight:800}
-.gauge{height:10px;border-radius:999px;background:var(--bg3);overflow:hidden}
+.usage-body{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.usage-body>div{background:var(--bg2);border:1px solid var(--border2);border-radius:11px;padding:10px 12px}
+.usage-lbl{font-size:9.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.usage-val{font-size:18px;font-weight:800;letter-spacing:-.3px;line-height:1.15}
+.gauge{height:8px;border-radius:999px;background:var(--bg3);overflow:hidden}
 .gauge-fill{height:100%;width:0;border-radius:999px;background:var(--green);transition:width .5s}
 .gauge-fill.yellow{background:var(--yellow)}
 .gauge-fill.red{background:var(--red)}
-.usage-note{font-size:12px;color:var(--text2);margin-top:10px;line-height:1.55}
-.usage-note code{background:var(--bg2);padding:1px 6px;border-radius:5px;font-size:11px}
-@media(max-width:680px){.usage-body{grid-template-columns:1fr;gap:10px}}
+.usage-note{font-size:11px;color:var(--text2);margin-top:9px;line-height:1.5}
+.usage-note code{background:var(--bg2);padding:1px 6px;border-radius:5px;font-size:10px}
+@media(max-width:680px){.usage-body{grid-template-columns:repeat(3,1fr);gap:7px}.usage-body>div{padding:8px 9px}.usage-val{font-size:14px}.usage-lbl{font-size:8px;letter-spacing:0}}
 .demo-note{margin-top:18px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--text2);line-height:1.6}
 .demo-note b{color:var(--text)}
 
@@ -168,6 +171,7 @@ tbody tr:hover{background:var(--bg2)}
   <div class="top-spacer"></div>
   <a class="btn-back" href="/"><span class="bk-ico">←</span><span class="bk-txt"> Dashboard</span></a>
   <button class="btn-uploader" id="uploaderBtn" title="Buka halaman upload valuasi"><span class="up-ico">📤</span><span class="up-txt">Buka Uploader Valuasi</span></button>
+  <button class="btn-uploader btn-parse" id="parseBtn" title="Buka halaman parse laporan keuangan"><span class="up-ico">🧩</span><span class="up-txt">Parse</span></button>
   <button class="icon-btn" id="themeBtn" title="Ganti tema" aria-label="Ganti tema">🌙</button>
 </header>
 
@@ -253,6 +257,7 @@ tbody tr:hover{background:var(--bg2)}
 
 <script>
 var UPLOADER_URL='https://valuation-uploader.chamdani49.workers.dev/';
+var PARSE_URL='https://chamdani49-boop.github.io/parsing/laporan_keuangan_processor_fixed.html';
 
 // Tema
 (function(){
@@ -272,6 +277,11 @@ var UPLOADER_URL='https://valuation-uploader.chamdani49.workers.dev/';
 // Tombol uploader
 document.getElementById('uploaderBtn').addEventListener('click',function(){
   window.open(UPLOADER_URL,'_blank','noopener');
+});
+
+// Tombol parse (buka halaman parse laporan keuangan di tab baru)
+document.getElementById('parseBtn').addEventListener('click',function(){
+  window.open(PARSE_URL,'_blank','noopener');
 });
 
 // Data dummy (dipakai sebagai fallback bila API/D1 belum siap)
