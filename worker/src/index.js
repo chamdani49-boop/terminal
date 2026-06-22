@@ -862,6 +862,51 @@ async function handleSheetFeed(request, env, ctx, { name, cacheSeconds, build })
 }
 
 // ─────────────────────────────────────────────
+// PAYWALL — verifikasi token akses (HMAC) dari Worker terminal
+// Token dibuat oleh /api/live-token (terminal) memakai LIVE_TOKEN_SECRET yang
+// SAMA. Worker ini hanya memverifikasi tanda tangan + masa berlaku — tidak
+// perlu D1. Token dikirim via query ?token=... (bukan cookie) supaya tetap
+// kompatibel dengan cache edge (cache key memakai path saja) & CORS '*'.
+// ─────────────────────────────────────────────
+function _b64urlEncodeBytes(bytes) {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function _b64urlToString(str) {
+  const bin = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function _timingSafeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  let out = 0;
+  for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return out === 0;
+}
+async function verifyLiveToken(env, token) {
+  const secret = env.LIVE_TOKEN_SECRET;
+  if (!secret || !token || token.indexOf('.') < 0) return false;
+  const [p, sig] = token.split('.');
+  if (!p || !sig) return false;
+  let expected;
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+    );
+    const buf = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(p));
+    expected = _b64urlEncodeBytes(new Uint8Array(buf));
+  } catch (_) { return false; }
+  if (!_timingSafeEqual(expected, sig)) return false;
+  let body;
+  try { body = JSON.parse(_b64urlToString(p)); } catch (_) { return false; }
+  if (!body || !body.exp || body.exp < Math.floor(Date.now() / 1000)) return false;
+  return true;
+}
+
+// ─────────────────────────────────────────────
 // Entry
 // ─────────────────────────────────────────────
 export default {
@@ -870,6 +915,13 @@ export default {
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(env) });
+    }
+
+    // ── Gate: endpoint data wajib token akses valid (langganan aktif) ──
+    const isData = url.pathname === '/live.json' || url.pathname === '/consensus.json' || url.pathname === '/history.json';
+    if (isData) {
+      const ok = await verifyLiveToken(env, url.searchParams.get('token'));
+      if (!ok) return jsonResponse({ ok: false, error: 'unauthorized' }, env, { status: 401 });
     }
 
     if (url.pathname === '/live.json') {
