@@ -13,8 +13,8 @@ name: Deploy Worker to Cloudflare
 #     deploy supaya data.json same-origin ikut segar.
 #
 # Secret yang dibutuhkan (Settings → Secrets and variables → Actions):
-#   - CLOUDFLARE_API_TOKEN  : token dgn permission "Edit Cloudflare Workers"
-#   - CLOUDFLARE_ACCOUNT_ID : Account ID Cloudflare
+#   - CLOUDFLARE_API_TOKEN : token dgn permission "Edit Cloudflare Workers"
+#     (account_id terdeteksi otomatis dari token, jadi cukup 1 secret ini)
 #
 # Secret runtime worker (SESSION_SECRET, GOOGLE_*, MAYAR_*, LIVE_TOKEN_SECRET,
 # CF_API_TOKEN, dll) TIDAK tersentuh — `wrangler deploy` tidak menghapusnya.
@@ -43,5 +43,4 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
