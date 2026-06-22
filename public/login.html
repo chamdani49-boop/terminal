@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masuk — Economstock Terminal</title>
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f2ff;--bg2:#ede9fe;--card:#ffffff;--border:#d4ccf0;
+  --accent:#6d28d9;--accent2:#2563eb;--green:#059669;--red:#e11d48;
+  --text:#1a0f3c;--text2:#6e6490;--text3:#a49cc0;
+  --grad:linear-gradient(135deg,#6d28d9 0%,#2563eb 100%);
+  --shadow:0 8px 40px rgba(109,40,217,.14);--radius:14px;--radius-pill:999px;
+}
+[data-theme="dark"]{
+  --bg:#0a0521;--bg2:#1a1145;--card:#1f1450;--border:#4a3590;
+  --accent:#c4a3ff;--accent2:#93c5fd;--green:#4ade80;--red:#fb7185;
+  --text:#f4f2ff;--text2:#c4b8e8;--text3:#8b7eb8;
+  --grad:linear-gradient(135deg,#c4a3ff 0%,#93c5fd 100%);--shadow:0 8px 40px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);width:100%;max-width:400px;padding:34px 30px}
+.logo{font-family:'DM Serif Display',Georgia,serif;font-size:24px;text-align:center;display:block;margin-bottom:4px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo span{font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;color:var(--text2);-webkit-text-fill-color:var(--text2)}
+h1{font-size:22px;font-weight:800;text-align:center;margin-top:18px}
+.sub{font-size:14px;color:var(--text2);text-align:center;margin-bottom:24px;margin-top:4px}
+label{font-size:13px;font-weight:600;color:var(--text2);display:block;margin-bottom:7px}
+input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;color:var(--text);font-family:inherit;font-size:15px;outline:none;margin-bottom:14px}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
+input.code{text-align:center;letter-spacing:10px;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600}
+.btn{width:100%;background:var(--grad);color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:14px;border:none;border-radius:var(--radius);cursor:pointer}
+.btn:hover{filter:brightness(1.07)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--card);color:var(--text);border:1.5px solid var(--border);font-family:inherit;font-size:15px;font-weight:600;padding:13px;border-radius:var(--radius);cursor:pointer;margin-bottom:8px}
+.btn-google:hover{border-color:var(--accent)}
+.gicon{width:18px;height:18px}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text3);font-size:12px;font-weight:600;letter-spacing:1px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.msg{font-size:13px;padding:10px 14px;border-radius:10px;margin-bottom:14px;display:none;line-height:1.5}
+.msg.err{background:rgba(225,29,72,.1);color:var(--red);display:block}
+.msg.ok{background:rgba(5,150,105,.1);color:var(--green);display:block}
+.foot{text-align:center;font-size:13px;color:var(--text2);margin-top:18px}
+.back{text-align:center;margin-top:14px}
+.back a{font-size:13px;color:var(--text2)}
+.hidden{display:none}
+.link-btn{background:none;border:none;color:var(--accent);font-family:inherit;font-size:13px;cursor:pointer;padding:0;text-decoration:underline}
+</style>
+</head>
+<body>
+<main class="card">
+  <a class="logo" href="/">economstock<br><span>TERMINAL</span></a>
+  <h1>Masuk</h1>
+  <p class="sub">Akses dashboard saham IDX premium-mu.</p>
+
+  <div class="msg" id="msg"></div>
+
+  <!-- Google -->
+  <button class="btn-google" id="googleBtn">
+    <svg class="gicon" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.6 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/><path fill="#4CAF50" d="M24 43.5c5.5 0 10.3-1.9 13.7-5.1l-6.3-5.3C29.5 34.6 26.9 35.5 24 35.5c-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.6 39 16.2 43.5 24 43.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.3 5.3c-.4.4 6.5-4.8 6.5-14.3 0-1.2-.1-2.4-.4-3.5z"/></svg>
+    Masuk dengan Google
+  </button>
+
+  <div class="divider">ATAU</div>
+
+  <!-- Email step 1 -->
+  <div id="emailStep">
+    <label for="email">Alamat email</label>
+    <input id="email" type="email" placeholder="nama@email.com" autocomplete="email">
+    <button class="btn" id="reqBtn">Kirim kode masuk</button>
+  </div>
+
+  <!-- Email step 2 -->
+  <div id="codeStep" class="hidden">
+    <label for="code">Masukkan 6-digit kode yang dikirim ke email-mu</label>
+    <input id="code" class="code" type="text" inputmode="numeric" maxlength="6" placeholder="••••••">
+    <button class="btn" id="verBtn">Masuk</button>
+    <div class="back"><button class="link-btn" id="changeEmail">← Ganti email</button></div>
+  </div>
+
+  <div class="back"><a href="/">← Kembali ke beranda</a></div>
+</main>
+
+<script>
+// tema
+(function(){var s=localStorage.getItem('theme');var d=s?s==='dark':matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.setAttribute('data-theme',d?'dark':'light');})();
+
+var msg=document.getElementById('msg');
+function showMsg(t,type){msg.textContent=t;msg.className='msg '+(type||'err');}
+function clearMsg(){msg.className='msg';msg.textContent='';}
+
+// error dari OAuth callback
+var params=new URLSearchParams(location.search);
+if(params.get('error')){showMsg('Login Google gagal ('+params.get('error')+'). Coba lagi.','err');}
+var NEXT=params.get('next')||'/';
+
+// Google
+document.getElementById('googleBtn').addEventListener('click',function(){
+  location.href='/api/auth/google?next='+encodeURIComponent(NEXT);
+});
+
+// Email: minta kode
+var emailEl=document.getElementById('email');
+var codeEl=document.getElementById('code');
+var reqBtn=document.getElementById('reqBtn');
+var verBtn=document.getElementById('verBtn');
+
+reqBtn.addEventListener('click',async function(){
+  clearMsg();
+  var email=emailEl.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){showMsg('Email tidak valid.','err');return;}
+  reqBtn.disabled=true;reqBtn.textContent='Mengirim…';
+  try{
+    var r=await fetch('/api/auth/email/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})});
+    var d=await r.json();
+    if(!r.ok){showMsg(d.error||'Gagal mengirim kode.','err');reqBtn.disabled=false;reqBtn.textContent='Kirim kode masuk';return;}
+    document.getElementById('emailStep').classList.add('hidden');
+    document.getElementById('codeStep').classList.remove('hidden');
+    codeEl.focus();
+    if(d.dev_code){showMsg('Mode dev: kode-mu '+d.dev_code+' (provider email belum di-set).','ok');}
+    else{showMsg('Kode dikirim ke '+email+'. Cek inbox/spam.','ok');}
+  }catch(e){showMsg('Kesalahan jaringan.','err');reqBtn.disabled=false;reqBtn.textContent='Kirim kode masuk';}
+});
+
+verBtn.addEventListener('click',async function(){
+  clearMsg();
+  var email=emailEl.value.trim();var code=codeEl.value.trim();
+  if(code.length<6){showMsg('Masukkan 6 digit kode.','err');return;}
+  verBtn.disabled=true;verBtn.textContent='Memverifikasi…';
+  try{
+    var r=await fetch('/api/auth/email/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,code:code})});
+    var d=await r.json();
+    if(!r.ok){showMsg(d.error||'Kode salah.','err');verBtn.disabled=false;verBtn.textContent='Masuk';return;}
+    showMsg('Berhasil! Mengalihkan…','ok');
+    location.href=NEXT.startsWith('/')?NEXT:'/';
+  }catch(e){showMsg('Kesalahan jaringan.','err');verBtn.disabled=false;verBtn.textContent='Masuk';}
+});
+
+document.getElementById('changeEmail').addEventListener('click',function(){
+  document.getElementById('codeStep').classList.add('hidden');
+  document.getElementById('emailStep').classList.remove('hidden');
+  reqBtn.disabled=false;reqBtn.textContent='Kirim kode masuk';
+  clearMsg();
+});
+
+codeEl&&codeEl.addEventListener('keydown',function(e){if(e.key==='Enter')verBtn.click();});
+emailEl&&emailEl.addEventListener('keydown',function(e){if(e.key==='Enter')reqBtn.click();});
+</script>
+</body>
+</html>
