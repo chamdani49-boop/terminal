@@ -45,7 +45,7 @@ export async function handleAdminApi(request, env, url) {
       if (path === '/api/admin/users/extend') {
         const days = parseInt(body.days || '0', 10);
         if (!days || days < 1) return badRequest('days harus > 0');
-        const sub = await adminExtendDays(env, email, days);
+        const sub = await adminExtendDays(env, email, days, body.plan);
         return json({ ok: true, sub });
       }
       if (path === '/api/admin/users/suspend') {
@@ -103,10 +103,23 @@ async function detectPaid(env) {
 }
 
 async function adminUsage(env) {
-  const acc = env.CF_ACCOUNT_ID;
   const token = env.CF_API_TOKEN;
+  if (!token) return json({ ok: true, configured: false, links: usageLinks(env.CF_ACCOUNT_ID) });
+
+  // Account ID: pakai env kalau ada; kalau tidak, deteksi otomatis dari token.
+  // (Auto-detect bikin panel tetap jalan walau CF_ACCOUNT_ID terhapus saat deploy.)
+  let acc = env.CF_ACCOUNT_ID;
+  if (!acc) {
+    try {
+      const r = await fetch('https://api.cloudflare.com/client/v4/accounts', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await r.json();
+      if (d && d.success && Array.isArray(d.result) && d.result[0]) acc = d.result[0].id;
+    } catch (_) { /* abaikan */ }
+  }
   const links = usageLinks(acc);
-  if (!acc || !token) return json({ ok: true, configured: false, links });
+  if (!acc) return json({ ok: true, configured: false, links });
 
   const d0 = new Date();
   const todayStart = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth(), d0.getUTCDate())).toISOString();

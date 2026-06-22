@@ -45,6 +45,14 @@ a{color:inherit;text-decoration:none}
 .btn-uploader:hover{filter:brightness(1.08)}
 .icon-btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);width:38px;height:38px;border-radius:var(--radius-pill);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
 .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-back{display:inline-flex;align-items:center;font-size:13px;font-weight:600;color:var(--text2);padding:9px 14px;border-radius:var(--radius-pill);border:1px solid var(--border);background:var(--bg2);white-space:nowrap}
+.btn-back:hover{border-color:var(--accent);color:var(--accent)}
+/* Menu pilih durasi perpanjangan */
+.ext-menu{position:absolute;z-index:500;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-card-lg);padding:6px;display:none;min-width:140px}
+.ext-menu.open{display:block}
+.ext-menu .ext-title{font-size:11px;color:var(--text2);padding:6px 10px 5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ext-opt{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;border-radius:6px;cursor:pointer}
+.ext-opt:hover{background:var(--bg2);color:var(--accent)}
 
 .wrap{max-width:1140px;margin:0 auto;padding:28px 20px 80px}
 .page-title{font-size:24px;font-weight:800;margin-bottom:4px;letter-spacing:-.3px}
@@ -52,7 +60,7 @@ a{color:inherit;text-decoration:none}
 
 /* STAT CARDS */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
-@media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
 .stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-card)}
 .stat .lbl{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .stat .val{font-size:26px;font-weight:800;letter-spacing:-.5px}
@@ -117,16 +125,18 @@ tbody tr:hover{background:var(--bg2)}
   .logo{font-size:17px}
   .logo span{display:none}
   .badge-admin{display:none}
+  .btn-back{padding:8px 11px;font-size:13px}
+  .btn-back .bk-txt{display:none}
   .btn-uploader{padding:9px 12px;gap:0}
   .btn-uploader .up-txt{display:none}
   .btn-uploader .up-ico{font-size:17px}
   .wrap{padding:22px 14px 60px}
   .page-title{font-size:20px}
   .page-sub{font-size:13px;margin-bottom:18px}
-  .stats{gap:12px;margin-bottom:20px}
-  .stat{padding:14px}
-  .stat .lbl{font-size:11px}
-  .stat .val{font-size:21px}
+  .stats{grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:18px}
+  .stat{padding:10px 7px}
+  .stat .lbl{font-size:9px;letter-spacing:0;gap:3px;margin-bottom:5px}
+  .stat .val{font-size:15px}
   .toolbar{gap:10px}
   .search{min-width:0;flex:1 1 100%}
   .filter{flex:1}
@@ -134,7 +144,10 @@ tbody tr:hover{background:var(--bg2)}
   thead th,tbody td{padding:12px 12px}
 }
 @media(max-width:400px){
-  .stats{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(4,1fr);gap:5px}
+  .stat{padding:8px 5px}
+  .stat .lbl{font-size:8px}
+  .stat .val{font-size:14px}
 }
 </style>
 </head>
@@ -143,6 +156,7 @@ tbody tr:hover{background:var(--bg2)}
   <a class="logo" href="/">economstock<span>TERMINAL</span></a>
   <span class="badge-admin">Admin</span>
   <div class="top-spacer"></div>
+  <a class="btn-back" href="/"><span class="bk-ico">←</span><span class="bk-txt"> Dashboard</span></a>
   <button class="btn-uploader" id="uploaderBtn" title="Buka halaman upload valuasi"><span class="up-ico">📤</span><span class="up-txt">Buka Uploader Valuasi</span></button>
   <button class="icon-btn" id="themeBtn" title="Ganti tema" aria-label="Ganti tema">🌙</button>
 </header>
@@ -205,6 +219,18 @@ tbody tr:hover{background:var(--bg2)}
   </div>
 </main>
 
+<!-- Menu pilih durasi perpanjangan (muncul saat klik 🔁) -->
+<div class="ext-menu" id="extMenu">
+  <div class="ext-title">Perpanjang</div>
+  <button class="ext-opt" data-days="1">1 Hari</button>
+  <button class="ext-opt" data-days="3">3 Hari</button>
+  <button class="ext-opt" data-days="7">7 Hari</button>
+  <button class="ext-opt" data-days="30">1 Bulan</button>
+  <button class="ext-opt" data-days="90" data-plan="3bulan">3 Bulan</button>
+  <button class="ext-opt" data-days="182" data-plan="6bulan">6 Bulan</button>
+  <button class="ext-opt" data-days="365" data-plan="tahunan">1 Tahun</button>
+</div>
+
 <script>
 var UPLOADER_URL='https://valuation-uploader.chamdani49.workers.dev/';
 
@@ -240,7 +266,7 @@ var USERS=[
 ];
 var LIVE=false; // true jika data dari API
 var PRICE={'6bulan':997000,'tahunan':1750000};
-var PLAN_LABEL={'6bulan':'6 Bulan','tahunan':'Tahunan','-':'—'};
+var PLAN_LABEL={'3bulan':'3 Bulan','6bulan':'6 Bulan','tahunan':'Tahunan','custom':'Custom','-':'—'};
 var PLAN_DAYS={'6bulan':182,'tahunan':365};
 
 function fmtDate(v){
@@ -295,11 +321,6 @@ async function doAction(act,email){
       var u=USERS.find(x=>x.email===email);
       var to=u&&u.status==='suspended'?'active':'suspended';
       await postAdmin('/api/admin/users/suspend',{email:email,status:to});
-    } else if(act==='perpanjang'){
-      var u2=USERS.find(x=>x.email===email);
-      var days=PLAN_DAYS[u2&&u2.paket]||182;
-      if(!confirm('Perpanjang '+email+' selama '+days+' hari?'))return;
-      await postAdmin('/api/admin/users/extend',{email:email,days:days});
     } else if(act==='edit'){
       var nm=prompt('Nama baru untuk '+email+':',(USERS.find(x=>x.email===email)||{}).nama||'');
       if(nm==null)return;
@@ -343,7 +364,11 @@ function render(){
         '<button class="act danger" data-act="hapus" title="Hapus">🗑️</button>'+
       '</div></td>';
     tr.querySelectorAll('.act').forEach(function(b){
-      b.addEventListener('click',function(){doAction(b.getAttribute('data-act'),u.email);});
+      b.addEventListener('click',function(ev){
+        var act=b.getAttribute('data-act');
+        if(act==='perpanjang'){ ev.stopPropagation(); openExtendMenu(u.email, b); }
+        else { doAction(act, u.email); }
+      });
     });
     tb.appendChild(tr);
   });
@@ -352,6 +377,43 @@ function render(){
 
 document.getElementById('searchInp').addEventListener('input',render);
 document.getElementById('filterSel').addEventListener('change',render);
+
+// ── Menu perpanjangan (pilih durasi) ──
+var _extEmail=null;
+var extMenu=document.getElementById('extMenu');
+function openExtendMenu(email, btn){
+  if(!LIVE){
+    alert('Perpanjang '+email+'\n\n(Mode demo — aktif setelah login admin & data asli termuat.)');
+    return;
+  }
+  _extEmail=email;
+  var rect=btn.getBoundingClientRect();
+  extMenu.classList.add('open');
+  var mw=extMenu.offsetWidth;
+  var left=window.scrollX+rect.right-mw;
+  if(left<window.scrollX+8) left=window.scrollX+8;
+  extMenu.style.left=left+'px';
+  extMenu.style.top=(window.scrollY+rect.bottom+6)+'px';
+}
+extMenu.querySelectorAll('.ext-opt').forEach(function(opt){
+  opt.addEventListener('click',async function(){
+    var days=parseInt(opt.getAttribute('data-days'),10);
+    var plan=opt.getAttribute('data-plan')||'';
+    var label=opt.textContent.trim();
+    extMenu.classList.remove('open');
+    if(!_extEmail)return;
+    if(!confirm('Perpanjang '+_extEmail+' selama '+label+'?'))return;
+    try{
+      var body={email:_extEmail,days:days};
+      if(plan) body.plan=plan;
+      await postAdmin('/api/admin/users/extend',body);
+      await loadUsers();
+    }catch(e){alert('Gagal: '+(e.message||e));}
+  });
+});
+document.addEventListener('click',function(e){
+  if(extMenu.classList.contains('open') && !extMenu.contains(e.target)) extMenu.classList.remove('open');
+});
 
 // ── Panel penggunaan / kuota Worker ──
 async function loadUsage(){
