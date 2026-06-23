@@ -56,6 +56,10 @@ ROW_METRICS = {
 LABEL_ROW = 18
 BAD_STRINGS = {'#value!', '#n/a', '#div/0!', '#ref!', 'libur', '', 'n/a', '-'}
 
+# Kolom kuartal tahun berjalan: D=Q1, E=Q2, F=Q3, G=Q4 → tutup kuartal bln 3/6/9/12.
+QUARTER_COLS  = {'Q1': 4, 'Q2': 5, 'Q3': 6, 'Q4': 7}
+QUARTER_MONTH = {'Q1': 3, 'Q2': 6, 'Q3': 9, 'Q4': 12}
+
 
 # ════════════════════════════ PARSING XLSX ══════════════════════════════════
 def col_to_idx(col):
@@ -129,11 +133,21 @@ def read_workbook(path):
 
 def parse_sheet(name, grid):
     col_period = {col: clean_period_label(grid.get((LABEL_ROW, col))) for col in range(9, 27)}
-    q1, annualized, annual = {}, {}, {}
+    quarters, annualized, annual = {}, {}, {}
+    q_price_libur = {}
+    # Kuartal tahun berjalan: D=Q1, E=Q2, F=Q3, G=Q4 (E-G bisa kosong = belum lapor).
+    for qn, qcol in QUARTER_COLS.items():
+        qf = {}
+        for row, field in ROW_METRICS.items():
+            qf[field] = to_number(grid.get((row, qcol)))
+        quarters[qn] = qf
+        # Tandai kalau sel HARGA (baris 2) berisi teks 'libur' → ADA data (perlu diisi
+        # dari history). Sel kosong → belum ada laporan kuartal → JANGAN diisi.
+        praw = str(grid.get((2, qcol)) or '').strip().lower()
+        q_price_libur[qn] = (praw == 'libur')
     for row, field in ROW_METRICS.items():
-        q1[field] = to_number(grid.get((row, 4)))           # D
-        annualized[field] = to_number(grid.get((row, 8)))   # H
-        for col in range(9, 27):                            # I..Z
+        annualized[field] = to_number(grid.get((row, 8)))   # H = tahun berjalan
+        for col in range(9, 27):                            # I..Z = tahunan
             period = col_period.get(col)
             if period and re.match(r'^\d{4}$', period):
                 annual.setdefault(period, {})[field] = to_number(grid.get((row, col)))
@@ -143,8 +157,10 @@ def parse_sheet(name, grid):
         'code': name.strip().upper(),
         'code_in_sheet': (str(code_in_sheet).strip().upper() if code_in_sheet else None),
         'q_label': (str(q_label).strip() if q_label else None),
-        'q1': q1,
-        'annualized': annualized,   # = Q1 x 4 (run-rate, BUKAN TTM) — sesuai keputusan: dipakai apa adanya
+        'q1': quarters['Q1'],       # backward-compat: mesin & frontend pakai stock['q1']
+        'quarters': quarters,        # Q1..Q4 (kolom D..G)
+        'q_price_libur': q_price_libur,
+        'annualized': annualized,   # = Q1 x 4 (run-rate) / "tahun berjalan" (kolom H)
         'annual': annual,
     }
 
@@ -613,86 +629,121 @@ def five_year_valuation(stock, last_price, warn, override=None):
 
 
 def load_data_json():
-    """Ambil beta, stock_info, harga live, & lookup history Desember per kode saham."""
+    """Ambil beta, stock_info, harga live, & lookup history bulanan per kode saham."""
     try:
         d = json.load(open(DATA_JSON, encoding='utf-8'))
         stats = d.get('stats', {})
         betas = {c: s.get('beta') for c, s in stats.items()}
         live = {c: (v or {}).get('price') for c, v in d.get('live', {}).items()}
-        return betas, d.get('stock_info', {}), live, build_hist_close(d)
+        return betas, d.get('stock_info', {}), live, build_hist_monthly(d)
     except Exception as e:
         print(f'[build-valuation] data.json tidak terbaca ({e}) → default dipakai', file=sys.stderr)
         return {}, {}, {}, {}
 
 
-def build_hist_close(d):
-    """Lookup {TICKER: {year: close}} dari price_history. Untuk tiap tahun diambil
-    close bulan TERAKHIR yang ada datanya (utamakan Desember/tutup tahun; mundur ke
-    bulan sebelumnya bila Desember null). Dipakai mengisi harga tahunan yang 'Libur'."""
-    tmp = {}   # {TICKER: {year: (month, close)}}
+def build_hist_monthly(d):
+    """Lookup {TICKER: {(year, month): close}} dari price_history (semua bulan)."""
+    out = {}
     for e in (d.get('price_history') or []):
-        dt = str(e.get('date') or '')            # format "YYYY-MM-01"
-        m = re.match(r'(\d{4})-(\d{2})', dt)
+        m = re.match(r'(\d{4})-(\d{2})', str(e.get('date') or ''))   # "YYYY-MM-01"
         if not m:
             continue
-        year, mon = int(m.group(1)), int(m.group(2))
+        y, mon = int(m.group(1)), int(m.group(2))
         for k, v in e.items():
             if k in ('date', 'label') or v is None:
                 continue
-            ymap = tmp.setdefault(str(k).strip().upper(), {})
-            cur = ymap.get(year)
-            if cur is None or mon > cur[0]:        # simpan bulan paling akhir
-                ymap[year] = (mon, v)
-    return {tk: {y: mv[1] for y, mv in ymap.items()} for tk, ymap in tmp.items()}
+            out.setdefault(str(k).strip().upper(), {})[(y, mon)] = v
+    return out
 
 
-def fill_holiday_prices(stock, hist_close):
-    """Perbaiki data yang hilang karena harga tahunan = 'Libur' (hari bursa libur).
+def hist_close_at(monthly, ticker, year, month):
+    """Close pada (year, month). Bila kosong/null, mundur ke bulan sebelumnya di
+    tahun yang sama (mis. tutup kuartal/tahun jatuh saat libur → pakai hari bursa
+    terakhir sebelumnya). None bila tidak ada sama sekali di tahun itu."""
+    mp = monthly.get(ticker)
+    if not mp:
+        return None
+    for mo in range(month, 0, -1):
+        v = mp.get((year, mo))
+        if v is not None:
+            return v
+    return None
 
-    1) Isi `price` tahunan yang kosong dari price_history (close Desember tahun itu).
-    2) Hitung ulang `market_cap` = price × shares bila kosong.
-    3) Hitung ulang rasio harga (pbv/per/psr) bila kosong, konsisten dgn price.
 
-    HANYA mengisi nilai yang KOSONG (None) — tidak pernah menimpa angka asli Excel.
-    Berlaku untuk data lama, baru, & pengganti (jalan tiap build).
+def fill_holiday_prices(stock, monthly, live_price=None):
+    """Perbaiki data yang hilang karena harga = 'Libur'/'#VALUE!' (hari bursa libur).
+
+    - TAHUNAN (I..Z): isi `price` kosong dari history close tahun itu (Des/terakhir).
+    - KUARTAL (D=Q1..G=Q4): HANYA bila sel harga = 'Libur' (ada data, bukan kosong) →
+      isi dari history close bulan tutup kuartal (3/6/9/12) tahun BERJALAN.
+      Sel kosong = belum ada laporan kuartal → dilewati.
+    - TAHUN BERJALAN (H/annualized): isi `price` kosong dari HARGA LIVE (sheet live).
+    - Selalu recompute market_cap = price×shares & rasio (pbv/per/psr) yang kosong.
+
+    HANYA mengisi nilai KOSONG (None) — tidak pernah menimpa angka asli Excel.
     Mengembalikan (n_price, n_market_cap, n_ratio).
     """
+    def recompute(fields, price):
+        nmc = nrt = 0
+        if fields.get('market_cap') is None:
+            sh = fields.get('shares')
+            if sh is not None and sh > 0:
+                fields['market_cap'] = price * sh; nmc += 1
+        if fields.get('pbv') is None and fields.get('bvps') not in (None, 0):
+            fields['pbv'] = round(price / fields['bvps'], 4); nrt += 1
+        if fields.get('per') is None and fields.get('eps') not in (None, 0):
+            fields['per'] = round(price / fields['eps'], 4); nrt += 1
+        if fields.get('psr') is None and fields.get('sps') not in (None, 0):
+            fields['psr'] = round(price / fields['sps'], 4); nrt += 1
+        return nmc, nrt
+
     code = stock.get('code')
-    ch = hist_close.get(code, {}) if code else {}
     n_price = n_mc = n_ratio = 0
-    years_filled = []
+    filled = []
+
+    # 1) TAHUNAN (I..Z) — harga kosong → history close tahun itu.
     for year, fields in stock.get('annual', {}).items():
         try:
             y = int(year)
         except (TypeError, ValueError):
             continue
-        # 1) Harga tahunan kosong → ambil close Desember dari history.
-        if fields.get('price') is None and ch.get(y) is not None:
-            fields['price'] = ch[y]
-            n_price += 1
-            years_filled.append(year)
+        if fields.get('price') is None:
+            v = hist_close_at(monthly, code, y, 12)
+            if v is not None:
+                fields['price'] = v; n_price += 1; filled.append(year)
         price = fields.get('price')
-        if price is None or price <= 0:
-            continue
-        # 2) market_cap = price × shares (kalau hilang).
-        if fields.get('market_cap') is None:
-            sh = fields.get('shares')
-            if sh is not None and sh > 0:
-                fields['market_cap'] = price * sh
-                n_mc += 1
-        # 3) Rasio harga (kalau hilang) — pbv=price/bvps, per=price/eps, psr=price/sps.
-        if fields.get('pbv') is None and fields.get('bvps') not in (None, 0):
-            fields['pbv'] = round(price / fields['bvps'], 4); n_ratio += 1
-        if fields.get('per') is None and fields.get('eps') not in (None, 0):
-            fields['per'] = round(price / fields['eps'], 4); n_ratio += 1
-        if fields.get('psr') is None and fields.get('sps') not in (None, 0):
-            fields['psr'] = round(price / fields['sps'], 4); n_ratio += 1
+        if price is not None and price > 0:
+            mc, rt = recompute(fields, price); n_mc += mc; n_ratio += rt
+
+    # 2) KUARTAL (D..G) — hanya yang sel-nya 'Libur' (ada data). Pakai history bulan
+    #    tutup kuartal (3/6/9/12) tahun berjalan = (tahun annual terbaru + 1).
+    running = (max(int(y) for y in stock['annual']) + 1) if stock.get('annual') else None
+    libur = stock.get('q_price_libur', {})
+    for qn, fields in (stock.get('quarters') or {}).items():
+        if fields.get('price') is None and libur.get(qn) and running is not None:
+            v = hist_close_at(monthly, code, running, QUARTER_MONTH[qn])
+            if v is not None:
+                fields['price'] = v; n_price += 1; filled.append(f'{running}-{qn}')
+        price = fields.get('price')
+        if price is not None and price > 0:
+            mc, rt = recompute(fields, price); n_mc += mc; n_ratio += rt
+
+    # 3) TAHUN BERJALAN (H/annualized) — harga kosong → LIVE.
+    ann = stock.get('annualized')
+    if ann is not None:
+        if ann.get('price') is None and live_price and live_price > 0:
+            ann['price'] = live_price; n_price += 1
+        price = ann.get('price')
+        if price is not None and price > 0:
+            mc, rt = recompute(ann, price); n_mc += mc; n_ratio += rt
+
     if n_price or n_mc or n_ratio:
         stock['holiday_fill'] = {
             'price': n_price, 'market_cap': n_mc, 'ratio': n_ratio,
-            'years': sorted(years_filled, reverse=True),
-            'source': 'price_history (close Desember)',
+            'filled': sorted(filled, reverse=True),
+            'source': 'tahunan & kuartal: price_history (per bulan); tahun berjalan: live',
         }
+    stock.pop('q_price_libur', None)   # flag transien, jangan ikut ke JSON output
     return n_price, n_mc, n_ratio
 
 
@@ -725,7 +776,7 @@ def main():
     if not files:
         print(f'[build-valuation] Tidak ada file .xlsx di {SRC_DIR}', file=sys.stderr)
 
-    betas, stock_info, live_prices, hist_close = load_data_json()
+    betas, stock_info, live_prices, hist_monthly = load_data_json()
     overrides = load_overrides()
     stocks, warnings, source_files = {}, [], []
     fill_totals = {'price': 0, 'market_cap': 0, 'ratio': 0}
@@ -748,7 +799,7 @@ def main():
             # Perbaiki harga 'Libur' (hari bursa libur) + recompute market_cap/rasio
             # dari price_history. Hanya mengisi yang kosong; berlaku semua data.
             try:
-                hp = fill_holiday_prices(data, hist_close)
+                hp = fill_holiday_prices(data, hist_monthly, live_prices.get(code))
                 fill_totals['price'] += hp[0]; fill_totals['market_cap'] += hp[1]; fill_totals['ratio'] += hp[2]
             except Exception as e:
                 warnings.append(f"{code}: gagal isi harga libur ({type(e).__name__}: {e})")
