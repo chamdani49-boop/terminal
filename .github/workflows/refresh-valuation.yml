@@ -61,7 +61,12 @@ jobs:
           git config user.name  "valuation-refresh[bot]"
           git config user.email "valuation-refresh@economstock.local"
           git add public/valuation.json
-          git commit -m "valuation: refresh $(date -u +%FT%TZ) [skip ci]"
+          # CATATAN: SENGAJA TANPA [skip ci]. Commit ini harus memicu redeploy
+          # Cloudflare supaya valuation.json baru langsung tampil di situs live.
+          # Dengan [skip ci], Cloudflare melewati deploy → data beku di deploy
+          # sebelumnya (UI tidak update walau workflow sukses). Cadence valuasi
+          # jarang (saat upload Excel) → aman untuk limit build.
+          git commit -m "valuation: refresh $(date -u +%FT%TZ)"
 
           pushed=false
           for attempt in 1 2 3 4 5; do
