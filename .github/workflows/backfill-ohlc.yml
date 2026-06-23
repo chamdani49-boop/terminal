@@ -75,7 +75,10 @@ jobs:
           git config user.name  "ohlc-backfill[bot]"
           git config user.email "ohlc-backfill@economstock.local"
           git add public/ohlc.json public/rec-status.json
-          git commit -m "ohlc: backfill bertahap $(date -u +%FT%TZ) [skip ci]"
+          # CATATAN: SENGAJA TANPA [skip ci] supaya tiap batch backfill langsung
+          # ter-deploy Cloudflare & muncul di chart. Backfill hanya jalan saat
+          # run pertama (~10 batch) lalu nonaktif → aman untuk limit build.
+          git commit -m "ohlc: backfill bertahap $(date -u +%FT%TZ)"
 
           pushed=false
           for attempt in 1 2 3 4 5; do
