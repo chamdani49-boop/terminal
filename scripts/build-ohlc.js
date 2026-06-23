@@ -54,6 +54,9 @@
  *   node scripts/build-ohlc.js                 # incremental (default)
  *   node scripts/build-ohlc.js --full          # abaikan cache, fetch ulang penuh
  *   node scripts/build-ohlc.js --only=TLKM,BBCA # batasi ke ticker tertentu (debug)
+ *   node scripts/build-ohlc.js --backfill=100   # bertahap: fetch maks 100 saham
+ *                                                # yang BELUM lengkap per run
+ *                                                # (juga via env OHLC_BACKFILL=100)
  *
  * Env:
  *   TWELVEDATA_API_KEY  (opsional) API key Twelve Data. Kalau ada → jadi sumber utama.
@@ -477,6 +480,17 @@ async function main() {
   const onlyArg  = args.find((a) => a.startsWith('--only='));
   const onlyset  = onlyArg ? new Set(onlyArg.split('=')[1].split(',').map((s) => s.trim().toUpperCase())) : null;
 
+  // ── Mode BACKFILL (bertahap) ──────────────────────────────────────────
+  // Saat run pertama (~848 saham baru tanpa cache), menarik semuanya sekaligus
+  // berisiko diblokir Yahoo. Mode backfill membatasi jumlah saham YANG BELUM
+  // punya data per run (mis. 100), dan membiarkan saham yang sudah ada apa
+  // adanya (tanpa re-fetch). Dipanggil tiap 1 jam via workflow → ~9 run untuk
+  // 848 saham → selesai dalam sehari. Ketika semua sudah lengkap → no-op.
+  const backfillArg = args.find((a) => a.startsWith('--backfill='));
+  const BACKFILL = backfillArg
+    ? (parseInt(backfillArg.split('=')[1], 10) || 0)
+    : (parseInt(process.env.OHLC_BACKFILL || '0', 10) || 0);
+
   // Load data.json (sumber daftar ticker)
   if (!fs.existsSync(DATA_PATH)) {
     console.error(`FATAL: ${DATA_PATH} tidak ada. Jalankan build-data.js dulu.`);
@@ -488,7 +502,7 @@ async function main() {
   if (onlyset) {
     targets = Object.fromEntries(Object.entries(targets).filter(([t]) => onlyset.has(t)));
   }
-  const tickers = Object.keys(targets).sort();
+  let tickers = Object.keys(targets).sort();
   if (tickers.length === 0) {
     console.error('FATAL: tidak ada ticker di data.json (stock_list & consensus kosong).');
     process.exit(1);
@@ -514,6 +528,25 @@ async function main() {
 
   const outTickers = { ...cache.tickers };
   let okCount = 0, failCount = 0, skipCount = 0, totalCandles = 0;
+
+  // ── Backfill: batasi ke saham yang BELUM lengkap, maksimal BACKFILL per run ──
+  if (BACKFILL > 0 && !fullMode) {
+    // "Belum lengkap" = saham yang akan di-full-fetch oleh logika utama, yaitu
+    // tidak punya cache valid yang menjangkau desiredFrom (saham baru ATAU
+    // cache-nya belum mundur sejauh target). Saham yang sudah lengkap dilewati.
+    const needsFull = tickers.filter((t) => {
+      const ex = cache.tickers[t];
+      return !(ex && Array.isArray(ex.candles) && ex.candles.length > 0
+               && ex.from && ex.from <= targets[t]);
+    });
+    if (needsFull.length === 0) {
+      console.log('Backfill: semua saham sudah punya data lengkap → no-op (tidak menulis / commit).');
+      return;
+    }
+    const batch = needsFull.slice(0, BACKFILL);
+    console.log(`Backfill: ${needsFull.length} saham belum lengkap · proses ${batch.length} run ini (batch=${BACKFILL}) · sisa ${needsFull.length - batch.length} untuk run berikutnya.`);
+    tickers = batch;
+  }
 
   for (const t of tickers) {
     const desiredFrom = targets[t];

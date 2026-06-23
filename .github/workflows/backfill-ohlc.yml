@@ -1,0 +1,97 @@
+name: Backfill OHLC bertahap (100 saham / jam)
+
+# ═══════════════════════════════════════════════════════════════════════
+# Backfill candle harian untuk SEMUA saham secara BERTAHAP, agar run pertama
+# (~946 saham yang belum punya data / belum 6 bulan) tidak menarik semuanya
+# sekaligus dan kena blokir Yahoo.
+#
+# CARA KERJA:
+#   - Jalan tiap 1 jam.
+#   - Tiap run hanya menarik maksimal OHLC_BACKFILL (default 100) saham yang
+#     BELUM lengkap; saham yang sudah ada dibiarkan apa adanya (tanpa re-fetch).
+#   - ~946 saham / 100 = ~10 run → selesai dalam sehari.
+#   - Setelah semua lengkap → script no-op (tidak menulis file) → tidak ada
+#     commit. Cron tetap jalan tiap jam tapi murah; otomatis mem-backfill
+#     saham baru yang muncul di kemudian hari.
+#
+# Refresh harian (refresh-ohlc.yml, 17:00 WIB) tetap berjalan terpisah untuk
+# memperbarui candle terbaru semua saham.
+# ═══════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    - cron: '0 * * * *'      # tiap jam, di menit ke-0
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: 'Jumlah saham per run (default 100)'
+        required: false
+        default: '100'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backfill-ohlc
+  cancel-in-progress: false
+
+jobs:
+  backfill-ohlc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── Backfill bertahap ohlc.json ────────────────────────────────────
+      - name: Build ohlc.json (backfill batch)
+        env:
+          OHLC_BACKFILL: ${{ github.event.inputs.batch || '100' }}
+        run: node scripts/build-ohlc.js
+
+      # ── Commit hanya kalau berubah (no-op saat semua sudah lengkap) ─────
+      - name: Commit & push if changed
+        id: commit
+        run: |
+          if git diff --quiet -- public/ohlc.json public/rec-status.json; then
+            echo "⏭  Tidak ada perubahan (backfill selesai / no-op) — skip commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "ohlc-backfill[bot]"
+          git config user.email "ohlc-backfill@economstock.local"
+          git add public/ohlc.json public/rec-status.json
+          git commit -m "ohlc: backfill bertahap $(date -u +%FT%TZ) [skip ci]"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "✓ Pushed on attempt $attempt"
+              pushed=true
+              break
+            fi
+            echo "⚠️  Push gagal (attempt $attempt) — rebase ke origin/main lalu retry…"
+            git pull --rebase --autostash origin main || true
+            sleep $(( (RANDOM % 5) + 2 ))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "FATAL: push gagal setelah 5 percobaan."
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # ── Purge jsDelivr CDN cache ───────────────────────────────────────
+      - name: Purge jsDelivr CDN cache
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          for f in ohlc.json rec-status.json; do
+            response=$(curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/public/$f")
+            echo "Purge $f: $response"
+          done
