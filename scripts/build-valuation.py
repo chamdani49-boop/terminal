@@ -646,52 +646,67 @@ def build_hist_close(d):
     return {tk: {y: mv[1] for y, mv in ymap.items()} for tk, ymap in tmp.items()}
 
 
-def fill_holiday_prices(stock, hist_close):
-    """Perbaiki data yang hilang karena harga tahunan = 'Libur' (hari bursa libur).
+def fill_holiday_prices(stock, hist_close, live_price=None):
+    """Perbaiki data yang hilang karena harga = 'Libur'/'#VALUE!' (hari bursa libur).
 
-    1) Isi `price` tahunan yang kosong dari price_history (close Desember tahun itu).
-    2) Hitung ulang `market_cap` = price × shares bila kosong.
-    3) Hitung ulang rasio harga (pbv/per/psr) bila kosong, konsisten dgn price.
+    - Kolom TAHUNAN (I..Z): isi `price` kosong dari price_history (close tahun itu).
+    - Kolom TAHUN BERJALAN (D=Q1, H=tahun berjalan): isi `price` kosong dari HARGA LIVE
+      (sheet live), konsisten dgn logika 'tahun berjalan pakai live'.
+    - Selalu recompute `market_cap` = price × shares & rasio (pbv/per/psr) yang kosong.
 
     HANYA mengisi nilai yang KOSONG (None) — tidak pernah menimpa angka asli Excel.
-    Berlaku untuk data lama, baru, & pengganti (jalan tiap build).
     Mengembalikan (n_price, n_market_cap, n_ratio).
     """
+    def _recompute(fields, price):
+        """Isi market_cap & rasio yang kosong dari `price`. Return (n_mc, n_ratio)."""
+        nmc = nrt = 0
+        if fields.get('market_cap') is None:
+            sh = fields.get('shares')
+            if sh is not None and sh > 0:
+                fields['market_cap'] = price * sh; nmc += 1
+        if fields.get('pbv') is None and fields.get('bvps') not in (None, 0):
+            fields['pbv'] = round(price / fields['bvps'], 4); nrt += 1
+        if fields.get('per') is None and fields.get('eps') not in (None, 0):
+            fields['per'] = round(price / fields['eps'], 4); nrt += 1
+        if fields.get('psr') is None and fields.get('sps') not in (None, 0):
+            fields['psr'] = round(price / fields['sps'], 4); nrt += 1
+        return nmc, nrt
+
     code = stock.get('code')
     ch = hist_close.get(code, {}) if code else {}
     n_price = n_mc = n_ratio = 0
     years_filled = []
+
+    # 1) Kolom TAHUNAN (I..Z) — isi harga dari history close tahun itu.
     for year, fields in stock.get('annual', {}).items():
         try:
             y = int(year)
         except (TypeError, ValueError):
             continue
-        # 1) Harga tahunan kosong → ambil close Desember dari history.
         if fields.get('price') is None and ch.get(y) is not None:
-            fields['price'] = ch[y]
-            n_price += 1
-            years_filled.append(year)
+            fields['price'] = ch[y]; n_price += 1; years_filled.append(year)
         price = fields.get('price')
         if price is None or price <= 0:
             continue
-        # 2) market_cap = price × shares (kalau hilang).
-        if fields.get('market_cap') is None:
-            sh = fields.get('shares')
-            if sh is not None and sh > 0:
-                fields['market_cap'] = price * sh
-                n_mc += 1
-        # 3) Rasio harga (kalau hilang) — pbv=price/bvps, per=price/eps, psr=price/sps.
-        if fields.get('pbv') is None and fields.get('bvps') not in (None, 0):
-            fields['pbv'] = round(price / fields['bvps'], 4); n_ratio += 1
-        if fields.get('per') is None and fields.get('eps') not in (None, 0):
-            fields['per'] = round(price / fields['eps'], 4); n_ratio += 1
-        if fields.get('psr') is None and fields.get('sps') not in (None, 0):
-            fields['psr'] = round(price / fields['sps'], 4); n_ratio += 1
+        mc, rt = _recompute(fields, price); n_mc += mc; n_ratio += rt
+
+    # 2) Kolom TAHUN BERJALAN (D=Q1 & H=annualized) — isi harga dari LIVE.
+    cur = live_price if (live_price and live_price > 0) else stock.get('q1', {}).get('price')
+    if cur and cur > 0:
+        for block in (stock.get('q1'), stock.get('annualized')):
+            if not block:
+                continue
+            if block.get('price') is None:
+                block['price'] = cur; n_price += 1
+            p = block.get('price')
+            if p and p > 0:
+                mc, rt = _recompute(block, p); n_mc += mc; n_ratio += rt
+
     if n_price or n_mc or n_ratio:
         stock['holiday_fill'] = {
             'price': n_price, 'market_cap': n_mc, 'ratio': n_ratio,
             'years': sorted(years_filled, reverse=True),
-            'source': 'price_history (close Desember)',
+            'source': 'history (tahunan) + live (tahun berjalan)',
         }
     return n_price, n_mc, n_ratio
 
@@ -748,7 +763,7 @@ def main():
             # Perbaiki harga 'Libur' (hari bursa libur) + recompute market_cap/rasio
             # dari price_history. Hanya mengisi yang kosong; berlaku semua data.
             try:
-                hp = fill_holiday_prices(data, hist_close)
+                hp = fill_holiday_prices(data, hist_close, live_prices.get(code))
                 fill_totals['price'] += hp[0]; fill_totals['market_cap'] += hp[1]; fill_totals['ratio'] += hp[2]
             except Exception as e:
                 warnings.append(f"{code}: gagal isi harga libur ({type(e).__name__}: {e})")
