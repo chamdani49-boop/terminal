@@ -32,6 +32,12 @@ async function ensureTables(env) {
     + 'id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, email TEXT, ip TEXT, '
     + 'country TEXT, type TEXT, detail TEXT, created_at INTEGER)'
   ).run();
+  await env.DB.prepare(
+    'CREATE TABLE IF NOT EXISTS account_ips ('
+    + 'user_id TEXT NOT NULL, ip TEXT NOT NULL, day INTEGER NOT NULL, '
+    + 'email TEXT, country TEXT, ua TEXT, seen_at INTEGER, '
+    + 'PRIMARY KEY (user_id, ip, day))'
+  ).run();
   _tablesReady = true;
 }
 
@@ -132,7 +138,7 @@ async function notifyThrottled(env, key, cooldownSec) {
 export async function reportAbuse(env, info) {
   await recordFlag(env, info);
   const cooldown = parseInt(env.ABUSE_NOTIFY_COOLDOWN_SEC || '1800', 10) || 1800;
-  const key = 'notif:' + (info.userId || info.ip || 'anon');
+  const key = 'notif:' + (info.type || 'x') + ':' + (info.userId || info.ip || 'anon');
   if (await notifyThrottled(env, key, cooldown)) {
     const txt =
       '🛡️ <b>Economstock Terminal</b> — aktivitas mencurigakan\n'
@@ -168,6 +174,68 @@ export async function flagSummary(env, { hours = 24, limit = 20 } = {}) {
       'SELECT COALESCE(email, user_id) AS who, COUNT(*) AS flags, '
       + 'COUNT(DISTINCT ip) AS ips, MAX(created_at) AS last_at '
       + 'FROM abuse_flags WHERE created_at >= ? GROUP BY who ORDER BY flags DESC LIMIT ?'
+    ).bind(since, Math.min(100, Math.max(1, limit))).all();
+    return (res && res.results) || [];
+  } catch (_) { return []; }
+}
+
+// ── Device / IP fingerprint → deteksi akun dibagi (account sharing) ────────
+/**
+ * Catat IP yang dipakai akun (1 baris per user+ip+hari) lalu, saat ada IP BARU,
+ * cek apakah akun dipakai dari terlalu banyak IP/negara dalam 24 jam. Kalau ya →
+ * flag `account_sharing` + notif Telegram (throttled). Hanya FLAG untuk review,
+ * TIDAK auto-block (hindari salah blokir; IP mobile sering berganti).
+ *
+ * Ambang via env (default longgar supaya minim false-positive):
+ *   ACCOUNT_MAX_IPS_PER_DAY  (default 8)
+ *   ACCOUNT_MAX_COUNTRIES    (default 3)
+ */
+export async function trackDevice(env, { userId, email, ip, country, ua }) {
+  if (!env.DB || !userId || !ip) return;
+  const maxIps = parseInt(env.ACCOUNT_MAX_IPS_PER_DAY || '8', 10) || 8;
+  const maxCountries = parseInt(env.ACCOUNT_MAX_COUNTRIES || '3', 10) || 3;
+  try {
+    await ensureTables(env);
+    const t = now();
+    const day = Math.floor(t / 86400);
+    const ins = await env.DB.prepare(
+      'INSERT OR IGNORE INTO account_ips (user_id, ip, day, email, country, ua, seen_at) '
+      + 'VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(userId, ip, day, email || null, country || '', (ua || '').slice(0, 160), t).run();
+
+    // Hanya cek lebih lanjut kalau IP ini BARU hari ini (hemat query).
+    const isNew = ins && ins.meta && ins.meta.changes > 0;
+    if (!isNew) return;
+
+    const since = t - 86400;
+    const row = await env.DB.prepare(
+      'SELECT COUNT(DISTINCT ip) AS ips, COUNT(DISTINCT country) AS countries '
+      + 'FROM account_ips WHERE user_id = ? AND seen_at >= ?'
+    ).bind(userId, since).first();
+    const ips = (row && row.ips) || 0;
+    const countries = (row && row.countries) || 0;
+
+    if (ips > maxIps || countries > maxCountries) {
+      await reportAbuse(env, {
+        userId, email, ip, country,
+        type: 'account_sharing',
+        detail: `${ips} IP & ${countries} negara dalam 24 jam (ambang ${maxIps} IP / ${maxCountries} negara)`,
+      });
+    }
+  } catch (_) { /* abaikan */ }
+}
+
+/** Ringkasan akun dengan banyak IP (24 jam) untuk panel admin. */
+export async function deviceSummary(env, { hours = 24, limit = 20 } = {}) {
+  if (!env.DB) return [];
+  try {
+    await ensureTables(env);
+    const since = now() - hours * 3600;
+    const res = await env.DB.prepare(
+      'SELECT user_id, MAX(email) AS email, COUNT(DISTINCT ip) AS ips, '
+      + 'COUNT(DISTINCT country) AS countries, MAX(seen_at) AS last_at '
+      + 'FROM account_ips WHERE seen_at >= ? GROUP BY user_id HAVING ips > 1 '
+      + 'ORDER BY ips DESC LIMIT ?'
     ).bind(since, Math.min(100, Math.max(1, limit))).all();
     return (res && res.results) || [];
   } catch (_) { return []; }
