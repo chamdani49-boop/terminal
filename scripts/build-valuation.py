@@ -25,6 +25,7 @@ RNS = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR  = os.path.join(ROOT, 'data', 'valuation')
 OUT_FILE = os.path.join(ROOT, 'public', 'valuation.json')
+OUT_DIR  = os.path.join(ROOT, 'public', 'valuation')   # split: index.json + <CODE>.json
 DATA_JSON = os.path.join(ROOT, 'public', 'data.json')
 OVERRIDES_FILE = os.path.join(SRC_DIR, 'overrides.json')
 YEARLY_FILE = os.path.join(ROOT, 'public', 'history-yearly.json')   # fallback Yahoo (<2016)
@@ -800,6 +801,18 @@ def apply_override(code, five, override, warn):
     return
 
 
+def _is_empty_stock(data):
+    """True bila saham tidak punya satupun harga/pendapatan/laba bernilai (semua
+    0/None) — indikasi file Excel belum terhitung (rumus cached 0). Dilewati agar
+    tidak muncul sebagai 'Rp 0' di UI."""
+    vals = []
+    q1 = data.get('q1') or {}
+    vals += [q1.get('price'), q1.get('total_revenue')]
+    for yd in (data.get('annual') or {}).values():
+        vals += [yd.get('price'), yd.get('total_revenue'), yd.get('net_income')]
+    return all(v is None or v == 0 for v in vals)
+
+
 def _shrink_floats(o, nd=6):
     """Bersihkan 'ekor' float (mis. 7.000000000000001 → 7) & bulatkan ke nd desimal,
     rekursif. Float yang bernilai bulat → int. Mengecilkan ukuran JSON signifikan
@@ -830,6 +843,7 @@ def main():
     yearly_close = load_yearly_close()
     stocks, warnings, source_files = {}, [], []
     fill_totals = {'price': 0, 'market_cap': 0, 'ratio': 0}
+    empty_stocks = []
 
     for path in files:
         source_files.append(os.path.basename(path))
@@ -846,6 +860,11 @@ def main():
                                 f"({type(e).__name__}: {e}) — dilewati")
                 continue
             code = data.get('code') or name
+            # Lewati saham yang SEMUA datanya 0/kosong (Excel belum terhitung —
+            # rumus cached 0). Tidak ditampilkan sbg 'Rp 0'; tunggu re-upload.
+            if _is_empty_stock(data):
+                empty_stocks.append(code)
+                continue
             # Perbaiki harga 'Libur' (hari bursa libur) + recompute market_cap/rasio
             # dari price_history. Hanya mengisi yang kosong; berlaku semua data.
             try:
@@ -922,30 +941,95 @@ def main():
                     }
                 stocks[code] = data
 
-    out = {
-        'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        'source_files': source_files,
-        'count': len(stocks),
-        'assumptions': ASSUMPTIONS,
-        'note': ("'annualized' = 'tahun berjalan' sheet = Q1 x 4 (run-rate, dipakai apa adanya). "
-                 "Growth 5 th DCF masih PLACEHOLDER (menunggu rumus proyeksi pemilik). "
-                 "risk_free sementara konstan; akan dibaca dari sheet 'SBN'."),
-        'stocks': stocks,
-        'warnings': warnings,
-    }
-
-    os.makedirs(os.path.dirname(OUT_FILE), exist_ok=True)
-    with open(OUT_FILE, 'w', encoding='utf-8') as f:
-        # Compact (tanpa indent) + bersihkan ekor float → ukuran jauh lebih kecil,
-        # supaya frontend (terutama dgn 500+ saham) memuat cepat.
-        json.dump(_shrink_floats(out), f, ensure_ascii=False, separators=(',', ':'))
+    note = ("'annualized' = 'tahun berjalan' sheet = Q1 x 4 (run-rate, dipakai apa adanya). "
+            "Growth 5 th DCF masih PLACEHOLDER (menunggu rumus proyeksi pemilik). "
+            "risk_free sementara konstan; akan dibaca dari sheet 'SBN'.")
 
     if fill_totals['price'] or fill_totals['market_cap'] or fill_totals['ratio']:
         warnings.append(
             f"Holiday-fill: {fill_totals['price']} harga + {fill_totals['market_cap']} market_cap + "
-            f"{fill_totals['ratio']} rasio diisi/dihitung ulang dari price_history (close Desember).")
+            f"{fill_totals['ratio']} rasio diisi/dihitung ulang dari price_history.")
+    if empty_stocks:
+        warnings.append(
+            f"{len(empty_stocks)} saham DILEWATI (semua data 0/kosong — Excel belum terhitung): "
+            + ', '.join(sorted(empty_stocks)[:30]) + (' ...' if len(empty_stocks) > 30 else ''))
 
-    print(f"[build-valuation] {len(stocks)} saham dari {len(source_files)} file -> {OUT_FILE}")
+    # ── SPLIT OUTPUT: index ringan + 1 file per saham (lazy-load) ──────────────
+    # Frontend memuat index.json (kecil) utk daftar/search, lalu file <CODE>.json
+    # hanya saat saham dibuka. Skalabel utk ratusan-ribuan saham.
+    os.makedirs(OUT_DIR, exist_ok=True)
+
+    index_stocks = []
+    for code in sorted(stocks.keys()):
+        s = stocks[code]
+        v = s.get('valuation') or {}
+        fy = v.get('five_year') or {}
+        index_stocks.append({
+            'code': code,
+            'name': (stock_info.get(code, {}) or {}).get('name') or code,
+            'sector': v.get('sector'),
+            'applicable': bool(fy.get('applicable')),
+            'potential_pct': fy.get('potential_pct'),
+            'last_price': v.get('last_price'),
+        })
+
+    index_payload = {
+        'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        'source_files': source_files,
+        'count': len(stocks),
+        'assumptions': ASSUMPTIONS,
+        'note': note,
+        'warnings': warnings,
+        'stocks': index_stocks,
+    }
+    with open(os.path.join(OUT_DIR, 'index.json'), 'w', encoding='utf-8') as f:
+        json.dump(_shrink_floats(index_payload), f, ensure_ascii=False, separators=(',', ':'))
+
+    # Tulis 1 file per saham.
+    for code in stocks:
+        with open(os.path.join(OUT_DIR, code + '.json'), 'w', encoding='utf-8') as f:
+            json.dump(_shrink_floats(stocks[code]), f, ensure_ascii=False, separators=(',', ':'))
+
+    # File dividen agregat (kecil) — dipakai halaman Simulasi yang butuh dps
+    # SEMUA saham sekaligus (tidak cocok lazy per-saham).
+    dividends = {}
+    for code in stocks:
+        annual = (stocks[code] or {}).get('annual') or {}
+        by_year = {}
+        latest_dps, latest_yr = None, -1
+        for yr, yd in annual.items():
+            d = (yd or {}).get('dps')
+            if isinstance(d, (int, float)):
+                by_year[yr] = d
+                try:
+                    y = int(yr)
+                    if y > latest_yr:
+                        latest_yr, latest_dps = y, d
+                except (TypeError, ValueError):
+                    pass
+        if by_year:
+            dividends[code] = {'byYear': by_year, 'latestDps': latest_dps}
+    with open(os.path.join(OUT_DIR, 'dividends.json'), 'w', encoding='utf-8') as f:
+        json.dump(_shrink_floats({'generated_at': index_payload['generated_at'], 'stocks': dividends}),
+                  f, ensure_ascii=False, separators=(',', ':'))
+
+    # Bersihkan file per-saham basi (kode yang sudah tidak ada → mis. file dihapus/diganti).
+    keep = set(code + '.json' for code in stocks) | {'index.json', 'dividends.json'}
+    removed = 0
+    for fn in os.listdir(OUT_DIR):
+        if fn.endswith('.json') and fn not in keep:
+            try: os.remove(os.path.join(OUT_DIR, fn)); removed += 1
+            except OSError: pass
+
+    # Monolith lama tidak dipakai lagi → hapus bila ada (hemat ukuran deploy).
+    if os.path.exists(OUT_FILE):
+        try: os.remove(OUT_FILE)
+        except OSError: pass
+
+    print(f"[build-valuation] {len(stocks)} saham (split) -> {OUT_DIR}/ "
+          f"(index.json + {len(stocks)} file; {removed} basi dihapus)")
+    if empty_stocks:
+        print(f"[build-valuation] {len(empty_stocks)} saham dilewati (data 0/kosong).")
     if warnings:
         print('[build-valuation] WARNINGS:')
         for w in warnings:

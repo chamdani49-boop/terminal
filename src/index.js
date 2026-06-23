@@ -21,7 +21,7 @@ import { rateLimit, reportAbuse, trackDevice } from './lib/abuse.js';
 import { TOS_VERSION, hasAcceptedCurrent, saveConsent } from './lib/legal.js';
 
 // Path yang butuh langganan aktif saat gating menyala
-const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/ohlc.json', '/macro.json', '/insights.json', '/headlines.json', '/dashboard'];
+const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/valuation/', '/ohlc.json', '/macro.json', '/insights.json', '/headlines.json', '/dashboard'];
 
 function assetFor(env, url, pathname, request) {
   const u = new URL(url.toString());
