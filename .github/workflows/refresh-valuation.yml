@@ -24,6 +24,7 @@ on:
     paths:
       - 'data/valuation/**'
       - 'scripts/build-valuation.py'
+      - 'public/history-yearly.json'
       - '.github/workflows/refresh-valuation.yml'
   workflow_dispatch:
 
