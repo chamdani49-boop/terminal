@@ -17,14 +17,104 @@ function planDays(env, plan) {
   return parseInt(env.PLAN_DAYS_6BULAN || '182', 10);
 }
 
-// ── CHECKOUT: arahkan user ke halaman bayar Mayar ──
+// Base URL API headless Mayar. Bisa di-override lewat env (mis. untuk sandbox).
+function mayarApiBase(env) {
+  return (env.MAYAR_API_BASE || 'https://api.mayar.id/hl/v1').replace(/\/+$/, '');
+}
+
+// ── Buat invoice/tagihan via API Mayar (tanpa GAS) ──
+// Mengembalikan { link } (URL halaman bayar) atau melempar error.
+// Docs: POST {base}/invoice/create — body { name, email, mobile?, amount,
+// description, redirectUrl, items[] }, balasan { data: { id, link, ... } }.
+async function createMayarInvoice(env, { plan, amount, planName, email, name, redirectUrl }) {
+  const apiKey = env.MAYAR_API_KEY;
+  if (!apiKey) throw new Error('NO_API_KEY');
+
+  const body = {
+    name: name || email || 'Pelanggan Economstock',
+    email,
+    amount,                                  // total tagihan (Rupiah, tanpa desimal)
+    description: `Langganan Economstock Terminal — ${planName} (${plan})`,
+    redirectUrl,                             // tujuan setelah pembayaran sukses
+    items: [
+      { quantity: 1, rate: amount, description: planName },
+    ],
+  };
+  // mobile opsional — sebagian akun Mayar mewajibkannya; isi bila tersedia.
+  if (env.MAYAR_DEFAULT_MOBILE) body.mobile = env.MAYAR_DEFAULT_MOBILE;
+
+  const res = await fetch(`${mayarApiBase(env)}/invoice/create`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  let out = {};
+  try { out = await res.json(); } catch { /* biarkan kosong */ }
+  if (!res.ok) {
+    const msg = (out && (out.messages || out.message || out.error)) || `HTTP ${res.status}`;
+    throw new Error(`Mayar API: ${msg}`);
+  }
+
+  // Bentuk balasan bisa { data: {...} } atau flat. Ambil link & id fleksibel.
+  const d = (out && out.data) || out;
+  const link = pick(d, ['link', 'url', 'paymentUrl', 'payment_url', 'checkoutUrl']);
+  const invId = pick(d, ['id', 'transactionId', 'transaction_id', 'invoiceId']);
+  if (!link) throw new Error('Mayar API: link pembayaran tidak ditemukan di respons');
+  return { link, invId };
+}
+
+// ── CHECKOUT: buat tagihan Mayar (atau fallback link statis) lalu arahkan user ──
 export async function checkout(request, env, url) {
   const plan = url.searchParams.get('plan');
   if (!['3bulan', '6bulan', 'tahunan'].includes(plan)) return json({ error: 'Paket tidak valid' }, 400);
 
+  const session = await getSession(request, env);
+
+  // ── MODE BARU: buat invoice via API Mayar (butuh MAYAR_API_KEY + user login) ──
+  if (env.MAYAR_API_KEY) {
+    if (!session || !session.email) {
+      return json({ error: 'Silakan login dulu sebelum membuat tagihan.' }, 401);
+    }
+    // Ambil harga & nama paket dari billing config (sumber kebenaran harga).
+    let amount = 0;
+    let planName = plan;
+    try {
+      const cfg = await getBillingConfig(env);
+      const p = cfg.plans[plan] || {};
+      amount = Math.round(Number(p.priceReal) || 0);
+      planName = p.name || plan;
+    } catch (_) { /* fallback amount=0 → ditolak di bawah */ }
+
+    if (!amount || amount < 1000) {
+      return json({ error: 'Harga paket belum dikonfigurasi di panel admin.' }, 503);
+    }
+
+    // Tujuan setelah bayar: override via env, atau halaman billing situs ini.
+    const redirectUrl = env.MAYAR_REDIRECT_URL || `${new URL(request.url).origin}/billing?paid=1`;
+
+    try {
+      const { link } = await createMayarInvoice(env, {
+        plan, amount, planName,
+        email: session.email,
+        name: session.name || '',
+        redirectUrl,
+      });
+      return json({ ok: true, url: link });
+    } catch (e) {
+      if ((e && e.message) !== 'NO_API_KEY') {
+        return json({ error: `Gagal membuat tagihan: ${(e && e.message) || 'error'}` }, 502);
+      }
+      // NO_API_KEY tidak mungkin di cabang ini, tapi jaga-jaga → lanjut ke fallback.
+    }
+  }
+
+  // ── MODE LAMA (fallback): redirect ke payment link statis ──
   // Prioritas link: direct link yang di-set admin (D1 billing config) → env var.
-  // Ini bikin admin cukup mengelola link di satu tempat (panel admin) agar
-  // selalu sama dengan halaman produk di mayar.id.
   let link = '';
   try {
     const cfg = await getBillingConfig(env);
@@ -40,7 +130,6 @@ export async function checkout(request, env, url) {
   }
 
   // Sertakan email user (kalau sudah login) agar checkout terhubung ke akun.
-  const session = await getSession(request, env);
   let target = link;
   if (session && session.email) {
     const sep = link.includes('?') ? '&' : '?';
