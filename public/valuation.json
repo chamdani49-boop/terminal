@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-23T06:13:34.466599+00:00",
+  "generated_at": "2026-06-23T06:32:25.978464+00:00",
   "source_files": [
     "laporan_keuangan 1-100.xlsx",
     "laporan_keuangan 101-200.xlsx",
@@ -1933,7 +1933,7 @@
           "dps": 0.0
         },
         "2023": {
-          "price": null,
+          "price": 6300,
           "total_revenue": 650143266000.0,
           "net_income": 43377168000.0,
           "total_equity": 1548860178000.0,
@@ -1947,7 +1947,7 @@
           "interest_expense": null,
           "tax_expense": 6936000.0,
           "pretax_income": 84568787000.0,
-          "market_cap": null,
+          "market_cap": 3906000000000.0,
           "shares": 620000000.0,
           "roe": 2.8005864322763934,
           "roe_5y": 0.20202109973803983,
@@ -1963,7 +1963,7 @@
           "dps": 0.0
         },
         "2022": {
-          "price": null,
+          "price": 6700,
           "total_revenue": 652776357000.0,
           "net_income": 43991037000.0,
           "total_equity": 1505488077000.0,
@@ -1977,7 +1977,7 @@
           "interest_expense": null,
           "tax_expense": -27654367000.0,
           "pretax_income": 118792646000.0,
-          "market_cap": null,
+          "market_cap": 4154000000000.0,
           "shares": 620000000.0,
           "roe": 2.9220448618670796,
           "roe_5y": -0.2738303954331863,
@@ -1993,7 +1993,7 @@
           "dps": 0.0
         },
         "2021": {
-          "price": null,
+          "price": 6950,
           "total_revenue": 657847895000.0,
           "net_income": 166473168000.0,
           "total_equity": 1512103062000.0,
@@ -2007,7 +2007,7 @@
           "interest_expense": null,
           "tax_expense": -34465321000.0,
           "pretax_income": 191816390000.0,
-          "market_cap": null,
+          "market_cap": 4309000000000.0,
           "shares": 620000000.0,
           "roe": 11.009379729699932,
           "roe_5y": 0.08432904144791764,
@@ -2023,7 +2023,7 @@
           "dps": 81.51
         },
         "2020": {
-          "price": null,
+          "price": 5975,
           "total_revenue": 760560074000.0,
           "net_income": 170794172000.0,
           "total_equity": 1387236002000.0,
@@ -2037,7 +2037,7 @@
           "interest_expense": null,
           "tax_expense": -46191048000.0,
           "pretax_income": 184381335000.0,
-          "market_cap": null,
+          "market_cap": 3704500000000.0,
           "shares": 620000000.0,
           "roe": 12.311832431811412,
           "roe_5y": 0.2072522010660982,
@@ -2053,7 +2053,7 @@
           "dps": 67.0
         },
         "2019": {
-          "price": null,
+          "price": 6925,
           "total_revenue": 909229441000.0,
           "net_income": 37248182000.0,
           "total_equity": 1253704378000.0,
@@ -2067,7 +2067,7 @@
           "interest_expense": null,
           "tax_expense": -21077104000.0,
           "pretax_income": 108601446000.0,
-          "market_cap": null,
+          "market_cap": 4293500000000.0,
           "shares": 620000000.0,
           "roe": 2.971049846648936,
           "roe_5y": -0.39575386894870157,
@@ -2083,7 +2083,7 @@
           "dps": 60.0
         },
         "2018": {
-          "price": null,
+          "price": 7000,
           "total_revenue": 1056903547000.0,
           "net_income": 14892838000.0,
           "total_equity": 1334408933000.0,
@@ -2097,7 +2097,7 @@
           "interest_expense": null,
           "tax_expense": 18280929000.0,
           "pretax_income": 50829464000.0,
-          "market_cap": null,
+          "market_cap": 4340000000000.0,
           "shares": 620000000.0,
           "roe": 1.1160625226420002,
           "roe_5y": -0.470888524511331,
@@ -2113,7 +2113,7 @@
           "dps": 190.0
         },
         "2017": {
-          "price": null,
+          "price": 7000,
           "total_revenue": 1114920773000.0,
           "net_income": 199026367000.0,
           "total_equity": 1375352652000.0,
@@ -2127,7 +2127,7 @@
           "interest_expense": null,
           "tax_expense": -4197568000.0,
           "pretax_income": 165019709000.0,
-          "market_cap": null,
+          "market_cap": 4340000000000.0,
           "shares": 620000000.0,
           "roe": 14.470933451910048,
           "roe_5y": -0.17510390978336265,
@@ -2143,7 +2143,7 @@
           "dps": 90.0
         },
         "2016": {
-          "price": null,
+          "price": 6650,
           "total_revenue": 1201828061000.0,
           "net_income": 90497697000.0,
           "total_equity": 1232196934000.0,
@@ -2157,7 +2157,7 @@
           "interest_expense": null,
           "tax_expense": -23724488000.0,
           "pretax_income": 197206138000.0,
-          "market_cap": null,
+          "market_cap": 4123000000000.0,
           "shares": 620000000.0,
           "roe": 7.3444182908509,
           "roe_5y": -0.2394206823958236,
@@ -2412,6 +2412,22 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 8,
+        "market_cap": 8,
+        "ratio": 0,
+        "years": [
+          "2023",
+          "2022",
+          "2021",
+          "2020",
+          "2019",
+          "2018",
+          "2017",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -2894,7 +2910,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 1455,
           "total_revenue": 592394952.0,
           "net_income": 8664343.0,
           "total_equity": 245193711.0,
@@ -2908,7 +2924,7 @@
           "interest_expense": -36576834.0,
           "tax_expense": -16065228.0,
           "pretax_income": 19959192.0,
-          "market_cap": null,
+          "market_cap": 4001250000000.0,
           "shares": 2750000000.0,
           "roe": 3.5336726071249025,
           "roe_5y": null,
@@ -2954,7 +2970,7 @@
           "dps": 36.32
         },
         "2017": {
-          "price": null,
+          "price": 2290,
           "total_revenue": 690732993.0,
           "net_income": 4743923.0,
           "total_equity": 162323025.0,
@@ -2968,7 +2984,7 @@
           "interest_expense": -46411846.0,
           "tax_expense": -8093967.0,
           "pretax_income": 11892729.0,
-          "market_cap": null,
+          "market_cap": 6297500000000.0,
           "shares": 2750000000.0,
           "roe": 2.9225200799455284,
           "roe_5y": 0.04861335033224834,
@@ -3193,6 +3209,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -8041,7 +8067,7 @@
           "dps": null
         },
         "2018": {
-          "price": null,
+          "price": 50,
           "total_revenue": 107378945218.0,
           "net_income": -9311473812.0,
           "total_equity": 750868136729.0,
@@ -8055,7 +8081,7 @@
           "interest_expense": -33895320689.0,
           "tax_expense": -562491239.0,
           "pretax_income": -9076406539.0,
-          "market_cap": null,
+          "market_cap": 322500000000.0,
           "shares": 6450000000.0,
           "roe": -1.2400944129236178,
           "roe_5y": -0.5390069854997537,
@@ -8370,6 +8396,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -8929,7 +8964,7 @@
           "dps": 12.0
         },
         "2017": {
-          "price": null,
+          "price": 850,
           "total_revenue": 2064857643000.0,
           "net_income": 13910181000.0,
           "total_equity": 1126612491000.0,
@@ -8943,7 +8978,7 @@
           "interest_expense": -61842339000.0,
           "tax_expense": -18479528000.0,
           "pretax_income": 31813498000.0,
-          "market_cap": null,
+          "market_cap": 578000000000.0,
           "shares": 680000000.0,
           "roe": 1.2346908197026194,
           "roe_5y": null,
@@ -8959,7 +8994,7 @@
           "dps": 0.0
         },
         "2016": {
-          "price": null,
+          "price": 820,
           "total_revenue": 2047218639000.0,
           "net_income": 18003926000.0,
           "total_equity": 1120035169000.0,
@@ -8973,7 +9008,7 @@
           "interest_expense": -58764469000.0,
           "tax_expense": -23558754000.0,
           "pretax_income": 75952611000.0,
-          "market_cap": null,
+          "market_cap": 557600000000.0,
           "shares": 680000000.0,
           "roe": 1.6074429177143097,
           "roe_5y": null,
@@ -9018,6 +9053,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2017",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Basic Materials",
@@ -11238,7 +11283,7 @@
           "dps": 0.55
         },
         "2017": {
-          "price": null,
+          "price": 176,
           "total_revenue": 708740551637.0,
           "net_income": 12426839706.0,
           "total_equity": 229422823176.0,
@@ -11252,7 +11297,7 @@
           "interest_expense": -9420721207.0,
           "tax_expense": -9586395553.0,
           "pretax_income": 38621790950.0,
-          "market_cap": null,
+          "market_cap": 96800000000.0,
           "shares": 550000000.0,
           "roe": 5.4165664662172,
           "roe_5y": -0.11324389524196321,
@@ -11268,7 +11313,7 @@
           "dps": 0.8
         },
         "2016": {
-          "price": null,
+          "price": 176,
           "total_revenue": 666434061412.0,
           "net_income": 14118520103.0,
           "total_equity": 200887900422.0,
@@ -11282,7 +11327,7 @@
           "interest_expense": -9623919526.0,
           "tax_expense": -8617820135.0,
           "pretax_income": 33847325358.0,
-          "market_cap": null,
+          "market_cap": 96800000000.0,
           "shares": 550000000.0,
           "roe": 7.028058968878461,
           "roe_5y": null,
@@ -11477,6 +11522,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2017",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Basic Materials",
@@ -12132,7 +12187,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 216,
           "total_revenue": 1151605756000.0,
           "net_income": -928004000.0,
           "total_equity": 61104431000.0,
@@ -12146,7 +12201,7 @@
           "interest_expense": -4306218000.0,
           "tax_expense": 239519000.0,
           "pretax_income": 276648000.0,
-          "market_cap": null,
+          "market_cap": 110160000000.0,
           "shares": 510000000.0,
           "roe": -1.5187180124465933,
           "roe_5y": null,
@@ -12251,6 +12306,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Basic Materials",
@@ -14167,7 +14231,7 @@
           "dps": 50.0
         },
         "2019": {
-          "price": null,
+          "price": 296,
           "total_revenue": 779573143000.0,
           "net_income": 124789630000.0,
           "total_equity": 1951094614000.0,
@@ -14181,7 +14245,7 @@
           "interest_expense": null,
           "tax_expense": -5873219000.0,
           "pretax_income": 78933529000.0,
-          "market_cap": null,
+          "market_cap": 1480000000000.0,
           "shares": 5000000000.0,
           "roe": 6.395877939725582,
           "roe_5y": -0.13126458339312308,
@@ -14526,6 +14590,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2019"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -19315,7 +19388,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 330,
           "total_revenue": 93918906.0,
           "net_income": 20203594.0,
           "total_equity": 56295236.0,
@@ -19329,7 +19402,7 @@
           "interest_expense": -17028324.0,
           "tax_expense": -7545725.0,
           "pretax_income": 27749319.0,
-          "market_cap": null,
+          "market_cap": 877800000000.0,
           "shares": 2660000000.0,
           "roe": 35.888638960497474,
           "roe_5y": null,
@@ -19345,7 +19418,7 @@
           "dps": null
         },
         "2018": {
-          "price": null,
+          "price": 1595,
           "total_revenue": 91610151.0,
           "net_income": -103272082.0,
           "total_equity": -150267591.0,
@@ -19359,7 +19432,7 @@
           "interest_expense": -43006211.0,
           "tax_expense": 6048239.0,
           "pretax_income": -109852174.0,
-          "market_cap": null,
+          "market_cap": 4242700000000.0,
           "shares": 2660000000.0,
           "roe": 68.72545258278613,
           "roe_5y": null,
@@ -19524,6 +19597,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Energy",
@@ -20739,7 +20822,7 @@
           "dps": null
         },
         "2024": {
-          "price": null,
+          "price": 178,
           "total_revenue": 280126867734.0,
           "net_income": 4488627754.0,
           "total_equity": 417433943563.0,
@@ -20753,7 +20836,7 @@
           "interest_expense": -16217085950.0,
           "tax_expense": -5914656088.0,
           "pretax_income": 11163484740.0,
-          "market_cap": null,
+          "market_cap": 192240000000.0,
           "shares": 1080000000.0,
           "roe": 1.0752905515271225,
           "roe_5y": -0.3393786033194811,
@@ -20949,7 +21032,7 @@
           "dps": null
         },
         "2017": {
-          "price": null,
+          "price": 208,
           "total_revenue": 168065942352.0,
           "net_income": 11382641604.0,
           "total_equity": 247392624934.0,
@@ -20963,7 +21046,7 @@
           "interest_expense": -15156654421.0,
           "tax_expense": -5277612742.0,
           "pretax_income": 19199605423.0,
-          "market_cap": null,
+          "market_cap": 224640000000.0,
           "shares": 1080000000.0,
           "roe": 4.601043223110103,
           "roe_5y": -0.2992115373299,
@@ -21128,6 +21211,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2024",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -25885,7 +25978,7 @@
           "dps": 28.0
         },
         "2024": {
-          "price": null,
+          "price": 2570,
           "total_revenue": 105155474541.0,
           "net_income": 13836290313.0,
           "total_equity": 278239716863.0,
@@ -25899,7 +25992,7 @@
           "interest_expense": -39767611.0,
           "tax_expense": -310175831.0,
           "pretax_income": 18550887572.0,
-          "market_cap": null,
+          "market_cap": 1156500000000.0,
           "shares": 450000000.0,
           "roe": 4.972794850784271,
           "roe_5y": 0.38836123678651946,
@@ -26005,7 +26098,7 @@
           "dps": 0.0
         },
         "2020": {
-          "price": null,
+          "price": 286,
           "total_revenue": 32934176030.0,
           "net_income": -9865168084.0,
           "total_equity": 342691195224.0,
@@ -26019,7 +26112,7 @@
           "interest_expense": -28793392.0,
           "tax_expense": -3692776807.0,
           "pretax_income": -7516492010.0,
-          "market_cap": null,
+          "market_cap": 128700000000.0,
           "shares": 450000000.0,
           "roe": -2.8787340385420865,
           "roe_5y": null,
@@ -26065,7 +26158,7 @@
           "dps": 0.0
         },
         "2018": {
-          "price": null,
+          "price": 310,
           "total_revenue": 87440977373.0,
           "net_income": 10793710403.0,
           "total_equity": 367760525336.0,
@@ -26079,7 +26172,7 @@
           "interest_expense": -28477297.0,
           "tax_expense": -2939275880.0,
           "pretax_income": 10437768583.0,
-          "market_cap": null,
+          "market_cap": 139500000000.0,
           "shares": 450000000.0,
           "roe": 2.934983408874146,
           "roe_5y": null,
@@ -26394,6 +26487,17 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2024",
+          "2020",
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -26752,7 +26856,7 @@
       },
       "annual": {
         "2024": {
-          "price": null,
+          "price": 2,
           "total_revenue": 37082046768.0,
           "net_income": -5217283431.0,
           "total_equity": -202856461711.0,
@@ -26766,7 +26870,7 @@
           "interest_expense": -23169340.0,
           "tax_expense": 0.0,
           "pretax_income": -4425790744.0,
-          "market_cap": null,
+          "market_cap": 15680000000.0,
           "shares": 7840000000.0,
           "roe": 2.5719089187470976,
           "roe_5y": null,
@@ -27261,6 +27365,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2024"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Energy",
@@ -27820,7 +27933,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 128,
           "total_revenue": 77160007562.0,
           "net_income": -34714750684.0,
           "total_equity": 147268748114.0,
@@ -27834,7 +27947,7 @@
           "interest_expense": null,
           "tax_expense": 4549198329.0,
           "pretax_income": -37879763486.0,
-          "market_cap": null,
+          "market_cap": 154880000000.0,
           "shares": 1210000000.0,
           "roe": -23.57238119327767,
           "roe_5y": null,
@@ -27909,6 +28022,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -28361,7 +28483,7 @@
           "dps": 5.7
         },
         "2020": {
-          "price": null,
+          "price": 312,
           "total_revenue": 275023586000.0,
           "net_income": 24367799000.0,
           "total_equity": 313771731000.0,
@@ -28375,7 +28497,7 @@
           "interest_expense": null,
           "tax_expense": 5040852000.0,
           "pretax_income": 18627452000.0,
-          "market_cap": null,
+          "market_cap": 109200000000.0,
           "shares": 350000000.0,
           "roe": 7.766091267157525,
           "roe_5y": -0.14519370598713655,
@@ -28391,7 +28513,7 @@
           "dps": 10.0
         },
         "2019": {
-          "price": null,
+          "price": 304,
           "total_revenue": 267412037000.0,
           "net_income": 13776687000.0,
           "total_equity": 291485498000.0,
@@ -28405,7 +28527,7 @@
           "interest_expense": null,
           "tax_expense": 66280000.0,
           "pretax_income": 7942780000.0,
-          "market_cap": null,
+          "market_cap": 106400000000.0,
           "shares": 350000000.0,
           "roe": 4.726371327056552,
           "roe_5y": -0.14395554766422236,
@@ -28481,7 +28603,7 @@
           "dps": 10.0
         },
         "2016": {
-          "price": null,
+          "price": 320,
           "total_revenue": 213891077000.0,
           "net_income": 17514712000.0,
           "total_equity": 173651622000.0,
@@ -28495,7 +28617,7 @@
           "interest_expense": null,
           "tax_expense": -3425600000.0,
           "pretax_income": 18730381000.0,
-          "market_cap": null,
+          "market_cap": 112000000000.0,
           "shares": 350000000.0,
           "roe": 10.086120589187471,
           "roe_5y": 0.007717797247838831,
@@ -28750,6 +28872,17 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2020",
+          "2019",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -29331,7 +29464,7 @@
           "dps": 36.5
         },
         "2017": {
-          "price": null,
+          "price": 550,
           "total_revenue": 197589365000.0,
           "net_income": 36403858000.0,
           "total_equity": 295392424000.0,
@@ -29345,7 +29478,7 @@
           "interest_expense": null,
           "tax_expense": -9542549000.0,
           "pretax_income": 49820399000.0,
-          "market_cap": null,
+          "market_cap": 104500000000.0,
           "shares": 190000000.0,
           "roe": 12.323896973065226,
           "roe_5y": -0.05555550775750662,
@@ -29361,7 +29494,7 @@
           "dps": 34.5
         },
         "2016": {
-          "price": null,
+          "price": 453,
           "total_revenue": 192534634000.0,
           "net_income": 38386498000.0,
           "total_equity": 272236566000.0,
@@ -29375,7 +29508,7 @@
           "interest_expense": null,
           "tax_expense": -8145400000.0,
           "pretax_income": 47196242000.0,
-          "market_cap": null,
+          "market_cap": 86070000000.0,
           "shares": 190000000.0,
           "roe": 14.100419559362207,
           "roe_5y": -0.05568209847060146,
@@ -29540,6 +29673,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2017",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -34188,7 +34331,7 @@
           "dps": 0.0
         },
         "2023": {
-          "price": null,
+          "price": 389,
           "total_revenue": 2022469106180.0,
           "net_income": 84131208699.0,
           "total_equity": 678478999511.0,
@@ -34202,7 +34345,7 @@
           "interest_expense": null,
           "tax_expense": -17431768782.0,
           "pretax_income": 106229973998.0,
-          "market_cap": null,
+          "market_cap": 116700000000.0,
           "shares": 300000000.0,
           "roe": 12.399972402924169,
           "roe_5y": -0.06639544694584276,
@@ -34218,7 +34361,7 @@
           "dps": 15.48
         },
         "2022": {
-          "price": null,
+          "price": 400,
           "total_revenue": 2022042246142.0,
           "net_income": 81803226748.0,
           "total_equity": 614117783224.0,
@@ -34232,7 +34375,7 @@
           "interest_expense": null,
           "tax_expense": -3584378981.0,
           "pretax_income": 90081897136.0,
-          "market_cap": null,
+          "market_cap": 120000000000.0,
           "shares": 300000000.0,
           "roe": 13.320445846487106,
           "roe_5y": -0.047105249872572696,
@@ -34338,7 +34481,7 @@
           "dps": 12.82
         },
         "2018": {
-          "price": null,
+          "price": 395,
           "total_revenue": 942887361824.0,
           "net_income": 70941809996.0,
           "total_equity": 405785338438.0,
@@ -34352,7 +34495,7 @@
           "interest_expense": null,
           "tax_expense": -11606411205.0,
           "pretax_income": 88198904566.0,
-          "market_cap": null,
+          "market_cap": 82950000000.0,
           "shares": 210000000.0,
           "roe": 17.482595667225965,
           "roe_5y": -0.014835536800143378,
@@ -34368,7 +34511,7 @@
           "dps": 14.28
         },
         "2017": {
-          "price": null,
+          "price": 427,
           "total_revenue": 849463668131.0,
           "net_income": 60409458086.0,
           "total_equity": 356295920510.0,
@@ -34382,7 +34525,7 @@
           "interest_expense": null,
           "tax_expense": -12920521178.0,
           "pretax_income": 73843996987.0,
-          "market_cap": null,
+          "market_cap": 89670000000.0,
           "shares": 210000000.0,
           "roe": 16.954855390858878,
           "roe_5y": -0.03804984225347274,
@@ -34398,7 +34541,7 @@
           "dps": 16.8
         },
         "2016": {
-          "price": null,
+          "price": 317,
           "total_revenue": 798167697137.0,
           "net_income": 63563186977.0,
           "total_equity": 310491043060.0,
@@ -34412,7 +34555,7 @@
           "interest_expense": null,
           "tax_expense": -14678829365.0,
           "pretax_income": 77829512162.0,
-          "market_cap": null,
+          "market_cap": 66570000000.0,
           "shares": 210000000.0,
           "roe": 20.47182628863046,
           "roe_5y": 0.059696964657023566,
@@ -34577,6 +34720,19 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 5,
+        "market_cap": 5,
+        "ratio": 0,
+        "years": [
+          "2023",
+          "2022",
+          "2018",
+          "2017",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -41659,7 +41815,7 @@
           "dps": 21.24
         },
         "2016": {
-          "price": null,
+          "price": 820,
           "total_revenue": 999802379000.0,
           "net_income": 42039071000.0,
           "total_equity": 557155279000.0,
@@ -41673,7 +41829,7 @@
           "interest_expense": -981399000.0,
           "tax_expense": -23070359000.0,
           "pretax_income": 65302022000.0,
-          "market_cap": null,
+          "market_cap": 1066000000000.0,
           "shares": 1300000000.0,
           "roe": 7.545306054616059,
           "roe_5y": -0.13926938594872984,
@@ -41928,6 +42084,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -45741,7 +45906,7 @@
           "dps": 4.0
         },
         "2019": {
-          "price": null,
+          "price": 484,
           "total_revenue": 788173000000.0,
           "net_income": 53468000000.0,
           "total_equity": 1207483000000.0,
@@ -45755,7 +45920,7 @@
           "interest_expense": null,
           "tax_expense": -19120000000.0,
           "pretax_income": 78389000000.0,
-          "market_cap": null,
+          "market_cap": 798600000000.0,
           "shares": 1650000000.0,
           "roe": 4.428054059560258,
           "roe_5y": -0.13345663662693108,
@@ -45771,7 +45936,7 @@
           "dps": 0.0
         },
         "2018": {
-          "price": null,
+          "price": 486,
           "total_revenue": 683841000000.0,
           "net_income": 73848000000.0,
           "total_equity": 1177056000000.0,
@@ -45785,7 +45950,7 @@
           "interest_expense": null,
           "tax_expense": -19341000000.0,
           "pretax_income": 76912000000.0,
-          "market_cap": null,
+          "market_cap": 801900000000.0,
           "shares": 1650000000.0,
           "roe": 6.273958078460158,
           "roe_5y": -0.12872117127418004,
@@ -45801,7 +45966,7 @@
           "dps": 14.0
         },
         "2017": {
-          "price": null,
+          "price": 620,
           "total_revenue": 664294000000.0,
           "net_income": 54970000000.0,
           "total_equity": 1129541000000.0,
@@ -45815,7 +45980,7 @@
           "interest_expense": null,
           "tax_expense": -21887000000.0,
           "pretax_income": 88320000000.0,
-          "market_cap": null,
+          "market_cap": 1023000000000.0,
           "shares": 1650000000.0,
           "roe": 4.866578548277575,
           "roe_5y": -0.20362974764996877,
@@ -46100,6 +46265,17 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2018",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -46681,7 +46857,7 @@
           "dps": 0.0
         },
         "2017": {
-          "price": null,
+          "price": 1535,
           "total_revenue": 1026201831931.0,
           "net_income": 460378437835.0,
           "total_equity": 3082150626770.0,
@@ -46695,7 +46871,7 @@
           "interest_expense": null,
           "tax_expense": -89819756386.0,
           "pretax_income": 353573133007.0,
-          "market_cap": null,
+          "market_cap": 6278150000000.0,
           "shares": 4090000000.0,
           "roe": 14.936922090581362,
           "roe_5y": null,
@@ -46740,6 +46916,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -48841,7 +49026,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 244,
           "total_revenue": 13818874.0,
           "net_income": 6270928.0,
           "total_equity": 44270091.0,
@@ -48855,7 +49040,7 @@
           "interest_expense": -371307.0,
           "tax_expense": -157400.0,
           "pretax_income": 6427101.0,
-          "market_cap": null,
+          "market_cap": 2069120000000.0,
           "shares": 8480000000.0,
           "roe": 14.165157239003642,
           "roe_5y": null,
@@ -48991,7 +49176,7 @@
           "dps": null
         },
         "2020": {
-          "price": null,
+          "price": 70,
           "total_revenue": 11348417.0,
           "net_income": -11043613.0,
           "total_equity": 7190990.0,
@@ -49005,7 +49190,7 @@
           "interest_expense": -1978624.0,
           "tax_expense": -135618.0,
           "pretax_income": -11036834.0,
-          "market_cap": null,
+          "market_cap": 375900000000.0,
           "shares": 5370000000.0,
           "roe": -153.57569680947964,
           "roe_5y": 0.33901188966285023,
@@ -49081,7 +49266,7 @@
           "dps": null
         },
         "2017": {
-          "price": null,
+          "price": 70,
           "total_revenue": 23575803.0,
           "net_income": -38474352.0,
           "total_equity": 30681977.0,
@@ -49095,7 +49280,7 @@
           "interest_expense": -1749707.0,
           "tax_expense": -520239.0,
           "pretax_income": -37880233.0,
-          "market_cap": null,
+          "market_cap": 375900000000.0,
           "shares": 5370000000.0,
           "roe": -125.39723890673669,
           "roe_5y": null,
@@ -49290,6 +49475,17 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2020",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Energy",
@@ -51445,7 +51641,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 224,
           "total_revenue": 2287344000000.0,
           "net_income": -107639000000.0,
           "total_equity": 6405279000000.0,
@@ -51459,7 +51655,7 @@
           "interest_expense": -859693000000.0,
           "tax_expense": 18854000000.0,
           "pretax_income": -57795000000.0,
-          "market_cap": null,
+          "market_cap": 1225280000000.0,
           "shares": 5470000000.0,
           "roe": -1.6804732471450503,
           "roe_5y": null,
@@ -51714,6 +51910,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -59272,7 +59477,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 71,
           "total_revenue": 108199961750.0,
           "net_income": -27536962915.0,
           "total_equity": 38237944265.0,
@@ -59286,7 +59491,7 @@
           "interest_expense": -10422100045.0,
           "tax_expense": -1764382328.0,
           "pretax_income": -22831267436.0,
-          "market_cap": null,
+          "market_cap": 43310000000.0,
           "shares": 610000000.0,
           "roe": -72.01475770810505,
           "roe_5y": -0.09542245532683569,
@@ -59542,7 +59747,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 200,
           "total_revenue": 172109865924.0,
           "net_income": 17601900104.0,
           "total_equity": -97175471622.0,
@@ -59556,7 +59761,7 @@
           "interest_expense": -6439187229.0,
           "tax_expense": -12459076448.0,
           "pretax_income": 29869197189.0,
-          "market_cap": null,
+          "market_cap": 122000000000.0,
           "shares": 610000000.0,
           "roe": -18.11352166364483,
           "roe_5y": null,
@@ -59811,6 +60016,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -66175,7 +66390,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 71,
           "total_revenue": 52413771234.0,
           "net_income": -26843855100.0,
           "total_equity": 545944370757.0,
@@ -66189,7 +66404,7 @@
           "interest_expense": -14811716617.0,
           "tax_expense": 0.0,
           "pretax_income": -28948289175.0,
-          "market_cap": null,
+          "market_cap": 484930000000.0,
           "shares": 6830000000.0,
           "roe": -4.9169579425791365,
           "roe_5y": 0.10969685057493916,
@@ -66444,6 +66659,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Properties & Real Estate",
@@ -67916,7 +68140,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 454,
           "total_revenue": 2048592000000.0,
           "net_income": -646764000000.0,
           "total_equity": 3477929000000.0,
@@ -67930,7 +68154,7 @@
           "interest_expense": null,
           "tax_expense": 215617000000.0,
           "pretax_income": -865950000000.0,
-          "market_cap": null,
+          "market_cap": 3977040000000.0,
           "shares": 8760000000.0,
           "roe": -18.596239313683515,
           "roe_5y": null,
@@ -68185,6 +68409,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -69283,7 +69516,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 2980,
           "total_revenue": 1257917268000.0,
           "net_income": 63087490000.0,
           "total_equity": 450735446000.0,
@@ -69297,7 +69530,7 @@
           "interest_expense": -113623165000.0,
           "tax_expense": -18738630000.0,
           "pretax_income": 79581638000.0,
-          "market_cap": null,
+          "market_cap": 2592600000000.0,
           "shares": 870000000.0,
           "roe": 13.996567290161599,
           "roe_5y": null,
@@ -69313,7 +69546,7 @@
           "dps": null
         },
         "2024": {
-          "price": null,
+          "price": 2000,
           "total_revenue": 1173236505000.0,
           "net_income": -70438651000.0,
           "total_equity": 387642563000.0,
@@ -69327,7 +69560,7 @@
           "interest_expense": -126979410000.0,
           "tax_expense": -84315543000.0,
           "pretax_income": 13050270000.0,
-          "market_cap": null,
+          "market_cap": 1740000000000.0,
           "shares": 870000000.0,
           "roe": -18.171031182661952,
           "roe_5y": null,
@@ -69463,7 +69696,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 3800,
           "total_revenue": 1414593340000.0,
           "net_income": 83385039000.0,
           "total_equity": 1243827414000.0,
@@ -69477,7 +69710,7 @@
           "interest_expense": -16745613000.0,
           "tax_expense": -31368313000.0,
           "pretax_income": 114714446000.0,
-          "market_cap": null,
+          "market_cap": 3306000000000.0,
           "shares": 870000000.0,
           "roe": 6.703907476347036,
           "roe_5y": null,
@@ -69672,6 +69905,17 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2024",
+          "2019"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -70169,7 +70413,7 @@
           "dps": 7.5
         },
         "2019": {
-          "price": null,
+          "price": 139,
           "total_revenue": 595200789000.0,
           "net_income": 63738681000.0,
           "total_equity": 1228931584000.0,
@@ -70183,7 +70427,7 @@
           "interest_expense": null,
           "tax_expense": -20693447000.0,
           "pretax_income": 80440261000.0,
-          "market_cap": null,
+          "market_cap": 617160000000.0,
           "shares": 4440000000.0,
           "roe": 5.186511749705344,
           "roe_5y": 0.06213505041742984,
@@ -70408,6 +70652,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2019"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -71860,7 +72113,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 113,
           "total_revenue": 2253792419520.0,
           "net_income": -18728396288.0,
           "total_equity": 148888325018.0,
@@ -71874,7 +72127,7 @@
           "interest_expense": -40438515687.0,
           "tax_expense": 66419892.0,
           "pretax_income": -19635644575.0,
-          "market_cap": null,
+          "market_cap": 131080000000.0,
           "shares": 1160000000.0,
           "roe": -12.57882126468668,
           "roe_5y": null,
@@ -71919,6 +72172,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Basic Materials",
@@ -73416,7 +73678,7 @@
           "dps": 10.0
         },
         "2016": {
-          "price": null,
+          "price": 137,
           "total_revenue": 717418383633.0,
           "net_income": 77121119264.0,
           "total_equity": 1296667409954.0,
@@ -73430,7 +73692,7 @@
           "interest_expense": null,
           "tax_expense": -27723285461.0,
           "pretax_income": 106483022630.0,
-          "market_cap": null,
+          "market_cap": 316470000000.0,
           "shares": 2310000000.0,
           "roe": 5.947640749815399,
           "roe_5y": null,
@@ -73685,6 +73947,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -74257,7 +74528,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 500,
           "total_revenue": 2075909000000.0,
           "net_income": -3414783000000.0,
           "total_equity": -6052021000000.0,
@@ -74271,7 +74542,7 @@
           "interest_expense": -268591000000.0,
           "tax_expense": -71250000000.0,
           "pretax_income": -3590368000000.0,
-          "market_cap": null,
+          "market_cap": 48510000000000.0,
           "shares": 97020000000.0,
           "roe": 56.42384585248465,
           "roe_5y": 0.403977575156784,
@@ -74526,6 +74797,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -77662,7 +77942,7 @@
           "dps": 10.0
         },
         "2020": {
-          "price": null,
+          "price": 590,
           "total_revenue": 788873091221.0,
           "net_income": -59998358032.0,
           "total_equity": 700034091362.0,
@@ -77676,7 +77956,7 @@
           "interest_expense": -2387353927.0,
           "tax_expense": 6263896193.0,
           "pretax_income": -63652188438.0,
-          "market_cap": null,
+          "market_cap": 1380600000000.0,
           "shares": 2340000000.0,
           "roe": -8.57077659107516,
           "roe_5y": null,
@@ -77931,6 +78211,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2020"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -78464,7 +78753,7 @@
           "dps": 0.0
         },
         "2020": {
-          "price": null,
+          "price": 767,
           "total_revenue": 354017584836.0,
           "net_income": 38782096675.0,
           "total_equity": 859103399491.0,
@@ -78478,7 +78767,7 @@
           "interest_expense": -90846553707.0,
           "tax_expense": -12291191240.0,
           "pretax_income": 53553686485.0,
-          "market_cap": null,
+          "market_cap": 1365260000000.0,
           "shares": 1780000000.0,
           "roe": 4.5142524983578864,
           "roe_5y": null,
@@ -78494,7 +78783,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 867,
           "total_revenue": 430926912882.0,
           "net_income": 77772851238.0,
           "total_equity": 819326860632.0,
@@ -78508,7 +78797,7 @@
           "interest_expense": -107350435575.0,
           "tax_expense": -22238783555.0,
           "pretax_income": 97096113884.0,
-          "market_cap": null,
+          "market_cap": 1543260000000.0,
           "shares": 1780000000.0,
           "roe": 9.492286287063596,
           "roe_5y": null,
@@ -78524,7 +78813,7 @@
           "dps": 0.0
         },
         "2018": {
-          "price": null,
+          "price": 400,
           "total_revenue": 430246179428.0,
           "net_income": 51028156718.0,
           "total_equity": 771425968507.0,
@@ -78538,7 +78827,7 @@
           "interest_expense": -120634770167.0,
           "tax_expense": -19225045841.0,
           "pretax_income": 87244894085.0,
-          "market_cap": null,
+          "market_cap": 712000000000.0,
           "shares": 1780000000.0,
           "roe": 6.614783375358586,
           "roe_5y": null,
@@ -78584,7 +78873,7 @@
           "dps": 0.0
         },
         "2016": {
-          "price": null,
+          "price": 312,
           "total_revenue": 258400114500.0,
           "net_income": 34588334473.0,
           "total_equity": 503805432420.0,
@@ -78598,7 +78887,7 @@
           "interest_expense": -58741713059.0,
           "tax_expense": -10215714980.0,
           "pretax_income": 44128822267.0,
-          "market_cap": null,
+          "market_cap": 424320000000.0,
           "shares": 1360000000.0,
           "roe": 6.865415147839306,
           "roe_5y": null,
@@ -78613,6 +78902,18 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 4,
+        "market_cap": 4,
+        "ratio": 0,
+        "years": [
+          "2020",
+          "2019",
+          "2018",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -78984,7 +79285,7 @@
           "dps": 6.98
         },
         "2024": {
-          "price": null,
+          "price": 555,
           "total_revenue": 1139826421984.0,
           "net_income": 160245817488.0,
           "total_equity": 1751704920314.0,
@@ -78998,7 +79299,7 @@
           "interest_expense": 0.0,
           "tax_expense": -57158703404.0,
           "pretax_income": 225306518085.0,
-          "market_cap": null,
+          "market_cap": 5722050000000.0,
           "shares": 10310000000.0,
           "roe": 9.14799151556161,
           "roe_5y": -0.024240939548374474,
@@ -79014,7 +79315,7 @@
           "dps": 11.75
         },
         "2023": {
-          "price": null,
+          "price": 518,
           "total_revenue": 971234739438.0,
           "net_income": 60407437535.0,
           "total_equity": 1650467490575.0,
@@ -79028,7 +79329,7 @@
           "interest_expense": 0.0,
           "tax_expense": -47166908869.0,
           "pretax_income": 185974406335.0,
-          "market_cap": null,
+          "market_cap": 269360000000.0,
           "shares": 520000000.0,
           "roe": 3.660019835589424,
           "roe_5y": -0.23346264542644968,
@@ -79044,7 +79345,7 @@
           "dps": 7.9
         },
         "2022": {
-          "price": null,
+          "price": 540,
           "total_revenue": 839071100120.0,
           "net_income": 718116041794.0,
           "total_equity": 1471686185714.0,
@@ -79058,7 +79359,7 @@
           "interest_expense": 0.0,
           "tax_expense": -40460809858.0,
           "pretax_income": 145482009271.0,
-          "market_cap": null,
+          "market_cap": 280800000000.0,
           "shares": 520000000.0,
           "roe": 48.795459844966906,
           "roe_5y": 0.22012760106594942,
@@ -79134,7 +79435,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 500,
           "total_revenue": 939480334483.0,
           "net_income": 126316377663.0,
           "total_equity": 1221368944441.0,
@@ -79148,7 +79449,7 @@
           "interest_expense": -141343612725.0,
           "tax_expense": -54734561207.0,
           "pretax_income": 209476314368.0,
-          "market_cap": null,
+          "market_cap": 280000000000.0,
           "shares": 560000000.0,
           "roe": 10.342196617813373,
           "roe_5y": -0.06995072735604213,
@@ -79164,7 +79465,7 @@
           "dps": 0.0
         },
         "2018": {
-          "price": null,
+          "price": 328,
           "total_revenue": 299995978301.0,
           "net_income": 83114271106.0,
           "total_equity": 600978283982.0,
@@ -79178,7 +79479,7 @@
           "interest_expense": -360647684.0,
           "tax_expense": -25389167988.0,
           "pretax_income": 123523705212.0,
-          "market_cap": null,
+          "market_cap": 167280000000.0,
           "shares": 510000000.0,
           "roe": 13.829829350121637,
           "roe_5y": 0.013006936431888771,
@@ -79194,7 +79495,7 @@
           "dps": 0.0
         },
         "2017": {
-          "price": null,
+          "price": 220,
           "total_revenue": 300458900059.0,
           "net_income": 93982185683.0,
           "total_equity": 520825673153.0,
@@ -79208,7 +79509,7 @@
           "interest_expense": -428840086.0,
           "tax_expense": -24671424763.0,
           "pretax_income": 117349069034.0,
-          "market_cap": null,
+          "market_cap": 112200000000.0,
           "shares": 510000000.0,
           "roe": 18.044845046528916,
           "roe_5y": null,
@@ -79343,6 +79644,20 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 6,
+        "market_cap": 6,
+        "ratio": 0,
+        "years": [
+          "2024",
+          "2023",
+          "2022",
+          "2019",
+          "2018",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -79864,7 +80179,7 @@
           "dps": 400.0
         },
         "2019": {
-          "price": null,
+          "price": 16000,
           "total_revenue": 245619303.0,
           "net_income": 15628043.0,
           "total_equity": 220661583.0,
@@ -79878,7 +80193,7 @@
           "interest_expense": -1222871.0,
           "tax_expense": -5956151.0,
           "pretax_income": 20538844.0,
-          "market_cap": null,
+          "market_cap": 7200000000000.0,
           "shares": 450000000.0,
           "roe": 7.082357874682699,
           "roe_5y": -0.027429864708721996,
@@ -79894,7 +80209,7 @@
           "dps": 600.0
         },
         "2018": {
-          "price": null,
+          "price": 6000,
           "total_revenue": 264440260.0,
           "net_income": 23185145.0,
           "total_equity": 220361888.0,
@@ -79908,7 +80223,7 @@
           "interest_expense": -2072602.0,
           "tax_expense": -7719952.0,
           "pretax_income": 27097002.0,
-          "market_cap": null,
+          "market_cap": 2700000000000.0,
           "shares": 450000000.0,
           "roe": 10.521395151597176,
           "roe_5y": 0.4664660742072422,
@@ -80223,6 +80538,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -84242,7 +84567,7 @@
           "dps": null
         },
         "2018": {
-          "price": null,
+          "price": 520,
           "total_revenue": 3085519000000.0,
           "net_income": 12236000000.0,
           "total_equity": 4856420000000.0,
@@ -84256,7 +84581,7 @@
           "interest_expense": null,
           "tax_expense": -25391000000.0,
           "pretax_income": 75863000000.0,
-          "market_cap": null,
+          "market_cap": 7997600000000.0,
           "shares": 15380000000.0,
           "roe": 0.25195514391259405,
           "roe_5y": -0.49959010635263834,
@@ -84541,6 +84866,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -85113,7 +85447,7 @@
           "dps": 346.22
         },
         "2016": {
-          "price": null,
+          "price": 1410,
           "total_revenue": 242598535.0,
           "net_income": 27393934.0,
           "total_equity": 127345381.0,
@@ -85127,7 +85461,7 @@
           "interest_expense": -1228598.0,
           "tax_expense": -8170678.0,
           "pretax_income": 35592255.0,
-          "market_cap": null,
+          "market_cap": 3694200000000.0,
           "shares": 2620000000.0,
           "roe": 21.51152541606515,
           "roe_5y": 0.15497529974487434,
@@ -85292,6 +85626,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Energy",
@@ -85675,7 +86018,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 935,
           "total_revenue": 441007573966.0,
           "net_income": 54891248865.0,
           "total_equity": 3512254400929.0,
@@ -85689,7 +86032,7 @@
           "interest_expense": null,
           "tax_expense": -15405558814.0,
           "pretax_income": 63687817465.0,
-          "market_cap": null,
+          "market_cap": 3450150000000.0,
           "shares": 3690000000.0,
           "roe": 1.5628494579003485,
           "roe_5y": null,
@@ -85735,7 +86078,7 @@
           "dps": null
         },
         "2023": {
-          "price": null,
+          "price": 1245,
           "total_revenue": 355024952208.0,
           "net_income": 49713488655.0,
           "total_equity": 3378441004326.0,
@@ -85749,7 +86092,7 @@
           "interest_expense": null,
           "tax_expense": -9971065010.0,
           "pretax_income": 58802456434.0,
-          "market_cap": null,
+          "market_cap": 4594050000000.0,
           "shares": 3690000000.0,
           "roe": 1.4714919867282943,
           "roe_5y": 0.12181811505352158,
@@ -86214,6 +86557,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2023"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -86696,7 +87049,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 50,
           "total_revenue": 697914218244.0,
           "net_income": -117912748401.0,
           "total_equity": 2142615920977.0,
@@ -87055,6 +87408,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 0,
+        "ratio": 0,
+        "years": [
+          "2019"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Non-Cyclicals",
@@ -96105,7 +96467,7 @@
           "dps": 62.66
         },
         "2016": {
-          "price": null,
+          "price": 610,
           "total_revenue": 555483921.0,
           "net_income": 29822363.0,
           "total_equity": 188150974.0,
@@ -96119,7 +96481,7 @@
           "interest_expense": -45826631.0,
           "tax_expense": -11487276.0,
           "pretax_income": 29502709.0,
-          "market_cap": null,
+          "market_cap": 2031300000000.0,
           "shares": 3330000000.0,
           "roe": 15.85023046439292,
           "roe_5y": -0.13067376486507432,
@@ -96374,6 +96736,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Energy",
@@ -96787,7 +97158,7 @@
           "dps": null
         },
         "2023": {
-          "price": null,
+          "price": 50,
           "total_revenue": 3501145.0,
           "net_income": -1414246.0,
           "total_equity": -31245030.0,
@@ -96801,7 +97172,7 @@
           "interest_expense": -1554.0,
           "tax_expense": -41263.0,
           "pretax_income": -1373918.0,
-          "market_cap": null,
+          "market_cap": 41500000000.0,
           "shares": 830000000.0,
           "roe": 4.526307063875438,
           "roe_5y": -0.33927669126308135,
@@ -97146,6 +97517,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2023"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Energy",
@@ -97644,7 +98024,7 @@
           "dps": 0.0
         },
         "2018": {
-          "price": null,
+          "price": 700,
           "total_revenue": 2200342255000.0,
           "net_income": 36741706000.0,
           "total_equity": 836031177000.0,
@@ -97658,7 +98038,7 @@
           "interest_expense": -53609410000.0,
           "tax_expense": -101425864000.0,
           "pretax_income": 298058600000.0,
-          "market_cap": null,
+          "market_cap": 1462999999999.9998,
           "shares": 2089999999.9999998,
           "roe": 4.394777014398351,
           "roe_5y": -0.30446867958400914,
@@ -97913,6 +98293,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Infrastructures",
@@ -104357,7 +104746,7 @@
           "dps": null
         },
         "2021": {
-          "price": null,
+          "price": 172,
           "total_revenue": 626001737958.0,
           "net_income": -2292147935352.0,
           "total_equity": -5205078080169.0,
@@ -104371,7 +104760,7 @@
           "interest_expense": -262607204936.0,
           "tax_expense": -406555440237.0,
           "pretax_income": -1931320737799.0,
-          "market_cap": null,
+          "market_cap": 1838680000000.0,
           "shares": 10690000000.0,
           "roe": 44.03676371512909,
           "roe_5y": 1.0469393036224601,
@@ -104686,6 +105075,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2021"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Transportation & Logistic",
@@ -105034,7 +105432,7 @@
           "dps": null
         },
         "2023": {
-          "price": null,
+          "price": 50,
           "total_revenue": null,
           "net_income": null,
           "total_equity": null,
@@ -105244,6 +105642,15 @@
           "dps": null
         }
       },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 0,
+        "ratio": 0,
+        "years": [
+          "2023"
+        ],
+        "source": "price_history (close Desember)"
+      },
       "valuation": {
         "sector": "Energy",
         "industry": "Coal",
@@ -105371,7 +105778,7 @@
       },
       "annual": {
         "2024": {
-          "price": null,
+          "price": 142,
           "total_revenue": 27012644.0,
           "net_income": -8794089.0,
           "total_equity": -29265224.0,
@@ -105385,7 +105792,7 @@
           "interest_expense": -2707309.0,
           "tax_expense": -264.0,
           "pretax_income": -8796511.0,
-          "market_cap": null,
+          "market_cap": 9940000000.0,
           "shares": 70000000.0,
           "roe": 30.04962135263342,
           "roe_5y": -0.18905967560098136,
@@ -105700,6 +106107,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2024"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -108969,7 +109385,7 @@
           "dps": 0.0
         },
         "2022": {
-          "price": null,
+          "price": 1530,
           "total_revenue": 129215954.0,
           "net_income": -6198367.0,
           "total_equity": 83319543.0,
@@ -108983,7 +109399,7 @@
           "interest_expense": -908648.0,
           "tax_expense": -152819.0,
           "pretax_income": -6495035.0,
-          "market_cap": null,
+          "market_cap": 1224000000000.0,
           "shares": 800000000.0,
           "roe": -7.439271480401663,
           "roe_5y": -0.08587102864981389,
@@ -109119,7 +109535,7 @@
           "dps": 0.0
         },
         "2017": {
-          "price": null,
+          "price": 4850,
           "total_revenue": 49681160.0,
           "net_income": -12272141.0,
           "total_equity": 105299739.0,
@@ -109133,7 +109549,7 @@
           "interest_expense": -365561.0,
           "tax_expense": 3475823.0,
           "pretax_income": -15590386.0,
-          "market_cap": null,
+          "market_cap": 3880000000000.0,
           "shares": 800000000.0,
           "roe": -11.654483777970238,
           "roe_5y": null,
@@ -109178,6 +109594,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2022",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Basic Materials",
@@ -111433,7 +111859,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 272,
           "total_revenue": 461440807000.0,
           "net_income": -260780563000.0,
           "total_equity": 3315128311000.0,
@@ -111447,7 +111873,7 @@
           "interest_expense": -268548353000.0,
           "tax_expense": -9023344000.0,
           "pretax_income": -251753574000.0,
-          "market_cap": null,
+          "market_cap": 854080000000.0,
           "shares": 3140000000.0,
           "roe": -7.866379172555653,
           "roe_5y": null,
@@ -111792,6 +112218,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2019"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Properties & Real Estate",
@@ -120373,7 +120808,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 304,
           "total_revenue": 12895719143.0,
           "net_income": 5931470911.0,
           "total_equity": 339551052771.0,
@@ -120387,7 +120822,7 @@
           "interest_expense": 0.0,
           "tax_expense": -480485818.0,
           "pretax_income": 1075679210.0,
-          "market_cap": null,
+          "market_cap": 100320000000.0,
           "shares": 330000000.0,
           "roe": 1.7468568754520404,
           "roe_5y": 0.00854715946591722,
@@ -120553,7 +120988,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 272,
           "total_revenue": 118917403800.0,
           "net_income": 7467940356.0,
           "total_equity": 282101635876.0,
@@ -120567,7 +121002,7 @@
           "interest_expense": 0.0,
           "tax_expense": -1364878143.0,
           "pretax_income": 5302563264.0,
-          "market_cap": null,
+          "market_cap": 89760000000.0,
           "shares": 330000000.0,
           "roe": 2.6472517016110437,
           "roe_5y": -0.17332503311260272,
@@ -120583,7 +121018,7 @@
           "dps": 3.0
         },
         "2018": {
-          "price": null,
+          "price": 332,
           "total_revenue": 143382081850.0,
           "net_income": 11844297790.0,
           "total_equity": 277708599001.0,
@@ -120597,7 +121032,7 @@
           "interest_expense": 0.0,
           "tax_expense": -2967432362.0,
           "pretax_income": 12347569714.0,
-          "market_cap": null,
+          "market_cap": 109560000000.0,
           "shares": 330000000.0,
           "roe": 4.265009377674096,
           "roe_5y": -0.30572604535912895,
@@ -120643,7 +121078,7 @@
           "dps": 3.0
         },
         "2016": {
-          "price": null,
+          "price": 404,
           "total_revenue": 115940711050.0,
           "net_income": 11705966086.0,
           "total_equity": 263264403585.0,
@@ -120657,7 +121092,7 @@
           "interest_expense": 0.0,
           "tax_expense": -2278665403.0,
           "pretax_income": 12288056506.0,
-          "market_cap": null,
+          "market_cap": 133320000000.0,
           "shares": 330000000.0,
           "roe": 4.446467477788163,
           "roe_5y": null,
@@ -120792,6 +121227,18 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 4,
+        "market_cap": 4,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2019",
+          "2018",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Basic Materials",
@@ -122793,7 +123240,7 @@
           "dps": null
         },
         "2023": {
-          "price": null,
+          "price": 308,
           "total_revenue": 5014659972.0,
           "net_income": 454001087.0,
           "total_equity": 1720815186.0,
@@ -122807,7 +123254,7 @@
           "interest_expense": -107457610.0,
           "tax_expense": -315756167.0,
           "pretax_income": 1181069686.0,
-          "market_cap": null,
+          "market_cap": 237160000000.0,
           "shares": 770000000.0,
           "roe": 26.382907978358578,
           "roe_5y": 0.5166043705544012,
@@ -122823,7 +123270,7 @@
           "dps": null
         },
         "2022": {
-          "price": null,
+          "price": 156,
           "total_revenue": 5956105798.0,
           "net_income": 449958692.0,
           "total_equity": 3057985347.0,
@@ -122837,7 +123284,7 @@
           "interest_expense": -158888223.0,
           "tax_expense": -302184619.0,
           "pretax_income": 1600348213.0,
-          "market_cap": null,
+          "market_cap": 120120000000.0,
           "shares": 770000000.0,
           "roe": 14.714220015521873,
           "roe_5y": 0.07293580990974524,
@@ -122853,7 +123300,7 @@
           "dps": null
         },
         "2021": {
-          "price": null,
+          "price": 200,
           "total_revenue": 2164946288.0,
           "net_income": 144275244.0,
           "total_equity": 1750209259.0,
@@ -122867,7 +123314,7 @@
           "interest_expense": -69341549.0,
           "tax_expense": -114037498.0,
           "pretax_income": 379375031.0,
-          "market_cap": null,
+          "market_cap": 154000000000.0,
           "shares": 770000000.0,
           "roe": 8.243313949923516,
           "roe_5y": 0.07398724016704894,
@@ -122973,7 +123420,7 @@
           "dps": null
         },
         "2017": {
-          "price": null,
+          "price": 56,
           "total_revenue": 1321743514.0,
           "net_income": 150497313.0,
           "total_equity": 1454320756.0,
@@ -122987,7 +123434,7 @@
           "interest_expense": -60858739.0,
           "tax_expense": -63123849.0,
           "pretax_income": 191361218.0,
-          "market_cap": null,
+          "market_cap": 43120000000.0,
           "shares": 770000000.0,
           "roe": 10.348288875002483,
           "roe_5y": 1.1059124801085543,
@@ -123272,6 +123719,18 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 4,
+        "market_cap": 4,
+        "ratio": 0,
+        "years": [
+          "2023",
+          "2022",
+          "2021",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Energy",
@@ -123738,7 +124197,7 @@
           "dps": 0.0
         },
         "2021": {
-          "price": null,
+          "price": 3390,
           "total_revenue": 2177783404033.0,
           "net_income": 668231145849.0,
           "total_equity": 10961489326966.0,
@@ -123752,7 +124211,7 @@
           "interest_expense": -217409818584.0,
           "tax_expense": -1209645128.0,
           "pretax_income": 731322766012.0,
-          "market_cap": null,
+          "market_cap": 6271500000000.0,
           "shares": 1850000000.0,
           "roe": 6.0961711124883955,
           "roe_5y": -0.07433171128138516,
@@ -123798,7 +124257,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 4980,
           "total_revenue": 2459812402375.0,
           "net_income": 1097731675915.0,
           "total_equity": 10590770182820.0,
@@ -123812,7 +124271,7 @@
           "interest_expense": -5539276113.0,
           "tax_expense": -8510594250.0,
           "pretax_income": 1298473559565.0,
-          "market_cap": null,
+          "market_cap": 9213000000000.0,
           "shares": 1850000000.0,
           "roe": 10.364984387025075,
           "roe_5y": 0.019780999332497107,
@@ -123828,7 +124287,7 @@
           "dps": 300.0
         },
         "2018": {
-          "price": null,
+          "price": 3850,
           "total_revenue": 2225704530841.0,
           "net_income": 920832091589.0,
           "total_equity": 9414918798240.0,
@@ -123842,7 +124301,7 @@
           "interest_expense": -5807213152.0,
           "tax_expense": -6525357822.0,
           "pretax_income": 1133182587932.0,
-          "market_cap": null,
+          "market_cap": 7122500000000.0,
           "shares": 1850000000.0,
           "roe": 9.78056328814156,
           "roe_5y": -0.021116683293640137,
@@ -123858,7 +124317,7 @@
           "dps": 0.0
         },
         "2017": {
-          "price": null,
+          "price": 5400,
           "total_revenue": 1718746728686.0,
           "net_income": 524330135424.0,
           "total_equity": 8334861687451.0,
@@ -123872,7 +124331,7 @@
           "interest_expense": -12141377378.0,
           "tax_expense": -4366075250.0,
           "pretax_income": 653012273229.0,
-          "market_cap": null,
+          "market_cap": 9990000000000.0,
           "shares": 1850000000.0,
           "roe": 6.290807875233652,
           "roe_5y": -0.09358678982082436,
@@ -123888,7 +124347,7 @@
           "dps": 0.0
         },
         "2016": {
-          "price": null,
+          "price": 5800,
           "total_revenue": 2019459161815.0,
           "net_income": 699004622667.0,
           "total_equity": 7792913029035.0,
@@ -123902,7 +124361,7 @@
           "interest_expense": -27705808994.0,
           "tax_expense": -134656422463.0,
           "pretax_income": 975307046479.0,
-          "market_cap": null,
+          "market_cap": 10730000000000.0,
           "shares": 1850000000.0,
           "roe": 8.969747513704231,
           "roe_5y": -0.017278084273788963,
@@ -124157,6 +124616,19 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 5,
+        "market_cap": 5,
+        "ratio": 0,
+        "years": [
+          "2021",
+          "2019",
+          "2018",
+          "2017",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Properties & Real Estate",
@@ -126430,7 +126902,7 @@
           "dps": 0.0
         },
         "2018": {
-          "price": null,
+          "price": 1095,
           "total_revenue": 2003208506432.0,
           "net_income": 20236933604.0,
           "total_equity": 1735496820895.0,
@@ -126444,7 +126916,7 @@
           "interest_expense": -294113913.0,
           "tax_expense": 2243390000.0,
           "pretax_income": 19582402298.0,
-          "market_cap": null,
+          "market_cap": 1456350000000.0,
           "shares": 1330000000.0,
           "roe": 1.1660599639452964,
           "roe_5y": -0.3754390838156879,
@@ -126639,6 +127111,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -128952,7 +129433,7 @@
           "dps": null
         },
         "2020": {
-          "price": null,
+          "price": 50,
           "total_revenue": 616211000000.0,
           "net_income": -244119000000.0,
           "total_equity": 8435792000000.0,
@@ -128966,7 +129447,7 @@
           "interest_expense": null,
           "tax_expense": -1108000000.0,
           "pretax_income": -325250000000.0,
-          "market_cap": null,
+          "market_cap": 2176000000000.0,
           "shares": 43520000000.0,
           "roe": -2.8938480228056833,
           "roe_5y": -0.2703498435654763,
@@ -129341,6 +129822,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2020"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Properties & Real Estate",
@@ -132442,7 +132932,7 @@
           "dps": 200.0
         },
         "2019": {
-          "price": null,
+          "price": 2150,
           "total_revenue": 22226912485948.0,
           "net_income": 585070445890.0,
           "total_equity": 6129308447048.0,
@@ -132456,7 +132946,7 @@
           "interest_expense": -6161028189.0,
           "tax_expense": -232288751064.0,
           "pretax_income": 813103428517.0,
-          "market_cap": null,
+          "market_cap": 5826500000000.0,
           "shares": 2710000000.0,
           "roe": 9.545456081130684,
           "roe_5y": -0.07886753530203183,
@@ -132502,7 +132992,7 @@
           "dps": 90.0
         },
         "2017": {
-          "price": null,
+          "price": 2900,
           "total_revenue": 19669096571146.0,
           "net_income": 524166303594.0,
           "total_equity": 5130769417972.0,
@@ -132516,7 +133006,7 @@
           "interest_expense": -9924174581.0,
           "tax_expense": -177717985297.0,
           "pretax_income": 695554155912.0,
-          "market_cap": null,
+          "market_cap": 7859000000000.0,
           "shares": 2710000000.0,
           "roe": 10.216134479907756,
           "roe_5y": -0.08132415626497469,
@@ -132532,7 +133022,7 @@
           "dps": 5.0
         },
         "2016": {
-          "price": null,
+          "price": 2700,
           "total_revenue": 18936240950891.0,
           "net_income": 563184752313.0,
           "total_equity": 4619981227666.0,
@@ -132546,7 +133036,7 @@
           "interest_expense": -10762560065.0,
           "tax_expense": -204038431238.0,
           "pretax_income": 760159126914.0,
-          "market_cap": null,
+          "market_cap": 7317000000000.0,
           "shares": 2710000000.0,
           "roe": 12.19019568608765,
           "roe_5y": -0.03351555271148732,
@@ -132801,6 +133291,17 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2017",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Non-Cyclicals",
@@ -134318,7 +134819,7 @@
           "dps": 0.0
         },
         "2016": {
-          "price": null,
+          "price": 182,
           "total_revenue": 70555051.0,
           "net_income": 2865261.0,
           "total_equity": 20001283.0,
@@ -134332,7 +134833,7 @@
           "interest_expense": 0.0,
           "tax_expense": -612258.0,
           "pretax_income": 2171613.0,
-          "market_cap": null,
+          "market_cap": 234780000000.0,
           "shares": 1290000000.0,
           "roe": 14.3253860264864,
           "roe_5y": null,
@@ -134497,6 +134998,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -139779,7 +140289,7 @@
           "dps": 14.0
         },
         "2024": {
-          "price": null,
+          "price": 1070,
           "total_revenue": 1292650185.0,
           "net_income": 5897563.0,
           "total_equity": 174955646.0,
@@ -139793,7 +140303,7 @@
           "interest_expense": -10199854.0,
           "tax_expense": -5000602.0,
           "pretax_income": 14595261.0,
-          "market_cap": null,
+          "market_cap": 513600000000.0,
           "shares": 480000000.0,
           "roe": 3.370890356976533,
           "roe_5y": -0.20932431701648446,
@@ -139929,7 +140439,7 @@
           "dps": 25.0
         },
         "2019": {
-          "price": null,
+          "price": 270,
           "total_revenue": 1022192946.0,
           "net_income": 12756886.0,
           "total_equity": 116947774.0,
@@ -139943,7 +140453,7 @@
           "interest_expense": -6135209.0,
           "tax_expense": -5363459.0,
           "pretax_income": 16875017.0,
-          "market_cap": null,
+          "market_cap": 129600000000.0,
           "shares": 480000000.0,
           "roe": 10.908190522719996,
           "roe_5y": -0.04406660769270776,
@@ -139959,7 +140469,7 @@
           "dps": 7.5
         },
         "2018": {
-          "price": null,
+          "price": 389,
           "total_revenue": 1022214489.0,
           "net_income": 10826175.0,
           "total_equity": 108798941.0,
@@ -139973,7 +140483,7 @@
           "interest_expense": -4364091.0,
           "tax_expense": -4301144.0,
           "pretax_income": 16244161.0,
-          "market_cap": null,
+          "market_cap": 186720000000.0,
           "shares": 480000000.0,
           "roe": 9.950625346619873,
           "roe_5y": -0.17666879798854818,
@@ -140198,6 +140708,17 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2024",
+          "2019",
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Non-Cyclicals",
@@ -140611,7 +141132,7 @@
           "dps": null
         },
         "2024": {
-          "price": null,
+          "price": 222,
           "total_revenue": 35317779779.0,
           "net_income": 10347122240.0,
           "total_equity": 679664632684.0,
@@ -140625,7 +141146,7 @@
           "interest_expense": -83897209.0,
           "tax_expense": -651446679.0,
           "pretax_income": 11015570801.0,
-          "market_cap": null,
+          "market_cap": 1420800000000.0,
           "shares": 6400000000.0,
           "roe": 1.5223864450823559,
           "roe_5y": 0.17570734111070996,
@@ -140761,7 +141282,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 217,
           "total_revenue": 84249947508.0,
           "net_income": 4252260299.0,
           "total_equity": 627467278500.0,
@@ -140775,7 +141296,7 @@
           "interest_expense": -18533617026.0,
           "tax_expense": -2122307029.0,
           "pretax_income": 4841104604.0,
-          "market_cap": null,
+          "market_cap": 590240000000.0,
           "shares": 2720000000.0,
           "roe": 0.677686382175226,
           "roe_5y": -0.051353896421553746,
@@ -140970,6 +141491,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2024",
+          "2019"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Properties & Real Estate",
@@ -141496,7 +142027,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 110,
           "total_revenue": 87598981860.0,
           "net_income": 845802647.0,
           "total_equity": 63558508606.0,
@@ -141510,7 +142041,7 @@
           "interest_expense": -39532054.0,
           "tax_expense": -552948393.0,
           "pretax_income": 1221265790.0,
-          "market_cap": null,
+          "market_cap": 51700000000.0,
           "shares": 470000000.0,
           "roe": 1.3307465287506057,
           "roe_5y": -0.14522870547245859,
@@ -141586,7 +142117,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 294,
           "total_revenue": 354200998847.0,
           "net_income": -7003398445.0,
           "total_equity": 127129417567.0,
@@ -141600,7 +142131,7 @@
           "interest_expense": -3618397995.0,
           "tax_expense": -4390455375.0,
           "pretax_income": -1731524913.0,
-          "market_cap": null,
+          "market_cap": 138180000000.0,
           "shares": 470000000.0,
           "roe": -5.508873224648461,
           "roe_5y": null,
@@ -141855,6 +142386,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -144663,7 +145204,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 1900,
           "total_revenue": 139315838.0,
           "net_income": -1104146.0,
           "total_equity": 53289682.0,
@@ -144677,7 +145218,7 @@
           "interest_expense": -2069061.0,
           "tax_expense": -266762.0,
           "pretax_income": 2184.0,
-          "market_cap": null,
+          "market_cap": 779000000000.0,
           "shares": 410000000.0,
           "roe": -2.0719695794018813,
           "roe_5y": null,
@@ -144723,7 +145264,7 @@
           "dps": null
         },
         "2017": {
-          "price": null,
+          "price": 2030,
           "total_revenue": 161261509.0,
           "net_income": -2288028.0,
           "total_equity": 53577623.0,
@@ -144737,7 +145278,7 @@
           "interest_expense": -659615.0,
           "tax_expense": -628283.0,
           "pretax_income": -265931.0,
-          "market_cap": null,
+          "market_cap": 832300000000.0,
           "shares": 410000000.0,
           "roe": -4.27049180587948,
           "roe_5y": null,
@@ -145022,6 +145563,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -145516,7 +146067,7 @@
           "dps": 0.0
         },
         "2020": {
-          "price": null,
+          "price": 308,
           "total_revenue": 984347363283.0,
           "net_income": 5115309916.0,
           "total_equity": 370843358175.0,
@@ -145530,7 +146081,7 @@
           "interest_expense": -33007072160.0,
           "tax_expense": -9302921992.0,
           "pretax_income": 10902705411.0,
-          "market_cap": null,
+          "market_cap": 492800000000.0,
           "shares": 1600000000.0,
           "roe": 1.3793721265963994,
           "roe_5y": -0.3719353907268821,
@@ -145905,6 +146456,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2020"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -149652,7 +150212,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 94,
           "total_revenue": 50607742632.0,
           "net_income": -107478867594.0,
           "total_equity": -1203251555512.0,
@@ -149666,7 +150226,7 @@
           "interest_expense": -108197412586.0,
           "tax_expense": -242492478.0,
           "pretax_income": -107864967575.0,
-          "market_cap": null,
+          "market_cap": 104340000000.0,
           "shares": 1110000000.0,
           "roe": 8.932368888421363,
           "roe_5y": 0.07032145021606007,
@@ -149682,7 +150242,7 @@
           "dps": null
         },
         "2024": {
-          "price": null,
+          "price": 65,
           "total_revenue": 185653036629.0,
           "net_income": -90559432557.0,
           "total_equity": -1095772704987.0,
@@ -149696,7 +150256,7 @@
           "interest_expense": -91419856298.0,
           "tax_expense": -591068319.0,
           "pretax_income": -89745157667.0,
-          "market_cap": null,
+          "market_cap": 72150000000.0,
           "shares": 1110000000.0,
           "roe": 8.26443587660585,
           "roe_5y": 0.0919443273995022,
@@ -150101,6 +150661,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2024"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -150539,7 +151109,7 @@
           "dps": 0.0
         },
         "2020": {
-          "price": null,
+          "price": 1798,
           "total_revenue": 167584026620.0,
           "net_income": -104920850435.0,
           "total_equity": 584938806990.0,
@@ -150553,7 +151123,7 @@
           "interest_expense": -5895576217.0,
           "tax_expense": -451221614.0,
           "pretax_income": -105498825152.0,
-          "market_cap": null,
+          "market_cap": 179800000000.0,
           "shares": 100000000.0,
           "roe": -17.937064387111814,
           "roe_5y": null,
@@ -150569,7 +151139,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 1595,
           "total_revenue": 205515914355.0,
           "net_income": -71871228936.0,
           "total_equity": 690169339803.0,
@@ -150583,7 +151153,7 @@
           "interest_expense": -4649659655.0,
           "tax_expense": -599701639.0,
           "pretax_income": -69515841972.0,
-          "market_cap": null,
+          "market_cap": 159500000000.0,
           "shares": 100000000.0,
           "roe": -10.413564438622371,
           "roe_5y": null,
@@ -150659,7 +151229,7 @@
           "dps": 1.6
         },
         "2016": {
-          "price": null,
+          "price": 698,
           "total_revenue": 276272327077.0,
           "net_income": 85839474272.0,
           "total_equity": 638758820149.0,
@@ -150673,7 +151243,7 @@
           "interest_expense": 0.0,
           "tax_expense": -591738150.0,
           "pretax_income": 87506296666.0,
-          "market_cap": null,
+          "market_cap": 69800000000.0,
           "shares": 100000000.0,
           "roe": 13.438479683454965,
           "roe_5y": -0.13838927535820877,
@@ -150928,6 +151498,17 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2020",
+          "2019",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Properties & Real Estate",
@@ -151512,7 +152093,7 @@
           "dps": null
         },
         "2017": {
-          "price": null,
+          "price": 239,
           "total_revenue": 26755052488.0,
           "net_income": -772641367.0,
           "total_equity": 83319102861.0,
@@ -151526,7 +152107,7 @@
           "interest_expense": -3157597591.0,
           "tax_expense": -825173596.0,
           "pretax_income": -232130492.0,
-          "market_cap": null,
+          "market_cap": 74090000000.0,
           "shares": 310000000.0,
           "roe": -0.9273279961847236,
           "roe_5y": null,
@@ -151542,7 +152123,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 257,
           "total_revenue": 9649714603.0,
           "net_income": -1082698269.0,
           "total_equity": 84065372585.0,
@@ -151556,7 +152137,7 @@
           "interest_expense": -3209589041.0,
           "tax_expense": -1700191916.0,
           "pretax_income": -6346958744.0,
-          "market_cap": null,
+          "market_cap": 79670000000.0,
           "shares": 310000000.0,
           "roe": -1.2879241900763176,
           "roe_5y": null,
@@ -151781,6 +152362,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2017",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Infrastructures",
@@ -156835,7 +157426,7 @@
           "dps": null
         },
         "2022": {
-          "price": null,
+          "price": 50,
           "total_revenue": 3919110600.0,
           "net_income": -158027945.0,
           "total_equity": 13228643020.0,
@@ -156849,7 +157440,7 @@
           "interest_expense": null,
           "tax_expense": -84035351.0,
           "pretax_income": -198147450.0,
-          "market_cap": null,
+          "market_cap": 106000000000.0,
           "shares": 2120000000.0,
           "roe": -1.1945892315718412,
           "roe_5y": -0.5077360278339521,
@@ -156895,7 +157486,7 @@
           "dps": null
         },
         "2020": {
-          "price": null,
+          "price": 50,
           "total_revenue": 3714160800.0,
           "net_income": -1434203919.0,
           "total_equity": 13781387182.0,
@@ -156909,7 +157500,7 @@
           "interest_expense": null,
           "tax_expense": -132609596.0,
           "pretax_income": -2308825995.0,
-          "market_cap": null,
+          "market_cap": 106000000000.0,
           "shares": 2120000000.0,
           "roe": -10.406818269159633,
           "roe_5y": 0.5651835412614017,
@@ -157074,6 +157665,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2022",
+          "2020"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Infrastructures",
@@ -157633,7 +158234,7 @@
           "dps": null
         },
         "2017": {
-          "price": null,
+          "price": 196,
           "total_revenue": 583096686000.0,
           "net_income": 11425651000.0,
           "total_equity": 524755698000.0,
@@ -157647,7 +158248,7 @@
           "interest_expense": null,
           "tax_expense": -3115467000.0,
           "pretax_income": 20973576000.0,
-          "market_cap": null,
+          "market_cap": 456680000000.0,
           "shares": 2330000000.0,
           "roe": 2.1773276676263933,
           "roe_5y": -0.18026778453943193,
@@ -157872,6 +158473,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -158357,7 +158967,7 @@
           "dps": null
         },
         "2018": {
-          "price": null,
+          "price": 830,
           "total_revenue": 12970389000000.0,
           "net_income": -1257255000000.0,
           "total_equity": 3941488000000.0,
@@ -158371,7 +158981,7 @@
           "interest_expense": -6076000000.0,
           "tax_expense": 2806000000.0,
           "pretax_income": -1252995000000.0,
-          "market_cap": null,
+          "market_cap": 3469399999999.9995,
           "shares": 4179999999.9999995,
           "roe": -31.897978631420422,
           "roe_5y": null,
@@ -158686,6 +159296,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Non-Cyclicals",
@@ -164633,7 +165252,7 @@
           "dps": null
         },
         "2023": {
-          "price": null,
+          "price": 18,
           "total_revenue": 4176800357.0,
           "net_income": -67791254771.0,
           "total_equity": -631134405131.0,
@@ -164647,7 +165266,7 @@
           "interest_expense": -28868530277.0,
           "tax_expense": -40156263069.0,
           "pretax_income": -27638145404.0,
-          "market_cap": null,
+          "market_cap": 27360000000.0,
           "shares": 1520000000.0,
           "roe": 10.741175606950005,
           "roe_5y": null,
@@ -164872,6 +165491,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2023"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -165160,7 +165788,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 4950,
           "total_revenue": 871892000000.0,
           "net_income": 411441000000.0,
           "total_equity": 2579828000000.0,
@@ -165174,7 +165802,7 @@
           "interest_expense": -118717000000.0,
           "tax_expense": -37096000000.0,
           "pretax_income": 448537000000.0,
-          "market_cap": null,
+          "market_cap": 6682500000000.0,
           "shares": 1350000000.0,
           "roe": 15.948388807315835,
           "roe_5y": 0.37715314922344967,
@@ -165190,7 +165818,7 @@
           "dps": 0.0
         },
         "2024": {
-          "price": null,
+          "price": 5100,
           "total_revenue": 862466000000.0,
           "net_income": -1844881000000.0,
           "total_equity": 2168387000000.0,
@@ -165204,7 +165832,7 @@
           "interest_expense": -237172000000.0,
           "tax_expense": -5668000000.0,
           "pretax_income": -1845168000000.0,
-          "market_cap": null,
+          "market_cap": 6885000000000.0,
           "shares": 1350000000.0,
           "roe": -85.08079969119903,
           "roe_5y": null,
@@ -165220,7 +165848,7 @@
           "dps": 0.0
         },
         "2023": {
-          "price": null,
+          "price": 5300,
           "total_revenue": 1109756000000.0,
           "net_income": 75310000000.0,
           "total_equity": 4013268000000.0,
@@ -165234,7 +165862,7 @@
           "interest_expense": -282197000000.0,
           "tax_expense": -25234000000.0,
           "pretax_income": 97308000000.0,
-          "market_cap": null,
+          "market_cap": 7155000000000.0,
           "shares": 1350000000.0,
           "roe": 1.876525564701884,
           "roe_5y": -0.3605933987473694,
@@ -165310,7 +165938,7 @@
           "dps": 618.0
         },
         "2020": {
-          "price": null,
+          "price": 7450,
           "total_revenue": 1122276247134.0,
           "net_income": 199676473228.0,
           "total_equity": 6201850319816.0,
@@ -165324,7 +165952,7 @@
           "interest_expense": -366069282337.0,
           "tax_expense": -24990246564.0,
           "pretax_income": 92194414308.0,
-          "market_cap": null,
+          "market_cap": 10057500000000.0,
           "shares": 1350000000.0,
           "roe": 3.219627416514691,
           "roe_5y": -0.21204949812918739,
@@ -165340,7 +165968,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 8300,
           "total_revenue": 1087963086355.0,
           "net_income": 581338486861.0,
           "total_equity": 5802718740462.0,
@@ -165354,7 +165982,7 @@
           "interest_expense": -231683666926.0,
           "tax_expense": -3170390779.0,
           "pretax_income": 132001538414.0,
-          "market_cap": null,
+          "market_cap": 11205000000000.0,
           "shares": 1350000000.0,
           "roe": 10.018381259931877,
           "roe_5y": 0.05662925355806836,
@@ -165400,7 +166028,7 @@
           "dps": 0.0
         },
         "2017": {
-          "price": null,
+          "price": 9400,
           "total_revenue": 761760612195.0,
           "net_income": 879099393578.0,
           "total_equity": 4317467149606.0,
@@ -165414,7 +166042,7 @@
           "interest_expense": -137205502922.0,
           "tax_expense": 113970371750.0,
           "pretax_income": 148155664761.0,
-          "market_cap": null,
+          "market_cap": 12690000000000.0,
           "shares": 1350000000.0,
           "roe": 20.36146108623488,
           "roe_5y": -0.15037859927965647,
@@ -165609,6 +166237,20 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 6,
+        "market_cap": 6,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2024",
+          "2023",
+          "2020",
+          "2019",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Infrastructures",
@@ -169424,7 +170066,7 @@
           "dps": null
         },
         "2023": {
-          "price": null,
+          "price": 50,
           "total_revenue": 208393296000.0,
           "net_income": 9272753000.0,
           "total_equity": 754173065000.0,
@@ -169438,7 +170080,7 @@
           "interest_expense": -4906857000.0,
           "tax_expense": -10754509000.0,
           "pretax_income": 17510111000.0,
-          "market_cap": null,
+          "market_cap": 665500000000.0,
           "shares": 13310000000.0,
           "roe": 1.229525878121887,
           "roe_5y": -0.3288174996918969,
@@ -169454,7 +170096,7 @@
           "dps": null
         },
         "2022": {
-          "price": null,
+          "price": 50,
           "total_revenue": 227978382000.0,
           "net_income": -38476059000.0,
           "total_equity": 747184735000.0,
@@ -169468,7 +170110,7 @@
           "interest_expense": -17344800000.0,
           "tax_expense": -1263423000.0,
           "pretax_income": -34027382000.0,
-          "market_cap": null,
+          "market_cap": 665500000000.0,
           "shares": 13310000000.0,
           "roe": -5.149470699505123,
           "roe_5y": null,
@@ -169604,7 +170246,7 @@
           "dps": null
         },
         "2017": {
-          "price": null,
+          "price": 29,
           "total_revenue": 13297423000.0,
           "net_income": -43140787000.0,
           "total_equity": -105427056000.0,
@@ -169618,7 +170260,7 @@
           "interest_expense": -214446000.0,
           "tax_expense": 9640942000.0,
           "pretax_income": -53218962000.0,
-          "market_cap": null,
+          "market_cap": 22910000000.0,
           "shares": 790000000.0,
           "roe": 40.9200338478578,
           "roe_5y": null,
@@ -169753,6 +170395,17 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2023",
+          "2022",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -173150,7 +173803,7 @@
           "dps": null
         },
         "2024": {
-          "price": null,
+          "price": 126,
           "total_revenue": 210379673780.0,
           "net_income": -338652612178.0,
           "total_equity": -1144041808773.0,
@@ -173164,7 +173817,7 @@
           "interest_expense": -30541548962.0,
           "tax_expense": -50734478772.0,
           "pretax_income": -283757708547.0,
-          "market_cap": null,
+          "market_cap": 390600000000.0,
           "shares": 3100000000.0,
           "roe": 29.60141924718725,
           "roe_5y": 0.783303401960624,
@@ -173659,6 +174312,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2024"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Healthcare",
@@ -175016,7 +175678,7 @@
           "dps": 18.89
         },
         "2018": {
-          "price": null,
+          "price": 498,
           "total_revenue": 367961600950.0,
           "net_income": 52678443057.0,
           "total_equity": 319952419798.0,
@@ -175030,7 +175692,7 @@
           "interest_expense": -801060336.0,
           "tax_expense": -5364743569.0,
           "pretax_income": 22040417272.0,
-          "market_cap": null,
+          "market_cap": 99600000000.0,
           "shares": 200000000.0,
           "roe": 16.464461525328737,
           "roe_5y": 0.1497714769497296,
@@ -175076,7 +175738,7 @@
           "dps": 5.29
         },
         "2016": {
-          "price": null,
+          "price": 283,
           "total_revenue": 176067561639.0,
           "net_income": 90585509314.0,
           "total_equity": 242826462751.0,
@@ -175090,7 +175752,7 @@
           "interest_expense": -356410905.0,
           "tax_expense": -3305911836.0,
           "pretax_income": 13294748095.0,
-          "market_cap": null,
+          "market_cap": 50940000000.0,
           "shares": 180000000.0,
           "roe": 37.304628287934385,
           "roe_5y": null,
@@ -175315,6 +175977,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2018",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Basic Materials",
@@ -183420,7 +184092,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 670,
           "total_revenue": 86290000.0,
           "net_income": -69504000.0,
           "total_equity": 19715000.0,
@@ -183434,7 +184106,7 @@
           "interest_expense": -8735000.0,
           "tax_expense": 8711000.0,
           "pretax_income": -78129000.0,
-          "market_cap": null,
+          "market_cap": 931300000000.0,
           "shares": 1390000000.0,
           "roe": -352.5437484149125,
           "roe_5y": null,
@@ -183600,7 +184272,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 790,
           "total_revenue": 104058000.0,
           "net_income": -19584000.0,
           "total_equity": 150591000.0,
@@ -183614,7 +184286,7 @@
           "interest_expense": -9142000.0,
           "tax_expense": 4563000.0,
           "pretax_income": -24023000.0,
-          "market_cap": null,
+          "market_cap": 1098100000000.0,
           "shares": 1390000000.0,
           "roe": -13.004761240711597,
           "roe_5y": null,
@@ -183809,6 +184481,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2019"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Basic Materials",
@@ -184126,7 +184808,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 74,
           "total_revenue": 966917000000.0,
           "net_income": -65146000000.0,
           "total_equity": -2121284000000.0,
@@ -184140,7 +184822,7 @@
           "interest_expense": -113705000000.0,
           "tax_expense": -56579000000.0,
           "pretax_income": -24512000000.0,
-          "market_cap": null,
+          "market_cap": 247160000000.0,
           "shares": 3340000000.0,
           "roe": 3.071064506214161,
           "roe_5y": -0.4603789462159098,
@@ -184186,7 +184868,7 @@
           "dps": null
         },
         "2023": {
-          "price": null,
+          "price": 50,
           "total_revenue": 1081792000000.0,
           "net_income": -45420000000.0,
           "total_equity": -1931127000000.0,
@@ -184200,7 +184882,7 @@
           "interest_expense": -114354000000.0,
           "tax_expense": -95554000000.0,
           "pretax_income": 36716000000.0,
-          "market_cap": null,
+          "market_cap": 167000000000.0,
           "shares": 3340000000.0,
           "roe": 2.351994457122706,
           "roe_5y": null,
@@ -184216,7 +184898,7 @@
           "dps": null
         },
         "2022": {
-          "price": null,
+          "price": 71,
           "total_revenue": 661309000000.0,
           "net_income": -165607000000.0,
           "total_equity": -1866772000000.0,
@@ -184230,7 +184912,7 @@
           "interest_expense": -133967000000.0,
           "tax_expense": -41277000000.0,
           "pretax_income": -57646000000.0,
-          "market_cap": null,
+          "market_cap": 237140000000.0,
           "shares": 3340000000.0,
           "roe": 8.8713029764749,
           "roe_5y": null,
@@ -184666,6 +185348,17 @@
           "dps": null
         }
       },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2023",
+          "2022"
+        ],
+        "source": "price_history (close Desember)"
+      },
       "valuation": {
         "sector": "Industrials",
         "industry": "Machinery",
@@ -185015,7 +185708,7 @@
           "dps": null
         },
         "2023": {
-          "price": null,
+          "price": 134,
           "total_revenue": 43826512604.0,
           "net_income": -608210202.0,
           "total_equity": 39651858429.0,
@@ -185029,7 +185722,7 @@
           "interest_expense": 0.0,
           "tax_expense": 349173589.0,
           "pretax_income": -935199164.0,
-          "market_cap": null,
+          "market_cap": 79060000000.0,
           "shares": 590000000.0,
           "roe": -1.533875651979974,
           "roe_5y": null,
@@ -185225,7 +185918,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 130,
           "total_revenue": 73938540229.0,
           "net_income": 2629883916.0,
           "total_equity": 34179529112.0,
@@ -185239,7 +185932,7 @@
           "interest_expense": -40868176.0,
           "tax_expense": -628679989.0,
           "pretax_income": 1854980256.0,
-          "market_cap": null,
+          "market_cap": 15600000000.0,
           "shares": 120000000.0,
           "roe": 7.694324598160368,
           "roe_5y": null,
@@ -185284,6 +185977,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2023",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Basic Materials",
@@ -191719,7 +192422,7 @@
           "dps": 10.0
         },
         "2023": {
-          "price": null,
+          "price": 538,
           "total_revenue": 3087562665000.0,
           "net_income": 59738448000.0,
           "total_equity": 792848103000.0,
@@ -191733,7 +192436,7 @@
           "interest_expense": -51740786000.0,
           "tax_expense": -42892836000.0,
           "pretax_income": 107283322000.0,
-          "market_cap": null,
+          "market_cap": 80700000000.0,
           "shares": 150000000.0,
           "roe": 7.534664934425655,
           "roe_5y": -0.1344517570646726,
@@ -191839,7 +192542,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 1235,
           "total_revenue": 2926098892000.0,
           "net_income": 96161043000.0,
           "total_equity": 756131724000.0,
@@ -191853,7 +192556,7 @@
           "interest_expense": -50453888000.0,
           "tax_expense": -42452569000.0,
           "pretax_income": 144970437000.0,
-          "market_cap": null,
+          "market_cap": 185250000000.0,
           "shares": 150000000.0,
           "roe": 12.717498809770875,
           "roe_5y": -0.016636991683546043,
@@ -191869,7 +192572,7 @@
           "dps": 0.0
         },
         "2018": {
-          "price": null,
+          "price": 1330,
           "total_revenue": 3207579964000.0,
           "net_income": 94492380000.0,
           "total_equity": 609241164000.0,
@@ -191883,7 +192586,7 @@
           "interest_expense": -57079103000.0,
           "tax_expense": -33619690000.0,
           "pretax_income": 122048569000.0,
-          "market_cap": null,
+          "market_cap": 199500000000.0,
           "shares": 150000000.0,
           "roe": 15.509848247877093,
           "roe_5y": -0.0003458717653623822,
@@ -192198,6 +192901,17 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2023",
+          "2019",
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -192763,7 +193477,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 550,
           "total_revenue": 1447914679000.0,
           "net_income": 7027716000.0,
           "total_equity": 4989924831000.0,
@@ -192777,7 +193491,7 @@
           "interest_expense": -20984731000.0,
           "tax_expense": -31350690000.0,
           "pretax_income": 175496165000.0,
-          "market_cap": null,
+          "market_cap": 1281500000000.0,
           "shares": 2330000000.0,
           "roe": 0.1408381135591499,
           "roe_5y": -0.29498858458375965,
@@ -192793,7 +193507,7 @@
           "dps": null
         },
         "2018": {
-          "price": null,
+          "price": 494,
           "total_revenue": 1457372082000.0,
           "net_income": 20930188000.0,
           "total_equity": 4999322008000.0,
@@ -192807,7 +193521,7 @@
           "interest_expense": -29532250000.0,
           "tax_expense": -37869903000.0,
           "pretax_income": 196248605000.0,
-          "market_cap": null,
+          "market_cap": 1151020000000.0,
           "shares": 2330000000.0,
           "roe": 0.4186605296979702,
           "roe_5y": -0.5693235311835378,
@@ -193122,6 +193836,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -197194,7 +197918,7 @@
           "dps": 10.0
         },
         "2022": {
-          "price": null,
+          "price": 850,
           "total_revenue": 1376550783000.0,
           "net_income": -35613674000.0,
           "total_equity": 2701248239000.0,
@@ -197208,7 +197932,7 @@
           "interest_expense": -131348083000.0,
           "tax_expense": 2001788000.0,
           "pretax_income": -54195349000.0,
-          "market_cap": null,
+          "market_cap": 1972000000000.0,
           "shares": 2320000000.0,
           "roe": -1.318415445341823,
           "roe_5y": null,
@@ -197224,7 +197948,7 @@
           "dps": 0.0
         },
         "2021": {
-          "price": null,
+          "price": 755,
           "total_revenue": 552780814000.0,
           "net_income": -195231597000.0,
           "total_equity": 2708632030000.0,
@@ -197238,7 +197962,7 @@
           "interest_expense": -109608667000.0,
           "tax_expense": -4660784000.0,
           "pretax_income": -328705447000.0,
-          "market_cap": null,
+          "market_cap": 1751600000000.0,
           "shares": 2320000000.0,
           "roe": -7.207756344814396,
           "roe_5y": null,
@@ -197284,7 +198008,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 970,
           "total_revenue": 1295694847000.0,
           "net_income": 96556366000.0,
           "total_equity": 3304149848000.0,
@@ -197298,7 +198022,7 @@
           "interest_expense": -61896428000.0,
           "tax_expense": -18869519000.0,
           "pretax_income": 162378220000.0,
-          "market_cap": null,
+          "market_cap": 2250400000000.0,
           "shares": 2320000000.0,
           "roe": 2.9222756364529143,
           "roe_5y": -0.23406929363954332,
@@ -197374,7 +198098,7 @@
           "dps": 19.0
         },
         "2016": {
-          "price": null,
+          "price": 2050,
           "total_revenue": 1078594542000.0,
           "net_income": 122719938000.0,
           "total_equity": 2651080405000.0,
@@ -197388,7 +198112,7 @@
           "interest_expense": -32599135000.0,
           "tax_expense": -62146426000.0,
           "pretax_income": 231576835000.0,
-          "market_cap": null,
+          "market_cap": 4756000000000.0,
           "shares": 2320000000.0,
           "roe": 4.629053791373031,
           "roe_5y": -0.11976969257005365,
@@ -197643,6 +198367,18 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 4,
+        "market_cap": 4,
+        "ratio": 0,
+        "years": [
+          "2022",
+          "2021",
+          "2019",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -202505,7 +203241,7 @@
           "dps": null
         },
         "2024": {
-          "price": null,
+          "price": 97,
           "total_revenue": 28572000000.0,
           "net_income": 1322741000000.0,
           "total_equity": 738469000000.0,
@@ -202519,7 +203255,7 @@
           "interest_expense": -52000000.0,
           "tax_expense": 0.0,
           "pretax_income": 58015000000.0,
-          "market_cap": null,
+          "market_cap": 168780000000.0,
           "shares": 1740000000.0,
           "roe": 179.1193672313936,
           "roe_5y": null,
@@ -202655,7 +203391,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 274,
           "total_revenue": 248909000000.0,
           "net_income": -320372000000.0,
           "total_equity": 945741000000.0,
@@ -202669,7 +203405,7 @@
           "interest_expense": -226178000000.0,
           "tax_expense": -14975000000.0,
           "pretax_income": -241021000000.0,
-          "market_cap": null,
+          "market_cap": 476760000000.0,
           "shares": 1740000000.0,
           "roe": -33.87523645480105,
           "roe_5y": null,
@@ -203014,6 +203750,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2024",
+          "2019"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Infrastructures",
@@ -204904,7 +205650,7 @@
       },
       "annual": {
         "2025": {
-          "price": null,
+          "price": 19,
           "total_revenue": 611942000000.0,
           "net_income": -1184000000.0,
           "total_equity": 782344000000.0,
@@ -204918,7 +205664,7 @@
           "interest_expense": -1741000000.0,
           "tax_expense": 1245000000.0,
           "pretax_income": -13233000000.0,
-          "market_cap": null,
+          "market_cap": 7980000000.0,
           "shares": 420000000.0,
           "roe": -0.1513400754655241,
           "roe_5y": -0.03675016817944843,
@@ -204994,7 +205740,7 @@
           "dps": null
         },
         "2022": {
-          "price": null,
+          "price": 50,
           "total_revenue": 647952496309.0,
           "net_income": 17369905.0,
           "total_equity": 853001407166.0,
@@ -205008,7 +205754,7 @@
           "interest_expense": -770634751.0,
           "tax_expense": 5510210719.0,
           "pretax_income": 1043659853.0,
-          "market_cap": null,
+          "market_cap": 746500000000.0,
           "shares": 14930000000.0,
           "roe": 0.0020363278247933414,
           "roe_5y": null,
@@ -205443,6 +206189,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2025",
+          "2022"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -205940,7 +206696,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 202,
           "total_revenue": 91061314601.0,
           "net_income": -7294562216.0,
           "total_equity": 87355039686.0,
@@ -205954,7 +206710,7 @@
           "interest_expense": -652300007.0,
           "tax_expense": 1021029724.0,
           "pretax_income": -4193649233.0,
-          "market_cap": null,
+          "market_cap": 56560000000.0,
           "shares": 280000000.0,
           "roe": -8.350476677957559,
           "roe_5y": null,
@@ -206030,7 +206786,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 135,
           "total_revenue": 99382027031.0,
           "net_income": -4361852873.0,
           "total_equity": 89009754475.0,
@@ -206044,7 +206800,7 @@
           "interest_expense": -946288728.0,
           "tax_expense": -214733321.0,
           "pretax_income": 577669984.0,
-          "market_cap": null,
+          "market_cap": 37800000000.0,
           "shares": 280000000.0,
           "roe": -4.900421193977235,
           "roe_5y": null,
@@ -206299,6 +207055,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -210273,7 +211039,7 @@
           "dps": null
         },
         "2020": {
-          "price": null,
+          "price": 97,
           "total_revenue": 1446474839632.0,
           "net_income": 40565182315.0,
           "total_equity": 126596486024.0,
@@ -210287,7 +211053,7 @@
           "interest_expense": -770911928.0,
           "tax_expense": -11639337668.0,
           "pretax_income": 52764018688.0,
-          "market_cap": null,
+          "market_cap": 95060000000.0,
           "shares": 980000000.0,
           "roe": 32.04289754717971,
           "roe_5y": 0.24993201421998346,
@@ -210333,7 +211099,7 @@
           "dps": null
         },
         "2018": {
-          "price": null,
+          "price": 296,
           "total_revenue": 1750649236912.0,
           "net_income": -8484812173.0,
           "total_equity": 103079629940.0,
@@ -210347,7 +211113,7 @@
           "interest_expense": -1060666666.0,
           "tax_expense": -1667551840.0,
           "pretax_income": -8325461068.0,
-          "market_cap": null,
+          "market_cap": 290080000000.0,
           "shares": 980000000.0,
           "roe": -8.231318038237807,
           "roe_5y": null,
@@ -210363,7 +211129,7 @@
           "dps": null
         },
         "2017": {
-          "price": null,
+          "price": 298,
           "total_revenue": 1605317945521.0,
           "net_income": -9660298274.0,
           "total_equity": 111564441918.0,
@@ -210377,7 +211143,7 @@
           "interest_expense": 0.0,
           "tax_expense": -7353440928.0,
           "pretax_income": -7244550782.0,
-          "market_cap": null,
+          "market_cap": 292040000000.0,
           "shares": 980000000.0,
           "roe": -8.658940167603161,
           "roe_5y": null,
@@ -210393,7 +211159,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 250,
           "total_revenue": 1448167445096.0,
           "net_income": -2625876991.0,
           "total_equity": 121224740388.0,
@@ -210407,7 +211173,7 @@
           "interest_expense": 0.0,
           "tax_expense": -137067905.0,
           "pretax_income": 130368081.0,
-          "market_cap": null,
+          "market_cap": 245000000000.0,
           "shares": 980000000.0,
           "roe": -2.1661230064056585,
           "roe_5y": -0.6766077726879385,
@@ -210662,6 +211428,18 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 4,
+        "market_cap": 4,
+        "ratio": 0,
+        "years": [
+          "2020",
+          "2018",
+          "2017",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -211222,7 +212000,7 @@
           "dps": null
         },
         "2016": {
-          "price": null,
+          "price": 474,
           "total_revenue": 113741761843.0,
           "net_income": -8326665515.0,
           "total_equity": 17624533469.0,
@@ -211236,7 +212014,7 @@
           "interest_expense": -1163994049.0,
           "tax_expense": -4057831907.0,
           "pretax_income": -3075395860.0,
-          "market_cap": null,
+          "market_cap": 71100000000.0,
           "shares": 150000000.0,
           "roe": -47.24474284465952,
           "roe_5y": null,
@@ -211281,6 +212059,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -219654,7 +220441,7 @@
           "dps": null
         },
         "2018": {
-          "price": null,
+          "price": 142,
           "total_revenue": 455555959093.0,
           "net_income": -45765663055.0,
           "total_equity": 330490664696.0,
@@ -219668,7 +220455,7 @@
           "interest_expense": -27974440154.0,
           "tax_expense": 12484288068.0,
           "pretax_income": -58874992358.0,
-          "market_cap": null,
+          "market_cap": 143420000000.0,
           "shares": 1010000000.0,
           "roe": -13.847792976874942,
           "roe_5y": 0.355182655939289,
@@ -219983,6 +220770,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -222104,7 +222900,7 @@
           "dps": 6.0
         },
         "2023": {
-          "price": null,
+          "price": 400,
           "total_revenue": 3019681482377.0,
           "net_income": 116037664848.0,
           "total_equity": 843744702806.0,
@@ -222118,7 +222914,7 @@
           "interest_expense": null,
           "tax_expense": 10011472312.0,
           "pretax_income": 14873855445.0,
-          "market_cap": null,
+          "market_cap": 120000000000.0,
           "shares": 300000000.0,
           "roe": 13.752698471717723,
           "roe_5y": null,
@@ -222164,7 +222960,7 @@
           "dps": 5.4
         },
         "2021": {
-          "price": null,
+          "price": 258,
           "total_revenue": 1753770002196.0,
           "net_income": 52605237916.0,
           "total_equity": 871834713331.0,
@@ -222178,7 +222974,7 @@
           "interest_expense": null,
           "tax_expense": -48878538652.0,
           "pretax_income": 147263305972.0,
-          "market_cap": null,
+          "market_cap": 38700000000.0,
           "shares": 150000000.0,
           "roe": 6.033854480858224,
           "roe_5y": null,
@@ -222194,7 +222990,7 @@
           "dps": 33.33
         },
         "2020": {
-          "price": null,
+          "price": 169,
           "total_revenue": 1220142637207.0,
           "net_income": 44781312438.0,
           "total_equity": 861079475415.0,
@@ -222208,7 +223004,7 @@
           "interest_expense": null,
           "tax_expense": -19005851331.0,
           "pretax_income": 111914336371.0,
-          "market_cap": null,
+          "market_cap": 25350000000.0,
           "shares": 150000000.0,
           "roe": 5.2006015375546495,
           "roe_5y": null,
@@ -222224,7 +223020,7 @@
           "dps": 13.95
         },
         "2019": {
-          "price": null,
+          "price": 180,
           "total_revenue": 1167490752228.0,
           "net_income": 17442239322.0,
           "total_equity": 848511733189.0,
@@ -222238,7 +223034,7 @@
           "interest_expense": null,
           "tax_expense": -7771486906.0,
           "pretax_income": 87774030433.0,
-          "market_cap": null,
+          "market_cap": 27000000000.0,
           "shares": 150000000.0,
           "roe": 2.055627357849967,
           "roe_5y": -0.363194282325765,
@@ -222284,7 +223080,7 @@
           "dps": 16.25
         },
         "2017": {
-          "price": null,
+          "price": 245,
           "total_revenue": 1107453771288.0,
           "net_income": -89021568845.0,
           "total_equity": 1071538322010.0,
@@ -222298,7 +223094,7 @@
           "interest_expense": null,
           "tax_expense": -4924919889.0,
           "pretax_income": 96799303814.0,
-          "market_cap": null,
+          "market_cap": 36750000000.0,
           "shares": 150000000.0,
           "roe": -8.307828755766069,
           "roe_5y": null,
@@ -222583,6 +223379,19 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 5,
+        "market_cap": 5,
+        "ratio": 0,
+        "years": [
+          "2023",
+          "2021",
+          "2020",
+          "2019",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -223104,7 +223913,7 @@
           "dps": 117.0
         },
         "2019": {
-          "price": null,
+          "price": 262,
           "total_revenue": 88357595957.0,
           "net_income": 29728455691.0,
           "total_equity": 303298783362.0,
@@ -223118,7 +223927,7 @@
           "interest_expense": 0.0,
           "tax_expense": -1456658691.0,
           "pretax_income": 31375178612.0,
-          "market_cap": null,
+          "market_cap": 110040000000.0,
           "shares": 420000000.0,
           "roe": 9.801706212424143,
           "roe_5y": null,
@@ -223194,7 +224003,7 @@
           "dps": 0.0
         },
         "2016": {
-          "price": null,
+          "price": 270,
           "total_revenue": 141746864032.0,
           "net_income": -51736358621.0,
           "total_equity": 51595020389.0,
@@ -223208,7 +224017,7 @@
           "interest_expense": -35428608083.0,
           "tax_expense": 22154660456.0,
           "pretax_income": -86192120269.0,
-          "market_cap": null,
+          "market_cap": 5400000000.0,
           "shares": 20000000.0,
           "roe": -100.27393773843751,
           "roe_5y": null,
@@ -223463,6 +224272,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -227561,7 +228380,7 @@
           "dps": null
         },
         "2019": {
-          "price": null,
+          "price": 120,
           "total_revenue": 124579469969.0,
           "net_income": -6870643326.0,
           "total_equity": 261174167488.0,
@@ -227575,7 +228394,7 @@
           "interest_expense": -1874297083.0,
           "tax_expense": -375449764.0,
           "pretax_income": -6481690867.0,
-          "market_cap": null,
+          "market_cap": 42000000000.0,
           "shares": 350000000.0,
           "roe": -2.6306749216748937,
           "roe_5y": null,
@@ -227800,6 +228619,15 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2019"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Transportation & Logistic",
@@ -232636,7 +233464,7 @@
           "dps": 0.0
         },
         "2019": {
-          "price": null,
+          "price": 3075,
           "total_revenue": 8938464000000.0,
           "net_income": 556056000000.0,
           "total_equity": 12341969000000.0,
@@ -232650,7 +233478,7 @@
           "interest_expense": null,
           "tax_expense": -186574000000.0,
           "pretax_income": 714688000000.0,
-          "market_cap": null,
+          "market_cap": 21002250000000.0,
           "shares": 6830000000.0,
           "roe": 4.505407524520601,
           "roe_5y": -0.21817214802016283,
@@ -232666,7 +233494,7 @@
           "dps": 0.0
         },
         "2018": {
-          "price": null,
+          "price": 2523,
           "total_revenue": 7994584000000.0,
           "net_income": 517896000000.0,
           "total_equity": 10788574000000.0,
@@ -232680,7 +233508,7 @@
           "interest_expense": null,
           "tax_expense": -163518000000.0,
           "pretax_income": 600930000000.0,
-          "market_cap": null,
+          "market_cap": 16096740000000.0,
           "shares": 6380000000.0,
           "roe": 4.800411991427227,
           "roe_5y": -0.20541270296820502,
@@ -232726,7 +233554,7 @@
           "dps": 50.0
         },
         "2016": {
-          "price": null,
+          "price": 739,
           "total_revenue": 6029020643000.0,
           "net_income": 1566746506000.0,
           "total_equity": 7053472185000.0,
@@ -232740,7 +233568,7 @@
           "interest_expense": null,
           "tax_expense": -267008727000.0,
           "pretax_income": 1087199550000.0,
-          "market_cap": null,
+          "market_cap": 3635880000000.0,
           "shares": 4920000000.0,
           "roe": 22.212414891659492,
           "roe_5y": 0.15446139706246242,
@@ -232995,6 +233823,17 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 3,
+        "market_cap": 3,
+        "ratio": 0,
+        "years": [
+          "2019",
+          "2018",
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -236285,7 +237124,7 @@
           "dps": 0.0
         },
         "2024": {
-          "price": null,
+          "price": 10,
           "total_revenue": 669204802000.0,
           "net_income": -939477814000.0,
           "total_equity": 990968706000.0,
@@ -236299,7 +237138,7 @@
           "interest_expense": 0.0,
           "tax_expense": 7632238000.0,
           "pretax_income": -950542048000.0,
-          "market_cap": null,
+          "market_cap": 392200000000.0,
           "shares": 39220000000.0,
           "roe": -94.80398405234807,
           "roe_5y": null,
@@ -236315,7 +237154,7 @@
           "dps": 0.0
         },
         "2023": {
-          "price": null,
+          "price": 50,
           "total_revenue": 778049710000.0,
           "net_income": -1013310801000.0,
           "total_equity": 1930679284000.0,
@@ -236329,7 +237168,7 @@
           "interest_expense": 0.0,
           "tax_expense": -3042447000.0,
           "pretax_income": -956963840000.0,
-          "market_cap": null,
+          "market_cap": 1961000000000.0,
           "shares": 39220000000.0,
           "roe": -52.484677771059566,
           "roe_5y": 0.5738491540949238,
@@ -236644,6 +237483,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2024",
+          "2023"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -238704,7 +239553,7 @@
           "dps": null
         },
         "2020": {
-          "price": null,
+          "price": 50,
           "total_revenue": 87250908902.0,
           "net_income": -207588882352.0,
           "total_equity": -537942535977.0,
@@ -238718,7 +239567,7 @@
           "interest_expense": -5025077007.0,
           "tax_expense": -31236148006.0,
           "pretax_income": -176522312746.0,
-          "market_cap": null,
+          "market_cap": 381500000000.0,
           "shares": 7630000000.0,
           "roe": 38.58941587041103,
           "roe_5y": null,
@@ -238764,7 +239613,7 @@
           "dps": null
         },
         "2018": {
-          "price": null,
+          "price": 11,
           "total_revenue": 84328624580.0,
           "net_income": -38264645422.0,
           "total_equity": -403108356232.0,
@@ -238778,7 +239627,7 @@
           "interest_expense": -10699431725.0,
           "tax_expense": -982720388.0,
           "pretax_income": -37594744034.0,
-          "market_cap": null,
+          "market_cap": 55330000000.0,
           "shares": 5030000000.0,
           "roe": 9.492396977247884,
           "roe_5y": 0.14748806646799228,
@@ -239093,6 +239942,16 @@
           "dpr": null,
           "dps": null
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2020",
+          "2018"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Industrials",
@@ -240564,7 +241423,7 @@
           "dps": 26.76
         },
         "2016": {
-          "price": null,
+          "price": 771,
           "total_revenue": 6151919000000.0,
           "net_income": 1274836000000.0,
           "total_equity": 12265681000000.0,
@@ -240578,7 +241437,7 @@
           "interest_expense": null,
           "tax_expense": -387423000000.0,
           "pretax_income": 1545423000000.0,
-          "market_cap": null,
+          "market_cap": 5366160000000.0,
           "shares": 6960000000.0,
           "roe": 10.393519935827452,
           "roe_5y": -0.12886430828106166,
@@ -240833,6 +241692,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Financials",
@@ -241444,7 +242312,7 @@
           "dps": 260.0
         },
         "2016": {
-          "price": null,
+          "price": 9100,
           "total_revenue": 1034806890000.0,
           "net_income": 153929187000.0,
           "total_equity": 582672469000.0,
@@ -241458,7 +242326,7 @@
           "interest_expense": -323344000.0,
           "tax_expense": -61073314000.0,
           "pretax_income": 214916161000.0,
-          "market_cap": null,
+          "market_cap": 4095000000000.0,
           "shares": 450000000.0,
           "roe": 26.41778961415114,
           "roe_5y": -0.1079799826746779,
@@ -241713,6 +242581,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Healthcare",
@@ -244755,7 +245632,7 @@
           "dps": 10.0
         },
         "2016": {
-          "price": null,
+          "price": 450,
           "total_revenue": 641282717147.0,
           "net_income": 18640494523.0,
           "total_equity": 600813348217.0,
@@ -244769,7 +245646,7 @@
           "interest_expense": -13667611554.0,
           "tax_expense": -20201533509.0,
           "pretax_income": 44441102324.0,
-          "market_cap": null,
+          "market_cap": 270000000000.0,
           "shares": 600000000.0,
           "roe": 3.1025433403432774,
           "roe_5y": -0.20558819477720436,
@@ -245024,6 +245901,15 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 1,
+        "market_cap": 1,
+        "ratio": 0,
+        "years": [
+          "2016"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Cyclicals",
@@ -245619,7 +246505,7 @@
           "dps": 2.12
         },
         "2018": {
-          "price": null,
+          "price": 100,
           "total_revenue": 10701575000000.0,
           "net_income": 188289000000.0,
           "total_equity": 1080821000000.0,
@@ -245633,7 +246519,7 @@
           "interest_expense": -207230000000.0,
           "tax_expense": -48540000000.0,
           "pretax_income": 207694000000.0,
-          "market_cap": null,
+          "market_cap": 288000000000.0,
           "shares": 2880000000.0,
           "roe": 17.42092353868032,
           "roe_5y": 0.053208912251219154,
@@ -245649,7 +246535,7 @@
           "dps": 1.66
         },
         "2017": {
-          "price": null,
+          "price": 86,
           "total_revenue": 9767592000000.0,
           "net_income": 86853000000.0,
           "total_equity": 922870000000.0,
@@ -245663,7 +246549,7 @@
           "interest_expense": -204902000000.0,
           "tax_expense": -26423000000.0,
           "pretax_income": 129235000000.0,
-          "market_cap": null,
+          "market_cap": 247680000000.0,
           "shares": 2880000000.0,
           "roe": 9.411184673897733,
           "roe_5y": -0.01438960799712341,
@@ -245918,6 +246804,16 @@
           "dpr": 0.0,
           "dps": 0.0
         }
+      },
+      "holiday_fill": {
+        "price": 2,
+        "market_cap": 2,
+        "ratio": 0,
+        "years": [
+          "2018",
+          "2017"
+        ],
+        "source": "price_history (close Desember)"
       },
       "valuation": {
         "sector": "Consumer Non-Cyclicals",
