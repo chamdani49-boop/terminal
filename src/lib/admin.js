@@ -7,7 +7,7 @@ import {
   listUsersWithSub, adminExtendDays, adminSetStatus, adminDeleteUser, adminEditUser,
 } from './db.js';
 import { getBillingConfig, saveBillingConfig } from './billing.js';
-import { recentFlags, flagSummary, sendTelegram } from './abuse.js';
+import { recentFlags, flagSummary, sendTelegram, deviceSummary } from './abuse.js';
 
 export function isAdmin(env, email) {
   if (!email) return false;
@@ -39,12 +39,13 @@ export async function handleAdminApi(request, env, url) {
 
   // ── Anti-abuse: flag aktivitas mencurigakan (review manual admin) ──
   if (path === '/api/admin/abuse' && request.method === 'GET') {
-    const [flags, summary] = await Promise.all([
+    const [flags, summary, devices] = await Promise.all([
       recentFlags(env, { limit: 100 }),
       flagSummary(env, { hours: 24, limit: 20 }),
+      deviceSummary(env, { hours: 24, limit: 20 }),
     ]);
     const telegram_configured = !!((env.TELEGRAM_BOT_TOKEN || '').trim() && (env.TELEGRAM_CHAT_ID || '').trim());
-    return json({ ok: true, flags, summary, telegram_configured });
+    return json({ ok: true, flags, summary, devices, telegram_configured });
   }
 
   // ── Anti-abuse: kirim pesan test ke Telegram (verifikasi setup) ──

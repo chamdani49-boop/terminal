@@ -17,7 +17,7 @@ import { checkout, webhook } from './lib/mayar.js';
 import { handleAdminApi } from './lib/admin.js';
 import { getActiveSubscription } from './lib/db.js';
 import { getBillingConfig, publicBilling } from './lib/billing.js';
-import { rateLimit, reportAbuse } from './lib/abuse.js';
+import { rateLimit, reportAbuse, trackDevice } from './lib/abuse.js';
 
 // Path yang butuh langganan aktif saat gating menyala
 const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/ohlc.json', '/macro.json', '/insights.json', '/headlines.json', '/dashboard'];
@@ -126,6 +126,19 @@ async function guardProtected(request, env, ctx, path) {
         { 'Retry-After': String(rl.retryAfter || 30) }
       );
     }
+  }
+
+  // 3) Fingerprint device/IP → deteksi akun dibagi. Cukup di /data.json
+  //    (di-fetch tiap buka dashboard) supaya hemat write D1. Hanya FLAG +
+  //    notif (tidak blokir). trackDevice sendiri fail-safe & throttled.
+  if (session && !isAdmin && path === '/data.json' && ctx && ctx.waitUntil) {
+    ctx.waitUntil(trackDevice(env, {
+      userId: session.uid,
+      email: session.email,
+      ip: request.headers.get('CF-Connecting-IP') || '',
+      country: (request.cf && request.cf.country) || '',
+      ua: request.headers.get('User-Agent') || '',
+    }));
   }
   return null;
 }

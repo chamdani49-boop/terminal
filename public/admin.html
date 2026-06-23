@@ -286,6 +286,14 @@ tbody tr:hover{background:var(--bg2)}
           </tr></thead><tbody id="abuseSummary"></tbody></table>
         </div></div>
       </div>
+      <div id="abuseDevicesWrap" style="margin-bottom:16px">
+        <div class="usage-lbl" style="margin-bottom:8px">🌐 Indikasi akun dibagi — banyak IP/negara (24 jam)</div>
+        <div class="table-card"><div class="table-scroll">
+          <table style="min-width:520px"><thead><tr>
+            <th>User</th><th>IP unik</th><th>Negara</th><th>Terakhir</th>
+          </tr></thead><tbody id="abuseDevices"></tbody></table>
+        </div></div>
+      </div>
       <div class="usage-lbl" style="margin-bottom:8px">Flag terbaru</div>
       <div class="table-card"><div class="table-scroll">
         <table style="min-width:640px"><thead><tr>
@@ -729,6 +737,19 @@ async function loadAbuse(){
                  '<td class="mono">'+abuseTimeAgo(s.last_at)+'</td></tr>';
         }).join('')
       : '<tr><td colspan="4" style="color:var(--text2)">Tidak ada dalam 24 jam terakhir.</td></tr>';
+
+    // Indikasi akun dibagi (multi-IP)
+    var devEl=document.getElementById('abuseDevices');
+    var devices=(d&&d.devices)||[];
+    devEl.innerHTML = devices.length
+      ? devices.map(function(v){
+          var warn=(v.ips>=8||v.countries>=3);
+          return '<tr><td class="u-email">'+abuseEsc(v.email||v.user_id||'—')+'</td>'+
+                 '<td class="mono"'+(warn?' style="color:var(--red);font-weight:700"':'')+'>'+(v.ips||0)+'</td>'+
+                 '<td class="mono"'+(v.countries>=3?' style="color:var(--red);font-weight:700"':'')+'>'+(v.countries||0)+'</td>'+
+                 '<td class="mono">'+abuseTimeAgo(v.last_at)+'</td></tr>';
+        }).join('')
+      : '<tr><td colspan="4" style="color:var(--text2)">Tidak ada akun multi-IP dalam 24 jam terakhir.</td></tr>';
 
     flagsEl.innerHTML = flags.map(function(f){
       return '<tr><td class="mono">'+abuseTimeAgo(f.created_at)+'</td>'+
