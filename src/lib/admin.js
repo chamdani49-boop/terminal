@@ -7,6 +7,7 @@ import {
   listUsersWithSub, adminExtendDays, adminSetStatus, adminDeleteUser, adminEditUser,
 } from './db.js';
 import { getBillingConfig, saveBillingConfig } from './billing.js';
+import { recentFlags, flagSummary } from './abuse.js';
 
 export function isAdmin(env, email) {
   if (!email) return false;
@@ -34,6 +35,15 @@ export async function handleAdminApi(request, env, url) {
 
   if (path === '/api/admin/usage' && request.method === 'GET') {
     return adminUsage(env);
+  }
+
+  // ── Anti-abuse: flag aktivitas mencurigakan (review manual admin) ──
+  if (path === '/api/admin/abuse' && request.method === 'GET') {
+    const [flags, summary] = await Promise.all([
+      recentFlags(env, { limit: 100 }),
+      flagSummary(env, { hours: 24, limit: 20 }),
+    ]);
+    return json({ ok: true, flags, summary });
   }
 
   // ── Billing: baca config lengkap (termasuk link Mayar) untuk editor ──
