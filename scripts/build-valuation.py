@@ -800,6 +800,18 @@ def apply_override(code, five, override, warn):
     return
 
 
+def _is_empty_stock(data):
+    """True bila saham tidak punya satupun harga/pendapatan/laba bernilai (semua
+    0/None) — indikasi file Excel belum terhitung (rumus cached 0). Dilewati agar
+    tidak muncul sebagai 'Rp 0' di UI."""
+    vals = []
+    q1 = data.get('q1') or {}
+    vals += [q1.get('price'), q1.get('total_revenue')]
+    for yd in (data.get('annual') or {}).values():
+        vals += [yd.get('price'), yd.get('total_revenue'), yd.get('net_income')]
+    return all(v is None or v == 0 for v in vals)
+
+
 def _shrink_floats(o, nd=6):
     """Bersihkan 'ekor' float (mis. 7.000000000000001 → 7) & bulatkan ke nd desimal,
     rekursif. Float yang bernilai bulat → int. Mengecilkan ukuran JSON signifikan
@@ -830,6 +842,7 @@ def main():
     yearly_close = load_yearly_close()
     stocks, warnings, source_files = {}, [], []
     fill_totals = {'price': 0, 'market_cap': 0, 'ratio': 0}
+    empty_stocks = []
 
     for path in files:
         source_files.append(os.path.basename(path))
@@ -846,6 +859,11 @@ def main():
                                 f"({type(e).__name__}: {e}) — dilewati")
                 continue
             code = data.get('code') or name
+            # Lewati saham yang SEMUA datanya 0/kosong (file Excel belum terhitung —
+            # rumus cached 0). Tidak ditampilkan sbg 'Rp 0' di UI; tunggu re-upload.
+            if _is_empty_stock(data):
+                empty_stocks.append(code)
+                continue
             # Perbaiki harga 'Libur' (hari bursa libur) + recompute market_cap/rasio
             # dari price_history. Hanya mengisi yang kosong; berlaku semua data.
             try:
@@ -946,6 +964,12 @@ def main():
             f"{fill_totals['ratio']} rasio diisi/dihitung ulang dari price_history (close Desember).")
 
     print(f"[build-valuation] {len(stocks)} saham dari {len(source_files)} file -> {OUT_FILE}")
+    if empty_stocks:
+        warnings.append(
+            f"{len(empty_stocks)} saham DILEWATI karena semua data 0/kosong "
+            f"(Excel belum terhitung saat disimpan): {', '.join(sorted(empty_stocks)[:30])}"
+            + (' ...' if len(empty_stocks) > 30 else ''))
+        print(f"[build-valuation] {len(empty_stocks)} saham dilewati (data 0/kosong).")
     if warnings:
         print('[build-valuation] WARNINGS:')
         for w in warnings:
