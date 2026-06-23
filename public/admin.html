@@ -260,6 +260,42 @@ tbody tr:hover{background:var(--bg2)}
     </div>
   </section>
 
+  <!-- ANTI-ABUSE / AKTIVITAS MENCURIGAKAN -->
+  <section class="bill-card" id="abuseCard" style="display:none">
+    <div class="bill-head" id="abuseHead">
+      <div class="usage-title">🛡️ Aktivitas Mencurigakan <span class="plan-badge" id="abuseBadge">rate limit</span></div>
+      <button class="bill-toggle" id="abuseToggle" type="button">Sembunyikan ▲</button>
+    </div>
+    <div class="bill-body" id="abuseBody">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="font-size:12.5px" id="tgStatus">Notifikasi Telegram: <b>—</b></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="bill-msg" id="tgMsg"></span>
+          <button class="bill-toggle" id="tgTestBtn" type="button">📨 Test Telegram</button>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:var(--text2);line-height:1.55;margin-bottom:14px">
+        Permintaan data yang melebihi batas (rate limit) otomatis ditolak (429) &amp; dicatat di sini untuk
+        <b>review manual</b>. Kalau ada user yang jelas men-scrape, kamu bisa <b>Suspend</b> dari tabel user di bawah.
+      </p>
+      <div id="abuseSummaryWrap" style="margin-bottom:16px">
+        <div class="usage-lbl" style="margin-bottom:8px">Top 24 jam terakhir</div>
+        <div class="table-card"><div class="table-scroll">
+          <table style="min-width:520px"><thead><tr>
+            <th>User</th><th>Jumlah flag</th><th>IP unik</th><th>Terakhir</th>
+          </tr></thead><tbody id="abuseSummary"></tbody></table>
+        </div></div>
+      </div>
+      <div class="usage-lbl" style="margin-bottom:8px">Flag terbaru</div>
+      <div class="table-card"><div class="table-scroll">
+        <table style="min-width:640px"><thead><tr>
+          <th>Waktu</th><th>User</th><th>IP</th><th>Negara</th><th>Tipe</th><th>Detail</th>
+        </tr></thead><tbody id="abuseFlags"></tbody></table>
+      </div></div>
+      <div class="empty" id="abuseEmpty" style="display:none">Belum ada aktivitas mencurigakan. 👍</div>
+    </div>
+  </section>
+
   <!-- TOOLBAR -->
   <div class="toolbar">
     <div class="search"><span class="ico">🔍</span><input id="searchInp" type="text" placeholder="Cari email atau nama…"></div>
@@ -656,6 +692,79 @@ document.getElementById('billHead').addEventListener('click',function(){
 });
 
 loadBilling();
+
+// ── Anti-abuse: panel aktivitas mencurigakan ──
+function abuseTimeAgo(ts){
+  if(!ts) return '—';
+  var diff=Math.floor(Date.now()/1000)-ts;
+  if(diff<60) return diff+' dtk lalu';
+  if(diff<3600) return Math.floor(diff/60)+' mnt lalu';
+  if(diff<86400) return Math.floor(diff/3600)+' jam lalu';
+  return new Date(ts*1000).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+function abuseEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+async function loadAbuse(){
+  var card=document.getElementById('abuseCard');
+  try{
+    var r=await fetch('/api/admin/abuse',{headers:{'Accept':'application/json'}});
+    if(!r.ok){ card.style.display='none'; return; }   // non-admin / belum login
+    var d=await r.json();
+    card.style.display='block';
+    var sumEl=document.getElementById('abuseSummary');
+    var flagsEl=document.getElementById('abuseFlags');
+    var summary=(d&&d.summary)||[];
+    var flags=(d&&d.flags)||[];
+
+    // Status Telegram
+    var tg=document.getElementById('tgStatus');
+    if(d.telegram_configured){ tg.innerHTML='Notifikasi Telegram: <b style="color:var(--green)">aktif ✓</b>'; }
+    else{ tg.innerHTML='Notifikasi Telegram: <b style="color:var(--yellow)">belum diset</b> (set TELEGRAM_BOT_TOKEN &amp; TELEGRAM_CHAT_ID)'; }
+
+    sumEl.innerHTML = summary.length
+      ? summary.map(function(s){
+          return '<tr><td class="u-email">'+abuseEsc(s.who||'—')+'</td>'+
+                 '<td class="mono">'+(s.flags||0)+'</td>'+
+                 '<td class="mono">'+(s.ips||0)+'</td>'+
+                 '<td class="mono">'+abuseTimeAgo(s.last_at)+'</td></tr>';
+        }).join('')
+      : '<tr><td colspan="4" style="color:var(--text2)">Tidak ada dalam 24 jam terakhir.</td></tr>';
+
+    flagsEl.innerHTML = flags.map(function(f){
+      return '<tr><td class="mono">'+abuseTimeAgo(f.created_at)+'</td>'+
+             '<td class="u-email">'+abuseEsc(f.email||f.user_id||'—')+'</td>'+
+             '<td class="mono">'+abuseEsc(f.ip||'—')+'</td>'+
+             '<td>'+abuseEsc(f.country||'—')+'</td>'+
+             '<td><span class="pill suspended">'+abuseEsc(f.type||'—')+'</span></td>'+
+             '<td style="color:var(--text2)">'+abuseEsc(f.detail||'')+'</td></tr>';
+    }).join('');
+    document.getElementById('abuseEmpty').style.display=flags.length?'none':'block';
+  }catch(e){ card.style.display='none'; }
+}
+
+document.getElementById('abuseHead').addEventListener('click',function(){
+  var body=document.getElementById('abuseBody');
+  var t=document.getElementById('abuseToggle');
+  var hidden=body.classList.toggle('collapsed');
+  t.textContent=hidden?'Tampilkan ▼':'Sembunyikan ▲';
+});
+
+// Tombol test Telegram
+document.getElementById('tgTestBtn').addEventListener('click',async function(e){
+  e.stopPropagation();
+  var btn=this; var msg=document.getElementById('tgMsg');
+  btn.disabled=true; msg.className='bill-msg'; msg.textContent='Mengirim…';
+  try{
+    var r=await fetch('/api/admin/abuse/test-telegram',{method:'POST',headers:{'Content-Type':'application/json'}});
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok) throw new Error(d.error||('HTTP '+r.status));
+    msg.className='bill-msg ok'; msg.textContent='✓ '+(d.message||'Terkirim');
+  }catch(err){ msg.className='bill-msg err'; msg.textContent='Gagal: '+(err.message||err); }
+  btn.disabled=false;
+  setTimeout(function(){ if(msg.classList.contains('ok')) msg.textContent=''; },5000);
+});
+
+loadAbuse();
 </script>
 </body>
 </html>

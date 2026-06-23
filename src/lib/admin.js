@@ -7,6 +7,7 @@ import {
   listUsersWithSub, adminExtendDays, adminSetStatus, adminDeleteUser, adminEditUser,
 } from './db.js';
 import { getBillingConfig, saveBillingConfig } from './billing.js';
+import { recentFlags, flagSummary, sendTelegram } from './abuse.js';
 
 export function isAdmin(env, email) {
   if (!email) return false;
@@ -34,6 +35,24 @@ export async function handleAdminApi(request, env, url) {
 
   if (path === '/api/admin/usage' && request.method === 'GET') {
     return adminUsage(env);
+  }
+
+  // ── Anti-abuse: flag aktivitas mencurigakan (review manual admin) ──
+  if (path === '/api/admin/abuse' && request.method === 'GET') {
+    const [flags, summary] = await Promise.all([
+      recentFlags(env, { limit: 100 }),
+      flagSummary(env, { hours: 24, limit: 20 }),
+    ]);
+    const telegram_configured = !!((env.TELEGRAM_BOT_TOKEN || '').trim() && (env.TELEGRAM_CHAT_ID || '').trim());
+    return json({ ok: true, flags, summary, telegram_configured });
+  }
+
+  // ── Anti-abuse: kirim pesan test ke Telegram (verifikasi setup) ──
+  if (path === '/api/admin/abuse/test-telegram' && request.method === 'POST') {
+    const r = await sendTelegram(env, '✅ <b>Test notifikasi Economstock Terminal</b>\nKalau kamu menerima pesan ini, notifikasi Telegram sudah aktif. 🎉');
+    if (r.ok) return json({ ok: true, message: 'Pesan test terkirim. Cek Telegram-mu.' });
+    if (r.skipped) return json({ error: r.reason || 'Telegram belum dikonfigurasi.' }, 400);
+    return json({ error: 'Gagal kirim: ' + (r.error || 'unknown') }, 400);
   }
 
   // ── Billing: baca config lengkap (termasuk link Mayar) untuk editor ──

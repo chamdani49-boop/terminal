@@ -17,6 +17,7 @@ import { checkout, webhook } from './lib/mayar.js';
 import { handleAdminApi } from './lib/admin.js';
 import { getActiveSubscription } from './lib/db.js';
 import { getBillingConfig, publicBilling } from './lib/billing.js';
+import { rateLimit, reportAbuse } from './lib/abuse.js';
 
 // Path yang butuh langganan aktif saat gating menyala
 const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/ohlc.json', '/macro.json', '/insights.json', '/headlines.json', '/dashboard'];
@@ -44,15 +45,10 @@ export default {
       if (path === '/dashboard') return assetFor(env, url, '/index.html', request);
       if (path === '/admin') return assetFor(env, url, '/admin.html', request);
 
-      // ──────── Gating (opsional, default OFF) ────────
+      // ──────── Gating + anti-abuse (opsional, default OFF) ────────
       if (env.GATING_ENABLED === 'true' && isProtected(path)) {
-        const ok = await hasActiveSub(request, env);
-        if (!ok) {
-          // navigasi halaman → redirect ke billing; request data → 402
-          const accept = request.headers.get('Accept') || '';
-          if (accept.includes('text/html')) return redirect('/billing', 302);
-          return json({ error: 'Langganan tidak aktif' }, 402);
-        }
+        const blocked = await guardProtected(request, env, ctx, path);
+        if (blocked) return blocked;   // redirect billing / 402 / 429
       }
 
       // ──────── Cache privat untuk data JSON ter-gate ────────
@@ -81,12 +77,64 @@ function isProtected(path) {
   return PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(p));
 }
 
+function adminList(env) {
+  return (env.ADMIN_EMAILS || '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+}
+
+/**
+ * Penjaga endpoint ter-proteksi: cek langganan + rate limit anti-scraping.
+ * @returns {Promise<Response|null>} Response bila harus diblokir, null bila boleh lanjut.
+ *
+ * Alur (sesuai flowchart):
+ *   1. Cek sesi + langganan aktif → kalau tidak: redirect /billing (halaman) atau 402 (data).
+ *   2. Rate limit per-user pada endpoint data .json (lawan scraping). Admin dikecualikan.
+ *      Melebihi limit → 429 + catat flag untuk review admin. FAIL-OPEN bila D1 error.
+ */
+async function guardProtected(request, env, ctx, path) {
+  const session = await getSession(request, env);
+  const isAdmin = !!(session && adminList(env).includes((session.email || '').toLowerCase()));
+
+  // 1) Langganan aktif?
+  let allowed = isAdmin;
+  if (session && !isAdmin) {
+    try { allowed = !!(await getActiveSubscription(env, session.uid)); }
+    catch { allowed = false; }
+  }
+  if (!allowed) {
+    const accept = request.headers.get('Accept') || '';
+    if (accept.includes('text/html')) return redirect('/billing', 302);
+    return json({ error: 'Langganan tidak aktif' }, 402);
+  }
+
+  // 2) Rate limit — hanya user non-admin & hanya endpoint DATA (.json) yang
+  //    jadi target scraping. Halaman /dashboard (HTML) tidak dihitung.
+  if (session && !isAdmin && path.endsWith('.json')) {
+    const limitPerMin = parseInt(env.RATE_LIMIT_PER_MIN || '120', 10) || 120;
+    const rl = await rateLimit(env, { identity: session.uid, limit: limitPerMin });
+    if (!rl.ok) {
+      const ip = request.headers.get('CF-Connecting-IP') || '';
+      const country = (request.cf && request.cf.country) || '';
+      if (ctx && ctx.waitUntil) {
+        ctx.waitUntil(reportAbuse(env, {
+          userId: session.uid, email: session.email, ip, country,
+          type: 'rate_limit', detail: `${rl.count} req/min > ${limitPerMin} (${path})`,
+        }));
+      }
+      return json(
+        { error: 'Terlalu banyak request. Coba lagi sebentar.' },
+        429,
+        { 'Retry-After': String(rl.retryAfter || 30) }
+      );
+    }
+  }
+  return null;
+}
+
 async function hasActiveSub(request, env) {
   const session = await getSession(request, env);
   if (!session) return false;
   // Admin selalu boleh (untuk pengelolaan & pengujian, walau tanpa langganan).
-  const admins = (env.ADMIN_EMAILS || '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
-  if (admins.includes((session.email || '').toLowerCase())) return true;
+  if (adminList(env).includes((session.email || '').toLowerCase())) return true;
   try {
     const sub = await getActiveSubscription(env, session.uid);
     return !!sub;
