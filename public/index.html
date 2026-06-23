@@ -13658,27 +13658,29 @@ document.addEventListener('keydown', (e) => {
 
 <!-- ═══════════ CONSENT GATE — Ketentuan & Kebijakan Privasi ═══════════ -->
 <style>
-.tosg-overlay{position:fixed;inset:0;background:rgba(10,5,33,.75);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:99999;padding:18px}
+.tosg-overlay{position:fixed;inset:0;background:rgba(15,15,25,.78);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:99999;padding:18px}
 .tosg-overlay.open{display:flex}
-.tosg-card{background:var(--card,#1f1450);color:var(--text,#f4f2ff);border:1px solid var(--border,#4a3590);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5);width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
-.tosg-head{padding:18px 22px 12px;border-bottom:1px solid var(--border,#4a3590)}
-.tosg-head h2{font-size:18px;font-weight:800;margin:0 0 3px}
-.tosg-head p{font-size:12.5px;color:var(--text2,#c4b8e8);margin:0}
-.tosg-body{padding:16px 22px;overflow-y:auto;font-size:13px;line-height:1.65;color:var(--text2,#c4b8e8)}
-.tosg-body h3{font-size:13.5px;font-weight:800;color:var(--text,#f4f2ff);margin:16px 0 6px}
+/* Tampilan mirip DOKUMEN: kertas putih, teks rapat & rata kiri-kanan, font serif. */
+.tosg-card{background:#ffffff;color:#1f2430;border:1px solid #d8d8e0;border-radius:6px;box-shadow:0 24px 70px rgba(0,0,0,.55);width:100%;max-width:600px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;font-family:Georgia,'Times New Roman',serif}
+.tosg-head{padding:22px 30px 14px;border-bottom:2px solid #1f2430;background:#fff;text-align:center}
+.tosg-head h2{font-size:20px;font-weight:700;margin:0 0 4px;color:#111;letter-spacing:.2px}
+.tosg-head p{font-size:12px;color:#6b7280;margin:0;font-style:italic}
+.tosg-body{padding:20px 30px;overflow-y:auto;font-size:13px;line-height:1.55;color:#2b303a;text-align:justify;hyphens:auto}
+.tosg-body h3{font-size:13.5px;font-weight:700;color:#111;margin:15px 0 5px;text-align:left}
 .tosg-body h3:first-child{margin-top:0}
-.tosg-body p,.tosg-body li{margin:0 0 7px}
-.tosg-body ul{margin:0 0 7px;padding-left:20px}
-.tosg-body b{color:var(--text,#f4f2ff)}
-.tosg-body .tosg-warn{color:#fb7185}
-.tosg-end{margin-top:14px;padding:10px 12px;border:1px dashed var(--border,#4a3590);border-radius:10px;font-size:12px;text-align:center;color:var(--text3,#8b7eb8)}
-.tosg-foot{padding:14px 22px 18px;border-top:1px solid var(--border,#4a3590);background:var(--bg2,#1a1145)}
-.tosg-chk{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text,#f4f2ff);cursor:pointer;margin-bottom:12px;line-height:1.5}
-.tosg-chk input{margin-top:2px;width:18px;height:18px;flex-shrink:0;cursor:pointer;accent-color:var(--accent,#6d28d9)}
-.tosg-hint{font-size:11.5px;color:var(--yellow,#fbbf24);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.tosg-hint.done{color:var(--green,#4ade80)}
-.tosg-err{font-size:12px;color:#fb7185;margin-bottom:10px;display:none}
-.tosg-btn{width:100%;background:linear-gradient(135deg,#6d28d9,#2563eb);color:#fff;font-family:inherit;font-size:15px;font-weight:800;padding:13px;border:none;border-radius:12px;cursor:pointer}
+.tosg-body p,.tosg-body li{margin:0 0 6px}
+.tosg-body ul{margin:0 0 6px;padding-left:22px}
+.tosg-body li{margin-bottom:4px}
+.tosg-body b{color:#111;font-weight:700}
+.tosg-body .tosg-warn{color:#b91c1c;font-weight:700}
+.tosg-end{margin-top:16px;padding-top:10px;border-top:1px solid #d8d8e0;font-size:11px;text-align:center;color:#9ca3af;font-style:italic}
+.tosg-foot{padding:14px 30px 18px;border-top:1px solid #d8d8e0;background:#f7f7fa}
+.tosg-chk{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#1f2430;cursor:pointer;margin-bottom:12px;line-height:1.5;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.tosg-chk input{margin-top:2px;width:18px;height:18px;flex-shrink:0;cursor:pointer;accent-color:#6d28d9}
+.tosg-hint{font-size:11.5px;color:#b45309;margin-bottom:10px;display:flex;align-items:center;gap:6px;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.tosg-hint.done{color:#15803d}
+.tosg-err{font-size:12px;color:#b91c1c;margin-bottom:10px;display:none;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.tosg-btn{width:100%;background:linear-gradient(135deg,#6d28d9,#2563eb);color:#fff;font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:15px;font-weight:800;padding:13px;border:none;border-radius:8px;cursor:pointer}
 .tosg-btn:disabled{opacity:.45;cursor:not-allowed}
 </style>
 
