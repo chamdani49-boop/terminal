@@ -132,6 +132,34 @@ tbody tr:hover{background:var(--bg2)}
 .demo-note{margin-top:18px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--text2);line-height:1.6}
 .demo-note b{color:var(--text)}
 
+/* BILLING EDITOR */
+.bill-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);padding:16px 18px;margin-bottom:26px}
+.bill-head{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer}
+.bill-head .usage-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px}
+.bill-toggle{font-size:11px;font-weight:700;padding:6px 12px;border-radius:var(--radius-pill);border:1px solid var(--border);color:var(--text2);background:var(--bg2);cursor:pointer}
+.bill-toggle:hover{border-color:var(--accent);color:var(--accent)}
+.bill-body{margin-top:16px}
+.bill-body.collapsed{display:none}
+.bill-global{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.bill-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.bplan{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:14px}
+.bplan-title{font-size:13px;font-weight:800;margin-bottom:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+.bf{margin-bottom:10px}
+.bf label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.bf input,.bf select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none}
+.bf input:focus,.bf select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
+.brow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bcalc{font-size:12px;font-weight:700;color:var(--green);background:var(--green-bg);border-radius:8px;padding:8px 10px;margin-bottom:10px;text-align:center}
+.bcalc b{font-weight:800}
+.bf-link{display:flex;gap:8px;align-items:center}
+.bf-link input{flex:1}
+.bf-open{font-size:11px;font-weight:700;white-space:nowrap;padding:9px 13px;border-radius:8px;border:1px solid var(--border);color:var(--accent);background:var(--card);cursor:pointer}
+.bf-open:hover{background:var(--bg3)}
+.bill-actions{display:flex;align-items:center;justify-content:flex-end;gap:14px;margin-top:16px;flex-wrap:wrap}
+.bill-msg{font-size:12.5px;color:var(--text2)}
+.bill-msg.ok{color:var(--green)}.bill-msg.err{color:var(--red)}
+@media(max-width:820px){.bill-grid{grid-template-columns:1fr}.bill-global{grid-template-columns:1fr}}
+
 /* MOBILE */
 @media(max-width:680px){
   .top-bar{padding:0 12px;gap:8px}
@@ -200,6 +228,36 @@ tbody tr:hover{background:var(--bg2)}
     </div>
     <div class="gauge"><div class="gauge-fill" id="gaugeFill"></div></div>
     <div class="usage-note" id="usageNote">Memuat data penggunaan…</div>
+  </section>
+
+  <!-- PENGATURAN BILLING -->
+  <section class="bill-card" id="billCard" style="display:none">
+    <div class="bill-head" id="billHead">
+      <div class="usage-title">💳 Pengaturan Billing <span class="plan-badge">harga &amp; teks card</span></div>
+      <button class="bill-toggle" id="billToggle" type="button">Sembunyikan ▲</button>
+    </div>
+    <div class="bill-body" id="billBody">
+      <p style="font-size:12.5px;color:var(--text2);line-height:1.55;margin-bottom:14px">
+        Ubah harga real &amp; harga coret, teks tiap card, label promo, dan link Mayar.
+        <b>Persentase hemat</b> &amp; <b>harga per-bulan</b> dihitung otomatis.
+        Isi <b>link Mayar</b> tiap paket agar tombol bayar mengarah ke halaman produk yang harganya sama dengan di mayar.id.
+      </p>
+      <div class="bill-global">
+        <div class="bf"><label for="bfPromo">Label promo (badge paket unggulan)</label><input id="bfPromo" type="text" maxlength="60" placeholder="PALING HEMAT"></div>
+        <div class="bf"><label for="bfFeatured">Paket unggulan (yang diberi badge)</label>
+          <select id="bfFeatured">
+            <option value="3bulan">3 Bulan</option>
+            <option value="6bulan">6 Bulan</option>
+            <option value="tahunan">Tahunan</option>
+          </select>
+        </div>
+      </div>
+      <div class="bill-grid" id="billGrid"></div>
+      <div class="bill-actions">
+        <span class="bill-msg" id="billMsg"></span>
+        <button class="modal-btn ok" id="billSave" type="button" style="flex:0 0 auto;padding:11px 22px">💾 Simpan Billing</button>
+      </div>
+    </div>
   </section>
 
   <!-- TOOLBAR -->
@@ -490,6 +548,114 @@ renderStats();
 render();
 loadUsers();
 loadUsage();
+
+// ── Pengaturan Billing (editor harga / teks / promo / link Mayar) ──
+var BILL_PLANS=['3bulan','6bulan','tahunan'];
+var BILL_PLAN_LABEL={'3bulan':'Paket 3 Bulan','6bulan':'Paket 6 Bulan','tahunan':'Paket Tahunan'};
+var BILL_MONTHS={'3bulan':3,'6bulan':6,'tahunan':12};
+
+function billPct(real,coret){real=Number(real)||0;coret=Number(coret)||0;if(coret<=0||real>=coret)return 0;return Math.round((1-real/coret)*100);}
+function billPerMo(plan,real){var m=BILL_MONTHS[plan]||1;return Math.round((Number(real)||0)/m);}
+function billRp(n){return Number(n||0).toLocaleString('id-ID');}
+
+function billPlanEditor(plan){
+  return ''+
+  '<div class="bplan" data-plan="'+plan+'">'+
+    '<div class="bplan-title">'+BILL_PLAN_LABEL[plan]+'</div>'+
+    '<div class="bf"><label>Nama paket</label><input data-k="name" type="text" maxlength="80"></div>'+
+    '<div class="bf"><label>Durasi (judul besar)</label><input data-k="dur" type="text" maxlength="60"></div>'+
+    '<div class="brow">'+
+      '<div class="bf"><label>Harga real (Rp)</label><input data-k="priceReal" type="number" inputmode="numeric" min="0"></div>'+
+      '<div class="bf"><label>Harga coret (Rp)</label><input data-k="priceCoret" type="number" inputmode="numeric" min="0"></div>'+
+    '</div>'+
+    '<div class="bcalc" data-calc>—</div>'+
+    '<div class="bf"><label>Subjudul</label><input data-k="sub" type="text" maxlength="160"></div>'+
+    '<div class="bf"><label>Fitur 1</label><input data-k="f0" type="text" maxlength="160"></div>'+
+    '<div class="bf"><label>Fitur 2</label><input data-k="f1" type="text" maxlength="160"></div>'+
+    '<div class="bf"><label>Fitur 3</label><input data-k="f2" type="text" maxlength="160"></div>'+
+    '<div class="bf"><label>Teks tombol</label><input data-k="btnText" type="text" maxlength="60"></div>'+
+    '<div class="bf"><label>Link Mayar (direct link — biar tidak lupa)</label>'+
+      '<div class="bf-link"><input data-k="mayarLink" type="url" placeholder="https://...mayar.id/..."><button type="button" class="bf-open" data-open>Buka</button></div>'+
+    '</div>'+
+  '</div>';
+}
+
+function billUpdateCalc(card){
+  var plan=card.getAttribute('data-plan');
+  var real=card.querySelector('[data-k="priceReal"]').value;
+  var coret=card.querySelector('[data-k="priceCoret"]').value;
+  card.querySelector('[data-calc]').innerHTML='Hemat <b>'+billPct(real,coret)+'%</b> · ≈ Rp '+billRp(billPerMo(plan,real))+' / bulan';
+}
+
+function billPopulate(cfg){
+  document.getElementById('bfPromo').value=cfg.promoLabel||'';
+  document.getElementById('bfFeatured').value=cfg.featured||'tahunan';
+  var grid=document.getElementById('billGrid');
+  grid.innerHTML=BILL_PLANS.map(billPlanEditor).join('');
+  BILL_PLANS.forEach(function(p){
+    var card=grid.querySelector('.bplan[data-plan="'+p+'"]');
+    var pl=(cfg.plans&&cfg.plans[p])||{};
+    function set(k,v){var el=card.querySelector('[data-k="'+k+'"]');if(el)el.value=(v==null?'':v);}
+    set('name',pl.name);set('dur',pl.dur);set('priceReal',pl.priceReal);set('priceCoret',pl.priceCoret);
+    set('sub',pl.sub);set('btnText',pl.btnText);set('mayarLink',pl.mayarLink);
+    var f=pl.features||[];set('f0',f[0]);set('f1',f[1]);set('f2',f[2]);
+    billUpdateCalc(card);
+    card.addEventListener('input',function(){billUpdateCalc(card);});
+    card.querySelector('[data-open]').addEventListener('click',function(){
+      var url=(card.querySelector('[data-k="mayarLink"]').value||'').trim();
+      if(url) window.open(url,'_blank','noopener'); else alert('Link Mayar paket ini masih kosong.');
+    });
+  });
+}
+
+function billCollect(){
+  var cfg={promoLabel:document.getElementById('bfPromo').value,featured:document.getElementById('bfFeatured').value,plans:{}};
+  BILL_PLANS.forEach(function(p){
+    var card=document.getElementById('billGrid').querySelector('.bplan[data-plan="'+p+'"]');
+    function g(k){var el=card.querySelector('[data-k="'+k+'"]');return el?el.value:'';}
+    cfg.plans[p]={
+      name:g('name'),dur:g('dur'),sub:g('sub'),btnText:g('btnText'),mayarLink:(g('mayarLink')||'').trim(),
+      priceReal:parseInt(g('priceReal')||'0',10)||0,
+      priceCoret:parseInt(g('priceCoret')||'0',10)||0,
+      features:[g('f0'),g('f1'),g('f2')].map(function(x){return (x||'').trim();}).filter(Boolean)
+    };
+  });
+  return cfg;
+}
+
+async function loadBilling(){
+  var card=document.getElementById('billCard');
+  try{
+    var r=await fetch('/api/admin/billing',{headers:{'Accept':'application/json'}});
+    if(!r.ok){ card.style.display='none'; return; }   // non-admin / belum login
+    var d=await r.json();
+    if(d&&d.config){ billPopulate(d.config); card.style.display='block'; }
+  }catch(e){ card.style.display='none'; }
+}
+
+document.getElementById('billSave').addEventListener('click',async function(){
+  var msg=document.getElementById('billMsg');
+  var btn=this; btn.disabled=true;
+  msg.className='bill-msg'; msg.textContent='Menyimpan…';
+  try{
+    var r=await fetch('/api/admin/billing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config:billCollect()})});
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok) throw new Error(d.error||('HTTP '+r.status));
+    if(d.config) billPopulate(d.config);
+    msg.className='bill-msg ok'; msg.textContent='✓ Tersimpan. Halaman billing langsung memakai harga & teks baru.';
+    setTimeout(function(){ if(msg.classList.contains('ok')) msg.textContent=''; },4500);
+  }catch(e){ msg.className='bill-msg err'; msg.textContent='Gagal: '+(e.message||e); }
+  btn.disabled=false;
+});
+
+document.getElementById('billHead').addEventListener('click',function(){
+  var body=document.getElementById('billBody');
+  var t=document.getElementById('billToggle');
+  var hidden=body.classList.toggle('collapsed');
+  t.textContent=hidden?'Tampilkan ▼':'Sembunyikan ▲';
+});
+
+loadBilling();
 </script>
 </body>
 </html>
