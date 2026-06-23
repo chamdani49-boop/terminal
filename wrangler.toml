@@ -29,7 +29,7 @@ compatibility_date = "2025-05-01"
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/api/*", "/data.json", "/valuation.json", "/ohlc.json", "/macro.json", "/insights.json", "/headlines.json", "/dashboard"]
+run_worker_first = ["/api/*", "/data.json", "/valuation.json", "/valuation/*", "/ohlc.json", "/macro.json", "/insights.json", "/headlines.json", "/dashboard"]
 
 # Variabel non-rahasia (boleh publik). Rahasia (SESSION_SECRET, GOOGLE_*,
 # MAYAR_*, LIVE_TOKEN_SECRET, RESEND_API_KEY) di-set via dashboard / `wrangler secret put`.

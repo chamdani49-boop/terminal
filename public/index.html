@@ -4355,8 +4355,8 @@ async function loadValuationDiv() {
   if (VAL_DIV) return VAL_DIV;
   const v = Date.now();
   const urls = [
-    'valuation.json?v=' + v,
-    'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/valuation.json?v=' + v,
+    'valuation/dividends.json?v=' + v,
+    'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/valuation/dividends.json?v=' + v,
   ];
   for (const u of urls) {
     try {
@@ -4364,22 +4364,8 @@ async function loadValuationDiv() {
       if (!res.ok) continue;
       const j = await res.json();
       const stocks = (j && j.stocks) || {};
-      const map = {};
-      for (const code of Object.keys(stocks)) {
-        const annual = (stocks[code] && stocks[code].annual) || {};
-        const byYear = {};
-        let latestDps = null, latestYr = -1;
-        for (const yr of Object.keys(annual)) {
-          const d = annual[yr] && annual[yr].dps;
-          if (Number.isFinite(d)) {
-            byYear[yr] = d;
-            const y = parseInt(yr, 10);
-            if (y > latestYr) { latestYr = y; latestDps = d; }
-          }
-        }
-        map[code] = { byYear, latestDps };
-      }
-      VAL_DIV = map;
+      // File dividends.json sudah berformat { CODE: { byYear, latestDps } }.
+      VAL_DIV = (stocks && typeof stocks === 'object') ? stocks : {};
       return VAL_DIV;
     } catch (_) {}
   }
@@ -10682,6 +10668,9 @@ body.vl-maxing{overflow:hidden}
   // ── Sumber data (tiru pola GLOBAL MODULE: CDN dulu, lalu same-origin) ──
   const VAL_CDN_URL   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/valuation.json';
   const VAL_LOCAL_URL = 'valuation.json';
+  // SPLIT/LAZY-LOAD: index ringan (daftar+search) + 1 file per saham (lazy).
+  const VAL_INDEX_URL = 'valuation/index.json';
+  const valStockUrl   = code => 'valuation/' + encodeURIComponent(String(code).toUpperCase()) + '.json';
   const DATA_CDN_URL  = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/data.json';
   const DATA_LOCAL_URL= 'data.json';
 
@@ -10689,7 +10678,8 @@ body.vl-maxing{overflow:hidden}
   const COL = { blue:'#2563eb', green:'#059669', purple:'#6d28d9', pink:'#db2777', orange:'#d97706', purpleSoft:'#8b7eb8' };
 
   const state = {
-    raw:null,    // valuation.json
+    raw:null,    // { stocks:{}, assumptions } — stocks diisi LAZY per-saham
+    index:null,  // daftar ringan dari valuation/index.json (utk dropdown/search/default)
     live:null,   // data.json .live (sheet live) → harga realtime
     priceHist:null, // data.json .price_history → harga historis bulanan (utk Uji Data)
     stats:null,  // data.json .stats → beta dsb (utk WACC, digabung dgn dashboard)
@@ -10750,6 +10740,19 @@ body.vl-maxing{overflow:hidden}
   }
   function latestYear(stock){ const ys=annualYears(stock); return ys[ys.length-1]; }
   function curStock(){ return state.raw && state.raw.stocks[state.code]; }
+
+  // Lazy-load: pastikan data lengkap 1 saham sudah dimuat ke state.raw.stocks[code].
+  // File per-saham (valuation/<CODE>.json) kecil → cepat. Di-cache di memori.
+  async function ensureStock(code){
+    if(!code || !state.raw) return null;
+    code = String(code).toUpperCase();
+    if(state.raw.stocks[code]) return state.raw.stocks[code];
+    try{
+      const s = await fetchJson([valStockUrl(code)]);
+      if(s && (s.annual || s.valuation)){ state.raw.stocks[code] = s; return s; }
+    }catch(e){ console.warn('[valuasi] gagal load saham', code, e&&e.message); }
+    return null;
+  }
 
   // Harga terakhir efektif: utamakan sheet live (data.json), fallback valuation.last_price
   function effLast(stock){
@@ -12823,13 +12826,12 @@ body.vl-maxing{overflow:hidden}
     });
   }
   function populateStockSelect(){
-    if(!state.raw) return;
+    if(!state.index) return;
     const drop = document.getElementById('vlStockDrop'); if(!drop) return;
-    const codes = Object.keys(state.raw.stocks);
-    drop.innerHTML = codes.map(c=>{
-      const v = (state.raw.stocks[c].valuation)||{};
-      const sector = v.sector || '';
-      const hay = (c+' '+sector).toLowerCase().replace(/"/g,'&quot;');
+    drop.innerHTML = state.index.map(it=>{
+      const c = it.code;
+      const sector = it.sector || '';
+      const hay = (c+' '+sector+' '+(it.name||'')).toLowerCase().replace(/"/g,'&quot;');
       return '<div class="vl-search-item" data-code="'+c+'" data-search="'+hay+'">'+
                '<span class="code">'+c+'</span>'+
                (sector?'<span class="sector">'+sector+'</span>':'')+
@@ -12852,16 +12854,15 @@ body.vl-maxing{overflow:hidden}
     vlSyncStockSearchInput();
   }
   function vlSyncStockSearchInput(){
-    const inp = document.getElementById('vlStockSearch'); if(!inp || !state.raw) return;
-    if(!state.code || !state.raw.stocks || !state.raw.stocks[state.code]){
+    const inp = document.getElementById('vlStockSearch'); if(!inp) return;
+    if(!state.code){
       inp.value = '';
       inp.placeholder = 'Data emiten belum tersedia — coba refresh halaman';
       return;
     }
-    const s = state.raw.stocks[state.code];
-    const sector = s && s.valuation && s.valuation.sector ? s.valuation.sector : '';
-    // Input dibiarkan KOSONG; saham terpilih ditampilkan sbg placeholder.
-    // Jadi user tinggal mengetik tanpa perlu hapus teks lama dulu.
+    const s = state.raw && state.raw.stocks[state.code];
+    let sector = (s && s.valuation && s.valuation.sector) || '';
+    if(!sector && state.index){ const it = state.index.find(x=>x.code===state.code); if(it) sector = it.sector||''; }
     inp.value = '';
     inp.placeholder = state.code + (sector?' · '+sector:'');
   }
@@ -12920,18 +12921,16 @@ body.vl-maxing{overflow:hidden}
     });
   }
   function pickDefaultCode(){
-    if(!state.raw || !state.raw.stocks) return null;
-    const codes = Object.keys(state.raw.stocks);
-    if(!codes.length) return null;
-    const firstApplicable = codes.find(c=>{
-      const v = state.raw.stocks[c].valuation;
-      return v && v.five_year && v.five_year.applicable;
-    });
-    return firstApplicable || codes[0];
+    if(!state.index || !state.index.length) return null;
+    const ap = state.index.find(it=>it.applicable);
+    return (ap && ap.code) || state.index[0].code;
   }
 
-  window.vlSelectStock = function(code){
-    if(!state.raw || !state.raw.stocks[code]) return;
+  window.vlSelectStock = async function(code){
+    if(!state.index) return;
+    code = String(code).toUpperCase();
+    const s = await ensureStock(code);   // lazy: muat file saham bila belum ada
+    if(!s) return;
     state.code = code;
     vlSyncStockSearchInput();
     renderAll();
@@ -13013,31 +13012,21 @@ body.vl-maxing{overflow:hidden}
     console.error('Valuasi error:', msg||'');
   }
 
-  // Init: fetch valuation.json + (opsional) data.json untuk harga live.
+  // Init: fetch valuation/index.json (ringan) + data.json; saham dimuat lazy.
   async function init(){
     if(state.loading || state.raw) return;
     state.loading = true;
     try{
-      // ── 1) Render INSTAN dari cache valuasi (kalau ada) ──
-      const cVal = (window.escCacheRead && window.escCacheRead('val')) || null;
-      if(cVal && cVal.stocks){
-        try{
-          state.raw = cVal;
-          const cData = window.escCacheRead('data');
-          if(cData){
-            state.live = (cData && cData.live) ? cData.live : null;
-            state.priceHist = (cData && Array.isArray(cData.price_history)) ? cData.price_history : null;
-            state.stats = (cData && cData.stats) ? cData.stats : null;
-            state.fundamentals = (cData && cData.fundamentals) ? cData.fundamentals : null;
-            state.stockInfo = (cData && cData.stock_info) ? cData.stock_info : null;
-          }
-          state.code = pickDefaultCode();
-          if(state.code){ populateStockSelect(); setWinButtons(); renderAll(); }
-        }catch(_){ }
+      // 1) Index ringan: daftar + search + default. (Split/lazy-load.)
+      const idx = await fetchJson([VAL_INDEX_URL]);
+      if(!idx || !Array.isArray(idx.stocks) || !idx.stocks.length){
+        showError('Data valuasi belum tersedia. Coba refresh halaman dalam beberapa saat.');
+        state.loading = false; return;
       }
-      // ── 2) Revalidasi versi fresh dari network ──
-      const fresh = await fetchJson([VAL_LOCAL_URL]);
-      if(fresh && fresh.stocks){ try{ window.escCacheWrite && window.escCacheWrite('val', fresh); }catch(_){} state.raw = fresh; }
+      state.index = idx.stocks;
+      state.raw = { stocks:{}, assumptions: idx.assumptions || {} };
+
+      // 2) data.json untuk harga live + histori (opsional).
       try{
         const data = await fetchJson([DATA_LOCAL_URL]);
         state.live = (data && data.live) ? data.live : null;
@@ -13045,14 +13034,17 @@ body.vl-maxing{overflow:hidden}
         state.stats = (data && data.stats) ? data.stats : null;
         state.fundamentals = (data && data.fundamentals) ? data.fundamentals : null;
         state.stockInfo = (data && data.stock_info) ? data.stock_info : null;
-      }catch(e){ /* harga live opsional → pertahankan nilai dari cache */ }
+      }catch(e){ /* harga live opsional */ }
+
+      // 3) Pilih default + muat data lengkapnya (lazy), lalu render.
+      populateStockSelect();
       state.code = pickDefaultCode();
       if(!state.code){
         showError('Data valuasi belum tersedia. Coba refresh halaman dalam beberapa saat (workflow refresh-valuation mungkin sedang berjalan).');
         state.loading = false;
         return;
       }
-      populateStockSelect();
+      await ensureStock(state.code);
       setWinButtons();
       renderAll();
     }catch(e){
