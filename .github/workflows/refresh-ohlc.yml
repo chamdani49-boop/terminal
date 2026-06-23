@@ -94,7 +94,10 @@ jobs:
           git config user.name  "ohlc-refresh[bot]"
           git config user.email "ohlc-refresh@economstock.local"
           git add public/ohlc.json public/rec-status.json
-          git commit -m "ohlc: refresh $(date -u +%FT%TZ) [skip ci]"
+          # CATATAN: SENGAJA TANPA [skip ci] supaya Cloudflare redeploy & candle
+          # baru langsung terdistribusi ke chart. Deploy harian ini sekaligus
+          # membawa semua file public/ terbaru (data.json, dll) dalam 1 bundle.
+          git commit -m "ohlc: refresh $(date -u +%FT%TZ)"
 
           pushed=false
           for attempt in 1 2 3 4 5; do
