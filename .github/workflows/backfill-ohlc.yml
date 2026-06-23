@@ -30,6 +30,7 @@ on:
 
 permissions:
   contents: write
+  actions: write           # untuk menonaktifkan workflow ini sendiri saat selesai
 
 concurrency:
   group: backfill-ohlc
@@ -50,9 +51,17 @@ jobs:
 
       # ── Backfill bertahap ohlc.json ────────────────────────────────────
       - name: Build ohlc.json (backfill batch)
+        id: build
         env:
           OHLC_BACKFILL: ${{ github.event.inputs.batch || '100' }}
-        run: node scripts/build-ohlc.js
+        run: |
+          set -o pipefail
+          node scripts/build-ohlc.js | tee /tmp/ohlc-backfill.log
+          if grep -q '__BACKFILL_COMPLETE__' /tmp/ohlc-backfill.log; then
+            echo "complete=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "complete=false" >> "$GITHUB_OUTPUT"
+          fi
 
       # ── Commit hanya kalau berubah (no-op saat semua sudah lengkap) ─────
       - name: Commit & push if changed
@@ -95,3 +104,17 @@ jobs:
             response=$(curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/public/$f")
             echo "Purge $f: $response"
           done
+
+      # ── Selesai → nonaktifkan workflow per-jam ini (backfill = run pertama saja) ──
+      # Setelah semua saham lengkap, refresh harian (refresh-ohlc.yml, 17:00 WIB)
+      # sudah cukup untuk update + menambahkan saham baru. Backfill per-jam tidak
+      # perlu lagi, jadi di-disable supaya tidak jalan terus.
+      - name: Disable hourly backfill once complete
+        if: steps.build.outputs.complete == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "✓ Backfill semua saham SELESAI — menonaktifkan workflow per-jam ini."
+          echo "  Refresh harian (refresh-ohlc.yml, 17:00 WIB) akan menangani update & saham baru."
+          gh workflow disable backfill-ohlc.yml --repo "${{ github.repository }}"

@@ -541,6 +541,7 @@ async function main() {
     });
     if (needsFull.length === 0) {
       console.log('Backfill: semua saham sudah punya data lengkap → no-op (tidak menulis / commit).');
+      console.log('__BACKFILL_COMPLETE__');   // sinyal untuk workflow agar menonaktifkan cron per-jam
       return;
     }
     const batch = needsFull.slice(0, BACKFILL);
