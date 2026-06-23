@@ -613,16 +613,87 @@ def five_year_valuation(stock, last_price, warn, override=None):
 
 
 def load_data_json():
-    """Ambil beta, stock_info, dan harga live per kode saham dari public/data.json."""
+    """Ambil beta, stock_info, harga live, & lookup history Desember per kode saham."""
     try:
         d = json.load(open(DATA_JSON, encoding='utf-8'))
         stats = d.get('stats', {})
         betas = {c: s.get('beta') for c, s in stats.items()}
         live = {c: (v or {}).get('price') for c, v in d.get('live', {}).items()}
-        return betas, d.get('stock_info', {}), live
+        return betas, d.get('stock_info', {}), live, build_hist_close(d)
     except Exception as e:
         print(f'[build-valuation] data.json tidak terbaca ({e}) → default dipakai', file=sys.stderr)
-        return {}, {}, {}
+        return {}, {}, {}, {}
+
+
+def build_hist_close(d):
+    """Lookup {TICKER: {year: close}} dari price_history. Untuk tiap tahun diambil
+    close bulan TERAKHIR yang ada datanya (utamakan Desember/tutup tahun; mundur ke
+    bulan sebelumnya bila Desember null). Dipakai mengisi harga tahunan yang 'Libur'."""
+    tmp = {}   # {TICKER: {year: (month, close)}}
+    for e in (d.get('price_history') or []):
+        dt = str(e.get('date') or '')            # format "YYYY-MM-01"
+        m = re.match(r'(\d{4})-(\d{2})', dt)
+        if not m:
+            continue
+        year, mon = int(m.group(1)), int(m.group(2))
+        for k, v in e.items():
+            if k in ('date', 'label') or v is None:
+                continue
+            ymap = tmp.setdefault(str(k).strip().upper(), {})
+            cur = ymap.get(year)
+            if cur is None or mon > cur[0]:        # simpan bulan paling akhir
+                ymap[year] = (mon, v)
+    return {tk: {y: mv[1] for y, mv in ymap.items()} for tk, ymap in tmp.items()}
+
+
+def fill_holiday_prices(stock, hist_close):
+    """Perbaiki data yang hilang karena harga tahunan = 'Libur' (hari bursa libur).
+
+    1) Isi `price` tahunan yang kosong dari price_history (close Desember tahun itu).
+    2) Hitung ulang `market_cap` = price × shares bila kosong.
+    3) Hitung ulang rasio harga (pbv/per/psr) bila kosong, konsisten dgn price.
+
+    HANYA mengisi nilai yang KOSONG (None) — tidak pernah menimpa angka asli Excel.
+    Berlaku untuk data lama, baru, & pengganti (jalan tiap build).
+    Mengembalikan (n_price, n_market_cap, n_ratio).
+    """
+    code = stock.get('code')
+    ch = hist_close.get(code, {}) if code else {}
+    n_price = n_mc = n_ratio = 0
+    years_filled = []
+    for year, fields in stock.get('annual', {}).items():
+        try:
+            y = int(year)
+        except (TypeError, ValueError):
+            continue
+        # 1) Harga tahunan kosong → ambil close Desember dari history.
+        if fields.get('price') is None and ch.get(y) is not None:
+            fields['price'] = ch[y]
+            n_price += 1
+            years_filled.append(year)
+        price = fields.get('price')
+        if price is None or price <= 0:
+            continue
+        # 2) market_cap = price × shares (kalau hilang).
+        if fields.get('market_cap') is None:
+            sh = fields.get('shares')
+            if sh is not None and sh > 0:
+                fields['market_cap'] = price * sh
+                n_mc += 1
+        # 3) Rasio harga (kalau hilang) — pbv=price/bvps, per=price/eps, psr=price/sps.
+        if fields.get('pbv') is None and fields.get('bvps') not in (None, 0):
+            fields['pbv'] = round(price / fields['bvps'], 4); n_ratio += 1
+        if fields.get('per') is None and fields.get('eps') not in (None, 0):
+            fields['per'] = round(price / fields['eps'], 4); n_ratio += 1
+        if fields.get('psr') is None and fields.get('sps') not in (None, 0):
+            fields['psr'] = round(price / fields['sps'], 4); n_ratio += 1
+    if n_price or n_mc or n_ratio:
+        stock['holiday_fill'] = {
+            'price': n_price, 'market_cap': n_mc, 'ratio': n_ratio,
+            'years': sorted(years_filled, reverse=True),
+            'source': 'price_history (close Desember)',
+        }
+    return n_price, n_mc, n_ratio
 
 
 def load_overrides():
@@ -654,9 +725,10 @@ def main():
     if not files:
         print(f'[build-valuation] Tidak ada file .xlsx di {SRC_DIR}', file=sys.stderr)
 
-    betas, stock_info, live_prices = load_data_json()
+    betas, stock_info, live_prices, hist_close = load_data_json()
     overrides = load_overrides()
     stocks, warnings, source_files = {}, [], []
+    fill_totals = {'price': 0, 'market_cap': 0, 'ratio': 0}
 
     for path in files:
         source_files.append(os.path.basename(path))
@@ -673,6 +745,13 @@ def main():
                                 f"({type(e).__name__}: {e}) — dilewati")
                 continue
             code = data.get('code') or name
+            # Perbaiki harga 'Libur' (hari bursa libur) + recompute market_cap/rasio
+            # dari price_history. Hanya mengisi yang kosong; berlaku semua data.
+            try:
+                hp = fill_holiday_prices(data, hist_close)
+                fill_totals['price'] += hp[0]; fill_totals['market_cap'] += hp[1]; fill_totals['ratio'] += hp[2]
+            except Exception as e:
+                warnings.append(f"{code}: gagal isi harga libur ({type(e).__name__}: {e})")
             if data.get('code_in_sheet') and data['code_in_sheet'] != code:
                 warnings.append(f"Sheet '{name}' di {os.path.basename(path)}: nama sheet != C1 "
                                 f"('{code}' vs '{data['code_in_sheet']}')")
@@ -757,6 +836,11 @@ def main():
     os.makedirs(os.path.dirname(OUT_FILE), exist_ok=True)
     with open(OUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
+
+    if fill_totals['price'] or fill_totals['market_cap'] or fill_totals['ratio']:
+        warnings.append(
+            f"Holiday-fill: {fill_totals['price']} harga + {fill_totals['market_cap']} market_cap + "
+            f"{fill_totals['ratio']} rasio diisi/dihitung ulang dari price_history (close Desember).")
 
     print(f"[build-valuation] {len(stocks)} saham dari {len(source_files)} file -> {OUT_FILE}")
     if warnings:
