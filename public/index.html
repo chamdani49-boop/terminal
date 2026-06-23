@@ -6117,9 +6117,7 @@ function buildSearchIndex() {
 
 function selectStock(code) {
   currentStock = code;
-  showPage('dashboard');
-  // Activate dashboard tab
-  document.querySelectorAll('.nav-tab').forEach((t,i) => { if(i===0) t.classList.add('active'); else t.classList.remove('active'); });
+  showPage('dashboard');   // sudah otomatis menyinkronkan nav-tab aktif (Dashboard)
   renderDashboard(code);
   // Update watchlist active
   document.querySelectorAll('.watchlist-item').forEach(el => {
