@@ -49,6 +49,16 @@ input.code{text-align:center;letter-spacing:10px;font-family:'IBM Plex Mono',mon
 .back a{font-size:13px;color:var(--text2)}
 .hidden{display:none}
 .link-btn{background:none;border:none;color:var(--accent);font-family:inherit;font-size:13px;cursor:pointer;padding:0;text-decoration:underline}
+
+/* SECURITY NOTE */
+.secure-note{margin-top:18px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.secure-head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px}
+.secure-head svg{width:18px;height:18px;flex-shrink:0}
+.secure-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.secure-list li{font-size:12px;color:var(--text2);line-height:1.5;padding-left:20px;position:relative}
+.secure-list li::before{content:"✓";position:absolute;left:0;top:0;color:var(--green);font-weight:800}
+.secure-list b{color:var(--text);font-weight:700}
+.secure-foot{margin-top:11px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);line-height:1.5;text-align:center}
 </style>
 </head>
 <body>
@@ -64,6 +74,21 @@ input.code{text-align:center;letter-spacing:10px;font-family:'IBM Plex Mono',mon
     <svg class="gicon" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.6 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/><path fill="#4CAF50" d="M24 43.5c5.5 0 10.3-1.9 13.7-5.1l-6.3-5.3C29.5 34.6 26.9 35.5 24 35.5c-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.6 39 16.2 43.5 24 43.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.3 5.3c-.4.4 6.5-4.8 6.5-14.3 0-1.2-.1-2.4-.4-3.5z"/></svg>
     Masuk dengan Google
   </button>
+
+  <!-- Catatan keamanan -->
+  <div class="secure-note">
+    <div class="secure-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--green)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      Login aman &amp; terenkripsi
+    </div>
+    <ul class="secure-list">
+      <li>Memakai autentikasi resmi <b>Google (OAuth 2.0)</b> — kamu masuk langsung di Google, bukan di halaman ini.</li>
+      <li>Seluruh koneksi <b>terenkripsi (HTTPS/TLS)</b> end-to-end.</li>
+      <li>Kami <b>tidak pernah</b> menerima, melihat, atau menyimpan kata sandimu.</li>
+      <li>Sesi diamankan dengan cookie <b>terenkripsi &amp; httpOnly</b> (tidak bisa dibaca skrip).</li>
+    </ul>
+    <div class="secure-foot">🔒 Dengan masuk, kamu menyetujui Ketentuan &amp; Kebijakan Privasi Economstock Terminal.</div>
+  </div>
 
   <div class="divider hidden">ATAU</div>
 
