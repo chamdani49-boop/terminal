@@ -43,6 +43,15 @@ PLAN_DAYS_3BULAN = "90"
 PLAN_DAYS_6BULAN = "182"
 PLAN_DAYS_TAHUNAN = "365"
 
+# ── Anti-abuse (Step 1-3) ──
+# RATE_LIMIT_PER_MIN     : maks request data/menit per user (default 120 bila kosong)
+# ACCOUNT_MAX_IPS_PER_DAY: ambang flag akun-dibagi per jumlah IP/24 jam (default 8)
+# ACCOUNT_MAX_COUNTRIES  : ambang flag akun-dibagi per jumlah negara/24 jam (default 3)
+# ABUSE_AUTOSUSPEND      : "true" untuk MENGAKTIFKAN auto-suspend. Default OFF.
+# ABUSE_AUTOSUSPEND_FLAGS: jumlah flag dalam window untuk auto-suspend (default 12)
+# ABUSE_AUTOSUSPEND_HOURS: window jam untuk hitung flag (default 24)
+ABUSE_AUTOSUSPEND = "false"
+
 # ── Database D1 ──
 [[d1_databases]]
 binding = "DB"

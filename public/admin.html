@@ -405,6 +405,15 @@ tbody tr:hover{background:var(--bg2)}
       </tbody>
     </table>
 
+    <div class="guide-sec"><b>3) Auto-suspend (opsional)</b></div>
+    <table class="guide-table">
+      <tbody>
+        <tr><td>⚙️ Default</td><td><b>NONAKTIF.</b> Nyalakan dgn set var <code>ABUSE_AUTOSUSPEND="true"</code> di Worker.</td></tr>
+        <tr><td>🎯 Kapan</td><td>Hanya saat 1 user kumpulkan <b>≥12 flag dalam 24 jam</b> (abuse parah &amp; berulang) — bukan sekali dua kali.</td></tr>
+        <tr><td>📩 Saat terjadi</td><td>User otomatis di-suspend + kamu dapat notif Telegram. Tinggal review &amp; aktifkan lagi kalau salah.</td></tr>
+      </tbody>
+    </table>
+
     <div class="guide-sec" style="font-size:12px;color:var(--text3)">
       Ambang bisa diatur via variabel Worker: <code>RATE_LIMIT_PER_MIN</code> (120),
       <code>ACCOUNT_MAX_IPS_PER_DAY</code> (8), <code>ACCOUNT_MAX_COUNTRIES</code> (3).
@@ -787,6 +796,7 @@ async function loadAbuse(){
     var tg=document.getElementById('tgStatus');
     if(d.telegram_configured){ tg.innerHTML='Notifikasi Telegram: <b style="color:var(--green)">aktif ✓</b>'; }
     else{ tg.innerHTML='Notifikasi Telegram: <b style="color:var(--yellow)">belum diset</b> (set TELEGRAM_BOT_TOKEN &amp; TELEGRAM_CHAT_ID)'; }
+    tg.innerHTML += ' &nbsp;·&nbsp; Auto-suspend: <b style="color:'+(d.autosuspend?'var(--green)':'var(--text3)')+'">'+(d.autosuspend?'aktif':'nonaktif')+'</b>';
 
     sumEl.innerHTML = summary.length
       ? summary.map(function(s){

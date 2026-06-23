@@ -15,6 +15,7 @@
 //     manual. Migration 0003 tetap disediakan untuk kebersihan.
 // ─────────────────────────────────────────────────────────────────────────
 import { now } from './util.js';
+import { autoSuspendByUserId } from './db.js';
 
 const DEFAULT_WINDOW_SEC = 60;
 
@@ -149,6 +150,59 @@ export async function reportAbuse(env, info) {
       + '\nBuka /admin → panel "Aktivitas Mencurigakan" untuk review.';
     await sendTelegram(env, txt);
   }
+
+  // Auto-suspend (OPSIONAL, OFF default). Jangan cek ulang untuk flag auto_suspend.
+  if (info.type !== 'auto_suspend') {
+    await maybeAutoSuspend(env, info);
+  }
+}
+
+/** Jumlah flag untuk satu user dalam `hours` jam terakhir (exclude auto_suspend). */
+async function flagCountForUser(env, userId, hours) {
+  if (!env.DB || !userId) return 0;
+  try {
+    await ensureTables(env);
+    const since = now() - hours * 3600;
+    const row = await env.DB.prepare(
+      "SELECT COUNT(*) AS c FROM abuse_flags WHERE user_id = ? AND created_at >= ? AND type != 'auto_suspend'"
+    ).bind(userId, since).first();
+    return (row && row.c) || 0;
+  } catch (_) { return 0; }
+}
+
+/** True kalau auto-suspend aktif (var ABUSE_AUTOSUSPEND === "true"). */
+export function autosuspendEnabled(env) {
+  return env.ABUSE_AUTOSUSPEND === 'true';
+}
+
+/**
+ * Auto-suspend HANYA untuk abuse parah & BERULANG: kalau 1 user mengumpulkan
+ * >= ABUSE_AUTOSUSPEND_FLAGS (default 12) flag dalam ABUSE_AUTOSUSPEND_HOURS
+ * (default 24) jam. OFF kecuali ABUSE_AUTOSUSPEND="true". Admin dikecualikan di
+ * pemanggil (guardProtected tidak menjalankan rate-limit/flag untuk admin).
+ * Aman: idempoten (sekali suspend, tidak diulang) + notif Telegram sekali.
+ */
+async function maybeAutoSuspend(env, info) {
+  if (!autosuspendEnabled(env) || !info.userId) return;
+  const hours = parseInt(env.ABUSE_AUTOSUSPEND_HOURS || '24', 10) || 24;
+  const threshold = parseInt(env.ABUSE_AUTOSUSPEND_FLAGS || '12', 10) || 12;
+  const count = await flagCountForUser(env, info.userId, hours);
+  if (count < threshold) return;
+
+  let suspended = false;
+  try { suspended = await autoSuspendByUserId(env, info.userId); } catch (_) { suspended = false; }
+  if (!suspended) return;   // sudah suspended / tidak ada langganan aktif
+
+  await recordFlag(env, {
+    userId: info.userId, email: info.email, ip: info.ip, country: info.country,
+    type: 'auto_suspend', detail: `${count} flag dalam ${hours} jam → otomatis di-suspend`,
+  });
+  await sendTelegram(env,
+    '⛔ <b>AUTO-SUSPEND</b> — Economstock Terminal\n'
+    + `• User: ${esc(info.email || info.userId)}\n`
+    + `• Alasan: ${count} flag dalam ${hours} jam\n`
+    + '\nBuka /admin → tabel user untuk review / aktifkan kembali (klik ⛔).'
+  );
 }
 
 /** Flag terbaru (default 100) untuk panel admin. */
