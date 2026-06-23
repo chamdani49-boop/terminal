@@ -119,6 +119,16 @@ export async function adminSetStatus(env, email, status) {
   return { ok: true };
 }
 
+// Auto-suspend berdasarkan user_id (dipakai engine anti-abuse). Idempoten:
+// hanya men-suspend kalau saat ini ADA langganan aktif. Mengembalikan true bila
+// status benar-benar berubah aktif→suspended (untuk hindari notif berulang).
+export async function autoSuspendByUserId(env, userId) {
+  const active = await getActiveSubscription(env, userId);
+  if (!active) return false;
+  await db(env).prepare("UPDATE subscriptions SET status = 'suspended' WHERE id = ?").bind(active.id).run();
+  return true;
+}
+
 export async function adminDeleteUser(env, email) {
   const u = await getUserByEmail(env, email);
   if (!u) throw new Error('User tidak ditemukan');

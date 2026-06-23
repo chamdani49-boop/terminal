@@ -7,7 +7,7 @@ import {
   listUsersWithSub, adminExtendDays, adminSetStatus, adminDeleteUser, adminEditUser,
 } from './db.js';
 import { getBillingConfig, saveBillingConfig } from './billing.js';
-import { recentFlags, flagSummary, sendTelegram, deviceSummary } from './abuse.js';
+import { recentFlags, flagSummary, sendTelegram, deviceSummary, autosuspendEnabled } from './abuse.js';
 
 export function isAdmin(env, email) {
   if (!email) return false;
@@ -45,7 +45,7 @@ export async function handleAdminApi(request, env, url) {
       deviceSummary(env, { hours: 24, limit: 20 }),
     ]);
     const telegram_configured = !!((env.TELEGRAM_BOT_TOKEN || '').trim() && (env.TELEGRAM_CHAT_ID || '').trim());
-    return json({ ok: true, flags, summary, devices, telegram_configured });
+    return json({ ok: true, flags, summary, devices, telegram_configured, autosuspend: autosuspendEnabled(env) });
   }
 
   // ── Anti-abuse: kirim pesan test ke Telegram (verifikasi setup) ──
