@@ -10707,8 +10707,15 @@ body.vl-maxing{overflow:hidden}
   const ok      = v => v!=null && isFinite(v);
   const fmtInt  = v => ok(v) ? Math.round(v).toLocaleString('id-ID') : '-';
   const fmtRp   = v => ok(v) ? 'Rp '+Math.round(v).toLocaleString('id-ID') : '-';
-  const fmtMrp  = v => ok(v) ? 'Rp '+(v/1e9).toLocaleString('id-ID',{maximumFractionDigits:0})+' M' : '-';
-  const fmtM    = v => ok(v) ? (v/1e9).toLocaleString('id-ID',{maximumFractionDigits:0}) : '-';
+  // Satuan Miliar dengan desimal ADAPTIF: nilai kecil (<1 M, mis. emiten yang
+  // lapor USD seperti SMDR) TIDAK dibulatkan jadi 0/1 — tampilkan desimal secukupnya.
+  const _inMiliar = v => {
+    const m = v/1e9, a = Math.abs(m);
+    const d = a>=100 ? 0 : a>=10 ? 1 : a>=1 ? 2 : (a>0 ? 3 : 0);
+    return m.toLocaleString('id-ID',{minimumFractionDigits:0, maximumFractionDigits:d});
+  };
+  const fmtMrp  = v => ok(v) ? 'Rp '+_inMiliar(v)+' M' : '-';
+  const fmtM    = v => ok(v) ? _inMiliar(v) : '-';
   const fmtD2   = v => ok(v) ? v.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2}) : '-';
   const fmtPct  = v => ok(v) ? v.toFixed(2)+'%' : '-';
   const fmtGl   = v => ok(v) ? (v>=0?'+':'')+v.toFixed(2)+'%' : '-';
