@@ -770,6 +770,11 @@ def fill_holiday_prices(stock, monthly, live_price=None, yearly=None):
             'source': 'tahunan & kuartal: price_history (per bulan); tahun berjalan: live',
         }
     stock.pop('q_price_libur', None)   # flag transien, jangan ikut ke JSON output
+    # Buang kuartal Q2/Q3/Q4 yang SEMUA kosong (belum ada laporan) → hemat ukuran.
+    q = stock.get('quarters') or {}
+    for qn in ('Q2', 'Q3', 'Q4'):
+        if qn in q and all(v is None for v in q[qn].values()):
+            del q[qn]
     return n_price, n_mc, n_ratio
 
 
@@ -793,6 +798,24 @@ def apply_override(code, five, override, warn):
     """DEPRECATED: override kini diterapkan di dalam five_year_valuation(override=...).
     Disisakan sebagai no-op untuk kompatibilitas bila ada pemanggil lama."""
     return
+
+
+def _shrink_floats(o, nd=6):
+    """Bersihkan 'ekor' float (mis. 7.000000000000001 → 7) & bulatkan ke nd desimal,
+    rekursif. Float yang bernilai bulat → int. Mengecilkan ukuran JSON signifikan
+    tanpa mengubah angka secara berarti."""
+    if isinstance(o, bool):
+        return o
+    if isinstance(o, float):
+        if o != o or o in (float('inf'), float('-inf')):
+            return None
+        r = round(o, nd)
+        return int(r) if r == int(r) else r
+    if isinstance(o, dict):
+        return {k: _shrink_floats(v, nd) for k, v in o.items()}
+    if isinstance(o, list):
+        return [_shrink_floats(v, nd) for v in o]
+    return o
 
 
 # ════════════════════════════ MAIN ══════════════════════════════════════════
@@ -913,7 +936,9 @@ def main():
 
     os.makedirs(os.path.dirname(OUT_FILE), exist_ok=True)
     with open(OUT_FILE, 'w', encoding='utf-8') as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
+        # Compact (tanpa indent) + bersihkan ekor float → ukuran jauh lebih kecil,
+        # supaya frontend (terutama dgn 500+ saham) memuat cepat.
+        json.dump(_shrink_floats(out), f, ensure_ascii=False, separators=(',', ':'))
 
     if fill_totals['price'] or fill_totals['market_cap'] or fill_totals['ratio']:
         warnings.append(
