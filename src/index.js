@@ -18,6 +18,7 @@ import { handleAdminApi } from './lib/admin.js';
 import { getActiveSubscription } from './lib/db.js';
 import { getBillingConfig, publicBilling } from './lib/billing.js';
 import { rateLimit, reportAbuse, trackDevice } from './lib/abuse.js';
+import { TOS_VERSION, hasAcceptedCurrent, saveConsent } from './lib/legal.js';
 
 // Path yang butuh langganan aktif saat gating menyala
 const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/ohlc.json', '/macro.json', '/insights.json', '/headlines.json', '/dashboard'];
@@ -177,13 +178,30 @@ async function handleApi(request, env, url) {
       if (s) sub = { plan: s.plan, status: s.status, expires_at: s.expires_at, active: s.expires_at > now() };
     } catch { /* D1 belum siap */ }
     const admins = (env.ADMIN_EMAILS || '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+    let tosAccepted = true;
+    try { tosAccepted = await hasAcceptedCurrent(env, session.uid); } catch { tosAccepted = true; }
     return json({
       authenticated: true,
       email: session.email,
       name: session.name || null,
       is_admin: admins.includes((session.email || '').toLowerCase()),
       subscription: sub,
+      tos_version: TOS_VERSION,
+      tos_accepted: tosAccepted,
     });
+  }
+
+  // ── Persetujuan Ketentuan & Privasi ──
+  if (path === '/api/accept-terms' && method === 'POST') {
+    const session = await getSession(request, env);
+    if (!session) return json({ error: 'unauthenticated' }, 401);
+    try {
+      const ip = request.headers.get('CF-Connecting-IP') || '';
+      const r = await saveConsent(env, session.uid, ip);
+      return json({ ok: !!r.ok, version: TOS_VERSION });
+    } catch (e) {
+      return json({ error: (e && e.message) || 'gagal menyimpan persetujuan' }, 500);
+    }
   }
 
   // ── Token akses feed live (Worker terminal-live, lintas-domain) ──

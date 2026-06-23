@@ -4405,6 +4405,7 @@ async function _ensureAccess() {
     if (!active && !j.is_admin) { location.replace('/billing'); return false; }
     window.__ES_PROFILE = j;
     try { _renderAccount(j); } catch (_) {}
+    try { if (!j.tos_accepted && window.__esConsentGate) window.__esConsentGate(); } catch (_) {}
     return true;
   } catch (e) {
     // Endpoint error → jangan kunci user; data tetap dilindungi server.
@@ -13653,6 +13654,132 @@ function closeInfoModalOnBackdrop(e) {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { closeInfoModal(); closeRecDetail(); }
 });
+</script>
+
+<!-- ═══════════ CONSENT GATE — Ketentuan & Kebijakan Privasi ═══════════ -->
+<style>
+.tosg-overlay{position:fixed;inset:0;background:rgba(10,5,33,.75);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:99999;padding:18px}
+.tosg-overlay.open{display:flex}
+.tosg-card{background:var(--card,#1f1450);color:var(--text,#f4f2ff);border:1px solid var(--border,#4a3590);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5);width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.tosg-head{padding:18px 22px 12px;border-bottom:1px solid var(--border,#4a3590)}
+.tosg-head h2{font-size:18px;font-weight:800;margin:0 0 3px}
+.tosg-head p{font-size:12.5px;color:var(--text2,#c4b8e8);margin:0}
+.tosg-body{padding:16px 22px;overflow-y:auto;font-size:13px;line-height:1.65;color:var(--text2,#c4b8e8)}
+.tosg-body h3{font-size:13.5px;font-weight:800;color:var(--text,#f4f2ff);margin:16px 0 6px}
+.tosg-body h3:first-child{margin-top:0}
+.tosg-body p,.tosg-body li{margin:0 0 7px}
+.tosg-body ul{margin:0 0 7px;padding-left:20px}
+.tosg-body b{color:var(--text,#f4f2ff)}
+.tosg-body .tosg-warn{color:#fb7185}
+.tosg-end{margin-top:14px;padding:10px 12px;border:1px dashed var(--border,#4a3590);border-radius:10px;font-size:12px;text-align:center;color:var(--text3,#8b7eb8)}
+.tosg-foot{padding:14px 22px 18px;border-top:1px solid var(--border,#4a3590);background:var(--bg2,#1a1145)}
+.tosg-chk{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text,#f4f2ff);cursor:pointer;margin-bottom:12px;line-height:1.5}
+.tosg-chk input{margin-top:2px;width:18px;height:18px;flex-shrink:0;cursor:pointer;accent-color:var(--accent,#6d28d9)}
+.tosg-hint{font-size:11.5px;color:var(--yellow,#fbbf24);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.tosg-hint.done{color:var(--green,#4ade80)}
+.tosg-err{font-size:12px;color:#fb7185;margin-bottom:10px;display:none}
+.tosg-btn{width:100%;background:linear-gradient(135deg,#6d28d9,#2563eb);color:#fff;font-family:inherit;font-size:15px;font-weight:800;padding:13px;border:none;border-radius:12px;cursor:pointer}
+.tosg-btn:disabled{opacity:.45;cursor:not-allowed}
+</style>
+
+<div class="tosg-overlay" id="tosgOverlay" role="dialog" aria-modal="true" aria-labelledby="tosgTitle">
+  <div class="tosg-card">
+    <div class="tosg-head">
+      <h2 id="tosgTitle">Ketentuan Layanan &amp; Kebijakan Privasi</h2>
+      <p>Wajib dibaca sebelum menggunakan Economstock Terminal.</p>
+    </div>
+    <div class="tosg-body" id="tosgBody">
+      <h3>1. Penerimaan</h3>
+      <p>Dengan masuk dan/atau berlangganan Economstock Terminal (economstock.com), kamu menyatakan telah membaca, memahami, dan menyetujui seluruh ketentuan di bawah ini.</p>
+
+      <h3>2. Layanan &amp; Pembayaran</h3>
+      <ul>
+        <li>Akses bersifat <b>langganan berbayar</b> sesuai paket &amp; masa aktif yang dipilih.</li>
+        <li><b>Tidak ada pengembalian dana (no refund).</b> Pembelian berarti menyetujui ketentuan ini.</li>
+        <li>Masa aktif berjalan sesuai kalender sejak diaktifkan.</li>
+      </ul>
+
+      <h3>3. Aturan Penggunaan</h3>
+      <ul>
+        <li>Akun untuk <b>pemakaian pribadi 1 orang</b>. <span class="tosg-warn">Dilarang membagikan, menjual, atau memakai akun bersama.</span></li>
+        <li><span class="tosg-warn">Dilarang scraping, bot, akses otomatis, atau pengunduhan data secara massal.</span></li>
+        <li>Dilarang menyalin, menyebarkan ulang, atau menjual kembali data/konten.</li>
+        <li>Pelanggaran dapat berakibat <b>penangguhan/pemblokiran akun tanpa pengembalian dana</b>. Sistem kami otomatis mendeteksi pola mencurigakan (lonjakan permintaan, banyak lokasi/perangkat).</li>
+      </ul>
+
+      <h3>4. Data &amp; Privasi</h3>
+      <ul>
+        <li>Kami mengumpulkan: email (dari login Google) dan alamat IP (untuk keamanan).</li>
+        <li>Data dipakai untuk autentikasi, keamanan, dan menjalankan layanan.</li>
+        <li>Kami <b>tidak menjual</b> data pribadimu ke pihak ketiga.</li>
+      </ul>
+
+      <h3>5. Disclaimer Investasi</h3>
+      <p>Seluruh data, valuasi, dan konsensus disajikan untuk tujuan <b>analisis &amp; edukasi</b>, <b>bukan ajakan/rekomendasi membeli atau menjual</b> efek apa pun. Keputusan investasi sepenuhnya tanggung jawab kamu. Kami tidak bertanggung jawab atas kerugian yang timbul.</p>
+
+      <h3>6. Hukum yang Berlaku</h3>
+      <p>Ketentuan ini tunduk pada hukum Republik Indonesia.</p>
+
+      <h3>7. Kontak</h3>
+      <p>Pertanyaan atau keluhan: WhatsApp <b>+62 896-5461-9822</b>.</p>
+
+      <div class="tosg-end">— Akhir dokumen —</div>
+    </div>
+    <div class="tosg-foot">
+      <div class="tosg-hint" id="tosgHint">⬆️ Gulir sampai bawah untuk melanjutkan…</div>
+      <div class="tosg-err" id="tosgErr"></div>
+      <label class="tosg-chk"><input type="checkbox" id="tosgChk" disabled> Saya telah membaca seluruh dokumen dan <b>menyetujui</b> Ketentuan Layanan &amp; Kebijakan Privasi.</label>
+      <button class="tosg-btn" id="tosgBtn" disabled>Setuju &amp; Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var shown=false, scrolledEnd=false;
+  function el(id){return document.getElementById(id);}
+  function update(){
+    var chk=el('tosgChk'), btn=el('tosgBtn');
+    btn.disabled=!(scrolledEnd && chk.checked);
+  }
+  window.__esConsentGate=function(){
+    if(shown) return; shown=true;
+    var ov=el('tosgOverlay'), body=el('tosgBody'), chk=el('tosgChk'), btn=el('tosgBtn'), hint=el('tosgHint'), err=el('tosgErr');
+    if(!ov) return;
+    ov.classList.add('open');
+    try{ document.body.style.overflow='hidden'; }catch(_){}
+    function markEnd(){
+      if(scrolledEnd) return;
+      scrolledEnd=true;
+      chk.disabled=false;
+      hint.textContent='✓ Selesai dibaca — centang persetujuan di bawah.';
+      hint.classList.add('done');
+      update();
+    }
+    function onScroll(){
+      if(body.scrollTop + body.clientHeight >= body.scrollHeight - 8) markEnd();
+    }
+    body.addEventListener('scroll', onScroll);
+    // Kalau konten tidak perlu di-scroll (layar besar), langsung anggap selesai.
+    setTimeout(function(){ if(body.scrollHeight <= body.clientHeight + 8) markEnd(); }, 60);
+    chk.addEventListener('change', update);
+    btn.addEventListener('click', async function(){
+      err.style.display='none';
+      btn.disabled=true; var label=btn.textContent; btn.textContent='Menyimpan…';
+      try{
+        var r=await fetch('/api/accept-terms',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+        var d=await r.json().catch(function(){return {};});
+        if(!r.ok || !d.ok) throw new Error(d.error||('HTTP '+r.status));
+        ov.classList.remove('open');
+        try{ document.body.style.overflow=''; }catch(_){}
+      }catch(e){
+        err.textContent='Gagal menyimpan persetujuan: '+(e.message||e)+'. Coba lagi.';
+        err.style.display='block';
+        btn.textContent=label; update();
+      }
+    });
+  };
+})();
 </script>
 
 </body>
