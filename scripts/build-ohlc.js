@@ -1,10 +1,17 @@
 /**
  * scripts/build-ohlc.js — build-time OHLC pipeline.
  *
- * Fetch data candle HARIAN (open/high/low/close) untuk SEMUA ticker yang punya
- * rekomendasi analis (consensus_slim di data.json), lalu tulis ke
- * public/ohlc.json. Frontend serve sebagai static asset via CDN jsDelivr dan
- * render candlestick di popup detail rekomendasi.
+ * Fetch data candle HARIAN (open/high/low/close) untuk SEMUA saham di
+ * data.json (stock_list, ~957 ticker), lalu tulis ke public/ohlc.json.
+ * Frontend serve sebagai static asset (ter-gate Worker) & render candlestick
+ * di popup detail saham/rekomendasi.
+ *
+ * CAKUPAN TICKER:
+ *   - Default: SEMUA saham (data.stock_list). Tiap saham minimal 6 bulan ke
+ *     belakang (DEFAULT_BACK_MONTHS).
+ *   - Saham yang punya rekomendasi analis tetap ditarik LEBIH JAUH — sampai
+ *     tanggal rekomendasi terlama (clamp MAX_BACK_MONTHS=18 bln) — supaya
+ *     perhitungan rec-status (release price, hit target, dsb) tetap akurat.
  *
  * SUMBER DATA (otomatis):
  *   - Twelve Data (UTAMA) — kalau env TWELVEDATA_API_KEY di-set. Cakupan resmi
@@ -19,8 +26,10 @@
  *   GitHub Secrets → tidak pernah bocor ke browser (cuma ohlc.json statis).
  *
  * STRATEGI CACHE (sesuai permintaan):
- *   - Per ticker, fetch dari tanggal rekomendasi PALING LAMA (rec_ohlc_meta
- *     atau dihitung dari consensus_slim), di-clamp maksimal 18 bulan ke belakang.
+ *   - Per ticker, fetch dari "from" yang ditentukan buildTickerTargets:
+ *       - Saham biasa  -> 6 bulan ke belakang (DEFAULT_BACK_MONTHS).
+ *       - Saham ber-rekomendasi -> tanggal rilis terlama, clamp maks 18 bln
+ *         (MAX_BACK_MONTHS) — pakai yang LEBIH JAUH ke belakang.
  *   - Incremental: kalau public/ohlc.json sudah ada untuk ticker itu, hanya
  *     re-fetch ~12 hari terakhir lalu di-merge → hemat kuota API.
  *   - Robust: kalau fetch satu ticker gagal, data lama TETAP dipertahankan
@@ -61,7 +70,8 @@ const DATA_PATH = path.join(__dirname, '..', 'public', 'data.json');
 const OUT_PATH  = path.join(__dirname, '..', 'public', 'ohlc.json');
 const REC_STATUS_PATH = path.join(__dirname, '..', 'public', 'rec-status.json');
 
-const MAX_BACK_MONTHS    = 18;     // batas paling jauh fetch ke belakang
+const MAX_BACK_MONTHS    = 18;     // batas paling jauh fetch ke belakang (saham ber-rekomendasi)
+const DEFAULT_BACK_MONTHS = 6;     // default lookback untuk SEMUA saham (6 bulan)
 const INCREMENTAL_DAYS   = 12;     // berapa hari terakhir di-refetch saat incremental
 const MAX_RETRIES        = 3;      // retry saat 429 / network error
 const RETRY_BACKOFF_MS   = 1500;   // backoff awal (naik linear tiap retry)
@@ -381,29 +391,79 @@ function mergeCandles(oldCandles, newCandles) {
 // ─────────────────────────────────────────────
 // Tentukan daftar ticker + tanggal "from" per ticker
 // ─────────────────────────────────────────────
-function buildTickerTargets(data) {
-  const maxBack = new Date();
-  maxBack.setUTCMonth(maxBack.getUTCMonth() - MAX_BACK_MONTHS);
-  const maxBackStr = isoDay(maxBack);
 
-  // Prioritas 1: rec_ohlc_meta (sudah dihitung build-data.js)
+/** Tanggal n bulan ke belakang (UTC) sebagai objek Date. */
+function monthsAgoDate(n) {
+  const d = new Date();
+  d.setUTCMonth(d.getUTCMonth() - n);
+  return d;
+}
+
+/**
+ * Universe ticker = SEMUA saham di data.json (stock_list), fallback ke
+ * stats / stock_info / fundamentals bila stock_list kosong.
+ * @returns {string[]} kode IDX uppercase, unik.
+ */
+function buildUniverse(data) {
+  const set = new Set();
+  if (Array.isArray(data.stock_list) && data.stock_list.length > 0) {
+    for (const s of data.stock_list) {
+      const code = s && (s.code || s.ticker || s.symbol);
+      if (code) set.add(String(code).trim().toUpperCase());
+    }
+  }
+  if (set.size === 0) {
+    for (const src of [data.stats, data.stock_info, data.fundamentals]) {
+      if (src && typeof src === 'object' && !Array.isArray(src)) {
+        for (const k of Object.keys(src)) set.add(String(k).trim().toUpperCase());
+        if (set.size > 0) break;
+      }
+    }
+  }
+  return Array.from(set).filter(Boolean);
+}
+
+/**
+ * Hitung "from" per ticker:
+ *   - SEMUA saham minimal 6 bulan ke belakang (DEFAULT_BACK_MONTHS).
+ *   - Saham ber-rekomendasi ditarik lebih jauh sampai tanggal rilis terlama
+ *     (rec_ohlc_meta / consensus_slim), di-clamp maks 18 bln (MAX_BACK_MONTHS).
+ *   - Dipilih tanggal yang LEBIH LAMA (lebih jauh ke belakang) → data lebih
+ *     panjang, cukup untuk rec-status.
+ */
+function buildTickerTargets(data) {
+  const maxBackStr = isoDay(monthsAgoDate(MAX_BACK_MONTHS));     // 18 bln (batas terjauh)
+  const defBackStr = isoDay(monthsAgoDate(DEFAULT_BACK_MONTHS)); // 6 bln (default semua saham)
+
+  // "from" berbasis rekomendasi (deep history) — logika lama dipertahankan.
+  const recFrom = {};
   const meta = data.rec_ohlc_meta;
   if (meta && typeof meta === 'object' && Object.keys(meta).length > 0) {
-    const out = {};
     for (const [t, from] of Object.entries(meta)) {
-      out[t] = (from && from > maxBackStr) ? from : maxBackStr;
+      const key = String(t).toUpperCase();
+      recFrom[key] = (from && String(from).slice(0, 10) > maxBackStr) ? String(from).slice(0, 10) : maxBackStr;
     }
-    return out;
+  } else {
+    const cs = data.consensus_slim || {};
+    for (const [t, recs] of Object.entries(cs)) {
+      const dates = (recs || []).map((r) => r.date).filter(Boolean).sort();
+      if (dates.length === 0) continue;
+      const oldest = dates[0].slice(0, 10);
+      recFrom[String(t).toUpperCase()] = (oldest > maxBackStr) ? oldest : maxBackStr;
+    }
   }
 
-  // Prioritas 2: hitung dari consensus_slim
-  const cs = data.consensus_slim || {};
+  // Universe = semua saham; gabungkan dengan deep-history rekomendasi.
   const out = {};
-  for (const [t, recs] of Object.entries(cs)) {
-    const dates = (recs || []).map((r) => r.date).filter(Boolean).sort();
-    if (dates.length === 0) continue;
-    const oldest = dates[0].slice(0, 10);
-    out[t] = (oldest > maxBackStr) ? oldest : maxBackStr;
+  for (const t of buildUniverse(data)) {
+    let from = defBackStr;                         // default 6 bulan
+    const rf = recFrom[t];
+    if (rf && rf < from) from = rf;                // pakai yang lebih jauh ke belakang
+    out[t] = from;
+  }
+  // Pastikan ticker ber-rekomendasi tetap masuk walau absen dari stock_list.
+  for (const [t, rf] of Object.entries(recFrom)) {
+    if (!out[t]) out[t] = rf;
   }
   return out;
 }
@@ -430,10 +490,11 @@ async function main() {
   }
   const tickers = Object.keys(targets).sort();
   if (tickers.length === 0) {
-    console.error('FATAL: tidak ada ticker consensus di data.json.');
+    console.error('FATAL: tidak ada ticker di data.json (stock_list & consensus kosong).');
     process.exit(1);
   }
-  console.log(`OHLC build: ${tickers.length} ticker · mode=${fullMode ? 'full' : 'incremental'} · source=${SOURCE}${SOURCE === 'twelvedata' ? ' (XIDX)' : ''}`);
+  const recCount = Object.keys(data.rec_ohlc_meta || data.consensus_slim || {}).length;
+  console.log(`OHLC build: ${tickers.length} ticker (semua saham; ${recCount} ber-rekomendasi) · default ${DEFAULT_BACK_MONTHS} bln · mode=${fullMode ? 'full' : 'incremental'} · source=${SOURCE}${SOURCE === 'twelvedata' ? ' (XIDX)' : ''}`);
   if (SOURCE === 'twelvedata' && !TWELVEDATA_API_KEY) {
     console.error('FATAL: OHLC_SOURCE=twelvedata tapi TWELVEDATA_API_KEY kosong.');
     process.exit(1);
