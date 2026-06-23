@@ -16,6 +16,7 @@ import { googleStart, googleCallback, emailRequest, emailVerify } from './lib/au
 import { checkout, webhook } from './lib/mayar.js';
 import { handleAdminApi } from './lib/admin.js';
 import { getActiveSubscription } from './lib/db.js';
+import { getBillingConfig, publicBilling } from './lib/billing.js';
 
 // Path yang butuh langganan aktif saat gating menyala
 const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/ohlc.json', '/macro.json', '/insights.json', '/headlines.json', '/dashboard'];
@@ -148,6 +149,12 @@ async function handleApi(request, env, url) {
   // ── Checkout & webhook Mayar ──
   if (path === '/api/checkout' && method === 'GET') return checkout(request, env, url);
   if (path === '/api/webhook/mayar' && method === 'POST') return webhook(request, env);
+
+  // ── Konfigurasi billing (publik, dibaca billing.html) ──
+  if (path === '/api/billing-config' && method === 'GET') {
+    const cfg = await getBillingConfig(env);
+    return json(publicBilling(cfg), 200, { 'Cache-Control': 'public, max-age=30' });
+  }
 
   // ── Admin ──
   if (path.startsWith('/api/admin/')) return handleAdminApi(request, env, url);

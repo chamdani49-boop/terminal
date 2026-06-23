@@ -6,6 +6,7 @@ import { getSession } from './session.js';
 import {
   listUsersWithSub, adminExtendDays, adminSetStatus, adminDeleteUser, adminEditUser,
 } from './db.js';
+import { getBillingConfig, saveBillingConfig } from './billing.js';
 
 export function isAdmin(env, email) {
   if (!email) return false;
@@ -33,6 +34,24 @@ export async function handleAdminApi(request, env, url) {
 
   if (path === '/api/admin/usage' && request.method === 'GET') {
     return adminUsage(env);
+  }
+
+  // ── Billing: baca config lengkap (termasuk link Mayar) untuk editor ──
+  if (path === '/api/admin/billing' && request.method === 'GET') {
+    const cfg = await getBillingConfig(env);
+    return json({ ok: true, config: cfg });
+  }
+
+  // ── Billing: simpan config ──
+  if (path === '/api/admin/billing' && request.method === 'POST') {
+    let body;
+    try { body = await request.json(); } catch { return badRequest('Body tidak valid'); }
+    try {
+      const saved = await saveBillingConfig(env, body.config || body);
+      return json({ ok: true, config: saved });
+    } catch (e) {
+      return json({ error: e.message || 'Gagal menyimpan' }, 400);
+    }
   }
 
   if (request.method === 'POST') {

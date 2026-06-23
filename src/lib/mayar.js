@@ -8,6 +8,7 @@
 import { json } from './util.js';
 import { getSession } from './session.js';
 import { ensureUser, activateSubscription, txnAlreadyProcessed } from './db.js';
+import { getBillingConfig } from './billing.js';
 
 // Map plan -> jumlah hari (dari vars)
 function planDays(env, plan) {
@@ -21,9 +22,19 @@ export async function checkout(request, env, url) {
   const plan = url.searchParams.get('plan');
   if (!['3bulan', '6bulan', 'tahunan'].includes(plan)) return json({ error: 'Paket tidak valid' }, 400);
 
-  const link = plan === 'tahunan' ? env.MAYAR_LINK_TAHUNAN
-    : plan === '3bulan' ? env.MAYAR_LINK_3BULAN
-      : env.MAYAR_LINK_6BULAN;
+  // Prioritas link: direct link yang di-set admin (D1 billing config) → env var.
+  // Ini bikin admin cukup mengelola link di satu tempat (panel admin) agar
+  // selalu sama dengan halaman produk di mayar.id.
+  let link = '';
+  try {
+    const cfg = await getBillingConfig(env);
+    link = (cfg.plans[plan] && cfg.plans[plan].mayarLink) || '';
+  } catch (_) { /* abaikan → fallback env */ }
+  if (!link) {
+    link = plan === 'tahunan' ? env.MAYAR_LINK_TAHUNAN
+      : plan === '3bulan' ? env.MAYAR_LINK_3BULAN
+        : env.MAYAR_LINK_6BULAN;
+  }
   if (!link) {
     return json({ error: 'Pembayaran belum dikonfigurasi untuk paket ini.' }, 503);
   }
@@ -90,9 +101,23 @@ export async function webhook(request, env) {
   if (productId && env.MAYAR_PRODUCT_TAHUNAN && productId == env.MAYAR_PRODUCT_TAHUNAN) plan = 'tahunan';
   else if (productId && env.MAYAR_PRODUCT_6BULAN && productId == env.MAYAR_PRODUCT_6BULAN) plan = '6bulan';
   else if (productId && env.MAYAR_PRODUCT_3BULAN && productId == env.MAYAR_PRODUCT_3BULAN) plan = '3bulan';
-  else if (amount >= 1500000) plan = 'tahunan';
-  else if (amount >= 850000) plan = '6bulan';
-  else if (amount >= 400000) plan = '3bulan';
+
+  // Fallback nominal: cocokkan dengan harga real di billing config (mengikuti
+  // harga yang di-set admin), supaya tetap akurat saat harga diubah.
+  if (!plan && amount > 0) {
+    try {
+      const cfg = await getBillingConfig(env);
+      for (const k of ['tahunan', '6bulan', '3bulan']) {
+        const price = (cfg.plans[k] && cfg.plans[k].priceReal) || 0;
+        if (price > 0 && amount >= Math.round(price * 0.9)) { plan = k; break; }
+      }
+    } catch (_) { /* abaikan → fallback threshold statis */ }
+  }
+  if (!plan) {
+    if (amount >= 1500000) plan = 'tahunan';
+    else if (amount >= 850000) plan = '6bulan';
+    else if (amount >= 400000) plan = '3bulan';
+  }
 
   if (!plan) return json({ error: `Paket tidak dikenali (product=${productId}, amount=${amount})` }, 400);
 
