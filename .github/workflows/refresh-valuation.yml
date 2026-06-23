@@ -54,16 +54,17 @@ jobs:
       - name: Commit & push if valuation changed
         id: commit
         run: |
-          if git diff --quiet -- public/valuation public/valuation.json; then
+          if git diff --quiet -- public/valuation; then
             echo "⏭  Tidak ada perubahan valuasi — skip commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name  "valuation-refresh[bot]"
           git config user.email "valuation-refresh@economstock.local"
-          # Split output: index.json + <CODE>.json + dividends.json di public/valuation/.
-          # Monolith public/valuation.json dihapus build → stage deletionnya juga.
-          git add public/valuation public/valuation.json
+          # Split output di public/valuation/ (index.json + <CODE>.json + dividends.json).
+          # `git add -A` agar file per-saham basi (kode dihapus/diganti) ikut ter-stage
+          # sbg deletion. Monolith valuation.json sudah dihapus permanen (jangan di-add).
+          git add -A public/valuation
           # CATATAN: SENGAJA TANPA [skip ci] supaya Cloudflare redeploy.
           git commit -m "valuation: refresh $(date -u +%FT%TZ)"
 
