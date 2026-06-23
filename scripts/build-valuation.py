@@ -27,6 +27,7 @@ SRC_DIR  = os.path.join(ROOT, 'data', 'valuation')
 OUT_FILE = os.path.join(ROOT, 'public', 'valuation.json')
 DATA_JSON = os.path.join(ROOT, 'public', 'data.json')
 OVERRIDES_FILE = os.path.join(SRC_DIR, 'overrides.json')
+YEARLY_FILE = os.path.join(ROOT, 'public', 'history-yearly.json')   # fallback Yahoo (<2016)
 
 # ── ASUMSI VALUASI (transparan & mudah disetel) ──────────────────────────────
 ASSUMPTIONS = {
@@ -658,8 +659,7 @@ def build_hist_monthly(d):
 
 def hist_close_at(monthly, ticker, year, month):
     """Close pada (year, month). Bila kosong/null, mundur ke bulan sebelumnya di
-    tahun yang sama (mis. tutup kuartal/tahun jatuh saat libur → pakai hari bursa
-    terakhir sebelumnya). None bila tidak ada sama sekali di tahun itu."""
+    tahun yang sama. None bila tidak ada sama sekali di tahun itu."""
     mp = monthly.get(ticker)
     if not mp:
         return None
@@ -670,7 +670,31 @@ def hist_close_at(monthly, ticker, year, month):
     return None
 
 
-def fill_holiday_prices(stock, monthly, live_price=None):
+def load_yearly_close():
+    """Fallback Yahoo year-end (public/history-yearly.json) → {TICKER: {year:int: close}}.
+    Untuk mengisi harga tahunan <2016 yang tidak ada di price_history."""
+    try:
+        d = json.load(open(YEARLY_FILE, encoding='utf-8'))
+        out = {}
+        for tk, ymap in (d.get('closes') or {}).items():
+            row = {}
+            for y, v in (ymap or {}).items():
+                try:
+                    if v is not None:
+                        row[int(y)] = v
+                except (TypeError, ValueError):
+                    continue
+            if row:
+                out[str(tk).strip().upper()] = row
+        return out
+    except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f'[build-valuation] history-yearly.json tidak terbaca ({e}) → fallback Yahoo dilewati', file=sys.stderr)
+        return {}
+
+
+def fill_holiday_prices(stock, monthly, live_price=None, yearly=None):
     """Perbaiki data yang hilang karena harga = 'Libur'/'#VALUE!' (hari bursa libur).
 
     - TAHUNAN (I..Z): isi `price` kosong dari history close tahun itu (Des/terakhir).
@@ -709,6 +733,8 @@ def fill_holiday_prices(stock, monthly, live_price=None):
             continue
         if fields.get('price') is None:
             v = hist_close_at(monthly, code, y, 12)
+            if v is None and yearly:                      # fallback Yahoo year-end (<2016)
+                v = yearly.get(code, {}).get(y)
             if v is not None:
                 fields['price'] = v; n_price += 1; filled.append(year)
         price = fields.get('price')
@@ -778,6 +804,7 @@ def main():
 
     betas, stock_info, live_prices, hist_monthly = load_data_json()
     overrides = load_overrides()
+    yearly_close = load_yearly_close()
     stocks, warnings, source_files = {}, [], []
     fill_totals = {'price': 0, 'market_cap': 0, 'ratio': 0}
 
@@ -799,7 +826,7 @@ def main():
             # Perbaiki harga 'Libur' (hari bursa libur) + recompute market_cap/rasio
             # dari price_history. Hanya mengisi yang kosong; berlaku semua data.
             try:
-                hp = fill_holiday_prices(data, hist_monthly, live_prices.get(code))
+                hp = fill_holiday_prices(data, hist_monthly, live_prices.get(code), yearly_close)
                 fill_totals['price'] += hp[0]; fill_totals['market_cap'] += hp[1]; fill_totals['ratio'] += hp[2]
             except Exception as e:
                 warnings.append(f"{code}: gagal isi harga libur ({type(e).__name__}: {e})")
