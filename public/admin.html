@@ -267,6 +267,13 @@ tbody tr:hover{background:var(--bg2)}
       <button class="bill-toggle" id="abuseToggle" type="button">Sembunyikan ▲</button>
     </div>
     <div class="bill-body" id="abuseBody">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="font-size:12.5px" id="tgStatus">Notifikasi Telegram: <b>—</b></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="bill-msg" id="tgMsg"></span>
+          <button class="bill-toggle" id="tgTestBtn" type="button">📨 Test Telegram</button>
+        </div>
+      </div>
       <p style="font-size:12.5px;color:var(--text2);line-height:1.55;margin-bottom:14px">
         Permintaan data yang melebihi batas (rate limit) otomatis ditolak (429) &amp; dicatat di sini untuk
         <b>review manual</b>. Kalau ada user yang jelas men-scrape, kamu bisa <b>Suspend</b> dari tabel user di bawah.
@@ -709,6 +716,11 @@ async function loadAbuse(){
     var summary=(d&&d.summary)||[];
     var flags=(d&&d.flags)||[];
 
+    // Status Telegram
+    var tg=document.getElementById('tgStatus');
+    if(d.telegram_configured){ tg.innerHTML='Notifikasi Telegram: <b style="color:var(--green)">aktif ✓</b>'; }
+    else{ tg.innerHTML='Notifikasi Telegram: <b style="color:var(--yellow)">belum diset</b> (set TELEGRAM_BOT_TOKEN &amp; TELEGRAM_CHAT_ID)'; }
+
     sumEl.innerHTML = summary.length
       ? summary.map(function(s){
           return '<tr><td class="u-email">'+abuseEsc(s.who||'—')+'</td>'+
@@ -735,6 +747,21 @@ document.getElementById('abuseHead').addEventListener('click',function(){
   var t=document.getElementById('abuseToggle');
   var hidden=body.classList.toggle('collapsed');
   t.textContent=hidden?'Tampilkan ▼':'Sembunyikan ▲';
+});
+
+// Tombol test Telegram
+document.getElementById('tgTestBtn').addEventListener('click',async function(e){
+  e.stopPropagation();
+  var btn=this; var msg=document.getElementById('tgMsg');
+  btn.disabled=true; msg.className='bill-msg'; msg.textContent='Mengirim…';
+  try{
+    var r=await fetch('/api/admin/abuse/test-telegram',{method:'POST',headers:{'Content-Type':'application/json'}});
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok) throw new Error(d.error||('HTTP '+r.status));
+    msg.className='bill-msg ok'; msg.textContent='✓ '+(d.message||'Terkirim');
+  }catch(err){ msg.className='bill-msg err'; msg.textContent='Gagal: '+(err.message||err); }
+  btn.disabled=false;
+  setTimeout(function(){ if(msg.classList.contains('ok')) msg.textContent=''; },5000);
 });
 
 loadAbuse();

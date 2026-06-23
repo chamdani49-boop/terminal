@@ -17,7 +17,7 @@ import { checkout, webhook } from './lib/mayar.js';
 import { handleAdminApi } from './lib/admin.js';
 import { getActiveSubscription } from './lib/db.js';
 import { getBillingConfig, publicBilling } from './lib/billing.js';
-import { rateLimit, recordFlag } from './lib/abuse.js';
+import { rateLimit, reportAbuse } from './lib/abuse.js';
 
 // Path yang butuh langganan aktif saat gating menyala
 const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/ohlc.json', '/macro.json', '/insights.json', '/headlines.json', '/dashboard'];
@@ -115,7 +115,7 @@ async function guardProtected(request, env, ctx, path) {
       const ip = request.headers.get('CF-Connecting-IP') || '';
       const country = (request.cf && request.cf.country) || '';
       if (ctx && ctx.waitUntil) {
-        ctx.waitUntil(recordFlag(env, {
+        ctx.waitUntil(reportAbuse(env, {
           userId: session.uid, email: session.email, ip, country,
           type: 'rate_limit', detail: `${rl.count} req/min > ${limitPerMin} (${path})`,
         }));

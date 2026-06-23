@@ -81,6 +81,70 @@ export async function recordFlag(env, { userId, email, ip, country, type, detail
   } catch (_) { /* abaikan */ }
 }
 
+// ── Notifikasi Telegram ───────────────────────────────────────────────────
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
+/** Kirim pesan ke Telegram (HTML). Butuh secret TELEGRAM_BOT_TOKEN & TELEGRAM_CHAT_ID. */
+export async function sendTelegram(env, text) {
+  const token = (env.TELEGRAM_BOT_TOKEN || '').trim();
+  const chatId = (env.TELEGRAM_CHAT_ID || '').trim();
+  if (!token || !chatId) return { ok: false, skipped: true, reason: 'TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID belum di-set' };
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const j = await res.json(); if (j && j.description) msg = j.description; } catch (_) {}
+      return { ok: false, error: msg };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e && e.message) || 'fetch error' };
+  }
+}
+
+/** True bila boleh kirim notif untuk `key` (cooldown agar tidak spam). Pakai rate_counters. */
+async function notifyThrottled(env, key, cooldownSec) {
+  if (!env.DB) return true;
+  const t = now();
+  try {
+    await ensureTables(env);
+    const row = await env.DB.prepare('SELECT window_start FROM rate_counters WHERE key = ?').bind(key).first();
+    if (row && (t - row.window_start) < cooldownSec) return false;
+    await env.DB.prepare(
+      'INSERT INTO rate_counters (key, count, window_start) VALUES (?, 1, ?) '
+      + 'ON CONFLICT(key) DO UPDATE SET window_start = ?'
+    ).bind(key, t, t).run();
+    return true;
+  } catch (_) { return false; }
+}
+
+/**
+ * Catat flag + (dengan throttle) kirim notifikasi Telegram.
+ * Throttle per-user/IP default 30 menit (var ABUSE_NOTIFY_COOLDOWN_SEC) supaya
+ * scraper yang spam 429 tidak membanjiri Telegram.
+ */
+export async function reportAbuse(env, info) {
+  await recordFlag(env, info);
+  const cooldown = parseInt(env.ABUSE_NOTIFY_COOLDOWN_SEC || '1800', 10) || 1800;
+  const key = 'notif:' + (info.userId || info.ip || 'anon');
+  if (await notifyThrottled(env, key, cooldown)) {
+    const txt =
+      '🛡️ <b>Economstock Terminal</b> — aktivitas mencurigakan\n'
+      + `• Tipe: <b>${esc(info.type)}</b>\n`
+      + `• User: ${esc(info.email || info.userId || '—')}\n`
+      + `• IP: ${esc(info.ip || '—')}${info.country ? ' (' + esc(info.country) + ')' : ''}\n`
+      + `• Detail: ${esc(info.detail || '—')}\n`
+      + '\nBuka /admin → panel "Aktivitas Mencurigakan" untuk review.';
+    await sendTelegram(env, txt);
+  }
+}
+
 /** Flag terbaru (default 100) untuk panel admin. */
 export async function recentFlags(env, { limit = 100 } = {}) {
   if (!env.DB) return [];
