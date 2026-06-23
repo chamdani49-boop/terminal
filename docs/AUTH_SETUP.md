@@ -15,7 +15,8 @@ biasa (flag `GATING_ENABLED="false"`, binding D1 dikomentari).
   (`/login`, `/billing`, `/admin`, `/dashboard`). Aset lain dilayani langsung.
 - **D1** (`DB`) — tabel `users`, `subscriptions`, `email_codes`.
 - **Auth** — Google OAuth + kode email (passwordless), sesi via cookie HMAC.
-- **Bayar** — Mayar.id: tombol → `/api/checkout` → payment link; webhook
+- **Bayar** — Mayar.id: tombol → `/api/checkout` → invoice dinamis via API
+  (atau payment link statis bila `MAYAR_API_KEY` kosong); webhook
   `/api/webhook/mayar` mengaktifkan langganan.
 - **Admin** — `/admin` (UI) + `/api/admin/*` (dibatasi `ADMIN_EMAILS`).
 
@@ -49,6 +50,9 @@ npx wrangler secret put SESSION_SECRET        # string acak panjang (mis. hasil 
 npx wrangler secret put GOOGLE_CLIENT_ID
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put MAYAR_WEBHOOK_TOKEN   # token webhook dari dashboard Mayar
+# ── Metode BARU: invoice dinamis via API (tanpa GAS, direkomendasikan) ──
+npx wrangler secret put MAYAR_API_KEY         # API key (Bearer) dari dashboard Mayar → Settings → Developer/API
+# ── Metode LAMA (fallback bila MAYAR_API_KEY kosong): payment link statis ──
 npx wrangler secret put MAYAR_LINK_6BULAN     # URL payment link produk 6 bulan
 npx wrangler secret put MAYAR_LINK_TAHUNAN    # URL payment link produk tahunan
 # Opsional (kirim kode email via Resend):
@@ -62,6 +66,26 @@ npx wrangler secret put MAYAR_PRODUCT_TAHUNAN
 Set juga **vars** (boleh lewat dashboard atau `wrangler.toml`):
 
 - `ADMIN_EMAILS` = email admin, dipisah koma. Contoh: `chamdani49@gmail.com`
+- `MAYAR_REDIRECT_URL` (opsional) = URL tujuan setelah bayar. Default: `https://<domain-kamu>/billing?paid=1`.
+- `MAYAR_API_BASE` (opsional) = base URL API Mayar. Default: `https://api.mayar.id/hl/v1`. Ganti hanya bila pakai sandbox.
+- `MAYAR_DEFAULT_MOBILE` (opsional) = nomor HP default untuk invoice, bila akun Mayar mewajibkan field `mobile`.
+
+## 2b. Metode pembayaran: invoice dinamis vs payment link
+
+Sejak update ini, `/api/checkout` punya dua mode (dipilih otomatis):
+
+1. **Invoice dinamis (API)** — aktif bila `MAYAR_API_KEY` di-set. Worker memanggil
+   `POST {MAYAR_API_BASE}/invoice/create` dengan harga & nama paket dari **billing
+   config** (panel admin), email + nama dari sesi user yang login, lalu mengembalikan
+   `{ url }` (link halaman bayar Mayar) yang langsung dibuka di browser. Tagihan dibuat
+   per-transaksi, jadi nominal selalu mengikuti harga di admin tanpa bikin produk manual.
+   Syarat: user harus login (butuh email untuk invoice).
+2. **Payment link statis (fallback)** — dipakai bila `MAYAR_API_KEY` kosong. Sama
+   seperti sebelumnya: redirect ke link Mayar dari billing config / `MAYAR_LINK_*`.
+
+Aktivasi langganan tetap lewat **webhook** `/api/webhook/mayar` (tidak berubah). Untuk
+invoice dinamis, paket dikenali dari nominal yang cocok dengan `priceReal` di billing
+config — pastikan harga tiap paket berbeda cukup jelas.
 
 ## 3. Google OAuth (Google Cloud Console)
 
