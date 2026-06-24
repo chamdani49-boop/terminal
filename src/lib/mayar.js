@@ -175,7 +175,7 @@ async function forwardToGas(env, raw, request) {
 }
 
 // ── WEBHOOK ──
-export async function webhook(request, env) {
+export async function webhook(request, env, ctx) {
   const raw = await request.text();
 
   // 1) Verifikasi token (Mayar mengirim token webhook di header).
@@ -189,9 +189,13 @@ export async function webhook(request, env) {
     if (got !== token) return json({ error: 'Invalid webhook token' }, 401);
   }
 
-  // 1b) Teruskan ke GAS (kalau dikonfigurasi) — supaya sistem lama tetap jalan.
-  //     Dilakukan setelah verifikasi token (hanya relay request Mayar yang sah).
-  await forwardToGas(env, raw, request);
+  // 1b) Teruskan ke GAS (kalau dikonfigurasi) — di LATAR BELAKANG (non-blocking)
+  //     supaya balasan ke Mayar tidak menunggu GAS (GAS bisa lambat → timeout).
+  if (env.GAS_WEBHOOK_URL) {
+    const fwd = forwardToGas(env, raw, request);
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(fwd);
+    else fwd.catch(() => {});   // fallback: jangan await, jangan blokir
+  }
 
   let payload;
   try { payload = JSON.parse(raw); } catch { return json({ error: 'Bad JSON' }, 400); }

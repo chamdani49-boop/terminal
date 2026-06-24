@@ -37,7 +37,7 @@ export default {
     try {
       // ───────────── API ─────────────
       if (path.startsWith('/api/')) {
-        return await handleApi(request, env, url);
+        return await handleApi(request, env, url, ctx);
       }
 
       // ──────── Route bersih (tanpa .html) ────────
@@ -155,7 +155,7 @@ async function hasActiveSub(request, env) {
   } catch { return false; }
 }
 
-async function handleApi(request, env, url) {
+async function handleApi(request, env, url, ctx) {
   const path = url.pathname;
   const method = request.method;
 
@@ -227,7 +227,7 @@ async function handleApi(request, env, url) {
 
   // ── Checkout & webhook Mayar ──
   if (path === '/api/checkout' && method === 'GET') return checkout(request, env, url);
-  if (path === '/api/webhook/mayar' && method === 'POST') return webhook(request, env);
+  if (path === '/api/webhook/mayar' && method === 'POST') return webhook(request, env, ctx);
 
   // ── Konfigurasi billing (publik, dibaca billing.html) ──
   if (path === '/api/billing-config' && method === 'GET') {
