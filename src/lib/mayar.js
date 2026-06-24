@@ -74,8 +74,8 @@ async function createMayarInvoice(env, { plan, amount, planName, email, name, re
       { quantity: 1, rate: amount, description: planName },
     ],
   };
-  // mobile opsional — sebagian akun Mayar mewajibkannya; isi bila tersedia.
-  if (env.MAYAR_DEFAULT_MOBILE) body.mobile = env.MAYAR_DEFAULT_MOBILE;
+  // mobile WAJIB di API invoice Mayar → selalu kirim. Pakai env bila ada, atau default.
+  body.mobile = env.MAYAR_DEFAULT_MOBILE || '08123456789';
 
   const res = await fetch(`${mayarApiBase(env)}/invoice/create`, {
     method: 'POST',
@@ -90,8 +90,8 @@ async function createMayarInvoice(env, { plan, amount, planName, email, name, re
   let out = {};
   try { out = await res.json(); } catch { /* biarkan kosong */ }
   if (!res.ok) {
-    const msg = (out && (out.messages || out.message || out.error)) || JSON.stringify(out || {});
-    throw new Error(`Mayar API HTTP ${res.status}: ${msg || 'no body'}`);
+    const detail = (out && (out.messages || out.message || out.error)) || '';
+    throw new Error(`Mayar API HTTP ${res.status}: ${detail} | ${JSON.stringify(out || {})}`);
   }
 
   // Bentuk balasan bisa { data: {...} } atau flat. Ambil link & id fleksibel.
