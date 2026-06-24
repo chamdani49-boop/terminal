@@ -11212,6 +11212,11 @@ body.vl-maxing{overflow:hidden}
       (shares>=1e9 ? (shares/1e9).toLocaleString('id-ID',{maximumFractionDigits:2})+' miliar lembar'
                    : (shares/1e6).toLocaleString('id-ID',{maximumFractionDigits:0})+' juta lembar');
     const tags = [v.sector, v.industry].filter(Boolean).map(t=>'<span class="vl-tag">'+t+'</span>').join('');
+    // Market cap ikut harga LIVE: skala market_cap tahun terakhir dgn (hargaLive / hargaTahunan).
+    // Jadi turunan market cap mengikuti harga realtime, bukan harga build/tahun lalu.
+    const liveMktCap = (ok(a.market_cap) && ok(a.price) && a.price>0 && ok(e.price) && e.price>0)
+      ? a.market_cap * (e.price / a.price)
+      : a.market_cap;
     const liveDot = (e.source==='live') ? '<span class="vl-live-dot" title="Harga live"></span>' : '';
     const chgBadge = ok(e.change)
       ? '<div class="vl-price-meta" style="margin-top:3px"><span class="'+(e.change>=0?'vl-badge vl-up':'vl-badge vl-dn')+'">'+(e.change>=0?'+':'')+(e.change*100).toFixed(2)+'%</span>'+liveDot+'</div>' : '';
@@ -11239,7 +11244,7 @@ body.vl-maxing{overflow:hidden}
         '<div>'+
           '<div><span class="vl-name">'+s.code+'</span></div>'+
           '<div class="vl-sub" style="margin-top:2px">'+sharesTxt+' saham beredar</div>'+
-          '<div class="vl-mktcap-left"><span class="l">Market Cap</span> <span class="v">'+fmtMrp(a.market_cap)+'</span></div>'+
+          '<div class="vl-mktcap-left"><span class="l">Market Cap</span> <span class="v">'+fmtMrp(liveMktCap)+'</span></div>'+
         '</div>'+
       '</div>'+
       midBlock+
@@ -11314,6 +11319,13 @@ body.vl-maxing{overflow:hidden}
         if(r.label==='Harga (Rp)' && c.key==='tb' && ok(_livePx) && _livePx>0){
           val = _livePx;
           liveDot = '<span class="vl-live-dot"></span>';
+        }
+        // Rasio harga di kolom TTM/Thn Berjalan ikut harga LIVE (dihitung ulang),
+        // karena PBV/PER/PSR = harga ÷ (bvps/eps/sps). Metrik non-harga tetap.
+        if(c.key==='tb' && ok(_livePx) && _livePx>0){
+          if(r.label==='PBV' && ok(c.a.bvps) && c.a.bvps>0) val = _livePx / c.a.bvps;
+          else if(r.label==='PER' && ok(c.a.eps) && c.a.eps>0) val = _livePx / c.a.eps;
+          else if(r.label==='PSR' && ok(c.a.sps) && c.a.sps>0) val = _livePx / c.a.sps;
         }
         let chg='';
         if(/^\d{4}$/.test(c.key) && ok(val) && val!==0){
