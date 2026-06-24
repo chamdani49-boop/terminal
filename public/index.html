@@ -11094,6 +11094,19 @@ body.vl-maxing{overflow:hidden}
   function vlQLabelFull(s,k){ return 'TTM '+String(k).toUpperCase()+' '+vlTtmYear(s); }
   // Label pendek: "Q2'26".
   function vlQLabelShort(s,k){ return String(k).toUpperCase()+"'"+String(vlTtmYear(s)).slice(2); }
+  // Nomor kuartal dari key: 'Q2' -> 2.
+  function vlQNum(k){ return parseInt(String(k||'').replace(/[^0-9]/g,''),10) || 1; }
+  // Disetahunkan (annualize) item ARUS/LABA yang di kolom D..G masih KUARTALAN
+  // (mis. FCF, baris 8). TTM Q-n = jumlah kuartal standalone Q1..Qn × (4 / jumlah
+  // kuartal terisi). Mis. sampai Q2 → (Q1+Q2)×2. Dipakai DCF & FCF (valuasi butuh
+  // basis tahunan, bukan satu kuartal). Item neraca (net_debt) TIDAK di-annualisasi.
+  function vlAnnualizeFlow(stock, qk, field){
+    const q=(stock&&stock.quarters)||{};
+    const n=vlQNum(qk);
+    let sum=0, cnt=0;
+    for(let i=1;i<=n;i++){ const o=q['Q'+i]; const val=o?o[field]:null; if(ok(val)){ sum+=val; cnt++; } }
+    return cnt ? sum*(4/cnt) : null;
+  }
   function latestYear(stock){ const ys=annualYears(stock); return ys[ys.length-1]; }
   function curStock(){ return state.raw && state.raw.stocks[state.code]; }
 
@@ -12201,10 +12214,14 @@ body.vl-maxing{overflow:hidden}
     if(vlIsQBasis(basis) || basis==='current'){
       const qk = vlIsQBasis(basis) ? basis : vlLatestQuarter(stock);
       const o=(stock.quarters&&stock.quarters[qk])||stock.annualized||{};
+      // FCF disetahunkan (DCF/FCF butuh basis tahunan): (jumlah Q1..Qn) × 4/n.
+      // Fallback ke o.fcf (kuartal) bila gagal hitung. DPS (baris 37) sudah TTM →
+      // pakai apa adanya. net_debt = snapshot neraca → tidak di-annualisasi.
+      const fcfAnn = vlAnnualizeFlow(stock, qk, 'fcf');
       return { key:qk, label:vlQLabelFull(stock,qk), yr:ly,
         eps:o.eps, bvps:o.bvps, sps:o.sps, g5:o.eps_growth_5y,
-        dps:o.dps, fcf:o.fcf, netDebt:o.net_debt, shares:o.shares,
-        note:'data TTM '+vlQLabelFull(stock,qk)+' (langsung dari laporan kuartalan)' };
+        dps:o.dps, fcf:(ok(fcfAnn)?fcfAnn:o.fcf), netDebt:o.net_debt, shares:o.shares,
+        note:'data TTM '+vlQLabelFull(stock,qk)+' \u2014 FCF disetahunkan (\xD74/n); EPS/BVPS/SPS/DPS dari laporan kuartalan' };
     }
     const ay=(stock.annual&&stock.annual[ly])||{};
     return { key:'year', label:String(ly), yr:ly,
