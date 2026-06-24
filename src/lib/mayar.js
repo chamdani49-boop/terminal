@@ -106,10 +106,10 @@ export async function checkout(request, env, url) {
       });
       return json({ ok: true, url: link });
     } catch (e) {
-      if ((e && e.message) !== 'NO_API_KEY') {
-        return json({ error: `Gagal membuat tagihan: ${(e && e.message) || 'error'}` }, 502);
-      }
-      // NO_API_KEY tidak mungkin di cabang ini, tapi jaga-jaga → lanjut ke fallback.
+      // Invoice gagal (API key salah / Mayar down / format beda) → JANGAN
+      // menggagalkan checkout. Lanjut ke fallback payment link statis di bawah
+      // supaya user tetap bisa bayar. (Sesuai permintaan: invoice, fallback statis.)
+      console.warn('[mayar] invoice gagal, fallback ke link statis:', (e && e.message) || e);
     }
   }
 
@@ -147,6 +147,33 @@ function pick(obj, keys) {
   return null;
 }
 
+// ── Teruskan webhook mentah ke sistem lain (mis. Google Apps Script) ──
+// Mayar cuma punya 1 slot webhook. Supaya GAS (sistem lama) TETAP dapat notif,
+// website ini jadi penerima utama lalu MENERUSKAN salinan payload ke GAS.
+// Set env GAS_WEBHOOK_URL = URL .../exec milik GAS. Token diteruskan apa adanya
+// (atau pakai GAS_WEBHOOK_TOKEN bila GAS minta token tertentu).
+async function forwardToGas(env, raw, request) {
+  const gasUrl = env.GAS_WEBHOOK_URL;
+  if (!gasUrl) return;
+  const tok = env.GAS_WEBHOOK_TOKEN
+    || request.headers.get('x-callback-token')
+    || request.headers.get('x-webhook-token')
+    || '';
+  try {
+    await fetch(gasUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': request.headers.get('content-type') || 'application/json',
+        'x-callback-token': tok,
+        'x-webhook-token': tok,
+      },
+      body: raw,
+    });
+  } catch (e) {
+    console.warn('[mayar] forward webhook ke GAS gagal:', (e && e.message) || e);
+  }
+}
+
 // ── WEBHOOK ──
 export async function webhook(request, env) {
   const raw = await request.text();
@@ -161,6 +188,10 @@ export async function webhook(request, env) {
       '';
     if (got !== token) return json({ error: 'Invalid webhook token' }, 401);
   }
+
+  // 1b) Teruskan ke GAS (kalau dikonfigurasi) — supaya sistem lama tetap jalan.
+  //     Dilakukan setelah verifikasi token (hanya relay request Mayar yang sah).
+  await forwardToGas(env, raw, request);
 
   let payload;
   try { payload = JSON.parse(raw); } catch { return json({ error: 'Bad JSON' }, 400); }
