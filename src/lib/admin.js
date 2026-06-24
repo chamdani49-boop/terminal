@@ -4,7 +4,7 @@
 import { json, badRequest, forbidden, unauthorized } from './util.js';
 import { getSession } from './session.js';
 import {
-  listUsersWithSub, adminExtendDays, adminSetStatus, adminDeleteUser, adminEditUser,
+  listUsersWithSub, adminExtendDays, adminSetDays, adminSetStatus, adminDeleteUser, adminEditUser,
 } from './db.js';
 import { getBillingConfig, saveBillingConfig } from './billing.js';
 import { recentFlags, flagSummary, sendTelegram, deviceSummary, autosuspendEnabled } from './abuse.js';
@@ -87,7 +87,11 @@ export async function handleAdminApi(request, env, url) {
       if (path === '/api/admin/users/extend') {
         const days = parseInt(body.days || '0', 10);
         if (!days || days < 1) return badRequest('days harus > 0');
-        const sub = await adminExtendDays(env, email, days, body.plan);
+        // mode 'set' → setel masa aktif = sekarang + days (bisa MENGURANGI);
+        // selain itu (default) → perpanjang/menambah dari kedaluwarsa saat ini.
+        const sub = (body.mode === 'set')
+          ? await adminSetDays(env, email, days, body.plan)
+          : await adminExtendDays(env, email, days, body.plan);
         return json({ ok: true, sub });
       }
       if (path === '/api/admin/users/suspend') {

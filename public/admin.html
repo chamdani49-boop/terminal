@@ -362,6 +362,12 @@ tbody tr:hover{background:var(--bg2)}
       <option value="182" data-plan="6bulan">6 Bulan</option>
       <option value="365" data-plan="tahunan">1 Tahun</option>
     </select>
+    <label class="modal-label" style="margin-top:12px">Mode</label>
+    <div style="display:flex;gap:16px;font-size:13px;margin-bottom:6px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="extMode" value="extend" checked> Perpanjang (tambah ke sisa)</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="extMode" value="set"> Set jadi (dari sekarang)</label>
+    </div>
+    <div class="modal-sub" id="extModeHint" style="font-size:11.5px;color:var(--text3);margin-bottom:4px">"Set jadi" menghitung dari sekarang &mdash; bisa untuk <b>mengurangi</b> masa aktif (mis. set jadi 1 hari).</div>
     <div class="modal-actions">
       <button class="modal-btn cancel" id="extCancel">Batal</button>
       <button class="modal-btn ok" id="extConfirm">Perpanjang</button>
@@ -592,6 +598,8 @@ function openExtendModal(email){
   _extEmail=email;
   document.getElementById('extModalEmail').textContent=email;
   document.getElementById('extSelect').value='30';
+  var dflt=document.querySelector('input[name="extMode"][value="extend"]');
+  if(dflt) dflt.checked=true;
   extModal.classList.add('open');
 }
 function closeExtendModal(){ extModal.classList.remove('open'); _extEmail=null; }
@@ -603,9 +611,13 @@ document.getElementById('extConfirm').addEventListener('click',async function(){
   var opt=sel.options[sel.selectedIndex];
   var days=parseInt(sel.value,10);
   var plan=opt.getAttribute('data-plan')||'';
+  var modeEl=document.querySelector('input[name="extMode"]:checked');
+  var mode=(modeEl&&modeEl.value==='set')?'set':'extend';
   var email=_extEmail;
+  // Konfirmasi ekstra utk mode SET (bisa mengurangi masa aktif).
+  if(mode==='set' && !confirm('SET masa aktif '+email+' menjadi '+days+' hari dari sekarang?\nIni MENGGANTI tanggal kedaluwarsa (bisa mengurangi), bukan menambah.')) return;
   try{
-    var body={email:email,days:days};
+    var body={email:email,days:days,mode:mode};
     if(plan) body.plan=plan;
     await postAdmin('/api/admin/users/extend',body);
     closeExtendModal();

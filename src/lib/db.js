@@ -110,6 +110,27 @@ export async function adminExtendDays(env, email, days, planOverride) {
   return activateSubscription(env, u.id, plan, days, 'admin', null);
 }
 
+// SET masa aktif = SEKARANG + days (override, BUKAN stacking). Dipakai admin
+// untuk MENGURANGI / menyetel ulang masa aktif (mis. set jadi 1 hari saja).
+// Berbeda dgn adminExtendDays yang menambah dari tanggal kedaluwarsa saat ini.
+export async function adminSetDays(env, email, days, planOverride) {
+  const u = await getUserByEmail(env, email);
+  if (!u) throw new Error('User tidak ditemukan');
+  const t = now();
+  const expires = t + days * 86400;
+  const latest = await getLatestSubscription(env, u.id);
+  const plan = planOverride || (latest ? latest.plan : 'custom');
+  if (latest) {
+    await db(env).prepare("UPDATE subscriptions SET plan = ?, status = 'active', expires_at = ?, source = 'admin' WHERE id = ?")
+      .bind(plan, expires, latest.id).run();
+    return getLatestSubscription(env, u.id);
+  }
+  const id = randomId(16);
+  await db(env).prepare('INSERT INTO subscriptions (id, user_id, plan, status, started_at, expires_at, source, mayar_txn_id, created_at) VALUES (?,?,?,?,?,?,?,?,?)')
+    .bind(id, u.id, plan, 'active', t, expires, 'admin', null, t).run();
+  return getLatestSubscription(env, u.id);
+}
+
 export async function adminSetStatus(env, email, status) {
   const u = await getUserByEmail(env, email);
   if (!u) throw new Error('User tidak ditemukan');
