@@ -10734,6 +10734,43 @@ body.vl-maxing{overflow:hidden}
     throw lastErr || new Error('fetch gagal');
   }
 
+  /* ── CACHE LOKAL (localStorage) — stale-while-revalidate ──────────────
+     Data valuasi (index + per-saham) HANYA berubah saat file Excel di
+     data/valuation/ ditambah/dihapus (workflow refresh-valuation), jadi
+     aman di-cache di browser. Strategi: render INSTAN dari cache lokal,
+     lalu revalidasi ke jaringan di latar belakang — kalau ada versi baru,
+     cache diperbarui & tampilan di-render ulang otomatis. Ini bikin buka
+     menu Valuasi terasa instan setelah kunjungan pertama. */
+  const VAL_CACHE_PREFIX = 'es_valcache_';
+  function valCacheGet(key){
+    try{
+      const raw = localStorage.getItem(VAL_CACHE_PREFIX + key);
+      if(!raw) return null;
+      const obj = JSON.parse(raw);
+      return (obj && 'd' in obj) ? obj : null;   // { t:timestamp, d:data }
+    }catch(e){ return null; }
+  }
+  function valCacheSet(key, data){
+    try{ localStorage.setItem(VAL_CACHE_PREFIX + key, JSON.stringify({ t:Date.now(), d:data })); }
+    catch(e){ /* kuota penuh / private mode → lewati, tidak fatal */ }
+  }
+  function _changed(a, b){ try{ return JSON.stringify(a) !== JSON.stringify(b); }catch(e){ return true; } }
+
+  // Pasang data index & data.json ke state (dipisah agar bisa dipakai ulang
+  // saat render pertama maupun saat revalidasi latar belakang).
+  function applyIndex(idx){
+    state.index = idx.stocks;
+    if(!state.raw) state.raw = { stocks:{}, assumptions: idx.assumptions || {} };
+    else state.raw.assumptions = idx.assumptions || state.raw.assumptions || {};
+  }
+  function applyData(data){
+    state.live = (data && data.live) ? data.live : null;
+    state.priceHist = (data && Array.isArray(data.price_history)) ? data.price_history : null;
+    state.stats = (data && data.stats) ? data.stats : null;
+    state.fundamentals = (data && data.fundamentals) ? data.fundamentals : null;
+    state.stockInfo = (data && data.stock_info) ? data.stock_info : null;
+  }
+
   /* ── Util data ── */
   function annualYears(stock){
     return Object.keys((stock&&stock.annual)||{}).map(Number).filter(y=>!isNaN(y)).sort((a,b)=>a-b).map(String);
@@ -10742,14 +10779,33 @@ body.vl-maxing{overflow:hidden}
   function curStock(){ return state.raw && state.raw.stocks[state.code]; }
 
   // Lazy-load: pastikan data lengkap 1 saham sudah dimuat ke state.raw.stocks[code].
-  // File per-saham (valuation/<CODE>.json) kecil → cepat. Di-cache di memori.
+  // File per-saham (valuation/<CODE>.json) kecil → cepat. Di-cache di memori +
+  // localStorage (stale-while-revalidate) supaya buka emiten yang sama instan.
   async function ensureStock(code){
     if(!code || !state.raw) return null;
     code = String(code).toUpperCase();
     if(state.raw.stocks[code]) return state.raw.stocks[code];
+
+    // 1) Cache lokal dulu → render instan, lalu revalidasi di latar belakang.
+    const cached = valCacheGet('stock_' + code);
+    if(cached && cached.d && (cached.d.annual || cached.d.valuation)){
+      state.raw.stocks[code] = cached.d;
+      fetchJson([valStockUrl(code)]).then(s=>{
+        if(s && (s.annual || s.valuation)){
+          valCacheSet('stock_' + code, s);
+          if(_changed(s, cached.d)){
+            state.raw.stocks[code] = s;
+            if(state.code === code){ try{ renderAll(); }catch(e){} }
+          }
+        }
+      }).catch(()=>{});
+      return state.raw.stocks[code];
+    }
+
+    // 2) Belum ada cache → ambil dari jaringan, lalu simpan ke cache.
     try{
       const s = await fetchJson([valStockUrl(code)]);
-      if(s && (s.annual || s.valuation)){ state.raw.stocks[code] = s; return s; }
+      if(s && (s.annual || s.valuation)){ state.raw.stocks[code] = s; valCacheSet('stock_' + code, s); return s; }
     }catch(e){ console.warn('[valuasi] gagal load saham', code, e&&e.message); }
     return null;
   }
@@ -13012,31 +13068,26 @@ body.vl-maxing{overflow:hidden}
     console.error('Valuasi error:', msg||'');
   }
 
-  // Init: fetch valuation/index.json (ringan) + data.json; saham dimuat lazy.
+  // Init: render INSTAN dari cache lokal bila ada (index + saham default),
+  // data.json (harga live) dimuat non-blocking, lalu revalidasi ke jaringan.
   async function init(){
     if(state.loading || state.raw) return;
     state.loading = true;
     try{
-      // 1) Index ringan: daftar + search + default. (Split/lazy-load.)
-      const idx = await fetchJson([VAL_INDEX_URL]);
+      // 1) Index ringan: cache lokal dulu, kalau kosong baru ambil jaringan.
+      const idxCache = valCacheGet('index');
+      let idx = (idxCache && idxCache.d) || null;
+      if(!idx){
+        idx = await fetchJson([VAL_INDEX_URL]);
+        if(idx) valCacheSet('index', idx);
+      }
       if(!idx || !Array.isArray(idx.stocks) || !idx.stocks.length){
         showError('Data valuasi belum tersedia. Coba refresh halaman dalam beberapa saat.');
         state.loading = false; return;
       }
-      state.index = idx.stocks;
-      state.raw = { stocks:{}, assumptions: idx.assumptions || {} };
+      applyIndex(idx);
 
-      // 2) data.json untuk harga live + histori (opsional).
-      try{
-        const data = await fetchJson([DATA_LOCAL_URL]);
-        state.live = (data && data.live) ? data.live : null;
-        state.priceHist = (data && Array.isArray(data.price_history)) ? data.price_history : null;
-        state.stats = (data && data.stats) ? data.stats : null;
-        state.fundamentals = (data && data.fundamentals) ? data.fundamentals : null;
-        state.stockInfo = (data && data.stock_info) ? data.stock_info : null;
-      }catch(e){ /* harga live opsional */ }
-
-      // 3) Pilih default + muat data lengkapnya (lazy), lalu render.
+      // 2) Pilih default + muat lengkapnya (lazy + cache), lalu render UI cepat.
       populateStockSelect();
       state.code = pickDefaultCode();
       if(!state.code){
@@ -13047,9 +13098,25 @@ body.vl-maxing{overflow:hidden}
       await ensureStock(state.code);
       setWinButtons();
       renderAll();
+      state.loading = false;
+
+      // 3) data.json (harga live + histori) — NON-BLOCKING: overlay setelah UI tampil.
+      fetchJson([DATA_LOCAL_URL]).then(data=>{
+        applyData(data);
+        try{ renderAll(); }catch(e){}
+      }).catch(()=>{ /* harga live opsional */ });
+
+      // 4) Revalidasi index di latar belakang — kalau ada emiten baru/berubah
+      //    (Excel baru diupload), perbarui cache + dropdown + tampilan.
+      fetchJson([VAL_INDEX_URL]).then(fresh=>{
+        if(fresh && Array.isArray(fresh.stocks) && fresh.stocks.length){
+          const isDiff = _changed(fresh.stocks, state.index);
+          valCacheSet('index', fresh);
+          if(isDiff){ applyIndex(fresh); populateStockSelect(); try{ renderAll(); }catch(e){} }
+        }
+      }).catch(()=>{});
     }catch(e){
       showError(String((e && e.message) || e));
-    }finally{
       state.loading = false;
     }
   }
