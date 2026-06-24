@@ -69,6 +69,10 @@ Set juga **vars** (boleh lewat dashboard atau `wrangler.toml`):
 - `MAYAR_REDIRECT_URL` (opsional) = URL tujuan setelah bayar. Default: `https://<domain-kamu>/billing?paid=1`.
 - `MAYAR_API_BASE` (opsional) = base URL API Mayar. Default: `https://api.mayar.id/hl/v1`. Ganti hanya bila pakai sandbox.
 - `MAYAR_DEFAULT_MOBILE` (opsional) = nomor HP default untuk invoice, bila akun Mayar mewajibkan field `mobile`.
+- `GAS_WEBHOOK_URL` (opsional) = URL `.../exec` Google Apps Script. Bila di-set, webhook Mayar yang masuk ke `/api/webhook/mayar` akan **diteruskan (forward)** ke GAS, sehingga sistem lama (GAS) tetap menerima notifikasi pembayaran. Pakai ini kalau di Mayar webhook diarahkan ke website ini tapi GAS masih dipakai.
+- `GAS_WEBHOOK_TOKEN` (opsional) = token yang dikirim ke GAS saat forward (kalau GAS memverifikasi token tertentu). Bila kosong, token dari Mayar diteruskan apa adanya.
+
+> **Catatan checkout**: bila `MAYAR_API_KEY` di-set, checkout membuat invoice via API; **jika pembuatan invoice gagal** (API down/salah), checkout **otomatis fallback** ke payment link statis (`MAYAR_LINK_*` / billing config) agar user tetap bisa bayar.
 
 ## 2b. Metode pembayaran: invoice dinamis vs payment link
 
