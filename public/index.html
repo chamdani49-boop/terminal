@@ -799,6 +799,12 @@ select.form-control option{background:var(--card);color:var(--text)}
   #savingQuickContent .qr-div-calc{font-size:10px}
 }
 
+/* Catatan kecil di ringkasan (penjelasan skenario dividen) */
+#savingQuickContent .qr-note{
+  font-size:11px;color:var(--text3);line-height:1.45;
+  padding:6px 2px 2px;font-style:italic;
+}
+
 /* ── Toggle dividen di chart Simulasi (additive, scoped #page-menabung) ── */
 #page-menabung .saving-chart-ctrl{
   display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:2px 0 12px;
@@ -8905,7 +8911,7 @@ function buildSavingSeries(rows, dividen, last, mode, code) {
         divTotalReinvest += amount;
         const cash = amount + leftover;
         const price = rows[i].price;
-        const lots = price > 0 ? Math.floor(cash / price / 100) * 100 : 0;
+        const lots = price > 0 ? Math.floor(cash / price) : 0;   // reinvest per LEMBAR (DRIP) — lebih realistis & terlihat tumbuh
         extraUnits += lots;
         leftover = cash - lots * price;
         reinvLotsMonth[i] = lots;
@@ -8994,8 +9000,9 @@ function renderSavingSummary() {
   const sim = _savingSim; if (!sim) return;
   const last = sim.last; const sel = _savingSelected(); if (!sel) return;
   const finalVal = sel.final;
-  const totalGL = finalVal - last.modal;
-  const totalPct = last.modal > 0 ? totalGL / last.modal : 0;
+  const modalDisetor = last.modal;                       // uang dari kantong sendiri (sama di semua skenario)
+  const totalGL = finalVal - modalDisetor;
+  const totalPct = modalDisetor > 0 ? totalGL / modalDisetor : 0;
   const cls = totalGL >= 0 ? 'up' : 'dn';
   const box = totalGL >= 0 ? 'profit' : 'loss';
   const sign = totalGL >= 0 ? '+' : '';
@@ -9004,14 +9011,31 @@ function renderSavingSummary() {
   else if (sel.mode === 'reinvest') heroLabel = totalGL >= 0 ? 'Untung + Dividen (Reinvest)' : 'Rugi (incl. Reinvest)';
 
   const avail = sim.dividen.available;
-  let divRow;
-  if (!avail) divRow = `<div class="qr-row"><span class="qr-label">💰 Dividen</span><span class="qr-val" style="color:var(--text3);font-size:12px">data belum tersedia</span></div>`;
-  else if (sel.mode === 'none') divRow = `<div class="qr-row"><span class="qr-label">💰 Dividen</span><span class="qr-val" style="color:var(--text3);font-size:12px">dimatikan — klik "Dengan"</span></div>`;
-  else divRow = `<div class="qr-row"><span class="qr-label">💰 Dividen ${sel.mode === 'reinvest' ? 'Reinvest' : 'Tunai'}</span><span class="qr-val" style="color:var(--accent)">${rp(sel.divTotal)}</span></div>`;
+  const extra = sim.extraUnitsFinal || 0;                                                 // lembar tambahan dari reinvest
+  const reinvestedSpent = Math.max(0, (sim.divTotalReinvest || 0) - (sim.leftoverFinal || 0)); // dividen yg benar-benar jadi saham
+  const nilaiSahamReinvest = (last.totalUnit + extra) * last.price;                       // nilai saham termasuk lembar hasil reinvest
+  const totalUnitShow = sel.mode === 'reinvest' ? (last.totalUnit + extra) : last.totalUnit;
 
-  const reinvestRow = (sel.mode === 'reinvest' && sim.extraUnitsFinal > 0)
-    ? `<div class="qr-row"><span class="qr-label">↻ Unit dari Reinvest</span><span class="qr-val" style="color:var(--accent2)">+${sim.extraUnitsFinal.toLocaleString('id')}</span></div>` : '';
-  const totalUnitShow = sel.mode === 'reinvest' ? (last.totalUnit + sim.extraUnitsFinal) : last.totalUnit;
+  // Baris tengah berbeda jelas tiap skenario (biar modal & dividen tidak rancu).
+  let midRows;
+  if (sel.mode === 'cash') {
+    midRows = `
+      <div class="qr-row"><span class="qr-label">📈 Nilai Saham Sekarang</span><span class="qr-val">${rp(last.nilai)}</span></div>
+      <div class="qr-row"><span class="qr-label">💰 Dividen Tunai (masuk kas)</span><span class="qr-val" style="color:var(--accent)">+${rp(sim.divTotalCash)}</span></div>
+      <div class="qr-note">Dividen diterima sebagai uang tunai — tidak dibelikan saham, jumlah lembar tetap.</div>`;
+  } else if (sel.mode === 'reinvest') {
+    midRows = `
+      <div class="qr-row"><span class="qr-label">↻ Dividen Direinvestasikan</span><span class="qr-val" style="color:var(--accent)">+${rp(reinvestedSpent)}</span></div>
+      <div class="qr-row"><span class="qr-label">🛒 Total Modal Beli Saham</span><span class="qr-val" style="font-weight:800">${rp(modalDisetor + reinvestedSpent)}</span></div>
+      <div class="qr-row"><span class="qr-label">🧾 Tambahan dari Reinvest</span><span class="qr-val" style="color:var(--accent2)">+${extra.toLocaleString('id')} lembar (${Math.floor(extra/100).toLocaleString('id')} lot)</span></div>
+      <div class="qr-row"><span class="qr-label">📈 Nilai Saham (incl. reinvest)</span><span class="qr-val">${rp(nilaiSahamReinvest)}</span></div>
+      ${sim.leftoverFinal > 0 ? `<div class="qr-row"><span class="qr-label">💵 Sisa Kas Dividen</span><span class="qr-val">${rp(sim.leftoverFinal)}</span></div>` : ''}
+      <div class="qr-note">Dividen dibelikan saham lagi → jumlah lembar bertambah & ikut tumbuh.</div>`;
+  } else {
+    midRows = `
+      <div class="qr-row"><span class="qr-label">📈 Nilai Saham Sekarang</span><span class="qr-val">${rp(last.nilai)}</span></div>
+      ${avail ? `<div class="qr-note">💡 Dividen dimatikan — klik "Dengan Dividen" untuk lihat efeknya.</div>` : `<div class="qr-note">Data dividen emiten ini belum tersedia.</div>`}`;
+  }
 
   const detailItems = sel.mode === 'reinvest' ? sim.eventsReinvest : (sim.dividen.perYear || []);
   const detailHtml = (avail && sel.mode !== 'none' && detailItems.length) ? `
@@ -9020,7 +9044,7 @@ function renderSavingSummary() {
       <div class="qr-div-rows">
         ${detailItems.map(d => {
           const sub = sel.mode === 'reinvest'
-            ? `${(d.lots || 0).toLocaleString('id')} lembar dibeli ulang`
+            ? `beli ${(d.lots || 0).toLocaleString('id')} lembar`
             : `${(d.units || 0).toLocaleString('id')} lembar × ${rp(d.dps)}`;
           return `<div class="qr-div-line"><span class="qr-div-yr">${d.year}</span><span class="qr-div-calc">${sub}</span><span class="qr-div-amt">${rp(d.amount)}</span></div>`;
         }).join('')}
@@ -9031,15 +9055,13 @@ function renderSavingSummary() {
     <div class="qr-hero ${box}">
       <div class="qr-hero-label">${heroLabel}</div>
       <div class="qr-hero-value ${cls}">${sign}${rp(totalGL)}</div>
-      <div class="qr-hero-pct ${cls}">${sign}${(totalPct * 100).toFixed(2)}% total return</div>
+      <div class="qr-hero-pct ${cls}">${sign}${(totalPct * 100).toFixed(2)}% dari modal disetor</div>
     </div>
     <div class="qr-list">
-      <div class="qr-row"><span class="qr-label">Total Modal</span><span class="qr-val">${rp(last.modal)}</span></div>
-      <div class="qr-row"><span class="qr-label">Nilai Saham (Capital)</span><span class="qr-val">${rp(last.nilai)}</span></div>
-      ${divRow}
+      <div class="qr-row"><span class="qr-label">💵 Modal Disetor (uang sendiri)</span><span class="qr-val">${rp(modalDisetor)}</span></div>
+      ${midRows}
       <div class="qr-row" style="border-top:1px dashed var(--border);margin-top:2px;padding-top:8px"><span class="qr-label" style="font-weight:800">Nilai Akhir Portofolio</span><span class="qr-val ${cls}" style="font-weight:800">${rp(finalVal)}</span></div>
-      ${reinvestRow}
-      <div class="qr-row"><span class="qr-label">Total Unit</span><span class="qr-val">${totalUnitShow.toLocaleString('id')}</span></div>
+      <div class="qr-row"><span class="qr-label">Total Unit${sel.mode === 'reinvest' ? ' (incl. reinvest)' : ''}</span><span class="qr-val">${totalUnitShow.toLocaleString('id')} lembar</span></div>
       <div class="qr-row"><span class="qr-label">Harga Per Lembar</span><span class="qr-val">${rp(last.price)}</span></div>
       <div class="qr-row"><span class="qr-label">Periode</span><span class="qr-val">${sim.rows.length} bulan</span></div>
     </div>
@@ -9099,7 +9121,7 @@ function drawSavingChart() {
                   'Total: ' + lot.toLocaleString('id') + ' lot (' + d.totalUnit.toLocaleString('id') + ' lembar)',
                   'Modal: ' + rp(d.modal),
                 ];
-                if (d.mode === 'reinvest' && d.extraUnits > 0) lines.push('↻ Reinvest: +' + Math.round(d.extraUnits / 100).toLocaleString('id') + ' lot');
+                if (d.mode === 'reinvest' && d.extraUnits > 0) lines.push('↻ Reinvest: +' + d.extraUnits.toLocaleString('id') + ' lembar');
                 if (d.mode === 'cash' && d.divCash > 0) lines.push('💰 Dividen (kumulatif): ' + rp(d.divCash));
                 lines.push('Total G/L: ' + (d.gl >= 0 ? '+' : '') + rp(d.gl) + ' (' + (d.gl >= 0 ? '+' : '') + (d.pctGl * 100).toFixed(2) + '%)');
                 lines.push('Nilai sekarang: ' + rp(d.nilai));
