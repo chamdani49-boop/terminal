@@ -8872,6 +8872,7 @@ function buildSavingSeries(rows, dividen, last, mode, code) {
 
   // CASH: dividen dari unit akhir tahun (basis), diakumulasi sebagai kas.
   const seriesCash = seriesNone.slice();
+  const cashCum = new Array(n).fill(0);
   const eventsCash = [];
   {
     const evs = (div.perYear || [])
@@ -8881,6 +8882,7 @@ function buildSavingSeries(rows, dividen, last, mode, code) {
     let cum = 0, ei = 0;
     for (let i = 0; i < n; i++) {
       while (ei < evs.length && evs[ei].idx === i) { cum += evs[ei].amount; eventsCash.push(evs[ei]); ei++; }
+      cashCum[i] = cum;
       seriesCash[i] = rows[i].nilai + cum;
     }
   }
@@ -8888,6 +8890,9 @@ function buildSavingSeries(rows, dividen, last, mode, code) {
 
   // REINVEST: dividen bunga-berbunga di atas (unit basis + unit hasil reinvest).
   const seriesReinvest = seriesNone.slice();
+  const reinvExtraUnits = new Array(n).fill(0);
+  const reinvLeftover = new Array(n).fill(0);
+  const reinvLotsMonth = new Array(n).fill(0);
   const eventsReinvest = [];
   let extraUnits = 0, leftover = 0, divTotalReinvest = 0;
   {
@@ -8903,8 +8908,11 @@ function buildSavingSeries(rows, dividen, last, mode, code) {
         const lots = price > 0 ? Math.floor(cash / price / 100) * 100 : 0;
         extraUnits += lots;
         leftover = cash - lots * price;
+        reinvLotsMonth[i] = lots;
         eventsReinvest.push({ idx: i, year: evIdx[i].year, amount, lots });
       }
+      reinvExtraUnits[i] = extraUnits;
+      reinvLeftover[i] = leftover;
       seriesReinvest[i] = (rows[i].totalUnit + extraUnits) * rows[i].price + leftover;
     }
   }
@@ -8912,6 +8920,7 @@ function buildSavingSeries(rows, dividen, last, mode, code) {
   return {
     rows, last, mode, code, dividen: div,
     seriesNone, seriesCash, seriesReinvest,
+    cashCum, reinvExtraUnits, reinvLeftover, reinvLotsMonth,
     eventsCash, eventsReinvest,
     divTotalCash, divTotalReinvest,
     extraUnitsFinal: extraUnits, leftoverFinal: leftover,
@@ -8929,6 +8938,43 @@ function _savingSelected() {
   return { mode: 'cash', series: sim.seriesCash, events: sim.eventsCash, final: sim.finalCash, divTotal: sim.divTotalCash };
 }
 
+// Data 1 bulan (index i) untuk skenario terpilih → dipakai tabel & tooltip.
+function _savingRowAt(i) {
+  const sim = _savingSim; if (!sim) return null;
+  const sel = _savingSelected(); const r = sim.rows[i]; if (!r) return null;
+  const nilai = sel.series[i];
+  const modal = r.modal;
+  const gl = nilai - modal;
+  const pctGl = modal > 0 ? gl / modal : 0;
+  let units = r.totalUnit, divCash = 0, extraUnits = 0;
+  if (sel.mode === 'cash') divCash = (sim.cashCum && sim.cashCum[i]) || 0;
+  if (sel.mode === 'reinvest') { extraUnits = (sim.reinvExtraUnits && sim.reinvExtraUnits[i]) || 0; units = r.totalUnit + extraUnits; }
+  return { i, label: r.label, dateStr: r.dateStr, price: r.price, unitBeli: r.unitBeli, totalUnit: units, extraUnits, modal, nilai, gl, pctGl, divCash, mode: sel.mode };
+}
+
+// Render tabel "Detail Per Periode" sesuai skenario terpilih.
+function renderSavingTable() {
+  const sim = _savingSim; if (!sim) return;
+  const tbody = document.getElementById('savingTableBody'); if (!tbody) return;
+  const rows = sim.rows;
+  const step = Math.max(1, Math.floor(rows.length / 40));
+  const idxs = [];
+  for (let i = 0; i < rows.length; i++) { if (i % step === 0 || i === rows.length - 1) idxs.push(i); }
+  tbody.innerHTML = idxs.map(i => {
+    const d = _savingRowAt(i); const cls = d.gl >= 0 ? 'up' : 'dn';
+    return `<tr>
+      <td>${d.label}</td>
+      <td>${rp(d.price)}</td>
+      <td>${d.unitBeli > 0 ? d.unitBeli.toLocaleString('id') : '-'}</td>
+      <td>${d.totalUnit.toLocaleString('id')}</td>
+      <td>${rp(d.modal)}</td>
+      <td>${rp(d.nilai)}</td>
+      <td class="${cls}">${d.gl>=0?'+':''}${rp(d.gl)}</td>
+      <td class="${cls}">${d.gl>=0?'+':''}${(d.pctGl*100).toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
+
 // Sinkron status aktif tombol dengan state + tampil/sembunyi grup mode.
 function syncSavingCtrlButtons() {
   const dg = document.getElementById('sccDivGroup');
@@ -8940,8 +8986,8 @@ function syncSavingCtrlButtons() {
   }
 }
 
-function setSavingDiv(v) { savingDivOn = (v === 'on'); syncSavingCtrlButtons(); renderSavingSummary(); drawSavingChart(); }
-function setSavingDivMode(v) { savingDivMode = v; syncSavingCtrlButtons(); renderSavingSummary(); drawSavingChart(); }
+function setSavingDiv(v) { savingDivOn = (v === 'on'); syncSavingCtrlButtons(); renderSavingSummary(); renderSavingTable(); drawSavingChart(); }
+function setSavingDivMode(v) { savingDivMode = v; syncSavingCtrlButtons(); renderSavingSummary(); renderSavingTable(); drawSavingChart(); }
 
 // Render ringkasan (hero + list + rincian) sesuai skenario terpilih.
 function renderSavingSummary() {
@@ -9035,13 +9081,31 @@ function drawSavingChart() {
       data:{ labels: rows.map(r => r.label), datasets },
       options:{
         responsive:true, maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
         plugins:{
           legend:{labels:{color:ct.ticks,font:{size:11,weight:'600'}}},
-          tooltip:{backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:10,cornerRadius:10,
-            callbacks:{ label: i => {
-              if (i.dataset.label === 'Dividen') { const m = markerInfo[i.dataIndex]; return m ? ` 💰 Dividen ${m.year}: ${rp(m.amount)}` : ' Dividen'; }
-              return ` ${i.dataset.label}: ${rp(i.raw)}`;
-            } }
+          tooltip:{backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:12,cornerRadius:10,
+            displayColors:false,
+            filter: it => it.dataset.label !== 'Total Modal',
+            callbacks:{
+              title: items => (items && items[0]) ? items[0].label : '',
+              label: i => {
+                if (i.dataset.label === 'Dividen') { const m = markerInfo[i.dataIndex]; return m ? `💰 Dividen ${m.year}: ${rp(m.amount)}` : ''; }
+                if (i.dataset.label !== 'Nilai Portofolio') return '';
+                const d = _savingRowAt(i.dataIndex); if (!d) return '';
+                const lot = Math.round(d.totalUnit / 100);
+                const lines = [
+                  'Harga: ' + rp(d.price) + ' /lembar',
+                  'Total: ' + lot.toLocaleString('id') + ' lot (' + d.totalUnit.toLocaleString('id') + ' lembar)',
+                  'Modal: ' + rp(d.modal),
+                ];
+                if (d.mode === 'reinvest' && d.extraUnits > 0) lines.push('↻ Reinvest: +' + Math.round(d.extraUnits / 100).toLocaleString('id') + ' lot');
+                if (d.mode === 'cash' && d.divCash > 0) lines.push('💰 Dividen (kumulatif): ' + rp(d.divCash));
+                lines.push('Total G/L: ' + (d.gl >= 0 ? '+' : '') + rp(d.gl) + ' (' + (d.gl >= 0 ? '+' : '') + (d.pctGl * 100).toFixed(2) + '%)');
+                lines.push('Nilai sekarang: ' + rp(d.nilai));
+                return lines;
+              }
+            }
           }
         },
         scales:{
@@ -9157,26 +9221,9 @@ function showSavingResult(code, rows, last, mode, dividen) {
   drawSavingChart();
 
   // Table (show every 3 months to keep compact)
-  const tbody = document.getElementById('savingTableBody');
-  const step = Math.max(1, Math.floor(rows.length / 40));
-  const displayRows = rows.filter((_,i) => i % step === 0 || i === rows.length-1);
-
-  tbody.innerHTML = displayRows.map(r => {
-    const glCls2 = r.gl >= 0 ? 'up' : 'dn';
-    return `<tr>
-      <td>${r.label}</td>
-      <td>${rp(r.price)}</td>
-      <td>${r.unitBeli > 0 ? r.unitBeli.toLocaleString('id') : '-'}</td>
-      <td>${r.totalUnit.toLocaleString('id')}</td>
-      <td>${rp(r.modal)}</td>
-      <td>${rp(r.nilai)}</td>
-      <td class="${glCls2}">${r.gl>=0?'+':''}${rp(r.gl)}</td>
-      <td class="${glCls2}">${r.gl>=0?'+':''}${(r.pctGl*100).toFixed(1)}%</td>
-    </tr>`;
-  }).join('');
-
-  // Ringkasan dirender ulang sesuai skenario dividen yang dipilih (override
-  // ringkasan default di atas) supaya hero/angka konsisten dengan chart.
+  // Tabel & ringkasan dirender sesuai skenario dividen terpilih (override
+  // tampilan default di atas) supaya konsisten dengan chart & tombol.
+  renderSavingTable();
   renderSavingSummary();
 }
 
