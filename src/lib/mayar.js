@@ -5,10 +5,44 @@
 // bawah dibuat fleksibel (mencoba beberapa nama field umum). Setelah webhook
 // pertama masuk, cek log & sesuaikan pemetaan bila perlu (lihat docs/AUTH_SETUP.md).
 // ─────────────────────────────────────────────────────────────────────────
-import { json } from './util.js';
+import { json, now } from './util.js';
 import { getSession } from './session.js';
 import { ensureUser, activateSubscription, txnAlreadyProcessed } from './db.js';
 import { getBillingConfig } from './billing.js';
+
+// ── Ingatan invoice TERMINAL (D1) — untuk pemisahan 100% akurat dari GAS ──
+// Terminal mencatat ID invoice yang IA buat. Webhook hanya mengaktifkan langganan
+// untuk invoice yang tercatat di sini → invoice GAS (ID beda) tidak akan pernah cocok,
+// tanpa bergantung pada nominal harga.
+async function ensureInvoiceTable(env) {
+  if (!env.DB) return;
+  await env.DB.prepare(
+    'CREATE TABLE IF NOT EXISTS mayar_invoices (invoice_id TEXT PRIMARY KEY, plan TEXT, email TEXT, amount INTEGER, created_at INTEGER)'
+  ).run();
+}
+async function rememberInvoice(env, { invoiceId, plan, email, amount }) {
+  if (!env.DB || !invoiceId) return;
+  try {
+    await ensureInvoiceTable(env);
+    await env.DB.prepare(
+      'INSERT INTO mayar_invoices (invoice_id, plan, email, amount, created_at) VALUES (?,?,?,?,?) '
+      + 'ON CONFLICT(invoice_id) DO UPDATE SET plan=excluded.plan, email=excluded.email, amount=excluded.amount'
+    ).bind(String(invoiceId), plan, email || '', amount || 0, now()).run();
+  } catch (_) { /* jangan ganggu alur utama */ }
+}
+async function lookupInvoicePlan(env, ids) {
+  if (!env.DB || !Array.isArray(ids)) return null;
+  try {
+    await ensureInvoiceTable(env);
+    for (const id of ids) {
+      if (!id) continue;
+      const row = await env.DB.prepare('SELECT plan FROM mayar_invoices WHERE invoice_id = ?')
+        .bind(String(id)).first();
+      if (row && row.plan) return row.plan;
+    }
+  } catch (_) { /* abaikan */ }
+  return null;
+}
 
 // Map plan -> jumlah hari (dari vars)
 function planDays(env, plan) {
@@ -98,12 +132,14 @@ export async function checkout(request, env, url) {
     const redirectUrl = env.MAYAR_REDIRECT_URL || `${new URL(request.url).origin}/billing?paid=1`;
 
     try {
-      const { link } = await createMayarInvoice(env, {
+      const { link, invId } = await createMayarInvoice(env, {
         plan, amount, planName,
         email: session.email,
         name: session.name || '',
         redirectUrl,
       });
+      // Ingat invoice ini sebagai milik TERMINAL (untuk pemisahan akurat di webhook).
+      await rememberInvoice(env, { invoiceId: invId, plan, email: session.email, amount });
       return json({ ok: true, url: link });
     } catch (e) {
       // Invoice gagal (API key salah / Mayar down / format beda) → JANGAN
@@ -174,6 +210,36 @@ async function forwardToGas(env, raw, request) {
   }
 }
 
+// ── Deteksi paket TERMINAL dari payload (pemisahan dari produk GAS/research) ──
+// Prioritas: Product ID terminal (kalau di-set di env) → lalu cocokkan NOMINAL
+// dengan harga paket terminal pada RENTANG SEMPIT [0.9x .. 1.5x]. Karena harga
+// terminal (mis. 699rb+) jauh di atas produk GAS (10rb–79rb), produk GAS / produk
+// lain TIDAK akan pernah cocok → tidak mengaktifkan langganan terminal.
+async function detectTerminalPlan(env, { productId, amount, invoiceIds }) {
+  // 0) PALING PASTI: invoice yang DIBUAT terminal sendiri (tak bergantung harga).
+  const byInvoice = await lookupInvoicePlan(env, invoiceIds || []);
+  if (byInvoice) return byInvoice;
+
+  // 1) Product ID terminal (untuk payment link statis / fallback, kalau di-set).
+  if (productId != null && productId !== '') {
+    if (env.MAYAR_PRODUCT_TAHUNAN && productId == env.MAYAR_PRODUCT_TAHUNAN) return 'tahunan';
+    if (env.MAYAR_PRODUCT_6BULAN && productId == env.MAYAR_PRODUCT_6BULAN) return '6bulan';
+    if (env.MAYAR_PRODUCT_3BULAN && productId == env.MAYAR_PRODUCT_3BULAN) return '3bulan';
+  }
+  // 2) Jaring pengaman: cocokkan NOMINAL dgn harga paket terminal [0.9x..1.5x].
+  const amt = parseInt(amount, 10) || 0;
+  if (amt > 0) {
+    try {
+      const cfg = await getBillingConfig(env);
+      for (const k of ['tahunan', '6bulan', '3bulan']) {
+        const price = (cfg.plans[k] && cfg.plans[k].priceReal) || 0;
+        if (price > 0 && amt >= Math.round(price * 0.9) && amt <= Math.round(price * 1.5)) return k;
+      }
+    } catch (_) { /* abaikan */ }
+  }
+  return null;
+}
+
 // ── WEBHOOK ──
 export async function webhook(request, env, ctx) {
   const raw = await request.text();
@@ -189,13 +255,8 @@ export async function webhook(request, env, ctx) {
     if (got !== token) return json({ error: 'Invalid webhook token' }, 401);
   }
 
-  // 1b) Teruskan ke GAS (kalau dikonfigurasi) — di LATAR BELAKANG (non-blocking)
-  //     supaya balasan ke Mayar tidak menunggu GAS (GAS bisa lambat → timeout).
-  if (env.GAS_WEBHOOK_URL) {
-    const fwd = forwardToGas(env, raw, request);
-    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(fwd);
-    else fwd.catch(() => {});   // fallback: jangan await, jangan blokir
-  }
+  // 1b) Catatan: forward ke GAS dipindah ke BAWAH — hanya untuk pembayaran yang
+  //     BUKAN milik terminal (lihat langkah 4), supaya terminal tak bocor ke GAS.
 
   let payload;
   try { payload = JSON.parse(raw); } catch { return json({ error: 'Bad JSON' }, 400); }
@@ -204,54 +265,45 @@ export async function webhook(request, env, ctx) {
   const data = payload.data || payload;
   const event = (payload.event || payload.type || data.status || '').toString().toLowerCase();
 
-  // 2b) Event tes dari tombol "Test URL" Mayar (payload contoh, amount 100rb) →
-  //     balas 200 OK supaya Test URL sukses, TANPA mengaktifkan langganan apa pun.
+  // 2b) Event tes dari tombol "Test URL" Mayar → balas 200 OK tanpa aktivasi.
   if (event === 'testing' || event === 'test') {
     return json({ ok: true, test: true });
   }
 
   const status = (pick(data, ['status', 'paymentStatus', 'transactionStatus']) || event || '').toString().toLowerCase();
   const isPaid = ['paid', 'success', 'settled', 'capture', 'completed', 'payment.received', 'paymentreceived'].some((s) => status.includes(s) || event.includes(s));
-  if (!isPaid) return json({ ok: true, skipped: true, reason: `status=${status}` });
 
   const email = pick(data, ['customerEmail', 'customer_email', 'email', 'buyerEmail']);
   const txnId = pick(data, ['id', 'transactionId', 'transaction_id', 'paymentId', 'invoiceId']);
   const productId = pick(data, ['productId', 'product_id', 'productLinkId', 'link_id']);
   const amount = parseInt(pick(data, ['amount', 'total', 'grossAmount']) || '0', 10);
 
+  // 3) Apakah pembayaran ini milik TERMINAL? (invoice buatan terminal / produk / harga)
+  const invoiceIds = [
+    pick(data, ['invoiceId', 'invoice_id']),
+    pick(data, ['id', 'transactionId', 'transaction_id', 'paymentId']),
+  ];
+  const plan = await detectTerminalPlan(env, { productId, amount, invoiceIds });
+  const isTerminalPayment = !!plan;
+
+  // 4) Forward ke GAS HANYA bila BUKAN pembayaran terminal (produk GAS/research,
+  //    atau produk lain). Jalan di latar belakang (non-blocking).
+  if (env.GAS_WEBHOOK_URL && !isTerminalPayment) {
+    const fwd = forwardToGas(env, raw, request);
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(fwd);
+    else fwd.catch(() => {});
+  }
+
+  // 5) Bukan pembayaran terminal → selesai (tidak mengaktifkan langganan terminal).
+  if (!isTerminalPayment) {
+    return json({ ok: true, skipped: true, reason: `bukan produk terminal (product=${productId}, amount=${amount})` });
+  }
+
+  // 6) Pembayaran terminal: aktifkan langganan (hanya bila benar-benar lunas).
+  if (!isPaid) return json({ ok: true, skipped: true, reason: `status=${status}` });
   if (!email) return json({ error: 'Email tidak ditemukan di payload' }, 400);
+  if (txnId && (await txnAlreadyProcessed(env, txnId))) return json({ ok: true, duplicate: true });
 
-  // 3) Idempotensi
-  if (txnId && (await txnAlreadyProcessed(env, txnId))) {
-    return json({ ok: true, duplicate: true });
-  }
-
-  // 4) Tentukan paket: berdasarkan product id, fallback ke nominal.
-  let plan = null;
-  if (productId && env.MAYAR_PRODUCT_TAHUNAN && productId == env.MAYAR_PRODUCT_TAHUNAN) plan = 'tahunan';
-  else if (productId && env.MAYAR_PRODUCT_6BULAN && productId == env.MAYAR_PRODUCT_6BULAN) plan = '6bulan';
-  else if (productId && env.MAYAR_PRODUCT_3BULAN && productId == env.MAYAR_PRODUCT_3BULAN) plan = '3bulan';
-
-  // Fallback nominal: cocokkan dengan harga real di billing config (mengikuti
-  // harga yang di-set admin), supaya tetap akurat saat harga diubah.
-  if (!plan && amount > 0) {
-    try {
-      const cfg = await getBillingConfig(env);
-      for (const k of ['tahunan', '6bulan', '3bulan']) {
-        const price = (cfg.plans[k] && cfg.plans[k].priceReal) || 0;
-        if (price > 0 && amount >= Math.round(price * 0.9)) { plan = k; break; }
-      }
-    } catch (_) { /* abaikan → fallback threshold statis */ }
-  }
-  if (!plan) {
-    if (amount >= 1500000) plan = 'tahunan';
-    else if (amount >= 850000) plan = '6bulan';
-    else if (amount >= 400000) plan = '3bulan';
-  }
-
-  if (!plan) return json({ error: `Paket tidak dikenali (product=${productId}, amount=${amount})` }, 400);
-
-  // 5) Aktifkan langganan
   const user = await ensureUser(env, email);
   await activateSubscription(env, user.id, plan, planDays(env, plan), 'mayar', txnId);
 
