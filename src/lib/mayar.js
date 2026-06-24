@@ -90,8 +90,8 @@ async function createMayarInvoice(env, { plan, amount, planName, email, name, re
   let out = {};
   try { out = await res.json(); } catch { /* biarkan kosong */ }
   if (!res.ok) {
-    const msg = (out && (out.messages || out.message || out.error)) || `HTTP ${res.status}`;
-    throw new Error(`Mayar API: ${msg}`);
+    const msg = (out && (out.messages || out.message || out.error)) || JSON.stringify(out || {});
+    throw new Error(`Mayar API HTTP ${res.status}: ${msg || 'no body'}`);
   }
 
   // Bentuk balasan bisa { data: {...} } atau flat. Ambil link & id fleksibel.
@@ -106,6 +106,13 @@ async function createMayarInvoice(env, { plan, amount, planName, email, name, re
 export async function checkout(request, env, url) {
   const plan = url.searchParams.get('plan');
   if (!['3bulan', '6bulan', 'tahunan'].includes(plan)) return json({ error: 'Paket tidak valid' }, 400);
+
+  // Mode debug: tambahkan ?debug=1 di URL untuk melihat error invoice yang sebenarnya
+  // (kalau tidak, invoice gagal akan diam-diam jatuh ke link statis).
+  const debug = url.searchParams.get('debug') === '1';
+  if (debug && !env.MAYAR_API_KEY) {
+    return json({ debug: true, error: 'MAYAR_API_KEY belum terbaca di Worker terminal (kosong).' });
+  }
 
   const session = await getSession(request, env);
 
@@ -146,6 +153,14 @@ export async function checkout(request, env, url) {
       // menggagalkan checkout. Lanjut ke fallback payment link statis di bawah
       // supaya user tetap bisa bayar. (Sesuai permintaan: invoice, fallback statis.)
       console.warn('[mayar] invoice gagal, fallback ke link statis:', (e && e.message) || e);
+      if (debug) {
+        return json({
+          debug: true, stage: 'invoice_create_failed',
+          error: (e && e.message) || String(e),
+          amount, planName, apiBase: mayarApiBase(env),
+          hasApiKey: !!env.MAYAR_API_KEY,
+        });
+      }
     }
   }
 
