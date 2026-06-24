@@ -799,6 +799,30 @@ select.form-control option{background:var(--card);color:var(--text)}
   #savingQuickContent .qr-div-calc{font-size:10px}
 }
 
+/* ── Toggle dividen di chart Simulasi (additive, scoped #page-menabung) ── */
+#page-menabung .saving-chart-ctrl{
+  display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:2px 0 12px;
+}
+#page-menabung .scc-group{display:flex;align-items:center;gap:6px}
+#page-menabung .scc-label{
+  font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--text2);margin-right:1px;
+}
+#page-menabung .scc-seg{
+  display:inline-flex;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius-pill);padding:2px;gap:2px;
+}
+#page-menabung .scc-btn{
+  font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:var(--radius-pill);
+  border:none;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s ease;
+}
+#page-menabung .scc-btn:hover{color:var(--accent)}
+#page-menabung .scc-btn.active{background:var(--accent);color:#fff}
+@media(max-width:640px){
+  #page-menabung .scc-btn{padding:5px 10px;font-size:11px}
+  #page-menabung .saving-chart-ctrl{gap:6px 12px}
+}
+
 /* Portfolio table — 8 kolom, paksa min-width supaya horizontal scroll
    di mobile alih-alih squish jadi unreadable. Container `.port-scroll`
    handle scroll dua arah. */
@@ -2908,6 +2932,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="card" id="savingResultCard" style="display:none">
           <div class="card-title" id="savingResultTitle">Hasil Simulasi</div>
           <div class="result-grid" id="savingResultGrid"></div>
+          <div class="saving-chart-ctrl" id="savingChartCtrl" style="display:none">
+            <div class="scc-group" id="sccDivGroup">
+              <span class="scc-label">Dividen</span>
+              <div class="scc-seg">
+                <button class="scc-btn" data-div="off" onclick="setSavingDiv('off')">Tanpa</button>
+                <button class="scc-btn active" data-div="on" onclick="setSavingDiv('on')">Dengan</button>
+              </div>
+            </div>
+            <div class="scc-group" id="sccModeGroup">
+              <span class="scc-label">Perlakuan</span>
+              <div class="scc-seg">
+                <button class="scc-btn active" data-mode="cash" onclick="setSavingDivMode('cash')">Tunai</button>
+                <button class="scc-btn" data-mode="reinvest" onclick="setSavingDivMode('reinvest')">Reinvest</button>
+              </div>
+            </div>
+          </div>
           <div class="chart-wrap" style="height:220px"><canvas id="savingChart"></canvas></div>
         </div>
         <div class="card" id="savingTableCard" style="display:none">
@@ -4145,6 +4185,11 @@ let wlMetric = 'live';
 let wlSort = 'desc';
 let consensusDonutInstance = null;
 let savingChartInstance = null;
+
+// ── State toggle dividen di chart Simulasi (additive) ──
+let savingDivOn = true;          // true = tampilkan dividen di chart
+let savingDivMode = 'cash';      // 'cash' (tunai) | 'reinvest' (DRIP)
+let _savingSim = null;           // hasil simulasi terakhir (rows + seri nilai per skenario)
 
 // Strategi loading data.json:
 //   1) Same-origin (Cloudflare Pages bundle) DULU. Jalan untuk repo PUBLIC
@@ -8811,6 +8856,203 @@ async function calculateSaving() {
   }
 }
 
+// ── Bangun seri nilai portofolio untuk 3 skenario dividen ──
+// none = tanpa dividen (capital saja); cash = dividen tunai diakumulasi;
+// reinvest = dividen dibelikan saham lagi (lot 100, efek bunga-berbunga).
+function buildSavingSeries(rows, dividen, last, mode, code) {
+  const n = rows.length;
+  const div = dividen || { total: 0, perYear: [], available: false };
+  const seriesNone = rows.map(r => r.nilai);
+
+  // index bulan TERAKHIR tiap tahun = tempat dividen "cair".
+  const yearLastIdx = {};
+  rows.forEach((r, i) => { const yr = String(r.dateStr || '').slice(0, 4); if (yr) yearLastIdx[yr] = i; });
+  const dpsByYear = {};
+  (div.perYear || []).forEach(d => { dpsByYear[d.year] = d.dps; });
+
+  // CASH: dividen dari unit akhir tahun (basis), diakumulasi sebagai kas.
+  const seriesCash = seriesNone.slice();
+  const eventsCash = [];
+  {
+    const evs = (div.perYear || [])
+      .map(d => ({ idx: yearLastIdx[d.year], year: d.year, amount: d.amount, units: d.units, dps: d.dps }))
+      .filter(e => e.idx != null)
+      .sort((a, b) => a.idx - b.idx);
+    let cum = 0, ei = 0;
+    for (let i = 0; i < n; i++) {
+      while (ei < evs.length && evs[ei].idx === i) { cum += evs[ei].amount; eventsCash.push(evs[ei]); ei++; }
+      seriesCash[i] = rows[i].nilai + cum;
+    }
+  }
+  const divTotalCash = eventsCash.reduce((s, e) => s + e.amount, 0);
+
+  // REINVEST: dividen bunga-berbunga di atas (unit basis + unit hasil reinvest).
+  const seriesReinvest = seriesNone.slice();
+  const eventsReinvest = [];
+  let extraUnits = 0, leftover = 0, divTotalReinvest = 0;
+  {
+    const evIdx = {};
+    Object.keys(yearLastIdx).forEach(yr => { if (dpsByYear[yr] > 0) evIdx[yearLastIdx[yr]] = { year: yr, dps: dpsByYear[yr] }; });
+    for (let i = 0; i < n; i++) {
+      if (evIdx[i]) {
+        const held = rows[i].totalUnit + extraUnits;
+        const amount = held * evIdx[i].dps;
+        divTotalReinvest += amount;
+        const cash = amount + leftover;
+        const price = rows[i].price;
+        const lots = price > 0 ? Math.floor(cash / price / 100) * 100 : 0;
+        extraUnits += lots;
+        leftover = cash - lots * price;
+        eventsReinvest.push({ idx: i, year: evIdx[i].year, amount, lots });
+      }
+      seriesReinvest[i] = (rows[i].totalUnit + extraUnits) * rows[i].price + leftover;
+    }
+  }
+
+  return {
+    rows, last, mode, code, dividen: div,
+    seriesNone, seriesCash, seriesReinvest,
+    eventsCash, eventsReinvest,
+    divTotalCash, divTotalReinvest,
+    extraUnitsFinal: extraUnits, leftoverFinal: leftover,
+    finalNone: seriesNone[n - 1] || 0,
+    finalCash: seriesCash[n - 1] || 0,
+    finalReinvest: seriesReinvest[n - 1] || 0,
+  };
+}
+
+// Skenario yang sedang dipilih lewat tombol toggle.
+function _savingSelected() {
+  const sim = _savingSim; if (!sim) return null;
+  if (!savingDivOn || !sim.dividen.available) return { mode: 'none', series: sim.seriesNone, events: [], final: sim.finalNone, divTotal: 0 };
+  if (savingDivMode === 'reinvest') return { mode: 'reinvest', series: sim.seriesReinvest, events: sim.eventsReinvest, final: sim.finalReinvest, divTotal: sim.divTotalReinvest };
+  return { mode: 'cash', series: sim.seriesCash, events: sim.eventsCash, final: sim.finalCash, divTotal: sim.divTotalCash };
+}
+
+// Sinkron status aktif tombol dengan state + tampil/sembunyi grup mode.
+function syncSavingCtrlButtons() {
+  const dg = document.getElementById('sccDivGroup');
+  if (dg) dg.querySelectorAll('.scc-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-div') === (savingDivOn ? 'on' : 'off')));
+  const mg = document.getElementById('sccModeGroup');
+  if (mg) {
+    mg.style.display = (savingDivOn && _savingSim && _savingSim.dividen.available) ? 'flex' : 'none';
+    mg.querySelectorAll('.scc-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-mode') === savingDivMode));
+  }
+}
+
+function setSavingDiv(v) { savingDivOn = (v === 'on'); syncSavingCtrlButtons(); renderSavingSummary(); drawSavingChart(); }
+function setSavingDivMode(v) { savingDivMode = v; syncSavingCtrlButtons(); renderSavingSummary(); drawSavingChart(); }
+
+// Render ringkasan (hero + list + rincian) sesuai skenario terpilih.
+function renderSavingSummary() {
+  const sim = _savingSim; if (!sim) return;
+  const last = sim.last; const sel = _savingSelected(); if (!sel) return;
+  const finalVal = sel.final;
+  const totalGL = finalVal - last.modal;
+  const totalPct = last.modal > 0 ? totalGL / last.modal : 0;
+  const cls = totalGL >= 0 ? 'up' : 'dn';
+  const box = totalGL >= 0 ? 'profit' : 'loss';
+  const sign = totalGL >= 0 ? '+' : '';
+  let heroLabel = totalGL >= 0 ? 'Untung (Capital Gain)' : 'Rugi (Capital)';
+  if (sel.mode === 'cash') heroLabel = totalGL >= 0 ? 'Untung + Dividen (Tunai)' : 'Rugi (incl. Dividen Tunai)';
+  else if (sel.mode === 'reinvest') heroLabel = totalGL >= 0 ? 'Untung + Dividen (Reinvest)' : 'Rugi (incl. Reinvest)';
+
+  const avail = sim.dividen.available;
+  let divRow;
+  if (!avail) divRow = `<div class="qr-row"><span class="qr-label">💰 Dividen</span><span class="qr-val" style="color:var(--text3);font-size:12px">data belum tersedia</span></div>`;
+  else if (sel.mode === 'none') divRow = `<div class="qr-row"><span class="qr-label">💰 Dividen</span><span class="qr-val" style="color:var(--text3);font-size:12px">dimatikan — klik "Dengan"</span></div>`;
+  else divRow = `<div class="qr-row"><span class="qr-label">💰 Dividen ${sel.mode === 'reinvest' ? 'Reinvest' : 'Tunai'}</span><span class="qr-val" style="color:var(--accent)">${rp(sel.divTotal)}</span></div>`;
+
+  const reinvestRow = (sel.mode === 'reinvest' && sim.extraUnitsFinal > 0)
+    ? `<div class="qr-row"><span class="qr-label">↻ Unit dari Reinvest</span><span class="qr-val" style="color:var(--accent2)">+${sim.extraUnitsFinal.toLocaleString('id')}</span></div>` : '';
+  const totalUnitShow = sel.mode === 'reinvest' ? (last.totalUnit + sim.extraUnitsFinal) : last.totalUnit;
+
+  const detailItems = sel.mode === 'reinvest' ? sim.eventsReinvest : (sim.dividen.perYear || []);
+  const detailHtml = (avail && sel.mode !== 'none' && detailItems.length) ? `
+    <div class="qr-div-detail">
+      <div class="qr-div-detail-hd">Rincian Dividen per Tahun${sel.mode === 'reinvest' ? ' · Reinvest' : ''}</div>
+      <div class="qr-div-rows">
+        ${detailItems.map(d => {
+          const sub = sel.mode === 'reinvest'
+            ? `${(d.lots || 0).toLocaleString('id')} lembar dibeli ulang`
+            : `${(d.units || 0).toLocaleString('id')} lembar × ${rp(d.dps)}`;
+          return `<div class="qr-div-line"><span class="qr-div-yr">${d.year}</span><span class="qr-div-calc">${sub}</span><span class="qr-div-amt">${rp(d.amount)}</span></div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  document.getElementById('savingQuickContent').innerHTML = `
+    <div class="qr-hero ${box}">
+      <div class="qr-hero-label">${heroLabel}</div>
+      <div class="qr-hero-value ${cls}">${sign}${rp(totalGL)}</div>
+      <div class="qr-hero-pct ${cls}">${sign}${(totalPct * 100).toFixed(2)}% total return</div>
+    </div>
+    <div class="qr-list">
+      <div class="qr-row"><span class="qr-label">Total Modal</span><span class="qr-val">${rp(last.modal)}</span></div>
+      <div class="qr-row"><span class="qr-label">Nilai Saham (Capital)</span><span class="qr-val">${rp(last.nilai)}</span></div>
+      ${divRow}
+      <div class="qr-row" style="border-top:1px dashed var(--border);margin-top:2px;padding-top:8px"><span class="qr-label" style="font-weight:800">Nilai Akhir Portofolio</span><span class="qr-val ${cls}" style="font-weight:800">${rp(finalVal)}</span></div>
+      ${reinvestRow}
+      <div class="qr-row"><span class="qr-label">Total Unit</span><span class="qr-val">${totalUnitShow.toLocaleString('id')}</span></div>
+      <div class="qr-row"><span class="qr-label">Harga Per Lembar</span><span class="qr-val">${rp(last.price)}</span></div>
+      <div class="qr-row"><span class="qr-label">Periode</span><span class="qr-val">${sim.rows.length} bulan</span></div>
+    </div>
+    ${detailHtml}
+  `;
+}
+
+// Gambar chart sesuai skenario terpilih + penanda titik dividen (diamond).
+function drawSavingChart() {
+  const sim = _savingSim; if (!sim) return;
+  const sel = _savingSelected(); if (!sel) return;
+  if (savingChartInstance) { savingChartInstance.destroy(); savingChartInstance = null; }
+  requestAnimationFrame(() => {
+    const el = document.getElementById('savingChart'); if (!el) return;
+    const ctx = el.getContext('2d');
+    const ct = chartColors();
+    const rows = sim.rows;
+    // Penanda dividen: titik diamond di bulan dividen cair, duduk di garis nilai.
+    const markerData = rows.map(() => null);
+    const markerInfo = {};
+    sel.events.forEach(e => { markerData[e.idx] = sel.series[e.idx]; markerInfo[e.idx] = { year: e.year, amount: e.amount }; });
+
+    const datasets = [
+      { label:'Nilai Portofolio', data: sel.series, borderColor:'#6d28d9', borderWidth:2.2, pointRadius:0, fill:true,
+        backgroundColor: c => { const g = c.chart.ctx.createLinearGradient(0,0,0,c.chart.height); g.addColorStop(0,'rgba(109,40,217,.25)'); g.addColorStop(1,'rgba(109,40,217,0)'); return g; }
+      },
+      { label:'Total Modal', data: rows.map(r => r.modal), borderColor:'#2563eb', borderWidth:1.6, borderDash:[5,5], pointRadius:0, fill:false }
+    ];
+    if (sel.events.length) {
+      datasets.push({
+        label:'Dividen', data: markerData, showLine:false, spanGaps:false,
+        borderColor:'#b45309', backgroundColor:'#f59e0b',
+        pointRadius:5, pointHoverRadius:8, pointStyle:'rectRot', pointBorderColor:'#b45309', pointBorderWidth:1.5
+      });
+    }
+
+    savingChartInstance = new Chart(ctx, {
+      type:'line',
+      data:{ labels: rows.map(r => r.label), datasets },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:ct.ticks,font:{size:11,weight:'600'}}},
+          tooltip:{backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:10,cornerRadius:10,
+            callbacks:{ label: i => {
+              if (i.dataset.label === 'Dividen') { const m = markerInfo[i.dataIndex]; return m ? ` 💰 Dividen ${m.year}: ${rp(m.amount)}` : ' Dividen'; }
+              return ` ${i.dataset.label}: ${rp(i.raw)}`;
+            } }
+          }
+        },
+        scales:{
+          x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:10},maxTicksLimit:10}},
+          y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:10},callback:v=>v>=1e9?'Rp'+(v/1e9).toFixed(1)+'M':v>=1e6?'Rp'+(v/1e6).toFixed(0)+'jt':v}}
+        }
+      }
+    });
+  });
+}
+
 function showSavingResult(code, rows, last, mode, dividen) {
   // Tampilkan semua card dulu sebelum render chart
   // (Chart.js butuh canvas visible untuk hitung dimensi)
@@ -8831,6 +9073,13 @@ function showSavingResult(code, rows, last, mode, dividen) {
   const glSign = last.gl >= 0 ? '+' : '';
 
   document.getElementById('savingResultTitle').textContent = `Hasil Simulasi ${mode} · ${code}`;
+
+  // Hitung semua skenario dividen sekali (tanpa / tunai / reinvest), lalu
+  // tampilkan kontrol toggle bila emiten punya data dividen.
+  _savingSim = buildSavingSeries(rows, dividen, last, mode, code);
+  const _scc = document.getElementById('savingChartCtrl');
+  if (_scc) _scc.style.display = _savingSim.dividen.available ? 'flex' : 'none';
+  syncSavingCtrlButtons();
 
   // ── Hitung total termasuk dividen ──
   const div = dividen || { total: 0, perYear: [], available: false };
@@ -8904,36 +9153,8 @@ function showSavingResult(code, rows, last, mode, dividen) {
     </div>` : ''}
   `;
 
-  // Chart — render dalam requestAnimationFrame agar canvas sudah visible & punya dimensi
-  if (savingChartInstance) { savingChartInstance.destroy(); savingChartInstance = null; }
-  requestAnimationFrame(() => {
-  const ctx = document.getElementById('savingChart').getContext('2d');
-  const ct = chartColors();
-  savingChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: rows.map(r => r.label),
-      datasets: [
-        { label:'Nilai Portofolio', data: rows.map(r => r.nilai), borderColor:'#6d28d9', borderWidth:2.2, pointRadius:0, fill:true,
-          backgroundColor: c => { const g = c.chart.ctx.createLinearGradient(0,0,0,c.chart.height); g.addColorStop(0,'rgba(109,40,217,.25)'); g.addColorStop(1,'rgba(109,40,217,0)'); return g; }
-        },
-        { label:'Total Modal', data: rows.map(r => r.modal), borderColor:'#2563eb', borderWidth:1.6, borderDash:[5,5], pointRadius:0, fill:false }
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:ct.ticks,font:{size:11,weight:'600'}}},
-        tooltip:{backgroundColor:ct.tooltipBg,borderColor:ct.tooltipBorder,borderWidth:1,bodyColor:ct.tooltipText,titleColor:ct.tooltipTitle,padding:10,cornerRadius:10,
-          callbacks:{label: i => ` ${i.dataset.label}: ${rp(i.raw)}`}
-        }
-      },
-      scales:{
-        x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:10},maxTicksLimit:10}},
-        y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:10},callback:v=>v>=1e9?'Rp'+(v/1e9).toFixed(1)+'M':v>=1e6?'Rp'+(v/1e6).toFixed(0)+'jt':v}}
-      }
-    }
-  });
-  }); // end requestAnimationFrame
+  // Chart digambar oleh drawSavingChart() — dukung toggle dividen + penanda titik dividen.
+  drawSavingChart();
 
   // Table (show every 3 months to keep compact)
   const tbody = document.getElementById('savingTableBody');
@@ -8953,6 +9174,10 @@ function showSavingResult(code, rows, last, mode, dividen) {
       <td class="${glCls2}">${r.gl>=0?'+':''}${(r.pctGl*100).toFixed(1)}%</td>
     </tr>`;
   }).join('');
+
+  // Ringkasan dirender ulang sesuai skenario dividen yang dipilih (override
+  // ringkasan default di atas) supaya hero/angka konsisten dengan chart.
+  renderSavingSummary();
 }
 
 function rp(n) {
