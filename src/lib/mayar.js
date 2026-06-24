@@ -204,6 +204,12 @@ export async function webhook(request, env, ctx) {
   const data = payload.data || payload;
   const event = (payload.event || payload.type || data.status || '').toString().toLowerCase();
 
+  // 2b) Event tes dari tombol "Test URL" Mayar (payload contoh, amount 100rb) →
+  //     balas 200 OK supaya Test URL sukses, TANPA mengaktifkan langganan apa pun.
+  if (event === 'testing' || event === 'test') {
+    return json({ ok: true, test: true });
+  }
+
   const status = (pick(data, ['status', 'paymentStatus', 'transactionStatus']) || event || '').toString().toLowerCase();
   const isPaid = ['paid', 'success', 'settled', 'capture', 'completed', 'payment.received', 'paymentreceived'].some((s) => status.includes(s) || event.includes(s));
   if (!isPaid) return json({ ok: true, skipped: true, reason: `status=${status}` });
