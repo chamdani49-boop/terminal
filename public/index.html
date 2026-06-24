@@ -11289,7 +11289,14 @@ body.vl-maxing{overflow:hidden}
     const yearsDesc = annualYears(s).slice().reverse();   // terbaru → terlama (…→2008)
     // Kolom LENGKAP & dibalik: Q1 + TTM dinamis (Q1x4) + semua tahun (apa adanya).
     const cols = [];
+    const _q = s.quarters || {};
     if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'Q1',           a:s.q1 });
+    // Q2/Q3/Q4 — tampil OTOMATIS hanya bila laporan kuartal itu sudah terisi
+    // (build membuang kuartal yang masih kosong). Begitu kamu upload Excel dgn
+    // kolom F (Q3)/G (Q4) terisi, kolomnya otomatis muncul di sini.
+    ['Q2','Q3','Q4'].forEach(function(qn){
+      if(_q[qn] && Object.keys(_q[qn]).length) cols.push({ key:qn, label:qn, a:_q[qn] });
+    });
     if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:vlTtmLabelFull(s), a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
