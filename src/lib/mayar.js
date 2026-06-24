@@ -5,10 +5,44 @@
 // bawah dibuat fleksibel (mencoba beberapa nama field umum). Setelah webhook
 // pertama masuk, cek log & sesuaikan pemetaan bila perlu (lihat docs/AUTH_SETUP.md).
 // ─────────────────────────────────────────────────────────────────────────
-import { json } from './util.js';
+import { json, now } from './util.js';
 import { getSession } from './session.js';
 import { ensureUser, activateSubscription, txnAlreadyProcessed } from './db.js';
 import { getBillingConfig } from './billing.js';
+
+// ── Ingatan invoice TERMINAL (D1) — untuk pemisahan 100% akurat dari GAS ──
+// Terminal mencatat ID invoice yang IA buat. Webhook hanya mengaktifkan langganan
+// untuk invoice yang tercatat di sini → invoice GAS (ID beda) tidak akan pernah cocok,
+// tanpa bergantung pada nominal harga.
+async function ensureInvoiceTable(env) {
+  if (!env.DB) return;
+  await env.DB.prepare(
+    'CREATE TABLE IF NOT EXISTS mayar_invoices (invoice_id TEXT PRIMARY KEY, plan TEXT, email TEXT, amount INTEGER, created_at INTEGER)'
+  ).run();
+}
+async function rememberInvoice(env, { invoiceId, plan, email, amount }) {
+  if (!env.DB || !invoiceId) return;
+  try {
+    await ensureInvoiceTable(env);
+    await env.DB.prepare(
+      'INSERT INTO mayar_invoices (invoice_id, plan, email, amount, created_at) VALUES (?,?,?,?,?) '
+      + 'ON CONFLICT(invoice_id) DO UPDATE SET plan=excluded.plan, email=excluded.email, amount=excluded.amount'
+    ).bind(String(invoiceId), plan, email || '', amount || 0, now()).run();
+  } catch (_) { /* jangan ganggu alur utama */ }
+}
+async function lookupInvoicePlan(env, ids) {
+  if (!env.DB || !Array.isArray(ids)) return null;
+  try {
+    await ensureInvoiceTable(env);
+    for (const id of ids) {
+      if (!id) continue;
+      const row = await env.DB.prepare('SELECT plan FROM mayar_invoices WHERE invoice_id = ?')
+        .bind(String(id)).first();
+      if (row && row.plan) return row.plan;
+    }
+  } catch (_) { /* abaikan */ }
+  return null;
+}
 
 // Map plan -> jumlah hari (dari vars)
 function planDays(env, plan) {
@@ -98,12 +132,14 @@ export async function checkout(request, env, url) {
     const redirectUrl = env.MAYAR_REDIRECT_URL || `${new URL(request.url).origin}/billing?paid=1`;
 
     try {
-      const { link } = await createMayarInvoice(env, {
+      const { link, invId } = await createMayarInvoice(env, {
         plan, amount, planName,
         email: session.email,
         name: session.name || '',
         redirectUrl,
       });
+      // Ingat invoice ini sebagai milik TERMINAL (untuk pemisahan akurat di webhook).
+      await rememberInvoice(env, { invoiceId: invId, plan, email: session.email, amount });
       return json({ ok: true, url: link });
     } catch (e) {
       // Invoice gagal (API key salah / Mayar down / format beda) → JANGAN
@@ -179,12 +215,18 @@ async function forwardToGas(env, raw, request) {
 // dengan harga paket terminal pada RENTANG SEMPIT [0.9x .. 1.5x]. Karena harga
 // terminal (mis. 699rb+) jauh di atas produk GAS (10rb–79rb), produk GAS / produk
 // lain TIDAK akan pernah cocok → tidak mengaktifkan langganan terminal.
-async function detectTerminalPlan(env, { productId, amount }) {
+async function detectTerminalPlan(env, { productId, amount, invoiceIds }) {
+  // 0) PALING PASTI: invoice yang DIBUAT terminal sendiri (tak bergantung harga).
+  const byInvoice = await lookupInvoicePlan(env, invoiceIds || []);
+  if (byInvoice) return byInvoice;
+
+  // 1) Product ID terminal (untuk payment link statis / fallback, kalau di-set).
   if (productId != null && productId !== '') {
     if (env.MAYAR_PRODUCT_TAHUNAN && productId == env.MAYAR_PRODUCT_TAHUNAN) return 'tahunan';
     if (env.MAYAR_PRODUCT_6BULAN && productId == env.MAYAR_PRODUCT_6BULAN) return '6bulan';
     if (env.MAYAR_PRODUCT_3BULAN && productId == env.MAYAR_PRODUCT_3BULAN) return '3bulan';
   }
+  // 2) Jaring pengaman: cocokkan NOMINAL dgn harga paket terminal [0.9x..1.5x].
   const amt = parseInt(amount, 10) || 0;
   if (amt > 0) {
     try {
@@ -236,8 +278,12 @@ export async function webhook(request, env, ctx) {
   const productId = pick(data, ['productId', 'product_id', 'productLinkId', 'link_id']);
   const amount = parseInt(pick(data, ['amount', 'total', 'grossAmount']) || '0', 10);
 
-  // 3) Apakah pembayaran ini milik TERMINAL? (berdasar produk/harga terminal)
-  const plan = await detectTerminalPlan(env, { productId, amount });
+  // 3) Apakah pembayaran ini milik TERMINAL? (invoice buatan terminal / produk / harga)
+  const invoiceIds = [
+    pick(data, ['invoiceId', 'invoice_id']),
+    pick(data, ['id', 'transactionId', 'transaction_id', 'paymentId']),
+  ];
+  const plan = await detectTerminalPlan(env, { productId, amount, invoiceIds });
   const isTerminalPayment = !!plan;
 
   // 4) Forward ke GAS HANYA bila BUKAN pembayaran terminal (produk GAS/research,
