@@ -11339,23 +11339,24 @@ body.vl-maxing{overflow:hidden}
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
     const rows = [
-      {label:'Harga (Rp)',      f:a=>a.price,        t:'rp'},
-      {label:'Pendapatan (M)',  f:a=>a.total_revenue,t:'m'},
-      {label:'Laba Bersih (M)', f:a=>a.net_income,   t:'m'},
-      {label:'Margin Laba',     f:a=>(a.total_revenue?a.net_income/a.total_revenue*100:null), t:'pct'},
-      {label:'EPS',             f:a=>a.eps,          t:'d2'},
-      {label:'SPS',             f:a=>a.sps,          t:'d2'},
-      {label:'Ekuitas (M)',     f:a=>a.total_equity, t:'m'},
-      {label:'ROE',             f:a=>a.roe,          t:'pct'},
-      {label:'Book Value',      f:a=>a.bvps,         t:'d2'},
-      {label:'PBV',             f:a=>a.pbv,          t:'d2'},
-      {label:'PER',             f:a=>a.per,          t:'d2'},
-      {label:'PSR',             f:a=>a.psr,          t:'d2'},
+      {label:'Harga (Rp)',      f:a=>a.price,        t:'rp',  ttm:true},
+      {label:'Pendapatan (M)',  f:a=>a.total_revenue,t:'m',   ttm:false},
+      {label:'Laba Bersih (M)', f:a=>a.net_income,   t:'m',   ttm:false},
+      {label:'Margin Laba',     f:a=>(a.total_revenue?a.net_income/a.total_revenue*100:null), t:'pct', ttm:false},
+      {label:'EPS',             f:a=>a.eps,          t:'d2',  ttm:true},
+      {label:'SPS',             f:a=>a.sps,          t:'d2',  ttm:true},
+      {label:'Ekuitas (M)',     f:a=>a.total_equity, t:'m',   ttm:true},
+      {label:'ROE',             f:a=>a.roe,          t:'pct', ttm:true},
+      {label:'Book Value',      f:a=>a.bvps,         t:'d2',  ttm:true},
+      {label:'PBV',             f:a=>a.pbv,          t:'d2',  ttm:true},
+      {label:'PER',             f:a=>a.per,          t:'d2',  ttm:true},
+      {label:'PSR',             f:a=>a.psr,          t:'d2',  ttm:true},
     ];
     const fmtByT = (val,t)=> t==='rp'?fmtRp(val) : t==='m'?fmtM(val) : t==='pct'?fmtPct(val) : fmtD2(val);
     // Perubahan (▲▼) = YoY: dibanding TAHUN SEBELUMNYA (kolom tahun di sebelah kanannya).
     // Lebih valid & intuitif drpd "vs tahun terlama", dan tahan thd anomali data.
     const _livePx = effLast(s).price;
+    const _lyKey = yearsDesc[0];   // tahun annual terbaru (mis. '2025') — basis pembanding TTM/Thn Berjalan
     tbody.innerHTML = rows.map(r=>{
       const cells = cols.map(c=>{
         let val = r.f(c.a);
@@ -11385,6 +11386,22 @@ body.vl-maxing{overflow:hidden}
             if(ratio<=20 && ratio>=0.05){
               const cc = (val-prevVal)/Math.abs(prevVal)*100;
               chg = '<span class="'+(cc>=0?'vl-chg-up':'vl-chg-dn')+'">'+(cc>=0?'▲':'▼')+' '+Math.abs(cc).toFixed(1)+'%</span>';
+            }
+          }
+        } else if((c.key==='tb' || c.key==='q1' || /^Q[1-4]$/.test(c.key)) && ok(val) && val!==0){
+          // TTM / Thn Berjalan → dibandingkan TAHUN ANNUAL TERBARU (mis. 2025).
+          // - Kolom 'tb' (Thn Berjalan, sudah disetahunkan) → % utk SEMUA metrik.
+          // - Kolom kuartal TTM Q1..Q4 → HANYA metrik yg sudah TTM/sebanding (r.ttm).
+          //   Pendapatan/Laba/Margin (kuartalan, belum di-TTM) sengaja tanpa %.
+          const showPct = (c.key==='tb') ? true : !!r.ttm;
+          if(showPct){
+            const baseVal = r.f(s.annual[_lyKey]||{});
+            if(ok(baseVal) && baseVal!==0){
+              const ratio = Math.abs(val/baseVal);
+              if(ratio<=20 && ratio>=0.05){
+                const cc = (val-baseVal)/Math.abs(baseVal)*100;
+                chg = '<span class="'+(cc>=0?'vl-chg-up':'vl-chg-dn')+'">'+(cc>=0?'▲':'▼')+' '+Math.abs(cc).toFixed(1)+'%</span>';
+              }
             }
           }
         }
