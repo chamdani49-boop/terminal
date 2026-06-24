@@ -11069,6 +11069,31 @@ body.vl-maxing{overflow:hidden}
   function annualYears(stock){
     return Object.keys((stock&&stock.annual)||{}).map(Number).filter(y=>!isNaN(y)).sort((a,b)=>a-b).map(String);
   }
+
+  /* ── Basis kuartal TTM (kolom D..G Excel) ──────────────────────────────
+     Tiap kuartal (D=Q1, E=Q2, F=Q3, G=Q4) berisi metrik per-saham/rasio yang
+     SUDAH TTM (EPS/SPS/BVPS/PBV/PER/PSR/ROE/DPS). Basis valuasi memakai nilai
+     itu langsung. Tombol basis dibuat per kuartal yang SUDAH terisi saja —
+     Q3/Q4 muncul otomatis begitu laporannya diisi & Excel di-reupload. */
+  var VL_QMONTH = { Q1:'3/31/', Q2:'6/30/', Q3:'9/30/', Q4:'12/31/' };
+  // Tahun TTM kuartal tahun berjalan = fiscalYear + 1 (mis. 2025 → 2026).
+  function vlTtmYear(s){ const fy=ujFiscalYear(); return ok(fy)?fy+1:new Date().getFullYear(); }
+  // Daftar kuartal yang sudah terisi (punya data), urut Q1..Q4.
+  function vlFilledQuarters(s){
+    const q=(s&&s.quarters)||{};
+    return ['Q1','Q2','Q3','Q4'].filter(function(k){
+      const o=q[k];
+      return o && Object.keys(o).length && (ok(o.eps)||ok(o.price)||ok(o.bvps)||ok(o.total_revenue));
+    });
+  }
+  // Kuartal terakhir yang terisi (default basis "current" lama).
+  function vlLatestQuarter(s){ const f=vlFilledQuarters(s); return f.length?f[f.length-1]:'Q1'; }
+  // Apakah key basis = basis kuartal TTM (Q1..Q4)?
+  function vlIsQBasis(b){ return /^Q[1-4]$/.test(b||''); }
+  // Label panjang: "TTM Q2 2026".
+  function vlQLabelFull(s,k){ return 'TTM '+String(k).toUpperCase()+' '+vlTtmYear(s); }
+  // Label pendek: "Q2'26".
+  function vlQLabelShort(s,k){ return String(k).toUpperCase()+"'"+String(vlTtmYear(s)).slice(2); }
   function latestYear(stock){ const ys=annualYears(stock); return ys[ys.length-1]; }
   function curStock(){ return state.raw && state.raw.stocks[state.code]; }
 
@@ -11290,14 +11315,14 @@ body.vl-maxing{overflow:hidden}
     // Kolom LENGKAP & dibalik: Q1 + TTM dinamis (Q1x4) + semua tahun (apa adanya).
     const cols = [];
     const _q = s.quarters || {};
-    if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'Q1',           a:s.q1 });
+    if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'TTM Q1',         a:s.q1 });
     // Q2/Q3/Q4 — tampil OTOMATIS hanya bila laporan kuartal itu sudah terisi
     // (build membuang kuartal yang masih kosong). Begitu kamu upload Excel dgn
     // kolom F (Q3)/G (Q4) terisi, kolomnya otomatis muncul di sini.
     ['Q2','Q3','Q4'].forEach(function(qn){
-      if(_q[qn] && Object.keys(_q[qn]).length) cols.push({ key:qn, label:qn, a:_q[qn] });
+      if(_q[qn] && Object.keys(_q[qn]).length) cols.push({ key:qn, label:'TTM '+qn, a:_q[qn] });
     });
-    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:vlTtmLabelFull(s), a:s.annualized });
+    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:'Thn Berjalan', a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
     const rows = [
@@ -11366,7 +11391,8 @@ body.vl-maxing{overflow:hidden}
       const bp = ujBasisPrice(s);
       const last = (ok(bp)&&bp>0) ? bp : effLast(s).price;
       const pc = vlUjiCalc(s, win, last);
-      pc._last = last; pc._startYr = ujBasisStartYear(s); pc._isCurrent = (basis==='current');
+      pc._last = last; pc._startYr = ujBasisStartYear(s); pc._isCurrent = (vlIsQBasis(basis) || basis==='current');
+      pc._qbasis = vlIsQBasis(basis) ? basis : (basis==='current' ? vlLatestQuarter(s) : null);
       return pc;
     } finally { _ujBasis = saved; }
   }
@@ -11407,14 +11433,20 @@ body.vl-maxing{overflow:hidden}
   function renderProjection(){
     const s = curStock(); if(!s) return;
     const yrs = annualYears(s); const latest = yrs[yrs.length-1];
-    if(_projBasis!=='current' && !yrs.some(function(y){ return 'Y'+y===_projBasis; })) _projBasis = 'current';
+    // Normalisasi basis: 'current' (lama) → kuartal terakhir terisi; basis kuartal
+    // yang tak lagi terisi → fallback ke kuartal terakhir; selain itu harus tahun valid.
+    // Jika saham tak punya kuartal terisi sama sekali → fallback ke tahun terbaru.
+    const _fq = vlFilledQuarters(s);
+    const _fallback = _fq.length ? _fq[_fq.length-1] : ('Y'+latest);
+    if(_projBasis==='current') _projBasis = _fallback;
+    if(vlIsQBasis(_projBasis) && _fq.indexOf(_projBasis)<0) _projBasis = _fallback;
+    if(!vlIsQBasis(_projBasis) && !yrs.some(function(y){ return 'Y'+y===_projBasis; })) _projBasis = _fallback;
     projBasisButtons(s);
     const scopeEl = document.getElementById('vlProjScope');
-    // TTM label dinamis: "TTM Q<n> <tahun>"
-    const _ttmQ = (function(){ let q=(s&&s.q_label)?String(s.q_label).trim():''; if(!q)q='Q1'; if(!/^q/i.test(q)){const n=q.replace(/[^0-9]/g,'');q='Q'+(n||'1');} return q.toUpperCase(); })();
-    const _ttmYr = (function(){ const fy=ujFiscalYear(); return ok(fy)?fy+1:new Date().getFullYear(); })();
-    const _ttmLabel = 'TTM '+_ttmQ+' '+_ttmYr;
-    const basisLabel = (_projBasis==='current') ? _ttmLabel : _projBasis.replace(/^Y/,'');
+    // TTM label dinamis: "TTM Q<n> <tahun>" (ikut kuartal basis terpilih)
+    const _isQ = vlIsQBasis(_projBasis);
+    const _ttmLabel = _isQ ? vlQLabelFull(s, _projBasis) : vlQLabelFull(s, vlLatestQuarter(s));
+    const basisLabel = _isQ ? _ttmLabel : _projBasis.replace(/^Y/,'');
     if(scopeEl) scopeEl.textContent = basisLabel;
     const chartBasisLbl = document.getElementById('vlChartBasisLabel');
     if(chartBasisLbl) chartBasisLbl.textContent = '· basis ' + basisLabel;
@@ -11780,7 +11812,8 @@ body.vl-maxing{overflow:hidden}
         const basisYr = pm._startYr || qYear;
         let anchor=null;
         if(pm._isCurrent){
-          for(const d of data){ if(d.time.slice(0,7)===qYear+'-03') anchor={time:d.time,value:d.close}; }
+          const _qm = ({Q1:'-03',Q2:'-06',Q3:'-09',Q4:'-12'})[pm._qbasis||'Q1'] || '-03';
+          for(const d of data){ if(d.time.slice(0,7)===qYear+_qm) anchor={time:d.time,value:d.close}; }
         } else {
           // Cari candle terdekat dgn akhir tahun basis
           for(const d of data){ if(d.time.slice(0,7)===basisYr+'-12') anchor={time:d.time,value:d.close}; }
@@ -11920,7 +11953,7 @@ body.vl-maxing{overflow:hidden}
       const fyr = ujFiscalYear(); const qYear = ok(fyr) ? fyr+1 : (new Date().getFullYear());
       let anchorLab;
       if(pm._isCurrent){
-        anchorLab = '3/31/'+qYear;
+        anchorLab = (VL_QMONTH[pm._qbasis||'Q1'] || '3/31/')+qYear;
       } else {
         // Basis tahun penuh: anchor di akhir tahun basis (price_history labels format "M/DD/YYYY")
         const basisYr = pm._startYr || qYear;
@@ -12054,7 +12087,7 @@ body.vl-maxing{overflow:hidden}
   ════════════════════════════════════════════════════════════════ */
   let _cmpData = {};     // key -> objek metode (utk popup)
   let _cmpWacc = null;   // simpan WACC terakhir (utk popup WACC)
-  let _cmpBasis = 'year';// basis data: 'current' (Q1 annualized) atau 'year' (tahun penuh terakhir)
+  let _cmpBasis = 'current';// basis data: kuartal TTM (Q1..Q4, sumber quarters[Qn]) atau 'year' (tahun penuh terakhir)
   let _cmpOverrides = {};// user slider overrides: rf, erp, beta, g5, tg
   let _cmpValChart = null;   // Chart.js instance valuasi historis
 
@@ -12165,12 +12198,13 @@ body.vl-maxing{overflow:hidden}
   function cmpBasis(stock, basis){
     const v=stock.valuation||{}, fy=v.five_year||{}, inp=fy.inputs||{};
     const yrs=annualYears(stock), ly=yrs[yrs.length-1];
-    if(basis==='current'){
-      const o=stock.annualized||{};
-      return { key:'current', label:vlTtmLabel(stock), yr:ly,
+    if(vlIsQBasis(basis) || basis==='current'){
+      const qk = vlIsQBasis(basis) ? basis : vlLatestQuarter(stock);
+      const o=(stock.quarters&&stock.quarters[qk])||stock.annualized||{};
+      return { key:qk, label:vlQLabelFull(stock,qk), yr:ly,
         eps:o.eps, bvps:o.bvps, sps:o.sps, g5:o.eps_growth_5y,
         dps:o.dps, fcf:o.fcf, netDebt:o.net_debt, shares:o.shares,
-        note:'data TTM — Q1 disetahunkan (x4)' };
+        note:'data TTM '+vlQLabelFull(stock,qk)+' (langsung dari laporan kuartalan)' };
     }
     const ay=(stock.annual&&stock.annual[ly])||{};
     return { key:'year', label:String(ly), yr:ly,
@@ -12316,9 +12350,12 @@ body.vl-maxing{overflow:hidden}
     const curWaccPct=(wc.wacc*100);
     const waccRisk=(v2)=>v2<=10?'Konservatif':v2<=13?'Moderat':v2<=16?'Agresif':'Sangat Agresif';
 
+    const _qbtns = vlFilledQuarters(s).map(function(qn){
+      return '<button class="vl-basis-btn'+(bi.key===qn?' active':'')+'" onclick="vlSetCmpBasis(\''+qn+'\')">'+vlQLabelShort(s,qn)+'</button>';
+    }).join('');
     h+='<div class="vl-cmp-basis"><span class="lab">Basis Data</span>'+
        '<div class="vl-basis" style="margin:0">'+
-         '<button class="vl-basis-btn'+(bi.key==='current'?' active':'')+'" onclick="vlSetCmpBasis(\'current\')">'+vlTtmLabel(s)+'</button>'+
+         _qbtns+
          '<button class="vl-basis-btn'+(bi.key==='year'?' active':'')+'" onclick="vlSetCmpBasis(\'year\')">'+bi.yr+'</button>'+
        '</div><span class="src">'+bi.note+'</span></div>';
     h+=_cmpWarnHtml;
@@ -12381,7 +12418,7 @@ body.vl-maxing{overflow:hidden}
          '<td style="text-align:center;white-space:nowrap"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button><button class="vl-shot" onclick="vlShotMethod(\''+m.key+'\')" title="Download screenshot — Terminal Economstock">\u2913</button></td></tr>';
     });
     h+='</tbody></table></div>';
-    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlTtmLabel(s)+'</strong> = Q1 disetahunkan (\xD74), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
+    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlQLabelFull(s, vlIsQBasis(_cmpBasis)?_cmpBasis:vlLatestQuarter(s))+'</strong> = TTM kuartalan (langsung dari laporan, bukan disetahunkan), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
 
     host.innerHTML=h;
 
@@ -12605,7 +12642,7 @@ body.vl-maxing{overflow:hidden}
       const m=(_cmpData||{})[key]; if(!m) return;
       const price=effLast(s).price;
       const biSel=cmpBasis(s,_cmpBasis);
-      const basisLabel=(_cmpBasis==='current') ? vlTtmLabelFull(s) : ('Annual '+biSel.yr); // dinamis ikut basis (Q1/Q2.., tahun ikut data)
+      const basisLabel=(biSel.key!=='year') ? biSel.label : ('Annual '+biSel.yr); // dinamis ikut basis (TTM Q1/Q2.., tahun ikut data)
       const code=s.code;
       const name=(typeof plName==='function'?(plName(code)||''):'');
       const fair=ok(m.fair)?m.fair:null;
@@ -12864,7 +12901,7 @@ body.vl-maxing{overflow:hidden}
     if(md) md.classList.add('show');
   };
   window.vlCloseMethod=function(){ const md=document.getElementById('vlMethodModal'); if(md) md.classList.remove('show'); };
-  window.vlSetCmpBasis=function(b){ _cmpBasis = (b==='current') ? 'current' : 'year'; renderCompare(); };
+  window.vlSetCmpBasis=function(b){ _cmpBasis = (b==='year') ? 'year' : b; renderCompare(); };
 
   /* ── Insight popup per chart panel (headline-first) ── */
   var _vlInsights = {};
@@ -13454,14 +13491,11 @@ body.vl-maxing{overflow:hidden}
   function ujDataBases(stock){
     const yrs = annualYears(stock);                 // ascending
     const latest = yrs[yrs.length-1];
-    const ttmLabel = vlTtmLabel(stock);
-    // Ambil kuartal utk tag
-    let q = (stock && stock.q_label) ? String(stock.q_label).trim() : '';
-    if(!q) q = 'Q1';
-    if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
-    q = q.toUpperCase();
-    const yrFull = '20' + (ttmLabel.split("'")[1] || '');   // "Q1'26" -> "2026"
-    const buttons = [{ key:'current', label: 'TTM '+q+' '+yrFull, tag:'' }];
+    // Basis kuartal TTM — satu tombol per kuartal yang SUDAH terisi (Q1..Q4).
+    // Q3/Q4 muncul sendiri begitu diisi & Excel di-reupload.
+    const buttons = vlFilledQuarters(stock).map(function(qn){
+      return { key:qn, label: vlQLabelFull(stock, qn), tag:'' };
+    });
     yrs.slice(-4).reverse().forEach(y=> buttons.push({ key:'Y'+y, year:y, label:y }));
     const moreYears = yrs.slice(0, -4).reverse();   // tahun lebih lama, terbaru dulu di dropdown
     return { buttons, moreYears, latest, defKey:'Y'+latest };
@@ -13491,15 +13525,22 @@ body.vl-maxing{overflow:hidden}
     // Basis = tahun annual terbaru → pakai fy.inputs apa adanya (override otoritatif menang).
     if(basis === 'Y'+latest) return { inp: (fy.inputs||{}), label: latest+' (terbaru)' };
     let period, prev, label, year;
-    if(basis==='current'){ period=stock.annualized; prev=stock.annual[latest]; label=vlTtmLabel(stock); year=parseInt(latest,10); }
+    const isQ = vlIsQBasis(basis) || basis==='current';
+    if(isQ){
+      const qk = vlIsQBasis(basis) ? basis : vlLatestQuarter(stock);
+      period = (stock.quarters&&stock.quarters[qk]) || stock.annualized || {};
+      prev = stock.annual[latest]; label = vlQLabelFull(stock,qk); year = parseInt(latest,10);
+    }
     else { const y=basis.slice(1); period=stock.annual[y]; const i=yrs.indexOf(y); prev=(i>0)?stock.annual[yrs[i-1]]:null; label=y; year=parseInt(y,10); }
     if(!period) return { inp:(fy.inputs||{}), label: latest+' (terbaru)' };
     const sharesLatest = (stock.annual[latest]||{}).shares;
     const psh = v => (ok(v)&&ok(sharesLatest)&&sharesLatest>0) ? v/sharesLatest : null;
-    // Per-share recalc (terbukti cocok dgn template Excel).
-    const eps  = psh(period.net_income)    || period.eps;
-    const bvps = psh(period.total_equity)  || period.bvps;
-    const sps  = psh(period.total_revenue) || period.sps;
+    // Basis kuartal: EPS/BVPS/SPS di kolom D..G SUDAH TTM (rumus pemilik) → pakai
+    // langsung, JANGAN recalc dari net_income/equity/revenue (yg masih kuartalan).
+    // Basis tahun penuh lama: per-share di-recalc dgn shares_LATEST (cocok template Excel).
+    const eps  = isQ ? (ok(period.eps) ?period.eps :psh(period.net_income))   : (psh(period.net_income)    || period.eps);
+    const bvps = isQ ? (ok(period.bvps)?period.bvps:psh(period.total_equity)) : (psh(period.total_equity)  || period.bvps);
+    const sps  = isQ ? (ok(period.sps) ?period.sps :psh(period.total_revenue)): (psh(period.total_revenue) || period.sps);
     const g=(cur,pr)=> (ok(cur)&&ok(pr)&&pr!==0)? (cur-pr)/pr : null;
     // ROE 5y CAGR (sumber data 'roe' dlm persen → konversi sebelum CAGR).
     const cagrRoe = ()=>{
@@ -13526,11 +13567,10 @@ body.vl-maxing{overflow:hidden}
   function ujBasisPrice(stock){
     const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
     const basis = _ujBasis || ('Y'+latest);
-    if(basis==='current'){
-      // Harga akhir kuartal efektif per saham (dari stock.q_label).
-      // Q1→3/31, Q2→6/30, Q3→9/30, Q4→12/31. Default Q1 jika kosong.
-      const qMap = {Q1:'3/31/',Q2:'6/30/',Q3:'9/30/',Q4:'12/31/'};
-      const prefix = qMap[stock.q_label] || '3/31/';
+    if(vlIsQBasis(basis) || basis==='current'){
+      // Harga akhir kuartal efektif (Q1→3/31, Q2→6/30, Q3→9/30, Q4→12/31) thn berjalan.
+      const qk = vlIsQBasis(basis) ? basis : vlLatestQuarter(stock);
+      const prefix = VL_QMONTH[qk] || '3/31/';
       const fy = ujFiscalYear();
       const p = ok(fy) ? ujPriceOn(prefix+(fy+1)) : null;
       return ok(p) && p>0 ? p : null;
@@ -13544,7 +13584,7 @@ body.vl-maxing{overflow:hidden}
   function ujBasisStartYear(stock){
     const yrs=annualYears(stock); const latest=yrs[yrs.length-1];
     const basis = _ujBasis || ('Y'+latest);
-    if(basis==='current') return parseInt(latest,10) || 0;
+    if(vlIsQBasis(basis) || basis==='current') return parseInt(latest,10) || 0;
     return parseInt(basis.slice(1),10) || 0;
   }
 
