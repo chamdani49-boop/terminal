@@ -39,6 +39,11 @@ SOURCES = [
     ("EmitenNews",        "emitennews.com"),
     ("InvestorTrust",     "investortrust.id"),
     ("Stockwatch",        "stockwatch.id"),
+    ("Katadata",          "katadata.co.id"),
+    ("EmitenTrust",       "emitentrust.com"),
+    ("IDX Channel",       "idxchannel.com"),
+    ("IDN Financials",    "idnfinancials.com"),
+    ("Kabar Bursa",       "kabarbursa.com"),
 ]
 
 UA = ("Mozilla/5.0 (compatible; EconomstockHeadlines/1.0; "
