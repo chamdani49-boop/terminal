@@ -1551,8 +1551,10 @@ select.form-control option{background:var(--card);color:var(--text)}
 .firm-hero-dist .firm-dist-donut-wrap{width:96px;height:96px}
 .firm-hero-dist .firm-dist-legend{flex-direction:column;gap:3px;align-items:center;font-size:10px;margin-top:0}
 @media(max-width:680px){
-  .firm-hero{flex-direction:column-reverse;align-items:flex-start;gap:16px}
-  .firm-hero-dist{align-self:center}
+  /* HP: info firm di ATAS, blok donut DI BAWAH; donut + legend BERSAMPINGAN. */
+  .firm-hero{flex-direction:column;align-items:stretch;gap:16px}
+  .firm-hero-dist{flex-direction:row;align-items:center;justify-content:center;gap:18px;align-self:stretch}
+  .firm-hero-dist .firm-dist-legend{align-items:flex-start;margin-top:0}
 }
 
 /* ── TRACK RECORD: header + 3 kartu sejajar ── */
