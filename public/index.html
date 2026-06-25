@@ -1551,8 +1551,10 @@ select.form-control option{background:var(--card);color:var(--text)}
 .firm-hero-dist .firm-dist-donut-wrap{width:96px;height:96px}
 .firm-hero-dist .firm-dist-legend{flex-direction:column;gap:3px;align-items:center;font-size:10px;margin-top:0}
 @media(max-width:680px){
-  .firm-hero{flex-direction:column-reverse;align-items:flex-start;gap:16px}
-  .firm-hero-dist{align-self:center}
+  /* HP: info firm di ATAS, blok donut DI BAWAH; donut + legend BERSAMPINGAN. */
+  .firm-hero{flex-direction:column;align-items:stretch;gap:16px}
+  .firm-hero-dist{flex-direction:row;align-items:center;justify-content:center;gap:18px;align-self:stretch}
+  .firm-hero-dist .firm-dist-legend{align-items:flex-start;margin-top:0}
 }
 
 /* ── TRACK RECORD: header + 3 kartu sejajar ── */
@@ -2664,7 +2666,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
       <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
       <div class="acct-row"><span class="acct-label">Paket</span><span class="acct-val" id="acctPlan">—</span></div>
-      <div class="acct-row"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
+      <div class="acct-row" id="acctExpiryRow"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
       <a class="acct-action" id="acctAdminLink" href="/admin" style="display:none">⚙️ Dashboard Admin</a>
       <a class="acct-action" href="/billing">↻ Perpanjang / Billing</a>
       <a class="acct-action danger" href="/api/auth/logout">⎋ Logout</a>
@@ -4493,20 +4495,27 @@ function _renderAccount(p) {
   const sub = p.subscription;
   const planMap = { '3bulan': '3 Bulan', '6bulan': '6 Bulan', 'tahunan': 'Tahunan' };
   const stEl = document.getElementById('acctStatus');
-  if (sub && sub.active) {
-    if (stEl) { stEl.textContent = 'Aktif'; stEl.className = 'acct-val badge-aktif'; }
-    set('acctPlan', planMap[sub.plan] || sub.plan || '—');
-    set('acctExpiry', _fmtDateID(sub.expires_at));
-  } else if (p.is_admin) {
-    if (stEl) { stEl.textContent = 'Admin'; stEl.className = 'acct-val'; }
-    set('acctPlan', '—'); set('acctExpiry', '—');
-  } else if (sub) {
-    if (stEl) { stEl.textContent = 'Kedaluwarsa'; stEl.className = 'acct-val badge-expired'; }
-    set('acctPlan', planMap[sub.plan] || sub.plan || '—');
-    set('acctExpiry', _fmtDateID(sub.expires_at));
+  const expRow = document.getElementById('acctExpiryRow');
+  if (p.is_admin) {
+    // Admin = permanen → tidak ada masa aktif. Sembunyikan baris "Masa aktif s/d".
+    if (stEl) { stEl.textContent = 'Admin'; stEl.className = 'acct-val badge-aktif'; }
+    set('acctPlan', 'Permanen');
+    set('acctExpiry', 'Permanen');
+    if (expRow) expRow.style.display = 'none';
   } else {
-    if (stEl) { stEl.textContent = 'Belum berlangganan'; stEl.className = 'acct-val badge-expired'; }
-    set('acctPlan', '—'); set('acctExpiry', '—');
+    if (expRow) expRow.style.display = '';
+    if (sub && sub.active) {
+      if (stEl) { stEl.textContent = 'Aktif'; stEl.className = 'acct-val badge-aktif'; }
+      set('acctPlan', planMap[sub.plan] || sub.plan || '—');
+      set('acctExpiry', _fmtDateID(sub.expires_at));
+    } else if (sub) {
+      if (stEl) { stEl.textContent = 'Kedaluwarsa'; stEl.className = 'acct-val badge-expired'; }
+      set('acctPlan', planMap[sub.plan] || sub.plan || '—');
+      set('acctExpiry', _fmtDateID(sub.expires_at));
+    } else {
+      if (stEl) { stEl.textContent = 'Belum berlangganan'; stEl.className = 'acct-val badge-expired'; }
+      set('acctPlan', '—'); set('acctExpiry', '—');
+    }
   }
   if (!_acctWired) {
     _acctWired = true;
@@ -7458,6 +7467,14 @@ function getFirmSeriesAvg(allRecs) {
   for (const r of allRecs) {
     if (!r.date || !r.code) continue;
 
+    const sugg = (r.suggestion || '').toUpperCase();
+    // NEUTRAL/HOLD: tidak ada tesis arah & tidak ada target take-profit → TIDAK
+    // diskor di rata-rata performa (tetap dihitung di komposisi BUY/NEUTRAL/SELL).
+    if (sugg.includes('NEUTRAL') || sugg.includes('HOLD') || sugg.includes('MARKET')) continue;
+    // SELL/UNDERWEIGHT/dll → call "turun". IDX tak ada short, jadi performa diukur
+    // sebagai AKURASI/loss-dihindari: index dicerminkan (harga turun = index NAIK).
+    const isSell = /SELL|UNDERWEIGHT|UNDERPERFORM|REDUCE/.test(sugg);
+
     // Cari releaseIdx di price_history
     const recYM = String(r.date).slice(0, 7);
     let releaseIdx = -1;
@@ -7474,13 +7491,32 @@ function getFirmSeriesAvg(allRecs) {
     const ageMonths = ph.length - 1 - releaseIdx;
     if (ageMonths < 1 || ageMonths > 24) continue; // filter aktif 1–24 bln
 
-    // Build normalized array: index 0 = 100 (rilis), index k = bulan ke-k
+    // Target & level index saat target tercapai ("di-stop" = sudah take profit).
+    //   BUY  : valid bila target > rilis → tgtIdx = target/rilis ×100  (hit: harga ≥ target)
+    //   SELL : valid bila target < rilis → tgtIdx = (2 − target/rilis) ×100 (hit: harga ≤ target)
+    const target = (r.target_price && r.target_price > 0) ? r.target_price : null;
+    let tgtIdx = null;
+    if (target) {
+      if (!isSell && target > releasePrice) tgtIdx = (target / releasePrice) * 100;
+      else if (isSell && target < releasePrice) tgtIdx = (2 - target / releasePrice) * 100;
+    }
+
+    // Build normalized array: index 0 = 100 (rilis), index k = bulan ke-k.
+    // - Sebelum target tercapai → mengikuti harga (long utk BUY, cermin utk SELL).
+    // - Saat target tercapai → DIBEKUKAN di tgtIdx untuk semua bulan berikutnya
+    //   (gain/loss di-stop; asumsi posisi ditutup di target).
     const norm = [];
+    let frozen = null;
     for (let k = 0; k <= ageMonths; k++) {
       const price = ph[releaseIdx + k][r.code];
-      norm.push(price > 0 ? (price / releasePrice) * 100 : null);
+      if (frozen != null) { norm.push(frozen); continue; }
+      if (!(price > 0)) { norm.push(null); continue; }
+      const rawIdx = isSell ? (2 - price / releasePrice) * 100 : (price / releasePrice) * 100;
+      const hit = tgtIdx != null && (isSell ? price <= target : price >= target);
+      if (hit) { frozen = tgtIdx; norm.push(frozen); }
+      else norm.push(rawIdx);
     }
-    seriesList.push({ norm, ageMonths, code: r.code, suggestion: r.suggestion });
+    seriesList.push({ norm, ageMonths, code: r.code, suggestion: sugg });
   }
 
   if (!seriesList.length) return { avgNorm: [], countPerMonth: [], maxAge: 0, seriesList: [] };

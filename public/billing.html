@@ -114,6 +114,14 @@ a{color:inherit;text-decoration:none}
 .wa-btn:hover{filter:brightness(1.05);color:#fff}
 .wa-btn svg{width:20px;height:20px;fill:currentColor;flex-shrink:0}
 
+/* LINK TOOLS & TELEGRAM — 2 kolom sejajar (HP & PC) */
+.bill-links{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.bill-link{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 12px;box-shadow:var(--shadow-card);color:var(--text);font-weight:700;font-size:14px;line-height:1.25;transition:transform .15s,box-shadow .15s,border-color .15s}
+.bill-link:hover{transform:translateY(-2px);box-shadow:var(--shadow-card-lg);border-color:var(--accent);color:var(--text)}
+.bill-link .ic{font-size:24px;line-height:1}
+.bill-link .sub{font-size:11px;font-weight:600;color:var(--text2)}
+.bill-link.tg:hover{border-color:#229ED9}
+
 /* MOBILE */
 @media(max-width:560px){
   .top-bar{padding:0 14px;gap:10px}
@@ -227,6 +235,19 @@ a{color:inherit;text-decoration:none}
     </a>
   </div>
 
+  <div class="bill-links">
+    <a class="bill-link" href="https://www.economstock.com/p/tools.html" target="_blank" rel="noopener">
+      <span class="ic">🧰</span>
+      <span>Tools</span>
+      <span class="sub">Kumpulan alat bantu investasi</span>
+    </a>
+    <a class="bill-link tg" href="https://t.me/RUANGINVESTOR" target="_blank" rel="noopener">
+      <span class="ic">✈️</span>
+      <span>Gabung Channel Telegram</span>
+      <span class="sub">@RUANGINVESTOR</span>
+    </a>
+  </div>
+
   <div class="trust">
     <span>🔐 Pembayaran terenkripsi</span>
     <span>⚡ Aktivasi otomatis</span>
@@ -270,8 +291,8 @@ document.getElementById('yr').textContent=new Date().getFullYear();
     document.getElementById('acctName').textContent=name;
     document.getElementById('acctEmail').textContent=j.email||'';
     var sub=j.subscription, st=document.getElementById('acctStatus');
-    if(sub&&sub.active){ st.textContent='Aktif'; st.style.color='var(--green)'; }
-    else if(j.is_admin){ st.textContent='Admin'; }
+    if(j.is_admin){ st.textContent='Admin'; }
+    else if(sub&&sub.active){ st.textContent='Aktif'; st.style.color='var(--green)'; }
     else { st.textContent='Belum berlangganan'; st.style.color='var(--red)'; }
     var btn=document.getElementById('acctBtn'), menu=document.getElementById('acctMenu');
     btn.addEventListener('click',function(e){ e.stopPropagation(); menu.classList.toggle('open'); });
