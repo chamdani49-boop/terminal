@@ -285,8 +285,26 @@ export async function webhook(request, env, ctx) {
     return json({ ok: true, test: true });
   }
 
-  const status = (pick(data, ['status', 'paymentStatus', 'transactionStatus']) || event || '').toString().toLowerCase();
-  const isPaid = ['paid', 'success', 'settled', 'capture', 'completed', 'payment.received', 'paymentreceived'].some((s) => status.includes(s) || event.includes(s));
+  // ── Deteksi LUNAS yang KETAT ──────────────────────────────────────────
+  // BUG sebelumnya: pakai .includes() longgar → event/status NON-lunas (invoice
+  // baru dibuat, user pilih metode, pending, dll) bisa keliru dianggap lunas →
+  // langganan aktif PADAHAL belum bayar. Sekarang: cocok TEPAT + tolak semua
+  // sinyal yang jelas BUKAN lunas.
+  const eventRaw  = (payload.event || payload.type || '').toString().toLowerCase().trim();
+  const statusRaw = (pick(data, ['status', 'paymentStatus', 'transactionStatus']) || '').toString().toLowerCase().trim();
+  const status = statusRaw || eventRaw;   // utk pesan skip/log saja
+
+  // Sinyal LUNAS sah dari Mayar (event 'payment.received' = pembayaran diterima).
+  const PAID_EVENTS   = new Set(['payment.received', 'paymentreceived', 'payment_received']);
+  const PAID_STATUSES = new Set(['paid', 'settled', 'success', 'captured', 'capture', 'completed', 'complete']);
+  // Sinyal yang JELAS belum lunas → SELALU tolak (akar bug "aktif sebelum bayar").
+  const NOT_PAID_RX = /(created|pending|unpaid|waiting|await|expir|fail|cancel|void|refund|reminder|draft|requir|processing|initiat|reject|\bopen\b|test)/;
+
+  const isPaid =
+    !NOT_PAID_RX.test(eventRaw) && !NOT_PAID_RX.test(statusRaw) &&
+    (PAID_EVENTS.has(eventRaw) || PAID_STATUSES.has(statusRaw));
+
+  console.log(`[mayar] webhook event="${eventRaw}" status="${statusRaw}" isPaid=${isPaid}`);
 
   const email = pick(data, ['customerEmail', 'customer_email', 'email', 'buyerEmail']);
   const txnId = pick(data, ['id', 'transactionId', 'transaction_id', 'paymentId', 'invoiceId']);

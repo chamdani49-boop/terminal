@@ -78,7 +78,8 @@ export async function listUsersWithSub(env) {
   const admins = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
   const { results } = await db(env).prepare(`
     SELECT u.id, u.email, u.name, u.created_at,
-           s.plan AS plan, s.status AS sub_status, s.expires_at AS expires_at
+           s.plan AS plan, s.status AS sub_status, s.expires_at AS expires_at,
+           s.source AS source, s.mayar_txn_id AS txn
     FROM users u
     LEFT JOIN subscriptions s ON s.id = (
       SELECT id FROM subscriptions WHERE user_id = u.id ORDER BY expires_at DESC LIMIT 1
@@ -97,6 +98,10 @@ export async function listUsersWithSub(env) {
       paket: r.plan || '-',
       berakhir: r.expires_at || null,
       status,
+      source: r.source || null,
+      // Pendapatan riil = langganan dari pembayaran Mayar yang punya txn id.
+      // Grant admin/manual (source!='mayar') TIDAK dihitung sebagai pendapatan.
+      paid: r.source === 'mayar' && !!r.txn,
       is_admin: admins.includes((r.email || '').toLowerCase()),
     };
   });
