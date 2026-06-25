@@ -492,7 +492,7 @@ async function loadUsers(){
     if(r.ok){
       var d=await r.json();
       if(d&&d.users){
-        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,status:u.status,is_admin:u.is_admin};});
+        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,status:u.status,is_admin:u.is_admin,source:u.source||null,paid:!!u.paid};});
         LIVE=true;
         document.getElementById('demoNote').style.display='none';
       }
@@ -507,7 +507,10 @@ function renderStats(){
   var total=USERS.length;
   var aktif=USERS.filter(u=>u.status==='aktif').length;
   var expired=USERS.filter(u=>u.status==='expired').length;
-  var revenue=USERS.filter(u=>u.status==='aktif').reduce((s,u)=>s+(PRICE[u.paket]||0),0);
+  // Estimasi pendapatan = HANYA langganan aktif dari pembayaran Mayar riil
+  // (u.paid). Grant admin/manual & user non-bayar TIDAK dihitung → 0 bila belum
+  // ada yang benar-benar bayar.
+  var revenue=USERS.filter(u=>u.status==='aktif' && u.paid && !u.is_admin).reduce((s,u)=>s+(PRICE[u.paket]||0),0);
   document.getElementById('stTotal').textContent=total;
   document.getElementById('stAktif').textContent=aktif;
   document.getElementById('stExpired').textContent=expired;
