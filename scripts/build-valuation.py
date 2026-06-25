@@ -475,16 +475,18 @@ def five_year_valuation(stock, last_price, warn, override=None):
 
     # Rata-rata multiples & DPR untuk SEMUA window (3/5/7/10), pakai default utk hitung.
     windows = ASSUMPTIONS['avg_windows']
+    # DPR TIDAK dirata-rata — pakai DPR TAHUN TERBARU (keputusan pemilik).
+    dpr = latest_annual(stock, 'dpr')[0]
+    _dpr_r = round(dpr, 4) if dpr is not None else None
     avg_multiples = {
         'pbv': {win: round(avg_over_window(stock, 'pbv', win), 4) if avg_over_window(stock, 'pbv', win) is not None else None for win in windows},
         'per': {win: round(avg_over_window(stock, 'per', win), 4) if avg_over_window(stock, 'per', win) is not None else None for win in windows},
         'psr': {win: round(avg_over_window(stock, 'psr', win), 4) if avg_over_window(stock, 'psr', win) is not None else None for win in windows},
-        'dpr': {win: round(avg_over_window(stock, 'dpr', win), 4) if avg_over_window(stock, 'dpr', win) is not None else None for win in windows},
+        'dpr': {win: _dpr_r for win in windows},   # DPR = tahun terbaru (tak dirata-rata)
     }
     avg_pbv = avg_over_window(stock, 'pbv', w)
     avg_per = avg_over_window(stock, 'per', w)
     avg_psr = avg_over_window(stock, 'psr', w)
-    dpr     = avg_over_window(stock, 'dpr', w)
 
     # ── Override OTORITATIF (dari Excel pemilik via overrides.json) ──
     # Timpa nilai turunan SEBELUM sub-model dihitung, supaya seluruh output
@@ -584,12 +586,13 @@ def five_year_valuation(stock, last_price, warn, override=None):
     combine = (future_value + cagr_blend) / 2
 
     # Potensi price akumulasi sesuai rumus Excel pemilik:
-    # Future Value = blend Annual + Dividen Yield (sudah di atas), Combine = (FV+CAGR)/2,
-    # Potensi(n) = Last × (1 + Combine × n) — ramp pakai COMBINE SAJA.
+    # FutureValue = blend Annual + Dividen Yield ; Combine = (FV+CAGR)/2 ;
+    # Potensi(n) = Last × (1 + (Combine + Dividen Yield) × n) — ramp = Combine + DivYield.
     price_targets = []
     if last_price is not None and last_price > 0:
+        ramp = combine + div_yield
         for yr in range(1, n + 1):
-            pt = last_price * (1 + combine * yr)
+            pt = last_price * (1 + ramp * yr)
             price_targets.append({'year': yr, 'target_price': round(pt),
                                   'gl_pct': round((pt - last_price) / last_price * 100, 2)})
 
@@ -599,7 +602,7 @@ def five_year_valuation(stock, last_price, warn, override=None):
 
     return {
         'applicable': True,
-        'method': 'Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%); FutureValue=blendAnnual+divYield; Potensi=Last×(1+Combine×n)',
+        'method': 'Model 5-tahun multiples (PBV 50% / PER 40% / PSR 10%); FutureValue=blendAnnual+divYield; Potensi=Last×(1+(Combine+DivYield)×n)',
         'base_year': ly, 'last_price': last_price,
         'avg_window_used': w, 'avg_windows_available': windows,
         'avg_multiples': avg_multiples,

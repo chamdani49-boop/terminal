@@ -11253,9 +11253,10 @@ body.vl-maxing{overflow:hidden}
     // Lintasan harga akumulasi sesuai rumus Excel pemilik:
     // Potensi(n) = Last × (1 + Combine × n) — ramp pakai COMBINE SAJA
     // (dividen sudah ikut di Combine via Future Value).
+    // Potensi(n) = Last × (1 + (Combine + Dividen Yield) × n) — ramp = Combine + DivYield.
     const price_targets = [];
     for(let n=1;n<=5;n++){
-      const pt = last*(1 + combine*n);
+      const pt = last*(1 + (combine + dividend_yield)*n);
       price_targets.push({ year:n, target_price:Math.round(pt), gl_pct: last>0?(pt-last)/last*100:null });
     }
 
@@ -13552,7 +13553,7 @@ body.vl-maxing{overflow:hidden}
      vlUjiCalc adalah cermin computeModel yang di-parameter dgn harga
      basis sembarang. Digunakan oleh Ringkasan (projComputeFor).
   ════════════════════════════════════════════════════════════════ */
-  let _ujRamp = 'combine';                 // 'combine' | 'combineDiv' — ramp Potensi Price
+  let _ujRamp = 'combineDiv';              // ramp Potensi Price = Combine + Dividen Yield (rumus pemilik, terkunci)
   let _ujBasis = null;                     // basis data periode: null=tahun annual terbaru, 'current'=TTM(Q1), 'Y2024' dst
   let _ujOvr = {};                         // override input per emiten: {ANTM:{eps:311.58,...}}
 

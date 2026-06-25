@@ -1,25 +1,3 @@
 {
-  "_comment": "Override OTORITATIF per-emiten dari template Excel 'Future Value' milik pemilik. Nilai di sini menimpa hasil hitung otomatis pada blok five_year (inputs + avg_multiples window default) di public/valuation.json, supaya tampilan aplikasi (mis. tombol basis '2025' di tab Uji Data) PERSIS sama dengan Excel. Catatan: deret historis tahunan (annual) tidak diubah, jadi chart tetap memakai data laporan apa adanya. Tambahkan emiten lain dengan pola yang sama bila template-nya tersedia.",
-  "ANTM": {
-    "source": "Sheet final ANTM 2025 (Last Price 3150). Per-share = Profit/Equity/Sales / Shares (24.030 jt). Diverifikasi cocok 100% dgn rumus sheet (Combine 78.89%, MoS 78.45%).",
-    "note": "sps_growth_5y = 25.33% (BUKAN 97.65%; nilai 97.65% di file template lama adalah typo). g_sps = 0.8*25.33% + 0.2*22.33% = 24.73% sesuai sel 'SPS Growth' di sheet.",
-    "inputs": {
-      "eps": 311.58,
-      "sps": 3522.37,
-      "bvps": 1523.09,
-      "roe_annual": 0.2046,
-      "roe_5y": 0.3195,
-      "eps_growth_annual": 0.9765,
-      "eps_growth_5y": 0.4437,
-      "sps_growth_annual": 0.2233,
-      "sps_growth_5y": 0.2533,
-      "dpr": 0.7141
-    },
-    "avg_multiples": {
-      "pbv": 1.76,
-      "per": 14.21,
-      "psr": 1.27,
-      "dpr": 0.7141
-    }
-  }
+  "_comment": "Override OTORITATIF per-emiten (menimpa hasil hitung otomatis blok five_year). KOSONG: sejak rumus tahunan dikunci (avg multiple I-Z, DPR tahun terbaru, EPS dari kolom sumber, ramp = Combine + Dividen Yield), mesin menghitung semua emiten secara seragam tanpa override. Override ANTM lama (dari sheet versi typo) dihapus. Tambahkan emiten di sini HANYA bila benar-benar perlu menimpa hasil hitung."
 }
