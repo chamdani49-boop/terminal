@@ -406,7 +406,10 @@ function parseConsensus(csv, latestPrices, debug = {}) {
   let iDate    = findFz('date', 'tanggal', 'tgl', 'tanggalriset', 'tanggalreview', 'reviewdate', 'tanggalpublikasi');
   const iFirm  = findFz('firmname', 'firm', 'analyst', 'sekuritas', 'broker', 'analis', 'penerbit', 'firmnamesekuritas');
   let iSugg    = findFz('suggestion', 'rec', 'recommendation', 'rating', 'bns', 'rekomendasi', 'call');
-  let iTgt     = findFz('tprice', 'tprice1', 'targetprice', 'pricetarget', 'targetharga', 'hargatarget', 'target', 'tp');
+  // Target price SELALU kolom F (indeks 5) sesuai layout tetap sheet konsensus.
+  // Auto-detect (fuzzy header + inferensi numerik) DIMATIKAN utk kolom ini karena
+  // sering keliru mengambil kolom harga lain.
+  let iTgt     = 5;
   const iPct   = findFz('pctd', 'pct', 'upside', 'pctdelta', 'delta');
 
   // Special-case: header literal "[]" (bracket kosong) — sering dipakai sebagai
@@ -445,9 +448,9 @@ function parseConsensus(csv, latestPrices, debug = {}) {
     }
   }
 
-  // Content-based fallback untuk T.PRICE: cari kolom numerik dengan median > 50
-  // (harga saham IDX biasanya 4-digit, paling kecil 50)
-  if (iTgt < 0 || iTgt === iPct) {
+  // Content-based fallback untuk T.PRICE: DINONAKTIFKAN — target dikunci ke
+  // kolom F (indeks 5). Blok ini dipertahankan hanya sbg referensi (tidak jalan).
+  if (false) {
     const candCols = {};
     for (let r = headerIdx + 1; r < Math.min(rows.length, headerIdx + 200); r++) {
       const row = rows[r];
