@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-06-25T23:15:38+00:00",
+"generated_at": "2026-06-25T23:30:46+00:00",
 "count": 80,
 "items": [
 {
@@ -43,6 +43,12 @@
 "link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQTVNJSDZ6R3JnNzNlVk5lRW1DTGpvU0gydG9HMVJfY3RhdGJvM0I1UHlObW1qOVh6R0JQbmU2cTRIbGM2enpaaVc2VS1fTVNINHNWSHd5YU43bExrdml3ZzlFMjNEUU5qUzRQdm16SW9na2ZXTW5Rb2g5dmJib0hhYjFQOFJsQlhtcDJ4V1A4WFBwemxSNEJDMmtvRzREQTFpY3BudnBEbW5WU2NwRWdxdWZlYzBKVmNZM0xpRkZ4MXgySmZI?oc=5",
 "source": "Bisnis.com",
 "ts": 1782425630
+},
+{
+"title": "IHSG Rawan Koreksi Lanjutan, Saham MEDC-UNVR Bisa Dicermati",
+"link": "https://news.google.com/rss/articles/CBMingFBVV95cUxNU2dZTTREX2p3TFBzMUVraE1YUEw2MF9ldGRWbkJxNFoyaVRheWJCZXhUbXZQM09rTlNkQjNCX2JqZTg5WFFycTNLZWRmLTA0UHRlMDZMV2M5ZTZXcHJxSFgyR25OMlJCVGpzeFpSbnhVUGNHWVNCcUJMa25zeGRVZHgyTjA1dWpaOUI4dGpUMEFwcm9oLWJLdDhwbzY3d9IBowFBVV95cUxNS3loek1CaVU1RUk5eHVTNHR3TUpkaDVNVUVJRERJTEVlM2dCbWxYYkJGRlFIMnJkamdXWVRrZHlZMXhxU2E3LV8tQjdWRzdRSVhnR0k1MlhYUThMTjU2aWkxQzA2LW9qSHdRVGhqQ3ZfZnZpR1hNYlNWa09QdWZWSkJiaVFZMzFXcVVkTERYNkhLMFRDSnQ5UXFfek82ODlXODhJ?oc=5",
+"source": "IDX Channel",
+"ts": 1782425100
 },
 {
 "title": "Pemulangan Jemaah Haji Capai 76%",
@@ -303,6 +309,12 @@
 "ts": 1782365298
 },
 {
+"title": "Tak Bagi Dividen, Nusantara Pelabuhan Handal (PORT) Tetapkan Susunan Pengurus Baru",
+"link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxNOGVDZ3ZjMk1aeExzbHdhN0l1RDBZejlDS04xVzcyX19jM0xvTk44N2x1cVV2Z0JxcGdnM2ZfZy15cTU3Y2piVS1FODRzN000MTVVaC0yU3A4eThuUzZ2T2lNMUhqRUQtU0x2NnYxYWlqV1dmb1k5WkZHWHE0OGV0c0hlM3ZKMDB2RF9iSGNBOXdFaS00QkI1STlvQlZWaUlVNXFGLQ?oc=5",
+"source": "Stockwatch",
+"ts": 1782364629
+},
+{
 "title": "Bahlil Ungkap Alasan Dibalik Listrik Padam Bergilir di Beberapa Daerah",
 "link": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxOOXlXN0pwZlEzN0lpRmE3VG1KN25qZFF0RXAyb1FDaEhYM3RhM2NLakxXdFlWLWZaSWI5N1htbHg0aWNYaHkyT1ViUG9nT2RFX1RaN0lNbkVTWVdjTWVHTTVUS0ZhY2lHaHJuQ3EzcmxpNGFOLU44QjZfb1E4S3lWc0RHZG1uUTNDZWREZ05QdE5mdnNuVGstYmZMYXBVUUdqSXNSbFJJOW5HenpleGpxNk9YZUpZX3JpclJHcUpZNGRnSWt5Tk5jUNIBzgFBVV95cUxQNTlUd09reHl3czFrV0tQYzVOQVZJTVdRNFpMSjZONnd1RGdNNkplQkxXbXhaT1BQbURqTTRSYWV0aGliYnhTalhYbS0xeVlBRFVWbS1WYWhQZy1BTGtWSU5CYm9USFB6VmVCdnNUT3prcWJ3a3Z0Y1VTR013bkdBMHNVd19XbXNRMFhNOTVqd3VWdTZ2NmdCT1VYVkxsb080SUFTQjBMSWJhLW5aWk1VVGRKNEVaOWc0YjYtdThBNXhkRElRRXFPSVU1UGsxQQ?oc=5",
 "source": "CNBC Indonesia",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNZlo1ckFmUlhVbGNVT1MyRG5FWUJDM08yYnZIWHJ3S25lNmF1dHl1OUQ3WnVLbWtyeXlfS1ZLT1ZUU2NBTGtPUUVpZmlncGJnX3BrX3F3NnMxQkVreDdzNlZLM2ZIUWxSM2VMZUd6eFFGaWtvQU9LMTl0c0RESEpkVHNBYko4b3JWV0RsYmRmLVBPVDZMV0lldlNwb2N6MGlDbnBfY2FycThGdjV3VnJlN0JFcw?oc=5",
 "source": "IDN Financials",
 "ts": 1782352800
-},
-{
-"title": "Harga Buyback Emas Antam Anjlok Kamis (25/6) ke Bawah Awal 2026",
-"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPbGtKWWJQVEpKN1k4SVhWWnY3Rk13dmZxR2RYN19VRHg5LTRhb3VZYmNRUXRNZ1dtRVhJWEloTUFNMUNtM3hteFVXV2ZIajBaeDBoSEtkam5fMVVoekhoZGZSY1pOU2RJQTE0UnpRckZuWkd0WDFRejZpcFkwVmZxLWhPaEdQNjZYam5tRTkxSXo4UkJEcE82LTIyb2NRMEx3WHdMZEtBeWJDYVBGZGNKaEZn?oc=5",
-"source": "Bisnis.com",
-"ts": 1782352408
-},
-{
-"title": "Google Suntik Dana Rp1,2 Triliun ke A24 untuk Kembangkan Teknologi AI Perfilman, Picu Pro-Kontra",
-"link": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxPdVdLcnhsZWhsQ0VlSGUzUVlVU2VENUNmX05mbUFIVFdHVEg3ekIxM0FqU09ESXNFUFVTc2picEpCOEJDbmlFRzZFN0kyX04yT3VCY1V0OC04dnQwSzFYbzhnenpCRnN6enVHMkpsVGp1VGpRUEdNaEMxZ095b0FseVNEUDFwcUthMDZUdGhZaDhobXkxUnhyT3c1dl90OG5zc1kxWDRWWUR4anM4S0FaYnJ3TzgzVENxdF9GLTZ6V3BtRHFLTkRyeGt6bG42N3BYSlpiUjUzM1pYb0RTaWhEdXZn?oc=5",
-"source": "Bisnis.com",
-"ts": 1782352196
 }
 ]
 }
