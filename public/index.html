@@ -2664,7 +2664,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
       <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
       <div class="acct-row"><span class="acct-label">Paket</span><span class="acct-val" id="acctPlan">—</span></div>
-      <div class="acct-row"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
+      <div class="acct-row" id="acctExpiryRow"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
       <a class="acct-action" id="acctAdminLink" href="/admin" style="display:none">⚙️ Dashboard Admin</a>
       <a class="acct-action" href="/billing">↻ Perpanjang / Billing</a>
       <a class="acct-action danger" href="/api/auth/logout">⎋ Logout</a>
@@ -4493,20 +4493,27 @@ function _renderAccount(p) {
   const sub = p.subscription;
   const planMap = { '3bulan': '3 Bulan', '6bulan': '6 Bulan', 'tahunan': 'Tahunan' };
   const stEl = document.getElementById('acctStatus');
-  if (sub && sub.active) {
-    if (stEl) { stEl.textContent = 'Aktif'; stEl.className = 'acct-val badge-aktif'; }
-    set('acctPlan', planMap[sub.plan] || sub.plan || '—');
-    set('acctExpiry', _fmtDateID(sub.expires_at));
-  } else if (p.is_admin) {
-    if (stEl) { stEl.textContent = 'Admin'; stEl.className = 'acct-val'; }
-    set('acctPlan', '—'); set('acctExpiry', '—');
-  } else if (sub) {
-    if (stEl) { stEl.textContent = 'Kedaluwarsa'; stEl.className = 'acct-val badge-expired'; }
-    set('acctPlan', planMap[sub.plan] || sub.plan || '—');
-    set('acctExpiry', _fmtDateID(sub.expires_at));
+  const expRow = document.getElementById('acctExpiryRow');
+  if (p.is_admin) {
+    // Admin = permanen → tidak ada masa aktif. Sembunyikan baris "Masa aktif s/d".
+    if (stEl) { stEl.textContent = 'Admin'; stEl.className = 'acct-val badge-aktif'; }
+    set('acctPlan', 'Permanen');
+    set('acctExpiry', 'Permanen');
+    if (expRow) expRow.style.display = 'none';
   } else {
-    if (stEl) { stEl.textContent = 'Belum berlangganan'; stEl.className = 'acct-val badge-expired'; }
-    set('acctPlan', '—'); set('acctExpiry', '—');
+    if (expRow) expRow.style.display = '';
+    if (sub && sub.active) {
+      if (stEl) { stEl.textContent = 'Aktif'; stEl.className = 'acct-val badge-aktif'; }
+      set('acctPlan', planMap[sub.plan] || sub.plan || '—');
+      set('acctExpiry', _fmtDateID(sub.expires_at));
+    } else if (sub) {
+      if (stEl) { stEl.textContent = 'Kedaluwarsa'; stEl.className = 'acct-val badge-expired'; }
+      set('acctPlan', planMap[sub.plan] || sub.plan || '—');
+      set('acctExpiry', _fmtDateID(sub.expires_at));
+    } else {
+      if (stEl) { stEl.textContent = 'Belum berlangganan'; stEl.className = 'acct-val badge-expired'; }
+      set('acctPlan', '—'); set('acctExpiry', '—');
+    }
   }
   if (!_acctWired) {
     _acctWired = true;

@@ -172,19 +172,24 @@ async function handleApi(request, env, url, ctx) {
   if (path === '/api/me' && method === 'GET') {
     const session = await getSession(request, env);
     if (!session) return json({ authenticated: false });
-    let sub = null;
-    try {
-      const s = await getActiveSubscription(env, session.uid);
-      if (s) sub = { plan: s.plan, status: s.status, expires_at: s.expires_at, active: s.expires_at > now() };
-    } catch { /* D1 belum siap */ }
     const admins = (env.ADMIN_EMAILS || '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+    const isAdminUser = admins.includes((session.email || '').toLowerCase());
+    // Admin = akses PERMANEN, tidak punya masa aktif → tidak usah cek langganan.
+    let sub = null;
+    if (!isAdminUser) {
+      try {
+        const s = await getActiveSubscription(env, session.uid);
+        if (s) sub = { plan: s.plan, status: s.status, expires_at: s.expires_at, active: s.expires_at > now() };
+      } catch { /* D1 belum siap */ }
+    }
     let tosAccepted = true;
     try { tosAccepted = await hasAcceptedCurrent(env, session.uid); } catch { tosAccepted = true; }
     return json({
       authenticated: true,
       email: session.email,
       name: session.name || null,
-      is_admin: admins.includes((session.email || '').toLowerCase()),
+      is_admin: isAdminUser,
+      permanent: isAdminUser,   // admin: permanen, tanpa masa aktif
       subscription: sub,
       tos_version: TOS_VERSION,
       tos_accepted: tosAccepted,

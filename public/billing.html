@@ -270,8 +270,8 @@ document.getElementById('yr').textContent=new Date().getFullYear();
     document.getElementById('acctName').textContent=name;
     document.getElementById('acctEmail').textContent=j.email||'';
     var sub=j.subscription, st=document.getElementById('acctStatus');
-    if(sub&&sub.active){ st.textContent='Aktif'; st.style.color='var(--green)'; }
-    else if(j.is_admin){ st.textContent='Admin'; }
+    if(j.is_admin){ st.textContent='Admin'; }
+    else if(sub&&sub.active){ st.textContent='Aktif'; st.style.color='var(--green)'; }
     else { st.textContent='Belum berlangganan'; st.style.color='var(--red)'; }
     var btn=document.getElementById('acctBtn'), menu=document.getElementById('acctMenu');
     btn.addEventListener('click',function(e){ e.stopPropagation(); menu.classList.toggle('open'); });
