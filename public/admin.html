@@ -96,6 +96,17 @@ tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{background:var(--bg2)}
 .u-email{font-weight:600}
 .u-name{color:var(--text2)}
+/* Paginasi tabel user */
+.pager{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 14px;padding:14px 16px;border-top:1px solid var(--border2)}
+.pager-info{font-size:13px;color:var(--text2)}
+.pg-ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.pg-btn,.pg-num{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.pg-btn:hover:not(:disabled),.pg-num:hover{border-color:var(--accent);color:var(--accent)}
+.pg-btn:disabled{opacity:.45;cursor:not-allowed}
+.pg-num{min-width:36px;text-align:center}
+.pg-num.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pg-num.active:hover{color:#fff}
+.pg-ell{color:var(--text3);padding:0 2px}
 .pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 12px;border-radius:var(--radius-pill);white-space:nowrap}
 .pill.plan6{background:var(--bg3);color:var(--accent)}
 .pill.plan12{background:rgba(37,99,235,.12);color:var(--accent2)}
@@ -340,6 +351,7 @@ tbody tr:hover{background:var(--bg2)}
       </table>
     </div>
     <div class="empty" id="emptyMsg">Tidak ada user yang cocok dengan pencarian.</div>
+    <div class="pager" id="pager" style="display:none"></div>
   </div>
 
   <div class="demo-note" id="demoNote">
@@ -471,6 +483,7 @@ var USERS=[
   {email:'eko.prasetyo@gmail.com', nama:'Eko Prasetyo',   paket:'6bulan',  berakhir:'2026-02-28', status:'expired'},
 ];
 var LIVE=false; // true jika data dari API
+var PAGE=1, PAGE_SIZE=100;   // paginasi tabel user (slide 100/halaman)
 var PRICE={'6bulan':997000,'tahunan':1750000};
 var PLAN_LABEL={'3bulan':'3 Bulan','6bulan':'6 Bulan','tahunan':'Tahunan','custom':'Custom','-':'—'};
 var PLAN_DAYS={'6bulan':182,'tahunan':365};
@@ -553,9 +566,16 @@ function render(){
     var matchF=f==='all' || u.status===f;
     return matchQ && matchF;
   });
+  // Paginasi: 100 user / halaman (1–100, 101–200, dst). Berlaku setelah cari/filter.
+  var total=rows.length;
+  var pages=Math.max(1, Math.ceil(total/PAGE_SIZE));
+  if(PAGE>pages) PAGE=pages;
+  if(PAGE<1) PAGE=1;
+  var start=(PAGE-1)*PAGE_SIZE;
+  var pageRows=rows.slice(start, start+PAGE_SIZE);
   var tb=document.getElementById('tbody');
   tb.innerHTML='';
-  rows.forEach(function(u){
+  pageRows.forEach(function(u){
     var planCls=u.paket==='tahunan'?'plan12':'plan6';
     var stLabel={aktif:'🟢 Aktif',expired:'🔴 Kedaluwarsa',suspended:'⛔ Suspended',no_sub:'⚪ Belum langganan'}[u.status]||u.status;
     var stCls=u.status==='no_sub'?'expired':u.status;
@@ -584,11 +604,39 @@ function render(){
     });
     tb.appendChild(tr);
   });
-  document.getElementById('emptyMsg').style.display=rows.length?'none':'block';
+  document.getElementById('emptyMsg').style.display=total?'none':'block';
+  renderPager(total, pages, start, pageRows.length);
 }
 
-document.getElementById('searchInp').addEventListener('input',render);
-document.getElementById('filterSel').addEventListener('change',render);
+// Kontrol paginasi (slide). Hanya tampil bila total > PAGE_SIZE.
+function renderPager(total, pages, start, shown){
+  var pager=document.getElementById('pager');
+  if(!pager) return;
+  if(total<=PAGE_SIZE){ pager.style.display='none'; pager.innerHTML=''; return; }
+  var from=total?start+1:0, to=start+shown;
+  var nums='';
+  for(var p=1;p<=pages;p++){
+    if(pages<=7 || p===1 || p===pages || Math.abs(p-PAGE)<=1){
+      nums+='<button class="pg-num'+(p===PAGE?' active':'')+'" data-pg="'+p+'">'+p+'</button>';
+    } else if(p===PAGE-2 || p===PAGE+2){
+      nums+='<span class="pg-ell">…</span>';
+    }
+  }
+  pager.style.display='flex';
+  pager.innerHTML=
+    '<span class="pager-info">'+from+'–'+to+' dari '+total+' user</span>'+
+    '<div class="pg-ctrls">'+
+      '<button class="pg-btn" id="pgPrev"'+(PAGE<=1?' disabled':'')+'>‹ Sebelumnya</button>'+
+      nums+
+      '<button class="pg-btn" id="pgNext"'+(PAGE>=pages?' disabled':'')+'>Berikutnya ›</button>'+
+    '</div>';
+  var prev=document.getElementById('pgPrev'); if(prev) prev.addEventListener('click',function(){ if(PAGE>1){ PAGE--; render(); } });
+  var next=document.getElementById('pgNext'); if(next) next.addEventListener('click',function(){ if(PAGE<pages){ PAGE++; render(); } });
+  pager.querySelectorAll('.pg-num').forEach(function(b){ b.addEventListener('click',function(){ PAGE=parseInt(b.getAttribute('data-pg'),10)||1; render(); }); });
+}
+
+document.getElementById('searchInp').addEventListener('input',function(){ PAGE=1; render(); });
+document.getElementById('filterSel').addEventListener('change',function(){ PAGE=1; render(); });
 
 // ── Modal perpanjangan (pilih durasi via dropdown) ──
 var _extEmail=null;
