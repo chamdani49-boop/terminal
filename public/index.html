@@ -36,6 +36,9 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<!-- Pinch/zoom utk chart PROYEKSI (Chart.js). Chart harian pakai lightweight-charts (tak terpengaruh). -->
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -10350,6 +10353,10 @@ body.vl-maxing{overflow:hidden}
   /* Tabel proyeksi: muat penuh di layar sempit tanpa geser horizontal */
   #page-valuasi #vlProjTable{table-layout:fixed}
   #page-valuasi #vlProjTable thead th,#page-valuasi #vlProjTable tbody td{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+  /* Kolom "Tahun" dipersempit (cukup utk 4 digit) & "Potensi Price" dipaksa 1 baris
+     supaya "Rp" tidak turun ke bawah angka, dan kolom berikutnya tidak ikut melar. */
+  #page-valuasi #vlProjTable thead th:first-child,#page-valuasi #vlProjTable tbody td:first-child{width:38px;white-space:nowrap}
+  #page-valuasi #vlProjTable thead th:nth-child(2),#page-valuasi #vlProjTable tbody td:nth-child(2){white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
   #page-valuasi #vlProjTableHeader > div{flex-wrap:wrap!important;overflow-x:visible!important;white-space:normal!important}
   #page-valuasi .vl-kpis{grid-template-columns:repeat(2,1fr)}
   /* Proyeksi: basis dropdown + MoS side by side, then 3-col KPI grid */
@@ -12090,13 +12097,13 @@ body.vl-maxing{overflow:hidden}
       const hiAll = Math.max.apply(null, ph.map(r=>r[s.code]).filter(ok).concat(ok(liveP)?[liveP]:[]));
       const reached = proj.map((v,i2)=> (i2!==anchorIdx && ok(v) && v>0 && ok(hiAll) && v<=hiAll));
       const projCol = proj.map((v,i2)=> i2===anchorIdx?COL.purple : (!ok(v)||v<=0)?'rgba(0,0,0,0)' : reached[i2]?COL.green:COL.orange);
-      const projRad = proj.map((v,i2)=> i2===anchorIdx?3 : (ok(v)&&v>0)?5:0);
+      const projRad = proj.map((v,i2)=> i2===anchorIdx?2 : (ok(v)&&v>0)?3:0);
       const projData = proj;
       const allv = histData.concat(projData).filter(ok); const minY = allv.length ? Math.min(...allv)*0.9 : 0;
       const ds = [
         { label:'Harga Saham', data:histData, borderColor:COL.purple, backgroundColor:'rgba(109,40,217,.10)', fill:true, pointRadius:0, borderWidth:2, tension:.25 },
-        { label:'Proyeksi Valuasi 5Th', data:projData, borderColor:COL.orange, backgroundColor:'transparent', borderDash:[6,4], fill:false, spanGaps:true, borderWidth:2.5, tension:.12,
-          pointRadius:projRad, pointHoverRadius:7, pointBackgroundColor:projCol, pointBorderColor:'#fff', pointBorderWidth:1.5 }
+        { label:'Proyeksi Valuasi 5Th', data:projData, borderColor:COL.orange, backgroundColor:'transparent', borderDash:[6,4], fill:false, spanGaps:true, borderWidth:2, tension:.12,
+          pointRadius:projRad, pointHoverRadius:5, pointBackgroundColor:projCol, pointBorderColor:'#fff', pointBorderWidth:1 }
       ];
       vlEnsureRangeBar('vlProj');
       // Sinkronkan tombol range dgn data tersedia: nonaktifkan opsi yg melebihi
@@ -12113,13 +12120,21 @@ body.vl-maxing{overflow:hidden}
           b.classList.toggle('on', r===_eff);
         });
       })();
+      // Zoom 2-jari (pinch) + scroll utk chart PROYEKSI — aktif hanya bila plugin termuat;
+      // jika tidak, chart tetap tampil penuh seperti biasa (degradasi mulus, tanpa error).
+      const _zoomOK = !!window.Hammer && !!(window.Chart && Chart.registry && Chart.registry.plugins && Chart.registry.plugins.get('zoom'));
+      const _nextIdx = labels.lastIndexOf(String(startYr+1));   // posisi titik "tahun depan"
+      const _zoomCfg = _zoomOK ? { zoom:{ wheel:{enabled:true}, pinch:{enabled:true}, mode:'x' }, pan:{ enabled:true, mode:'x' }, limits:{ x:{ minRange:4 } } } : undefined;
+      const _xScale = { ticks:{...TICK, maxRotation:0, autoSkip:true, maxTicksLimit:7, callback:function(val,idx){var l=this.getLabelForValue(val);if(!l)return l;var p=l.split('/');if(p.length>=3){var mm=parseInt(p[0],10);var yy=String(p[2]).slice(-2);return mm+'/'+yy;}return l;}}, grid:{display:false} };
+      // Default: tampil s/d titik tahun depan; tahun berikutnya muncul saat di-zoom/geser.
+      if(_zoomOK && _nextIdx>=0){ _xScale.min = 0; _xScale.max = _nextIdx; }
       mk('vlProj', { type:'line', data:{ labels, datasets:ds }, options:{...base,
-        plugins:{...base.plugins, tooltip:{...base.plugins.tooltip, callbacks:{
+        plugins:{...base.plugins, zoom:_zoomCfg, tooltip:{...base.plugins.tooltip, callbacks:{
           label:ctx=>{ const v=ctx.parsed.y; if(!ok(v)) return ''; const rp='Rp'+Math.round(v).toLocaleString('id-ID');
             if(/proyeksi/i.test(ctx.dataset.label||'')){ const j=ctx.dataIndex-hist.length; if(j>=0) return ' Target '+tYears[j]+': '+rp+(reached[j]?'  ✓ tercapai':''); return ' Basis: '+rp; }
             return ' Harga: '+rp; } }}},
         scales:{ y:{ min:minY, ticks:{...TICK, callback:v=>'Rp'+Math.round(v).toLocaleString('id-ID')}, grid:GRID },
-                 x:{ ticks:{...TICK, maxRotation:0, autoSkip:true, maxTicksLimit:7, callback:function(val,idx){var l=this.getLabelForValue(val);if(!l)return l;var p=l.split('/');if(p.length>=3){var mm=parseInt(p[0],10);var yy=String(p[2]).slice(-2);return mm+'/'+yy;}return l;}}, grid:{display:false} } }} });
+                 x:_xScale }} });
     }
 
     // 7. Dividen per saham (tahunan) + yield
