@@ -3,12 +3,18 @@
 // ─────────────────────────────────────────────────────────────────────────
 import {
   json, redirect, badRequest, randomId, numericCode, sha256Hex, timingSafeEqual,
-  parseCookies, now,
+  parseCookies, serializeCookie, now,
 } from './util.js';
-import { ensureUser, saveEmailCode, getEmailCode, incEmailAttempts, deleteEmailCode, grantTrialIfEligible } from './db.js';
+import { ensureUser, saveEmailCode, getEmailCode, incEmailAttempts, deleteEmailCode, grantTrialIfEligible, rewardReferralIfEligible } from './db.js';
 import { createSessionToken, sessionCookieHeader, tempCookieHeader } from './session.js';
 
 const OAUTH_STATE = 'es_oauth_state';
+const REF_COOKIE = 'es_ref';   // cookie kode ajakan (di-set login.html dari ?ref=)
+
+// Hapus cookie ajakan setelah dikonsumsi (di-set client-side, jadi httpOnly=false).
+function clearRefCookieHeader() {
+  return serializeCookie(REF_COOKIE, '', { maxAge: 0, httpOnly: false, secure: true, sameSite: 'Lax' });
+}
 
 function appUrl(env) { return (env.APP_URL || '').replace(/\/$/, ''); }
 
@@ -67,9 +73,18 @@ export async function googleCallback(request, env, url) {
   const user = await ensureUser(env, profile.email, profile.name || null, profile.picture || null);
   // Trial 30 menit otomatis saat login bila memenuhi syarat (1x per user). Fail-open.
   try { await grantTrialIfEligible(env, user.id, user.email); } catch { /* jangan blokir login */ }
+  // Reward referral: HANYA saat akun BARU dibuat & ada cookie ajakan. Fail-open.
+  const refCode = cookies[REF_COOKIE];
+  if (user && user.is_new && refCode) {
+    try { await rewardReferralIfEligible(env, { newUser: user, refCode, ip: request.headers.get('CF-Connecting-IP') || '' }); }
+    catch { /* jangan blokir login */ }
+  }
   const sessionToken = await createSessionToken(env, { uid: user.id, email: user.email, name: user.name });
   const safeNext = next.startsWith('/') ? next : '/';
-  return redirect(safeNext, 302, { 'Set-Cookie': sessionCookieHeader(sessionToken) });
+  const headers = new Headers({ Location: safeNext });
+  headers.append('Set-Cookie', sessionCookieHeader(sessionToken));
+  if (refCode) headers.append('Set-Cookie', clearRefCookieHeader());   // bersihkan cookie ajakan
+  return new Response(null, { status: 302, headers });
 }
 
 // ── EMAIL CODE: minta kode ──
@@ -127,8 +142,18 @@ export async function emailVerify(request, env) {
   const user = await ensureUser(env, email, null, null);
   // Trial 30 menit otomatis saat login bila memenuhi syarat (1x per user). Fail-open.
   try { await grantTrialIfEligible(env, user.id, user.email); } catch { /* jangan blokir login */ }
+  // Reward referral: HANYA saat akun BARU dibuat & ada cookie ajakan. Fail-open.
+  const cookies = parseCookies(request);
+  const refCode = cookies[REF_COOKIE];
+  if (user && user.is_new && refCode) {
+    try { await rewardReferralIfEligible(env, { newUser: user, refCode, ip: request.headers.get('CF-Connecting-IP') || '' }); }
+    catch { /* jangan blokir login */ }
+  }
   const sessionToken = await createSessionToken(env, { uid: user.id, email: user.email, name: user.name });
-  return json({ ok: true }, 200, { 'Set-Cookie': sessionCookieHeader(sessionToken) });
+  const headers = new Headers({ 'Content-Type': 'application/json; charset=utf-8' });
+  headers.append('Set-Cookie', sessionCookieHeader(sessionToken));
+  if (refCode) headers.append('Set-Cookie', clearRefCookieHeader());
+  return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }
 
 // ── Kirim email via Resend (kalau RESEND_API_KEY di-set) ──

@@ -122,6 +122,13 @@ var params=new URLSearchParams(location.search);
 if(params.get('error')){showMsg('Login Google gagal ('+params.get('error')+'). Coba lagi.','err');}
 var NEXT=params.get('next')||'/';
 
+// Referral: simpan kode ajakan (?ref=) ke cookie agar diklaim saat user MENDAFTAR
+// (login pertama = daftar). Berlaku 30 hari; dibersihkan otomatis setelah dipakai.
+(function(){
+  var rf=params.get('ref');
+  if(rf){ rf=rf.trim().slice(0,32); if(rf){ document.cookie='es_ref='+encodeURIComponent(rf)+'; Max-Age=2592000; Path=/; SameSite=Lax; Secure'; } }
+})();
+
 // Google
 document.getElementById('googleBtn').addEventListener('click',function(){
   location.href='/api/auth/google?next='+encodeURIComponent(NEXT);

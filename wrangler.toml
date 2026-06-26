@@ -41,6 +41,9 @@ ADMIN_EMAILS = "chamdani49@gmail.com"
 # Durasi trial gratis (menit) utk user baru / belum pernah trial, dimulai saat LOGIN.
 # Diset di sini agar aktif begitu deploy. Ubah angkanya untuk ganti durasi; "0" = matikan trial.
 TRIAL_MINUTES = "30"
+# Referral (ajak teman): hari bonus yang didapat REFERRER tiap berhasil mengajak
+# 1 user baru mendaftar. Stacking & kelipatan tanpa batas. "0" = matikan referral.
+REFERRAL_DAYS = "3"
 # Durasi paket (hari)
 PLAN_DAYS_3BULAN = "90"
 PLAN_DAYS_6BULAN = "182"

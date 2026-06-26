@@ -160,6 +160,7 @@ a{color:inherit;text-decoration:none}
         </div>
       </div>
       <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
+      <div class="acct-row" id="acctRefRow" style="display:none"><span class="acct-label">Ajak teman</span><span class="acct-val" id="acctRef">—</span></div>
       <a class="acct-action danger" href="/api/auth/logout">⎋ Logout</a>
     </div>
   </div>
@@ -171,6 +172,20 @@ a{color:inherit;text-decoration:none}
     <h1>Akses Penuh Economstock Terminal</h1>
     <p>Pantau valuasi, konsensus analis, dan insight pasar dalam satu dashboard. Pilih durasi yang paling pas untukmu.</p>
   </section>
+
+  <!-- Ajak Teman + Panduan — 2 kolom sejajar (HP & PC), di atas paket -->
+  <div class="bill-links" style="margin-bottom:22px">
+    <a class="bill-link" id="refBtn" href="#" role="button">
+      <span class="ic">👥</span>
+      <span id="refTitle">Ajak Teman</span>
+      <span class="sub" id="refSub">Bagikan link — tiap teman baru daftar, +3 hari aksesmu</span>
+    </a>
+    <a class="bill-link tg" id="guideBtn" href="#" role="button">
+      <span class="ic">📖</span>
+      <span>Panduan Terminal</span>
+      <span class="sub">Segera hadir</span>
+    </a>
+  </div>
 
   <section class="grid">
     <!-- PAKET 3 BULAN -->
@@ -298,6 +313,46 @@ document.getElementById('yr').textContent=new Date().getFullYear();
     btn.addEventListener('click',function(e){ e.stopPropagation(); menu.classList.toggle('open'); });
     document.addEventListener('click',function(e){ if(!wrap.contains(e.target)) menu.classList.remove('open'); });
   }catch(e){}
+})();
+
+// ── Ajak Teman (referral) + statistik di pop-up akun ──
+(function(){
+  var refBtn=document.getElementById('refBtn');
+  var guideBtn=document.getElementById('guideBtn');
+  var info=null;
+
+  // Panduan Terminal — placeholder sampai kontennya siap.
+  if(guideBtn){ guideBtn.addEventListener('click',function(e){ e.preventDefault(); }); }
+
+  if(refBtn){
+    // Muat kode + statistik (sekali). Kalau belum login → info.authenticated=false.
+    fetch('/api/referral',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
+      info=j;
+      if(j&&j.authenticated){
+        var row=document.getElementById('acctRefRow');
+        var el=document.getElementById('acctRef');
+        if(el) el.textContent=(j.count||0)+' orang · '+(j.days||0)+' hari';
+        if(row) row.style.display='';
+      }
+    }).catch(function(){});
+
+    refBtn.addEventListener('click',async function(e){
+      e.preventDefault();
+      // Belum login → arahkan ke /login (link referral unik per akun).
+      if(!info||!info.authenticated||!info.link){ location.href='/login'; return; }
+      var ok=false;
+      try{ await navigator.clipboard.writeText(info.link); ok=true; }
+      catch(_){
+        try{ var ta=document.createElement('textarea'); ta.value=info.link; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); ok=document.execCommand('copy'); document.body.removeChild(ta); }catch(__){ ok=false; }
+      }
+      var titleEl=document.getElementById('refTitle');
+      var subEl=document.getElementById('refSub');
+      var oldT=titleEl?titleEl.textContent:''; var oldS=subEl?subEl.textContent:'';
+      if(titleEl) titleEl.textContent=ok?'✓ Tersalin!':'Salin manual:';
+      if(subEl) subEl.textContent=info.link;
+      setTimeout(function(){ if(titleEl)titleEl.textContent=oldT; if(subEl)subEl.textContent=oldS; },3000);
+    });
+  }
 })();
 
 // ── Render 3 card billing dari konfigurasi admin (/api/billing-config) ──
