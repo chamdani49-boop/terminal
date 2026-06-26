@@ -67,6 +67,10 @@ QUARTER_MONTH = {'Q1': 3, 'Q2': 6, 'Q3': 9, 'Q4': 12}
 # tertentu (atau emiten baru/reupload dengan layout sedikit beda), nilai tetap ketemu.
 TTM_VALUE_COLS = (8, 9) + tuple(c for c in range(4, 27) if c not in (8, 9))
 
+# Batas WAJAR multiple historis saat dirata-rata: buang tahun outlier (laba≈0 → PER
+# ratusan; ekuitas negatif → PBV/PER negatif) agar rata-rata tidak ketarik anomali.
+MULT_BOUNDS = {'pbv': (0.0, 20.0), 'per': (0.0, 50.0), 'psr': (0.0, 25.0)}
+
 
 # ════════════════════════════ PARSING XLSX ══════════════════════════════════
 def col_to_idx(col):
@@ -424,19 +428,24 @@ def two_latest(stock, field):
     return lv, pv, ly, py
 
 
-def avg_over_window_ttm(stock, field, n):
+def avg_over_window_ttm(stock, field, n, lo=None, hi=None):
     """Rata-rata `field` untuk model TTM: nilai TTM (kolom H) + n tahun annual
-    terakhir = (n+1) angka. Sesuai arahan pemilik (mis. window 5 = TTM + 2021..2025
-    → 6 angka; 3 → 4; 7 → 8; 10 → 11). Lewati None."""
+    terakhir = (n+1) angka (mis. window 5 = TTM + 2021..2025 → 6 angka).
+    Bila lo/hi diberi: nilai di luar (lo, hi] DIBUANG dari rata-rata (outlier),
+    tetapi tahunnya tetap dihitung sebagai bagian window."""
+    def _ok(v):
+        return v is not None and (lo is None or v > lo) and (hi is None or v <= hi)
     vals = []
     tv = (stock.get('annualized') or {}).get(field)
-    if tv is not None:
+    if _ok(tv):
         vals.append(tv)
     cnt = 0
     for y in annual_years_desc(stock):
         v = stock['annual'][y].get(field)
         if v is not None:
-            vals.append(v); cnt += 1
+            cnt += 1
+            if _ok(v):
+                vals.append(v)
         if cnt >= n:
             break
     return (sum(vals) / len(vals)) if vals else None
@@ -586,14 +595,14 @@ def five_year_valuation(stock, last_price, warn, override=None):
     dpr = _ttm('dpr')
     _dpr_r = round(dpr, 4) if dpr is not None else None
     avg_multiples = {
-        'pbv': {win: round(avg_over_window_ttm(stock, 'pbv', win), 4) if avg_over_window_ttm(stock, 'pbv', win) is not None else None for win in windows},
-        'per': {win: round(avg_over_window_ttm(stock, 'per', win), 4) if avg_over_window_ttm(stock, 'per', win) is not None else None for win in windows},
-        'psr': {win: round(avg_over_window_ttm(stock, 'psr', win), 4) if avg_over_window_ttm(stock, 'psr', win) is not None else None for win in windows},
+        'pbv': {win: round(avg_over_window_ttm(stock, 'pbv', win, *MULT_BOUNDS['pbv']), 4) if avg_over_window_ttm(stock, 'pbv', win, *MULT_BOUNDS['pbv']) is not None else None for win in windows},
+        'per': {win: round(avg_over_window_ttm(stock, 'per', win, *MULT_BOUNDS['per']), 4) if avg_over_window_ttm(stock, 'per', win, *MULT_BOUNDS['per']) is not None else None for win in windows},
+        'psr': {win: round(avg_over_window_ttm(stock, 'psr', win, *MULT_BOUNDS['psr']), 4) if avg_over_window_ttm(stock, 'psr', win, *MULT_BOUNDS['psr']) is not None else None for win in windows},
         'dpr': {win: _dpr_r for win in windows},   # DPR = kolom H / TTM (tak dirata-rata)
     }
-    avg_pbv = avg_over_window_ttm(stock, 'pbv', w)
-    avg_per = avg_over_window_ttm(stock, 'per', w)
-    avg_psr = avg_over_window_ttm(stock, 'psr', w)
+    avg_pbv = avg_over_window_ttm(stock, 'pbv', w, *MULT_BOUNDS['pbv'])
+    avg_per = avg_over_window_ttm(stock, 'per', w, *MULT_BOUNDS['per'])
+    avg_psr = avg_over_window_ttm(stock, 'psr', w, *MULT_BOUNDS['psr'])
 
     # ── Override OTORITATIF (dari Excel pemilik via overrides.json) ──
     # Timpa nilai turunan SEBELUM sub-model dihitung, supaya seluruh output
@@ -666,7 +675,7 @@ def five_year_valuation(stock, last_price, warn, override=None):
         if g5 is not None:
             return g5                                  # fallback: angka 5th saja
         return gann                                    # atau angka tahunan saja
-    def _clamp_g(g, lo=-0.5, hi=1.5):
+    def _clamp_g(g, lo=-0.5, hi=0.5):
         return None if g is None else max(lo, min(hi, g))
 
     g_bv  = _clamp_g(_blend_g(roe_5y, roe_ann))
