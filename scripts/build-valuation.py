@@ -62,6 +62,11 @@ BAD_STRINGS = {'#value!', '#n/a', '#div/0!', '#ref!', 'libur', '', 'n/a', '-'}
 QUARTER_COLS  = {'Q1': 4, 'Q2': 5, 'Q3': 6, 'Q4': 7}
 QUARTER_MONTH = {'Q1': 3, 'Q2': 6, 'Q3': 9, 'Q4': 12}
 
+# Urutan kolom pencarian NILAI metrik TTM di section "Key Stats": utamakan H(8) & I(9)
+# (lokasi lazim), lalu D..Z. Tujuannya FLEKSIBEL — bila posisi kolom bergeser di sheet
+# tertentu (atau emiten baru/reupload dengan layout sedikit beda), nilai tetap ketemu.
+TTM_VALUE_COLS = (8, 9) + tuple(c for c in range(4, 27) if c not in (8, 9))
+
 
 # ════════════════════════════ PARSING XLSX ══════════════════════════════════
 def col_to_idx(col):
@@ -128,8 +133,8 @@ def read_workbook(path):
                 col = col_to_idx(m.group(1)); r = int(m.group(2))
                 if col <= 26 and r <= 40:
                     grid[(r, col)] = cell_val(c)
-                elif r <= 400 and col in (3, 4, 8, 9):   # Key Stats TTM (di luar A1:Z40):
-                    grid[(r, col)] = cell_val(c)          # label di C(3); nilai di D/H/I (4/8/9)
+                elif r <= 400 and 3 <= col <= 26:         # Key Stats TTM (di luar A1:Z40):
+                    grid[(r, col)] = cell_val(c)          # label di C; nilai bisa di kolom mana saja
         return grid
 
     return sheets, read_sheet
@@ -178,7 +183,7 @@ def parse_sheet(name, grid):
         if c == 3 and v is not None:
             key = _ttm_metric(str(v).strip())
             if key and key not in ttm:              # set sekali, dari baris yg terisi
-                for vc in (8, 9, 4):                # H, I, D — kolom pertama yang terisi
+                for vc in TTM_VALUE_COLS:           # cari di SEMUA kolom (utamakan H,I) → fleksibel
                     val = to_number(grid.get((r, vc)))
                     if val is not None and val != 0:   # 0 = placeholder Excel → anggap kosong
                         ttm[key] = val
