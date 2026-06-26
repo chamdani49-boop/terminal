@@ -49,6 +49,10 @@ SOURCES = [
 UA = ("Mozilla/5.0 (compatible; EconomstockHeadlines/1.0; "
       "+https://github.com/chamdani49-boop/terminal)")
 
+# Judul "sampah" yang kadang ke-scrape dari halaman indeks/kategori portal
+# (mis. Katadata sering memunculkan "Indeks Semua Kategori"). Dibuang dari feed.
+JUNK_TITLE_RE = re.compile(r"indeks\s+semua\s+kategori", re.I)
+
 
 def gnews_url(domain: str) -> str:
     q = f"site:{domain} when:2d"
@@ -75,6 +79,8 @@ def parse_feed(xml_bytes: bytes, source: str) -> list:
         title = (item.findtext("title") or "").strip()
         link = (item.findtext("link") or "").strip()
         if not title or not link:
+            continue
+        if JUNK_TITLE_RE.search(title):      # buang judul indeks/kategori (mis. Katadata)
             continue
         pub = item.findtext("pubDate")
         try:
@@ -126,7 +132,8 @@ def main() -> int:
             by_key[k] = it
 
     cutoff = int(time.time()) - RETENTION_DAYS * 86400
-    merged = [it for it in by_key.values() if it.get("ts", 0) >= cutoff]
+    merged = [it for it in by_key.values()
+              if it.get("ts", 0) >= cutoff and not JUNK_TITLE_RE.search(it.get("title", ""))]
     merged.sort(key=lambda x: x.get("ts", 0), reverse=True)
     merged = merged[:MAX_ITEMS]
 
