@@ -73,6 +73,38 @@ export async function txnAlreadyProcessed(env, txnId) {
   return !!row;
 }
 
+// ── TRIAL (sekali per user, dimulai saat LOGIN bila memenuhi syarat) ──
+// Memberi langganan 'trial' selama TRIAL_MINUTES menit JIKA:
+//   (1) user belum punya langganan aktif (berbayar/admin/trial berjalan), DAN
+//   (2) hak trial belum pernah dipakai (users.trial_used = 0).
+// Penanda trial_used diklaim ATOMIK (UPDATE ... WHERE trial_used=0) agar tidak
+// dobel saat login bersamaan. Durasi via env TRIAL_MINUTES (default 30; 0/invalid
+// → trial dimatikan). FAIL-SAFE: bila kolom trial_used belum ada (migration belum
+// dijalankan) atau D1 error, fungsi diam-diam tidak memberi trial & TIDAK
+// mengganggu proses login.
+export async function grantTrialIfEligible(env, userId) {
+  const raw = env.TRIAL_MINUTES;
+  const mins = (raw === undefined || raw === null || String(raw).trim() === '') ? 30 : parseInt(raw, 10);
+  if (!Number.isFinite(mins) || mins <= 0) return null;          // trial dimatikan
+  try {
+    // Punya langganan aktif? → tak perlu trial, & JANGAN konsumsi hak trial
+    // (supaya saat langganan expired nanti dia tetap berhak dapat trial).
+    const active = await getActiveSubscription(env, userId);
+    if (active) return null;
+    // Klaim hak trial secara atomik: hanya berhasil bila trial_used masih 0.
+    const t = now();
+    const claim = await db(env).prepare('UPDATE users SET trial_used = 1, updated_at = ? WHERE id = ? AND trial_used = 0')
+      .bind(t, userId).run();
+    if (!claim || !claim.meta || claim.meta.changes === 0) return null;  // sudah pernah trial / user tak ada
+    const id = randomId(16);
+    await db(env).prepare('INSERT INTO subscriptions (id, user_id, plan, status, started_at, expires_at, source, mayar_txn_id, created_at) VALUES (?,?,?,?,?,?,?,?,?)')
+      .bind(id, userId, 'trial', 'active', t, t + mins * 60, 'trial', null, t).run();
+    return getLatestSubscription(env, userId);
+  } catch {
+    return null;   // mis. kolom trial_used belum ada → lewati dengan aman
+  }
+}
+
 // ── ADMIN: daftar user + langganan terbaru ──
 export async function listUsersWithSub(env) {
   const admins = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
