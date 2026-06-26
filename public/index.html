@@ -10776,7 +10776,7 @@ body.vl-maxing{overflow:hidden}
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note"><strong>Q1</strong> = kuartal terakhir · <strong class="vl-ttm-note">Thn Berjalan = TTM</strong> (12 bulan terakhir) · tahun penuh (2025…2008). Klik tombol <strong>i</strong> di judul untuk penjelasan TTM. Perubahan ▲▼: kolom tahun = vs tahun sebelumnya, TTM = vs tahun penuh terakhir · nilai uang dalam Miliar Rupiah · geser tabel untuk tahun lama.</p>
+        <p class="vl-note"><strong>Q1</strong> = kuartal terakhir · <strong class="vl-ttm-note">TTM (tahun berjalan)</strong> = 12 bulan terakhir · tahun penuh (2025…2008). Klik tombol <strong>i</strong> di judul untuk penjelasan TTM. Perubahan ▲▼: kolom tahun = vs tahun sebelumnya, TTM = vs tahun penuh terakhir · nilai uang dalam Miliar Rupiah · geser tabel untuk tahun lama.</p>
       </div>
     </div>
 
@@ -11362,17 +11362,23 @@ body.vl-maxing{overflow:hidden}
     const tbody = document.querySelector('#vlFundTable tbody');
     if(!head || !tbody) return;
     const yearsDesc = annualYears(s).slice().reverse();   // terbaru → terlama (…→2008)
-    // Kolom LENGKAP & dibalik: Q1 + TTM dinamis (Q1x4) + semua tahun (apa adanya).
     const cols = [];
     const _q = s.quarters || {};
-    if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'TTM Q1',         a:s.q1 });
-    // Q2/Q3/Q4 — tampil OTOMATIS hanya bila laporan kuartal itu sudah terisi
-    // (build membuang kuartal yang masih kosong). Begitu kamu upload Excel dgn
-    // kolom F (Q3)/G (Q4) terisi, kolomnya otomatis muncul di sini.
+    // Sebuah kolom dianggap BERISI bila ada minimal satu metrik fundamental terisi
+    // (harga diabaikan, karena kolom 'tahun berjalan' selalu diisi harga live). Kolom
+    // yang kosong otomatis disembunyikan.
+    const _FUND_KEYS = ['total_revenue','net_income','total_equity','eps','sps','bvps'];
+    const _hasVals = (a)=> !!a && _FUND_KEYS.some(k=> a[k]!=null && a[k]!==0);
+    // "Tahun berjalan" = tahun annual terbaru + 1 (mis. 2025 → "TTM 2026").
+    const _runYr = yearsDesc.length ? (parseInt(yearsDesc[0],10)+1) : new Date().getFullYear();
+    // Kuartal Q1..Q4 — tampil OTOMATIS & lengkap, HANYA yang sudah terisi (label "Q1".."Q4").
+    // Begitu Excel diupload dgn Q3 (kolom F) / Q4 (kolom G) terisi, kolomnya muncul sendiri.
+    if(_hasVals(s.q1)) cols.push({ key:'q1', label:'Q1', a:s.q1 });
     ['Q2','Q3','Q4'].forEach(function(qn){
-      if(_q[qn] && Object.keys(_q[qn]).length) cols.push({ key:qn, label:qn, a:_q[qn] });
+      if(_hasVals(_q[qn])) cols.push({ key:qn, label:qn, a:_q[qn] });
     });
-    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:'Thn Berjalan', a:s.annualized });
+    // "TTM <tahun berjalan>" — disembunyikan bila kosong (mis. Q1..Q4 belum ada data).
+    if(_hasVals(s.annualized)) cols.push({ key:'tb', label:'TTM '+_runYr, a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
     const rows = [
@@ -12332,19 +12338,19 @@ body.vl-maxing{overflow:hidden}
     // 5) PBV (rata-rata historis × BVPS)
     const pbvM=(am.pbv||{})[win];
     add({key:'pbv',name:'PBV (Rata² '+win+'Th)',grp:'Relatif',fair:(ok(pbvM)&&ok(bvps))?pbvM*bvps:null,cons:true,
-      short:'Harga wajar = rata-rata PBV historis ('+win+' tahun) × nilai buku per saham (BVPS) pada basis terpilih. Mengasumsikan saham kembali ke valuasi rata-ratanya.',
+      short:'Harga wajar = rata-rata PBV historis (nilai TTM + '+win+' tahun; tahun outlier dibuang) × nilai buku per saham (BVPS) pada basis terpilih. Mengasumsikan saham kembali ke valuasi rata-ratanya.',
       rows:[['Rata² PBV '+win+'Th',fmtX(pbvM)],['BVPS',fmtRp(bvps)],['PBV sekarang',ok(fund&&fund.pbv)?fmtX(fund.pbv):'-']]});
 
     // 6) PER (rata-rata historis × EPS)
     const perM=(am.per||{})[win];
     add({key:'per',name:'PER (Rata² '+win+'Th)',grp:'Relatif',fair:(ok(perM)&&ok(eps))?perM*eps:null,cons:true,
-      short:'Harga wajar = rata-rata PER historis ('+win+' tahun) × laba per saham (EPS) pada basis terpilih. Sensitif terhadap outlier laba; bandingkan dengan metode lain.',
+      short:'Harga wajar = rata-rata PER historis (nilai TTM + '+win+' tahun; tahun outlier laba≈0 dibuang) × laba per saham (EPS) pada basis terpilih. Sensitif terhadap outlier laba; bandingkan dengan metode lain.',
       rows:[['Rata² PER '+win+'Th',fmtX(perM)],['EPS',fmtRp(eps)],['PER sekarang',ok(fund&&fund.per)?fmtX(fund.per):'-']]});
 
     // 7) PSR (rata-rata historis × SPS)
     const psrM=(am.psr||{})[win];
     add({key:'psr',name:'PSR (Rata² '+win+'Th)',grp:'Relatif',fair:(ok(psrM)&&ok(sps))?psrM*sps:null,cons:true,
-      short:'Harga wajar = rata-rata Price-to-Sales historis ('+win+' tahun) × penjualan per saham (SPS) pada basis terpilih. Berguna saat laba fluktuatif/negatif.',
+      short:'Harga wajar = rata-rata Price-to-Sales historis (nilai TTM + '+win+' tahun; tahun outlier dibuang) × penjualan per saham (SPS) pada basis terpilih. Berguna saat laba fluktuatif/negatif.',
       rows:[['Rata² PSR '+win+'Th',fmtX(psrM)],['SPS',fmtRp(sps)]]});
 
     // 8) Earnings Power (EPS ÷ WACC)
@@ -12495,7 +12501,7 @@ body.vl-maxing{overflow:hidden}
          '<td style="text-align:center;white-space:nowrap"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button><button class="vl-shot" onclick="vlShotMethod(\''+m.key+'\')" title="Download screenshot — Terminal Economstock">\u2913</button></td></tr>';
     });
     h+='</tbody></table></div>';
-    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlQLabelFull(s, vlIsQBasis(_cmpBasis)?_cmpBasis:vlLatestQuarter(s))+'</strong> = TTM disetahunkan (kolom H, sesuai mesin valuasi; EPS dihitung dari laba/saham), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
+    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlQLabelFull(s, vlIsQBasis(_cmpBasis)?_cmpBasis:vlLatestQuarter(s))+'</strong> = TTM (12 bulan terakhir, sesuai mesin valuasi), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
 
     host.innerHTML=h;
 
@@ -12852,7 +12858,7 @@ body.vl-maxing{overflow:hidden}
         '<p>Bedanya dengan sekadar "disetahunkan": TTM <strong>tidak</strong> hanya mengalikan 1 kuartal × 4 (yang bisa menyesatkan bila satu kuartal kebetulan sangat kuat/lemah). TTM memakai angka <strong>nyata</strong> 12 bulan, jadi lebih adil & stabil.</p>'+
         '<table class="vl-mini">'+
         row('Kolom <strong>Q1</strong>','Laporan kuartal terakhir apa adanya (±3 bulan).')+
-        row('Kolom <strong>Thn Berjalan</strong>','TTM — gabungan 12 bulan terakhir. Paling update.')+
+        row('Kolom <strong>TTM (tahun berjalan)</strong>','Gabungan 12 bulan terakhir. Paling update.')+
         row('Kolom <strong>tahun</strong> (2025…)','Laporan tahunan penuh (tutup buku Desember).')+
         '</table>'+
         '<p style="margin-top:8px">EPS, SPS, dan ROE di kolom <strong>"Thn Berjalan"</strong> memakai basis TTM ini — <strong>dan inilah dasar perhitungan nilai wajar</strong> di tab Perbandingan. Memakai TTM membuat valuasi lebih <strong>konservatif & bijak</strong> (mencerminkan 12 bulan nyata, bukan proyeksi optimistis dari satu kuartal).</p>'+
@@ -12890,18 +12896,17 @@ body.vl-maxing{overflow:hidden}
     }
     if(key==='window'){
       h ='<h3>Window Rata-rata Multiple</h3>'+
-         '<p>Tombol <strong>3 / 5 / 7 / 10 Th</strong> menentukan <strong>berapa tahun ke belakang</strong> data rasio valuasi dirata-rata.</p>'+
-         '<p>Contoh: <strong>5 Th</strong> = rata-rata PBV, PER, PSR, dan DPR dari 5 tahun terakhir.</p>'+
+         '<p>Tombol <strong>3 / 5 / 7 / 10 Th</strong> menentukan <strong>berapa tahun ke belakang</strong> rasio valuasi dirata-rata. Tiap window memakai <strong>nilai TTM (tahun berjalan) + N tahun penuh</strong> (mis. 5 Th = TTM + 5 tahun = 6 angka).</p>'+
+         '<p>Contoh: <strong>5 Th</strong> = rata-rata PBV, PER, PSR dari nilai TTM + 5 tahun terakhir. Tahun outlier (mis. laba mendekati nol → PER ratusan, atau ekuitas negatif) <strong>dibuang</strong> agar rata-rata wajar.</p>'+
          '<h4 style="margin-top:10px">Apa yang berubah saat ganti window?</h4>'+
          '<table class="vl-mini">'+
-         row('Rata-rata PBV/PER/PSR','Dihitung ulang sesuai jumlah tahun yang dipilih')+
-         row('Rata-rata DPR','Ikut menyesuaikan')+
+         row('Rata-rata PBV/PER/PSR','Dihitung ulang: nilai TTM + N tahun annual')+
          row('Target harga 5 tahun','Berubah (per-share × multiple baru)')+
          row('Combine Return & CAGR','Berubah mengikuti target harga baru')+
-         row('Dividen Yield','Berubah (DPR baru × EPS ÷ harga)')+
          row('Margin of Safety','Berubah mengikuti target baru')+
          row('Nilai Wajar (PBV/PER/PSR)','Berubah di tab Perbandingan')+
          '</table>'+
+         '<p style="margin-top:8px;color:var(--text3);font-size:11px"><strong>DPR &amp; Dividen Yield TIDAK terpengaruh window</strong> — DPR diambil dari TTM (kolom H), tidak dirata-rata; yield = DPR × EPS(TTM) ÷ harga.</p>'+
          '<h4 style="margin-top:10px">Kapan pakai yang mana?</h4>'+
          '<table class="vl-mini">'+
          row('<strong>3 Th</strong>','Sensitif ke kondisi terbaru. Cocok untuk emiten yang berubah cepat (turnaround, re-rating).')+
