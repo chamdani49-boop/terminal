@@ -10769,14 +10769,14 @@ body.vl-maxing{overflow:hidden}
     <!-- ===== TAB: FUNDAMENTAL ===== -->
     <div id="vl-tab-fundamental" class="vl-tc">
       <div class="card">
-        <div class="card-title">Data Fundamental Tahunan</div>
+        <div class="card-title">Data Fundamental Tahunan <button class="vl-iq" onclick="vlMethodInfo('ttm')" style="vertical-align:middle;margin-left:6px">i</button></div>
         <div class="vl-tw">
           <table class="vl-table" id="vlFundTable">
             <thead id="vlFundHead"><tr><th>Metrik</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note">Kolom lengkap & dibalik: <strong>Q1</strong> · <strong class="vl-ttm-note">TTM</strong> (Q1×4) · lalu tahun terbaru → terlama (…2008). Perubahan (▲▼) relatif terhadap tahun <strong>paling kanan</strong> (terlama) · nilai uang dalam Miliar Rupiah · geser tabel ke kanan untuk lihat tahun lama.</p>
+        <p class="vl-note"><strong>Q1</strong> = kuartal terakhir · <strong class="vl-ttm-note">Thn Berjalan = TTM</strong> (12 bulan terakhir) · tahun penuh (2025…2008). Klik tombol <strong>i</strong> di judul untuk penjelasan TTM. Perubahan ▲▼: kolom tahun = vs tahun sebelumnya, TTM = vs tahun penuh terakhir · nilai uang dalam Miliar Rupiah · geser tabel untuk tahun lama.</p>
       </div>
     </div>
 
@@ -11370,7 +11370,7 @@ body.vl-maxing{overflow:hidden}
     // (build membuang kuartal yang masih kosong). Begitu kamu upload Excel dgn
     // kolom F (Q3)/G (Q4) terisi, kolomnya otomatis muncul di sini.
     ['Q2','Q3','Q4'].forEach(function(qn){
-      if(_q[qn] && Object.keys(_q[qn]).length) cols.push({ key:qn, label:'TTM '+qn, a:_q[qn] });
+      if(_q[qn] && Object.keys(_q[qn]).length) cols.push({ key:qn, label:qn, a:_q[qn] });
     });
     if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:'Thn Berjalan', a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
@@ -12846,6 +12846,19 @@ body.vl-maxing{overflow:hidden}
     const s=curStock(); const price=s?effLast(s).price:null;
     const row=(a,b)=>'<tr><td>'+a+'</td><td>'+b+'</td></tr>';
     let h='';
+    if(key==='ttm'){
+      h='<h3>Apa itu "Thn Berjalan" (TTM)?</h3>'+
+        '<p><strong>TTM = Trailing Twelve Months = kinerja 12 bulan terakhir.</strong> Dihitung dengan menjumlahkan <strong>4 kuartal terakhir</strong> yang sudah dilaporkan emiten.</p>'+
+        '<p>Bedanya dengan sekadar "disetahunkan": TTM <strong>tidak</strong> hanya mengalikan 1 kuartal × 4 (yang bisa menyesatkan bila satu kuartal kebetulan sangat kuat/lemah). TTM memakai angka <strong>nyata</strong> 12 bulan, jadi lebih adil & stabil.</p>'+
+        '<table class="vl-mini">'+
+        row('Kolom <strong>Q1</strong>','Laporan kuartal terakhir apa adanya (±3 bulan).')+
+        row('Kolom <strong>Thn Berjalan</strong>','TTM — gabungan 12 bulan terakhir. Paling update.')+
+        row('Kolom <strong>tahun</strong> (2025…)','Laporan tahunan penuh (tutup buku Desember).')+
+        '</table>'+
+        '<p style="margin-top:8px">EPS, SPS, dan ROE di kolom <strong>"Thn Berjalan"</strong> memakai basis TTM ini — <strong>dan inilah dasar perhitungan nilai wajar</strong> di tab Perbandingan. Memakai TTM membuat valuasi lebih <strong>konservatif & bijak</strong> (mencerminkan 12 bulan nyata, bukan proyeksi optimistis dari satu kuartal).</p>'+
+        '<p style="color:var(--text3);font-size:11px">Catatan: laba & EPS TTM memakai laba yang menjadi <strong>hak pemegang saham</strong> (tanpa porsi minoritas), sesuai standar perhitungan EPS.</p>';
+      box.innerHTML=h; if(md) md.classList.add('show'); return;
+    }
     if(key==='projgl'){
       h='<h3>Tabel Proyeksi G&L</h3>'+
         '<p>Tabel ini menampilkan <strong>potensi harga</strong> saham di tiap tahun proyeksi berdasarkan model valuasi (basis terpilih).</p>'+

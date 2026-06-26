@@ -62,6 +62,11 @@ BAD_STRINGS = {'#value!', '#n/a', '#div/0!', '#ref!', 'libur', '', 'n/a', '-'}
 QUARTER_COLS  = {'Q1': 4, 'Q2': 5, 'Q3': 6, 'Q4': 7}
 QUARTER_MONTH = {'Q1': 3, 'Q2': 6, 'Q3': 9, 'Q4': 12}
 
+# Urutan kolom pencarian NILAI metrik TTM di section "Key Stats": utamakan H(8) & I(9)
+# (lokasi lazim), lalu D..Z. Tujuannya FLEKSIBEL — bila posisi kolom bergeser di sheet
+# tertentu (atau emiten baru/reupload dengan layout sedikit beda), nilai tetap ketemu.
+TTM_VALUE_COLS = (8, 9) + tuple(c for c in range(4, 27) if c not in (8, 9))
+
 
 # ════════════════════════════ PARSING XLSX ══════════════════════════════════
 def col_to_idx(col):
@@ -128,6 +133,8 @@ def read_workbook(path):
                 col = col_to_idx(m.group(1)); r = int(m.group(2))
                 if col <= 26 and r <= 40:
                     grid[(r, col)] = cell_val(c)
+                elif r <= 400 and 3 <= col <= 26:         # Key Stats TTM (di luar A1:Z40):
+                    grid[(r, col)] = cell_val(c)          # label di C; nilai bisa di kolom mana saja
         return grid
 
     return sheets, read_sheet
@@ -153,6 +160,34 @@ def parse_sheet(name, grid):
             period = col_period.get(col)
             if period and re.match(r'^\d{4}$', period):
                 annual.setdefault(period, {})[field] = to_number(grid.get((row, col)))
+    # ── TTM RIIL dari section "Key Stats" (baris BERVARIASI per saham → dicari via
+    #    LABEL di kolom C; nilainya bisa di kolom H/I/D). Ini basis "tahun berjalan"
+    #    yang lebih bijak = 12 bulan terakhir nyata (bukan run-rate Q1×4).
+    #    Label bervariasi antar-batch Excel → cocokkan beberapa varian:
+    #      EPS     : "EPS - TTM (Qx)"        | "Current EPS (TTM)"
+    #      NI      : "Net Income - TTM (Qx)" | "Net Income (TTM)"
+    #      Revenue : "Revenue - TTM (Qx)"    | "Revenue (TTM)"
+    #      ROE     : "Return on Equity (TTM)"  (fraksi → ×100 saat dipakai)
+    def _ttm_metric(lbl):
+        if re.match(r'^EPS - TTM \(Q[1-4]\)$', lbl) or lbl == 'Current EPS (TTM)':
+            return 'eps'
+        if re.match(r'^Net Income - TTM \(Q[1-4]\)$', lbl) or lbl == 'Net Income (TTM)':
+            return 'net_income'
+        if re.match(r'^Revenue - TTM \(Q[1-4]\)$', lbl) or lbl == 'Revenue (TTM)':
+            return 'total_revenue'
+        if lbl == 'Return on Equity (TTM)':
+            return 'roe'
+        return None
+    ttm = {}
+    for (r, c), v in list(grid.items()):
+        if c == 3 and v is not None:
+            key = _ttm_metric(str(v).strip())
+            if key and key not in ttm:              # set sekali, dari baris yg terisi
+                for vc in TTM_VALUE_COLS:           # cari di SEMUA kolom (utamakan H,I) → fleksibel
+                    val = to_number(grid.get((r, vc)))
+                    if val is not None and val != 0:   # 0 = placeholder Excel → anggap kosong
+                        ttm[key] = val
+                        break
     code_in_sheet = grid.get((1, 3))
     q_label = grid.get((1, 4))   # sel D1 = penanda kuartal tahun berjalan (Q1/Q2/Q3)
     return {
@@ -164,6 +199,7 @@ def parse_sheet(name, grid):
         'q_price_libur': q_price_libur,
         'annualized': annualized,   # kolom H = "tahun berjalan" (TTM, dibaca apa adanya)
         'annual': annual,
+        'ttm': ttm,                 # TTM riil (Key Stats): eps/net_income/total_revenue/roe
     }
 
 
@@ -452,10 +488,14 @@ def five_year_valuation(stock, last_price, warn, override=None):
         v = ann.get(field)
         return v if v is not None else latest_annual(stock, field)[0]
 
-    ni_ttm     = ann.get('net_income')
-    shares_ttm = ann.get('shares')
-    eps_ttm = (ni_ttm / shares_ttm) if (ni_ttm is not None and shares_ttm not in (None, 0)) else None
-    if eps_ttm is None:                          # H tak bisa hitung → fallback EPS annual file
+    # EPS TTM = EPS-TTM riil (Key Stats) yang sudah di-set ke ann['eps'] di main();
+    # fallback: laba/saham (run-rate), lalu EPS annual terakhir.
+    eps_ttm = ann.get('eps')
+    if eps_ttm is None:
+        ni_ttm, shares_ttm = ann.get('net_income'), ann.get('shares')
+        if ni_ttm is not None and shares_ttm not in (None, 0):
+            eps_ttm = ni_ttm / shares_ttm
+    if eps_ttm is None:                          # benar-benar tak ada → fallback EPS annual file
         eps_ttm = latest_annual(stock, 'eps')[0]
 
     eps_LY  = eps_ttm            # EPS TTM (dihitung di mesin; fallback annual bila perlu)
@@ -612,9 +652,26 @@ def five_year_valuation(stock, last_price, warn, override=None):
                 'annual': round(gl / n, 4), 'cagr': round(cagr, 4) if cagr is not None else None,
                 'mos': round(mos, 4) if mos is not None else None}
 
-    g_bv  = (0.8 * roe_5y + 0.2 * roe_ann) if (roe_5y is not None and roe_ann is not None) else None
-    g_eps = (0.8 * eps_g_5y + 0.2 * eps_g_ann) if (eps_g_5y is not None and eps_g_ann is not None) else None
-    g_sps = (0.8 * sps_g_5y + 0.2 * sps_g_ann) if (sps_g_5y is not None and sps_g_ann is not None) else None
+    # ── Robustness: data TAHUNAN sebagian emiten anomali (mis. pendapatan tahunan
+    #    salah satuan) → growth TAHUNAN bisa meledak (mis. 1,6 juta %). Buang growth
+    #    tahunan yang absurd (pakai angka 5th saja), lalu clamp hasil blend.
+    def _sane(g, lo=-0.95, hi=5.0):
+        return g if (g is not None and lo <= g <= hi) else None
+    eps_g_ann = _sane(eps_g_ann)
+    sps_g_ann = _sane(sps_g_ann)
+
+    def _blend_g(g5, gann):
+        if g5 is not None and gann is not None:
+            return 0.8 * g5 + 0.2 * gann
+        if g5 is not None:
+            return g5                                  # fallback: angka 5th saja
+        return gann                                    # atau angka tahunan saja
+    def _clamp_g(g, lo=-0.5, hi=1.5):
+        return None if g is None else max(lo, min(hi, g))
+
+    g_bv  = _clamp_g(_blend_g(roe_5y, roe_ann))
+    g_eps = _clamp_g(_blend_g(eps_g_5y, eps_g_ann))
+    g_sps = _clamp_g(_blend_g(sps_g_5y, sps_g_ann))
 
     m_pbv = submodel('pbv', bvps_LY, g_bv, avg_pbv)
     m_per = submodel('per', eps_LY, g_eps, avg_per)
@@ -942,12 +999,25 @@ def main():
                 fill_totals['price'] += hp[0]; fill_totals['market_cap'] += hp[1]; fill_totals['ratio'] += hp[2]
             except Exception as e:
                 warnings.append(f"{code}: gagal isi harga libur ({type(e).__name__}: {e})")
-            # EPS TTM (kolom H) dihitung di mesin = laba / saham. EPS H di file SALAH
-            # (arahan pemilik) → ditimpa agar tabel & grafik menampilkan EPS TTM benar.
+            # ── BASIS TTM RIIL (arus periode berjalan) dari section "Key Stats" Excel:
+            #    EPS/Net Income/Revenue - TTM (Q1) + Return on Equity (TTM). Lebih bijak
+            #    dari run-rate ×4 → cerminan 12 bulan terakhir nyata, basis laba pemilik.
+            #    Fallback ke run-rate (laba/saham) bila TTM tak tersedia (mis. emiten IPO baru).
             _ann = data.get('annualized') or {}
-            _ni, _sh = _ann.get('net_income'), _ann.get('shares')
-            if _ni is not None and _sh not in (None, 0):
-                _ann['eps'] = round(_ni / _sh, 2)
+            _ttm = data.get('ttm') or {}
+            _sh  = _ann.get('shares')
+            if _ttm.get('net_income') is not None:
+                _ann['net_income'] = _ttm['net_income']
+            if _ttm.get('total_revenue') is not None:
+                _ann['total_revenue'] = _ttm['total_revenue']
+                if _sh not in (None, 0):
+                    _ann['sps'] = round(_ttm['total_revenue'] / _sh, 6)
+            if _ttm.get('eps') is not None:
+                _ann['eps'] = _ttm['eps']                          # EPS-TTM (laba pemilik)
+            elif _ann.get('net_income') is not None and _sh not in (None, 0):
+                _ann['eps'] = round(_ann['net_income'] / _sh, 2)   # fallback run-rate
+            if _ttm.get('roe') is not None:
+                _ann['roe'] = round(_ttm['roe'] * 100, 6)          # fraksi file → persen
             if data.get('code_in_sheet') and data['code_in_sheet'] != code:
                 warnings.append(f"Sheet '{name}' di {os.path.basename(path)}: nama sheet != C1 "
                                 f"('{code}' vs '{data['code_in_sheet']}')")
@@ -1017,11 +1087,11 @@ def main():
                     }
                 stocks[code] = data
 
-    note = ("'annualized' = 'tahun berjalan' (kolom H, dibaca apa adanya = TTM pemilik). "
-            "EPS TTM dihitung di mesin (laba/saham); EPS growth 5th = CAGR EPS_TTM→tahun ke-5. "
-            "Avg PBV/PER/PSR = nilai TTM (H) + n tahun annual. ROE/SPS 5th & DPR dari kolom H. "
-            "Growth 5 th DCF masih PLACEHOLDER (menunggu rumus proyeksi pemilik). "
-            "risk_free sementara konstan; akan dibaca dari sheet 'SBN'.")
+    note = ("Basis 'tahun berjalan' = TTM RIIL (12 bulan terakhir) dari section Key Stats Excel: "
+            "EPS/Net Income/Revenue - TTM (Q1) + Return on Equity (TTM); fallback run-rate (Q1x4) "
+            "bila TTM tak tersedia (emiten baru). EPS growth 5th = CAGR EPS_TTM->tahun ke-5. "
+            "Avg PBV/PER/PSR = nilai TTM + n tahun annual. ROE/SPS 5th & DPR dari kolom H. "
+            "Growth 5 th DCF masih PLACEHOLDER. risk_free sementara konstan (akan dari sheet 'SBN').")
 
     if fill_totals['price'] or fill_totals['market_cap'] or fill_totals['ratio']:
         warnings.append(
