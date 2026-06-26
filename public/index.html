@@ -2668,6 +2668,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div>
       </div>
       <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
+      <div class="acct-row" id="acctRefRow" style="display:none"><span class="acct-label">Ajak teman</span><span class="acct-val" id="acctRef">—</span></div>
       <div class="acct-row"><span class="acct-label">Paket</span><span class="acct-val" id="acctPlan">—</span></div>
       <div class="acct-row" id="acctExpiryRow"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
       <a class="acct-action" id="acctAdminLink" href="/admin" style="display:none">⚙️ Dashboard Admin</a>
@@ -4447,6 +4448,7 @@ async function _ensureAccess() {
     if (!active && !j.is_admin) { location.replace('/billing'); return false; }
     window.__ES_PROFILE = j;
     try { _renderAccount(j); } catch (_) {}
+    try { _loadReferralStat(); } catch (_) {}
     try { if (!j.tos_accepted && window.__esConsentGate) window.__esConsentGate(); } catch (_) {}
     return true;
   } catch (e) {
@@ -4480,6 +4482,19 @@ function _fmtDateID(ts) {
   catch (_) { return '—'; }
 }
 let _acctWired = false;
+// Statistik referral (N orang · M hari) untuk pop-up akun. Fail-safe.
+async function _loadReferralStat() {
+  try {
+    const r = await fetch('/api/referral', { cache: 'no-store' });
+    const j = await r.json();
+    const el = document.getElementById('acctRef');
+    const row = document.getElementById('acctRefRow');
+    if (j && j.authenticated) {
+      if (el) el.textContent = (j.count || 0) + ' orang · ' + (j.days || 0) + ' hari';
+      if (row) row.style.display = '';
+    }
+  } catch (_) { /* abaikan */ }
+}
 function _renderAccount(p) {
   if (!p || !p.authenticated) return;
   const wrap = document.getElementById('acctWrap');

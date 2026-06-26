@@ -33,7 +33,9 @@ export async function ensureUser(env, email, name = null, picture = null) {
   const id = randomId(16);
   await db(env).prepare('INSERT INTO users (id, email, name, picture, created_at, updated_at) VALUES (?,?,?,?,?,?)')
     .bind(id, email, name, picture, t, t).run();
-  return getUserById(env, id);
+  const created = await getUserById(env, id);
+  if (created) created.is_new = true;   // penanda (in-memory) — dipakai utk reward referral saat daftar
+  return created;
 }
 
 // ── SUBSCRIPTIONS ──
@@ -71,6 +73,100 @@ export async function txnAlreadyProcessed(env, txnId) {
   if (!txnId) return false;
   const row = await db(env).prepare('SELECT id FROM subscriptions WHERE mayar_txn_id = ? LIMIT 1').bind(txnId).first();
   return !!row;
+}
+
+// ── REFERRAL (ajak teman) ──
+// Reward +REFERRAL_DAYS hari (default 3) ke REFERRER tiap berhasil mengajak
+// USER BARU mendaftar. Kelipatan tanpa batas, STACKING (lewat activateSubscription),
+// source='referral' → TIDAK dihitung pendapatan. Semua fungsi FAIL-SAFE: bila
+// kolom/tabel referral belum ada (migration belum jalan) → diam-diam dilewati.
+const _REF_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // tanpa I,O,0,1 (anti-ambigu)
+function _genReferralCode() {
+  const arr = new Uint8Array(6);
+  crypto.getRandomValues(arr);
+  let s = '';
+  for (let i = 0; i < 6; i++) s += _REF_ALPHABET[arr[i] % _REF_ALPHABET.length];
+  return `ES-${s}`;
+}
+
+export async function getUserByReferralCode(env, code) {
+  if (!code) return null;
+  try {
+    return await db(env).prepare('SELECT * FROM users WHERE referral_code = ? LIMIT 1')
+      .bind(String(code).trim().toUpperCase()).first();
+  } catch { return null; }
+}
+
+// Pastikan user punya referral_code unik (generate lazy & simpan). Mengembalikan
+// kode, atau null bila migration belum jalan / gagal.
+export async function ensureReferralCode(env, user) {
+  try {
+    if (!user || !user.id) return null;
+    if (user.referral_code) return user.referral_code;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const code = _genReferralCode();
+      const t = now();
+      try {
+        const r = await db(env).prepare('UPDATE users SET referral_code = ?, updated_at = ? WHERE id = ? AND referral_code IS NULL')
+          .bind(code, t, user.id).run();
+        if (r && r.meta && r.meta.changes > 0) return code;
+      } catch { /* tabrakan UNIQUE → ulang dgn kode lain */ }
+      // changes==0: sudah punya kode (race) → ambil yang ada
+      const fresh = await getUserById(env, user.id);
+      if (fresh && fresh.referral_code) return fresh.referral_code;
+    }
+    return null;
+  } catch { return null; }
+}
+
+// Kode + statistik untuk ditampilkan (N orang · M hari).
+export async function getReferralInfo(env, userId) {
+  const user = await getUserById(env, userId);
+  if (!user) return null;
+  let code = user.referral_code || null;
+  if (!code) code = await ensureReferralCode(env, user);
+  const raw = env.REFERRAL_DAYS;
+  let per = (raw === undefined || raw === null || String(raw).trim() === '') ? 3 : parseInt(raw, 10);
+  if (!Number.isFinite(per) || per < 0) per = 3;
+  const count = user.referrals_count || 0;
+  return { code, count, days: count * per };
+}
+
+// Beri reward referral SAAT user baru daftar (dipanggil dari alur login).
+// Anti-curang B+: 1 reward/referee (referee_id UNIQUE), IP referee != IP referrer.
+export async function rewardReferralIfEligible(env, { newUser, refCode, ip } = {}) {
+  try {
+    if (!newUser || !newUser.id || !refCode) return null;
+    const raw = env.REFERRAL_DAYS;
+    const days = (raw === undefined || raw === null || String(raw).trim() === '') ? 3 : parseInt(raw, 10);
+    if (!Number.isFinite(days) || days <= 0) return null;          // fitur dimatikan
+    const code = String(refCode).trim().toUpperCase();
+    const referrer = await getUserByReferralCode(env, code);
+    if (!referrer || referrer.id === newUser.id) return null;       // kode tak valid / refer diri sendiri
+    // B+ : IP daftar referee tidak boleh sama dengan IP yang pernah dipakai referrer.
+    if (ip) {
+      try {
+        const same = await db(env).prepare('SELECT 1 FROM account_ips WHERE user_id = ? AND ip = ? LIMIT 1')
+          .bind(referrer.id, ip).first();
+        if (same) return null;
+      } catch { /* tabel account_ips belum ada → lewati cek IP */ }
+    }
+    // Klaim atomik: 1 reward per referee (referee_id UNIQUE). Sudah pernah → batal.
+    const id = randomId(16);
+    const t = now();
+    const ins = await db(env).prepare('INSERT OR IGNORE INTO referrals (id, referrer_id, referee_id, code, ip, created_at) VALUES (?,?,?,?,?,?)')
+      .bind(id, referrer.id, newUser.id, code, ip || null, t).run();
+    if (!ins || !ins.meta || ins.meta.changes === 0) return null;
+    try { await db(env).prepare('UPDATE users SET referred_by = ?, updated_at = ? WHERE id = ?').bind(code, t, newUser.id).run(); } catch { /* kolom opsional */ }
+    try { await db(env).prepare('UPDATE users SET referrals_count = COALESCE(referrals_count,0) + 1, updated_at = ? WHERE id = ?').bind(t, referrer.id).run(); } catch { /* kolom opsional */ }
+    // Admin = akses permanen → tak perlu baris langganan 'referral' (biar panel admin rapi).
+    const admins = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const referrerIsAdmin = referrer.email && admins.includes(String(referrer.email).toLowerCase());
+    if (!referrerIsAdmin) {
+      await activateSubscription(env, referrer.id, 'referral', days, 'referral', null);
+    }
+    return { referrerId: referrer.id, days };
+  } catch { return null; }
 }
 
 // ── TRIAL (sekali per user, dimulai saat LOGIN bila memenuhi syarat) ──
