@@ -162,7 +162,7 @@ def parse_sheet(name, grid):
         'q1': quarters['Q1'],       # backward-compat: mesin & frontend pakai stock['q1']
         'quarters': quarters,        # Q1..Q4 (kolom D..G)
         'q_price_libur': q_price_libur,
-        'annualized': annualized,   # = Q1 x 4 (run-rate) / "tahun berjalan" (kolom H)
+        'annualized': annualized,   # kolom H = "tahun berjalan" (TTM, dibaca apa adanya)
         'annual': annual,
     }
 
@@ -388,6 +388,48 @@ def two_latest(stock, field):
     return lv, pv, ly, py
 
 
+def avg_over_window_ttm(stock, field, n):
+    """Rata-rata `field` untuk model TTM: nilai TTM (kolom H) + n tahun annual
+    terakhir = (n+1) angka. Sesuai arahan pemilik (mis. window 5 = TTM + 2021..2025
+    → 6 angka; 3 → 4; 7 → 8; 10 → 11). Lewati None."""
+    vals = []
+    tv = (stock.get('annualized') or {}).get(field)
+    if tv is not None:
+        vals.append(tv)
+    cnt = 0
+    for y in annual_years_desc(stock):
+        v = stock['annual'][y].get(field)
+        if v is not None:
+            vals.append(v); cnt += 1
+        if cnt >= n:
+            break
+    return (sum(vals) / len(vals)) if vals else None
+
+
+def eps_growth_5y_ttm(stock, eps_ttm, n=5):
+    """EPS growth 5th (TTM) DIHITUNG di mesin sebagai CAGR:
+        (EPS_TTM / EPS_{n tahun lalu})^(1/periode) − 1
+    Pembilang  = EPS TTM dihitung (laba / saham).
+    Penyebut   = EPS annual FILE di tahun ke-n terbaru (mis. 2021).
+    Konsisten dgn cara file menghitung sps_growth_5y kolom H (TTM→2021).
+    EPS file kolom H (salah, sesuai pemilik) TIDAK dipakai."""
+    if eps_ttm is None or eps_ttm <= 0:
+        return None
+    pairs = [(int(y), stock['annual'][y].get('eps')) for y in stock['annual']]
+    pairs = sorted([(y, v) for y, v in pairs if v is not None],
+                   key=lambda p: p[0], reverse=True)
+    if not pairs:
+        return None
+    ttm_year = pairs[0][0] + 1                     # tahun berjalan = annual terbaru + 1
+    base_year, base_eps = pairs[min(n, len(pairs)) - 1]   # tahun ke-n (atau tertua tersedia)
+    if base_eps is None or base_eps <= 0:
+        return None
+    periods = ttm_year - base_year
+    if periods <= 0:
+        return None
+    return (eps_ttm / base_eps) ** (1.0 / periods) - 1
+
+
 def five_year_valuation(stock, last_price, warn, override=None):
     """Model 5-tahun pemilik: 3 sub-model multiples (PBV / PER / PSR) lalu di-blend."""
     n = ASSUMPTIONS['projection_years']
@@ -397,21 +439,46 @@ def five_year_valuation(stock, last_price, warn, override=None):
     if not last_price or last_price <= 0:
         return {'applicable': False, 'reason': 'Harga tidak tersedia'}
 
-    # Base per-share fundamentals (tahunan terbaru).
-    eps_LY, eps_PY, ly, py = two_latest(stock, 'eps')
-    sps_LY, sps_PY, _, _   = two_latest(stock, 'sps')
-    bvps_LY, _, _, _       = two_latest(stock, 'bvps')
+    # ── BASIS TTM (kolom H / "tahun berjalan") ──────────────────────────────
+    # Arahan pemilik: model TTM memakai kolom H, BUKAN baris annual terbaru (2025).
+    #  • Pendapatan/laba/ekuitas di H sudah disetahunkan (TTM) oleh pemilik.
+    #  • EPS H di file SALAH → JANGAN dipakai; hitung di mesin = laba / saham.
+    #  • bvps & multiples (pbv/per/psr) diambil apa adanya dari file (kolom H).
+    ann = stock.get('annualized') or {}
 
-    # Growth tahunan (LY vs PY).
+    def _ttm(field):
+        """Nilai kolom H (TTM); fallback ke annual terbaru bila H kosong (emiten
+        yang kolom H-nya belum lengkap) supaya model tetap jalan seperti sebelumnya."""
+        v = ann.get(field)
+        return v if v is not None else latest_annual(stock, field)[0]
+
+    ni_ttm     = ann.get('net_income')
+    shares_ttm = ann.get('shares')
+    eps_ttm = (ni_ttm / shares_ttm) if (ni_ttm is not None and shares_ttm not in (None, 0)) else None
+    if eps_ttm is None:                          # H tak bisa hitung → fallback EPS annual file
+        eps_ttm = latest_annual(stock, 'eps')[0]
+
+    eps_LY  = eps_ttm            # EPS TTM (dihitung di mesin; fallback annual bila perlu)
+    sps_LY  = _ttm('sps')        # SPS TTM (kolom H)
+    bvps_LY = _ttm('bvps')       # Book value TTM (kolom H, dari file)
+
+    # "Tahun sebelumnya" = annual terbaru dari FILE (annual terkunci PR280).
+    eps_PY, ly = latest_annual(stock, 'eps')
+    sps_PY, _  = latest_annual(stock, 'sps')
+
+    # Growth tahunan (TTM vs annual terbaru).
     eps_g_ann = (eps_LY - eps_PY) / eps_PY if (eps_LY is not None and eps_PY) else None
     sps_g_ann = (sps_LY - sps_PY) / sps_PY if (sps_LY is not None and sps_PY) else None
-    roe_ann_raw, _, _, _ = two_latest(stock, 'roe')           # persen
+
+    # ROE tahunan = ROE kolom H (TTM), persen → fraksi.
+    roe_ann_raw = _ttm('roe')
     roe_ann = roe_ann_raw / 100.0 if roe_ann_raw is not None else None
 
-    # Angka "5 tahun" diambil dari field data (sesuai arahan pemilik).
-    roe_5y   = latest_annual(stock, 'roe_5y')[0]
-    eps_g_5y = latest_annual(stock, 'eps_growth_5y')[0]
-    sps_g_5y = latest_annual(stock, 'sps_growth_5y')[0]
+    # Angka "5 tahun": ROE & SPS pakai nilai file kolom H (sudah benar — arahan pemilik).
+    roe_5y   = _ttm('roe_5y')
+    sps_g_5y = _ttm('sps_growth_5y')
+    # EPS growth 5th DIHITUNG di mesin (CAGR EPS_TTM → tahun ke-5; EPS H file tak dipakai).
+    eps_g_5y = eps_growth_5y_ttm(stock, eps_ttm, ASSUMPTIONS['projection_years'])
 
     # ── Fallback CAGR: hitung dari data annual jika field 5y dari Excel = None ──
     # Untuk emiten baru yang belum punya histori 5 tahun di Excel, kita hitung
@@ -475,18 +542,18 @@ def five_year_valuation(stock, last_price, warn, override=None):
 
     # Rata-rata multiples & DPR untuk SEMUA window (3/5/7/10), pakai default utk hitung.
     windows = ASSUMPTIONS['avg_windows']
-    # DPR TIDAK dirata-rata — pakai DPR TAHUN TERBARU (keputusan pemilik).
-    dpr = latest_annual(stock, 'dpr')[0]
+    # DPR TIDAK dirata-rata — pakai DPR kolom H / TTM (keputusan pemilik).
+    dpr = _ttm('dpr')
     _dpr_r = round(dpr, 4) if dpr is not None else None
     avg_multiples = {
-        'pbv': {win: round(avg_over_window(stock, 'pbv', win), 4) if avg_over_window(stock, 'pbv', win) is not None else None for win in windows},
-        'per': {win: round(avg_over_window(stock, 'per', win), 4) if avg_over_window(stock, 'per', win) is not None else None for win in windows},
-        'psr': {win: round(avg_over_window(stock, 'psr', win), 4) if avg_over_window(stock, 'psr', win) is not None else None for win in windows},
-        'dpr': {win: _dpr_r for win in windows},   # DPR = tahun terbaru (tak dirata-rata)
+        'pbv': {win: round(avg_over_window_ttm(stock, 'pbv', win), 4) if avg_over_window_ttm(stock, 'pbv', win) is not None else None for win in windows},
+        'per': {win: round(avg_over_window_ttm(stock, 'per', win), 4) if avg_over_window_ttm(stock, 'per', win) is not None else None for win in windows},
+        'psr': {win: round(avg_over_window_ttm(stock, 'psr', win), 4) if avg_over_window_ttm(stock, 'psr', win) is not None else None for win in windows},
+        'dpr': {win: _dpr_r for win in windows},   # DPR = kolom H / TTM (tak dirata-rata)
     }
-    avg_pbv = avg_over_window(stock, 'pbv', w)
-    avg_per = avg_over_window(stock, 'per', w)
-    avg_psr = avg_over_window(stock, 'psr', w)
+    avg_pbv = avg_over_window_ttm(stock, 'pbv', w)
+    avg_per = avg_over_window_ttm(stock, 'per', w)
+    avg_psr = avg_over_window_ttm(stock, 'psr', w)
 
     # ── Override OTORITATIF (dari Excel pemilik via overrides.json) ──
     # Timpa nilai turunan SEBELUM sub-model dihitung, supaya seluruh output
@@ -623,7 +690,7 @@ def five_year_valuation(stock, last_price, warn, override=None):
         'cagr': round(cagr_blend, 4),
         'combine': round(combine, 4),
         'dividend_yield': round(div_yield, 4),
-        'margin_of_safety': round(mos_blend, 4),
+        'margin_of_safety': round(mos_blend, 4) if mos_blend is not None else None,
         'price_targets': price_targets,
         'target_price_5y': price_targets[-1]['target_price'],
         'potential_pct': price_targets[-1]['gl_pct'],
@@ -875,6 +942,12 @@ def main():
                 fill_totals['price'] += hp[0]; fill_totals['market_cap'] += hp[1]; fill_totals['ratio'] += hp[2]
             except Exception as e:
                 warnings.append(f"{code}: gagal isi harga libur ({type(e).__name__}: {e})")
+            # EPS TTM (kolom H) dihitung di mesin = laba / saham. EPS H di file SALAH
+            # (arahan pemilik) → ditimpa agar tabel & grafik menampilkan EPS TTM benar.
+            _ann = data.get('annualized') or {}
+            _ni, _sh = _ann.get('net_income'), _ann.get('shares')
+            if _ni is not None and _sh not in (None, 0):
+                _ann['eps'] = round(_ni / _sh, 2)
             if data.get('code_in_sheet') and data['code_in_sheet'] != code:
                 warnings.append(f"Sheet '{name}' di {os.path.basename(path)}: nama sheet != C1 "
                                 f"('{code}' vs '{data['code_in_sheet']}')")
@@ -944,7 +1017,9 @@ def main():
                     }
                 stocks[code] = data
 
-    note = ("'annualized' = 'tahun berjalan' sheet = Q1 x 4 (run-rate, dipakai apa adanya). "
+    note = ("'annualized' = 'tahun berjalan' (kolom H, dibaca apa adanya = TTM pemilik). "
+            "EPS TTM dihitung di mesin (laba/saham); EPS growth 5th = CAGR EPS_TTM→tahun ke-5. "
+            "Avg PBV/PER/PSR = nilai TTM (H) + n tahun annual. ROE/SPS 5th & DPR dari kolom H. "
             "Growth 5 th DCF masih PLACEHOLDER (menunggu rumus proyeksi pemilik). "
             "risk_free sementara konstan; akan dibaca dari sheet 'SBN'.")
 
