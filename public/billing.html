@@ -82,9 +82,11 @@ a{color:inherit;text-decoration:none}
 .plan.featured::before{content:attr(data-promo);position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--grad);color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;padding:5px 16px;border-radius:var(--radius-pill);white-space:nowrap}
 .plan-name{font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
 .plan-dur{font-size:22px;font-weight:800;margin-bottom:16px}
-.plan-price{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
+.plan-price{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;margin-bottom:8px}
 .plan-price .cur{font-size:16px;font-weight:700;color:var(--text2)}
 .plan-price .amt{font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1}
+/* Harga coret (harga normal) dipindah ke BARIS harga real & diperbesar */
+.plan-price .was{font-size:23px;font-weight:600;color:var(--text2);line-height:1;text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:var(--accent3);margin-right:2px;white-space:nowrap}
 .plan-sub{font-size:13px;color:var(--text2);margin-bottom:8px}
 .plan-permo{font-size:12px;color:var(--green);font-weight:700;background:var(--green-bg);display:inline-block;padding:4px 12px;border-radius:var(--radius-pill);margin-bottom:22px}
 /* Harga coret (harga normal) — dibuat lebih jelas & menonjol */
@@ -136,6 +138,7 @@ a{color:inherit;text-decoration:none}
   .plan.featured{margin-top:6px}
   .plan-dur{font-size:20px}
   .plan-price .amt{font-size:32px}
+  .plan-price .was{font-size:18px}
   .feat li{font-size:13.5px}
   .btn-pay{font-size:14px;padding:14px}
   .note{padding:14px 16px;font-size:12.5px}
@@ -192,8 +195,8 @@ a{color:inherit;text-decoration:none}
     <div class="plan">
       <div class="plan-name">Paket Kuartal</div>
       <div class="plan-dur">3 Bulan</div>
-      <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">699.000</span></div>
-      <div class="plan-was"><s class="mono">Rp 1.000.000</s><span class="plan-off">Hemat 30%</span></div>
+      <div class="plan-price"><s class="was mono">Rp 1.000.000</s><span class="cur">Rp</span><span class="amt mono">699.000</span></div>
+      <div class="plan-was"><span class="plan-off">Hemat 30%</span></div>
       <div class="plan-sub">Sekali bayar untuk 3 bulan penuh</div>
       <div class="plan-permo mono">≈ Rp 233.000 / bulan</div>
       <ul class="feat">
@@ -208,8 +211,8 @@ a{color:inherit;text-decoration:none}
     <div class="plan">
       <div class="plan-name">Paket Semester</div>
       <div class="plan-dur">6 Bulan</div>
-      <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">997.000</span></div>
-      <div class="plan-was"><s class="mono">Rp 1.500.000</s><span class="plan-off">Hemat 33%</span></div>
+      <div class="plan-price"><s class="was mono">Rp 1.500.000</s><span class="cur">Rp</span><span class="amt mono">997.000</span></div>
+      <div class="plan-was"><span class="plan-off">Hemat 33%</span></div>
       <div class="plan-sub">Sekali bayar untuk 6 bulan penuh</div>
       <div class="plan-permo mono">≈ Rp 166.167 / bulan</div>
       <ul class="feat">
@@ -224,8 +227,8 @@ a{color:inherit;text-decoration:none}
     <div class="plan featured" data-promo="PALING HEMAT">
       <div class="plan-name">Paket Tahunan</div>
       <div class="plan-dur">12 Bulan</div>
-      <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">1.750.000</span></div>
-      <div class="plan-was"><s class="mono">Rp 2.750.000</s><span class="plan-off">Hemat 36%</span></div>
+      <div class="plan-price"><s class="was mono">Rp 2.750.000</s><span class="cur">Rp</span><span class="amt mono">1.750.000</span></div>
+      <div class="plan-was"><span class="plan-off">Hemat 36%</span></div>
       <div class="plan-sub">Sekali bayar untuk 1 tahun penuh</div>
       <div class="plan-permo mono">≈ Rp 145.833 / bulan</div>
       <ul class="feat">
@@ -369,17 +372,16 @@ function planCardHtml(plan,pl,featured,promo){
   var pct=calcPct(pl.priceReal,pl.priceCoret);
   var permo=calcPerMonth(plan,pl.priceReal);
   var feats=(pl.features||[]).map(function(f){return '<li><span class="ck">✓</span> '+escHtml(f)+'</li>';}).join('');
-  var was='';
-  if(Number(pl.priceCoret)>Number(pl.priceReal)){
-    was='<div class="plan-was"><span class="was-lbl">Normal</span><s class="mono">Rp '+rpId(pl.priceCoret)+'</s>'+
-        (pct>0?'<span class="plan-off">Hemat '+pct+'%</span>':'')+'</div>';
-  }
+  var hasCoret=Number(pl.priceCoret)>Number(pl.priceReal);
+  // Harga coret kini ikut di BARIS harga real (diperbesar); baris bawah sisakan badge "Hemat".
+  var coret=hasCoret?'<s class="was mono">Rp '+rpId(pl.priceCoret)+'</s>':'';
+  var was=(hasCoret&&pct>0)?'<div class="plan-was"><span class="plan-off">Hemat '+pct+'%</span></div>':'';
   var btnCls=featured?'btn-pay':'btn-pay outline';
   return ''+
     '<div class="plan'+(featured?' featured':'')+'"'+(featured?' data-promo="'+escHtml(promo||'PALING HEMAT')+'"':'')+'>'+
       '<div class="plan-name">'+escHtml(pl.name)+'</div>'+
       '<div class="plan-dur">'+escHtml(pl.dur)+'</div>'+
-      '<div class="plan-price"><span class="cur">Rp</span><span class="amt mono">'+rpId(pl.priceReal)+'</span></div>'+
+      '<div class="plan-price">'+coret+'<span class="cur">Rp</span><span class="amt mono">'+rpId(pl.priceReal)+'</span></div>'+
       was+
       '<div class="plan-sub">'+escHtml(pl.sub)+'</div>'+
       '<div class="plan-permo mono">≈ Rp '+rpId(permo)+' / bulan</div>'+
