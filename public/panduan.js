@@ -97,6 +97,9 @@
     '#pandu-next:hover{filter:brightness(1.08)}' +
     '#pandu-x{position:absolute;top:7px;right:9px;background:none!important;border:none!important;color:var(--text2,#c4b8e8)!important;font-size:22px;line-height:1;padding:2px 6px!important}' +
     '#pandu-wait{font-size:11px;color:var(--accent,#c4a3ff);font-weight:700}' +
+    '#pandu-card.pandu-bottom{left:8px!important;right:8px!important;top:auto!important;bottom:10px;width:auto!important;max-width:none;max-height:44vh;overflow:auto;padding:13px 14px 11px}' +
+    '#pandu-card.pandu-bottom #pandu-title{font-size:14px}' +
+    '#pandu-card.pandu-bottom #pandu-body{font-size:12.5px}' +
     '#pandu-welcome{position:fixed;inset:0;z-index:' + (Z + 5) + ';background:rgba(8,5,25,.66);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .25s}' +
     '#pandu-welcome.show{opacity:1}' +
     '#pandu-welcome .pw-box{background:var(--card,#1f1450);color:var(--text,#f4f2ff);border:1px solid var(--border,#4a3590);border-radius:18px;max-width:390px;width:100%;padding:30px 26px;text-align:center;box-shadow:0 16px 60px rgba(0,0,0,.5);font-family:"Plus Jakarta Sans",system-ui,sans-serif}' +
@@ -169,31 +172,64 @@
     reposition();
   }
 
+  var zoomedEl = null;
+  function applyZoom(el) {
+    if (zoomedEl === el) return;
+    clearZoom();
+    try {
+      el._pzPos = el.style.position; el._pzZ = el.style.zIndex; el._pzT = el.style.transform;
+      el._pzO = el.style.transformOrigin; el._pzTr = el.style.transition;
+      if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+      el.style.zIndex = String(Z);
+      el.style.transformOrigin = 'center center';
+      el.style.transition = 'transform .25s ease';
+      el.style.transform = 'scale(1.3)';   // perbesar kolom saat PC-view di perangkat HP
+      zoomedEl = el;
+    } catch (e) { zoomedEl = null; }
+  }
+  function clearZoom() {
+    if (!zoomedEl) return;
+    try {
+      var el = zoomedEl;
+      el.style.transform = el._pzT || ''; el.style.transformOrigin = el._pzO || '';
+      el.style.zIndex = el._pzZ || ''; el.style.position = el._pzPos || ''; el.style.transition = el._pzTr || '';
+    } catch (e) {}
+    zoomedEl = null;
+  }
   function reposition() {
     if (!active) return;
+    var phone = isMobileDevice() && !isDesktopView();      // HP pakai tampilan HP
+    var pcPhone = isMobileDevice() && isDesktopView();     // HP pakai tampilan PC
+    card.classList.toggle('pandu-bottom', !!phone);
     var el = curTarget ? curTarget() : null;
-    if (el && vis(el)) {
-      var r = el.getBoundingClientRect();
-      if (r.top < 70 || r.bottom > innerHeight - 70) {
-        try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
-        setTimeout(place, 330); return;
+    if (!(el && vis(el))) {
+      spot.style.opacity = '0'; clearZoom();
+      if (!phone) {
+        var cw0 = card.offsetWidth || 320, ch0 = card.offsetHeight || 150;
+        card.style.left = Math.max(16, (innerWidth - cw0) / 2) + 'px';
+        card.style.top = Math.max(16, (innerHeight - ch0) / 2) + 'px';
       }
-      place();
-    } else {
-      spot.style.opacity = '0';
-      var cw0 = card.offsetWidth || 320, ch0 = card.offsetHeight || 150;
-      card.style.left = Math.max(16, (innerWidth - cw0) / 2) + 'px';
-      card.style.top = Math.max(16, (innerHeight - ch0) / 2) + 'px';
+      return;
     }
+    if (pcPhone) applyZoom(el); else clearZoom();
+    var r = el.getBoundingClientRect();
+    var off = phone ? (r.top < 64 || r.top > innerHeight * 0.5) : (r.top < 70 || r.bottom > innerHeight - 70);
+    if (off) {
+      if (phone) { try { window.scrollBy({ top: r.top - 64, behavior: 'smooth' }); } catch (e) { window.scrollBy(0, r.top - 64); } }
+      else { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} } }
+      setTimeout(place, 340); return;
+    }
+    place();
     function place() {
-      var r = el.getBoundingClientRect(), pad = 8;
+      var rr = el.getBoundingClientRect(), pad = 8;
       spot.style.opacity = '1';
-      spot.style.left = (r.left - pad) + 'px'; spot.style.top = (r.top - pad) + 'px';
-      spot.style.width = (r.width + pad * 2) + 'px'; spot.style.height = (r.height + pad * 2) + 'px';
+      spot.style.left = (rr.left - pad) + 'px'; spot.style.top = (rr.top - pad) + 'px';
+      spot.style.width = (rr.width + pad * 2) + 'px'; spot.style.height = (rr.height + pad * 2) + 'px';
+      if (phone) return;                  // kartu HP sudah di-pin ke bawah lewat CSS (.pandu-bottom)
       var cw = card.offsetWidth || 320, ch = card.offsetHeight || 150;
-      var left = Math.min(Math.max(16, r.left), innerWidth - cw - 16), top;
-      if (r.bottom + ch + 16 < innerHeight) top = r.bottom + 14;
-      else if (r.top - ch - 16 > 0) top = r.top - ch - 14;
+      var left = Math.min(Math.max(16, rr.left), innerWidth - cw - 16), top;
+      if (rr.bottom + ch + 16 < innerHeight) top = rr.bottom + 14;
+      else if (rr.top - ch - 16 > 0) top = rr.top - ch - 14;
       else top = Math.max(16, (innerHeight - ch) / 2);
       card.style.left = left + 'px'; card.style.top = top + 'px';
     }
@@ -201,7 +237,7 @@
 
   function start(arr) { build(); steps = arr || []; if (!steps.length) return; idx = 0; lastShown = -1; curPage = null; active = true; setDone(); go(0); }
   function finish() {
-    cleanupLast(); active = false; clearPoll(); setDone();
+    cleanupLast(); clearZoom(); active = false; clearPoll(); setDone();
     try { sessionStorage.removeItem(RESUME_KEY); } catch (e) {}
     if (spot) spot.style.opacity = '0';
     if (card) card.classList.remove('on');
@@ -230,8 +266,7 @@
     P({ page: 'dashboard', target: T('Consensus Analyst'), title: 'Konsensus Analis', body: 'Ringkasan konsensus (Beli/Tahan/Jual) para analis untuk saham ini.' });
     P({ page: 'dashboard', target: T('Watchlist'), title: 'Watchlist IDX Terpilih', body: 'Saham-saham pilihan; bisa diurutkan dari potensi tertinggi atau yang terbaru.' });
 
-    // CONSENSUS (diawali kolom pencarian)
-    P({ page: 'consensus', tab: 'Overview', target: S('#consensusSearch'), title: 'Consensus \u2014 Cari Saham', body: 'Mulai dari kolom pencarian ini untuk memfilter saham pada konsensus.' });
+    // CONSENSUS (tidak ada kolom pencarian di tampilan awal)
     P({ page: 'consensus', tab: 'Overview', target: T('Market Sentiment'), title: 'Market Sentiment', body: 'Suasana pasar keseluruhan berdasarkan rekomendasi analis.' });
     P({ page: 'consensus', target: T('Upside Tertinggi'), title: 'Upside Tertinggi', body: 'Saham dengan potensi kenaikan tertinggi versi analis.' });
     P({ page: 'consensus', target: T('Aktivitas Rekomendasi'), title: 'Aktivitas Rekomendasi', body: 'Seberapa ramai rekomendasi keluar dari waktu ke waktu.' });
@@ -299,6 +334,7 @@
   // ── peluncuran (welcome + pilihan HP/PC) ──
   function launch() { build(); if (isMobileDevice()) showChoice(); else start(buildSteps()); }
   function showWelcome() {
+    setDone();   // tandai SEKARANG: panduan hanya muncul di awal; refresh tak memunculkannya lagi
     build();
     var ov = D.createElement('div'); ov.id = 'pandu-welcome';
     ov.innerHTML = '<div class="pw-box"><div class="pw-emoji">\uD83D\uDC4B</div>' +
