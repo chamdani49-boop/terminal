@@ -85,6 +85,8 @@ a{color:inherit;text-decoration:none}
 .search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
 .search .ico{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px}
 .filter{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-pill);padding:11px 16px;color:var(--text);font-family:inherit;font-size:14px;cursor:pointer;outline:none}
+.btn-dl{background:var(--green,#059669);border:none;border-radius:var(--radius-pill);padding:11px 18px;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:filter .15s}
+.btn-dl:hover{filter:brightness(1.08)}
 
 /* TABLE */
 .table-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);overflow:hidden}
@@ -96,6 +98,20 @@ tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{background:var(--bg2)}
 .u-email{font-weight:600}
 .u-name{color:var(--text2)}
+.u-seen{font-size:13px;color:var(--text2);white-space:nowrap}
+.u-seen .seen-never{color:var(--text3);font-style:italic}
+.u-seen .seen-stale{color:var(--red,#e11d48);font-weight:600}
+/* Paginasi tabel user */
+.pager{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 14px;padding:14px 16px;border-top:1px solid var(--border2)}
+.pager-info{font-size:13px;color:var(--text2)}
+.pg-ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.pg-btn,.pg-num{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.pg-btn:hover:not(:disabled),.pg-num:hover{border-color:var(--accent);color:var(--accent)}
+.pg-btn:disabled{opacity:.45;cursor:not-allowed}
+.pg-num{min-width:36px;text-align:center}
+.pg-num.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pg-num.active:hover{color:#fff}
+.pg-ell{color:var(--text3);padding:0 2px}
 .pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 12px;border-radius:var(--radius-pill);white-space:nowrap}
 .pill.plan6{background:var(--bg3);color:var(--accent)}
 .pill.plan12{background:rgba(37,99,235,.12);color:var(--accent2)}
@@ -325,6 +341,14 @@ tbody tr:hover{background:var(--bg2)}
       <option value="expired">Kedaluwarsa</option>
       <option value="suspended">Suspended</option>
     </select>
+    <select class="filter" id="activitySel" title="Saring berdasarkan aktivitas terakhir buka">
+      <option value="all">Semua aktivitas</option>
+      <option value="never">Belum pernah buka</option>
+      <option value="30">Tidak buka &gt; 30 hari</option>
+      <option value="90">Tidak buka &gt; 90 hari</option>
+      <option value="180">Tidak buka &gt; 180 hari</option>
+    </select>
+    <button class="btn-dl" id="dlBtn" type="button" title="Unduh daftar (sesuai filter) sebagai file Excel/CSV">⬇️ Download Excel</button>
   </div>
 
   <!-- TABEL -->
@@ -333,13 +357,14 @@ tbody tr:hover{background:var(--bg2)}
       <table>
         <thead>
           <tr>
-            <th>Email</th><th>Nama</th><th>Paket</th><th>Berakhir</th><th>Status</th><th>Aksi</th>
+            <th>Email</th><th>Nama</th><th>Paket</th><th>Berakhir</th><th>Status</th><th>Terakhir Aktif</th><th>Aksi</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
     <div class="empty" id="emptyMsg">Tidak ada user yang cocok dengan pencarian.</div>
+    <div class="pager" id="pager" style="display:none"></div>
   </div>
 
   <div class="demo-note" id="demoNote">
@@ -462,15 +487,16 @@ document.getElementById('parseBtn').addEventListener('click',function(){
 
 // Data dummy (dipakai sebagai fallback bila API/D1 belum siap)
 var USERS=[
-  {email:'budi.santoso@gmail.com', nama:'Budi Santoso',   paket:'tahunan', berakhir:'2027-03-14', status:'aktif'},
-  {email:'siti.aminah@yahoo.com',  nama:'Siti Aminah',    paket:'6bulan',  berakhir:'2026-09-30', status:'aktif'},
-  {email:'andre.wijaya@gmail.com', nama:'Andre Wijaya',   paket:'6bulan',  berakhir:'2026-05-02', status:'expired'},
-  {email:'dewi.lestari@outlook.com',nama:'Dewi Lestari',  paket:'tahunan', berakhir:'2026-12-21', status:'aktif'},
-  {email:'rudi.hartono@gmail.com', nama:'Rudi Hartono',   paket:'6bulan',  berakhir:'2026-04-18', status:'suspended'},
-  {email:'maya.putri@gmail.com',   nama:'Maya Putri',     paket:'tahunan', berakhir:'2027-01-09', status:'aktif'},
-  {email:'eko.prasetyo@gmail.com', nama:'Eko Prasetyo',   paket:'6bulan',  berakhir:'2026-02-28', status:'expired'},
+  {email:'budi.santoso@gmail.com', nama:'Budi Santoso',   paket:'tahunan', berakhir:'2027-03-14', status:'aktif',     last_seen:Math.floor(Date.now()/1000)-2*3600},
+  {email:'siti.aminah@yahoo.com',  nama:'Siti Aminah',    paket:'6bulan',  berakhir:'2026-09-30', status:'aktif',     last_seen:Math.floor(Date.now()/1000)-3*86400},
+  {email:'andre.wijaya@gmail.com', nama:'Andre Wijaya',   paket:'6bulan',  berakhir:'2026-05-02', status:'expired',   last_seen:Math.floor(Date.now()/1000)-120*86400},
+  {email:'dewi.lestari@outlook.com',nama:'Dewi Lestari',  paket:'tahunan', berakhir:'2026-12-21', status:'aktif',     last_seen:Math.floor(Date.now()/1000)-20*86400},
+  {email:'rudi.hartono@gmail.com', nama:'Rudi Hartono',   paket:'6bulan',  berakhir:'2026-04-18', status:'suspended', last_seen:Math.floor(Date.now()/1000)-200*86400},
+  {email:'maya.putri@gmail.com',   nama:'Maya Putri',     paket:'tahunan', berakhir:'2027-01-09', status:'aktif',     last_seen:Math.floor(Date.now()/1000)-1*3600},
+  {email:'eko.prasetyo@gmail.com', nama:'Eko Prasetyo',   paket:'6bulan',  berakhir:'2026-02-28', status:'expired',   last_seen:null},
 ];
 var LIVE=false; // true jika data dari API
+var PAGE=1, PAGE_SIZE=100;   // paginasi tabel user (slide 100/halaman)
 var PRICE={'6bulan':997000,'tahunan':1750000};
 var PLAN_LABEL={'3bulan':'3 Bulan','6bulan':'6 Bulan','tahunan':'Tahunan','custom':'Custom','-':'—'};
 var PLAN_DAYS={'6bulan':182,'tahunan':365};
@@ -485,6 +511,31 @@ function fmtDate(v){
 }
 function fmtRp(n){return 'Rp '+n.toLocaleString('id-ID');}
 
+// "Terakhir Aktif" — relatif & ramah baca. v = epoch detik (atau null/'-').
+function fmtLastSeen(v){
+  if(v==null||v==='-'||v===0) return '<span class="seen-never">Belum pernah</span>';
+  var sec=(typeof v==='number')?v:Math.floor(new Date(v).getTime()/1000);
+  if(isNaN(sec)) return '<span class="seen-never">Belum pernah</span>';
+  var diff=Math.floor(Date.now()/1000)-sec;
+  if(diff<0) diff=0;
+  var label;
+  if(diff<3600) label='Baru saja';
+  else if(diff<86400) label=Math.floor(diff/3600)+' jam lalu';
+  else if(diff<2592000) label=Math.floor(diff/86400)+' hari lalu';
+  else if(diff<31536000) label=Math.floor(diff/2592000)+' bulan lalu';
+  else label=Math.floor(diff/31536000)+' tahun lalu';
+  // Warnai merah bila >90 hari (kandidat dibersihkan).
+  var cls=(diff>90*86400)?' class="seen-stale"':'';
+  return '<span'+cls+'>'+label+'</span>';
+}
+// Berapa hari sejak terakhir aktif (Infinity bila belum pernah). Utk filter.
+function inactiveDays(v){
+  if(v==null||v==='-'||v===0) return Infinity;
+  var sec=(typeof v==='number')?v:Math.floor(new Date(v).getTime()/1000);
+  if(isNaN(sec)) return Infinity;
+  return (Math.floor(Date.now()/1000)-sec)/86400;
+}
+
 // Ambil data asli dari API admin; kalau gagal, pakai dummy.
 async function loadUsers(){
   try{
@@ -492,7 +543,7 @@ async function loadUsers(){
     if(r.ok){
       var d=await r.json();
       if(d&&d.users){
-        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,status:u.status,is_admin:u.is_admin,source:u.source||null,paid:!!u.paid};});
+        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,last_seen:u.last_seen||null,status:u.status,is_admin:u.is_admin,source:u.source||null,paid:!!u.paid};});
         LIVE=true;
         document.getElementById('demoNote').style.display='none';
       }
@@ -545,17 +596,33 @@ async function postAdmin(url,body){
   return d;
 }
 
-function render(){
+function filteredRows(){
   var q=document.getElementById('searchInp').value.trim().toLowerCase();
   var f=document.getElementById('filterSel').value;
-  var rows=USERS.filter(function(u){
+  var af=document.getElementById('activitySel').value;
+  return USERS.filter(function(u){
     var matchQ=!q || u.email.toLowerCase().includes(q) || (u.nama||'').toLowerCase().includes(q);
     var matchF=f==='all' || u.status===f;
-    return matchQ && matchF;
+    var matchA;
+    if(af==='all') matchA=true;
+    else if(af==='never') matchA=!u.last_seen;
+    else matchA=inactiveDays(u.last_seen) > parseInt(af,10);
+    return matchQ && matchF && matchA;
   });
+}
+
+function render(){
+  var rows=filteredRows();
+  // Paginasi: 100 user / halaman (1–100, 101–200, dst). Berlaku setelah cari/filter.
+  var total=rows.length;
+  var pages=Math.max(1, Math.ceil(total/PAGE_SIZE));
+  if(PAGE>pages) PAGE=pages;
+  if(PAGE<1) PAGE=1;
+  var start=(PAGE-1)*PAGE_SIZE;
+  var pageRows=rows.slice(start, start+PAGE_SIZE);
   var tb=document.getElementById('tbody');
   tb.innerHTML='';
-  rows.forEach(function(u){
+  pageRows.forEach(function(u){
     var planCls=u.paket==='tahunan'?'plan12':'plan6';
     var stLabel={aktif:'🟢 Aktif',expired:'🔴 Kedaluwarsa',suspended:'⛔ Suspended',no_sub:'⚪ Belum langganan'}[u.status]||u.status;
     var stCls=u.status==='no_sub'?'expired':u.status;
@@ -574,6 +641,7 @@ function render(){
       '<td><span class="pill '+planCls+'">'+(PLAN_LABEL[u.paket]||u.paket)+'</span></td>'+
       '<td class="mono">'+fmtDate(u.berakhir)+'</td>'+
       '<td><span class="pill '+stCls+'">'+stLabel+'</span></td>'+
+      '<td class="u-seen">'+fmtLastSeen(u.last_seen)+'</td>'+
       actionsCell;
     tr.querySelectorAll('.act').forEach(function(b){
       b.addEventListener('click',function(){
@@ -584,11 +652,77 @@ function render(){
     });
     tb.appendChild(tr);
   });
-  document.getElementById('emptyMsg').style.display=rows.length?'none':'block';
+  document.getElementById('emptyMsg').style.display=total?'none':'block';
+  renderPager(total, pages, start, pageRows.length);
 }
 
-document.getElementById('searchInp').addEventListener('input',render);
-document.getElementById('filterSel').addEventListener('change',render);
+// Kontrol paginasi (slide). Hanya tampil bila total > PAGE_SIZE.
+function renderPager(total, pages, start, shown){
+  var pager=document.getElementById('pager');
+  if(!pager) return;
+  if(total<=PAGE_SIZE){ pager.style.display='none'; pager.innerHTML=''; return; }
+  var from=total?start+1:0, to=start+shown;
+  var nums='';
+  for(var p=1;p<=pages;p++){
+    if(pages<=7 || p===1 || p===pages || Math.abs(p-PAGE)<=1){
+      nums+='<button class="pg-num'+(p===PAGE?' active':'')+'" data-pg="'+p+'">'+p+'</button>';
+    } else if(p===PAGE-2 || p===PAGE+2){
+      nums+='<span class="pg-ell">…</span>';
+    }
+  }
+  pager.style.display='flex';
+  pager.innerHTML=
+    '<span class="pager-info">'+from+'–'+to+' dari '+total+' user</span>'+
+    '<div class="pg-ctrls">'+
+      '<button class="pg-btn" id="pgPrev"'+(PAGE<=1?' disabled':'')+'>‹ Sebelumnya</button>'+
+      nums+
+      '<button class="pg-btn" id="pgNext"'+(PAGE>=pages?' disabled':'')+'>Berikutnya ›</button>'+
+    '</div>';
+  var prev=document.getElementById('pgPrev'); if(prev) prev.addEventListener('click',function(){ if(PAGE>1){ PAGE--; render(); } });
+  var next=document.getElementById('pgNext'); if(next) next.addEventListener('click',function(){ if(PAGE<pages){ PAGE++; render(); } });
+  pager.querySelectorAll('.pg-num').forEach(function(b){ b.addEventListener('click',function(){ PAGE=parseInt(b.getAttribute('data-pg'),10)||1; render(); }); });
+}
+
+document.getElementById('searchInp').addEventListener('input',function(){ PAGE=1; render(); });
+document.getElementById('filterSel').addEventListener('change',function(){ PAGE=1; render(); });
+document.getElementById('activitySel').addEventListener('change',function(){ PAGE=1; render(); });
+
+// ── Download daftar user (Email + Username dll) sebagai CSV (buka di Excel) ──
+// Mengikuti filter/pencarian yang aktif (mis. filter "aktif" → ekspor pelanggan aktif).
+function seenPlain(v){
+  if(v==null||v===0) return 'Belum pernah';
+  var sec=(typeof v==='number')?v:Math.floor(new Date(v).getTime()/1000);
+  if(isNaN(sec)) return 'Belum pernah';
+  return new Date(sec*1000).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+}
+function csvCell(v){ v=(v==null?'':String(v)); return /[",\n\r;]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+function downloadCsv(){
+  var rows=filteredRows();
+  if(!rows.length){ alert('Tidak ada data untuk diunduh (sesuai filter saat ini).'); return; }
+  var header=['Email','Username','Status','Paket','Berakhir','Terakhir Aktif'];
+  var lines=[header.map(csvCell).join(',')];
+  rows.forEach(function(u){
+    lines.push([
+      csvCell(u.email),
+      csvCell(u.nama||''),
+      csvCell(u.status),
+      csvCell(PLAN_LABEL[u.paket]||u.paket||''),
+      csvCell(u.berakhir?fmtDate(u.berakhir):''),
+      csvCell(seenPlain(u.last_seen))
+    ].join(','));
+  });
+  var csv='\ufeff'+lines.join('\r\n');   // BOM agar Excel baca UTF-8 (huruf â€™ dll benar)
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var d=new Date();
+  var ymd=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  var a=document.createElement('a');
+  a.href=url; a.download='economstock-users-'+ymd+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); },1500);
+}
+var _dlBtn=document.getElementById('dlBtn');
+if(_dlBtn) _dlBtn.addEventListener('click',downloadCsv);
 
 // ── Modal perpanjangan (pilih durasi via dropdown) ──
 var _extEmail=null;
