@@ -12272,15 +12272,21 @@ body.vl-maxing{overflow:hidden}
       // Fallback ke o.fcf (kuartal) bila gagal hitung. DPS (baris 37) sudah TTM →
       // pakai apa adanya. net_debt = snapshot neraca → tidak di-annualisasi.
       const fcfAnn = vlAnnualizeFlow(stock, qk, 'fcf');
+      // Basis TTM = MESIN kolom H (PR281): EPS dihitung (laba/saham), BVPS/SPS &
+      // EPS growth 5th diambil dari five_year.inputs (disetahunkan). FCF/DPS/net_debt/
+      // shares dibiarkan (di luar lingkup PR280/PR281).
       return { key:qk, label:vlQLabelFull(stock,qk), yr:ly,
-        eps:o.eps, bvps:o.bvps, sps:o.sps, g5:o.eps_growth_5y,
+        eps:ok(inp.eps)?inp.eps:o.eps, bvps:ok(inp.bvps)?inp.bvps:o.bvps,
+        sps:ok(inp.sps)?inp.sps:o.sps, g5:ok(inp.eps_growth_5y)?inp.eps_growth_5y:o.eps_growth_5y,
         dps:o.dps, fcf:(ok(fcfAnn)?fcfAnn:o.fcf), netDebt:o.net_debt, shares:o.shares,
-        note:'data TTM '+vlQLabelFull(stock,qk)+' \u2014 FCF disetahunkan (\xD74/n); EPS/BVPS/SPS/DPS dari laporan kuartalan' };
+        note:'data TTM kolom H (disetahunkan, sesuai mesin) \u2014 EPS dihitung & growth 5th dari mesin; FCF disetahunkan (\xD74/n)' };
     }
     const ay=(stock.annual&&stock.annual[ly])||{};
+    // Basis tahun penuh: pakai angka annual ASLI (bukan inputs TTM dari PR281) agar
+    // label tahun & angkanya konsisten. Mesin TTM & annual sengaja sedikit beda.
     return { key:'year', label:String(ly), yr:ly,
-      eps:ok(inp.eps)?inp.eps:ay.eps, bvps:ok(inp.bvps)?inp.bvps:ay.bvps, sps:ok(inp.sps)?inp.sps:ay.sps,
-      g5:ok(inp.eps_growth_5y)?inp.eps_growth_5y:ay.eps_growth_5y,
+      eps:ay.eps, bvps:ay.bvps, sps:ay.sps,
+      g5:ay.eps_growth_5y,
       dps:(v.ddm&&ok(v.ddm.base_dps))?v.ddm.base_dps:ay.dps,
       fcf:(v.dcf&&ok(v.dcf.base_fcf))?v.dcf.base_fcf:ay.fcf,
       netDebt:(v.dcf&&ok(v.dcf.net_debt))?v.dcf.net_debt:ay.net_debt,
@@ -12489,7 +12495,7 @@ body.vl-maxing{overflow:hidden}
          '<td style="text-align:center;white-space:nowrap"><button class="vl-iq" onclick="vlMethodInfo(\''+m.key+'\')">i</button><button class="vl-shot" onclick="vlShotMethod(\''+m.key+'\')" title="Download screenshot — Terminal Economstock">\u2913</button></td></tr>';
     });
     h+='</tbody></table></div>';
-    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlQLabelFull(s, vlIsQBasis(_cmpBasis)?_cmpBasis:vlLatestQuarter(s))+'</strong> = TTM kuartalan (langsung dari laporan, bukan disetahunkan), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
+    h+='<p class="vl-note" style="margin-top:10px"><strong>Potensi</strong> = nilai wajar \xF7 harga \u2212 1 (ruang kenaikan). <strong>Margin of Safety</strong> = 1 \u2212 harga \xF7 nilai wajar (diskon harga terhadap nilai wajar; makin tinggi makin aman). Basis data bisa diganti: <strong>'+vlQLabelFull(s, vlIsQBasis(_cmpBasis)?_cmpBasis:vlLatestQuarter(s))+'</strong> = TTM disetahunkan (kolom H, sesuai mesin valuasi; EPS dihitung dari laba/saham), atau <strong>'+bi.yr+'</strong> = tahun penuh terakhir. Tanda <strong>\u2014</strong> berarti metode tak bisa dihitung pada basis itu (mis. FCF/laba negatif). Metode bertanda <strong>*</strong> (PEG) hanya informatif & tidak masuk konsensus. Status: <strong>Murah</strong> bila nilai wajar \u2265 +15% di atas harga, <strong>Mahal</strong> bila \u2264 \u221215%, selain itu <strong>Wajar</strong>. Klik <strong>i</strong> untuk penjelasan & asumsi. Estimasi, bukan rekomendasi investasi.</p>';
 
     host.innerHTML=h;
 
