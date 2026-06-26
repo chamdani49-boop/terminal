@@ -10667,7 +10667,7 @@ body.vl-maxing{overflow:hidden}
           <div class="card">
             <div class="card-title">Tabel Proyeksi G&amp;L per Tahun <button class="vl-iq" onclick="vlMethodInfo('projgl')" style="vertical-align:middle;margin-left:8px">i</button></div>
             <div id="vlProjTableHeader" style="margin-bottom:10px"></div>
-            <table class="vl-table" id="vlProjTable" style="min-width:0"><thead><tr><th>Tahun</th><th>Potensi Price</th><th>% (vs Sekarang)</th><th>% (vs Basis)</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
+            <table class="vl-table" id="vlProjTable" style="min-width:0"><thead><tr><th>Tahun</th><th>Potensi<br>Price</th><th>% (vs Sekarang)</th><th>% (vs Basis)</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
           </div>
         </div>
         <div class="vl-grid4">
@@ -11598,7 +11598,7 @@ body.vl-maxing{overflow:hidden}
 
       // Update header kolom tabel (vs TTM <kuartal> <tahun>)
       const thRow = tb.closest('table').querySelector('thead tr');
-      if(thRow) thRow.innerHTML = '<th>Tahun</th><th>Potensi Price</th><th>% (vs Sekarang)</th><th>% (vs '+basisLabel+')</th>';
+      if(thRow) thRow.innerHTML = '<th>Tahun</th><th>Potensi<br>Price</th><th>% (vs Sekarang)</th><th>% (vs '+basisLabel+')</th>';
 
       let rows = years.map((yr,i)=>{
         const pt = pc.potensi[i];
@@ -11606,7 +11606,7 @@ body.vl-maxing{overflow:hidden}
         const glBasis = (basisPrice>0 && ok(pt)) ? (pt/basisPrice-1)*100 : null;
         return '<tr>'+
           '<td style="font-weight:700;color:var(--text)">'+yr+'</td>'+
-          '<td><strong>'+(ok(pt)?'<span style="font-size:.72em;font-weight:600;opacity:.6">Rp</span><br>'+Math.round(pt).toLocaleString('id-ID'):'-')+'</strong></td>'+
+          '<td><strong>'+fmtRp(pt)+'</strong></td>'+
           '<td><span class="'+badgeCls(glLive)+'">'+fmtGl(glLive)+'</span></td>'+
           '<td><span class="'+badgeCls(glBasis)+'">'+fmtGl(glBasis)+'</span></td>'+
           '</tr>';
