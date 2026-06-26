@@ -299,7 +299,18 @@ export async function autoSuspendByUserId(env, userId) {
 export async function adminDeleteUser(env, email) {
   const u = await getUserByEmail(env, email);
   if (!u) throw new Error('User tidak ditemukan');
-  await db(env).prepare('DELETE FROM users WHERE id = ?').bind(u.id).run();
+  const D = db(env);
+  // Hapus SEMUA data turunan user (bebaskan kuota D1), masing-masing fail-safe
+  // agar tabel yang belum ada tidak menggagalkan penghapusan.
+  const del = async (sql, ...binds) => { try { await D.prepare(sql).bind(...binds).run(); } catch (_) { /* tabel opsional */ } };
+  await del('DELETE FROM subscriptions WHERE user_id = ?', u.id);
+  await del('DELETE FROM account_ips WHERE user_id = ?', u.id);
+  await del('DELETE FROM abuse_flags WHERE user_id = ?', u.id);
+  await del('DELETE FROM consents WHERE user_id = ?', u.id);
+  await del('DELETE FROM referrals WHERE referrer_id = ? OR referee_id = ?', u.id, u.id);
+  await del('DELETE FROM email_codes WHERE email = ?', (u.email || email).toLowerCase());
+  // Terakhir: hapus baris user.
+  await D.prepare('DELETE FROM users WHERE id = ?').bind(u.id).run();
   return { ok: true };
 }
 
