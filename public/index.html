@@ -10667,7 +10667,7 @@ body.vl-maxing{overflow:hidden}
           <div class="card">
             <div class="card-title">Tabel Proyeksi G&amp;L per Tahun <button class="vl-iq" onclick="vlMethodInfo('projgl')" style="vertical-align:middle;margin-left:8px">i</button></div>
             <div id="vlProjTableHeader" style="margin-bottom:10px"></div>
-            <table class="vl-table" id="vlProjTable" style="min-width:0"><thead><tr><th>Tahun</th><th>Potensi Price</th><th>% (vs Sekarang)</th><th>% (vs Basis)</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
+            <table class="vl-table" id="vlProjTable" style="min-width:0"><thead><tr><th>Tahun</th><th>Potensi<br>Price</th><th>% (vs Sekarang)</th><th>% (vs Basis)</th></tr></thead><tbody id="vlProjTableBody"></tbody></table>
           </div>
         </div>
         <div class="vl-grid4">
@@ -11598,7 +11598,7 @@ body.vl-maxing{overflow:hidden}
 
       // Update header kolom tabel (vs TTM <kuartal> <tahun>)
       const thRow = tb.closest('table').querySelector('thead tr');
-      if(thRow) thRow.innerHTML = '<th>Tahun</th><th>Potensi Price</th><th>% (vs Sekarang)</th><th>% (vs '+basisLabel+')</th>';
+      if(thRow) thRow.innerHTML = '<th>Tahun</th><th>Potensi<br>Price</th><th>% (vs Sekarang)</th><th>% (vs '+basisLabel+')</th>';
 
       let rows = years.map((yr,i)=>{
         const pt = pc.potensi[i];
@@ -12123,10 +12123,10 @@ body.vl-maxing{overflow:hidden}
       // Zoom 2-jari (pinch) + scroll utk chart PROYEKSI — aktif hanya bila plugin termuat;
       // jika tidak, chart tetap tampil penuh seperti biasa (degradasi mulus, tanpa error).
       const _zoomOK = !!window.Hammer && !!(window.Chart && Chart.registry && Chart.registry.plugins && Chart.registry.plugins.get('zoom'));
-      const _nextIdx = labels.lastIndexOf(String(startYr+1));   // posisi titik "tahun depan"
+      const _nextIdx = labels.lastIndexOf(String(startYr+2));   // posisi titik "2 tahun depan"
       const _zoomCfg = _zoomOK ? { zoom:{ wheel:{enabled:true}, pinch:{enabled:true}, mode:'x' }, pan:{ enabled:true, mode:'x' }, limits:{ x:{ minRange:4 } } } : undefined;
       const _xScale = { ticks:{...TICK, maxRotation:0, autoSkip:true, maxTicksLimit:7, callback:function(val,idx){var l=this.getLabelForValue(val);if(!l)return l;var p=l.split('/');if(p.length>=3){var mm=parseInt(p[0],10);var yy=String(p[2]).slice(-2);return mm+'/'+yy;}return l;}}, grid:{display:false} };
-      // Default: tampil s/d titik tahun depan; tahun berikutnya muncul saat di-zoom/geser.
+      // Default: tampil s/d titik 2 tahun depan; tahun berikutnya muncul saat di-zoom/geser.
       if(_zoomOK && _nextIdx>=0){ _xScale.min = 0; _xScale.max = _nextIdx; }
       mk('vlProj', { type:'line', data:{ labels, datasets:ds }, options:{...base,
         plugins:{...base.plugins, zoom:_zoomCfg, tooltip:{...base.plugins.tooltip, callbacks:{

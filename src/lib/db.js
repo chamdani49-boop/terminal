@@ -82,7 +82,12 @@ export async function txnAlreadyProcessed(env, txnId) {
 // → trial dimatikan). FAIL-SAFE: bila kolom trial_used belum ada (migration belum
 // dijalankan) atau D1 error, fungsi diam-diam tidak memberi trial & TIDAK
 // mengganggu proses login.
-export async function grantTrialIfEligible(env, userId) {
+export async function grantTrialIfEligible(env, userId, email = null) {
+  // Admin TIDAK dapat trial — akses admin permanen via ADMIN_EMAILS (lepas dari
+  // langganan), jadi jangan buatkan baris trial untuk admin (biar panel admin rapi
+  // & admin tak ikut terdampak masa trial).
+  const admins = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+  if (email && admins.includes(String(email).toLowerCase())) return null;
   const raw = env.TRIAL_MINUTES;
   const mins = (raw === undefined || raw === null || String(raw).trim() === '') ? 30 : parseInt(raw, 10);
   if (!Number.isFinite(mins) || mins <= 0) return null;          // trial dimatikan
