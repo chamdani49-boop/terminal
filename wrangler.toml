@@ -38,6 +38,9 @@ GATING_ENABLED = "true"
 APP_URL = "https://terminal.economstock.com"
 # Daftar email admin, dipisah koma. Mis: "chamdani49@gmail.com"
 ADMIN_EMAILS = "chamdani49@gmail.com"
+# Durasi trial gratis (menit) utk user baru / belum pernah trial, dimulai saat LOGIN.
+# Diset di sini agar aktif begitu deploy. Ubah angkanya untuk ganti durasi; "0" = matikan trial.
+TRIAL_MINUTES = "30"
 # Durasi paket (hari)
 PLAN_DAYS_3BULAN = "90"
 PLAN_DAYS_6BULAN = "182"
