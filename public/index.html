@@ -10776,7 +10776,7 @@ body.vl-maxing{overflow:hidden}
             <tbody></tbody>
           </table>
         </div>
-        <p class="vl-note"><strong>Q1</strong> = kuartal terakhir · <strong class="vl-ttm-note">Thn Berjalan = TTM</strong> (12 bulan terakhir) · tahun penuh (2025…2008). Klik tombol <strong>i</strong> di judul untuk penjelasan TTM. Perubahan ▲▼: kolom tahun = vs tahun sebelumnya, TTM = vs tahun penuh terakhir · nilai uang dalam Miliar Rupiah · geser tabel untuk tahun lama.</p>
+        <p class="vl-note"><strong>Q1</strong> = kuartal terakhir · <strong class="vl-ttm-note">TTM (tahun berjalan)</strong> = 12 bulan terakhir · tahun penuh (2025…2008). Klik tombol <strong>i</strong> di judul untuk penjelasan TTM. Perubahan ▲▼: kolom tahun = vs tahun sebelumnya, TTM = vs tahun penuh terakhir · nilai uang dalam Miliar Rupiah · geser tabel untuk tahun lama.</p>
       </div>
     </div>
 
@@ -11362,17 +11362,23 @@ body.vl-maxing{overflow:hidden}
     const tbody = document.querySelector('#vlFundTable tbody');
     if(!head || !tbody) return;
     const yearsDesc = annualYears(s).slice().reverse();   // terbaru → terlama (…→2008)
-    // Kolom LENGKAP & dibalik: Q1 + TTM dinamis (Q1x4) + semua tahun (apa adanya).
     const cols = [];
     const _q = s.quarters || {};
-    if(s.q1 && Object.keys(s.q1).length)                 cols.push({ key:'q1', label:'TTM Q1',         a:s.q1 });
-    // Q2/Q3/Q4 — tampil OTOMATIS hanya bila laporan kuartal itu sudah terisi
-    // (build membuang kuartal yang masih kosong). Begitu kamu upload Excel dgn
-    // kolom F (Q3)/G (Q4) terisi, kolomnya otomatis muncul di sini.
+    // Sebuah kolom dianggap BERISI bila ada minimal satu metrik fundamental terisi
+    // (harga diabaikan, karena kolom 'tahun berjalan' selalu diisi harga live). Kolom
+    // yang kosong otomatis disembunyikan.
+    const _FUND_KEYS = ['total_revenue','net_income','total_equity','eps','sps','bvps'];
+    const _hasVals = (a)=> !!a && _FUND_KEYS.some(k=> a[k]!=null && a[k]!==0);
+    // "Tahun berjalan" = tahun annual terbaru + 1 (mis. 2025 → "TTM 2026").
+    const _runYr = yearsDesc.length ? (parseInt(yearsDesc[0],10)+1) : new Date().getFullYear();
+    // Kuartal Q1..Q4 — tampil OTOMATIS & lengkap, HANYA yang sudah terisi (label "Q1".."Q4").
+    // Begitu Excel diupload dgn Q3 (kolom F) / Q4 (kolom G) terisi, kolomnya muncul sendiri.
+    if(_hasVals(s.q1)) cols.push({ key:'q1', label:'Q1', a:s.q1 });
     ['Q2','Q3','Q4'].forEach(function(qn){
-      if(_q[qn] && Object.keys(_q[qn]).length) cols.push({ key:qn, label:qn, a:_q[qn] });
+      if(_hasVals(_q[qn])) cols.push({ key:qn, label:qn, a:_q[qn] });
     });
-    if(s.annualized && Object.keys(s.annualized).length) cols.push({ key:'tb', label:'Thn Berjalan', a:s.annualized });
+    // "TTM <tahun berjalan>" — disembunyikan bila kosong (mis. Q1..Q4 belum ada data).
+    if(_hasVals(s.annualized)) cols.push({ key:'tb', label:'TTM '+_runYr, a:s.annualized });
     yearsDesc.forEach(y=> cols.push({ key:y, label:y, a:s.annual[y]||{} }));
     head.innerHTML = '<tr><th>Metrik</th>'+cols.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';
     const rows = [
@@ -12852,7 +12858,7 @@ body.vl-maxing{overflow:hidden}
         '<p>Bedanya dengan sekadar "disetahunkan": TTM <strong>tidak</strong> hanya mengalikan 1 kuartal × 4 (yang bisa menyesatkan bila satu kuartal kebetulan sangat kuat/lemah). TTM memakai angka <strong>nyata</strong> 12 bulan, jadi lebih adil & stabil.</p>'+
         '<table class="vl-mini">'+
         row('Kolom <strong>Q1</strong>','Laporan kuartal terakhir apa adanya (±3 bulan).')+
-        row('Kolom <strong>Thn Berjalan</strong>','TTM — gabungan 12 bulan terakhir. Paling update.')+
+        row('Kolom <strong>TTM (tahun berjalan)</strong>','Gabungan 12 bulan terakhir. Paling update.')+
         row('Kolom <strong>tahun</strong> (2025…)','Laporan tahunan penuh (tutup buku Desember).')+
         '</table>'+
         '<p style="margin-top:8px">EPS, SPS, dan ROE di kolom <strong>"Thn Berjalan"</strong> memakai basis TTM ini — <strong>dan inilah dasar perhitungan nilai wajar</strong> di tab Perbandingan. Memakai TTM membuat valuasi lebih <strong>konservatif & bijak</strong> (mencerminkan 12 bulan nyata, bukan proyeksi optimistis dari satu kuartal).</p>'+
