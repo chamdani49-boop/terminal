@@ -96,6 +96,9 @@ tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{background:var(--bg2)}
 .u-email{font-weight:600}
 .u-name{color:var(--text2)}
+.u-seen{font-size:13px;color:var(--text2);white-space:nowrap}
+.u-seen .seen-never{color:var(--text3);font-style:italic}
+.u-seen .seen-stale{color:var(--red,#e11d48);font-weight:600}
 /* Paginasi tabel user */
 .pager{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 14px;padding:14px 16px;border-top:1px solid var(--border2)}
 .pager-info{font-size:13px;color:var(--text2)}
@@ -336,6 +339,13 @@ tbody tr:hover{background:var(--bg2)}
       <option value="expired">Kedaluwarsa</option>
       <option value="suspended">Suspended</option>
     </select>
+    <select class="filter" id="activitySel" title="Saring berdasarkan aktivitas terakhir buka">
+      <option value="all">Semua aktivitas</option>
+      <option value="never">Belum pernah buka</option>
+      <option value="30">Tidak buka &gt; 30 hari</option>
+      <option value="90">Tidak buka &gt; 90 hari</option>
+      <option value="180">Tidak buka &gt; 180 hari</option>
+    </select>
   </div>
 
   <!-- TABEL -->
@@ -344,7 +354,7 @@ tbody tr:hover{background:var(--bg2)}
       <table>
         <thead>
           <tr>
-            <th>Email</th><th>Nama</th><th>Paket</th><th>Berakhir</th><th>Status</th><th>Aksi</th>
+            <th>Email</th><th>Nama</th><th>Paket</th><th>Berakhir</th><th>Status</th><th>Terakhir Aktif</th><th>Aksi</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -474,13 +484,13 @@ document.getElementById('parseBtn').addEventListener('click',function(){
 
 // Data dummy (dipakai sebagai fallback bila API/D1 belum siap)
 var USERS=[
-  {email:'budi.santoso@gmail.com', nama:'Budi Santoso',   paket:'tahunan', berakhir:'2027-03-14', status:'aktif'},
-  {email:'siti.aminah@yahoo.com',  nama:'Siti Aminah',    paket:'6bulan',  berakhir:'2026-09-30', status:'aktif'},
-  {email:'andre.wijaya@gmail.com', nama:'Andre Wijaya',   paket:'6bulan',  berakhir:'2026-05-02', status:'expired'},
-  {email:'dewi.lestari@outlook.com',nama:'Dewi Lestari',  paket:'tahunan', berakhir:'2026-12-21', status:'aktif'},
-  {email:'rudi.hartono@gmail.com', nama:'Rudi Hartono',   paket:'6bulan',  berakhir:'2026-04-18', status:'suspended'},
-  {email:'maya.putri@gmail.com',   nama:'Maya Putri',     paket:'tahunan', berakhir:'2027-01-09', status:'aktif'},
-  {email:'eko.prasetyo@gmail.com', nama:'Eko Prasetyo',   paket:'6bulan',  berakhir:'2026-02-28', status:'expired'},
+  {email:'budi.santoso@gmail.com', nama:'Budi Santoso',   paket:'tahunan', berakhir:'2027-03-14', status:'aktif',     last_seen:Math.floor(Date.now()/1000)-2*3600},
+  {email:'siti.aminah@yahoo.com',  nama:'Siti Aminah',    paket:'6bulan',  berakhir:'2026-09-30', status:'aktif',     last_seen:Math.floor(Date.now()/1000)-3*86400},
+  {email:'andre.wijaya@gmail.com', nama:'Andre Wijaya',   paket:'6bulan',  berakhir:'2026-05-02', status:'expired',   last_seen:Math.floor(Date.now()/1000)-120*86400},
+  {email:'dewi.lestari@outlook.com',nama:'Dewi Lestari',  paket:'tahunan', berakhir:'2026-12-21', status:'aktif',     last_seen:Math.floor(Date.now()/1000)-20*86400},
+  {email:'rudi.hartono@gmail.com', nama:'Rudi Hartono',   paket:'6bulan',  berakhir:'2026-04-18', status:'suspended', last_seen:Math.floor(Date.now()/1000)-200*86400},
+  {email:'maya.putri@gmail.com',   nama:'Maya Putri',     paket:'tahunan', berakhir:'2027-01-09', status:'aktif',     last_seen:Math.floor(Date.now()/1000)-1*3600},
+  {email:'eko.prasetyo@gmail.com', nama:'Eko Prasetyo',   paket:'6bulan',  berakhir:'2026-02-28', status:'expired',   last_seen:null},
 ];
 var LIVE=false; // true jika data dari API
 var PAGE=1, PAGE_SIZE=100;   // paginasi tabel user (slide 100/halaman)
@@ -498,6 +508,31 @@ function fmtDate(v){
 }
 function fmtRp(n){return 'Rp '+n.toLocaleString('id-ID');}
 
+// "Terakhir Aktif" — relatif & ramah baca. v = epoch detik (atau null/'-').
+function fmtLastSeen(v){
+  if(v==null||v==='-'||v===0) return '<span class="seen-never">Belum pernah</span>';
+  var sec=(typeof v==='number')?v:Math.floor(new Date(v).getTime()/1000);
+  if(isNaN(sec)) return '<span class="seen-never">Belum pernah</span>';
+  var diff=Math.floor(Date.now()/1000)-sec;
+  if(diff<0) diff=0;
+  var label;
+  if(diff<3600) label='Baru saja';
+  else if(diff<86400) label=Math.floor(diff/3600)+' jam lalu';
+  else if(diff<2592000) label=Math.floor(diff/86400)+' hari lalu';
+  else if(diff<31536000) label=Math.floor(diff/2592000)+' bulan lalu';
+  else label=Math.floor(diff/31536000)+' tahun lalu';
+  // Warnai merah bila >90 hari (kandidat dibersihkan).
+  var cls=(diff>90*86400)?' class="seen-stale"':'';
+  return '<span'+cls+'>'+label+'</span>';
+}
+// Berapa hari sejak terakhir aktif (Infinity bila belum pernah). Utk filter.
+function inactiveDays(v){
+  if(v==null||v==='-'||v===0) return Infinity;
+  var sec=(typeof v==='number')?v:Math.floor(new Date(v).getTime()/1000);
+  if(isNaN(sec)) return Infinity;
+  return (Math.floor(Date.now()/1000)-sec)/86400;
+}
+
 // Ambil data asli dari API admin; kalau gagal, pakai dummy.
 async function loadUsers(){
   try{
@@ -505,7 +540,7 @@ async function loadUsers(){
     if(r.ok){
       var d=await r.json();
       if(d&&d.users){
-        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,status:u.status,is_admin:u.is_admin,source:u.source||null,paid:!!u.paid};});
+        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,last_seen:u.last_seen||null,status:u.status,is_admin:u.is_admin,source:u.source||null,paid:!!u.paid};});
         LIVE=true;
         document.getElementById('demoNote').style.display='none';
       }
@@ -561,10 +596,15 @@ async function postAdmin(url,body){
 function render(){
   var q=document.getElementById('searchInp').value.trim().toLowerCase();
   var f=document.getElementById('filterSel').value;
+  var af=document.getElementById('activitySel').value;
   var rows=USERS.filter(function(u){
     var matchQ=!q || u.email.toLowerCase().includes(q) || (u.nama||'').toLowerCase().includes(q);
     var matchF=f==='all' || u.status===f;
-    return matchQ && matchF;
+    var matchA;
+    if(af==='all') matchA=true;
+    else if(af==='never') matchA=!u.last_seen;
+    else matchA=inactiveDays(u.last_seen) > parseInt(af,10);
+    return matchQ && matchF && matchA;
   });
   // Paginasi: 100 user / halaman (1–100, 101–200, dst). Berlaku setelah cari/filter.
   var total=rows.length;
@@ -594,6 +634,7 @@ function render(){
       '<td><span class="pill '+planCls+'">'+(PLAN_LABEL[u.paket]||u.paket)+'</span></td>'+
       '<td class="mono">'+fmtDate(u.berakhir)+'</td>'+
       '<td><span class="pill '+stCls+'">'+stLabel+'</span></td>'+
+      '<td class="u-seen">'+fmtLastSeen(u.last_seen)+'</td>'+
       actionsCell;
     tr.querySelectorAll('.act').forEach(function(b){
       b.addEventListener('click',function(){
@@ -637,6 +678,7 @@ function renderPager(total, pages, start, shown){
 
 document.getElementById('searchInp').addEventListener('input',function(){ PAGE=1; render(); });
 document.getElementById('filterSel').addEventListener('change',function(){ PAGE=1; render(); });
+document.getElementById('activitySel').addEventListener('change',function(){ PAGE=1; render(); });
 
 // ── Modal perpanjangan (pilih durasi via dropdown) ──
 var _extEmail=null;
