@@ -66,7 +66,7 @@ export async function googleCallback(request, env, url) {
 
   const user = await ensureUser(env, profile.email, profile.name || null, profile.picture || null);
   // Trial 30 menit otomatis saat login bila memenuhi syarat (1x per user). Fail-open.
-  try { await grantTrialIfEligible(env, user.id); } catch { /* jangan blokir login */ }
+  try { await grantTrialIfEligible(env, user.id, user.email); } catch { /* jangan blokir login */ }
   const sessionToken = await createSessionToken(env, { uid: user.id, email: user.email, name: user.name });
   const safeNext = next.startsWith('/') ? next : '/';
   return redirect(safeNext, 302, { 'Set-Cookie': sessionCookieHeader(sessionToken) });
@@ -126,7 +126,7 @@ export async function emailVerify(request, env) {
   await deleteEmailCode(env, email);
   const user = await ensureUser(env, email, null, null);
   // Trial 30 menit otomatis saat login bila memenuhi syarat (1x per user). Fail-open.
-  try { await grantTrialIfEligible(env, user.id); } catch { /* jangan blokir login */ }
+  try { await grantTrialIfEligible(env, user.id, user.email); } catch { /* jangan blokir login */ }
   const sessionToken = await createSessionToken(env, { uid: user.id, email: user.email, name: user.name });
   return json({ ok: true }, 200, { 'Set-Cookie': sessionCookieHeader(sessionToken) });
 }
