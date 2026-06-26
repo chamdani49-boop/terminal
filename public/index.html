@@ -6160,6 +6160,18 @@ function buildSearchIndex() {
         </div>`).join('');
       drop.classList.toggle('open', results.length > 0);
     });
+    // Enter: kode benar → langsung tampilkan sahamnya; kode salah → tidak terjadi apa-apa.
+    // Prioritas cocok PERSIS dengan kode; jika tidak, ambil hasil pencocokan pertama.
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const q = input.value.trim().toUpperCase();
+      if (!q) return;
+      const list = (DATA && DATA.stock_list) || [];
+      const exact = list.find(s => s.code === q);
+      const pick = exact || list.find(s => s.code.includes(q) || (s.name && s.name.toUpperCase().includes(q)));
+      if (pick) { e.preventDefault(); selectStock(pick.code); }
+      // kode tidak valid → diabaikan (tidak memunculkan saham)
+    });
   }
 
   attachSearch(
