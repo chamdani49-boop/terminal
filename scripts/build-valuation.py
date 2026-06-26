@@ -158,20 +158,29 @@ def parse_sheet(name, grid):
     # ── TTM RIIL dari section "Key Stats" (baris BERVARIASI per saham → dicari via
     #    LABEL di kolom C; nilainya bisa di kolom H/I/D). Ini basis "tahun berjalan"
     #    yang lebih bijak = 12 bulan terakhir nyata (bukan run-rate Q1×4).
+    #    Label bervariasi antar-batch Excel → cocokkan beberapa varian:
+    #      EPS     : "EPS - TTM (Qx)"        | "Current EPS (TTM)"
+    #      NI      : "Net Income - TTM (Qx)" | "Net Income (TTM)"
+    #      Revenue : "Revenue - TTM (Qx)"    | "Revenue (TTM)"
+    #      ROE     : "Return on Equity (TTM)"  (fraksi → ×100 saat dipakai)
+    def _ttm_metric(lbl):
+        if re.match(r'^EPS - TTM \(Q[1-4]\)$', lbl) or lbl == 'Current EPS (TTM)':
+            return 'eps'
+        if re.match(r'^Net Income - TTM \(Q[1-4]\)$', lbl) or lbl == 'Net Income (TTM)':
+            return 'net_income'
+        if re.match(r'^Revenue - TTM \(Q[1-4]\)$', lbl) or lbl == 'Revenue (TTM)':
+            return 'total_revenue'
+        if lbl == 'Return on Equity (TTM)':
+            return 'roe'
+        return None
     ttm = {}
-    TTM_LABELS = {
-        'EPS - TTM (Q1)':        'eps',
-        'Net Income - TTM (Q1)': 'net_income',
-        'Revenue - TTM (Q1)':    'total_revenue',
-        'Return on Equity (TTM)':'roe',   # fraksi (mis. 0.2184) → dikali 100 saat dipakai
-    }
     for (r, c), v in list(grid.items()):
         if c == 3 and v is not None:
-            key = TTM_LABELS.get(str(v).strip())
-            if key:
-                for vc in (8, 9, 4):              # H, I, D — ambil kolom pertama yang terisi
+            key = _ttm_metric(str(v).strip())
+            if key and key not in ttm:              # set sekali, dari baris yg terisi
+                for vc in (8, 9, 4):                # H, I, D — kolom pertama yang terisi
                     val = to_number(grid.get((r, vc)))
-                    if val is not None:
+                    if val is not None and val != 0:   # 0 = placeholder Excel → anggap kosong
                         ttm[key] = val
                         break
     code_in_sheet = grid.get((1, 3))
@@ -638,9 +647,26 @@ def five_year_valuation(stock, last_price, warn, override=None):
                 'annual': round(gl / n, 4), 'cagr': round(cagr, 4) if cagr is not None else None,
                 'mos': round(mos, 4) if mos is not None else None}
 
-    g_bv  = (0.8 * roe_5y + 0.2 * roe_ann) if (roe_5y is not None and roe_ann is not None) else None
-    g_eps = (0.8 * eps_g_5y + 0.2 * eps_g_ann) if (eps_g_5y is not None and eps_g_ann is not None) else None
-    g_sps = (0.8 * sps_g_5y + 0.2 * sps_g_ann) if (sps_g_5y is not None and sps_g_ann is not None) else None
+    # ── Robustness: data TAHUNAN sebagian emiten anomali (mis. pendapatan tahunan
+    #    salah satuan) → growth TAHUNAN bisa meledak (mis. 1,6 juta %). Buang growth
+    #    tahunan yang absurd (pakai angka 5th saja), lalu clamp hasil blend.
+    def _sane(g, lo=-0.95, hi=5.0):
+        return g if (g is not None and lo <= g <= hi) else None
+    eps_g_ann = _sane(eps_g_ann)
+    sps_g_ann = _sane(sps_g_ann)
+
+    def _blend_g(g5, gann):
+        if g5 is not None and gann is not None:
+            return 0.8 * g5 + 0.2 * gann
+        if g5 is not None:
+            return g5                                  # fallback: angka 5th saja
+        return gann                                    # atau angka tahunan saja
+    def _clamp_g(g, lo=-0.5, hi=1.5):
+        return None if g is None else max(lo, min(hi, g))
+
+    g_bv  = _clamp_g(_blend_g(roe_5y, roe_ann))
+    g_eps = _clamp_g(_blend_g(eps_g_5y, eps_g_ann))
+    g_sps = _clamp_g(_blend_g(sps_g_5y, sps_g_ann))
 
     m_pbv = submodel('pbv', bvps_LY, g_bv, avg_pbv)
     m_per = submodel('per', eps_LY, g_eps, avg_per)
