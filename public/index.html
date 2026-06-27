@@ -2653,7 +2653,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <div class="logo">Economstock Terminal</div>
   <div class="search-wrap search-wrap-desktop">
     <span class="ico">⌕</span>
-    <input type="text" id="searchInput" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off">
+    <input type="text" id="searchInput" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off" enterkeyhint="search">
     <div class="search-drop" id="searchDrop"></div>
   </div>
   <nav class="nav-tabs">
@@ -2711,7 +2711,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <!-- SEARCH BAR MOBILE — tampil di atas hero, hanya di mobile -->
       <div class="search-wrap search-wrap-mobile">
         <span class="ico">⌕</span>
-        <input type="text" id="searchInputMobile" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off">
+        <input type="text" id="searchInputMobile" placeholder="Cari kode saham... (TLKM, BBCA, UNVR)" autocomplete="off" enterkeyhint="search">
         <div class="search-drop" id="searchDropMobile"></div>
       </div>
 
@@ -2826,7 +2826,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <span class="pl-grip">&#10287;</span>
           <span class="pl-win-title">📈 Market Chart</span>
           <span class="pl-spacer"></span>
-          <input type="text" class="pl-select pl-search-input" id="plSelA" autocomplete="off" placeholder="Cari kode… (BBRI)" aria-label="Simbol chart 1">
+          <input type="text" class="pl-select pl-search-input" id="plSelA" autocomplete="off" enterkeyhint="search" placeholder="Cari kode… (BBRI)" aria-label="Simbol chart 1">
           <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
         </div>
         <div class="pl-win-body tv" id="plChartA"></div>
@@ -2838,7 +2838,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <span class="pl-grip">&#10287;</span>
           <span class="pl-win-title">📈 Market Chart</span>
           <span class="pl-spacer"></span>
-          <input type="text" class="pl-select pl-search-input" id="plSelB" autocomplete="off" placeholder="Cari kode… (BBCA)" aria-label="Simbol chart 2">
+          <input type="text" class="pl-select pl-search-input" id="plSelB" autocomplete="off" enterkeyhint="search" placeholder="Cari kode… (BBCA)" aria-label="Simbol chart 2">
           <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
         </div>
         <div class="pl-win-body tv" id="plChartB"></div>
@@ -2866,7 +2866,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <button class="on" type="button" onclick="plSeasView('table',this)">Tabel</button>
             <button type="button" onclick="plSeasView('line',this)">Line</button>
           </div>
-          <input type="text" class="pl-select pl-search-input" id="plSeasSelect" autocomplete="off" placeholder="Cari kode… (IHSG)" aria-label="Simbol seasonality">
+          <input type="text" class="pl-select pl-search-input" id="plSeasSelect" autocomplete="off" enterkeyhint="search" placeholder="Cari kode… (IHSG)" aria-label="Simbol seasonality">
           <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
         </div>
         <div class="pl-win-body scroll" id="plSeasonality"></div>
@@ -2909,7 +2909,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <label class="form-label">Pilih Saham</label>
             <input type="hidden" id="savingStock">
             <div class="saving-stock-wrap" style="position:relative">
-              <input type="text" class="form-control" id="savingStockSearch" placeholder="Ketik kode / nama saham, mis. BBCA" autocomplete="off">
+              <input type="text" class="form-control" id="savingStockSearch" placeholder="Ketik kode / nama saham, mis. BBCA" autocomplete="off" enterkeyhint="search">
               <div class="search-drop" id="savingStockDrop"></div>
             </div>
             <div id="savingStockPicked" class="saving-picked" style="display:none"></div>
@@ -6212,20 +6212,17 @@ function buildSearchIndex() {
   // saat elemen di-render ulang, keyboard HP (kadang hanya keyup / e.target=body),
   // & variasi key/keyCode (Android). Kode persis benar → pilih; salah → diabaikan.
   var _esEnterTs = 0;
-  function _esSearchEnter(e) {
-    if (!(e.key === 'Enter' || e.keyCode === 13 || e.which === 13)) return;
-    var nowMs = Date.now(); if (nowMs - _esEnterTs < 250) return;          // dedupe keydown+keyup
-    var t = e.target;
-    if (!t || t.tagName !== 'INPUT' || !t.id) t = document.activeElement;  // fallback bila target=body
-    if (!t || !t.id) return;
+  // Lakukan pemilihan saham dari input cari (dipakai semua pemicu Enter).
+  function _esDoSelect(t) {
+    if (!t || t.tagName !== 'INPUT' || !t.id) return false;
     var id = t.id;
-    if (['searchInput', 'searchInputMobile', 'savingStockSearch', 'plSelA', 'plSelB', 'plSeasSelect'].indexOf(id) < 0) return;
-    var q = (t.value || '').trim().toUpperCase(); if (!q) return;
+    if (['searchInput', 'searchInputMobile', 'savingStockSearch', 'plSelA', 'plSelB', 'plSeasSelect'].indexOf(id) < 0) return false;
+    var q = (t.value || '').trim().toUpperCase(); if (!q) return false;
     var list = (typeof DATA !== 'undefined' && DATA && DATA.stock_list) || [];
     function pick() { return list.find(function (s) { return s.code === q; }) || list.find(function (s) { return s.code.indexOf(q) >= 0 || (s.name && s.name.toUpperCase().indexOf(q) >= 0); }); }
-    var p, did = false;
-    if (id === 'searchInput' || id === 'searchInputMobile') { p = pick(); if (p) { selectStock(p.code); did = true; } }
-    else if (id === 'savingStockSearch') { p = pick(); if (p && typeof savingPickStock === 'function') { savingPickStock(p.code); did = true; } }
+    var p;
+    if (id === 'searchInput' || id === 'searchInputMobile') { p = pick(); if (p) { selectStock(p.code); return true; } }
+    else if (id === 'savingStockSearch') { p = pick(); if (p && typeof savingPickStock === 'function') { savingPickStock(p.code); return true; } }
     else { // Pasar Live: chart A/B & seasonality
       var code = (typeof _plCodesSet !== 'undefined' && _plCodesSet && _plCodesSet.has(q)) ? q : (pick() ? pick().code : null);
       if (code) {
@@ -6236,43 +6233,33 @@ function buildSearchIndex() {
         if (typeof plSearchDispatch === 'function') plSearchDispatch(kind, code);
         setTimeout(function () { window.scrollTo(0, sy); }, 60);    // jaga posisi kolom
         setTimeout(function () { window.scrollTo(0, sy); }, 260);
-        did = true;
+        return true;
       }
     }
-    if (did) { _esEnterTs = nowMs; if (e.preventDefault) e.preventDefault(); if (e.stopPropagation) e.stopPropagation(); }
+    return false;
+  }
+  // keydown/keyup — keyboard normal (desktop & HP non-IME).
+  function _esSearchEnter(e) {
+    if (!(e.key === 'Enter' || e.keyCode === 13 || e.which === 13)) return;
+    var nowMs = Date.now(); if (nowMs - _esEnterTs < 300) return;          // dedupe antar-event
+    var t = e.target;
+    if (!t || t.tagName !== 'INPUT' || !t.id) t = document.activeElement;
+    if (_esDoSelect(t)) { _esEnterTs = nowMs; if (e.preventDefault) e.preventDefault(); if (e.stopPropagation) e.stopPropagation(); }
+  }
+  // beforeinput 'insertLineBreak' — Enter di keyboard Android IME (GBoard) yang
+  // mengirim keyCode 229 / key 'Unidentified', sehingga keydown tak bisa dipakai.
+  function _esBeforeInput(e) {
+    if (e.inputType !== 'insertLineBreak') return;
+    var nowMs = Date.now(); if (nowMs - _esEnterTs < 300) return;
+    var t = e.target;
+    if (!t || t.tagName !== 'INPUT' || !t.id) t = document.activeElement;
+    if (_esDoSelect(t)) { _esEnterTs = nowMs; if (e.preventDefault) e.preventDefault(); }
   }
   document.addEventListener('keydown', _esSearchEnter, true);
   document.addEventListener('keyup', _esSearchEnter, true);
-
-  // ── DIAGNOSTIK SEMENTARA (akan dihapus setelah masalah Enter di HP ketemu) ──
-  // Menampilkan kotak hitam di bawah layar: tiap kali tombol Enter (atau key
-  // sejenis) ditekan, dicatat detail event-nya. Ketuk kotak untuk mengosongkan.
-  function _esDbgBox() {
-    var d = document.getElementById('_esdbg');
-    if (!d) {
-      d = document.createElement('div');
-      d.id = '_esdbg';
-      d.style.cssText = 'position:fixed;left:6px;right:6px;bottom:6px;z-index:2147483647;background:rgba(0,0,0,.9);color:#4ade80;font:11px/1.45 monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;max-height:46vh;overflow:auto;box-shadow:0 4px 20px rgba(0,0,0,.5)';
-      d.addEventListener('click', function () { d.textContent = 'DIAGNOSTIK Enter (ketuk utk hapus)\n'; });
-      document.body.appendChild(d);
-      d.textContent = 'DIAGNOSTIK Enter (ketuk utk hapus)\n';
-    }
-    return d;
-  }
-  function _esDbgLog(e) {
-    var k = e.key, kc = e.keyCode || e.which || 0;
-    if (!(k === 'Enter' || kc === 13 || kc === 229)) return;
-    var t = e.target || {}, a = document.activeElement || {};
-    var line = '[' + e.type + '] key=' + k + ' kc=' + kc +
-      ' target=' + (t.id || t.tagName || '?') +
-      ' active=' + (a.id || a.tagName || '?') +
-      ' val="' + ((t.value != null ? t.value : a.value) || '') + '"';
-    var box = _esDbgBox();
-    box.textContent = line + '\n' + box.textContent;
-  }
-  document.addEventListener('keydown', _esDbgLog, true);
-  document.addEventListener('keyup', _esDbgLog, true);
+  document.addEventListener('beforeinput', _esBeforeInput, true);
 }
+
 
 function selectStock(code) {
   currentStock = code;
@@ -10712,7 +10699,7 @@ body.vl-maxing{overflow:hidden}
         <label class="vl-tb-label" for="vlStockSearch">Pilih Emiten</label>
         <div class="vl-search" id="vlSearchWrap">
           <span class="ico">⌕</span>
-          <input type="text" id="vlStockSearch" placeholder="Cari emiten... (TLKM, BBCA, UNVR)" autocomplete="off" spellcheck="false">
+          <input type="text" id="vlStockSearch" placeholder="Cari emiten... (TLKM, BBCA, UNVR)" autocomplete="off" spellcheck="false" enterkeyhint="search">
           <span class="caret">▾</span>
           <div class="vl-search-drop" id="vlStockDrop"></div>
         </div>
