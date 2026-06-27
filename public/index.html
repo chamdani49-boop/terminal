@@ -6207,20 +6207,27 @@ function buildSearchIndex() {
     }
   });
 
-  // Enter di HP (Android sering tak mengirim key 'Enter' yang persis di keydown) —
-  // ditangani terpusat lewat keyup utk SEMUA kolom cari saham: kode persis benar →
-  // langsung pilih; ada kecocokan → ambil pertama; kode salah → diabaikan.
-  document.addEventListener('keyup', function (e) {
+  // Enter di kolom cari saham — handler DELEGASI di level document, fase CAPTURE,
+  // dipasang utk keydown DAN keyup. Robust terhadap: listener per-input yang hilang
+  // saat elemen di-render ulang, keyboard HP (kadang hanya keyup / e.target=body),
+  // & variasi key/keyCode (Android). Kode persis benar → pilih; salah → diabaikan.
+  var _esEnterTs = 0;
+  function _esSearchEnter(e) {
     if (!(e.key === 'Enter' || e.keyCode === 13 || e.which === 13)) return;
-    var t = e.target; if (!t || !t.id || t.tagName !== 'INPUT') return;
+    var nowMs = Date.now(); if (nowMs - _esEnterTs < 250) return;          // dedupe keydown+keyup
+    var t = e.target;
+    if (!t || t.tagName !== 'INPUT' || !t.id) t = document.activeElement;  // fallback bila target=body
+    if (!t || !t.id) return;
+    var id = t.id;
+    if (['searchInput', 'searchInputMobile', 'savingStockSearch', 'vlStockSearch', 'plSelA', 'plSelB', 'plSeasSelect'].indexOf(id) < 0) return;
     var q = (t.value || '').trim().toUpperCase(); if (!q) return;
     var list = (typeof DATA !== 'undefined' && DATA && DATA.stock_list) || [];
     function pick() { return list.find(function (s) { return s.code === q; }) || list.find(function (s) { return s.code.indexOf(q) >= 0 || (s.name && s.name.toUpperCase().indexOf(q) >= 0); }); }
-    var id = t.id, p;
-    if (id === 'searchInput' || id === 'searchInputMobile') { p = pick(); if (p) selectStock(p.code); }
-    else if (id === 'savingStockSearch') { p = pick(); if (p && typeof savingPickStock === 'function') savingPickStock(p.code); }
-    else if (id === 'vlStockSearch') { p = pick(); if (p && typeof window.vlSelectStock === 'function') { window.vlSelectStock(p.code); try { t.blur(); } catch (x) {} } }
-    else if (id === 'plSelA' || id === 'plSelB' || id === 'plSeasSelect') {
+    var p, did = false;
+    if (id === 'searchInput' || id === 'searchInputMobile') { p = pick(); if (p) { selectStock(p.code); did = true; } }
+    else if (id === 'savingStockSearch') { p = pick(); if (p && typeof savingPickStock === 'function') { savingPickStock(p.code); did = true; } }
+    else if (id === 'vlStockSearch') { p = pick(); if (p && typeof window.vlSelectStock === 'function') { window.vlSelectStock(p.code); did = true; } }
+    else { // Pasar Live: chart A/B & seasonality
       var code = (typeof _plCodesSet !== 'undefined' && _plCodesSet && _plCodesSet.has(q)) ? q : (pick() ? pick().code : null);
       if (code) {
         var kind = id === 'plSelA' ? 'chartA' : (id === 'plSelB' ? 'chartB' : 'seas');
@@ -6228,11 +6235,15 @@ function buildSearchIndex() {
         t.value = code;
         if (typeof plSearchClose === 'function') plSearchClose();
         if (typeof plSearchDispatch === 'function') plSearchDispatch(kind, code);
-        // jaga posisi: jangan biarkan tampilan bergeser ke kolom lain
-        setTimeout(function () { window.scrollTo(0, sy); }, 60);
+        setTimeout(function () { window.scrollTo(0, sy); }, 60);    // jaga posisi kolom
+        setTimeout(function () { window.scrollTo(0, sy); }, 260);
+        did = true;
       }
     }
-  });
+    if (did) { _esEnterTs = nowMs; if (e.preventDefault) e.preventDefault(); if (e.stopPropagation) e.stopPropagation(); }
+  }
+  document.addEventListener('keydown', _esSearchEnter, true);
+  document.addEventListener('keyup', _esSearchEnter, true);
 }
 
 function selectStock(code) {
