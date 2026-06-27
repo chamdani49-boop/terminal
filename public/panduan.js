@@ -42,7 +42,11 @@
   }
   function call(fn, arg) { try { if (typeof W[fn] === 'function') { arg === undefined ? W[fn]() : W[fn](arg); return true; } } catch (e) {} return false; }
   function clickFirst(sel) { var e = $(sel); if (e) { try { e.click(); return true; } catch (x) {} } return false; }
-  function setDone() { try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {} }
+  function setDone() {
+    try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {}
+    // Tandai di server (per email/akun) → tak muncul lagi walau refresh / ganti perangkat.
+    try { fetch('/api/guide-seen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch (e) {}
+  }
 
   // Resolver: elemen pertama yang terlihat dari daftar selector.
   function S() { var a = arguments; return function () { for (var i = 0; i < a.length; i++) { var e = $(a[i]); if (e && vis(e)) return e; } return null; }; }
@@ -367,8 +371,13 @@
     var t = setInterval(function () {
       tries++;
       var p = W.__ES_PROFILE;
-      if (p && p.authenticated) { clearInterval(t); showWelcome(); }
-      else if (tries > 25) { clearInterval(t); }
+      if (p && p.authenticated) {
+        clearInterval(t);
+        // Kunci by EMAIL/akun: server bilang sudah pernah lihat → jangan tampilkan lagi
+        // (refresh / ganti perangkat tidak berpengaruh).
+        if (p.guide_seen) { try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {} return; }
+        showWelcome();
+      } else if (tries > 25) { clearInterval(t); }
     }, 400);
   }
 

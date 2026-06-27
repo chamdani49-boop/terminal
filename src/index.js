@@ -15,7 +15,7 @@ import { getSession, clearSessionCookieHeader } from './lib/session.js';
 import { googleStart, googleCallback, emailRequest, emailVerify } from './lib/auth.js';
 import { checkout, webhook } from './lib/mayar.js';
 import { handleAdminApi } from './lib/admin.js';
-import { getActiveSubscription, getReferralInfo } from './lib/db.js';
+import { getActiveSubscription, getReferralInfo, getUserById, markGuideSeen } from './lib/db.js';
 import { getBillingConfig, publicBilling } from './lib/billing.js';
 import { rateLimit, reportAbuse, trackDevice } from './lib/abuse.js';
 import { TOS_VERSION, hasAcceptedCurrent, saveConsent } from './lib/legal.js';
@@ -184,6 +184,8 @@ async function handleApi(request, env, url, ctx) {
     }
     let tosAccepted = true;
     try { tosAccepted = await hasAcceptedCurrent(env, session.uid); } catch { tosAccepted = true; }
+    let guideSeen = false;
+    try { const u = await getUserById(env, session.uid); guideSeen = !!(u && u.guide_seen); } catch { guideSeen = false; }
     return json({
       authenticated: true,
       email: session.email,
@@ -193,7 +195,16 @@ async function handleApi(request, env, url, ctx) {
       subscription: sub,
       tos_version: TOS_VERSION,
       tos_accepted: tosAccepted,
+      guide_seen: guideSeen,    // panduan tur sudah dilihat (per email/akun)
     });
+  }
+
+  // ── Tandai panduan tur sudah dilihat (per email/akun) ──
+  if (path === '/api/guide-seen' && method === 'POST') {
+    const session = await getSession(request, env);
+    if (!session) return json({ ok: false }, 401);
+    try { await markGuideSeen(env, session.uid); } catch { /* fail-safe */ }
+    return json({ ok: true });
   }
 
   // ── Referral: kode ajakan + statistik (N orang · M hari) ──
