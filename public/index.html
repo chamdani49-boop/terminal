@@ -5290,11 +5290,12 @@ function plSearchKey(evt) {
   if (evt.key === 'ArrowDown' && open) { evt.preventDefault(); _plSearchActive = Math.min(_plSearchItems.length - 1, _plSearchActive + 1); plSearchRender(); }
   else if (evt.key === 'ArrowUp' && open) { evt.preventDefault(); _plSearchActive = Math.max(0, _plSearchActive - 1); plSearchRender(); }
   else if (evt.key === 'Enter') {
-    if (open) {
-      evt.preventDefault();
-      const pick = _plSearchItems[_plSearchActive >= 0 ? _plSearchActive : 0];
-      if (pick) plSearchPick(pick.code);
-    }
+    evt.preventDefault();
+    const q = ((_plSearchInput && _plSearchInput.value) || '').trim().toUpperCase();
+    let code = null;
+    if (q && _plCodesSet && _plCodesSet.has(q)) code = q;            // kode persis valid
+    else if (open) { const p = _plSearchItems[_plSearchActive >= 0 ? _plSearchActive : 0]; if (p) code = p.code; }
+    if (code) plSearchPick(code);
   } else if (evt.key === 'Escape') { plSearchClose(); }
 }
 
@@ -7926,6 +7927,7 @@ function showFirmDetail(firm) {
   document.getElementById('firmRecsTable').innerHTML = `
     <thead>
       <tr>
+        <th style="text-align:center">#</th>
         <th>Saham</th>
         <th>Tanggal</th>
         <th>Rekomendasi</th>
@@ -7937,7 +7939,7 @@ function showFirmDetail(firm) {
       </tr>
     </thead>
     <tbody>
-      ${allRecs.map(r => {
+      ${allRecs.map((r, i) => {
         const cur = last[r.code] || 0;
         const pct = cur && r.target_price ? (r.target_price - cur) / cur : null;
         const badgeCls = r.suggestion === 'BUY' ? 'badge-buy' : r.suggestion === 'SELL' ? 'badge-sell' : 'badge-neutral';
@@ -7955,6 +7957,7 @@ function showFirmDetail(firm) {
         const codeEsc = escapeHtml(r.code);
 
         return `<tr style="cursor:pointer" onclick="showRecDetail('${codeEsc}', ${recIdx >= 0 ? recIdx : 0})" title="Klik untuk detail rekomendasi ${codeEsc}">
+          <td class="mono" style="color:var(--text3);text-align:center">${i + 1}</td>
           <td onclick="event.stopPropagation()">
             <span class="firm-recs-stock" onclick="selectStock('${codeEsc}')" title="${escapeHtml(stockName)} — klik untuk lihat detail saham">${codeEsc}</span>
           </td>
@@ -8778,7 +8781,12 @@ function savingSearchKey(evt) {
   if (evt.key === 'ArrowDown' && open) { evt.preventDefault(); _savingSearchActive = Math.min(_savingSearchItems.length - 1, _savingSearchActive + 1); savingSearchRender(); }
   else if (evt.key === 'ArrowUp' && open) { evt.preventDefault(); _savingSearchActive = Math.max(0, _savingSearchActive - 1); savingSearchRender(); }
   else if (evt.key === 'Enter') {
-    if (open) { evt.preventDefault(); const pick = _savingSearchItems[_savingSearchActive >= 0 ? _savingSearchActive : 0]; if (pick) savingPickStock(pick.code); }
+    evt.preventDefault();
+    const q = ((document.getElementById('savingStockSearch') || {}).value || '').trim().toUpperCase();
+    const items = (_savingSearchItems && _savingSearchItems.length) ? _savingSearchItems : savingSearchList(q);
+    const exact = items.find(s => s.code === q);
+    const pick = exact || (open ? items[_savingSearchActive >= 0 ? _savingSearchActive : 0] : null);
+    if (pick) savingPickStock(pick.code);
   } else if (evt.key === 'Escape') { drop.classList.remove('open'); }
 }
 
