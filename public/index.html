@@ -2333,17 +2333,19 @@ select.form-control option{background:var(--card);color:var(--text)}
   font-variant-numeric:tabular-nums;
 }
 
-/* HP: cegah popup detail rekomendasi melebihi lebar layar (angka 5-digit) */
+/* HP: popup detail rekomendasi — PERTAHANKAN tata letak lama (kiri-kanan),
+   hanya perkecil angka agar 5-digit (mis. Rp16.550) tidak keluar layar. */
 @media (max-width:560px){
   .rec-modal{min-width:0;overflow-x:hidden}
-  .rec-modal-ticker{font-size:18px}
-  .rec-modal-return-hero{flex-wrap:wrap;gap:10px 14px}
-  .rec-modal-return-hero > div[style*="margin-left:auto"]{margin-left:0!important;text-align:left!important;width:100%}
+  .rec-modal-ticker{font-size:17px}
+  .rec-modal-return-hero{gap:8px}
   .rec-modal-return-dual{min-width:0}
   .rec-modal-return-dual > div{min-width:0}
-  .rec-modal-return-val{font-size:23px}
-  .rec-modal-return-hit-val{font-size:19px}
-  .rec-modal-return-divider{margin:0 10px}
+  .rec-modal-return-val{font-size:19px}
+  .rec-modal-return-sub{font-size:10px}
+  .rec-modal-return-hit-val{font-size:16px}
+  .rec-modal-return-divider{margin:0 8px}
+  .rec-modal-return-hero > div[style*="margin-left:auto"] > div{font-size:15px !important}
 }
 
 /* Performance multi-period */
@@ -5277,7 +5279,7 @@ function plSearchPick(code) {
   input.value = code;
   plSearchClose();
   plSearchDispatch(kind, code);
-  input.blur();
+  // (tidak blur: blur menutup keyboard HP & membuat tampilan bergeser ke kolom lain)
 }
 
 // Jalankan aksi: ganti simbol chart atau render seasonality
@@ -6222,10 +6224,12 @@ function buildSearchIndex() {
       var code = (typeof _plCodesSet !== 'undefined' && _plCodesSet && _plCodesSet.has(q)) ? q : (pick() ? pick().code : null);
       if (code) {
         var kind = id === 'plSelA' ? 'chartA' : (id === 'plSelB' ? 'chartB' : 'seas');
+        var sy = window.scrollY;
         t.value = code;
         if (typeof plSearchClose === 'function') plSearchClose();
         if (typeof plSearchDispatch === 'function') plSearchDispatch(kind, code);
-        try { t.blur(); } catch (x) {}
+        // jaga posisi: jangan biarkan tampilan bergeser ke kolom lain
+        setTimeout(function () { window.scrollTo(0, sy); }, 60);
       }
     }
   });
@@ -6252,6 +6256,9 @@ function selectStock(code) {
     const el = document.getElementById(id);
     if (el) el.classList.remove('open');
   });
+  // HP: tampilkan header saham yang dipilih di atas (cegah tampilan "turun" ke kartu lain
+  // seperti Price Target Blueprint). Di tampilan PC tidak diubah.
+  try { if (typeof isDesktopView === 'function' && !isDesktopView()) window.scrollTo(0, 0); } catch (e) {}
 }
 
 // ═══════════════════════════════════════════
@@ -8822,10 +8829,11 @@ function savingSearchKey(evt) {
   else if (evt.key === 'Enter') {
     evt.preventDefault();
     const q = ((document.getElementById('savingStockSearch') || {}).value || '').trim().toUpperCase();
-    const items = (_savingSearchItems && _savingSearchItems.length) ? _savingSearchItems : savingSearchList(q);
-    const exact = items.find(s => s.code === q);
-    const pick = exact || (open ? items[_savingSearchActive >= 0 ? _savingSearchActive : 0] : null);
-    if (pick) savingPickStock(pick.code);
+    if (q) {
+      const items = savingSearchList(q);                 // selalu segar (hindari pilih saham basi)
+      const pick = items.find(s => s.code === q) || items[0];
+      if (pick) savingPickStock(pick.code);
+    }
   } else if (evt.key === 'Escape') { drop.classList.remove('open'); }
 }
 
