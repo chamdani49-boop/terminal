@@ -2223,6 +2223,7 @@ select.form-control option{background:var(--card);color:var(--text)}
   border-radius:var(--radius-lg);
   box-shadow:0 20px 60px rgba(0,0,0,.45);
   max-width:480px;width:100%;
+  min-width:0;overflow-x:hidden;
   max-height:calc(100vh - 32px);
   overflow-y:auto;
   position:relative;
@@ -2330,6 +2331,19 @@ select.form-control option{background:var(--card);color:var(--text)}
   font-family:'IBM Plex Mono',monospace;
   font-size:13px;font-weight:700;
   font-variant-numeric:tabular-nums;
+}
+
+/* HP: cegah popup detail rekomendasi melebihi lebar layar (angka 5-digit) */
+@media (max-width:560px){
+  .rec-modal{min-width:0;overflow-x:hidden}
+  .rec-modal-ticker{font-size:18px}
+  .rec-modal-return-hero{flex-wrap:wrap;gap:10px 14px}
+  .rec-modal-return-hero > div[style*="margin-left:auto"]{margin-left:0!important;text-align:left!important;width:100%}
+  .rec-modal-return-dual{min-width:0}
+  .rec-modal-return-dual > div{min-width:0}
+  .rec-modal-return-val{font-size:23px}
+  .rec-modal-return-hit-val{font-size:19px}
+  .rec-modal-return-divider{margin:0 10px}
 }
 
 /* Performance multi-period */
@@ -6188,6 +6202,31 @@ function buildSearchIndex() {
     if (!e.target.closest('.search-wrap')) {
       document.getElementById('searchDrop').classList.remove('open');
       document.getElementById('searchDropMobile').classList.remove('open');
+    }
+  });
+
+  // Enter di HP (Android sering tak mengirim key 'Enter' yang persis di keydown) —
+  // ditangani terpusat lewat keyup utk SEMUA kolom cari saham: kode persis benar →
+  // langsung pilih; ada kecocokan → ambil pertama; kode salah → diabaikan.
+  document.addEventListener('keyup', function (e) {
+    if (!(e.key === 'Enter' || e.keyCode === 13 || e.which === 13)) return;
+    var t = e.target; if (!t || !t.id || t.tagName !== 'INPUT') return;
+    var q = (t.value || '').trim().toUpperCase(); if (!q) return;
+    var list = (typeof DATA !== 'undefined' && DATA && DATA.stock_list) || [];
+    function pick() { return list.find(function (s) { return s.code === q; }) || list.find(function (s) { return s.code.indexOf(q) >= 0 || (s.name && s.name.toUpperCase().indexOf(q) >= 0); }); }
+    var id = t.id, p;
+    if (id === 'searchInput' || id === 'searchInputMobile') { p = pick(); if (p) selectStock(p.code); }
+    else if (id === 'savingStockSearch') { p = pick(); if (p && typeof savingPickStock === 'function') savingPickStock(p.code); }
+    else if (id === 'vlStockSearch') { p = pick(); if (p && typeof window.vlSelectStock === 'function') { window.vlSelectStock(p.code); try { t.blur(); } catch (x) {} } }
+    else if (id === 'plSelA' || id === 'plSelB' || id === 'plSeasSelect') {
+      var code = (typeof _plCodesSet !== 'undefined' && _plCodesSet && _plCodesSet.has(q)) ? q : (pick() ? pick().code : null);
+      if (code) {
+        var kind = id === 'plSelA' ? 'chartA' : (id === 'plSelB' ? 'chartB' : 'seas');
+        t.value = code;
+        if (typeof plSearchClose === 'function') plSearchClose();
+        if (typeof plSearchDispatch === 'function') plSearchDispatch(kind, code);
+        try { t.blur(); } catch (x) {}
+      }
     }
   });
 }
