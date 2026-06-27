@@ -6243,6 +6243,35 @@ function buildSearchIndex() {
   }
   document.addEventListener('keydown', _esSearchEnter, true);
   document.addEventListener('keyup', _esSearchEnter, true);
+
+  // ── DIAGNOSTIK SEMENTARA (akan dihapus setelah masalah Enter di HP ketemu) ──
+  // Menampilkan kotak hitam di bawah layar: tiap kali tombol Enter (atau key
+  // sejenis) ditekan, dicatat detail event-nya. Ketuk kotak untuk mengosongkan.
+  function _esDbgBox() {
+    var d = document.getElementById('_esdbg');
+    if (!d) {
+      d = document.createElement('div');
+      d.id = '_esdbg';
+      d.style.cssText = 'position:fixed;left:6px;right:6px;bottom:6px;z-index:2147483647;background:rgba(0,0,0,.9);color:#4ade80;font:11px/1.45 monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;max-height:46vh;overflow:auto;box-shadow:0 4px 20px rgba(0,0,0,.5)';
+      d.addEventListener('click', function () { d.textContent = 'DIAGNOSTIK Enter (ketuk utk hapus)\n'; });
+      document.body.appendChild(d);
+      d.textContent = 'DIAGNOSTIK Enter (ketuk utk hapus)\n';
+    }
+    return d;
+  }
+  function _esDbgLog(e) {
+    var k = e.key, kc = e.keyCode || e.which || 0;
+    if (!(k === 'Enter' || kc === 13 || kc === 229)) return;
+    var t = e.target || {}, a = document.activeElement || {};
+    var line = '[' + e.type + '] key=' + k + ' kc=' + kc +
+      ' target=' + (t.id || t.tagName || '?') +
+      ' active=' + (a.id || a.tagName || '?') +
+      ' val="' + ((t.value != null ? t.value : a.value) || '') + '"';
+    var box = _esDbgBox();
+    box.textContent = line + '\n' + box.textContent;
+  }
+  document.addEventListener('keydown', _esDbgLog, true);
+  document.addEventListener('keyup', _esDbgLog, true);
 }
 
 function selectStock(code) {
