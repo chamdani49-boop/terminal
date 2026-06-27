@@ -6219,14 +6219,13 @@ function buildSearchIndex() {
     if (!t || t.tagName !== 'INPUT' || !t.id) t = document.activeElement;  // fallback bila target=body
     if (!t || !t.id) return;
     var id = t.id;
-    if (['searchInput', 'searchInputMobile', 'savingStockSearch', 'vlStockSearch', 'plSelA', 'plSelB', 'plSeasSelect'].indexOf(id) < 0) return;
+    if (['searchInput', 'searchInputMobile', 'savingStockSearch', 'plSelA', 'plSelB', 'plSeasSelect'].indexOf(id) < 0) return;
     var q = (t.value || '').trim().toUpperCase(); if (!q) return;
     var list = (typeof DATA !== 'undefined' && DATA && DATA.stock_list) || [];
     function pick() { return list.find(function (s) { return s.code === q; }) || list.find(function (s) { return s.code.indexOf(q) >= 0 || (s.name && s.name.toUpperCase().indexOf(q) >= 0); }); }
     var p, did = false;
     if (id === 'searchInput' || id === 'searchInputMobile') { p = pick(); if (p) { selectStock(p.code); did = true; } }
     else if (id === 'savingStockSearch') { p = pick(); if (p && typeof savingPickStock === 'function') { savingPickStock(p.code); did = true; } }
-    else if (id === 'vlStockSearch') { p = pick(); if (p && typeof window.vlSelectStock === 'function') { window.vlSelectStock(p.code); did = true; } }
     else { // Pasar Live: chart A/B & seasonality
       var code = (typeof _plCodesSet !== 'undefined' && _plCodesSet && _plCodesSet.has(q)) ? q : (pick() ? pick().code : null);
       if (code) {
