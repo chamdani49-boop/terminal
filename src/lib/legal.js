@@ -45,22 +45,19 @@ export async function getConsentVersion(env, userId) {
 }
 
 /**
- * Apakah user sudah menyetujui versi terbaru DAN persetujuannya belum
- * kedaluwarsa (>30 hari). FAIL-OPEN saat error.
+ * Apakah user sudah menyetujui versi terbaru. Sekali disetujui (per email/akun),
+ * tidak diminta lagi — kecuali versi dokumen (TOS_VERSION) dinaikkan. FAIL-OPEN saat error.
  *
  * Pop up hanya muncul:
  *  - saat awal pendaftaran/login (belum pernah setuju), atau
- *  - kalau versi dokumen naik, atau
- *  - kalau persetujuan terakhir sudah lebih dari 30 hari.
+ *  - kalau versi dokumen naik (TOS_VERSION bertambah).
  */
 export async function hasAcceptedCurrent(env, userId) {
   if (!env.DB || !userId) return true;   // tanpa DB → jangan ganggu
   try {
     const row = await getConsent(env, userId);
     if (!row || (row.version || 0) < TOS_VERSION) return false;
-    const acceptedAt = row.accepted_at || 0;
-    if (acceptedAt && (now() - acceptedAt) > CONSENT_MAX_AGE_SEC) return false;
-    return true;
+    return true;   // sudah setuju versi terbaru → cukup sekali, tidak ada kedaluwarsa
   } catch (_) { return true; }
 }
 

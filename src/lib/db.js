@@ -296,6 +296,16 @@ export async function autoSuspendByUserId(env, userId) {
   return true;
 }
 
+// Tandai panduan tur sudah dilihat (per email/akun). FAIL-SAFE: bila kolom
+// guide_seen belum ada (migration belum jalan) → diabaikan dengan aman.
+export async function markGuideSeen(env, userId) {
+  if (!userId) return { ok: false };
+  try {
+    await db(env).prepare('UPDATE users SET guide_seen = 1, updated_at = ? WHERE id = ?').bind(now(), userId).run();
+    return { ok: true };
+  } catch { return { ok: false }; }
+}
+
 export async function adminDeleteUser(env, email) {
   const u = await getUserByEmail(env, email);
   if (!u) throw new Error('User tidak ditemukan');
