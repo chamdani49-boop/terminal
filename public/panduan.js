@@ -211,7 +211,7 @@
       }
       return;
     }
-    if (pcPhone) applyZoom(el); else clearZoom();
+    clearZoom();   // (zoom dinonaktifkan sesuai permintaan; kolom tidak diperbesar)
     var r = el.getBoundingClientRect();
     var off = phone ? (r.top < 64 || r.top > innerHeight * 0.5) : (r.top < 70 || r.bottom > innerHeight - 70);
     if (off) {
