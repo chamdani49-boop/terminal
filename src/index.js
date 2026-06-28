@@ -15,7 +15,7 @@ import { getSession, clearSessionCookieHeader } from './lib/session.js';
 import { googleStart, googleCallback, emailRequest, emailVerify } from './lib/auth.js';
 import { checkout, webhook } from './lib/mayar.js';
 import { handleAdminApi } from './lib/admin.js';
-import { getActiveSubscription, getReferralInfo, getUserById, markGuideSeen } from './lib/db.js';
+import { getActiveSubscription, getReferralInfo, getUserById, markGuideSeen, getFeatureFlags } from './lib/db.js';
 import { getBillingConfig, publicBilling } from './lib/billing.js';
 import { rateLimit, reportAbuse, trackDevice } from './lib/abuse.js';
 import { TOS_VERSION, hasAcceptedCurrent, saveConsent } from './lib/legal.js';
@@ -209,14 +209,19 @@ async function handleApi(request, env, url, ctx) {
 
   // ── Referral: kode ajakan + statistik (N orang · M hari) ──
   if (path === '/api/referral' && method === 'GET') {
+    // Fitur ajak teman bisa dimatikan dari panel admin → kirim enabled:false
+    // agar UI menyembunyikan kartu untuk semua pengunjung.
+    const flags = await getFeatureFlags(env);
+    if (!flags.referral) return json({ authenticated: false, enabled: false, code: null, link: null, count: 0, days: 0 });
     const session = await getSession(request, env);
-    if (!session) return json({ authenticated: false });
+    if (!session) return json({ authenticated: false, enabled: true });
     try {
       const info = await getReferralInfo(env, session.uid);
       const base = (env.APP_URL || '').replace(/\/$/, '');
       const link = info && info.code ? `${base}/login?ref=${encodeURIComponent(info.code)}` : null;
       return json({
         authenticated: true,
+        enabled: true,
         code: (info && info.code) || null,
         link,
         count: (info && info.count) || 0,
@@ -224,7 +229,7 @@ async function handleApi(request, env, url, ctx) {
       });
     } catch {
       // Migration belum jalan / D1 error → kembalikan kosong (UI sembunyikan).
-      return json({ authenticated: true, code: null, link: null, count: 0, days: 0 });
+      return json({ authenticated: true, enabled: true, code: null, link: null, count: 0, days: 0 });
     }
   }
 

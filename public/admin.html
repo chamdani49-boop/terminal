@@ -154,6 +154,18 @@ tbody tr:hover{background:var(--bg2)}
 .bill-head .usage-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px}
 .bill-toggle{font-size:11px;font-weight:700;padding:6px 12px;border-radius:var(--radius-pill);border:1px solid var(--border);color:var(--text2);background:var(--bg2);cursor:pointer}
 .bill-toggle:hover{border-color:var(--accent);color:var(--accent)}
+/* Pengaturan Fitur — baris toggle on/off */
+.feat-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 0;border-top:1px solid var(--border)}
+.feat-row:first-of-type{border-top:none}
+.feat-name{font-weight:700;font-size:14px}
+.feat-desc{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.45}
+.switch{position:relative;display:inline-block;width:48px;height:26px;flex:0 0 auto}
+.switch input{opacity:0;width:0;height:0}
+.switch .slider{position:absolute;cursor:pointer;inset:0;background:var(--bg2);border:1px solid var(--border);border-radius:999px;transition:.2s}
+.switch .slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:var(--text2);border-radius:50%;transition:.2s}
+.switch input:checked + .slider{background:var(--green);border-color:var(--green)}
+.switch input:checked + .slider:before{transform:translateX(22px);background:#fff}
+.feat-state{font-size:11px;font-weight:700;color:var(--text3);min-width:64px;text-align:right}
 .bill-body{margin-top:16px}
 .bill-body.collapsed{display:none}
 .bill-global{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
@@ -281,6 +293,42 @@ tbody tr:hover{background:var(--bg2)}
       <div class="bill-actions">
         <span class="bill-msg" id="billMsg"></span>
         <button class="modal-btn ok" id="billSave" type="button" style="flex:0 0 auto;padding:11px 22px">💾 Simpan Billing</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PENGATURAN FITUR (trial & ajak teman) -->
+  <section class="bill-card" id="featCard" style="display:none">
+    <div class="bill-head" id="featHead">
+      <div class="usage-title">🎚️ Pengaturan Fitur <span class="plan-badge">trial &amp; ajak teman</span></div>
+      <button class="bill-toggle" id="featToggle" type="button">Sembunyikan ▲</button>
+    </div>
+    <div class="bill-body" id="featBody">
+      <p style="font-size:12.5px;color:var(--text2);line-height:1.55;margin-bottom:6px">
+        Aktif/nonaktifkan fitur <b>tanpa deploy ulang</b>. Perubahan langsung berlaku.
+      </p>
+      <div class="feat-row">
+        <div class="feat-info">
+          <div class="feat-name">⏱️ Trial Gratis Otomatis</div>
+          <div class="feat-desc">Beri akses coba-coba (durasi sesuai setelan) otomatis saat user pertama kali login. Admin tidak terdampak.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="feat-state" id="featTrialState">—</span>
+          <label class="switch"><input type="checkbox" id="featTrial"><span class="slider"></span></label>
+        </div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-info">
+          <div class="feat-name">👥 Ajak Teman (Referral)</div>
+          <div class="feat-desc">Bonus hari untuk user yang berhasil mengajak teman baru mendaftar. Saat mati, kartu "Ajak Teman" di halaman billing ikut disembunyikan.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="feat-state" id="featReferralState">—</span>
+          <label class="switch"><input type="checkbox" id="featReferral"><span class="slider"></span></label>
+        </div>
+      </div>
+      <div class="bill-actions" style="margin-top:4px">
+        <span class="bill-msg" id="featMsg"></span>
       </div>
     </div>
   </section>
@@ -917,6 +965,55 @@ document.getElementById('billHead').addEventListener('click',function(){
 });
 
 loadBilling();
+
+// ── Pengaturan Fitur (toggle trial & ajak teman) ──
+function featSetState(){
+  var t=document.getElementById('featTrial'), r=document.getElementById('featReferral');
+  var ts=document.getElementById('featTrialState'), rs=document.getElementById('featReferralState');
+  if(ts){ ts.textContent=t.checked?'AKTIF':'NONAKTIF'; ts.style.color=t.checked?'var(--green)':'var(--text3)'; }
+  if(rs){ rs.textContent=r.checked?'AKTIF':'NONAKTIF'; rs.style.color=r.checked?'var(--green)':'var(--text3)'; }
+}
+async function loadFeatures(){
+  var card=document.getElementById('featCard');
+  try{
+    var r=await fetch('/api/admin/features',{headers:{'Accept':'application/json'}});
+    if(!r.ok){ card.style.display='none'; return; }   // non-admin / belum login
+    var d=await r.json();
+    var f=(d&&d.features)||{};
+    document.getElementById('featTrial').checked=f.trial!==false;
+    document.getElementById('featReferral').checked=f.referral!==false;
+    featSetState();
+    card.style.display='block';
+  }catch(e){ card.style.display='none'; }
+}
+async function saveFeatures(){
+  var msg=document.getElementById('featMsg');
+  msg.className='bill-msg'; msg.textContent='Menyimpan…';
+  featSetState();
+  var features={trial:document.getElementById('featTrial').checked,referral:document.getElementById('featReferral').checked};
+  try{
+    var r=await fetch('/api/admin/features',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({features:features})});
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok) throw new Error(d.error||('HTTP '+r.status));
+    if(d&&d.features){
+      document.getElementById('featTrial').checked=d.features.trial!==false;
+      document.getElementById('featReferral').checked=d.features.referral!==false;
+      featSetState();
+    }
+    msg.className='bill-msg ok'; msg.textContent='✓ Tersimpan & langsung berlaku.';
+    setTimeout(function(){ if(msg.classList.contains('ok')) msg.textContent=''; },3500);
+  }catch(e){ msg.className='bill-msg err'; msg.textContent='Gagal: '+(e.message||e); loadFeatures(); }
+}
+document.getElementById('featTrial').addEventListener('change',saveFeatures);
+document.getElementById('featReferral').addEventListener('change',saveFeatures);
+document.getElementById('featHead').addEventListener('click',function(e){
+  if(e.target.closest('.switch')) return;   // klik toggle jangan ikut collapse
+  var body=document.getElementById('featBody');
+  var t=document.getElementById('featToggle');
+  var hidden=body.classList.toggle('collapsed');
+  t.textContent=hidden?'Tampilkan ▼':'Sembunyikan ▲';
+});
+loadFeatures();
 
 // ── Anti-abuse: panel aktivitas mencurigakan ──
 function abuseTimeAgo(ts){
