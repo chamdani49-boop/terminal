@@ -75,6 +75,39 @@ export async function txnAlreadyProcessed(env, txnId) {
   return !!row;
 }
 
+// ── FEATURE FLAGS (toggle dari panel admin, disimpan di app_settings) ──
+// Mengizinkan admin meng-aktif/non-aktifkan fitur TANPA deploy ulang.
+//   key 'feature_flags' → {"trial":true,"referral":true}
+// Default: kedua fitur AKTIF (perilaku tidak berubah sampai admin mematikan).
+// FAIL-SAFE: bila tabel belum ada / D1 error → kembalikan default (aktif).
+export async function getFeatureFlags(env) {
+  const out = { trial: true, referral: true };
+  try {
+    await db(env).prepare('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)').run();
+    const row = await db(env).prepare('SELECT value FROM app_settings WHERE key = ?').bind('feature_flags').first();
+    if (row && row.value) {
+      const v = JSON.parse(row.value);
+      if (typeof v.trial === 'boolean') out.trial = v.trial;
+      if (typeof v.referral === 'boolean') out.referral = v.referral;
+    }
+  } catch { /* default: aktif */ }
+  return out;
+}
+
+export async function setFeatureFlags(env, flags) {
+  const cur = await getFeatureFlags(env);
+  const next = {
+    trial: typeof (flags && flags.trial) === 'boolean' ? flags.trial : cur.trial,
+    referral: typeof (flags && flags.referral) === 'boolean' ? flags.referral : cur.referral,
+  };
+  await db(env).prepare('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)').run();
+  await db(env).prepare(
+    'INSERT INTO app_settings (key, value, updated_at) VALUES (?,?,?) '
+    + 'ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at'
+  ).bind('feature_flags', JSON.stringify(next), now()).run();
+  return next;
+}
+
 // ── REFERRAL (ajak teman) ──
 // Reward +REFERRAL_DAYS hari (default 3) ke REFERRER tiap berhasil mengajak
 // USER BARU mendaftar. Kelipatan tanpa batas, STACKING (lewat activateSubscription),
@@ -121,6 +154,7 @@ export async function ensureReferralCode(env, user) {
 
 // Kode + statistik untuk ditampilkan (N orang · M hari).
 export async function getReferralInfo(env, userId) {
+  if (!(await getFeatureFlags(env)).referral) return null;   // fitur dimatikan dari admin
   const user = await getUserById(env, userId);
   if (!user) return null;
   let code = user.referral_code || null;
@@ -137,6 +171,7 @@ export async function getReferralInfo(env, userId) {
 export async function rewardReferralIfEligible(env, { newUser, refCode, ip } = {}) {
   try {
     if (!newUser || !newUser.id || !refCode) return null;
+    if (!(await getFeatureFlags(env)).referral) return null;   // fitur dimatikan dari admin
     const raw = env.REFERRAL_DAYS;
     const days = (raw === undefined || raw === null || String(raw).trim() === '') ? 3 : parseInt(raw, 10);
     if (!Number.isFinite(days) || days <= 0) return null;          // fitur dimatikan
@@ -184,6 +219,7 @@ export async function grantTrialIfEligible(env, userId, email = null) {
   // & admin tak ikut terdampak masa trial).
   const admins = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
   if (email && admins.includes(String(email).toLowerCase())) return null;
+  if (!(await getFeatureFlags(env)).trial) return null;          // fitur dimatikan dari admin
   const raw = env.TRIAL_MINUTES;
   const mins = (raw === undefined || raw === null || String(raw).trim() === '') ? 30 : parseInt(raw, 10);
   if (!Number.isFinite(mins) || mins <= 0) return null;          // trial dimatikan

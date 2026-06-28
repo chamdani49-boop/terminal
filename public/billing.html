@@ -332,6 +332,13 @@ document.getElementById('yr').textContent=new Date().getFullYear();
     // Muat kode + statistik (sekali). Kalau belum login → info.authenticated=false.
     fetch('/api/referral',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
       info=j;
+      // Fitur ajak teman dimatikan admin → sembunyikan kartu & rapikan kolom.
+      if(j&&j.enabled===false){
+        refBtn.style.display='none';
+        if(refBtn.parentElement) refBtn.parentElement.style.gridTemplateColumns='1fr';
+        var rrow=document.getElementById('acctRefRow'); if(rrow) rrow.style.display='none';
+        return;
+      }
       if(j&&j.authenticated){
         var row=document.getElementById('acctRefRow');
         var el=document.getElementById('acctRef');

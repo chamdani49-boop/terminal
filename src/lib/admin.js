@@ -5,6 +5,7 @@ import { json, badRequest, forbidden, unauthorized } from './util.js';
 import { getSession } from './session.js';
 import {
   listUsersWithSub, adminExtendDays, adminSetDays, adminSetStatus, adminDeleteUser, adminEditUser,
+  getFeatureFlags, setFeatureFlags,
 } from './db.js';
 import { getBillingConfig, saveBillingConfig } from './billing.js';
 import { recentFlags, flagSummary, sendTelegram, deviceSummary, autosuspendEnabled } from './abuse.js';
@@ -69,6 +70,24 @@ export async function handleAdminApi(request, env, url) {
     try {
       const saved = await saveBillingConfig(env, body.config || body);
       return json({ ok: true, config: saved });
+    } catch (e) {
+      return json({ error: e.message || 'Gagal menyimpan' }, 400);
+    }
+  }
+
+  // ── Feature flags: baca status toggle (trial & ajak teman) ──
+  if (path === '/api/admin/features' && request.method === 'GET') {
+    const features = await getFeatureFlags(env);
+    return json({ ok: true, features });
+  }
+
+  // ── Feature flags: simpan toggle ──
+  if (path === '/api/admin/features' && request.method === 'POST') {
+    let body;
+    try { body = await request.json(); } catch { return badRequest('Body tidak valid'); }
+    try {
+      const features = await setFeatureFlags(env, body.features || body);
+      return json({ ok: true, features });
     } catch (e) {
       return json({ error: e.message || 'Gagal menyimpan' }, 400);
     }
