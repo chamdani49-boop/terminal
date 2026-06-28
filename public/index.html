@@ -12286,6 +12286,8 @@ body.vl-maxing{overflow:hidden}
   let _cmpBasis = 'current';// basis data: kuartal TTM (Q1..Q4, sumber quarters[Qn]) atau 'year' (tahun penuh terakhir)
   let _cmpOverrides = {};// user slider overrides: rf, erp, beta, g5, tg
   let _cmpValChart = null;   // Chart.js instance valuasi historis
+  let _cmpValRange = 'all';  // rentang tahun chart Harga vs Nilai Wajar Historis (3/5/7/10/all)
+  let _cmpValArgs = null;    // argumen terakhir renderCmpValChart, utk re-render saat ganti rentang
 
   // WACC: CAPM + bobot utang. Beta diambil dari Dashboard bila ada. Overrides dari slider.
   function cmpWacc(stock){
@@ -12605,6 +12607,7 @@ body.vl-maxing{overflow:hidden}
 
     // ── Chart Harga vs Nilai Wajar Historis (side-by-side with football field) ──
     h+='<div class="vl-cmp-chart-card card"><button class="vl-maxbtn" onclick="vlToggleMax(this.parentElement)" title="Perbesar">\u26F6</button><div class="hd">\uD83D\uDCCA Harga vs Nilai Wajar Historis \u2014 '+s.code+'</div>';
+    h+='<div class="vl-rng vl-cmpval-rng">'+['3','5','7','10','all'].map(function(r){var lbl=(r==='all')?'All':(r==='3'?'3Th':r);return '<button type="button" data-r="'+r+'" class="'+(r===_cmpValRange?'on':'')+'" onclick="vlSetCmpValRange(\''+r+'\')">'+lbl+'</button>';}).join('')+'</div>';
     if(yrs.length<5) h+='<div class="vl-sld-warn" style="margin-bottom:8px">\u26A0\uFE0F Data historis < 5 tahun \u2014 akurasi belum bisa dinilai.</div>';
     h+='<div style="position:relative;height:280px" class="vl-cmp-canvas-wrap"><canvas id="vlCmpValChart"></canvas></div>';
     h+='<div class="vl-cmp-val-legend" id="vlCmpValLegend"></div></div>';
@@ -12637,6 +12640,7 @@ body.vl-maxing{overflow:hidden}
   function renderCmpValChart(stock, wc, bi, currentMethods){
     if(_cmpValChart){ _cmpValChart.destroy(); _cmpValChart=null; }
     const canvas=document.getElementById('vlCmpValChart'); if(!canvas) return;
+    _cmpValArgs={stock:stock, wc:wc, bi:bi, methods:currentMethods};   // simpan utk re-render saat ganti rentang
     const ctx=canvas.getContext('2d');
     const v=stock.valuation||{}, fy=v.five_year||{};
     const am=fy.avg_multiples||{}, win=String(state.win);
@@ -12771,6 +12775,18 @@ body.vl-maxing{overflow:hidden}
       if(lastVals.length){const mi=Math.floor(lastVals.length/2); consData[consData.length-1]=lastVals.length%2?lastVals[mi]:(lastVals[mi-1]+lastVals[mi])/2;}
     }
 
+    // ── Potong sesuai rentang tahun terpilih (_cmpValRange): simpan N titik tahunan terakhir + titik TTM ──
+    if(_cmpValRange!=='all'){
+      const nAnnual=parseInt(_cmpValRange,10)||5;
+      const hasTTM=labels.length>yrs.length;                 // titik "Q.. TTM" ditambahkan di akhir?
+      const keep=Math.min(labels.length, nAnnual+(hasTTM?1:0));
+      const cut=labels.length-keep;
+      if(cut>0){
+        labels.splice(0,cut); hargaData.splice(0,cut); consData.splice(0,cut);
+        methodDefs.forEach(function(md){ seriesData[md.key].splice(0,cut); });
+      }
+    }
+
     const ct=getCmpChartTheme();
 
     const datasets=[];
@@ -12825,6 +12841,13 @@ body.vl-maxing{overflow:hidden}
       legendEl.innerHTML=lg;
     }
   }
+
+  // Ganti rentang tahun chart Harga vs Nilai Wajar Historis (3/5/7/10/all) — independen dari chart Ringkasan.
+  window.vlSetCmpValRange=function(r){
+    _cmpValRange=String(r);
+    document.querySelectorAll('.vl-cmpval-rng button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-r')===_cmpValRange); });
+    if(_cmpValArgs){ renderCmpValChart(_cmpValArgs.stock, _cmpValArgs.wc, _cmpValArgs.bi, _cmpValArgs.methods); }
+  };
 
   // Chart theme helper
   function getCmpChartTheme(){
