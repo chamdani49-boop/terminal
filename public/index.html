@@ -2583,7 +2583,9 @@ table.scr-tbl thead th{position:sticky;top:0;z-index:3;background:var(--bg3);col
 table.scr-tbl thead th:hover{color:var(--accent)}
 table.scr-tbl thead th .scr-iq{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--text3);color:var(--text3);font-size:9px;font-weight:800;font-style:normal;margin-left:3px;line-height:1}
 table.scr-tbl thead th .scr-iq:hover{border-color:var(--accent);color:var(--accent)}
-table.scr-tbl thead th .scr-arrow{margin-left:2px;font-size:9px;opacity:.9}
+table.scr-tbl thead th .scr-arrow{margin-left:3px;font-size:9px;opacity:.32;transition:opacity .15s}
+table.scr-tbl thead th:hover .scr-arrow{opacity:.6}
+table.scr-tbl thead th .scr-arrow.on{opacity:1;color:var(--accent)}
 table.scr-tbl th.scr-c-no,table.scr-tbl td.scr-c-no{text-align:center;color:var(--text3);font-weight:700;width:34px}
 table.scr-tbl th.scr-c-code,table.scr-tbl td.scr-c-code{text-align:left;position:sticky;left:0;z-index:2;background:var(--card)}
 table.scr-tbl thead th.scr-c-code{z-index:4;background:var(--bg3)}
@@ -5534,7 +5536,13 @@ function plScrRender() {
   const pageRows = rows.slice(start, start + SCR_PAGE_SIZE);
 
   const cols = SCR_COLUMNS;
-  const arrow = key => _scrSort.key === key ? `<span class="scr-arrow">${_scrSort.dir === 'asc' ? '▲' : '▼'}</span>` : '';
+  // indikator sort: setiap kolom yang bisa diurutkan tampil ⇅ (redup);
+  // kolom aktif tampil ▲/▼ terang.
+  const arrow = key => {
+    if (SCR_COLDEFS[key].sortable === false) return '';
+    if (_scrSort.key === key) return `<span class="scr-arrow on">${_scrSort.dir === 'asc' ? '▲' : '▼'}</span>`;
+    return '<span class="scr-arrow">⇅</span>';
+  };
 
   // header
   let thead = '<tr>' + cols.map(key => {
