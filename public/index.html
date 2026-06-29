@@ -2558,6 +2558,62 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 .pl-seg2{display:inline-flex;gap:2px;background:var(--bg2);border-radius:var(--radius-pill);padding:1px}
 .pl-seg2 button{border:none;background:none;font-family:inherit;font-size:9.5px;font-weight:700;color:var(--text2);padding:2px 8px;border-radius:var(--radius-pill);cursor:pointer;transition:all .15s}
 .pl-seg2 button.on{background:var(--accent);color:#fff}
+
+/* ═══════ SCREENING PANEL ═══════ */
+.scr-win{margin-bottom:12px;height:auto}
+.scr-win .pl-win-body.scr-body{overflow:visible;padding:0;display:flex;flex-direction:column}
+.scr-win.pl-max .pl-win-body.scr-body{overflow:auto}
+.scr-head-sub{font-size:11px;color:var(--text3);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:680px){.scr-head-sub{display:none}}
+.scr-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.scr-presets{display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-pill);padding:3px}
+.scr-preset{border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;color:var(--text2);padding:6px 13px;border-radius:var(--radius-pill);cursor:pointer;transition:all .15s;white-space:nowrap}
+.scr-preset:hover{color:var(--accent)}
+.scr-preset.on{background:var(--accent);color:#fff}
+.scr-filters{display:inline-flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.scr-sel,.scr-search{font-family:inherit;font-size:12px;padding:7px 11px;border:1px solid var(--border);border-radius:9px;background:var(--card);color:var(--text);min-width:0}
+.scr-search{width:190px;max-width:46vw}
+.scr-sel:focus,.scr-search:focus{outline:none;border-color:var(--accent)}
+.scr-table-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch}
+.scr-loading{padding:40px 16px;text-align:center;color:var(--text3);font-size:13px}
+table.scr-tbl{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;font-variant-numeric:tabular-nums}
+table.scr-tbl th,table.scr-tbl td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border)}
+table.scr-tbl thead th{position:sticky;top:0;z-index:3;background:var(--bg3);color:var(--text2);font-weight:800;font-size:11px;cursor:pointer;user-select:none;border-bottom:2px solid var(--border)}
+table.scr-tbl thead th:hover{color:var(--accent)}
+table.scr-tbl thead th .scr-iq{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--text3);color:var(--text3);font-size:9px;font-weight:800;font-style:normal;margin-left:3px;line-height:1}
+table.scr-tbl thead th .scr-iq:hover{border-color:var(--accent);color:var(--accent)}
+table.scr-tbl thead th .scr-arrow{margin-left:2px;font-size:9px;opacity:.9}
+table.scr-tbl th.scr-c-no,table.scr-tbl td.scr-c-no{text-align:center;color:var(--text3);font-weight:700;width:34px}
+table.scr-tbl th.scr-c-code,table.scr-tbl td.scr-c-code{text-align:left;position:sticky;left:0;z-index:2;background:var(--card)}
+table.scr-tbl thead th.scr-c-code{z-index:4;background:var(--bg3)}
+table.scr-tbl td.scr-c-code{font-weight:800;color:var(--accent3)}
+table.scr-tbl tbody tr{cursor:pointer;transition:background .12s}
+table.scr-tbl tbody tr:hover td{background:var(--bg2)}
+table.scr-tbl tbody tr:hover td.scr-c-code{background:var(--bg2)}
+.scr-cell-sub{display:block;font-size:9.5px;color:var(--text3);font-weight:600;margin-top:1px}
+.scr-na{color:var(--text3)}
+.scr-neg-badge{display:inline-block;font-size:10px;font-weight:700;color:#e11d48;background:rgba(225,29,72,.12);padding:1px 5px;border-radius:5px}
+.scr-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px 12px;border-top:1px solid var(--border);background:var(--bg2);font-size:12px;color:var(--text3)}
+.scr-pager{display:inline-flex;gap:6px;align-items:center}
+.scr-pg-btn{font-family:inherit;font-size:12px;font-weight:700;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;transition:all .15s}
+.scr-pg-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.scr-pg-btn:disabled{opacity:.4;cursor:default}
+.scr-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:none;align-items:center;justify-content:center;padding:18px}
+.scr-modal.show{display:flex}
+.scr-modal-card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 24px 70px rgba(0,0,0,.5);max-width:440px;width:100%;max-height:80vh;overflow:auto;padding:22px 22px 18px}
+.scr-modal-x{position:absolute;top:12px;right:12px;width:28px;height:28px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);border-radius:8px;cursor:pointer;font-size:13px}
+.scr-modal-x:hover{border-color:var(--accent);color:var(--accent)}
+.scr-modal-card h3{margin:0 0 10px;font-size:16px;color:var(--text)}
+.scr-modal-card p{margin:0 0 9px;font-size:13px;line-height:1.55;color:var(--text2)}
+.scr-modal-card .scr-li{display:flex;gap:8px;font-size:13px;line-height:1.5;color:var(--text2);margin-bottom:6px}
+.scr-modal-card .scr-li b{flex-shrink:0}
+.scr-modal-card .scr-note{font-size:11.5px;color:var(--text3);margin-top:8px}
+@media(max-width:640px){
+  table.scr-tbl th,table.scr-tbl td{padding:6px 7px;font-size:11.5px}
+  .scr-search{width:140px}
+  .scr-toolbar{padding:9px 10px;gap:8px}
+  .scr-preset{padding:6px 10px;font-size:11.5px}
+}
 .pl-ma{display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:9.5px;font-weight:700;color:var(--text2);padding:2px 6px;border-radius:6px;border:1px solid var(--border);user-select:none;white-space:nowrap}
 .pl-ma .dot{width:10px;height:3px;border-radius:2px;flex-shrink:0}
 .pl-ma.off{opacity:.36}
@@ -2813,6 +2869,45 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="pl-title"><span class="pl-dot"></span>Pasar Live</div>
     <div class="pl-sub">Terminal saham IDX &amp; IHSG — chart, heatmap, seasonality &amp; headlines</div>
     <button class="pl-reload" type="button" onclick="plReloadAll()" title="Muat ulang semua panel">&#8635; Refresh</button>
+  </div>
+
+  <!-- ───────────────────────────────────────────────────────────────────
+       PANEL SCREENING — tabel 109 saham tercover konsensus, full-width.
+       Sumber: screening.json (fundamental terbaru) + data.json (stats/
+       consensus/live). Kolom turunan dihitung di plScr* (JS di bawah). -->
+  <section class="pl-win scr-win" id="plWinScreening">
+    <div class="pl-win-head">
+      <span class="pl-grip">&#10287;</span>
+      <span class="pl-win-title">🎯 Screening</span>
+      <span class="scr-head-sub" id="scrHeadSub">Ide saham — 109 emiten tercover analis</span>
+      <span class="pl-spacer"></span>
+      <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
+    </div>
+    <div class="pl-win-body scroll scr-body" id="plScreeningBody">
+      <div class="scr-toolbar">
+        <div class="scr-presets" id="scrPresets">
+          <button class="scr-preset on" type="button" data-preset="discount" onclick="plScrSetPreset('discount',this)">On Discount</button>
+          <button class="scr-preset" type="button" data-preset="target" onclick="plScrSetPreset('target',this)">Target &amp; Upside</button>
+          <button class="scr-preset" type="button" data-preset="momentum" onclick="plScrSetPreset('momentum',this)">Valuasi &amp; Momentum</button>
+        </div>
+        <div class="scr-filters">
+          <select class="scr-sel" id="scrSector" onchange="plScrRender()" aria-label="Filter sektor"><option value="">Semua sektor</option></select>
+          <input type="text" class="scr-search" id="scrSearch" placeholder="🔍 Cari kode / nama…" autocomplete="off" enterkeyhint="search" oninput="plScrRender()" aria-label="Cari saham">
+        </div>
+      </div>
+      <div class="scr-table-wrap" id="scrTableWrap">
+        <div class="scr-loading">Memuat data screening…</div>
+      </div>
+      <div class="scr-footer" id="scrFooter"></div>
+    </div>
+  </section>
+
+  <!-- Modal penjelasan kolom (untuk yang awam) -->
+  <div class="scr-modal" id="scrInfoModal" onclick="plScrCloseInfo(event)">
+    <div class="scr-modal-card" onclick="event.stopPropagation()">
+      <button class="scr-modal-x" type="button" onclick="plScrCloseInfo()" aria-label="Tutup">✕</button>
+      <div id="scrInfoBody"></div>
+    </div>
   </div>
 
   <div class="pl-terminal">
@@ -5183,8 +5278,364 @@ function plLoadAll(force) {
   plLoadNews(force);
   plRenderHeatmap();
   plRenderSeasonality();
+  plScrEnsure(force);
 }
 function plReloadAll() { plLoadAll(true); }
+
+// ═══════════════════════════════════════════════════════════════════════
+// SCREENING — tabel ide saham (109 emiten tercover konsensus)
+// Sumber: screening.json (fundamental terbaru) + DATA (stats/consensus/live).
+// Semua kolom turunan (diskon harga, diskon valuasi, div yield, UpDw,
+// ConsVal, PER kini, P/FCF kini) dihitung di sini agar selalu ikut harga live.
+// ═══════════════════════════════════════════════════════════════════════
+let _scrData    = null;                    // isi screening.json
+let _scrLoading = false;
+let _scrPreset  = 'discount';
+let _scrSort    = { key: 'upDw', dir: 'desc' };   // default: upside terbesar
+let _scrPage    = 0;
+const SCR_PAGE_SIZE = 50;
+const SCR_CDN_URL   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/screening.json';
+
+// Kolom yang tampil per preset (mengikuti 3 gambar referensi).
+const SCR_PRESETS = {
+  discount: ['no','code','price','high','diskonHarga','ytd','diskonValuasi','eps','pfcf','cagr','lastDiv','divYield'],
+  target:   ['no','code','price','low','frLows','beta','consVal','target','upDw'],
+  momentum: ['no','code','price','perNow','pfcf','epsg','ytd','yoy','mom','d1','consVal','target','upDw'],
+};
+
+// ── fetch screening.json (lokal → fallback CDN), sekali saja ──
+async function plScrEnsure(force) {
+  if (_scrData && !force) { plScrRender(); return; }
+  if (_scrLoading) return;
+  _scrLoading = true;
+  const local = 'screening.json?v=' + (window.__BUILD_V || Date.now());
+  for (const url of [local, SCR_CDN_URL]) {
+    try {
+      const r = await fetch(url, { cache: 'no-cache' });
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j && j.stocks) { _scrData = j; break; }
+    } catch (_) { /* coba url berikutnya */ }
+  }
+  _scrLoading = false;
+  plScrBuildSectorFilter();
+  plScrRender();
+}
+
+// ── util format ──
+function _scrNA() { return '<span class="scr-na">—</span>'; }
+function _scrThou(v) { return Math.round(v).toLocaleString('id-ID'); }
+function _scrPrice(v) { return Number.isFinite(v) ? _scrThou(v) : _scrNA(); }
+function _scrInt(v)   { return Number.isFinite(v) ? _scrThou(v) : _scrNA(); }
+function _scrRatio(v) { return Number.isFinite(v) ? v.toFixed(1) : _scrNA(); }
+function _scrPct(v, dec) {
+  if (!Number.isFinite(v)) return _scrNA();
+  const p = v * 100;
+  return (p > 0 ? '+' : '') + p.toFixed(dec == null ? 1 : dec) + '%';
+}
+
+// ── heatmap: kembalikan style background sesuai "baik/buruk" + magnitude ──
+function _scrTint(good, mag) {
+  if (!good) return '';
+  mag = Math.max(0, Math.min(1, mag));
+  const a = (0.08 + 0.34 * mag).toFixed(2);
+  return good > 0
+    ? `background:hsla(152,62%,45%,${a})`
+    : `background:hsla(349,72%,53%,${a})`;
+}
+function _scrHeatSigned(v, cap) { if (!Number.isFinite(v)) return ''; return _scrTint(v > 0 ? 1 : (v < 0 ? -1 : 0), Math.abs(v) / cap); }
+function _scrHeatDiscount(v, cap) { // negatif (diskon) = hijau; positif (di atas) = merah
+  if (!Number.isFinite(v)) return '';
+  return v <= 0 ? _scrTint(1, Math.abs(v) / cap) : _scrTint(-1, v / cap);
+}
+function _scrHeatLowGood(v, lo, hi) { // rendah = hijau (murah), tinggi = merah
+  if (!Number.isFinite(v) || v <= 0) return '';
+  const t = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
+  return _scrTint(t < 0.5 ? 1 : -1, Math.abs(0.5 - t) * 2);
+}
+function _scrHeatHighGood(v, lo, hi) { // tinggi = hijau (bagus)
+  if (!Number.isFinite(v)) return '';
+  const t = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
+  return _scrTint(t > 0.5 ? 1 : -1, Math.abs(t - 0.5) * 2);
+}
+
+// ── ConsVal: skala 1–5 dari rasio Buy/Neutral/Sell (5 = paling banyak Buy) ──
+function _scrConsVal(cs) {
+  if (!cs) return null;
+  const b = +cs.buy || 0, n = +cs.neutral || 0, s = +cs.sell || 0;
+  const tot = b + n + s;
+  if (!tot) return null;
+  return (5 * b + 3 * n + 1 * s) / tot;
+}
+
+// ── hitung semua metrik untuk satu kode ──
+function plScrRow(code) {
+  const sc = _scrData.stocks[code] || {};
+  const live = (DATA && DATA.live && DATA.live[code]) || {};
+  const st = (DATA && DATA.stats && DATA.stats[code]) || {};
+  const cs = (DATA && DATA.consensus_summary && DATA.consensus_summary[code]) || {};
+
+  const price = Number.isFinite(live.price) ? live.price : (Number.isFinite(st.current) ? st.current : null);
+  const high = Number.isFinite(live.max_price) ? live.max_price : null;
+  const low = Number.isFinite(live.low_price) ? live.low_price : null;
+
+  const eps = sc.eps;
+  const fcfps = sc.fcf_per_share;
+  const perNow = (Number.isFinite(eps) && eps > 0 && Number.isFinite(price)) ? price / eps : null;
+  const pfcf = (Number.isFinite(fcfps) && fcfps > 0 && Number.isFinite(price)) ? price / fcfps : null;
+  const fcfNeg = Number.isFinite(fcfps) && fcfps <= 0;
+  const epsNeg = Number.isFinite(eps) && eps <= 0;
+  const diskonValuasi = (Number.isFinite(perNow) && Number.isFinite(sc.max_per_5y) && sc.max_per_5y > 0)
+    ? (perNow / sc.max_per_5y - 1) : null;
+  const target = Number.isFinite(cs.target) && cs.target > 0 ? cs.target : null;
+
+  return {
+    code,
+    name: sc.name || code,
+    sector: sc.sector || '',
+    price,
+    high, highDate: live.max_date || null,
+    low, lowDate: live.low_date || null,
+    diskonHarga: (Number.isFinite(price) && Number.isFinite(high) && high > 0) ? (price / high - 1) : null,
+    frLows: (Number.isFinite(price) && Number.isFinite(low) && low > 0) ? (price / low - 1) : null,
+    ytd: Number.isFinite(st.ytd) ? st.ytd : null,
+    yoy: Number.isFinite(st.yoy) ? st.yoy : null,
+    mom: Number.isFinite(st.mom) ? st.mom : null,
+    d1: Number.isFinite(live.change_pct) ? live.change_pct : (Number.isFinite(st.change_pct_live) ? st.change_pct_live : null),
+    beta: Number.isFinite(st.beta) ? st.beta : null,
+    eps, epsNeg,
+    perNow, pfcf, fcfNeg,
+    diskonValuasi,
+    cagr: Number.isFinite(sc.eps_growth_5y) ? sc.eps_growth_5y : null,
+    epsg: Number.isFinite(sc.eps_growth_5y) ? sc.eps_growth_5y : null,
+    lastDiv: Number.isFinite(sc.dps) ? sc.dps : null,
+    divYield: (Number.isFinite(sc.dps) && Number.isFinite(price) && price > 0) ? sc.dps / price : null,
+    consVal: _scrConsVal(cs),
+    target,
+    upDw: (Number.isFinite(target) && Number.isFinite(price) && price > 0) ? (target / price - 1) : null,
+  };
+}
+
+// ── definisi kolom: label, render sel (nilai + heatmap), info key ──
+const SCR_COLDEFS = {
+  no:    { label: 'No', cls: 'scr-c-no', sortable: false },
+  code:  { label: 'Kode', cls: 'scr-c-code', sortable: true, info: 'code' },
+  price: { label: 'Harga', info: 'price', cell: r => ({ html: _scrPrice(r.price) }) },
+  high:  { label: 'Tertinggi', info: 'high', cell: r => ({ html: _scrPrice(r.high) + (r.highDate ? `<span class="scr-cell-sub">${_scrFmtDate(r.highDate)}</span>` : '') }) },
+  low:   { label: 'Terendah', info: 'low', cell: r => ({ html: _scrPrice(r.low) + (r.lowDate ? `<span class="scr-cell-sub">${_scrFmtDate(r.lowDate)}</span>` : '') }) },
+  diskonHarga:   { label: 'Diskon Harga', info: 'diskonHarga', cell: r => ({ html: _scrPct(r.diskonHarga), style: _scrHeatDiscount(r.diskonHarga, 0.6) }) },
+  frLows:        { label: 'FrLows', info: 'frLows', cell: r => ({ html: _scrPct(r.frLows), style: _scrHeatSigned(r.frLows, 1.0) }) },
+  ytd:   { label: 'YTD', info: 'ytd', cell: r => ({ html: _scrPct(r.ytd), style: _scrHeatSigned(r.ytd, 0.4) }) },
+  yoy:   { label: '1YR', info: 'yoy', cell: r => ({ html: _scrPct(r.yoy), style: _scrHeatSigned(r.yoy, 0.5) }) },
+  mom:   { label: 'MTD', info: 'mom', cell: r => ({ html: _scrPct(r.mom), style: _scrHeatSigned(r.mom, 0.2) }) },
+  d1:    { label: '1D', info: 'd1', cell: r => ({ html: _scrPct(r.d1), style: _scrHeatSigned(r.d1, 0.05) }) },
+  diskonValuasi: { label: 'Diskon Valuasi', info: 'diskonValuasi', cell: r => ({ html: _scrPct(r.diskonValuasi), style: _scrHeatDiscount(r.diskonValuasi, 0.6) }) },
+  eps:   { label: 'EPS', info: 'eps', cell: r => ({ html: r.epsNeg ? '<span class="scr-neg-badge">rugi</span>' : _scrInt(r.eps) }) },
+  perNow:{ label: 'PER', info: 'perNow', cell: r => ({ html: r.epsNeg ? '<span class="scr-neg-badge">rugi</span>' : _scrRatio(r.perNow), style: _scrHeatLowGood(r.perNow, 8, 30) }) },
+  pfcf:  { label: 'P/FCF', info: 'pfcf', cell: r => ({ html: r.fcfNeg ? '<span class="scr-neg-badge">FCF&minus;</span>' : _scrRatio(r.pfcf), style: _scrHeatLowGood(r.pfcf, 10, 35) }) },
+  cagr:  { label: 'CAGR 5th', info: 'cagr', cell: r => ({ html: _scrPct(r.cagr, 0), style: _scrHeatSigned(r.cagr, 0.3) }) },
+  epsg:  { label: 'EPS Gr', info: 'epsg', cell: r => ({ html: _scrPct(r.epsg, 0), style: _scrHeatSigned(r.epsg, 0.3) }) },
+  lastDiv:  { label: 'Last Div', info: 'lastDiv', cell: r => ({ html: _scrInt(r.lastDiv) }) },
+  divYield: { label: 'Div Yield', info: 'divYield', cell: r => ({ html: _scrPct(r.divYield), style: _scrHeatHighGood(r.divYield, 0, 0.07) }) },
+  beta:  { label: 'Beta', info: 'beta', cell: r => ({ html: _scrRatio(r.beta) }) },
+  consVal:  { label: 'ConsVal', info: 'consVal', cell: r => ({ html: Number.isFinite(r.consVal) ? r.consVal.toFixed(2) : _scrNA(), style: _scrHeatHighGood(r.consVal, 2.5, 4.6) }) },
+  target:   { label: '12M Target', info: 'target', cell: r => ({ html: _scrPrice(r.target) }) },
+  upDw:     { label: 'UpDw', info: 'upDw', cell: r => ({ html: _scrPct(r.upDw), style: _scrHeatSigned(r.upDw, 0.5) }) },
+};
+
+function _scrFmtDate(iso) {
+  // 2025-08-13 → 13 Agu '25
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+  if (!m) return '';
+  const mon = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][+m[2] - 1] || '';
+  return `${+m[3]} ${mon} '${m[1].slice(2)}`;
+}
+
+// ── isi dropdown sektor dari data ──
+function plScrBuildSectorFilter() {
+  const sel = document.getElementById('scrSector');
+  if (!sel || !_scrData) return;
+  const secs = Array.from(new Set(Object.values(_scrData.stocks).map(s => s.sector).filter(Boolean))).sort();
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Semua sektor</option>' + secs.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+// ── ganti preset ──
+function plScrSetPreset(p, btn) {
+  _scrPreset = p;
+  _scrPage = 0;
+  document.querySelectorAll('#scrPresets .scr-preset').forEach(b => b.classList.toggle('on', b === btn));
+  plScrRender();
+}
+
+// ── sorting via klik header ──
+function plScrSort(key) {
+  if (!SCR_COLDEFS[key] || SCR_COLDEFS[key].sortable === false) return;
+  if (_scrSort.key === key) _scrSort.dir = _scrSort.dir === 'desc' ? 'asc' : 'desc';
+  else _scrSort = { key, dir: key === 'code' ? 'asc' : 'desc' };
+  _scrPage = 0;
+  plScrRender();
+}
+
+function plScrPage(delta) {
+  _scrPage += delta;
+  plScrRender();
+  const wrap = document.getElementById('scrTableWrap');
+  if (wrap) wrap.scrollTop = 0;
+}
+
+// ── render tabel ──
+function plScrRender() {
+  const wrap = document.getElementById('scrTableWrap');
+  if (!wrap) return;
+  if (!_scrData) { wrap.innerHTML = '<div class="scr-loading">Memuat data screening…</div>'; return; }
+  if (!DATA) { wrap.innerHTML = '<div class="scr-loading">Menunggu data pasar…</div>'; return; }
+
+  // 1) bangun semua baris
+  let rows = Object.keys(_scrData.stocks).map(plScrRow);
+
+  // 2) filter sektor + cari
+  const secEl = document.getElementById('scrSector');
+  const qEl = document.getElementById('scrSearch');
+  const sec = secEl ? secEl.value : '';
+  const q = qEl ? qEl.value.trim().toUpperCase() : '';
+  if (sec) rows = rows.filter(r => r.sector === sec);
+  if (q) rows = rows.filter(r => r.code.includes(q) || (r.name && r.name.toUpperCase().includes(q)));
+
+  // 3) sort (null selalu di bawah)
+  const k = _scrSort.key, dir = _scrSort.dir === 'asc' ? 1 : -1;
+  rows.sort((a, b) => {
+    if (k === 'code') return a.code < b.code ? -dir : (a.code > b.code ? dir : 0);
+    const av = a[k], bv = b[k];
+    const an = !Number.isFinite(av), bn = !Number.isFinite(bv);
+    if (an && bn) return 0;
+    if (an) return 1;
+    if (bn) return -1;
+    return (av - bv) * dir;
+  });
+
+  const total = rows.length;
+  const pages = Math.max(1, Math.ceil(total / SCR_PAGE_SIZE));
+  if (_scrPage >= pages) _scrPage = pages - 1;
+  if (_scrPage < 0) _scrPage = 0;
+  const start = _scrPage * SCR_PAGE_SIZE;
+  const pageRows = rows.slice(start, start + SCR_PAGE_SIZE);
+
+  const cols = SCR_PRESETS[_scrPreset];
+  const arrow = key => _scrSort.key === key ? `<span class="scr-arrow">${_scrSort.dir === 'asc' ? '▲' : '▼'}</span>` : '';
+
+  // header
+  let thead = '<tr>' + cols.map(key => {
+    const d = SCR_COLDEFS[key];
+    const iq = d.info ? `<i class="scr-iq" onclick="event.stopPropagation();plScrInfo('${d.info}')">i</i>` : '';
+    const onsort = d.sortable === false ? '' : ` onclick="plScrSort('${key}')"`;
+    return `<th class="${d.cls || ''}"${onsort}>${d.label}${arrow(key)}${iq}</th>`;
+  }).join('') + '</tr>';
+
+  // body
+  let tbody = pageRows.map((r, i) => {
+    const tds = cols.map(key => {
+      const d = SCR_COLDEFS[key];
+      if (key === 'no') return `<td class="scr-c-no">${start + i + 1}</td>`;
+      if (key === 'code') return `<td class="scr-c-code" title="${(r.name || '').replace(/"/g, '')}">${r.code}</td>`;
+      const c = d.cell ? d.cell(r) : { html: _scrNA() };
+      return `<td class="${d.cls || ''}"${c.style ? ` style="${c.style}"` : ''}>${c.html}</td>`;
+    }).join('');
+    return `<tr onclick="plScrOpen('${r.code}')">${tds}</tr>`;
+  }).join('');
+
+  if (!pageRows.length) tbody = `<tr><td colspan="${cols.length}" style="text-align:center;padding:28px;color:var(--text3)">Tidak ada saham yang cocok dengan filter.</td></tr>`;
+
+  wrap.innerHTML = `<table class="scr-tbl"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+
+  // footer
+  const foot = document.getElementById('scrFooter');
+  if (foot) {
+    const sortLabel = (SCR_COLDEFS[_scrSort.key] && SCR_COLDEFS[_scrSort.key].label) || _scrSort.key;
+    const from = total ? start + 1 : 0;
+    const to = Math.min(start + SCR_PAGE_SIZE, total);
+    foot.innerHTML =
+      `<span>Menampilkan <b>${from}–${to}</b> dari ${total} · urut: ${sortLabel} ${_scrSort.dir === 'asc' ? '▲' : '▼'}</span>` +
+      `<span class="scr-pager">` +
+        `<button class="scr-pg-btn" onclick="plScrPage(-1)" ${_scrPage === 0 ? 'disabled' : ''}>‹ Sebelumnya</button>` +
+        `<span>Hal ${_scrPage + 1}/${pages}</span>` +
+        `<button class="scr-pg-btn" onclick="plScrPage(1)" ${_scrPage >= pages - 1 ? 'disabled' : ''}>Berikutnya ›</button>` +
+      `</span>`;
+  }
+}
+
+// ── klik baris → buka detail saham di tab Valuasi ──
+function plScrOpen(code) {
+  try { showPage('valuasi'); } catch (_) {}
+  try { if (typeof vlEnsureCharts === 'function') vlEnsureCharts(); } catch (_) {}
+  try { if (window.vlSelectStock) window.vlSelectStock(code); } catch (_) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
+}
+
+// ═══════ POPUP penjelasan kolom (untuk yang awam) ═══════
+const SCR_INFO = {
+  code: { t: 'Kode Saham', b: ['<p>Kode emiten di Bursa Efek Indonesia. Klik baris untuk membuka analisis valuasi lengkap saham tersebut.</p>'] },
+  price: { t: 'Harga', b: ['<p>Harga terakhir (live) saham saat ini.</p>'] },
+  high: { t: 'Harga Tertinggi', b: ['<p>Harga <b>tertinggi</b> 1 tahun terakhir beserta tanggalnya. Dipakai untuk menghitung <b>Diskon Harga</b>.</p>'] },
+  low: { t: 'Harga Terendah', b: ['<p>Harga <b>terendah</b> 1 tahun terakhir beserta tanggalnya. Dipakai untuk menghitung <b>FrLows</b>.</p>'] },
+  diskonHarga: { t: 'Diskon Harga', b: [
+    '<p>Selisih harga sekarang terhadap <b>harga tertinggi</b> setahun: (Harga ÷ Tertinggi − 1).</p>',
+    '<div class="scr-li"><b>Makin negatif</b><span>makin "diskon" / jauh dari puncak (hijau).</span></div>',
+    '<div class="scr-li"><b>Mendekati 0</b><span>harga mendekati puncak (merah).</span></div>'] },
+  frLows: { t: 'FrLows (From Lows)', b: [
+    '<p>Kenaikan harga sekarang dari <b>harga terendah</b> setahun: (Harga ÷ Terendah − 1).</p>',
+    '<p class="scr-note">Makin besar = sudah memantul jauh dari dasar. Kecil = masih dekat titik terendah.</p>'] },
+  ytd: { t: 'YTD (Year To Date)', b: ['<p>Perubahan harga sejak awal tahun berjalan. Hijau = naik, merah = turun.</p>'] },
+  yoy: { t: '1YR (Year over Year)', b: ['<p>Perubahan harga dibanding 1 tahun lalu.</p>'] },
+  mom: { t: 'MTD / Bulanan', b: ['<p>Perubahan harga dalam ~1 bulan terakhir.</p>'] },
+  d1: { t: '1D (Harian)', b: ['<p>Perubahan harga hari ini dibanding penutupan sebelumnya.</p>'] },
+  diskonValuasi: { t: 'Diskon Valuasi', b: [
+    '<p>Seberapa murah <b>PER sekarang</b> dibanding <b>PER tertinggi 5 tahun</b>: (PER kini ÷ PER tertinggi − 1).</p>',
+    '<div class="scr-li"><b>Negatif</b><span>valuasi lebih murah dari puncak historis (hijau).</span></div>',
+    '<p class="scr-note">PER = Harga ÷ Laba per Saham. Makin murah relatif terhadap sejarahnya, makin menarik.</p>'] },
+  eps: { t: 'EPS (Laba per Saham)', b: ['<p>Laba bersih per lembar saham (tahun buku terakhir). "Rugi" = laba negatif.</p>'] },
+  perNow: { t: 'PER (Price to Earnings)', b: [
+    '<p>Harga ÷ Laba per Saham (EPS terbaru). Berapa kali laba dihargai pasar.</p>',
+    '<div class="scr-li"><b>Rendah</b><span>relatif murah (hijau).</span></div>',
+    '<div class="scr-li"><b>Tinggi</b><span>relatif mahal (merah).</span></div>'] },
+  pfcf: { t: 'Cara Membaca P/FCF', b: [
+    '<p>Harga ÷ Arus Kas Bebas per Saham. Mengukur valuasi terhadap uang tunai riil yang dihasilkan.</p>',
+    '<div class="scr-li"><b>Rendah (mis. &lt; 15)</b><span>relatif murah.</span></div>',
+    '<div class="scr-li"><b>Tinggi (mis. &gt; 30)</b><span>relatif mahal.</span></div>',
+    '<div class="scr-li"><b>FCF&minus;</b><span>arus kas bebas negatif — perusahaan belum menghasilkan kas bebas.</span></div>'] },
+  cagr: { t: 'CAGR 5 Tahun', b: ['<p>Pertumbuhan laba per saham (EPS) rata-rata per tahun selama 5 tahun. Hijau = tumbuh, merah = menyusut.</p>'] },
+  epsg: { t: 'EPS Growth', b: ['<p>Pertumbuhan laba per saham (5 tahun, disetahunkan). Makin tinggi makin baik.</p>'] },
+  lastDiv: { t: 'Last Dividend', b: ['<p>Dividen tunai per saham yang dibagikan terakhir (Rp per lembar).</p>'] },
+  divYield: { t: 'Dividend Yield', b: [
+    '<p>Imbal hasil dividen: Dividen per Saham ÷ Harga sekarang.</p>',
+    '<p class="scr-note">Makin tinggi = pengembalian tunai lebih besar relatif terhadap harga (hijau).</p>'] },
+  beta: { t: 'Beta', b: [
+    '<p>Sensitivitas harga saham terhadap pergerakan pasar (IHSG).</p>',
+    '<div class="scr-li"><b>&gt; 1</b><span>lebih bergejolak dari pasar.</span></div>',
+    '<div class="scr-li"><b>&lt; 1</b><span>lebih stabil dari pasar.</span></div>'] },
+  consVal: { t: 'ConsVal (Konsensus Analis)', b: [
+    '<p>Rata-rata rekomendasi analis dalam skala <b>1–5</b> (5 = paling banyak rekomendasi Beli).</p>',
+    '<p class="scr-note">Dihitung dari rasio Buy / Neutral / Sell. Makin tinggi (hijau) = konsensus makin positif.</p>'] },
+  target: { t: '12M Target Price', b: ['<p>Rata-rata target harga 12 bulan dari konsensus analis.</p>'] },
+  upDw: { t: 'UpDw (Upside / Downside)', b: [
+    '<p>Potensi naik/turun ke target analis: (Target ÷ Harga − 1).</p>',
+    '<div class="scr-li"><b>Positif</b><span>harga masih di bawah target (potensi naik, hijau).</span></div>',
+    '<div class="scr-li"><b>Negatif</b><span>harga sudah di atas target (merah).</span></div>'] },
+};
+function plScrInfo(key) {
+  const info = SCR_INFO[key];
+  const md = document.getElementById('scrInfoModal');
+  const body = document.getElementById('scrInfoBody');
+  if (!info || !md || !body) return;
+  body.innerHTML = `<h3>${info.t}</h3>` + info.b.join('');
+  md.classList.add('show');
+}
+function plScrCloseInfo(e) {
+  if (e && e.target && e.target.id !== 'scrInfoModal' && !e.target.classList.contains('scr-modal-x')) return;
+  const md = document.getElementById('scrInfoModal');
+  if (md) md.classList.remove('show');
+}
 
 // ── Auto-refresh berita (headlines) ──────────────────────────────────────
 // Hanya menyegarkan saat halaman Pasar AKTIF dan tab TERLIHAT → hemat request.
