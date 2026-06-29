@@ -4273,11 +4273,14 @@ window.escCacheClear = function (key) {
 // Ganti URL ini kalau nama Worker / subdomain akun kamu berbeda.
 // Set ke null untuk MATIKAN live feed (balik ke perilaku lama: poll data.json).
 const LIVE_FEED_URL     = 'https://terminal-live.chamdani49.workers.dev/live.json';
-// Interval 3 menit: sheet update ~5 mnt + cache edge Worker 60 dtk, jadi 3 mnt
-// sudah lebih dari cukup & hemat request. URL TIDAK di-cache-bust (lihat
-// _pollLiveFeed) supaya CDN Cloudflare melayani dari cache 60 dtk → Worker
-// nyaris tidak ke-invoke walau ribuan user → hemat kuota + lindungi sheet.
-const LIVE_FEED_POLL_MS = 3 * 60 * 1000;  // 3 menit
+// Interval 60 detik: Worker menyegarkan harga dari Google tiap ~60 dtk, jadi
+// polling tiap 60 dtk membuat UI ikut berubah terus-menerus selama halaman
+// terbuka (bukan cuma sekali saat dibuka). URL di-cache-bust BERJENDELA 60 dtk
+// (lihat _pollLiveFeed): berubah tiap menit supaya browser/CDN tidak menyajikan
+// salinan lama, TAPI semua user berbagi URL yang sama dalam 1 jendela → CDN
+// tetap melayani dari cache edge (s-maxage 60) & Worker throttle fetch ke
+// Google → hemat kuota + lindungi sheet.
+const LIVE_FEED_POLL_MS = 60 * 1000;      // 60 detik
 let   _liveFeedTimer    = null;           // handle setInterval feed
 let   _lastLiveFeed     = null;           // payload live terakhir (re-apply setelah swap data.json)
 let   _liveFeedOk       = false;          // pernah sukses fetch feed?
@@ -4853,12 +4856,15 @@ async function _pollLiveFeed(force = false) {
   }
   _marketClosedLogged = false;
   try {
-    // URL stabil (TANPA cache-bust) → Cloudflare CDN melayani dari edge cache
-    // (max-age=60) tanpa meng-invoke Worker untuk mayoritas request. Data maks
-    // ~60 dtk lebih lama — tidak terasa (sheet update ~5 mnt).
+    // Cache-bust BERJENDELA 60 dtk: URL berubah tiap menit supaya browser/CDN
+    // tidak terus menyajikan salinan lama (gejala "harga cuma berubah sekali").
+    // Tetap hemat & aman: semua user berbagi URL yang sama dalam 1 jendela →
+    // Cloudflare CDN melayani dari edge cache (s-maxage 60) dan Worker mem-
+    // throttle fetch ke Google (caches.default 60 dtk) → sheet tetap terlindungi.
     const tok = await _getLiveToken();
     if (!tok) return;  // langganan habis di tengah sesi → hentikan overlay live
-    const res = await fetch(_withToken(LIVE_FEED_URL), { cache: 'default' });
+    const _cb = Math.floor(Date.now() / 60000);   // jendela 60 dtk
+    const res = await fetch(_withToken(LIVE_FEED_URL) + '&_cb=' + _cb, { cache: 'default' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if (!json || json.ok !== true || !json.live) throw new Error('payload live tidak valid');
