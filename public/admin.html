@@ -311,6 +311,16 @@ tbody tr:hover{background:var(--bg2)}
         <div class="feat-info">
           <div class="feat-name">⏱️ Trial Gratis Otomatis</div>
           <div class="feat-desc">Beri akses coba-coba (durasi sesuai setelan) otomatis saat user pertama kali login. Admin tidak terdampak.</div>
+          <div class="feat-desc" style="margin-top:8px">
+            Durasi trial (khusus testing):
+            <select id="featTrialMins" style="font:inherit;font-size:12px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);margin-left:4px">
+              <option value="1">1 menit</option>
+              <option value="2">2 menit</option>
+              <option value="5">5 menit</option>
+              <option value="30">30 menit</option>
+            </select>
+            <span style="color:var(--text3)"> — berlaku untuk trial baru</span>
+          </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <span class="feat-state" id="featTrialState">—</span>
@@ -983,6 +993,7 @@ async function loadFeatures(){
     var f=(d&&d.features)||{};
     document.getElementById('featTrial').checked=f.trial!==false;
     document.getElementById('featReferral').checked=f.referral!==false;
+    var tm=document.getElementById('featTrialMins'); if(tm) tm.value=String(f.trial_minutes||30);
     featSetState();
     card.style.display='block';
   }catch(e){ card.style.display='none'; }
@@ -991,7 +1002,7 @@ async function saveFeatures(){
   var msg=document.getElementById('featMsg');
   msg.className='bill-msg'; msg.textContent='Menyimpan…';
   featSetState();
-  var features={trial:document.getElementById('featTrial').checked,referral:document.getElementById('featReferral').checked};
+  var features={trial:document.getElementById('featTrial').checked,referral:document.getElementById('featReferral').checked,trial_minutes:parseInt((document.getElementById('featTrialMins')||{}).value,10)||30};
   try{
     var r=await fetch('/api/admin/features',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({features:features})});
     var d=await r.json().catch(function(){return {};});
@@ -999,6 +1010,7 @@ async function saveFeatures(){
     if(d&&d.features){
       document.getElementById('featTrial').checked=d.features.trial!==false;
       document.getElementById('featReferral').checked=d.features.referral!==false;
+      var tm2=document.getElementById('featTrialMins'); if(tm2&&d.features.trial_minutes) tm2.value=String(d.features.trial_minutes);
       featSetState();
     }
     msg.className='bill-msg ok'; msg.textContent='✓ Tersimpan & langsung berlaku.';
@@ -1007,6 +1019,7 @@ async function saveFeatures(){
 }
 document.getElementById('featTrial').addEventListener('change',saveFeatures);
 document.getElementById('featReferral').addEventListener('change',saveFeatures);
+(function(){ var tm=document.getElementById('featTrialMins'); if(tm) tm.addEventListener('change',saveFeatures); })();
 document.getElementById('featHead').addEventListener('click',function(e){
   if(e.target.closest('.switch')) return;   // klik toggle jangan ikut collapse
   var body=document.getElementById('featBody');

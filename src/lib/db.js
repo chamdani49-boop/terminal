@@ -81,7 +81,7 @@ export async function txnAlreadyProcessed(env, txnId) {
 // Default: kedua fitur AKTIF (perilaku tidak berubah sampai admin mematikan).
 // FAIL-SAFE: bila tabel belum ada / D1 error → kembalikan default (aktif).
 export async function getFeatureFlags(env) {
-  const out = { trial: true, referral: true };
+  const out = { trial: true, referral: true, trial_minutes: null };
   try {
     await db(env).prepare('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)').run();
     const row = await db(env).prepare('SELECT value FROM app_settings WHERE key = ?').bind('feature_flags').first();
@@ -89,6 +89,8 @@ export async function getFeatureFlags(env) {
       const v = JSON.parse(row.value);
       if (typeof v.trial === 'boolean') out.trial = v.trial;
       if (typeof v.referral === 'boolean') out.referral = v.referral;
+      // Durasi trial (menit) — khusus testing, diatur dari panel admin. null = pakai env TRIAL_MINUTES.
+      if (Number.isFinite(v.trial_minutes) && v.trial_minutes > 0) out.trial_minutes = v.trial_minutes;
     }
   } catch { /* default: aktif */ }
   return out;
@@ -99,6 +101,10 @@ export async function setFeatureFlags(env, flags) {
   const next = {
     trial: typeof (flags && flags.trial) === 'boolean' ? flags.trial : cur.trial,
     referral: typeof (flags && flags.referral) === 'boolean' ? flags.referral : cur.referral,
+    // Durasi trial (menit): simpan bila angka valid > 0, selain itu pertahankan nilai lama.
+    trial_minutes: (flags && Number.isFinite(Number(flags.trial_minutes)) && Number(flags.trial_minutes) > 0)
+      ? Math.floor(Number(flags.trial_minutes))
+      : cur.trial_minutes,
   };
   await db(env).prepare('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)').run();
   await db(env).prepare(
@@ -219,8 +225,10 @@ export async function grantTrialIfEligible(env, userId, email = null) {
   // & admin tak ikut terdampak masa trial).
   const admins = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
   if (email && admins.includes(String(email).toLowerCase())) return null;
-  if (!(await getFeatureFlags(env)).trial) return null;          // fitur dimatikan dari admin
-  const raw = env.TRIAL_MINUTES;
+  const flags = await getFeatureFlags(env);
+  if (!flags.trial) return null;          // fitur dimatikan dari admin
+  // Durasi trial: utamakan setelan admin (app_settings, khusus testing), lalu env TRIAL_MINUTES, default 30.
+  const raw = (flags.trial_minutes != null) ? flags.trial_minutes : env.TRIAL_MINUTES;
   const mins = (raw === undefined || raw === null || String(raw).trim() === '') ? 30 : parseInt(raw, 10);
   if (!Number.isFinite(mins) || mins <= 0) return null;          // trial dimatikan
   try {
