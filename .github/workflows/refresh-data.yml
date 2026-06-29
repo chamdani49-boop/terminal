@@ -130,6 +130,13 @@ jobs:
           REFRESH_MODE:       ${{ steps.mode.outputs.mode }}
         run: node scripts/build-data.js --mode=${{ steps.mode.outputs.mode }}
 
+      # ── Rebuild screening.json (hanya mode non-live; universe konsensus
+      #    berubah saat consensus/history/full). Mode live di-skip agar tidak
+      #    menambah commit tiap 5 menit. ─────────────────────────────────────
+      - name: Rebuild screening.json
+        if: steps.mode.outputs.mode != 'live'
+        run: node scripts/build-screening.js
+
       # ── Commit hanya kalau data berubah ─────────────────────────────────
       # Push pakai rebase + retry: workflow OHLC (refresh-ohlc.yml) push ke
       # branch main yang sama dengan concurrency group berbeda, jadi bisa
@@ -160,6 +167,9 @@ jobs:
           if [ "$MODE" = "live" ]; then SKIP_CI=" [skip ci]"; fi
 
           git add public/data.json
+          if [ "$MODE" != "live" ] && [ -f public/screening.json ]; then
+            git add public/screening.json
+          fi
           git commit -m "data: refresh $(date -u +%FT%TZ) [mode=$MODE]$SKIP_CI"
 
           pushed=false
