@@ -35,7 +35,15 @@
 // CSV utilities (port dari build-data.js)
 // ─────────────────────────────────────────────
 function gvizCsvUrl(sheetId, gid) {
-  return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`;
+  // Cache-buster WAJIB: endpoint gviz/tq Google Sheets menyajikan respons cache
+  // server-side beberapa menit kalau URL-nya identik tiap fetch → Worker membaca
+  // snapshot LAMA sehingga harga live "tidak berubah" di UI. Query param unik
+  // (_cb) memaksa cache-miss di sisi Google → harga selalu fresh. (Pelajaran ini
+  // sudah dipakai di scripts/build-data.js; kini diterapkan juga di Worker.)
+  // Throttle ke Google tetap terjaga oleh cache fresh per-endpoint (caches.default,
+  // 60 dtk), jadi penambahan _cb tidak menambah beban fetch ke Google.
+  const cb = Date.now();
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}&_cb=${cb}`;
 }
 
 /** RFC-4180-ish CSV parser supporting quoted fields with commas/newlines. */
