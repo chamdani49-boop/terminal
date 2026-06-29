@@ -46,16 +46,38 @@ SOURCES = [
     ("Kabar Bursa",       "kabarbursa.com"),
 ]
 
+# Portal "luas" yang meliput banyak topik di luar pasar modal (otomotif,
+# gaya hidup, dll). Untuk sumber ini, query Google News dibatasi ke kata kunci
+# pasar modal agar berita non-saham tidak ikut masuk. Tambah domain bila perlu.
+BROAD_SOURCES = {"katadata.co.id"}
+
+# Kata kunci relevansi pasar modal untuk BROAD_SOURCES (dipakai di query Google
+# News sebagai "(A OR B OR ...)"). Frasa multi-kata dibungkus tanda kutip.
+FINANCE_TERMS = [
+    "saham", "IHSG", "bursa", "emiten", "BEI", "IPO", "dividen", "obligasi",
+    '"pasar modal"', '"rights issue"', '"reksa dana"', "akuisisi",
+    '"laba bersih"', "rupiah",
+]
+
 UA = ("Mozilla/5.0 (compatible; EconomstockHeadlines/1.0; "
       "+https://github.com/chamdani49-boop/terminal)")
 
-# Judul "sampah" yang kadang ke-scrape dari halaman indeks/kategori portal
-# (mis. Katadata sering memunculkan "Indeks Semua Kategori"). Dibuang dari feed.
-JUNK_TITLE_RE = re.compile(r"indeks\s+semua\s+kategori", re.I)
+# Judul "sampah" dari halaman indeks/kategori/tag portal (bukan artikel asli).
+# Contoh Katadata: "Indeks Semua Kategori", "Berita Berita <topik> Hari Ini",
+# atau judul berakhiran "Kabar Terbaru Terkini". Dibuang dari feed.
+JUNK_TITLE_RE = re.compile(
+    r"indeks\s+semua\s+kategori"
+    r"|kabar\s+terbaru\s+terkini"
+    r"|^\s*berita\s+berita\b.*\bhari\s+ini\b"
+    r"|^\s*(topik|tag|indeks)\s+",
+    re.I,
+)
 
 
 def gnews_url(domain: str) -> str:
     q = f"site:{domain} when:2d"
+    if domain in BROAD_SOURCES:                       # batasi portal luas ke topik pasar modal
+        q += " (" + " OR ".join(FINANCE_TERMS) + ")"
     return ("https://news.google.com/rss/search?q="
             + urllib.parse.quote(q)
             + "&hl=id-ID&gl=ID&ceid=ID:id")
