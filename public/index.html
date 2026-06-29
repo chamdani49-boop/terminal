@@ -4836,6 +4836,32 @@ function applyLiveFeed(live, fullRender) {
   return n;
 }
 
+// ── Diagnostik live-feed di layar (AKTIF hanya bila buka URL dgn ?livedebug=1
+//    atau set localStorage 'livedebug'='1'). Untuk cek di HP tanpa devtools:
+//    menampilkan tiap langkah (token, fetch, count, overlay n) + perbandingan
+//    harga LIVE vs nilai yang dipakai price_history utk saham yang dibuka. ──
+const _LIVE_DBG = (function () {
+  try { return /[?&]livedebug=1/.test(location.search) || localStorage.getItem('livedebug') === '1'; }
+  catch (_) { return false; }
+})();
+let _liveDbgBox = null;
+function _liveDbg(line, color) {
+  if (!_LIVE_DBG) return;
+  try {
+    if (!_liveDbgBox) {
+      _liveDbgBox = document.createElement('div');
+      _liveDbgBox.style.cssText = 'position:fixed;left:6px;right:6px;bottom:6px;z-index:99999;max-height:44vh;overflow:auto;background:rgba(0,0,0,.9);color:#0f0;font:11px/1.45 ui-monospace,monospace;padding:8px 10px;border:1px solid #0f0;border-radius:8px;white-space:pre-wrap;word-break:break-word';
+      (document.body || document.documentElement).appendChild(_liveDbgBox);
+    }
+    const t = new Date().toLocaleTimeString('id-ID', { hour12: false });
+    const div = document.createElement('div');
+    if (color) div.style.color = color;
+    div.textContent = '[' + t + '] ' + line;
+    _liveDbgBox.insertBefore(div, _liveDbgBox.firstChild);
+    while (_liveDbgBox.childNodes.length > 60) _liveDbgBox.removeChild(_liveDbgBox.lastChild);
+  } catch (_) {}
+}
+
 // Fetch /live.json dari Worker, lalu overlay ke UI.
 // force=true → abaikan gating jam market (dipakai untuk fetch pertama saat
 // buka halaman, supaya user selalu lihat data terakhir walau bursa tutup).
@@ -4844,7 +4870,7 @@ async function _pollLiveFeed(force = false) {
   // Tab tidak terlihat (background) → skip. Hemat request: user yang nge-tab
   // di latar tidak ikut nge-poll. Saat kembali aktif, listener visibilitychange
   // memicu _pollLiveFeed() lagi.
-  if (typeof document !== 'undefined' && document.hidden) return;
+  if (typeof document !== 'undefined' && document.hidden) { _liveDbg('skip: tab background', '#fa0'); return; }
   // Gating jam bursa (WIB): di luar 08:50–16:30 Sen–Jum, harga tidak berubah →
   // jeda polling. Fetch pertama (force) tetap jalan biar dapat closing terakhir.
   if (!force && !_isMarketOpen()) {
@@ -4852,9 +4878,11 @@ async function _pollLiveFeed(force = false) {
       _marketClosedLogged = true;
       console.info('[live-feed] di luar jam bursa (WIB) — polling dijeda sampai bursa buka.');
     }
+    _liveDbg('skip: di luar jam bursa WIB (08:50–16:30 Sen–Jum) — fetch pertama tetap pakai closing terakhir', '#fa0');
     return;
   }
   _marketClosedLogged = false;
+  _liveDbg('poll mulai (force=' + force + ')');
   try {
     // Cache-bust BERJENDELA 60 dtk: URL berubah tiap menit supaya browser/CDN
     // tidak terus menyajikan salinan lama (gejala "harga cuma berubah sekali").
@@ -4862,9 +4890,10 @@ async function _pollLiveFeed(force = false) {
     // Cloudflare CDN melayani dari edge cache (s-maxage 60) dan Worker mem-
     // throttle fetch ke Google (caches.default 60 dtk) → sheet tetap terlindungi.
     const tok = await _getLiveToken();
-    if (!tok) return;  // langganan habis di tengah sesi → hentikan overlay live
+    if (!tok) { _liveDbg('STOP: token live GAGAL (/api/live-token). Cek LIVE_TOKEN_SECRET di Worker utama / status langganan.', '#f55'); return; }  // langganan habis di tengah sesi → hentikan overlay live
     const _cb = Math.floor(Date.now() / 60000);   // jendela 60 dtk
     const res = await fetch(_withToken(LIVE_FEED_URL) + '&_cb=' + _cb, { cache: 'default' });
+    _liveDbg('fetch /live.json → HTTP ' + res.status);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if (!json || json.ok !== true || !json.live) throw new Error('payload live tidak valid');
@@ -4878,8 +4907,21 @@ async function _pollLiveFeed(force = false) {
     } else {
       console.info(`[live-feed] refresh — ${n} ticker (generated_at=${json.generated_at})${tag}`);
     }
+    _liveDbg('feed ok | count=' + json.count + ' | stale=' + (!!json.stale) + ' | gen=' + json.generated_at, json.stale ? '#fa0' : '#0f0');
+    _liveDbg('overlay → n=' + n + ' ticker masuk DATA' + (json.count > 0 && n === 0 ? '  ⚠ GATE menolak: kode live tak ada di baris terakhir price_history' : ''), (json.count > 0 && n === 0) ? '#f55' : '#0f0');
+    try {
+      const c = currentStock;
+      const ph = DATA && DATA.price_history;
+      const lr = (Array.isArray(ph) && ph.length) ? ph[ph.length - 1] : null;
+      const lvp = (DATA.live && DATA.live[c]) ? DATA.live[c].price : '-';
+      const phl = (lr && lr[c] != null) ? lr[c] : '-';
+      const cur = (DATA.stats && DATA.stats[c]) ? DATA.stats[c].current : '-';
+      const sync = String(lvp) === String(phl);
+      _liveDbg('  ' + c + ': LIVE(sheet)=' + lvp + ' | dipakai-UI(price_history.last)=' + phl + ' | stats.current=' + cur + (sync ? '  ✓ sinkron (UI ikut live)' : '  ✗ beda → UI TIDAK ikut live'), sync ? '#0f0' : '#f55');
+    } catch (_) {}
     _flashLiveUpdate();
   } catch (e) {
+    _liveDbg('ERROR fetch/overlay: ' + (e.message || e), '#f55');
     console.warn('[live-feed] gagal:', e.message || e, '— tetap pakai harga terakhir + data.json.');
   }
 }
