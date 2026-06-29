@@ -12,7 +12,9 @@
  *   sehingga frontend cukup fetch 1x lalu gabung dengan data.json (stats /
  *   consensus / live) yang sudah ter-load.
  *
- * Universe = semua key di data.json → consensus_summary (saham dicover analis).
+ * Universe = SEMUA saham yang punya file valuasi di public/valuation/
+ *            (kecuali file non-ticker: index.json, dividends.json).
+ *            Saham tanpa data fundamental (annual) dilewati.
  *
  * Field per saham (fundamental "terbaru" = annual tahun terakhir):
  *   name, sector, last_year,
@@ -65,30 +67,30 @@ function maxPerLastN(annual, n) {
 
 function main() {
   const data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
-  const consensus = data.consensus_summary || {};
   const stockInfo = data.stock_info || {};
-  const universe = Object.keys(consensus);
+
+  // Universe = SEMUA saham yang punya file valuasi (kecuali file non-ticker).
+  const EXCLUDE = new Set(['index.json', 'dividends.json', 'screening.json', 'overrides.json']);
+  const files = fs.readdirSync(VAL_DIR)
+    .filter((f) => f.endsWith('.json') && !EXCLUDE.has(f));
 
   const stocks = {};
   let ok = 0;
-  let missing = [];
+  let skipped = 0;
 
-  for (const code of universe) {
-    const fp = path.join(VAL_DIR, code + '.json');
-    if (!fs.existsSync(fp)) {
-      missing.push(code);
-      continue;
-    }
+  for (const f of files) {
+    const code = f.replace(/\.json$/, '');
     let v;
     try {
-      v = JSON.parse(fs.readFileSync(fp, 'utf8'));
+      v = JSON.parse(fs.readFileSync(path.join(VAL_DIR, f), 'utf8'));
     } catch (e) {
-      missing.push(code);
+      skipped++;
       continue;
     }
 
     const annual = v.annual || {};
     const ly = latestAnnualYear(annual);
+    if (!ly && !v.annualized) { skipped++; continue; }   // tanpa data fundamental → lewati
     const a = (ly && annual[ly]) || v.annualized || {};
     const info = stockInfo[code] || {};
 
@@ -111,14 +113,14 @@ function main() {
     generated_at: new Date().toISOString(),
     count: ok,
     note:
-      'Field fundamental = annual tahun terakhir. Kolom turunan (diskon harga, ' +
-      'diskon valuasi, div yield, UpDw, ConsVal, PER kini, P/FCF kini) dihitung di frontend.',
+      'Universe = semua saham dengan data valuasi. Field fundamental = annual ' +
+      'tahun terakhir. Kolom turunan (diskon harga, diskon valuasi, div yield, ' +
+      'UpDw, ConsVal, PER kini, P/FCF kini) dihitung di frontend.',
     stocks,
   };
 
   fs.writeFileSync(OUT_PATH, JSON.stringify(out));
-  console.log(`✓ screening.json ditulis: ${ok} saham (universe konsensus ${universe.length})`);
-  if (missing.length) console.log(`  ⚠ tanpa file valuasi (${missing.length}): ${missing.join(', ')}`);
+  console.log(`✓ screening.json ditulis: ${ok} saham (dari ${files.length} file valuasi, ${skipped} dilewati)`);
 }
 
 main();
