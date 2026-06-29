@@ -2559,22 +2559,23 @@ table.pl-seas tr.avg td:first-child{color:var(--text)}
 .pl-seg2 button{border:none;background:none;font-family:inherit;font-size:9.5px;font-weight:700;color:var(--text2);padding:2px 8px;border-radius:var(--radius-pill);cursor:pointer;transition:all .15s}
 .pl-seg2 button.on{background:var(--accent);color:#fff}
 
-/* ═══════ SCREENING PANEL ═══════ */
-.scr-win{margin-bottom:12px;height:auto}
-.scr-win .pl-win-body.scr-body{overflow:visible;padding:0;display:flex;flex-direction:column}
-.scr-win.pl-max .pl-win-body.scr-body{overflow:auto}
-.scr-head-sub{font-size:11px;color:var(--text3);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ═══════ PASAR LIVE — SUB-MENU & VIEW SCREENING ═══════ */
+.pl-submenu{display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-pill);padding:3px}
+.pl-submenu-btn{border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--text2);padding:7px 16px;border-radius:var(--radius-pill);cursor:pointer;transition:all .15s;white-space:nowrap}
+.pl-submenu-btn:hover{color:var(--accent)}
+.pl-submenu-btn.on{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(109,40,217,.28)}
+.pl-view[hidden]{display:none}
+.scr-view{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);overflow:hidden;display:flex;flex-direction:column}
+.scr-vhead{display:flex;align-items:baseline;gap:10px;min-width:0;flex-wrap:wrap}
+.scr-vtitle{font-size:15px;font-weight:800;white-space:nowrap}
+.scr-head-sub{font-size:11.5px;color:var(--text3);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:680px){.scr-head-sub{display:none}}
-.scr-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg2)}
-.scr-presets{display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-pill);padding:3px}
-.scr-preset{border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;color:var(--text2);padding:6px 13px;border-radius:var(--radius-pill);cursor:pointer;transition:all .15s;white-space:nowrap}
-.scr-preset:hover{color:var(--accent)}
-.scr-preset.on{background:var(--accent);color:#fff}
+.scr-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg2)}
 .scr-filters{display:inline-flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap}
 .scr-sel,.scr-search{font-family:inherit;font-size:12px;padding:7px 11px;border:1px solid var(--border);border-radius:9px;background:var(--card);color:var(--text);min-width:0}
 .scr-search{width:190px;max-width:46vw}
 .scr-sel:focus,.scr-search:focus{outline:none;border-color:var(--accent)}
-.scr-table-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch}
+.scr-table-wrap{overflow:auto;max-height:72vh;min-height:180px;-webkit-overflow-scrolling:touch}
 .scr-loading{padding:40px 16px;text-align:center;color:var(--text3);font-size:13px}
 table.scr-tbl{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;font-variant-numeric:tabular-nums}
 table.scr-tbl th,table.scr-tbl td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border)}
@@ -2611,8 +2612,8 @@ table.scr-tbl tbody tr:hover td.scr-c-code{background:var(--bg2)}
 @media(max-width:640px){
   table.scr-tbl th,table.scr-tbl td{padding:6px 7px;font-size:11.5px}
   .scr-search{width:140px}
-  .scr-toolbar{padding:9px 10px;gap:8px}
-  .scr-preset{padding:6px 10px;font-size:11.5px}
+  .scr-toolbar{padding:10px;gap:8px}
+  .pl-submenu-btn{padding:6px 12px;font-size:12px}
 }
 .pl-ma{display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:9.5px;font-weight:700;color:var(--text2);padding:2px 6px;border-radius:6px;border:1px solid var(--border);user-select:none;white-space:nowrap}
 .pl-ma .dot{width:10px;height:3px;border-radius:2px;flex-shrink:0}
@@ -2867,40 +2868,33 @@ body.is-mobile-device.force-desktop .pl-col-main{
 <div class="page" id="page-pasar">
   <div class="pl-head">
     <div class="pl-title"><span class="pl-dot"></span>Pasar Live</div>
-    <div class="pl-sub">Terminal saham IDX &amp; IHSG — chart, heatmap, seasonality &amp; headlines</div>
+    <div class="pl-submenu" role="tablist" aria-label="Sub-menu Pasar Live">
+      <button class="pl-submenu-btn on" type="button" id="plSubTerminal" role="tab" onclick="plSetView('terminal',this)">📡 Terminal</button>
+      <button class="pl-submenu-btn" type="button" id="plSubScreening" role="tab" onclick="plSetView('screening',this)">🎯 Screening</button>
+    </div>
     <button class="pl-reload" type="button" onclick="plReloadAll()" title="Muat ulang semua panel">&#8635; Refresh</button>
   </div>
 
-  <!-- ───────────────────────────────────────────────────────────────────
-       PANEL SCREENING — tabel 109 saham tercover konsensus, full-width.
-       Sumber: screening.json (fundamental terbaru) + data.json (stats/
-       consensus/live). Kolom turunan dihitung di plScr* (JS di bawah). -->
-  <section class="pl-win scr-win" id="plWinScreening">
-    <div class="pl-win-head">
-      <span class="pl-grip">&#10287;</span>
-      <span class="pl-win-title">🎯 Screening</span>
-      <span class="scr-head-sub" id="scrHeadSub">Ide saham — 109 emiten tercover analis</span>
-      <span class="pl-spacer"></span>
-      <button class="pl-ico-btn" type="button" onclick="plMax(this)" title="Perbesar / kecilkan" aria-label="Perbesar panel">&#10530;</button>
-    </div>
-    <div class="pl-win-body scroll scr-body" id="plScreeningBody">
-      <div class="scr-toolbar">
-        <div class="scr-presets" id="scrPresets">
-          <button class="scr-preset on" type="button" data-preset="discount" onclick="plScrSetPreset('discount',this)">On Discount</button>
-          <button class="scr-preset" type="button" data-preset="target" onclick="plScrSetPreset('target',this)">Target &amp; Upside</button>
-          <button class="scr-preset" type="button" data-preset="momentum" onclick="plScrSetPreset('momentum',this)">Valuasi &amp; Momentum</button>
-        </div>
-        <div class="scr-filters">
-          <select class="scr-sel" id="scrSector" onchange="plScrRender()" aria-label="Filter sektor"><option value="">Semua sektor</option></select>
-          <input type="text" class="scr-search" id="scrSearch" placeholder="🔍 Cari kode / nama…" autocomplete="off" enterkeyhint="search" oninput="plScrRender()" aria-label="Cari saham">
-        </div>
+  <!-- ═══════════ SUB-MENU VIEW: SCREENING ═══════════
+       Tabel ide saham — SATU layer (semua kolom digabung), 109 emiten
+       tercover konsensus. Sumber: screening.json (fundamental terbaru) +
+       data.json (stats/consensus/live). Kolom turunan dihitung di plScr*. -->
+  <div class="pl-view scr-view" id="plViewScreening" hidden>
+    <div class="scr-toolbar">
+      <div class="scr-vhead">
+        <span class="scr-vtitle">🎯 Screening</span>
+        <span class="scr-head-sub" id="scrHeadSub">Ide saham — 109 emiten tercover analis · klik baris untuk detail valuasi</span>
       </div>
-      <div class="scr-table-wrap" id="scrTableWrap">
-        <div class="scr-loading">Memuat data screening…</div>
+      <div class="scr-filters">
+        <select class="scr-sel" id="scrSector" onchange="plScrRender()" aria-label="Filter sektor"><option value="">Semua sektor</option></select>
+        <input type="text" class="scr-search" id="scrSearch" placeholder="🔍 Cari kode / nama…" autocomplete="off" enterkeyhint="search" oninput="plScrRender()" aria-label="Cari saham">
       </div>
-      <div class="scr-footer" id="scrFooter"></div>
     </div>
-  </section>
+    <div class="scr-table-wrap" id="scrTableWrap">
+      <div class="scr-loading">Memuat data screening…</div>
+    </div>
+    <div class="scr-footer" id="scrFooter"></div>
+  </div>
 
   <!-- Modal penjelasan kolom (untuk yang awam) -->
   <div class="scr-modal" id="scrInfoModal" onclick="plScrCloseInfo(event)">
@@ -2910,6 +2904,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
   </div>
 
+  <!-- ═══════════ SUB-MENU VIEW: TERMINAL ═══════════ -->
+  <div class="pl-view" id="plViewTerminal">
   <div class="pl-terminal">
 
     <!-- KOLOM KIRI: Chart A/B + Heatmap + Seasonality (grid 2 kolom) -->
@@ -2983,6 +2979,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
 
   </div>
+  </div><!-- /plViewTerminal -->
 </div><!-- /page-pasar -->
 
 
@@ -5290,18 +5287,21 @@ function plReloadAll() { plLoadAll(true); }
 // ═══════════════════════════════════════════════════════════════════════
 let _scrData    = null;                    // isi screening.json
 let _scrLoading = false;
-let _scrPreset  = 'discount';
 let _scrSort    = { key: 'upDw', dir: 'desc' };   // default: upside terbesar
 let _scrPage    = 0;
 const SCR_PAGE_SIZE = 50;
 const SCR_CDN_URL   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/screening.json';
 
-// Kolom yang tampil per preset (mengikuti 3 gambar referensi).
-const SCR_PRESETS = {
-  discount: ['no','code','price','high','diskonHarga','ytd','diskonValuasi','eps','pfcf','cagr','lastDiv','divYield'],
-  target:   ['no','code','price','low','frLows','beta','consVal','target','upDw'],
-  momentum: ['no','code','price','perNow','pfcf','epsg','ytd','yoy','mom','d1','consVal','target','upDw'],
-};
+// SATU layer — semua kolom digabung (CAGR 5th = EPS Growth = satu kolom).
+// Urutan: identitas → harga/diskon → momentum → valuasi → fundamental →
+// dividen → risiko → konsensus/target.
+const SCR_COLUMNS = [
+  'no','code','price','high','low','diskonHarga','frLows',
+  'ytd','yoy','mom','d1',
+  'perNow','pfcf','diskonValuasi','eps','cagr',
+  'lastDiv','divYield','beta',
+  'consVal','target','upDw',
+];
 
 // ── fetch screening.json (lokal → fallback CDN), sekali saja ──
 async function plScrEnsure(force) {
@@ -5334,14 +5334,19 @@ function _scrPct(v, dec) {
   return (p > 0 ? '+' : '') + p.toFixed(dec == null ? 1 : dec) + '%';
 }
 
-// ── heatmap: kembalikan style background sesuai "baik/buruk" + magnitude ──
+// ── heatmap: warna kuat (dark & light) sesuai "baik/buruk" + magnitude ──
+// Tint pakai hsla beralpha tinggi supaya kontras di kedua tema; teks tetap
+// var(--text) (gelap di light / terang di dark) seperti tabel referensi.
 function _scrTint(good, mag) {
   if (!good) return '';
   mag = Math.max(0, Math.min(1, mag));
-  const a = (0.08 + 0.34 * mag).toFixed(2);
-  return good > 0
-    ? `background:hsla(152,62%,45%,${a})`
-    : `background:hsla(349,72%,53%,${a})`;
+  const a = (0.20 + 0.62 * mag).toFixed(2);                 // 0.20 → 0.82 (kuat)
+  const h = good > 0 ? 150 : 350;
+  const s = good > 0 ? 72 : 78;
+  const l = good > 0 ? 44 : 53;
+  let st = `background:hsla(${h},${s}%,${l}%,${a})`;
+  if (mag > 0.4) st += ';font-weight:800';                  // nilai kuat → tebal
+  return st;
 }
 function _scrHeatSigned(v, cap) { if (!Number.isFinite(v)) return ''; return _scrTint(v > 0 ? 1 : (v < 0 ? -1 : 0), Math.abs(v) / cap); }
 function _scrHeatDiscount(v, cap) { // negatif (diskon) = hijau; positif (di atas) = merah
@@ -5461,12 +5466,18 @@ function plScrBuildSectorFilter() {
   if (cur) sel.value = cur;
 }
 
-// ── ganti preset ──
-function plScrSetPreset(p, btn) {
-  _scrPreset = p;
-  _scrPage = 0;
-  document.querySelectorAll('#scrPresets .scr-preset').forEach(b => b.classList.toggle('on', b === btn));
-  plScrRender();
+// ── sub-menu Pasar Live: Terminal ↔ Screening ──
+function plSetView(view, btn) {
+  const isScr = view === 'screening';
+  const vScr = document.getElementById('plViewScreening');
+  const vTerm = document.getElementById('plViewTerminal');
+  if (vScr) vScr.hidden = !isScr;
+  if (vTerm) vTerm.hidden = isScr;
+  const bT = document.getElementById('plSubTerminal');
+  const bS = document.getElementById('plSubScreening');
+  if (bT) bT.classList.toggle('on', !isScr);
+  if (bS) bS.classList.toggle('on', isScr);
+  if (isScr) plScrEnsure();
 }
 
 // ── sorting via klik header ──
@@ -5522,7 +5533,7 @@ function plScrRender() {
   const start = _scrPage * SCR_PAGE_SIZE;
   const pageRows = rows.slice(start, start + SCR_PAGE_SIZE);
 
-  const cols = SCR_PRESETS[_scrPreset];
+  const cols = SCR_COLUMNS;
   const arrow = key => _scrSort.key === key ? `<span class="scr-arrow">${_scrSort.dir === 'asc' ? '▲' : '▼'}</span>` : '';
 
   // header
