@@ -13505,7 +13505,15 @@ body.vl-maxing{overflow:hidden}
     if(!live || !state.raw || !state.code) return;
     state.live = Object.assign({}, state.live||{}, live);
     try{
-      renderHead(); renderCards(); renderProjection();
+      // Re-render SEMUA bagian valuasi yang dihitung dari harga live (selaras
+      // urutan renderAll) supaya semuanya ikut sinkron saat harga Sheet Live
+      // berubah — bukan cuma header/kartu/proyeksi:
+      //   renderFund      → rasio fundamental berbasis harga (mis. PER/PBV "sekarang")
+      //   renderDividen   → dividend yield = DPS / harga
+      //   renderMultiples → PER/PBV/PSR (harga ÷ EPS/BVPS/SPS)
+      //   renderCompare   → nilai wajar vs harga → potensi & margin of safety
+      renderHead(); renderCards(); renderFund();
+      renderProjection(); renderDividen(); renderMultiples();
       renderCompare();
       buildCharts(); vlGenerateInsights(); vlEnsureMaxBtns();
       if(_vlChartMode==='harian') requestAnimationFrame(function(){ vlRenderHarian(); });
