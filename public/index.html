@@ -2885,7 +2885,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="scr-toolbar">
       <div class="scr-vhead">
         <span class="scr-vtitle">🎯 Screening</span>
-        <span class="scr-head-sub" id="scrHeadSub">Ide saham — 109 emiten tercover analis · klik baris untuk detail valuasi</span>
+        <span class="scr-head-sub" id="scrHeadSub">Ide saham — semua emiten IDX · klik baris untuk detail valuasi</span>
       </div>
       <div class="scr-filters">
         <select class="scr-sel" id="scrSector" onchange="plScrRender()" aria-label="Filter sektor"><option value="">Semua sektor</option></select>
@@ -5295,14 +5295,15 @@ const SCR_PAGE_SIZE = 50;
 const SCR_CDN_URL   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/screening.json';
 
 // SATU layer — semua kolom digabung (CAGR 5th = EPS Growth = satu kolom).
-// Urutan: identitas → harga/diskon → momentum → valuasi → fundamental →
-// dividen → risiko → konsensus/target.
+// Urutan: identitas → harga → momentum → valuasi → fundamental → dividen →
+// risiko → konsensus/target → (di akhir) tertinggi/terendah/diskon/frlows.
 const SCR_COLUMNS = [
-  'no','code','price','high','low','diskonHarga','frLows',
+  'no','code','price',
   'ytd','yoy','mom','d1',
   'perNow','pfcf','diskonValuasi','eps','cagr',
   'lastDiv','divYield','beta',
   'consVal','target','upDw',
+  'high','low','diskonHarga','frLows',
 ];
 
 // ── fetch screening.json (lokal → fallback CDN), sekali saja ──
@@ -5320,6 +5321,10 @@ async function plScrEnsure(force) {
     } catch (_) { /* coba url berikutnya */ }
   }
   _scrLoading = false;
+  if (_scrData) {
+    const sub = document.getElementById('scrHeadSub');
+    if (sub) sub.textContent = `Ide saham — ${_scrData.count || Object.keys(_scrData.stocks).length} emiten IDX · klik baris untuk detail valuasi`;
+  }
   plScrBuildSectorFilter();
   plScrRender();
 }
