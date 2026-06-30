@@ -13566,16 +13566,17 @@ body.vl-maxing{overflow:hidden}
     if(key==='window'){
       h ='<h3>Window Rata-rata Multiple</h3>'+
          '<p>Tombol <strong>3 / 5 / 7 / 10 Th</strong> menentukan <strong>berapa tahun ke belakang</strong> rasio valuasi dirata-rata. Tiap window memakai <strong>nilai TTM (tahun berjalan) + N tahun penuh</strong> (mis. 5 Th = TTM + 5 tahun = 6 angka).</p>'+
-         '<p>Contoh: <strong>5 Th</strong> = rata-rata PBV, PER, PSR dari nilai TTM + 5 tahun terakhir. Tahun outlier (mis. laba mendekati nol → PER ratusan, atau ekuitas negatif) <strong>dibuang</strong> agar rata-rata wajar.</p>'+
+         '<p>Contoh: <strong>5 Th</strong> = rata-rata PBV, PER, PSR, <strong>DPR</strong> dari nilai TTM + 5 tahun terakhir. Tahun outlier (mis. laba mendekati nol → PER ratusan, atau ekuitas negatif) <strong>dibuang</strong> agar rata-rata wajar.</p>'+
          '<h4 style="margin-top:10px">Apa yang berubah saat ganti window?</h4>'+
          '<table class="vl-mini">'+
-         row('Rata-rata PBV/PER/PSR','Dihitung ulang: nilai TTM + N tahun annual')+
+         row('Rata-rata PBV/PER/PSR/DPR','Dihitung ulang: nilai TTM + N tahun annual')+
+         row('Dividen Yield','Berubah (DPR rata-rata window × EPS ÷ harga)')+
          row('Target harga 5 tahun','Berubah (per-share × multiple baru)')+
          row('Combine Return & CAGR','Berubah mengikuti target harga baru')+
          row('Margin of Safety','Berubah mengikuti target baru')+
          row('Nilai Wajar (PBV/PER/PSR)','Berubah di tab Perbandingan')+
          '</table>'+
-         '<p style="margin-top:8px;color:var(--text3);font-size:11px"><strong>DPR &amp; Dividen Yield TIDAK terpengaruh window</strong> — DPR diambil dari TTM (kolom H), tidak dirata-rata; yield = DPR × EPS(TTM) ÷ harga.</p>'+
+         '<p style="margin-top:8px;color:var(--text3);font-size:11px"><strong>DPR sekarang dirata-rata per window</strong> (3/5/7/10 Th), sama seperti PBV/PER/PSR — sebelumnya hanya memakai DPR tahun berjalan. Tahun <strong>tanpa dividen dihitung sebagai 0</strong> (mencerminkan konsistensi), sedangkan <strong>payout ekstrem &gt;200%</strong> (dividen spesial sekali-kali) dan <strong>tahun rugi dibuang</strong>. Data dividen dihitung <strong>sejak 2017</strong>. Dividen Yield = DPR rata-rata × EPS ÷ harga.</p>'+
          '<h4 style="margin-top:10px">Kapan pakai yang mana?</h4>'+
          '<table class="vl-mini">'+
          row('<strong>3 Th</strong>','Sensitif ke kondisi terbaru. Cocok untuk emiten yang berubah cepat (turnaround, re-rating).')+

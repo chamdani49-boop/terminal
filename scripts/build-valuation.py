@@ -70,6 +70,15 @@ TTM_VALUE_COLS = (8, 9) + tuple(c for c in range(4, 27) if c not in (8, 9))
 # Batas WAJAR multiple historis saat dirata-rata: buang tahun outlier (laba≈0 → PER
 # ratusan; ekuitas negatif → PBV/PER negatif) agar rata-rata tidak ketarik anomali.
 MULT_BOUNDS = {'pbv': (0.0, 20.0), 'per': (0.0, 50.0), 'psr': (0.0, 25.0)}
+# DPR (Dividend Payout Ratio) — dirata-rata per window seperti PBV/PER/PSR
+# (keputusan pemilik 2025; sebelumnya pakai DPR TTM saja). Aturan:
+#   • lo = -1e-9  → tahun nilai 0 (tak bayar dividen) IKUT dirata-rata (cerminkan
+#                   konsistensi), tapi DPR negatif (bayar saat rugi) dibuang.
+#   • hi = 2.0    → payout ekstrem sekali-kali (>200%, mis. dividen spesial) dibuang.
+#   • min_year=2017 → data dividen baru valid sejak 2017; tahun 2008–2016 = 0 palsu
+#                     (celah data) sehingga di-skip. Window 10th efektif = 2017–2025.
+DPR_BOUNDS   = (-1e-9, 2.0)
+DPR_MIN_YEAR = 2017
 
 
 # ════════════════════════════ PARSING XLSX ══════════════════════════════════
@@ -428,11 +437,13 @@ def two_latest(stock, field):
     return lv, pv, ly, py
 
 
-def avg_over_window_ttm(stock, field, n, lo=None, hi=None):
+def avg_over_window_ttm(stock, field, n, lo=None, hi=None, min_year=None):
     """Rata-rata `field` untuk model TTM: nilai TTM (kolom H) + n tahun annual
     terakhir = (n+1) angka (mis. window 5 = TTM + 2021..2025 → 6 angka).
     Bila lo/hi diberi: nilai di luar (lo, hi] DIBUANG dari rata-rata (outlier),
-    tetapi tahunnya tetap dihitung sebagai bagian window."""
+    tetapi tahunnya tetap dihitung sebagai bagian window.
+    Bila min_year diberi: tahun annual < min_year TIDAK ikut window sama sekali
+    (mis. data dividen baru valid sejak 2017 → tahun pra-2017 di-skip)."""
     def _ok(v):
         return v is not None and (lo is None or v > lo) and (hi is None or v <= hi)
     vals = []
@@ -441,6 +452,8 @@ def avg_over_window_ttm(stock, field, n, lo=None, hi=None):
         vals.append(tv)
     cnt = 0
     for y in annual_years_desc(stock):
+        if min_year is not None and int(y) < min_year:
+            break
         v = stock['annual'][y].get(field)
         if v is not None:
             cnt += 1
@@ -591,14 +604,17 @@ def five_year_valuation(stock, last_price, warn, override=None):
 
     # Rata-rata multiples & DPR untuk SEMUA window (3/5/7/10), pakai default utk hitung.
     windows = ASSUMPTIONS['avg_windows']
-    # DPR TIDAK dirata-rata — pakai DPR kolom H / TTM (keputusan pemilik).
-    dpr = _ttm('dpr')
-    _dpr_r = round(dpr, 4) if dpr is not None else None
+    # DPR DIRATA-RATA per window seperti PBV/PER/PSR (floor 2017, include tahun 0,
+    # buang negatif & payout >200%). Lihat DPR_BOUNDS / DPR_MIN_YEAR.
+    def _avg_dpr(win):
+        r = avg_over_window_ttm(stock, 'dpr', win, *DPR_BOUNDS, min_year=DPR_MIN_YEAR)
+        return round(r, 4) if r is not None else None
+    dpr = avg_over_window_ttm(stock, 'dpr', w, *DPR_BOUNDS, min_year=DPR_MIN_YEAR)
     avg_multiples = {
         'pbv': {win: round(avg_over_window_ttm(stock, 'pbv', win, *MULT_BOUNDS['pbv']), 4) if avg_over_window_ttm(stock, 'pbv', win, *MULT_BOUNDS['pbv']) is not None else None for win in windows},
         'per': {win: round(avg_over_window_ttm(stock, 'per', win, *MULT_BOUNDS['per']), 4) if avg_over_window_ttm(stock, 'per', win, *MULT_BOUNDS['per']) is not None else None for win in windows},
         'psr': {win: round(avg_over_window_ttm(stock, 'psr', win, *MULT_BOUNDS['psr']), 4) if avg_over_window_ttm(stock, 'psr', win, *MULT_BOUNDS['psr']) is not None else None for win in windows},
-        'dpr': {win: _dpr_r for win in windows},   # DPR = kolom H / TTM (tak dirata-rata)
+        'dpr': {win: _avg_dpr(win) for win in windows},   # DPR dirata-rata per window
     }
     avg_pbv = avg_over_window_ttm(stock, 'pbv', w, *MULT_BOUNDS['pbv'])
     avg_per = avg_over_window_ttm(stock, 'per', w, *MULT_BOUNDS['per'])
