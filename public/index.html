@@ -11785,9 +11785,14 @@ body.vl-maxing{overflow:hidden}
   // Daftar kuartal yang sudah terisi (punya data), urut Q1..Q4.
   function vlFilledQuarters(s){
     const q=(s&&s.quarters)||{};
+    // Kuartal "terisi" dideteksi dari EKUITAS (baris 6, kolom D-G): D=Q1 (selalu ada),
+    // E=Q2, F=Q3, G=Q4. Kolom terisi PALING KANAN = kuartal terbaru → menentukan label
+    // "TTM Qx". Ekuitas = item neraca yg selalu dilaporkan tiap kuartal → indikator
+    // paling andal; metrik lain jadi cadangan.
     return ['Q1','Q2','Q3','Q4'].filter(function(k){
       const o=q[k];
-      return o && Object.keys(o).length && (ok(o.eps)||ok(o.price)||ok(o.bvps)||ok(o.total_revenue));
+      return o && Object.keys(o).length &&
+        (ok(o.total_equity)||ok(o.bvps)||ok(o.eps)||ok(o.price)||ok(o.total_revenue));
     });
   }
   // Kuartal terakhir yang terisi (default basis "current" lama).
