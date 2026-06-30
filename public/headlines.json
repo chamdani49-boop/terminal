@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-06-30T08:15:52+00:00",
+"generated_at": "2026-06-30T08:30:44+00:00",
 "count": 80,
 "items": [
 {
@@ -91,6 +91,18 @@
 "link": "https://news.google.com/rss/articles/CBMiygFBVV95cUxOYkdYek5ILVYycG1ZM2VpWnpDNWtKZzlLT1JiREZHN2FVTmVOUnl6bmZpZUNkeENseG16OUk2SklvNUZvNGVtMkpoamhRcm1JZzZUOXo4REdjQW9EZnpxSTRaTEFXeXY1RnlNelh6SFkxQkd0ajMzNXJ1dm9oWktFdEE0a2IyR2lKMjFjaU1YV0V1Y1lodnh0TjU3cFVtb2l3TE01WEpuZ0RjUU5BMWdkd1EzaGEyVnRSTGJCZi14MEVLT0lYU0U2anhR?oc=5",
 "source": "Bisnis.com",
 "ts": 1782792934
+},
+{
+"title": "BEI Suspensi 16 Saham Baru, Total 71 Emiten Bermasalah",
+"link": "https://news.google.com/rss/articles/CBMihAFBVV95cUxPTjBtdnFYcW1jX3BHQjJzSXhGNzMybm5FV0tTMmxUT2VnMWwtakdXb2RaNUdxUl9ad1hZVjQ3X09EU0hrYVlxeFhsdVRaZFRKeGt2WWJKQ1lzQnMxMUlTeDZqWHFXeHhsakQ0SjhwRmVqQVB2aVlDQ19zYjl4X0l4eTNVVjI?oc=5",
+"source": "EmitenTrust",
+"ts": 1782792884
+},
+{
+"title": "IHSG merosot 3,13% di awal sesi, risiko jebol ke 5.500",
+"link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNMHlISUdNTGdJdkZKOUhYMGtMbTFmMzA5Q3prMG1iOVc1XzNjTEhwZU05cjUtWU05ejE1bHJ6dkZzdS1sWnJtY2x2dldzY1ZnUUxoTzJWREh2TDMyTmVyLWVJQUFZZ3VXTFlWZFVEajdZSDlYd3M3TmN0c0hFOUJvYlo5ZHhfZkFqTW02T1BVWDNiSWJkUDRoUUhaOWE?oc=5",
+"source": "IDN Financials",
+"ts": 1782792600
 },
 {
 "title": "Harga Pertamax Naik, Begini Prediksi Inflasi Juni - Market",
@@ -259,6 +271,12 @@
 "link": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxOQVdQNFBSYXRBcEw1TU9kNGItLVNQTld2UEYxYk8yYjRvNnBxb3lleHdQOXdhb2pXMG1oU1FFY1RCdG50Z0F5eml5UUpVUGJaZldJYmhDY3dsb1VVQlE3ZG5HX2tELVhTU2QwRHlSbUQzTUpPX1NWMTRPTy1kSE1rc2FKYUVUc1lkZWJod0JaSEF4QVlTeHhXb0hTTGxQZFI5WFpIUkNEY3hUbXVsNHZuRzVWQk4wS01FNEV4OFlKVWN2ZzA?oc=5",
 "source": "Stockwatch",
 "ts": 1782783859
+},
+{
+"title": "BUMI Lepas Kepemilikan Saham Citra Palu Mineral ke BMRS",
+"link": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNNldZVURMOWFnMm9YTjlnS2V2MFFhZGZFOXB1VVhHa3lWVjdmdzB5S1hrNDNYY3FqMEU2U1ZZVmc5cHZaMFV4UXRLQmpHU0tuTnQ1SkdzRGQxM2lZSk5hYlV3cUp1QVpROEt0TTB1NDN0N212TktWanZMNDRjeXRZTzhVTV9sRWxIYXhIRDBFNnkxa0NVNjVnc3ZDYnhDUTlBd0ZTWE0xSGtDYU9KbWdoUXEydFR5OWlT0gG-AUFVX3lxTE1GUVRtSzVHank4WTN3b1dpdUdyX3FvSTJ6Tnh4SEtPM0JvRW92SWdrTjhvOHJwbTE2UmdRdEJ2U2lVZVZ3Q3VkY3VUUHFjMkFrdTROdlR3TGxJU3VNRjRwUTBqdy16dU9JU1lXeUNNYjhVVUhUWUZhQy1LUzNEUlY3bk83YUNINUFSWjBQNy1NWUxqY2wwVC1nc2JEWHhMY3d2Xy1vUk9qOGpQSldRS2M3X2txSkRLUVNKSWdEQ3c?oc=5",
+"source": "CNBC Indonesia",
+"ts": 1782783483
 },
 {
 "title": "Kehilangan Momentum AI, Bursa China Terburuk Sejak 2001",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQZUdESGplMEt1M0Vxd0NjaGRZTGFDR2lyYUlYMUI1T2paV2VqaFpxT2lPXzhtVHdlVVA1VlMtYTNtRHV5Z1YwaFNMdkg4V3VKM0M1bG1tY2JYYzBFUXppTUV6Mzd5RlpOMnI2OFplbWdDSnpCR19zbHF4SUNmdDJKTl85N1FzYVlBMlBRalZYQ2tmN3k3WHhDWUhseTFBaHpmSi1vSlB2bDlHUjNhcUxXLUVXZlJCTFdYVEhJa2NoWllJNUdm?oc=5",
 "source": "Bisnis.com",
 "ts": 1782772200
-},
-{
-"title": "Kontan Harian - 30 Juni 2026",
-"link": "https://news.google.com/rss/articles/CBMibkFVX3lxTE0tZzE0bTU4MVZ6Y1U1T3FPZ0ZEMmlkSFI3WVJpd3E1Znc3M05iUTdxcVlFM1FkdmQxSm8yWFZMMm9FUlhJbkMxZk1pVGs5OFRXUHNWdmRHVDF6b09EcWFWY2tka0U2a0t4bGUyV0tR?oc=5",
-"source": "Kontan",
-"ts": 1782772108
-},
-{
-"title": "Wall Street Reli: Indeks Dow Catat Rekor Tertinggi, Saham Terkait Teknologi Melonjak",
-"link": "https://news.google.com/rss/articles/CBMiugFBVV95cUxQelM0Q0dwTjZxd3ZPQkpaM0JjN05GM0sxbl91N2dySENEVEtHQmFjbjFIdnNMTzlwTU1Da1pjYmpualVybFVYaTg4eGRKZWZYRGVsVk45OGpNOWE2MTJpWnFTa3NyQjUzRTBzTWlLMlNfa1F2Ti16blhQaHFGLVJVN2t5QjdkOFpHeTBzSmd0Sjl6aGN2STZsZUh4QWkyZkJteHgzUDV0ZEtXWTg2cXBRNXllVFV1cjctQXfSAbIBQVVfeXFMUDkxMmNwbUNuaVMycTNHTjRNT3VXeVdaTUE1ZnhGdUlHdUp2dHZSU2ZPczBrSDBzdDJ6eHBqelFqS0xGWWItX3MzM2FaYjR3SkVWVy1KOVRMMDRoZlp1NkxoRnJkV0VTMmRELWV0eDNMX21FMWhybzdlRHRCVEM3cUxEYlFlMXNuM1ZLUjUxRmVZVUxaTWhzbWF2dzhOcjlGUkZmQlU2XzNCY2c4enRObk5MZw?oc=5",
-"source": "Kontan",
-"ts": 1782771332
-},
-{
-"title": "Keberadaan MBG Belum Pengaruhi Harga Pangan",
-"link": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPU2YybFo0T1N0ZHNfdkE1NWpEbUZPOWVyN0N5MGd2eVRTYnVNck9mSTk2RVdNWmVNYmc1aXNiY3Z3b2ozYmM1SG5PUDdUcHJCWTA2cTQtMno2Y1FudUJid1VtSkZaY1pNQVlTcFRhaUhjdHJGLVNha3g1cEwtWVEwdDU1aw?oc=5",
-"source": "Kontan",
-"ts": 1782771012
 }
 ]
 }
