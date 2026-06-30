@@ -1121,8 +1121,18 @@ function computeStats(history) {
 
     const prev = iCur > 0 ? series[iCur - 1] : null;
     const ytdStart = (() => {
-      const yr = (history[iCur].date || '').slice(0, 4);
-      for (let i = 0; i <= iCur; i++) if ((history[i].date || '').startsWith(yr)) return series[i];
+      // Basis YTD = harga TUTUP Desember tahun sebelumnya (konvensi standar).
+      // (Sebelumnya keliru: memakai harga bulan PERTAMA tahun berjalan = Januari,
+      //  sehingga return Januari tidak ikut terhitung.)
+      const yr = parseInt((history[iCur].date || '').slice(0, 4), 10);
+      const decPrev = `${yr - 1}-12`;
+      for (let i = iCur; i >= 0; i--) {
+        if ((history[i].date || '').startsWith(decPrev) && Number.isFinite(series[i])) return series[i];
+      }
+      // Fallback: harga pertama tahun berjalan (kalau Des tahun lalu tak tersedia).
+      for (let i = 0; i <= iCur; i++) {
+        if ((history[i].date || '').startsWith(String(yr)) && Number.isFinite(series[i])) return series[i];
+      }
       return null;
     })();
     const yoyPrev = iCur >= 12 ? series[iCur - 12] : null;

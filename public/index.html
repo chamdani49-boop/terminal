@@ -317,7 +317,7 @@ body.is-mobile-device .view-toggle{display:inline-flex}
    left-col di laptop 1366×768 / 13" Mac. Di mobile, urutan di-override
    pake CSS `order` (lihat bagian responsive di bawah).
 */
-.dash-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;max-width:1400px;margin:0 auto}
+.dash-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;max-width:none;margin:0 auto}
 @media(max-width:1180px){.dash-grid{grid-template-columns:minmax(0,1fr)}}
 .left-col,.right-col{display:flex;flex-direction:column;gap:16px;min-width:0}
 
@@ -910,7 +910,7 @@ select.form-control option{background:var(--card);color:var(--text)}
 /* ══════════════════════════════════════════════
    OVERVIEW DASHBOARD (redesigned)
    ══════════════════════════════════════════════ */
-.ov-page-wrap{max-width:1280px;margin:0 auto}
+.ov-page-wrap{max-width:none;margin:0 auto}
 .ov-view{display:flex;flex-direction:column;gap:16px}
 
 /* ── Period filter bar ── */
@@ -5381,6 +5381,35 @@ function _scrConsVal(cs) {
 }
 
 // ── hitung semua metrik untuk satu kode ──
+// ── YTD/MoM LIVE untuk Screening ──
+// Hitung dari harga LIVE ÷ basis price_history (sama mesin dgn Statistik
+// Deskriptif): basis YTD = tutup Des tahun lalu; basis MoM = bulan sebelumnya.
+// Jadi kolom YTD/MoM realtime & basisnya benar (tidak pakai stats.ytd backend
+// yang basisnya keliru). Fallback ke backend bila baris price_history tak ada.
+let _scrDecRow = null;    // baris price_history tutup Desember tahun lalu
+let _scrPrevRow = null;   // baris price_history bulan sebelumnya
+function _scrSetPxRows() {
+  _scrDecRow = _scrPrevRow = null;
+  const ph = DATA && DATA.price_history;
+  if (!ph || ph.length < 2) return;
+  _scrPrevRow = ph[ph.length - 2] || null;
+  const yr = parseInt(((ph[ph.length - 1].date) || '').slice(0, 4), 10);
+  const decPrev = `${yr - 1}-12`;
+  for (let i = ph.length - 1; i >= 0; i--) {
+    if (((ph[i].date) || '').startsWith(decPrev)) { _scrDecRow = ph[i]; break; }
+  }
+}
+function _scrLiveYtd(code, price, st) {
+  const base = _scrDecRow ? _scrDecRow[code] : null;
+  if (Number.isFinite(price) && Number.isFinite(base) && base > 0) return price / base - 1;
+  return Number.isFinite(st.ytd) ? st.ytd : null;   // fallback backend
+}
+function _scrLiveMom(code, price, st) {
+  const base = _scrPrevRow ? _scrPrevRow[code] : null;
+  if (Number.isFinite(price) && Number.isFinite(base) && base > 0) return price / base - 1;
+  return Number.isFinite(st.mom) ? st.mom : null;    // fallback backend
+}
+
 function plScrRow(code) {
   const sc = _scrData.stocks[code] || {};
   const live = (DATA && DATA.live && DATA.live[code]) || {};
@@ -5410,9 +5439,9 @@ function plScrRow(code) {
     low, lowDate: live.low_date || null,
     diskonHarga: (Number.isFinite(price) && Number.isFinite(high) && high > 0) ? (price / high - 1) : null,
     frLows: (Number.isFinite(price) && Number.isFinite(low) && low > 0) ? (price / low - 1) : null,
-    ytd: Number.isFinite(st.ytd) ? st.ytd : null,
+    ytd: _scrLiveYtd(code, price, st),
     yoy: Number.isFinite(st.yoy) ? st.yoy : null,
-    mom: Number.isFinite(st.mom) ? st.mom : null,
+    mom: _scrLiveMom(code, price, st),
     d1: Number.isFinite(live.change_pct) ? live.change_pct : (Number.isFinite(st.change_pct_live) ? st.change_pct_live : null),
     beta: Number.isFinite(st.beta) ? st.beta : null,
     eps, epsNeg,
@@ -5511,6 +5540,7 @@ function plScrRender() {
   if (!DATA) { wrap.innerHTML = '<div class="scr-loading">Menunggu data pasar…</div>'; return; }
 
   // 1) bangun semua baris
+  _scrSetPxRows();   // siapkan basis YTD (Des thn lalu) & MoM (bln lalu) utk hitung live
   let rows = Object.keys(_scrData.stocks).map(plScrRow);
 
   // 2) filter sektor + cari
@@ -10108,7 +10138,7 @@ document.addEventListener('DOMContentLoaded', () => {
 ═══════════════════════════════════════════════════════════════════ -->
 <style>
 /* ── VALUASI: layout & komponen — sinkron dgn dashboard ── */
-#page-valuasi .vl-wrap{max-width:1400px;margin:0 auto}
+#page-valuasi .vl-wrap{max-width:none;margin:0 auto}
 @media(max-width:640px){#page-valuasi{padding-bottom:90px}}
 
 /* Header emiten — pakai padding & radius sama dgn .card */
@@ -10695,7 +10725,7 @@ document.addEventListener('DOMContentLoaded', () => {
    ════════════════════════════════════════════════════════════════════ */
 
 /* — Lebar kerja sedikit dilebarkan utk kesan terminal — */
-#page-valuasi .vl-wrap{max-width:1480px}
+#page-valuasi .vl-wrap{max-width:none}
 #page-valuasi{padding-top:8px}
 
 /* ── PANEL = "window" terminal: .card-title jadi titlebar full-bleed ── */
