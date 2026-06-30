@@ -203,6 +203,52 @@ def parse_sheet(name, grid):
                         break
     code_in_sheet = grid.get((1, 3))
     q_label = grid.get((1, 4))   # sel D1 = penanda kuartal tahun berjalan (Q1/Q2/Q3)
+
+    # ── TTM dari LAPORAN KEUANGAN kuartalan (Σ 4 kuartal terakhir, kolom D-G) ──
+    #   Bagian ini punya header kuartal (mis. "Q1 2026 | Q4 2025 | Q3 2025 | Q2 2025")
+    #   → kolom D-G = 4 kuartal TERAKHIR berjalan-mundur, jadi Σ(D-G) = TTM asli.
+    #   Baris dicari via LABEL di kolom C (nomor baris BERVARIASI per saham & bisa
+    #   bergeser saat Excel di-reupload / saham baru) → tahan-banting:
+    #     • Revenue   : "Total Pendapatan"
+    #     • Laba (parent): "Pemilik Entitas Induk"
+    #     • Laba total (fallback): "Laba Bersih Tahun Berjalan" / "Total Laba Bersih Yang Dapat"
+    def _find_q_header():
+        for r in range(38, 72):
+            d = str(grid.get((r, 4)) or '').strip()
+            if re.match(r'^Q[1-4]\s*\d{4}', d):
+                return r
+        return None
+    def _sum_dg(r):
+        if r is None:
+            return None
+        tot, seen = 0.0, False
+        for c in (4, 5, 6, 7):
+            v = to_number(grid.get((r, c)))
+            if v is not None:
+                tot += v; seen = True
+        return tot if seen else None
+    def _find_row(hr, *subs):
+        if hr is None:
+            return None
+        for r in range(hr + 1, hr + 60):
+            lab = str(grid.get((r, 3)) or '').strip().lower()
+            if not lab:
+                continue
+            for sub in subs:
+                if sub in lab:
+                    return r
+        return None
+    ttm_is = {}
+    _qh = _find_q_header()
+    if _qh is not None:
+        ttm_is = {
+            'q_latest': str(grid.get((_qh, 4)) or '').strip(),     # mis. "Q1 2026"
+            'revenue':   _sum_dg(_find_row(_qh, 'total pendapatan')),
+            'ni_parent': _sum_dg(_find_row(_qh, 'pemilik entitas induk')),
+            'ni_total':  _sum_dg(_find_row(_qh, 'laba bersih tahun berjalan',
+                                                 'total laba bersih yang dapat')),
+        }
+
     return {
         'code': name.strip().upper(),
         'code_in_sheet': (str(code_in_sheet).strip().upper() if code_in_sheet else None),
@@ -213,6 +259,7 @@ def parse_sheet(name, grid):
         'annualized': annualized,   # kolom H = "tahun berjalan" (TTM, dibaca apa adanya)
         'annual': annual,
         'ttm': ttm,                 # TTM riil (Key Stats): eps/net_income/total_revenue/roe
+        'ttm_is': ttm_is,           # TTM dari laporan keuangan (Σ D-G): revenue, ni_parent, ni_total
     }
 
 
@@ -510,18 +557,49 @@ def five_year_valuation(stock, last_price, warn, override=None):
         v = ann.get(field)
         return v if v is not None else latest_annual(stock, field)[0]
 
-    # EPS TTM = EPS-TTM riil (Key Stats) yang sudah di-set ke ann['eps'] di main();
-    # fallback: laba/saham (run-rate), lalu EPS annual terakhir.
-    eps_ttm = ann.get('eps')
-    if eps_ttm is None:
-        ni_ttm, shares_ttm = ann.get('net_income'), ann.get('shares')
-        if ni_ttm is not None and shares_ttm not in (None, 0):
-            eps_ttm = ni_ttm / shares_ttm
-    if eps_ttm is None:                          # benar-benar tak ada → fallback EPS annual file
-        eps_ttm = latest_annual(stock, 'eps')[0]
+    # ── TTM laba/pendapatan dari LAPORAN KEUANGAN (Σ 4 kuartal, dari parse_sheet) ──
+    # Arahan pemilik: EPS pakai LABA PEMILIK ENTITAS INDUK (Σ D-G "Pemilik Entitas
+    # Induk"); SPS pakai Σ D-G "Total Pendapatan". Robust thd Excel re-upload/saham
+    # baru (baris dicari via label). Dua jaring pengaman menjaga data lama yg benar:
+    #   1. Anomali: parent > total (PTBA, SMGR) → pakai total NI.
+    #   2. Mismatch kurs (pelapor USD spt ADRO/ITMG): bila hasil ≠ wajar vs nilai
+    #      Key Stats (kolom H, sudah benar & rupiah) → tetap pakai Key Stats.
+    tis = stock.get('ttm_is') or {}
+    shares_ttm = ann.get('shares') or latest_annual(stock, 'shares')[0]
+    ni_parent, ni_total = tis.get('ni_parent'), tis.get('ni_total')
+    ni_use = None
+    if ni_parent is not None and ni_parent > 0:
+        ni_use = ni_total if (ni_total and ni_total > 0 and ni_parent > ni_total * 1.02) else ni_parent
+    elif ni_total is not None and ni_total > 0:
+        ni_use = ni_total
 
-    eps_LY  = eps_ttm            # EPS TTM (dihitung di mesin; fallback annual bila perlu)
-    sps_LY  = _ttm('sps')        # SPS TTM (kolom H)
+    # EPS Key Stats (kolom H) = acuan benar (rupiah) → fallback + cek kewajaran.
+    eps_ks = ann.get('eps')
+    if eps_ks is None:
+        _ni, _sh = ann.get('net_income'), ann.get('shares')
+        if _ni is not None and _sh not in (None, 0):
+            eps_ks = _ni / _sh
+    if eps_ks is None:
+        eps_ks = latest_annual(stock, 'eps')[0]
+
+    eps_ttm = eps_ks
+    if ni_use is not None and shares_ttm not in (None, 0):
+        cand = ni_use / shares_ttm
+        # Pakai EPS parent HANYA bila wajar vs Key Stats (rasio 0,2–5×). Jauh (pelapor
+        # USD → ratusan× lebih kecil) → tetap Key Stats (jaga data lama yg benar).
+        if not eps_ks or (0.2 <= abs(cand / eps_ks) <= 5.0):
+            eps_ttm = cand
+
+    # SPS: Σ D-G "Total Pendapatan" / saham; cek wajar vs SPS Key Stats, else fallback.
+    sps_ks = _ttm('sps')
+    sps_LY = sps_ks
+    rev_ttm = tis.get('revenue')
+    if rev_ttm is not None and shares_ttm not in (None, 0):
+        cand = rev_ttm / shares_ttm
+        if not sps_ks or (0.2 <= abs(cand / sps_ks) <= 5.0):
+            sps_LY = cand
+
+    eps_LY  = eps_ttm            # EPS TTM (laba pemilik entitas induk; pengaman aktif)
     bvps_LY = _ttm('bvps')       # Book value TTM (kolom H, dari file)
 
     # "Tahun sebelumnya" = annual terbaru dari FILE (annual terkunci PR280).

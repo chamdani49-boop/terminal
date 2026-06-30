@@ -14296,9 +14296,13 @@ body.vl-maxing{overflow:hidden}
     const latest = yrs[yrs.length-1];
     // Basis kuartal TTM — satu tombol per kuartal yang SUDAH terisi (Q1..Q4).
     // Q3/Q4 muncul sendiri begitu diisi & Excel di-reupload.
-    const buttons = vlFilledQuarters(stock).map(function(qn){
-      return { key:qn, label: vlQLabelFull(stock, qn), tag:'' };
-    });
+    // Satu tombol TTM untuk kuartal TERBARU yang terisi (mis. "TTM Q1 2026").
+    // Excel hanya menyediakan TTM terkini (Σ 4 kuartal terakhir) — tidak ada TTM
+    // historis per kuartal — jadi cukup satu basis TTM; labelnya maju otomatis
+    // (Q1→Q2→Q3→Q4) begitu kuartal baru diisi & Excel di-reupload.
+    const buttons = [];
+    const _fq = vlFilledQuarters(stock);
+    if(_fq.length){ const _qn=_fq[_fq.length-1]; buttons.push({ key:_qn, label: vlQLabelFull(stock,_qn), tag:'' }); }
     yrs.slice(-4).reverse().forEach(y=> buttons.push({ key:'Y'+y, year:y, label:y }));
     const moreYears = yrs.slice(0, -4).reverse();   // tahun lebih lama, terbaru dulu di dropdown
     return { buttons, moreYears, latest, defKey:'Y'+latest };
@@ -14327,14 +14331,17 @@ body.vl-maxing{overflow:hidden}
     const basis = _ujBasis || ('Y'+latest);
     // Basis = tahun annual terbaru → pakai fy.inputs apa adanya (override otoritatif menang).
     if(basis === 'Y'+latest) return { inp: (fy.inputs||{}), label: latest+' (terbaru)' };
-    let period, prev, label, year;
+    // Basis TTM (kuartal terbaru): pakai inputs TTM dari MESIN — EPS = laba PEMILIK
+    // ENTITAS INDUK & SPS = Total Pendapatan ÷ saham (Σ 4 kuartal terakhir, dihitung
+    // di build-valuation.py). JANGAN pakai angka kuartal TUNGGAL kolom D-G (itu ±¼
+    // setahun → valuasi jadi "jelek"). Konsisten dgn tab Perbandingan.
     const isQ = vlIsQBasis(basis) || basis==='current';
     if(isQ){
       const qk = vlIsQBasis(basis) ? basis : vlLatestQuarter(stock);
-      period = (stock.quarters&&stock.quarters[qk]) || stock.annualized || {};
-      prev = stock.annual[latest]; label = vlQLabelFull(stock,qk); year = parseInt(latest,10);
+      return { inp: (fy.inputs||{}), label: vlQLabelFull(stock, qk) };
     }
-    else { const y=basis.slice(1); period=stock.annual[y]; const i=yrs.indexOf(y); prev=(i>0)?stock.annual[yrs[i-1]]:null; label=y; year=parseInt(y,10); }
+    let period, prev, label, year;
+    { const y=basis.slice(1); period=stock.annual[y]; const i=yrs.indexOf(y); prev=(i>0)?stock.annual[yrs[i-1]]:null; label=y; year=parseInt(y,10); }
     if(!period) return { inp:(fy.inputs||{}), label: latest+' (terbaru)' };
     const sharesLatest = (stock.annual[latest]||{}).shares;
     const psh = v => (ok(v)&&ok(sharesLatest)&&sharesLatest>0) ? v/sharesLatest : null;
