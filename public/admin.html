@@ -390,6 +390,29 @@ tbody tr:hover{background:var(--bg2)}
     </div>
   </section>
 
+  <!-- DATA REFERRAL (ajak teman) — read-only, default hidden, tepat di atas user list -->
+  <section class="bill-card" id="refCard">
+    <div class="bill-head" id="refHead">
+      <div class="usage-title">👥 Data Referral (Ajak Teman) <span class="plan-badge" id="refBadge">—</span></div>
+      <button class="bill-toggle" id="refToggle" type="button">Tampilkan ▼</button>
+    </div>
+    <div class="bill-body collapsed" id="refBody">
+      <p style="font-size:12.5px;color:var(--text2);line-height:1.55;margin-bottom:14px">
+        Rekap siapa mengajak siapa. <b>Klik baris pengajak</b> untuk melihat rincian nama yang diajak &amp; status langganannya.
+        Kolom <b>Berlangganan</b> = jumlah yang diajak yang sudah pernah membayar. Bonus masa aktif diatur <b>manual</b> lewat tabel user di bawah.
+      </p>
+      <div class="table-card"><div class="table-scroll">
+        <table style="min-width:560px">
+          <thead><tr>
+            <th>Pengajak</th><th>Kode</th><th style="text-align:right">Diajak</th><th style="text-align:right">Berlangganan</th>
+          </tr></thead>
+          <tbody id="refRows"></tbody>
+        </table>
+      </div></div>
+      <div class="empty" id="refEmpty" style="display:none">Belum ada data referral.</div>
+    </div>
+  </section>
+
   <!-- TOOLBAR -->
   <div class="toolbar">
     <div class="search"><span class="ico">🔍</span><input id="searchInp" type="text" placeholder="Cari email atau nama…"></div>
@@ -973,6 +996,55 @@ document.getElementById('billHead').addEventListener('click',function(){
   var t=document.getElementById('billToggle');
   var hidden=body.classList.toggle('collapsed');
   t.textContent=hidden?'Tampilkan ▼':'Sembunyikan ▲';
+});
+
+// ── Panel Data Referral (read-only) — lazy-load saat pertama dibuka ──
+var _refLoaded=false;
+function refStatusLabel(s){
+  return s==='aktif'?'🟢 Aktif':s==='expired'?'🟡 Kedaluwarsa':s==='suspended'?'⛔ Suspended':'⚪ Belum langganan';
+}
+function _escR(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+async function loadReferrals(){
+  var rows=document.getElementById('refRows'), empty=document.getElementById('refEmpty'), badge=document.getElementById('refBadge');
+  try{
+    var r=await fetch('/api/admin/referrals',{headers:{'Accept':'application/json'}});
+    if(!r.ok){ rows.innerHTML=''; empty.style.display='block'; empty.textContent=(r.status===401||r.status===403)?'🔒 Login sebagai admin untuk melihat data referral.':'Gagal memuat data referral.'; return; }
+    var d=await r.json(); var list=(d&&d.referrals)||[];
+    if(badge) badge.textContent=list.length+' pengajak';
+    if(!list.length){ rows.innerHTML=''; empty.style.display='block'; empty.textContent='Belum ada data referral.'; return; }
+    empty.style.display='none';
+    rows.innerHTML=list.map(function(g,i){
+      var detail=g.referees.map(function(e){
+        return '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--border)">'+
+                 '<span>'+_escR(e.email)+(e.nama&&e.nama!=='-'?' <span style="color:var(--text3)">('+_escR(e.nama)+')</span>':'')+'</span>'+
+                 '<span style="white-space:nowrap">'+(e.subscribed?'✅ Berlangganan':'⚪ Belum')+' · <span style="color:var(--text3)">'+refStatusLabel(e.status)+'</span></span>'+
+               '</div>';
+      }).join('');
+      return '<tr class="ref-row" data-i="'+i+'" style="cursor:pointer">'+
+               '<td>'+_escR(g.referrer)+' <span style="color:var(--text3);font-size:11px">▾</span></td>'+
+               '<td><code>'+_escR(g.code||'-')+'</code></td>'+
+               '<td style="text-align:right">'+g.count+'</td>'+
+               '<td style="text-align:right">'+g.subscribed+'</td>'+
+             '</tr>'+
+             '<tr class="ref-detail" data-i="'+i+'" style="display:none"><td colspan="4" style="background:var(--bg2)">'+
+               '<div style="padding:6px 4px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Yang diajak ('+g.count+')</div>'+detail+'</div>'+
+             '</td></tr>';
+    }).join('');
+    rows.querySelectorAll('.ref-row').forEach(function(tr){
+      tr.addEventListener('click',function(){
+        var i=tr.getAttribute('data-i');
+        var det=rows.querySelector('.ref-detail[data-i="'+i+'"]');
+        if(det) det.style.display=(det.style.display==='none'?'':'none');
+      });
+    });
+  }catch(e){ rows.innerHTML=''; empty.style.display='block'; empty.textContent='Gagal memuat data referral.'; }
+}
+document.getElementById('refHead').addEventListener('click',function(){
+  var body=document.getElementById('refBody');
+  var t=document.getElementById('refToggle');
+  var hidden=body.classList.toggle('collapsed');
+  t.textContent=hidden?'Tampilkan ▼':'Sembunyikan ▲';
+  if(!hidden && !_refLoaded){ _refLoaded=true; loadReferrals(); }
 });
 
 loadBilling();

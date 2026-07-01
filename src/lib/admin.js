@@ -5,7 +5,7 @@ import { json, badRequest, forbidden, unauthorized } from './util.js';
 import { getSession } from './session.js';
 import {
   listUsersWithSub, adminExtendDays, adminSetDays, adminSetStatus, adminDeleteUser, adminEditUser,
-  getFeatureFlags, setFeatureFlags,
+  getFeatureFlags, setFeatureFlags, listReferralsGrouped,
 } from './db.js';
 import { getBillingConfig, saveBillingConfig } from './billing.js';
 import { recentFlags, flagSummary, sendTelegram, deviceSummary, autosuspendEnabled } from './abuse.js';
@@ -32,6 +32,12 @@ export async function handleAdminApi(request, env, url) {
   if (path === '/api/admin/users' && request.method === 'GET') {
     const users = await listUsersWithSub(env);
     return json({ ok: true, users, admin: session.email });
+  }
+
+  // Rekap referral (read-only): dikelompokkan per pengajak → panel admin.
+  if (path === '/api/admin/referrals' && request.method === 'GET') {
+    const referrals = await listReferralsGrouped(env);
+    return json({ ok: true, referrals });
   }
 
   if (path === '/api/admin/usage' && request.method === 'GET') {
