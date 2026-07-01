@@ -101,6 +101,7 @@ function main() {
       eps: num(a.eps),
       fcf_per_share: num(a.fcf_per_share),
       dps: num(a.dps),
+      price_annual: num(a.price),
       eps_growth_5y: num(a.eps_growth_5y),
       per_annual: num(a.per),
       pbv_annual: num(a.pbv),
