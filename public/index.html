@@ -5450,7 +5450,14 @@ function plScrRow(code) {
     cagr: Number.isFinite(sc.eps_growth_5y) ? sc.eps_growth_5y : null,
     epsg: Number.isFinite(sc.eps_growth_5y) ? sc.eps_growth_5y : null,
     lastDiv: Number.isFinite(sc.dps) ? sc.dps : null,
-    divYield: (Number.isFinite(sc.dps) && Number.isFinite(price) && price > 0) ? sc.dps / price : null,
+    divYield: (function(){
+      // Div Yield basis LAST ANNUAL: dividen tahun buku terakhir ÷ harga akhir tahun
+      // itu (bukan harga live), agar konsisten dgn dividen tahunannya. Pakai
+      // price_annual bila ada; fallback per_annual × eps (= harga annual).
+      var pa = (Number.isFinite(sc.price_annual) && sc.price_annual > 0) ? sc.price_annual
+             : ((Number.isFinite(sc.per_annual) && sc.per_annual > 0 && Number.isFinite(sc.eps) && sc.eps > 0) ? sc.per_annual * sc.eps : null);
+      return (Number.isFinite(sc.dps) && Number.isFinite(pa) && pa > 0) ? sc.dps / pa : null;
+    })(),
     consVal: _scrConsVal(cs),
     target,
     upDw: (Number.isFinite(target) && Number.isFinite(price) && price > 0) ? (target / price - 1) : null,
@@ -5662,8 +5669,8 @@ const SCR_INFO = {
   epsg: { t: 'EPS Growth', b: ['<p>Pertumbuhan laba per saham (5 tahun, disetahunkan). Makin tinggi makin baik.</p>'] },
   lastDiv: { t: 'Last Dividend', b: ['<p>Dividen tunai per saham yang dibagikan terakhir (Rp per lembar).</p>'] },
   divYield: { t: 'Dividend Yield', b: [
-    '<p>Imbal hasil dividen: Dividen per Saham ÷ Harga sekarang.</p>',
-    '<p class="scr-note">Makin tinggi = pengembalian tunai lebih besar relatif terhadap harga (hijau).</p>'] },
+    '<p>Imbal hasil dividen basis <b>tahun buku terakhir</b>: Dividen per Saham ÷ harga akhir tahun tersebut.</p>',
+    '<p class="scr-note">Sengaja memakai harga akhir tahun (bukan harga live) agar konsisten dengan Last Dividend tahunannya. Makin tinggi = pengembalian tunai lebih besar (hijau).</p>'] },
   beta: { t: 'Beta', b: [
     '<p>Sensitivitas harga saham terhadap pergerakan pasar (IHSG).</p>',
     '<div class="scr-li"><b>&gt; 1</b><span>lebih bergejolak dari pasar.</span></div>',
