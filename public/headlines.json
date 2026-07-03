@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-07-03T02:00:52+00:00",
+"generated_at": "2026-07-03T02:15:38+00:00",
 "count": 80,
 "items": [
 {
@@ -51,10 +51,22 @@
 "ts": 1783036300
 },
 {
+"title": "NCKL Jadwal Dividen Jumbo, Cum Date 8 Juli 2026",
+"link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE1fV2NETE9wZC10d21mMG5lZkIweUhiVFlKelVvd0NiVVlOWlZnNkxmYkdkN1FwRG9CUWlXNXlpYmJtTE42aHVhZE5uZVYzdHhDeHI5bDFveHdYZGVNT2JmUkx5ZkpfaEFHd3pPYUNzTEgyUGhLN0F3YVZFTExqNVU?oc=5",
+"source": "EmitenNews",
+"ts": 1783035900
+},
+{
 "title": "Indosat Raih Rp11,7 Triliun dari Divestasi Aset Serat Optik ke Arsari Group",
 "link": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNV0kxWkQ2Qm9WYlVSSEhqeVduSTVrT21zajN0TEpWRmNOc091RUdnaVg2SjlXM3lJa1FKeXh5SVl1aGszb1VaYU5VbFBXTXpoakEzS2UxSzhDUXJ3STRyWnhRRUk0ZnhKNVY4YlM5VkF3Ym1jR01LMndUbmFuVVdvRjhiQ1ZhaXVnRTZ3RG16cjVtcHlJRXhnN0x3Rk0weGJUSmZaaURFeTNwdG5wSFJQb2RnXzFxOEJxOExLdHY4QkRmR2pNWHBGXw?oc=5",
 "source": "Bisnis.com",
 "ts": 1783035858
+},
+{
+"title": "Singapura Masuk Lima Besar Pusat Keuangan Dunia, Kata Peneliti",
+"link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQWWx6OXJ5blhrWlBIT2luSk5wZUlVYThuWVI5R0VHLXBlY1RCd2N3V1N0cFg3SWY0QS1ZQ2U5SWMwcWg0UmVrMXMzUGdpRlkzajNRc1JESVdnRF9ZY2JpcUV3VnJCeTFQOWR0R0hleC1NUjRDeGtFOVB1QVZVaFg1TEl4ZWlpR1J6Qjl3Q0ZuTXhCMHUyNDQ1ZEVPWnplRmk0LWwzOVozbGF0R0lZZWVBTmU0MA?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1783035600
 },
 {
 "title": "Indosat dan Arsari Group Bentuk PT Infra Fiber Teknologi, Entitas Serat Optik Terbuka",
@@ -429,6 +441,12 @@
 "ts": 1782986347
 },
 {
+"title": "Iran Ancam AS dan Israel Jelang Pemakaman Ali Khamenei",
+"link": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPU1A2bW9qdFQwM19nZkdrN1dSOEh4YkI1WE9XckRXeFRFazA4RDRmX2ZJblBEWTRremRSQ182RUNGd19jU1NpX1Vhb1lEVDVfX3FBS05XMm1NREhmUl9HMDVRZmNkSFY3LVlpZURsNG5NV09PcWJBbGJaeGJCZ0VBNTBkcUVsNHF2WG5BSjlEV19pY1hWSFpFTHJ30gGMAUFVX3lxTE1KLU82N0ZhQVZrYXJMel82YTNNbVVzNExoMDdnQTZsanNNajNxbTZwbmE1eG9zRkt0eXdVelJEUzgwdzF5OFJOYzhYc0NuM2VBMHlkcWNuRnZwU1dpdWx3RWhyMTlsQTZVTnh6QkxrX1hYUlg2OUgxQzBUQzJGcjQ5cjByTG9LNXFZMFl1?oc=5",
+"source": "Kontan",
+"ts": 1782986342
+},
+{
 "title": "Trimegah Bangun Persada (NCKL) Sepakati Dividen Rp42,64 per Saham dan Buyback Saham",
 "link": "https://news.google.com/rss/articles/CBMipgFBVV95cUxQaDFUbkJDTnNCN1JHQkpMYU5yYkxLLXdlWTZmdVhkdTRCSFp6bDNYOFFaSEJ3SGZYbWdDVnJDVWhBSHR1OEJRVjI3eTByS2FGcEFlanR1VnF0WG5zUlhFX3hmczNXMXlhR0RsR3hvdnNhNl9DQ0ZjQ09hS0JnSGFFb1Z1QVBXZmsxSXA0NDFreW1xSndjMXNxQjB5QmZCZEx4bE5oOWZn?oc=5",
 "source": "Stockwatch",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPcUlvcW0xczk4azNRQXZnZFB6VjN3LTBwVkQ1RlBuWXJPcmMzRzFzS2t4Sy03eFJ1S1l4a2RMajNDRTFEUmJHUmhEek5sLVRRS2ZGWkJVd3ZJczc2UlJLU1FhT1pueExFSEtfaVhXRm9sbmt2b0k1V1VQNG54dmhzVFhTeS04bVBSOWZoQTNxdkp0VF9WcG12SXVCTjd4UDdoS1pCNEJXckt1dFBwM1JHNGdPTmFmamVqQ1JrVlNMekZZd2REbTNPNQ?oc=5",
 "source": "Katadata",
 "ts": 1782984881
-},
-{
-"title": "Ditiru Singapura, Teknologi Kebanggaan RI Sekarang Dicontek Malaysia",
-"link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxNRThTaFJYakoxdkJnREhaa1Y1MzFjNGVpd1BaUXpNbllHVThTY3h1bGxNcDc3OEE3dmhvWE95d2VvYkk2LXQ0TlZnQ2JNMkc0N2R4ZEtfckVrQTJ0UlJBNDVNTEk1UFl2NElpVzhMUXpCM3V0TGRkWUhHTWQ3REtMUnBpNHNuaXlHb012OTZNTWZ6ODRVZldZNlJPdk9MSndHWWc4elFnRF83ZXVRUkNuQ1JtQTBnNlV6SHI3bC1pSjE0UHhRaFHSAcsBQVVfeXFMT1dfWWJtMWhSTUk1VFFUelpwQUI0Z0lCXzY4NjFOaVBGa0tuUWI3M1FVTXdMYktzRDYzRE5STG82c21SS016Zm83cW9mak1QMUZtc1JWS1dFYXlVM0ZZM2VDcXNQb3NBUmFSdG11U05PelhIcHd0bHViem05QVZKby1NbDBIWElCdnA1bm9NSzRqVXRTUmVyay1jWEtLN1J5X1g4UHAtTy1SU3NBLXZXcjkzd3d2UWNTUFowOUp3eXpOVXFHUHc0REpHMFU?oc=5",
-"source": "CNBC Indonesia",
-"ts": 1782984420
-},
-{
-"title": "Kinerja BUMN 2025 Meroket, Danantara Manfaatkan Dividen untuk Investasi Proyek Strategis",
-"link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNVWozMjRJUVJORFFYVTJheUpISU9xSXQ4WjA0UGFzNHBoMmJfeHgwMXg0Y0NUbUpZRUg3eFJpYUlpVlh2ZmFrVU53QkFJbzVNSjNZUGVqVzI5cFV6anczai1qd29zV3Q1b3dWOUFLVlFlNzJZTWFFVjQyYnV1RmVRb1puQ2g4R3lSTEJUT2dRS0dKcF9wT1lHQndrcnRnWXZPUVJ2TEFEZjFBbnRaaFlJ?oc=5",
-"source": "Stockwatch",
-"ts": 1782982869
-},
-{
-"title": "Melalui right issue, BNBR targetkan dana hingga Rp4,36 triliun",
-"link": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxOZkQ4RGNSSmFKNG1xY2RaODExOEtNSXlWdmVHS200dG1BcVJIVm5nXzJNVlluM2ZndkNtVzl0VC1vMTJwWF9tdy12a1UtRkViRG5YU2tNZk82bHVzOW54cGpKYWg5ZHpHTFE2SEZnUXB0RDRWdHBrMTcxZE9hbnU5S3dyZ0I4ZV9zSFo2TWpzWGVSTUYxdjJpcWp0cmM1dDg2N1NZQUpRZlY?oc=5",
-"source": "IDN Financials",
-"ts": 1782982800
 }
 ]
 }
