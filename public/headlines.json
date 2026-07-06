@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-07-06T19:00:57+00:00",
+"generated_at": "2026-07-06T19:15:39+00:00",
 "count": 80,
 "items": [
 {
@@ -25,6 +25,12 @@
 "link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNLTJyTnJ2RTFNeU1RczZBR2tZNXNDRGM5MkxmemNmdlRQVHVzRUpvdHFKYmJIYWZheTRiZ1R3MEtyLUE5cXdPcHluLWpJc0ktMVBGWFByaFl1SHJYZ2lWcDVYNUpEbnlmQWpVc05FYlloSy1WTVVwNFZITWQtWVk4ZWo1YjhucGZQLWJ4Vlg1bVprc0lhRnVyblo1cW0xSDBNLU51bXJqVXBoZEhpQ1cwZnc0VHY5UQ?oc=5",
 "source": "Bisnis.com",
 "ts": 1783354217
+},
+{
+"title": "IHSG",
+"link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTFBJT05tWGJvdGJtMklibm9YTnUzb0NlM2paRnFVUDFUdHhzeURMMy1JejJEbjRSa2JjN01RUEY1OTRLYVdSaXg5OGtFdy03RUVJWFhOZjF1ZC1GRlFUV3dMdVJrcFllR00?oc=5",
+"source": "Katadata",
+"ts": 1783349447
 },
 {
 "title": "Halal! 2 Emiten Baru IPO Ini Resmi Masuk Indeks Syariah (ISSI)",
@@ -255,6 +261,12 @@
 "ts": 1783331821
 },
 {
+"title": "Ultra Voucher (UVCR) Hadirkan Fitur Baru Ini di Aplikasi BRImo",
+"link": "https://news.google.com/rss/articles/CBMikgFBVV95cUxOaE1VMkk3OUFmNzNtSmUyTDJCNWZFTjZJUkh0TzlySFNXb1NSem5wUDU4dDhBSGJOWnpPdTZha00wREJ0eGhxdWRnd0gzdXBIZnlaMHpzMHV6ZkFHSHlReWtsb3REaXFoNTQ0bHFfNDNCZ05xMl9SZzJaNEJCUUk0YlZkeEFGU1NsSFhxNW1uT2Zkdw?oc=5",
+"source": "EmitenNews",
+"ts": 1783331820
+},
+{
 "title": "Indonesian Rupiah Exchange Rate Strengthens to IDR 18,002.6 per US Dollar (Monday, 06 July 2026)",
 "link": "https://news.google.com/rss/articles/CBMi8gFBVV95cUxNVmdWVnF2bURaTk5neVpmZE5CVHpNSnpoQUtqRk01MGNzenBxUG8ycnl5YXhFcUM1cnNQSWw2eUlMeHdyMW02SURoNThhYkdSQTlPajl6WWY4UjBHZ1FqX09GV2RoVUtBRVZpRUFKZjZDSnEyZzA5bE5nZkV5X2hqaWpqZWphNEJYSE1hMkMyNlRTMlAtNWxKOTVZRzN4X191aU1qZ21ZX1d2V180NkhadU5sVkJ1RWMwSGVqSy1EUms3ekF1N0hZbThxYkpKcVNLS29Oc3pqTnhjVzNUSVlWajNhaTBRaDRjX3drZHhnNHZqQQ?oc=5",
 "source": "Katadata",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPa0lQZWs2Um5WMTZScG1nVUc2YjZNZ2NINmJ4aGxUQ2w1d3NWTGNPZUpVRTR6bVR0MGphQmJwYTVUVG9mbmtrcmc2NWRseE5KaGdkbXlnS0FwWmxyaUUzdEphTEZueFBPRGJZSVJvQjJTY19xVGJ5SEJpd2Eyb1B1YkkwVm1IS3Rxc1V3Vk02aHZqbnJKSExaRlRPdmNWYkJ4WURIRHVYNnhTbTloRk1vWXlUN3PSAboBQVVfeXFMT1pkR01uaFR0VXZXTzFkZ09fWUtTZTI4c0VIOGY3UVozTzFmb0xyLTA4M0JFMl9zaDNLZUtHNDM1RTNCd0hLbVZmWFJvRXBoSEpHczJNQ2RXY093S1ZRMVplcDVrcXUtdE44dTFiVjVwSnVKOUtwWGFtV2xiaWRCUjBJUWFjNTRNWW5PSjRYSkJRbnhzMHRjNUk5Y0h4TnN0MXJkWEdLenFnenFjMXdYYmc4Ym9TeDNHOGpR?oc=5",
 "source": "CNBC Indonesia",
 "ts": 1783320527
-},
-{
-"title": "IHSG Sesi I Turun ke 5.864, Investor Asing Net Sell hingga Rp 425,12 Miliar",
-"link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNc0hWOTlYMlRfQmVET2l6eWVhUnlobUNOVWhvLVBJcVVuRGpPVnJlX2laTUNsa3BVSHBKM0pJU1JfaTZUQmw4T2Q5RUp4U3BqTEJSRm9pdEo1aDlRMnZRUGYtZEFRalIyVVZ3dlRhVTRGWjZZTjZHYlhKZVEyaFk4cml0TUNITnZwVnpJV2p2bUNOUkdUWUp3bVp0R3BNWXlfWnZ3clN2S3FEZjgxV3RXWEhmb0xJdnlFMVZGMFh2QWhJbmIx0gHKAUFVX3lxTFBJS0lyOW5kczdNMUhHQllzSTg1RHktbmxzc0k3cmdJSVRMaDJpYzBjd2VXRkZrWFZMSVotSXBYbDNxN1VDWDZiUjVmNzdQdEVleG9TTExTWlRDc2djWjFURC1VTmxjZXBOYjJhX0tpNlhtVjlNY05rbUdfNkpabDJjdWdpZDI2TnFDZWR0aklNYndlMXVSYWZKTmpVV1J3a1JaVDR2WHlVdkFBT0RYVkFoVnhtYXlDTDU1RGUwTjg0RVBaVmhLQ2E2Unc?oc=5",
-"source": "Katadata",
-"ts": 1783320300
-},
-{
-"title": "Overtreatment Ancam Pasien dan Sistem Kesehatan, Investortrust Dorong Pencegahan Lewat Kolaborasi",
-"link": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxQSlNCWExPR3B1Qzk3VW83emp3My1vZU1LTVJiTDEyblItRkc2c05jYU5GUFhZTjB5M1RHYjNZZUhnb3RxY1N0MHVDYTQwOF9KNU1Wald1YXRzUGtNbFlCNDVJVjFDb3J4UkdidFpoVk10X2p2RGhkS2JsTm5nNXBNSjZTelRLSGR1aUNDeDJSRGJWaDVkMFJTSW42ekwyeUJUU1pZVElBQVcxZ1M0UFUwOFBqU3drQ3dlRThsaC1OUGE0c0xLVnlzTDNVcDlKdzVLWHcw?oc=5",
-"source": "InvestorTrust",
-"ts": 1783320241
 }
 ]
 }
