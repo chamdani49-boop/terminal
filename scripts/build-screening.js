@@ -18,7 +18,7 @@
  *
  * Field per saham (fundamental "terbaru" = annual tahun terakhir):
  *   name, sector, last_year,
- *   eps, fcf_per_share, dps, eps_growth_5y,
+ *   eps, fcf_per_share, dps, market_cap, eps_growth_5y,
  *   per_annual, pbv_annual, max_per_5y (PER historis tertinggi 5 th utk Diskon Valuasi)
  *
  * Field turunan (Diskon Harga, FrLows, Div Yield, UpDw, ConsVal, PER kini,
@@ -102,6 +102,7 @@ function main() {
       fcf_per_share: num(a.fcf_per_share),
       dps: num(a.dps),
       price_annual: num(a.price),
+      market_cap: num(a.market_cap),
       eps_growth_5y: num(a.eps_growth_5y),
       per_annual: num(a.per),
       pbv_annual: num(a.pbv),

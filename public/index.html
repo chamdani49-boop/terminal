@@ -5298,7 +5298,7 @@ const SCR_CDN_URL   = 'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main
 // Urutan: identitas → harga → momentum → valuasi → fundamental → dividen →
 // risiko → konsensus/target → (di akhir) tertinggi/terendah/diskon/frlows.
 const SCR_COLUMNS = [
-  'no','code','price',
+  'no','code','price','marketCap',
   'ytd','yoy','mom','d1',
   'perNow','pfcf','diskonValuasi','eps','cagr',
   'lastDiv','divYield','beta',
@@ -5335,6 +5335,14 @@ function _scrThou(v) { return Math.round(v).toLocaleString('id-ID'); }
 function _scrPrice(v) { return Number.isFinite(v) ? _scrThou(v) : _scrNA(); }
 function _scrInt(v)   { return Number.isFinite(v) ? _scrThou(v) : _scrNA(); }
 function _scrRatio(v) { return Number.isFinite(v) ? v.toFixed(1) : _scrNA(); }
+// Kapitalisasi pasar → format ringkas: T (triliun) / M (miliar) rupiah.
+function _scrMktCap(v) {
+  if (!Number.isFinite(v) || v <= 0) return _scrNA();
+  const t = v / 1e12;
+  if (t >= 1) return t.toLocaleString('id-ID', { maximumFractionDigits: t >= 100 ? 0 : (t >= 10 ? 1 : 2) }) + ' T';
+  const m = v / 1e9;
+  return m.toLocaleString('id-ID', { maximumFractionDigits: m >= 10 ? 0 : 1 }) + ' M';
+}
 function _scrPct(v, dec) {
   if (!Number.isFinite(v)) return _scrNA();
   const p = v * 100;
@@ -5430,11 +5438,19 @@ function plScrRow(code) {
     ? (perNow / sc.max_per_5y - 1) : null;
   const target = Number.isFinite(cs.target) && cs.target > 0 ? cs.target : null;
 
+  // Market cap ikut harga LIVE: skala kapitalisasi tahun buku terakhir dgn
+  // (harga live ÷ harga akhir tahun), sama seperti di halaman Valuasi.
+  const marketCap = (Number.isFinite(sc.market_cap) && sc.market_cap > 0)
+    ? ((Number.isFinite(price) && Number.isFinite(sc.price_annual) && sc.price_annual > 0)
+        ? sc.market_cap * (price / sc.price_annual) : sc.market_cap)
+    : null;
+
   return {
     code,
     name: sc.name || code,
     sector: sc.sector || '',
     price,
+    marketCap,
     high, highDate: live.max_date || null,
     low, lowDate: live.low_date || null,
     diskonHarga: (Number.isFinite(price) && Number.isFinite(high) && high > 0) ? (price / high - 1) : null,
@@ -5469,6 +5485,7 @@ const SCR_COLDEFS = {
   no:    { label: 'No', cls: 'scr-c-no', sortable: false },
   code:  { label: 'Kode', cls: 'scr-c-code', sortable: true, info: 'code' },
   price: { label: 'Harga', info: 'price', cell: r => ({ html: _scrPrice(r.price) }) },
+  marketCap: { label: 'Market Cap', info: 'marketCap', cell: r => ({ html: _scrMktCap(r.marketCap) }) },
   high:  { label: 'Tertinggi', info: 'high', cell: r => ({ html: _scrPrice(r.high) + (r.highDate ? `<span class="scr-cell-sub">${_scrFmtDate(r.highDate)}</span>` : '') }) },
   low:   { label: 'Terendah', info: 'low', cell: r => ({ html: _scrPrice(r.low) + (r.lowDate ? `<span class="scr-cell-sub">${_scrFmtDate(r.lowDate)}</span>` : '') }) },
   diskonHarga:   { label: 'Diskon Harga', info: 'diskonHarga', cell: r => ({ html: _scrPct(r.diskonHarga), style: _scrHeatDiscount(r.diskonHarga, 0.6) }) },
@@ -5638,6 +5655,9 @@ function plScrOpen(code) {
 const SCR_INFO = {
   code: { t: 'Kode Saham', b: ['<p>Kode emiten di Bursa Efek Indonesia. Klik baris untuk membuka analisis valuasi lengkap saham tersebut.</p>'] },
   price: { t: 'Harga', b: ['<p>Harga terakhir (live) saham saat ini.</p>'] },
+  marketCap: { t: 'Market Cap (Kapitalisasi Pasar)', b: [
+    '<p>Nilai pasar seluruh saham: Harga × Jumlah Saham Beredar. Mengikuti harga live (diskalakan dari kapitalisasi tahun buku terakhir).</p>',
+    '<p class="scr-note">T = triliun, M = miliar rupiah. Menunjukkan ukuran perusahaan.</p>'] },
   high: { t: 'Harga Tertinggi', b: ['<p>Harga <b>tertinggi</b> 1 tahun terakhir beserta tanggalnya. Dipakai untuk menghitung <b>Diskon Harga</b>.</p>'] },
   low: { t: 'Harga Terendah', b: ['<p>Harga <b>terendah</b> 1 tahun terakhir beserta tanggalnya. Dipakai untuk menghitung <b>FrLows</b>.</p>'] },
   diskonHarga: { t: 'Diskon Harga', b: [
