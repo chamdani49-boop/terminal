@@ -1,12 +1,30 @@
 {
-"generated_at": "2026-07-08T22:32:27+00:00",
+"generated_at": "2026-07-08T22:39:59+00:00",
 "count": 80,
 "items": [
+{
+"title": "Konsumen Kian Waspadai Tekanan Ekonomi",
+"link": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBEQWljVEZ2ck10dW1IenB2VWpvbHpXRTIwYUx4bmtoRFRWaGFtLUZoV1ktYUVPRzV5N3NqVkUtZnB2TVZnX0FJRjI4QmVIUFMwXzlySDU4TEpzd1k2VERBNUV5a0x5OVFmLTBlbF9jQ094MHQ0STlycW92M2o?oc=5",
+"source": "Kontan",
+"ts": 1783549829
+},
+{
+"title": "Yield Surat Utang Korporasi vs SBN Beda Tipis, Investor Pilih yang Mana?",
+"link": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOSGNUZUcyamVvQS1yZnFIdkFJZldlbldpWHl5N2xnbGZuOXNNNkJmOFFJNEV1STZlREw1Mll0WmpZbmNSTGNjeEhhQ01ESERfSnM2TFJ4aWFLVFc4TnZ4ZEJvcHFUY2ZrZW1CU1c5TEl2MWJRU0lDdktKUDBnY1dYWjRGem84TGJobEdfN3BCaDJPZHc3UTc3ai1wMkdLNmItTEFZYjVMSFAzcmJvcWlTMUN4ZmtwNW5PeEFWcTRrTUU?oc=5",
+"source": "Bisnis.com",
+"ts": 1783549800
+},
 {
 "title": "Kalbe Farma (KLBF) Cermati Daya Beli dan Kondisi Geopolitik",
 "link": "https://news.google.com/rss/articles/CBMilgFBVV95cUxPTGlaVVNWR3duSUZ5WjlrQkVvTTYwTC1OTHpPSjZDaEZjSnQ0LWoya0VfcjlycnQxaV9hUGpwOUFWdUhFaGcxYm5YSXVfNllpc3VmVnMyOHM1b0xaRlB0U082NW9hbElFN3R1OS15dGRfQ3NORGgyU3ZhZFZFZDhZSlcxcmNtM3UtT1hKZER3NGtSQW81eVE?oc=5",
 "source": "Kontan",
 "ts": 1783545633
+},
+{
+"title": "Viral Pemain Kolombia Tewas Ditembak setelah Kalah di Piala Dunia",
+"link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxOQktuU2hYZHdmQmlLWktDbFRYVWg3UVRhYkYxT016aTA2ZXNSVG91bGhUV2NpUzY5ZmtBM2t0MTJEV1ozbWJfSDhGTm9uTXFUNnpFS3NUZW9RYzBUb29TQVpvT1ZkeWpBYjNTcU5BUFRNcy1VLVpvNzM1eTJhcFVPcjNjQWF3eHpIdzBoaVhCN1V1Y0E5R2ltR0JPS2swUVFUcU5RVVVLUTdDUWJoSWVScUdwRGdCQQ?oc=5",
+"source": "Bisnis.com",
+"ts": 1783538631
 },
 {
 "title": "Wall Street Tersungkur Saat Trump Buka Peluang Serangan Baru ke Iran",
@@ -31,6 +49,12 @@
 "link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQYW43YUd3YktoRHFaMEZCbUloQ1dRVk5ucm5heUpaNWVuSUVLV0g0WkJVUm9XM0Ywek9oZmFRZlRKUkFyNDY4eE84MkJIMXktOEVFMnVhVUwzNlVBZlhDQ29DVmJ2a1BmVXRHUmhQUnY5RjA0ajBEV2RKb0ZuWGJSSFE1d0t6N2JWbHV4aEpLLXdsR1RsbTBMbFdLTUFmR2s3YURVemVlY19lSVhoUkJRY3diNA?oc=5",
 "source": "Bisnis.com",
 "ts": 1783519870
+},
+{
+"title": "Risiko Laten Saham RANS yang Perlu Diketahui Investor Ritel",
+"link": "https://news.google.com/rss/articles/CBMiogFBVV95cUxNcHhTdlNqZjNTR2FHRGFpVXdIZTI3amczUnlOSXZTS20xVjVhRmo0N0xDLVBUdlptbzJtR0FXeWo4S2RKbDR3ckptZjdUQmlqWXNsczFYQWs4UnBOR010UkE1RlVUZFVzRmNHemY4WlJyQTR2bVJ4RnN5YXByYnJuWjVKak9hVlAzUWRQTHNWZm5nSlQ3RVVoSG9rN1ZGdmxLQkE?oc=5",
+"source": "Kabar Bursa",
+"ts": 1783519500
 },
 {
 "title": "Kunjungan Prabowo dan PM Modi ke Candi Prambanan Tegaskan Kedekatan Indonesia-India",
@@ -457,30 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxNcDJtaDdHWm5EQUpXNlVvenM5bEhLbG4zS204a0lWOEpsVXZZLUJOYVpjeDVsVVJ6VFRIMVlaMU81ODJFdlNRRk1ubzByYWRpWEhHeUpxb0p1aExjRGJVQ0pncGNBOW5lNjRiUG12SWc3SHNwamtyV0psa2RuNG8xRm1xVU9vN2k2RlFpRmhVeGRGRkFUYU5PVnRnc2h6YTZreWp2WlFWOGZ6NmxkSXBGOWw2eXExUjFveGZqWkhYSdIBxAFBVV95cUxPMUJRbDlVZWJ0SzBOZEpiUFZsWFdWbGpXak8xVmdyTWNjaWdtelYwVXplYzN6YjcyQjkzNjdUcDhJejI5V0Z1clF2aV9PVEt5WlFZVjMxTlNEUTJzRHdGbGhLZXZZTFYxMnMzWGNNMkxvSC0xOTJyaUk0YlB0dzhlcVd6MnpoRThJVUdFZVJpT1MtOXdCaEtmVHh0V2xVSENjMklSelpWYkJ6MkNhM0R2em1HNUZwdVZuR1JrQUdMNjVBRE15?oc=5",
 "source": "CNBC Indonesia",
 "ts": 1783487141
-},
-{
-"title": "Harga Buyback Emas Antam Sudah Anjlok Rp596.000 dari Rekor ATH hingga Hari Ini Rabu (8/7) - Bisnis.com",
-"link": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxNcDhVdjVyRmwtMUp5YmFlR1U4YWVZN2UyUEtkUkpMVkJ3Z1hwc2ZXbVBTTTdtcnl6Rm01TUtTaGJ6SDI3UWJxZDJ5Zk4wald1U1lNMzA3ZGR4VEdCUmRaT3g5RnBiaUYwXy1LbG5FYTN6WGNXcmRBZGtHZDBlMldtSkVGWWl0Tm1kQ3RtUFZfU25rYW9UN243MWJkbTM1OUU1MFVSc1BYbEl4bjF0eDlPb0lsdjRCejJIaTQtZGdueFRNZUNwOVA2RmlpX0J5bmt4ZUVB?oc=5",
-"source": "Bisnis.com",
-"ts": 1783486650
-},
-{
-"title": "Risiko Watchlist S&P DJI, Kiwoom: RI Bisa Turun ke Frontier Market",
-"link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPcnlldkJqWEcwOUdCRXFGVU9NWWQ2bFB2NDg0SmxZczJtRHQtSktZbE1MUEJKWFZjdG9XY3VSOUxHYUZJTGdJajNVYUhFZHY2VzZNYV9icWRZem5GRXFIQlZvUl8tb0lMR2p5MFRROFJQRmxSZ3plemExeG96a3VQbExmbFJsQk5fenI2UVpBLVR4WjlUekRIOGFsU0E?oc=5",
-"source": "Kabar Bursa",
-"ts": 1783485732
-},
-{
-"title": "Praktisi: Indonesia Masih Penuhi Kriteria MSCI untuk Status Emerging Markets",
-"link": "https://news.google.com/rss/articles/CBMisAFBVV95cUxNYXRDMzhmekhwdE11VnRLQ3ZoWVNQc19TWGpoYUxKSkxkb1gtZkNxSVFyWVczOTF4NTNyMDF4Zkc0VmtrWnZ3VGxwRkpURnk2RDNwTF83SENob19RRndpWjFzbkk1NWhzWnpKUFFUNm44NGdGZk9KTHFGLURidWw5Unh3Ny1YSUtnSC1vX3djY1VpTk9HVFJwNlhlSzRPYWJOSnFSZEE5MkpjRHNVTF9sTtIBqAFBVV95cUxPNWFUWEZ4LWItM3FJSEZ5VktSZzRHTzBMMFBFUGREWFRYNmdyY1NiWDVKOV84Szc1OVVrMHlpNUhma1g4cjlHUU9HSmhPdjNIRVJTMXRmclBmdVNQNnI0R29ud092Y3o3ZjZaYUtsVEZXVnFNMUV6b1ljcE5Ebk1vMFJCQ2tka3JnS1BtVUtGcUlUVFlWLTdlV0NaMnpSZ2lWZnNpUnhGdTk?oc=5",
-"source": "Kontan",
-"ts": 1783485717
-},
-{
-"title": "Buntut Gangguan Listrik, ESDM Rombak Total Aturan Jaringan Nasional",
-"link": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNczhwbklnS2ZmaDhROE5jcVNDVlN0NW5HWFpoZ1VYcXlaODlMMDBZUTAwb3VJSWVkUE5LNFpTWVVVVnZBclpIOE1RTWhsUTZEWFlXVHlmQ2UxbFJlOWVuOGxYTkJVTXNUdnlXS0hvODBJMU1jdUIyOFMxYW1uUEtXem9YSlRTMUR6SFg3V0JEVk9qOGxUN2hMRlNVLWtGSlBI?oc=5",
-"source": "Kabar Bursa",
-"ts": 1783485517
 }
 ]
 }
