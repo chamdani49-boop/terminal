@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-07-09T13:30:51+00:00",
+"generated_at": "2026-07-09T13:45:40+00:00",
 "count": 80,
 "items": [
 {
@@ -117,6 +117,12 @@
 "ts": 1783590780
 },
 {
+"title": "IHSG naik 0,67% didukung lonjakan transaksi di BEI",
+"link": "https://news.google.com/rss/articles/CBMimAFBVV95cUxOa1dIZnFqZkZpYVgzaFV4UlhmSjBJTm5nODhVZDljTXlpLVh1bFE3QVZQbFFtVkx3UmRLSms2aTVuNC1qQmtCX0N1SjB0RmE4dkU1VEp3bnNUb1A0RUg1aEhCZHdNaFVDbGFYc1FwaTNUWWxhUG1ZZEkyM1lKRHhaUEdHZnFFcWV1UHlJWWR4WGJxRE8tTU92RA?oc=5",
+"source": "IDN Financials",
+"ts": 1783590600
+},
+{
 "title": "Jerry Ng Dikabarkan Kaji Langkah Strategis untuk BFI Finance (BFIN) dan Bank Jago (ARTO)",
 "link": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOLVRXQlVsakhWQW1qUWUyeDlONGx6ajUwOGVjcEhnMW9wRkRoSjJTazJ2bUpKV1J2ZkRwTnlZODNEWDRJT3hrcERfU25ZX2lpckp1U2hUZlhrYWppVVlXektRVnQydEJWMzItaUstRlV4T0RXRnNrZTdtRmZfOWJOM0RFamthV0psMkZyVWV6UExZeTRucWRBWFk5dTJ3SEdscGlCSWRCVmxfMjE1a3pJbmdkSVpsZHpIYXBOZkpqQWjSAcYBQVVfeXFMUEJVZFAyQ09wM2dJbnBYRFJ3ekpvTFB2bGpOQ2F0Q3VxS21JUnlwQzg2UHpGc2QtQTdMdHFNejRvSFZ4dFZQRnZuTUZ5Qm9OTEl6TUdCQ3FCenNvQXJidTl3VmdYTzF2T2JxU2tBM2JXbk9FX3ZlaDdRQzZQTFpSX1JmS2xoYTY2RjNhZnpyX1JxMnIxZGR5STFGeU1vX3RkNUlMcFhtalFBaHU4cTYzcmVLbVFPd3dsY2gxX3V5cnA3UjBoWEFB?oc=5",
 "source": "IDX Channel",
@@ -223,6 +229,12 @@
 "link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQdWxNLUhHSjViMEtRcU05N0NsNlVZdjAteFBGVVd3Ni1LTUtpNlkza3JVMTlTVG1fLWFMYUplajhvOFAyLXlwWFpYb20tMUVhdGV2WEdDeWlLdDI1RnRTNWxkZXBCclh3RlhPX1JXcnhhSFJUQkhhVFhfNTlZZ0dqOG1mc3NlR1lsU21ZMDVLODMzYjBEZjlfUE5ieXd0SURCWENmNTdyVkhRQVE2aEHSAacBQVVfeXFMT3BXbmc2Y3NkM0FtQ1JZejZWNUV1UmhzWFZVUEFDYkNjZklSZ0tXT0RFVUp2NTJnYzREaEVTYVJ3M1paRGp1Z3NIaXVtd1drb3lCUXJ0VVk3czVqazgyOFllQnhjMFVqLTlVMVpJZXZZYWxuZWZfam4zWVFVR3hTak5sQllhWWVMWHZRdGEzZkg0b2RZUXhBa0h4OEFVa0t0cXh1T2U1X0U?oc=5",
 "source": "Kontan",
 "ts": 1783582947
+},
+{
+"title": "Kapal KM JOI I Siap Dilelang, Ditjen Gakkum ESDM Minta Pemilik Sah Segera Ajukan Klarifikasi",
+"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOUUpsdWRYOG11eUlVV2FTWVVKaEE2RnNTM0JULWZOZVJPdHJaeWczVGEzOUg4RkJHanRPaVVJME5EX1BrWXNCaTVmRXdVQncyck5kRjNvYVlsX0dRcEE0ZHFYc2NWcWpMQURmdGU2SEpiRjRkZWMycld1SnoxMnJ4Z2UyUjdacno2cHlGdnpqNi1JTjJGWG42Uzl6Wml0VlJqQWExMUZDX1daaW5xUml0cWVrTHI?oc=5",
+"source": "Stockwatch",
+"ts": 1783582725
 },
 {
 "title": "Gelar RUPSLB, Multi Makmur (PIPA) Ubah Nama Jadi Oxala Energy & Setujui Rights Issue",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMisAFBVV95cUxOZnRfVnZfbHJXVWxFdjIwOE16X1czemVLbXpSWjI3YkJ5Z2ZtX0Myc0gtWVV5Q2VmREZkTHdFNm9kUF9heVprb0p2dTVHamV4aHdScVJ1Smt1OEk0eDdJU3MtYldCaVM5cjluSmdNZTBHSi0yZE42UnkzSDBXc2JITExSMmg3TU1xV2VPQ3pVelktSG5sUzhOVGtIWkZXRmFvMWp2U1RndUxlVjdkYXMyYQ?oc=5",
 "source": "Bisnis.com",
 "ts": 1783559471
-},
-{
-"title": "Polri geledah kafe, sita Rp60 miliar terkait kasus PLN-Asabri",
-"link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPNjVUQTRDUUl4QU1iMnlIMXdURlhma0thZG1YWllRbFYtd0UzTXhPaXNqZEh5d0lZZ1hBa0dDWnp3c2JudlAyZ1AyNG1LYmdmWnFCV1pqN2tiTl9vWG9FOW9JX2J4Wm8wT2tMbWxHbVo5bUFTY2FQaVdMSDNwTE1hMHB2QzhTSXB5VVc1MDZQTG44dmxDODczcXlETXloQWRnSVB1V0t2dw?oc=5",
-"source": "IDN Financials",
-"ts": 1783559400
-},
-{
-"title": "Proyeksi Pasar Kendaraan Niaga Semester II/2026, Bakal Moncer?",
-"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQOEtTVVVYUjJXWnRoUy1UOWExcDBzZnp2czRIRGRRNGJrYzN2WUNfOEZDV2I4a2o1UmMtODczU2tDWmtTUnJRWE4wUm1iLVBzeXY1dXEyUktnRVpmdXdqMnZJOE5DYzRoaUhndTFNM19uMDNMdU50cHZMUTdBYVFsRllWVVRSUDZwdFM3QXlYZ0FjdWxfemJ0dU1Yemc0VjJiYUg4eTFZckl3R0c3Uk1wbnBn?oc=5",
-"source": "Bisnis.com",
-"ts": 1783558800
 }
 ]
 }
