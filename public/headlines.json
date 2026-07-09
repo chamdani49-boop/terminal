@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-07-09T08:35:55+00:00",
+"generated_at": "2026-07-09T08:46:19+00:00",
 "count": 80,
 "items": [
 {
@@ -55,6 +55,12 @@
 "link": "https://news.google.com/rss/articles/CBMiogFBVV95cUxObGptdDk0cm9sVXFUTGE0UlA5SlVmSmM0b2cyamNuSkhkMURzZjFhLUJQNFUwX0xGNHlNRFFPVTNqWl9HNHBVMXVVbWFJYmNVUFlKLU53SlB4TVZwU3pTU0xzVlEza19xbDY5c3ZPRnFKS2pqTHcwNTIwSTNGeVktZ2RkSkJuMmx4U0JtcGlNc3RHVW42bEphSl9SWVNMZDU4ZlE?oc=5",
 "source": "Stockwatch",
 "ts": 1783577024
+},
+{
+"title": "IHSG Naik ke 5.885, Saham Grup Bakrie DEWA, BNBR, BUMI Ceria",
+"link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQOVVvaGxpdzFiR3JPOHBaZTlUTW8teFdEbUR4eGdROE5qZWQ1U0t6MnVkNVdaOFJDR0swTXFVNVpTR3FZMFdWM1JLQXVSNXRQREJtMFlZZERYVmhnN2dtbmFMTnBpUVlOY0owdG1LaVZFRUktNTRUZ1RUc0JNdnpXNDRDNGRvU3NrSk1XenlSdU9VMkJPR05zVGxndUpfWHVPOW5nMEdzV3BDRVlUT1HSAbMBQVVfeXFMT0dSZVVkeDdUaXBPRi1iRXVpdU1PSUlGSE1zUmJ0R3Znc0JONkYyWGY4eW4tRUMxNE14bkFMWG8xTmdNdTdJQndQeldQdnN1WWZoOWZzV1RhOVExQ05ZcEMtQ3FjMURvOVo4a29xeF82U2lKMkJwdkFLMmkwQXdSRWVFTG1jM0wxTlF3N2NtbVhCOTBDZ0prTXBGNUVkWWdQRlFMZ0tkZEM2QnRNcndmYzZpdVk?oc=5",
+"source": "Katadata",
+"ts": 1783576560
 },
 {
 "title": "Tuntas Akuisisi, DSSA Lanjut Suntik Rp8,53T ke Pengendali EXCL",
@@ -180,6 +186,12 @@
 "title": "RI Siapkan Pengganti LPG dengan CNG, Pertagas Dukung Infrastrukturnya",
 "link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQdzM5bndvaS1KLWtiQV9aMWxuaUdFR1hZYzNuamdvZ0RXY1NheGFXcV8yWVhJZ2YtRjU4ekQyMEE1ZzVkcnhQb3BzZS14WlNIeDVvdWJVSDlMZGh0dnpDMkJacjFoR3pFTkNnWU13RWpYeXBfZmE5N2lIUkxvODFYWFdfbnNuUGxXQ3ZwZTBBSE5QUzlJdFRsZ3hfaGNyLUQtWVF3MUM0eGhRUU4xSGxreUpMM0h0WHcxWklBc2JVbHRIME5vZkxZ0gHMAUFVX3lxTE1KU1JxMUZpd25CV1dnbWNIZjNCQ3kxVng4TUxZeFRtWmotcW5sdHJ6dTZTdVNLRGNJN1E1dXhWYVFJM2dqekJDQXNBMG1YbEhVb0VadV9fY2dKWU0xaFhJSTZiTGZBdVZoakhaSHpYUXcyeE1YZDV1NWxXaUwweGY0TU5YeE5GSk1LNXhfbG5qaldFdzA1dEVTOEtkNUl0aDhuMmxhNmNzdFFSSGpBclNQNFhuODYxYS1pazhyQ0p4NlpOVlJkMWNFeTRJUw?oc=5",
 "source": "CNBC Indonesia",
+"ts": 1783561500
+},
+{
+"title": "CBDK milik PANI suntik modal 2 anak usaha Rp128,4 miliar",
+"link": "https://news.google.com/rss/articles/CBMiogFBVV95cUxPRFNPUVI3c1UteWVQV1JwZ3Y5bnVKazRmSFF6UU13RkpDSGNnRHBGdURsUjNqSC1UNTdfRnNDdnlOWWNZTF9hZ0ZkaHdETkFQQWhqTDg4dzQwMGJlTldUV1ZLTVI2X3NuTzgtZnR2S0lXLTdaWVJMYjdEaldEcmZvUHhGbVpWa3cya2ZKTWxubHptLWtlQnNSajJqVTVvY2pfaUE?oc=5",
+"source": "IDN Financials",
 "ts": 1783561500
 },
 {
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPWGM1VUp3WUcxZHRiMTZXRndnbkhySFZrOVBhckdPM0hYSDFYRXdZeTVQdFZaekFVeXVFb2JTNDBPR05nX2doQ0xQMEJVNnJKRllNVGw5V2ZtOXcwNGtPaTJjelAzanRDZ3RwMmVSLWc4YmZmd2JQdUV1TzVxUU9vN0dKQXVvRkZrdEhpQmVMS0FZdmtyTkN4aTJ5TDB2aU9RVUNyY1RsT0xVNFZ3T0hOM1NOYlU?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1783516800
-},
-{
-"title": "Tilly Norwood Shooting, Pemain Film di Seluruh Dunia Gemetar",
-"link": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOUGRCNEdsTm1VTXhSZ0laNXFVdU80b05MQk9SR3cycnFDdU5kcFFGU2hNdzV0QUliT3p2Mk1NeFM0MUpPUVFCdDdtWTgzT1ZZbWVMb2dGcXpfME56RnJYUHR2MVBGM1IydkVjSTlZc2JlQTl5cXFCUHNLZlppbjRaeE5sb1RCU0lNcmZHbVRTZFF2Z3V1ZjYtcWpMcFF6N0FoTW9lbEJYYTFVQnM5SmtFc1ZrdkNaZlpiTXFR0gHAAUFVX3lxTFBKeW5Gb01BVUMyNnNLVDdMcnZPVHQ4cTdIcHg1Tm84R2g5ZEJlVUd4VFVFaUdLanE1RU5IWXV5M0hOUFRiTlNMZmNHMVRGNklqYVA4TFlJSVNsYnJMbkZCM0FpN2xoTXdXY2ZjYWxqcWUzbGNzbWtBSk1PZnBGeWNmSFdRRW1BUUtPM2U0OFBBWWVBRGFLX2VFQ01LbkQxVlQ1R3E2TWJ2Y05hSTdrY2tpcTY5cDI1VHlXTDA2d29xag?oc=5",
-"source": "CNBC Indonesia",
-"ts": 1783516800
-},
-{
-"title": "Grup Bakrie (BUMI) Siap Panen! Tambang Emas Wolfram Melaju Lebih Cepat",
-"link": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPZGM3bnBaYVRSc1Yxb1pxaUFBdnpjZ2tpd19WSVlnNVo0OHFFTjNZd3FNanNaUGlrUUpmUlBoVUxBZFBSM3NsVHhBZm4tRmI0UFZZTk9xUUZ4Vnd4SUhveG1qYkUzRGZJTFo5NDlIUTZzcUZYYmNzdy1OWEpHeEhjcDRadEZDQjNrRURfbnlsaS1GZE9SSkxn?oc=5",
-"source": "EmitenTrust",
-"ts": 1783515319
 }
 ]
 }
