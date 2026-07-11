@@ -342,6 +342,22 @@ function renderFormPage(env) {
   const horizonOpts = ['<option value="">— (opsional)</option>']
     .concat(HORIZON_OPTS.map(h => `<option value="${h}">${escapeHtml(HORIZON_LABEL[h])}</option>`))
     .join('');
+  // Prompt untuk Gemini/ChatGPT — dirender langsung ke HTML (server-side) supaya
+  // SELALU tampil, tidak bergantung JS. Dipakai juga oleh tombol Salin Prompt.
+  const aiPromptText = [
+    'Baca screenshot rekomendasi saham ini. Tulis ULANG datanya PERSIS dengan format di bawah, tanpa kalimat lain. Kalau ada nilai yang tidak ada di gambar, biarkan kosong setelah titik dua.',
+    '',
+    '<BUY atau SELL> <KODE SAHAM>',
+    'Entry: <harga>',
+    'TP1: <harga target pertama/terdekat>',
+    'TP2: <harga target kedua, bila ada>',
+    'SL: <harga stop loss>',
+    '',
+    'Aturan:',
+    '- Harga angka polos tanpa pemisah ribuan (contoh: 9500, bukan 9.500).',
+    '- Bila target lebih dari 2, ambil 2 yang terdekat ke Entry sebagai TP1 & TP2.',
+    '- Bila entry berupa rentang (mis. 9500-9600), pakai angka pertama.'
+  ].join('\n');
   return `<!DOCTYPE html>
 <html lang="id"><head>
 <meta charset="utf-8">
@@ -361,7 +377,7 @@ ${STYLE}
   <div class="card">
     <div style="font-weight:700;margin-bottom:6px">⚡ Tempel &amp; Parse <span style="color:var(--text3);font-weight:500;font-size:11px">(cara cepat)</span></div>
     <div class="hint" style="margin-bottom:8px">Punya screenshot sinyal? <b>1)</b> Salin prompt di bawah → <b>2)</b> buka Gemini/ChatGPT (akunmu sendiri) → <b>3)</b> di sana upload foto + tempel prompt → <b>4)</b> salin hasilnya → tempel ke kotak "Tempel &amp; Parse" di bawah. Atau ketik manual.</div>
-    <textarea id="aiPrompt" rows="4" readonly style="font-size:12px;background:var(--bg2)"></textarea>
+    <textarea id="aiPrompt" rows="6" readonly style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
     <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-sec" id="copyPrompt">📋 Salin Prompt</button>
       <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Buka Gemini ↗</a>
@@ -525,24 +541,10 @@ SL: 9.300"></textarea>
     document.getElementById('rawParse').value = 'BUY BBCA\nEntry: 9.500\nTP1: 9.800\nTP2: 10.100\nSL: 9.300';
   };
 
-  // ── Tombol AI: salin prompt + buka Gemini/ChatGPT (pakai akun inputer) ──
-  var AI_PROMPT = [
-    'Baca screenshot rekomendasi saham ini. Tulis ULANG datanya PERSIS dengan format di bawah, tanpa kalimat lain. Kalau ada nilai yang tidak ada di gambar, biarkan kosong setelah titik dua.',
-    '',
-    '<BUY atau SELL> <KODE SAHAM>',
-    'Entry: <harga>',
-    'TP1: <harga target pertama/terdekat>',
-    'TP2: <harga target kedua, bila ada>',
-    'SL: <harga stop loss>',
-    '',
-    'Aturan:',
-    '- Harga angka polos tanpa pemisah ribuan (contoh: 9500, bukan 9.500).',
-    '- Bila target lebih dari 2, ambil 2 yang terdekat ke Entry sebagai TP1 & TP2.',
-    '- Bila entry berupa rentang (mis. 9500-9600), pakai angka pertama.'
-  ].join('\n');
-  // Tampilkan prompt di kotak readonly (selalu bisa disalin manual).
+  // Prompt AI — dari server (sama dgn isi #aiPrompt yg sudah dirender HTML).
+  var AI_PROMPT = ${JSON.stringify(aiPromptText)};
   var aiPromptEl = document.getElementById('aiPrompt');
-  if(aiPromptEl) aiPromptEl.value = AI_PROMPT;
+  if(aiPromptEl && !aiPromptEl.value) aiPromptEl.value = AI_PROMPT;
   var aiInfo = document.getElementById('aiInfo');
   // Tombol SALIN saja (murni gesture user → clipboard andal). Buka situs
   // ditangani link <a target=_blank> di HTML (tidak pernah diblokir popup).
