@@ -377,7 +377,7 @@ ${STYLE}
   <div class="card">
     <div style="font-weight:700;margin-bottom:6px">⚡ Tempel &amp; Parse <span style="color:var(--text3);font-weight:500;font-size:11px">(cara cepat)</span></div>
     <div class="hint" style="margin-bottom:8px">Punya screenshot sinyal? <b>1)</b> Salin prompt di bawah → <b>2)</b> buka Gemini/ChatGPT (akunmu sendiri) → <b>3)</b> di sana upload foto + tempel prompt → <b>4)</b> salin hasilnya → tempel ke kotak "Tempel &amp; Parse" di bawah. Atau ketik manual.</div>
-    <textarea id="aiPrompt" rows="6" readonly style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
+    <textarea id="aiPrompt" rows="6" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
     <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-sec" id="copyPrompt">📋 Salin Prompt</button>
       <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Buka Gemini ↗</a>
@@ -551,23 +551,22 @@ SL: 9.300"></textarea>
   var copyPromptBtn = document.getElementById('copyPrompt');
   if(copyPromptBtn) copyPromptBtn.onclick = function(){
     function ok(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--green)">✓ Prompt tersalin. Buka Gemini/ChatGPT, upload foto, tempel prompt, lalu salin hasilnya ke kotak Tempel &amp; Parse.</span>'; }
-    function manual(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--yellow)">Auto-salin gagal. Teks prompt sudah diblok — tekan Ctrl+C (di HP: tahan lalu Copy).</span>'; }
-    // Seleksi teks di kotak (readonly dilepas sementara agar bisa di HP/iOS).
-    function selectBox(){
-      try{
-        aiPromptEl.removeAttribute('readonly');
-        aiPromptEl.focus();
-        aiPromptEl.setSelectionRange(0, (aiPromptEl.value||'').length);
-        var okc=false; try{ okc=document.execCommand('copy'); }catch(_){}
-        aiPromptEl.setAttribute('readonly','readonly');
-        return okc;
-      }catch(e){ try{ aiPromptEl.setAttribute('readonly','readonly'); }catch(_){}; return false; }
-    }
+    function manual(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--yellow)">Teks prompt sudah diblok otomatis — tinggal tekan Ctrl+C (di HP: tahan lalu Copy).</span>'; }
+    // Cara PALING ANDAL: seleksi teks di kotak lalu copy (readonly dilepas
+    // sementara agar jalan di HP/iOS). Teks tetap keblok → bisa Ctrl+C manual.
+    var copied = false;
+    try{
+      aiPromptEl.removeAttribute('readonly');
+      aiPromptEl.focus();
+      aiPromptEl.setSelectionRange(0, (aiPromptEl.value||'').length);
+      try{ copied = document.execCommand('copy'); }catch(_){}
+      aiPromptEl.setAttribute('readonly','readonly');
+    }catch(_){ try{ aiPromptEl.setAttribute('readonly','readonly'); }catch(__){} }
+    if(copied){ ok(); return; }
+    // Cadangan: clipboard API
     if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(AI_PROMPT).then(ok, function(){ if(selectBox()) ok(); else manual(); });
-    } else {
-      if(selectBox()) ok(); else manual();
-    }
+      navigator.clipboard.writeText(AI_PROMPT).then(ok, manual);
+    } else { manual(); }
   };
 
   // ── Upload & kompres foto (maks 5) ──
