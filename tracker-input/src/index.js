@@ -2,20 +2,19 @@
  * tracker-input — Cloudflare Worker
  *
  * Halaman web SEDERHANA untuk kontributor submit rekomendasi trading (menu
- * Tracker). Alur baru (parse-driven):
- *   Login password → salin prompt → buka Gemini/ChatGPT (upload foto + tempel
- *   prompt) → salin hasil → tempel & Parse (SEMUA kolom terisi otomatis) →
- *   periksa sebentar → Kirim → POST /api/submit → Worker teruskan ke Google
- *   Apps Script (GAS) → GAS append 1 baris ke Google Sheet "Tracker" (pending).
+ * Tracker). Alur:
+ *   Login password → isi form → POST /api/submit → Worker teruskan ke Google
+ *   Apps Script (GAS) Web App → GAS append 1 baris ke Google Sheet "Tracker"
+ *   dengan status "pending" (menunggu approve owner).
  *
  * TERISOLASI: worker ini terpisah total dari site utama & terminal-live.
+ * Tidak menyentuh apa pun yang sudah live.
  *
  * Env yang dibutuhkan:
  *   - APP_PASSWORD (secret) — password login kontributor
  *   - GAS_URL      (secret) — URL Web App GAS (…/exec)
  *   - GAS_TOKEN    (secret) — token yg dicocokkan GAS (= TOKEN di gas/Code.gs)
  *   - APP_TITLE    (var)    — judul halaman (kosmetik)
- *   - TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID (secret, opsional) — kirim foto bukti
  */
 
 const COOKIE_NAME = 'ti_auth';
@@ -28,10 +27,6 @@ const HORIZON_LABEL = {
   '1H': '1 Hari', '1M': '1 Minggu', '1Bln': '1 Bulan',
   '3Bln': '3 Bulan', '6Bln': '6 Bulan', '1Th': '1 Tahun',
 };
-
-// Penanda versi yang tampil di kaki halaman. Naikkan setiap kali ada perubahan
-// berarti supaya mudah memastikan versi mana yang sedang live setelah deploy.
-const BUILD_TAG = 'parse-v2';
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -70,11 +65,7 @@ function clearCookieHeader() {
 function jsonRes(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-      'X-Content-Type-Options': 'nosniff',
-    },
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
   });
 }
 
@@ -134,16 +125,11 @@ async function sendPhotosTelegram(env, photos, caption) {
 // ── Handlers ────────────────────────────────────────────────────────────
 
 async function handleLogin(request, env) {
+  const form = await request.formData();
+  const password = form.get('password') || '';
   if (!env.APP_PASSWORD) {
     return htmlRes(renderLoginPage(env, 'APP_PASSWORD belum di-set di Worker secret.'), 500);
   }
-  let form;
-  try {
-    form = await request.formData();
-  } catch (_) {
-    return htmlRes(renderLoginPage(env, 'Form tidak valid. Coba lagi.'), 400);
-  }
-  const password = form.get('password') || '';
   if (password !== env.APP_PASSWORD) {
     return htmlRes(renderLoginPage(env, 'Password salah.'), 401);
   }
@@ -286,8 +272,6 @@ const STYLE = `
   body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;padding:24px 16px}
   .wrap{max-width:560px;margin:0 auto}
   .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:16px}
-  .step{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;margin-right:8px;flex:0 0 auto}
-  .cardhead{display:flex;align-items:center;font-weight:700;margin-bottom:6px;font-size:15px}
   h1{margin:0 0 4px;font-size:22px;font-weight:700;letter-spacing:.3px}
   .sub{color:var(--text2);font-size:13px;margin-bottom:18px}
   label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:600;letter-spacing:.4px}
@@ -310,15 +294,8 @@ const STYLE = `
   .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
   .small{font-size:11px;color:var(--text3);text-align:center;margin-top:14px}
   .hint{font-size:11px;color:var(--text3);margin-top:4px}
-  .link{color:var(--accent2);cursor:pointer;text-decoration:underline;font-size:12.5px}
-  .summary{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px 14px;margin-bottom:14px}
-  .srow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
-  .srow:last-child{border-bottom:0}
-  .srow>span{color:var(--text2);flex:0 0 auto}
-  .srow>b{color:var(--text);text-align:right;word-break:break-word}
-  .srow.miss>b{color:var(--yellow)}
   code{background:var(--bg2);padding:1px 6px;border-radius:4px;font-size:12px;font-family:ui-monospace,monospace;color:var(--accent2)}
-  .btn-sec{display:inline-flex;align-items:center;justify-content:center;background:var(--bg2);border:1px solid var(--border);color:var(--accent2);width:auto;padding:9px 14px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;text-decoration:none}
+  .btn-sec{background:var(--bg2);border:1px solid var(--border);color:var(--accent2);width:auto;padding:9px 14px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer}
   .btn-sec:hover{background:var(--card);color:var(--text)}
   .photo-drop{display:block;border:1px dashed var(--border);border-radius:8px;padding:14px;text-align:center;color:var(--text2);cursor:pointer;font-size:13px;background:var(--bg2)}
   .photo-drop:hover{border-color:var(--accent);color:var(--text)}
@@ -353,7 +330,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.55">build ${BUILD_TAG}</span></div>
+  <div class="small">Password diberikan oleh admin.</div>
 </div>
 </body></html>`;
 }
@@ -365,44 +342,24 @@ function renderFormPage(env) {
   const horizonOpts = ['<option value="">— (opsional)</option>']
     .concat(HORIZON_OPTS.map(h => `<option value="${h}">${escapeHtml(HORIZON_LABEL[h])}</option>`))
     .join('');
-
-  // Prompt untuk Gemini/ChatGPT — MENCAKUP SEMUA kolom yang dibutuhkan Sheet,
-  // supaya hasilnya bisa di-Parse sekaligus (tanpa isi manual satu per satu).
+  // Prompt untuk Gemini/ChatGPT — dirender langsung ke HTML (server-side) supaya
+  // SELALU tampil, tidak bergantung JS. Dipakai juga oleh tombol Salin Prompt.
   const aiPromptText = [
-    'Kamu adalah asisten ekstraksi data. Baca screenshot rekomendasi saham (IDX) yang aku lampirkan, lalu tulis ULANG datanya PERSIS memakai format label di bawah — satu field per baris, tanpa kalimat pembuka/penutup, tanpa markdown. Jika sebuah data tidak ada di gambar, biarkan KOSONG setelah titik dua (jangan hapus barisnya, jangan menebak).',
+    'Baca screenshot rekomendasi saham ini. Tulis ULANG datanya PERSIS dengan format label di bawah (satu per baris), tanpa kalimat lain. Kosongkan (biarkan kosong setelah titik dua) bila datanya memang tidak ada di gambar.',
     '',
-    'Analis:',
-    'Firm:',
-    'Sertifikasi:',
-    'Tanggal:',
-    'Tipe:',
-    'Saham:',
-    'Entry:',
-    'TP1:',
-    'TP2:',
-    'SL:',
-    'Horizon:',
-    'Catatan:',
+    'Analis: <nama analis / sumber sinyal>',
+    'Firm: <sekuritas / komunitas, bila ada>',
+    'Tanggal: <tanggal rilis, format YYYY-MM-DD>',
+    'Tipe: <BUY atau SELL>',
+    'Saham: <kode saham, mis. BBCA>',
+    'Entry: <harga masuk>',
+    'TP1: <target pertama/terdekat>',
+    'TP2: <target kedua, bila ada>',
+    'SL: <stop loss>',
+    'Catatan: <alasan/tesis singkat, bila ada>',
     '',
-    'Aturan pengisian:',
-    '- Analis: nama analis / sumber sinyal.',
-    '- Firm: sekuritas / komunitas (bila ada).',
-    '- Sertifikasi: mis. CTA, WPPE, RSA (bila ada).',
-    '- Tanggal: tanggal rilis, format YYYY-MM-DD.',
-    '- Tipe: tulis BUY atau SELL saja.',
-    '- Saham: kode 4 huruf, mis. BBCA.',
-    '- Entry / TP1 / TP2 / SL: angka polos tanpa pemisah ribuan (contoh 9500, bukan 9.500). Pakai titik untuk desimal (contoh 1.08).',
-    '- Horizon: salah satu dari 1 Hari / 1 Minggu / 1 Bulan / 3 Bulan / 6 Bulan / 1 Tahun (bila ada).',
-    '- Catatan: alasan/tesis singkat (bila ada).'
+    'Aturan harga: tulis angka polos tanpa pemisah ribuan (contoh: 9500, bukan 9.500).'
   ].join('\n');
-
-  const demoText = [
-    'Analis: Budi Santoso', 'Firm: XYZ Sekuritas', 'Sertifikasi: CTA',
-    'Tanggal: ' + today, 'Tipe: BUY', 'Saham: BBCA',
-    'Entry: 9500', 'TP1: 9800', 'TP2: 10100', 'SL: 9300',
-    'Horizon: 1 Bulan', 'Catatan: breakout resistance'
-  ].join('\n');
-
   return `<!DOCTYPE html>
 <html lang="id"><head>
 <meta charset="utf-8">
@@ -414,98 +371,95 @@ ${STYLE}
   <div class="top">
     <div>
       <h1>${title}</h1>
-      <div class="sub">Ambil data dari foto pakai AI → Parse → periksa → Kirim. Setelah submit, menunggu <b>approve admin</b>.</div>
+      <div class="sub">Isi rekomendasi trading. Setelah submit, menunggu <b>approve admin</b> sebelum tampil.</div>
     </div>
     <a href="/logout" class="btn btn-ghost">Keluar</a>
   </div>
 
   <div class="card">
-    <div class="cardhead"><span class="step">1</span> Salin prompt &amp; buka AI</div>
-    <div class="hint" style="margin-bottom:8px">Tekan <b>Salin Prompt</b> → buka Gemini/ChatGPT (akunmu sendiri) → upload screenshot sinyal + tempel prompt → salin hasilnya. Tombol "Salin &amp; buka" akan menyalin prompt lalu membuka situsnya sekaligus.</div>
-    <textarea id="aiPrompt" rows="7" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
-    <div style="display:flex;gap:8px;margin:10px 0 0;flex-wrap:wrap;align-items:center">
+    <div style="font-weight:700;margin-bottom:6px">⚡ Tempel &amp; Parse <span style="color:var(--text3);font-weight:500;font-size:11px">(cara cepat)</span></div>
+    <div class="hint" style="margin-bottom:8px">Punya screenshot sinyal? <b>1)</b> Salin prompt di bawah → <b>2)</b> buka Gemini/ChatGPT (akunmu sendiri) → <b>3)</b> di sana upload foto + tempel prompt → <b>4)</b> salin hasilnya → tempel ke kotak "Tempel &amp; Parse" di bawah. Atau ketik manual.</div>
+    <textarea id="aiPrompt" rows="6" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
+    <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-sec" id="copyPrompt">📋 Salin Prompt</button>
-      <a class="btn-sec" id="openGemini" href="https://gemini.google.com/app" target="_blank" rel="noopener">Salin &amp; buka Gemini ↗</a>
-      <a class="btn-sec" id="openGpt" href="https://chatgpt.com/" target="_blank" rel="noopener">Salin &amp; buka ChatGPT ↗</a>
+      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Buka Gemini ↗</a>
+      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Buka ChatGPT ↗</a>
     </div>
-    <div id="aiInfo" class="hint" style="margin-top:8px"></div>
-  </div>
-
-  <div class="card">
-    <div class="cardhead"><span class="step">2</span> Tempel hasil AI &amp; Parse</div>
-    <div class="hint" style="margin-bottom:8px">Tempel seluruh hasil dari AI di sini, lalu tekan <b>Parse</b>. Semua kolom akan terisi otomatis — kamu tinggal periksa.</div>
-    <textarea id="rawParse" rows="8" placeholder="Tempel hasil AI di sini, mis.:
-${escapeHtml(demoText)}"></textarea>
+    <div id="aiInfo" class="hint" style="margin-bottom:8px"></div>
+    <textarea id="rawParse" rows="6" placeholder="Tempel hasil AI di sini, mis.:
+Analis: Budi Santoso
+Firm: XYZ Sekuritas
+Tanggal: 2026-07-11
+Tipe: BUY
+Saham: BBCA
+Entry: 9500
+TP1: 9800
+TP2: 10100
+SL: 9300
+Catatan: breakout resistance"></textarea>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-      <button type="button" class="btn" id="parseBtn" style="width:auto">⚡ Parse &amp; Isi</button>
+      <button type="button" class="btn" id="parseBtn" style="width:auto">⚡ Parse &amp; Isi Form</button>
       <button type="button" class="btn btn-ghost" id="parseDemoBtn">Contoh</button>
     </div>
     <div id="parseInfo" class="hint" style="margin-top:8px"></div>
   </div>
 
   <div class="card">
-    <div class="cardhead"><span class="step">3</span> Foto bukti <span style="color:var(--text3);font-weight:500;font-size:11px;margin-left:6px">(opsional, maks 5)</span></div>
-    <div class="hint" style="margin-bottom:8px">Foto <b>dikirim ke admin via Telegram</b> untuk validasi — <b>tidak disimpan</b> di database/Sheet.</div>
+    <div style="font-weight:700;margin-bottom:6px">📷 Foto Bukti <span style="color:var(--text3);font-weight:500;font-size:11px">(opsional, maks 5)</span></div>
+    <div class="hint" style="margin-bottom:8px">Lampirkan screenshot sinyal. Foto <b>dikirim ke admin via Telegram</b> untuk validasi — <b>tidak disimpan</b> di database/Sheet.</div>
     <label class="photo-drop" for="photoInput">📎 Pilih foto (bisa lebih dari satu, maks 5)</label>
     <input id="photoInput" type="file" accept="image/*" multiple style="display:none">
     <div class="thumbs" id="thumbs"></div>
     <div id="photoInfo" class="hint" style="margin-top:6px"></div>
   </div>
 
-  <div id="reviewWrap">
+  <div class="card">
     <div id="msg"></div>
-    <div class="hint" style="text-align:center;margin-bottom:10px">Belum punya foto/AI? <span class="link" id="manualLink">Isi manual</span>.</div>
-  </div>
-
-  <div class="card" id="reviewCard" style="display:none">
-    <div class="cardhead"><span class="step">4</span> Periksa &amp; Kirim</div>
-    <div class="hint" style="margin-bottom:12px">Ringkasan hasil Parse di bawah. Kalau sudah benar, langsung <b>Kirim</b>. Ada yang keliru? Tekan <span class="link" id="editToggle">✏️ Koreksi data</span>.</div>
-    <div id="summary" class="summary"></div>
     <form id="form" autocomplete="off">
-      <div id="editFields" style="display:none">
+      <div class="field">
+        <label class="req" for="analis">Nama Analis</label>
+        <input id="analis" name="analis" type="text" maxlength="60" required placeholder="mis. Budi Santoso">
+      </div>
       <div class="grid2">
-        <div class="field">
-          <label class="req" for="analis">Nama Analis</label>
-          <input id="analis" name="analis" type="text" maxlength="60" required placeholder="mis. Budi Santoso">
-        </div>
         <div class="field">
           <label for="firm">Firm / Instansi</label>
           <input id="firm" name="firm" type="text" maxlength="60" placeholder="opsional">
         </div>
-      </div>
-      <div class="grid2">
         <div class="field">
           <label for="sertifikasi">Sertifikasi</label>
           <input id="sertifikasi" name="sertifikasi" type="text" maxlength="40" placeholder="mis. CTA, WPPE (opsional)">
-        </div>
-        <div class="field">
-          <label class="req" for="ticker">Kode Saham</label>
-          <input id="ticker" name="ticker" type="text" maxlength="12" required placeholder="mis. BBCA" style="text-transform:uppercase">
         </div>
       </div>
 
       <div class="grid2">
         <div class="field">
+          <label class="req" for="ticker">Kode Saham</label>
+          <input id="ticker" name="ticker" type="text" maxlength="12" required placeholder="mis. BBCA" style="text-transform:uppercase">
+        </div>
+        <div class="field">
           <label class="req" for="tipe">Tipe</label>
           <select id="tipe" name="tipe" required>${tipeOpts}</select>
         </div>
+      </div>
+
+      <div class="grid2">
         <div class="field">
           <label class="req" for="entry">Entry</label>
           <input id="entry" name="entry" type="number" step="any" min="0" required inputmode="decimal">
         </div>
-      </div>
-      <div class="grid3">
         <div class="field">
-          <label class="req" for="tp1">TP1</label>
+          <label class="req" for="sl">Stop Loss (SL)</label>
+          <input id="sl" name="sl" type="number" step="any" min="0" required inputmode="decimal">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label class="req" for="tp1">Target 1 (TP1)</label>
           <input id="tp1" name="tp1" type="number" step="any" min="0" required inputmode="decimal">
         </div>
         <div class="field">
-          <label for="tp2">TP2</label>
+          <label for="tp2">Target 2 (TP2)</label>
           <input id="tp2" name="tp2" type="number" step="any" min="0" inputmode="decimal" placeholder="opsional">
-        </div>
-        <div class="field">
-          <label class="req" for="sl">SL</label>
-          <input id="sl" name="sl" type="number" step="any" min="0" required inputmode="decimal">
         </div>
       </div>
       <div class="hint" id="dirHint">BUY: TP di atas Entry, SL di bawah (TP2 lebih jauh dari TP1). SELL: kebalikannya.</div>
@@ -525,7 +479,6 @@ ${escapeHtml(demoText)}"></textarea>
         <label for="catatan">Catatan / Tesis</label>
         <textarea id="catatan" name="catatan" maxlength="500" placeholder="opsional — alasan singkat rekomendasi"></textarea>
       </div>
-      </div><!-- /editFields -->
 
       <div class="field">
         <label for="submitted_by">Diinput oleh</label>
@@ -536,108 +489,21 @@ ${escapeHtml(demoText)}"></textarea>
     </form>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.55">build ${BUILD_TAG}</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin.</div>
 </div>
 
 <script>
 (function(){
-  var AI_PROMPT = ${JSON.stringify(aiPromptText)};
-  var DEMO = ${JSON.stringify(demoText)};
-
   var f = document.getElementById('form');
   var msg = document.getElementById('msg');
   var btn = document.getElementById('submitBtn');
-  var reviewCard = document.getElementById('reviewCard');
-  var aiInfo = document.getElementById('aiInfo');
-  var parseInfo = document.getElementById('parseInfo');
 
-  var summaryEl = document.getElementById('summary');
-  var editFields = document.getElementById('editFields');
-  var editToggle = document.getElementById('editToggle');
-  var HLABEL = { '1H':'1 Hari','1M':'1 Minggu','1Bln':'1 Bulan','3Bln':'3 Bulan','6Bln':'6 Bulan','1Th':'1 Tahun' };
-
-  function setMsg(text, cls){ if(msg) msg.innerHTML = text ? '<div class="'+cls+'">'+text+'</div>' : ''; }
+  function setMsg(text, cls){ msg.innerHTML = text ? '<div class="'+cls+'">'+text+'</div>' : ''; }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
-  function showReview(){ if(reviewCard) reviewCard.style.display=''; }
-  function showEdit(){ if(editFields) editFields.style.display=''; }
-  function hideEdit(){ if(editFields) editFields.style.display='none'; }
-  function val(id){ return f && f[id] ? String(f[id].value||'').trim() : ''; }
 
-  // Ringkasan read-only hasil Parse (pengganti form banyak-kolom). Field wajib
-  // yang masih kosong ditandai kuning + ⚠ supaya jelas apa yg perlu dikoreksi.
-  function renderSummary(){
-    if(!summaryEl) return;
-    var rows = [
-      ['Tipe / Saham', ((val('tipe')||'—')+'  '+(val('ticker')||'—')), !val('ticker')||!val('tipe')],
-      ['Entry', val('entry')||'—', !val('entry')],
-      ['TP1', val('tp1')||'—', !val('tp1')],
-      ['TP2', val('tp2')||'—', false],
-      ['SL', val('sl')||'—', !val('sl')],
-      ['Tanggal', val('tanggal')||'—', !val('tanggal')],
-      ['Horizon', (HLABEL[val('horizon')]||'—'), false],
-      ['Analis', val('analis')||'—', !val('analis')],
-      ['Firm', val('firm')||'—', false],
-      ['Sertifikasi', val('sertifikasi')||'—', false],
-      ['Catatan', val('catatan')||'—', false]
-    ];
-    summaryEl.innerHTML = rows.map(function(r){
-      return '<div class="srow'+(r[2]?' miss':'')+'"><span>'+r[0]+'</span><b>'+esc(r[1])+(r[2]?' ⚠':'')+'</b></div>';
-    }).join('');
-  }
-  if(editToggle) editToggle.onclick = function(){
-    if(!editFields) return;
-    if(editFields.style.display==='none'){ showEdit(); } else { hideEdit(); }
-  };
-  // Jaga ringkasan tetap sinkron saat user mengedit lewat "Koreksi data".
-
-  // ── Copy util yang ANDAL (clipboard API dulu, fallback execCommand) ──
-  function copyText(text){
-    return new Promise(function(resolve){
-      if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext){
-        navigator.clipboard.writeText(text).then(function(){ resolve(true); }, function(){ resolve(fallbackCopy(text)); });
-      } else {
-        resolve(fallbackCopy(text));
-      }
-    });
-  }
-  function fallbackCopy(text){
-    try{
-      // Pakai textarea prompt yang SUDAH terlihat bila memungkinkan — lebih
-      // andal di iOS/Safari daripada elemen tersembunyi.
-      var el = document.getElementById('aiPrompt');
-      var ta, created = false;
-      if(el && el.value === text){ ta = el; }
-      else {
-        ta = document.createElement('textarea'); ta.value = text;
-        ta.style.position='fixed'; ta.style.top='0'; ta.style.left='0'; ta.style.opacity='0';
-        document.body.appendChild(ta); created = true;
-      }
-      var wasRO = ta.hasAttribute('readonly'); ta.removeAttribute('readonly');
-      ta.focus(); ta.select(); try{ ta.setSelectionRange(0, text.length); }catch(_){}
-      var ok=false; try{ ok=document.execCommand('copy'); }catch(_){}
-      if(created) document.body.removeChild(ta); else if(wasRO) ta.setAttribute('readonly','');
-      return ok;
-    }catch(_){ return false; }
-  }
-
-  var copyBtn = document.getElementById('copyPrompt');
-  if(copyBtn) copyBtn.onclick = function(){
-    copyText(AI_PROMPT).then(function(ok){
-      if(aiInfo) aiInfo.innerHTML = ok
-        ? '<span style="color:var(--green)">✓ Prompt tersalin. Buka Gemini/ChatGPT, upload foto + tempel prompt, lalu salin hasilnya ke Langkah 2.</span>'
-        : '<span style="color:var(--yellow)">Gagal menyalin otomatis. Klik area prompt di atas (otomatis terblok), lalu tekan Ctrl+C / (di HP: tahan → Copy).</span>';
-    });
-  };
-  // "Salin & buka": salin prompt lalu biarkan link <a target=_blank> membuka situs.
-  ['openGemini','openGpt'].forEach(function(id){
-    var a=document.getElementById(id);
-    if(a) a.addEventListener('click', function(){
-      copyText(AI_PROMPT);
-      if(aiInfo) aiInfo.innerHTML='<span style="color:var(--green)">✓ Prompt tersalin & situs AI dibuka di tab baru. Di sana: upload foto + tempel prompt (Ctrl+V).</span>';
-    });
-  });
-
-  // ── Bersih-bersih angka & tanggal ──
+  // ── Tempel & Parse: ekstrak Tipe/Saham/Entry/TP/SL dari teks bebas ──
+  // Bersihkan angka: pemisah ribuan (mis. 9.500 / 9,500) → integer;
+  // desimal koma (mis. 1,08) → titik.
   function cleanNum(s){
     if(s==null) return '';
     s = String(s).replace(/\s/g,'');
@@ -645,6 +511,7 @@ ${escapeHtml(demoText)}"></textarea>
     if(/^\d+,\d{1,2}$/.test(s)) return s.replace(',', '.');
     return s.replace(/,/g,'');
   }
+  // Normalisasi tanggal apa pun → YYYY-MM-DD (dukung DD/MM/YYYY & YYYY-MM-DD).
   function normDate(s){
     s=String(s).trim().replace(/\//g,'-');
     var p=s.split('-'); if(p.length!==3) return '';
@@ -655,92 +522,44 @@ ${escapeHtml(demoText)}"></textarea>
     if(!/^\d{4}$/.test(y)|| +mo<1 || +mo>12 || +d<1 || +d>31) return '';
     return y+'-'+mo+'-'+d;
   }
-  // Teks bebas horizon → salah satu kode HORIZON_OPTS.
-  function normHorizon(s){
-    s=String(s||'').toLowerCase().trim();
-    if(!s) return '';
-    if(/(^|\D)1\s*th\b|1\s*tahun|1\s*year|tahun|year/.test(s)) return '1Th';
-    if(/6\s*bln|6\s*bulan|6\s*month/.test(s)) return '6Bln';
-    if(/3\s*bln|3\s*bulan|3\s*month/.test(s)) return '3Bln';
-    if(/1\s*bln|1\s*bulan|1\s*month|bulan|month/.test(s)) return '1Bln';
-    if(/1\s*mgg|1\s*minggu|minggu|week|pekan/.test(s)) return '1M';
-    if(/1\s*hr|1\s*hari|hari|day|harian|intraday/.test(s)) return '1H';
-    return '';
-  }
-  // Buang nilai placeholder yang belum diisi AI (mis. "<nama analis>").
-  function clean(v){ v=String(v==null?'':v).trim(); if(/^<.*>$/.test(v)) return ''; return v; }
-
-  function firstNum(s){ var m=String(s||'').match(/[\d.,]+/); return m ? cleanNum(m[0]) : ''; }
-  // Label baris (dicocokkan PERSIS pada teks sebelum ":"/"=") → key kanonik.
-  var LABELS = {
-    analis:      /^(?:analis|nama analis|analyst|oleh|by|sumber)$/i,
-    firm:        /^(?:firm|instansi|sekuritas|broker|komunitas|perusahaan)$/i,
-    sertifikasi: /^(?:sertifikasi|sertifikat|certification|cert|lisensi|licen[sc]e)$/i,
-    tanggal:     /^(?:tanggal|tgl|date)$/i,
-    tipe:        /^(?:tipe|type|arah|sinyal|signal|posisi|aksi|rekomendasi)$/i,
-    saham:       /^(?:saham|kode saham|kode emiten|emiten|ticker|kode|stock)$/i,
-    entry:       /^(?:entry|entri|buy area|sell area|area|beli|op|open|harga entry)$/i,
-    tp1:         /^(?:tp1|tp 1|target 1|target1|tp|target|tp\/target)$/i,
-    tp2:         /^(?:tp2|tp 2|target 2|target2)$/i,
-    sl:          /^(?:sl|stop loss|stoploss|stop|cut loss|cutloss|cl)$/i,
-    horizon:     /^(?:horizon|timeframe|time frame|jangka|jangka waktu)$/i,
-    catatan:     /^(?:catatan|note|notes|tesis|alasan|remark|keterangan)$/i
-  };
-
   function parseSignalText(text){
-    text = String(text||'').replace(/\r/g, '');
+    text = String(text||'');
     var U = text.toUpperCase();
-    var out = { analis:'', firm:'', sertifikasi:'', tanggal:'', tipe:'', ticker:'', entry:'', tps:[], sl:'', horizon:'', catatan:'' };
-
-    // ── 1) Baris berlabel "Label: value" (format keluaran AI) ──
-    // Tahan banting terhadap gaya keluaran AI: bullet (- * •), penomoran (1.),
-    // markdown bold (**), heading (#), dan backtick — semua dibersihkan dulu.
-    var map = {};
-    text.split('\n').forEach(function(line){
-      var raw = line.replace(/[*#\`]/g, '').replace(/^\s*(?:[-–—•·>]+|\d+[.)])\s+/, '');
-      var m = raw.match(/^\s*([^:=]+?)\s*[:=]\s*(.*)$/);   // hanya nilai di baris yg SAMA
-      if(!m) return;
-      var key = m[1].trim(), value = clean(m[2]);
-      for(var k in LABELS){ if(map[k] === undefined && LABELS[k].test(key)){ map[k] = value; break; } }
-    });
-
-    out.analis      = map.analis || '';
-    out.firm        = map.firm || '';
-    out.sertifikasi = map.sertifikasi || '';
-    out.catatan     = map.catatan || '';
-    if(map.tanggal){ var dm = map.tanggal.match(/[0-9]{1,4}[-\/][0-9]{1,2}[-\/][0-9]{1,4}/); if(dm){ var d=normDate(dm[0]); if(d) out.tanggal=d; } }
-    if(map.horizon) out.horizon = normHorizon(map.horizon);
-    if(map.tipe){ out.tipe = /SELL|SHORT|JUAL/i.test(map.tipe) ? 'SELL' : (/BUY|LONG|BELI/i.test(map.tipe) ? 'BUY' : ''); }
-    if(map.saham){ var sm2 = map.saham.match(/[A-Za-z]{2,6}/); if(sm2) out.ticker = sm2[0].toUpperCase(); }
-    if(map.entry) out.entry = firstNum(map.entry);
-    if(map.tp1) { var v1=firstNum(map.tp1); if(v1) out.tps[0]=v1; }
-    if(map.tp2) { var v2=firstNum(map.tp2); if(v2) out.tps[1]=v2; }
-    if(map.sl)  out.sl = firstNum(map.sl);
-
-    // ── 2) Fallback teks bebas (sinyal messy tanpa label) ──
-    if(!out.tipe){ if(/\b(SELL|SHORT|JUAL)\b/.test(U)) out.tipe='SELL'; else if(/\b(BUY|LONG|BELI)\b/.test(U)) out.tipe='BUY'; }
-    if(!out.ticker){
-      var STOP={BUY:1,SELL:1,LONG:1,SHORT:1,TP:1,SL:1,ENTRY:1,TARGET:1,STOP:1,LOSS:1,BELI:1,JUAL:1,AREA:1,OP:1,OPEN:1,CL:1,IDX:1,WA:1,RR:1,CUT:1,ANALIS:1,FIRM:1,TIPE:1,SAHAM:1,TANGGAL:1,CATATAN:1,TGL:1,DATE:1,NOTE:1,HORIZON:1,SWING:1};
+    var out = { analis:'', firm:'', tanggal:'', tipe:'', ticker:'', entry:'', tps:[], sl:'', catatan:'' };
+    function grab(re){ var m=text.match(re); return m ? m[1].trim() : ''; }
+    // Field berlabel (dari output AI atau teks sinyal)
+    out.analis  = grab(/(?:ANALIS|ANALYST|OLEH)\s*[:=]\s*(.+)/i);
+    out.firm    = grab(/(?:FIRM|SEKURITAS|BROKER|INSTANSI|KOMUNITAS)\s*[:=]\s*(.+)/i);
+    out.catatan = grab(/(?:CATATAN|NOTE|TESIS|ALASAN)\s*[:=]\s*(.+)/i);
+    var td = grab(/(?:TANGGAL|TGL|DATE)\s*[:=]\s*([0-9]{1,4}[-\/][0-9]{1,2}[-\/][0-9]{1,4})/i);
+    if(td) out.tanggal = normDate(td);
+    // Tipe: label dulu, lalu kata kunci di teks
+    var tl = grab(/(?:TIPE|TYPE|ARAH|SINYAL|SIGNAL|POSISI)\s*[:=]\s*(BUY|SELL|LONG|SHORT|BELI|JUAL)/i);
+    if(tl){ out.tipe = /SELL|SHORT|JUAL/i.test(tl)?'SELL':'BUY'; }
+    else { if(/\b(SELL|SHORT|JUAL)\b/.test(U)) out.tipe='SELL'; if(/\b(BUY|LONG|BELI)\b/.test(U)) out.tipe='BUY'; }
+    // Saham: label dulu, lalu tebak token 2–5 huruf kapital
+    var sh = grab(/(?:SAHAM|TICKER|KODE|EMITEN|STOCK)\s*[:=]\s*([A-Za-z0-9.\-]{2,12})/i);
+    if(sh){ out.ticker = sh.toUpperCase(); }
+    else {
+      var STOP={BUY:1,SELL:1,LONG:1,SHORT:1,TP:1,SL:1,ENTRY:1,TARGET:1,STOP:1,LOSS:1,BELI:1,JUAL:1,AREA:1,OP:1,OPEN:1,CL:1,IDX:1,WA:1,RR:1,CUT:1,ANALIS:1,FIRM:1,TIPE:1,SAHAM:1,TANGGAL:1,CATATAN:1,TGL:1,DATE:1,NOTE:1};
       var toks = U.match(/\b[A-Z]{2,5}\b/g) || [];
       for(var i=0;i<toks.length;i++){ if(!STOP[toks[i]]){ out.ticker=toks[i]; break; } }
     }
-    if(!out.entry){ var em = text.match(/(?:ENTRY|BUY\s*AREA|AREA|BELI|OP|OPEN)\s*[:=]?\s*([\d.,]+)/i); if(em) out.entry = cleanNum(em[1]); }
-    if(!out.tps.length){
-      var tpRe = /(?:TP|TARGET)\s*\d{0,2}[\s:=]+([\d.,]+)/ig, mm;
-      while((mm = tpRe.exec(text))){ if(out.tps.length<2) out.tps.push(cleanNum(mm[1])); }
-    }
-    if(!out.sl){ var sf = text.match(/(?:SL|STOP\s*LOSS|STOPLOSS|STOP|CUT\s*LOSS|CUTLOSS|CL)\s*[:=]?\s*([\d.,]+)/i); if(sf) out.sl = cleanNum(sf[1]); }
-    if(!out.horizon && /\b(swing|scalp|intraday|harian|mingguan|bulanan)\b/i.test(text)) out.horizon = normHorizon(text);
+    var em = text.match(/(?:ENTRY|BUY\s*AREA|AREA|BELI|OP|OPEN)\s*[:=]?\s*([\d.,]+)/i);
+    if(em) out.entry = cleanNum(em[1]);
+    var tpRe = /(?:TP|TARGET)\s*\d*\s*[:=]?\s*([\d.,]+)/ig, m;
+    while((m = tpRe.exec(text))){ if(out.tps.length<2) out.tps.push(cleanNum(m[1])); }
+    var sm = text.match(/(?:SL|STOP\s*LOSS|STOPLOSS|STOP|CUT\s*LOSS|CUTLOSS|CL)\s*[:=]?\s*([\d.,]+)/i);
+    if(sm) out.sl = cleanNum(sm[1]);
     return out;
   }
-
+  var parseInfo = document.getElementById('parseInfo');
   var parseBtn = document.getElementById('parseBtn');
   if(parseBtn) parseBtn.onclick = function(){
     var out = parseSignalText(document.getElementById('rawParse').value);
     var filled = [];
     if(out.analis){ f.analis.value = out.analis; filled.push('Analis'); }
     if(out.firm){ f.firm.value = out.firm; filled.push('Firm'); }
-    if(out.sertifikasi){ f.sertifikasi.value = out.sertifikasi; filled.push('Sertifikasi'); }
     if(out.tanggal){ f.tanggal.value = out.tanggal; filled.push('Tanggal'); }
     if(out.tipe){ f.tipe.value = out.tipe; filled.push('Tipe'); }
     if(out.ticker){ f.ticker.value = out.ticker; filled.push('Saham'); }
@@ -748,34 +567,46 @@ ${escapeHtml(demoText)}"></textarea>
     if(out.tps[0]){ f.tp1.value = out.tps[0]; filled.push('TP1'); }
     if(out.tps[1]){ f.tp2.value = out.tps[1]; filled.push('TP2'); }
     if(out.sl){ f.sl.value = out.sl; filled.push('SL'); }
-    if(out.horizon){ f.horizon.value = out.horizon; filled.push('Horizon'); }
     if(out.catatan){ f.catatan.value = out.catatan; filled.push('Catatan'); }
-    hideEdit();
-    showReview();
-    renderSummary();
-    reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
-    if(filled.length){
-      parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terbaca: '+esc(filled.join(', '))+'. Cek ringkasan di Langkah 4, lalu Kirim.</span>';
-    } else {
-      showEdit();
-      parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terbaca. Tempel hasil AI yang berlabel (Analis:, Tipe:, Saham:, Entry:, TP1:, SL: …), atau isi lewat "Koreksi data".</span>';
-    }
+    if(filled.length){ parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terisi otomatis: '+esc(filled.join(', '))+'. Periksa sebentar, lalu Kirim.</span>'; }
+    else { parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terdeteksi. Tempel hasil AI (format berlabel Analis/Tipe/Saham/Entry/TP1/SL), atau isi manual.</span>'; }
   };
   var parseDemoBtn = document.getElementById('parseDemoBtn');
-  if(parseDemoBtn) parseDemoBtn.onclick = function(){ document.getElementById('rawParse').value = DEMO; };
+  if(parseDemoBtn) parseDemoBtn.onclick = function(){
+    document.getElementById('rawParse').value = 'Analis: Budi Santoso\nFirm: XYZ Sekuritas\nTanggal: 2026-07-11\nTipe: BUY\nSaham: BBCA\nEntry: 9500\nTP1: 9800\nTP2: 10100\nSL: 9300\nCatatan: breakout resistance';
+  };
 
-  var manualLink = document.getElementById('manualLink');
-  if(manualLink) manualLink.onclick = function(){ showReview(); renderSummary(); showEdit(); reviewCard.scrollIntoView({behavior:'smooth', block:'start'}); };
-
-  // Sinkronkan ringkasan saat user mengoreksi lewat form edit.
-  if(f) f.addEventListener('input', renderSummary);
-
-  // Kode saham selalu tampil kapital saat diketik.
-  if(f && f.ticker) f.ticker.addEventListener('input', function(){ this.value = this.value.toUpperCase(); });
+  // Prompt AI — dari server (sama dgn isi #aiPrompt yg sudah dirender HTML).
+  var AI_PROMPT = ${JSON.stringify(aiPromptText)};
+  var aiPromptEl = document.getElementById('aiPrompt');
+  if(aiPromptEl && !aiPromptEl.value) aiPromptEl.value = AI_PROMPT;
+  var aiInfo = document.getElementById('aiInfo');
+  // Tombol SALIN saja (murni gesture user → clipboard andal). Buka situs
+  // ditangani link <a target=_blank> di HTML (tidak pernah diblokir popup).
+  var copyPromptBtn = document.getElementById('copyPrompt');
+  if(copyPromptBtn) copyPromptBtn.onclick = function(){
+    function ok(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--green)">✓ Prompt tersalin. Buka Gemini/ChatGPT, upload foto, tempel prompt, lalu salin hasilnya ke kotak Tempel &amp; Parse.</span>'; }
+    function manual(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--yellow)">Teks prompt sudah diblok otomatis — tinggal tekan Ctrl+C (di HP: tahan lalu Copy).</span>'; }
+    // Cara PALING ANDAL: seleksi teks di kotak lalu copy (readonly dilepas
+    // sementara agar jalan di HP/iOS). Teks tetap keblok → bisa Ctrl+C manual.
+    var copied = false;
+    try{
+      aiPromptEl.removeAttribute('readonly');
+      aiPromptEl.focus();
+      aiPromptEl.setSelectionRange(0, (aiPromptEl.value||'').length);
+      try{ copied = document.execCommand('copy'); }catch(_){}
+      aiPromptEl.setAttribute('readonly','readonly');
+    }catch(_){ try{ aiPromptEl.setAttribute('readonly','readonly'); }catch(__){} }
+    if(copied){ ok(); return; }
+    // Cadangan: clipboard API
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(AI_PROMPT).then(ok, manual);
+    } else { manual(); }
+  };
 
   // ── Upload & kompres foto (maks 5) ──
   var MAX_PHOTOS = 5;
-  var photos = [];
+  var photos = [];   // array data URL (base64) terkompres
   var photoInput = document.getElementById('photoInput');
   var thumbs = document.getElementById('thumbs');
   var photoInfo = document.getElementById('photoInfo');
@@ -815,18 +646,9 @@ ${escapeHtml(demoText)}"></textarea>
     renderThumbs();
   };
 
-  if(f) f.addEventListener('submit', async function(e){
+  f.addEventListener('submit', async function(e){
     e.preventDefault();
     setMsg('', '');
-    // Validasi ringan di klien; kalau ada yg kurang, buka "Koreksi data".
-    var need = [['analis','Nama Analis'],['ticker','Kode Saham'],['tipe','Tipe'],['entry','Entry'],['tp1','TP1'],['sl','SL'],['tanggal','Tanggal']];
-    var miss = need.filter(function(n){ return !val(n[0]); }).map(function(n){ return n[1]; });
-    if(miss.length){
-      setMsg('Data belum lengkap: '+esc(miss.join(', '))+'. Perbaiki lewat "Koreksi data".', 'err');
-      renderSummary(); showEdit();
-      reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
-      return;
-    }
     var data = {
       analis: f.analis.value, firm: f.firm.value, sertifikasi: f.sertifikasi.value,
       ticker: f.ticker.value, tipe: f.tipe.value,
@@ -844,6 +666,7 @@ ${escapeHtml(demoText)}"></textarea>
       var j = await res.json().catch(function(){ return {}; });
       if(!res.ok || j.error){ throw new Error(j.error || ('HTTP '+res.status)); }
       setMsg('✓ Terkirim: <b>'+esc(j.tipe)+' '+esc(j.ticker)+'</b>.'+((j.photos&&j.photos.sent)?(' '+j.photos.sent+' foto dikirim ke Telegram.'):'')+' Menunggu approve admin. Form dikosongkan untuk input berikutnya.', 'ok');
+      // Reset tapi pertahankan nama analis, firm, sertifikasi, & "diinput oleh"
       var keepA=f.analis.value, keepF=f.firm.value, keepS=f.sertifikasi.value, keepBy=f.submitted_by.value;
       f.reset();
       f.analis.value=keepA; f.firm.value=keepF; f.sertifikasi.value=keepS; f.submitted_by.value=keepBy;
@@ -851,9 +674,6 @@ ${escapeHtml(demoText)}"></textarea>
       var rp=document.getElementById('rawParse'); if(rp) rp.value='';
       if(parseInfo) parseInfo.innerHTML='';
       photos.length=0; renderThumbs();
-      hideEdit();
-      if(summaryEl) summaryEl.innerHTML='';
-      if(reviewCard) reviewCard.style.display='none';
       window.scrollTo({top:0, behavior:'smooth'});
     }catch(err){
       setMsg('Gagal: '+esc(err.message), 'err');
@@ -870,38 +690,24 @@ ${escapeHtml(demoText)}"></textarea>
 
 export default {
   async fetch(request, env) {
-    try {
-      const url = new URL(request.url);
-      const path = url.pathname.replace(/\/+$/, '') || '/';
-      const method = request.method;
+    const url = new URL(request.url);
+    const path = url.pathname.replace(/\/+$/, '') || '/';
+    const method = request.method;
 
-      // Login: POST memproses password; GET diarahkan balik ke halaman utama
-      // (menghindari 404 bila kontributor mengetik /login di address bar).
-      if (path === '/login') {
-        if (method === 'POST') return handleLogin(request, env);
-        return new Response(null, { status: 303, headers: { 'Location': '/' } });
-      }
-      if (path === '/logout') return handleLogout();
+    if (path === '/login' && method === 'POST') return handleLogin(request, env);
+    if (path === '/logout') return handleLogout();
 
-      const authed = await isAuthed(request, env);
+    const authed = await isAuthed(request, env);
 
-      if (path === '/api/submit') {
-        if (method !== 'POST') return jsonRes({ error: 'method not allowed' }, 405);
-        if (!authed) return jsonRes({ error: 'unauthorized' }, 401);
-        return apiSubmit(request, env);
-      }
-
-      if (path === '/' || path === '/index.html') {
-        if (method !== 'GET' && method !== 'HEAD') {
-          return new Response('Method not allowed', { status: 405 });
-        }
-        return htmlRes(authed ? renderFormPage(env) : renderLoginPage(env, null));
-      }
-
-      return new Response('Not found', { status: 404 });
-    } catch (e) {
-      // Jangan pernah membocorkan stack trace ke user; kembalikan pesan bersih.
-      return jsonRes({ error: 'Terjadi kesalahan tak terduga di server.' }, 500);
+    if (path === '/api/submit' && method === 'POST') {
+      if (!authed) return jsonRes({ error: 'unauthorized' }, 401);
+      return apiSubmit(request, env);
     }
+
+    if (path === '/' || path === '/index.html') {
+      return htmlRes(authed ? renderFormPage(env) : renderLoginPage(env, null));
+    }
+
+    return new Response('Not found', { status: 404 });
   },
 };

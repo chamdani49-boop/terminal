@@ -29,25 +29,12 @@ Kontributor  →  Worker (login password + form)  →  GAS Web App  →  Google 
 
 ---
 
-## Alur input (parse-driven, minim ketik manual)
+## Fitur bantu input (mengurangi ketik manual)
 
-Halaman dibagi jadi 4 langkah:
-
-1. **Salin prompt & buka AI** — prompt sudah mencakup **SEMUA** kolom Sheet
-   (Analis, Firm, Sertifikasi, Tanggal, Tipe, Saham, Entry, TP1, TP2, SL,
-   Horizon, Catatan). Tombol **Salin Prompt** (copy andal: Clipboard API →
-   fallback `execCommand`). Tombol **Salin & buka Gemini/ChatGPT** menyalin
-   prompt lalu membuka situs AI di tab baru (pakai **akun inputer sendiri**,
-   tanpa API key/biaya di sisi kita).
-2. **Tempel hasil AI & Parse** — parser membaca format berlabel "Label: value"
-   per baris → **semua field terisi otomatis**. Angka dirapikan (pemisah
-   ribuan `9.500` → `9500`, desimal koma `1,08` → `1.08`), tanggal
-   dinormalisasi ke `YYYY-MM-DD` (dukung `DD/MM/YYYY`), horizon dipetakan ke
-   kode (`1 Bulan` → `1Bln`), dan nilai kosong / placeholder `<...>` diabaikan.
-   Tetap ada fallback untuk teks sinyal bebas (tanpa label).
-3. **Foto bukti (opsional, maks 5)** — lihat di bawah.
-4. **Periksa & Kirim** — form muncul terisi dari Parse (atau via link "Isi
-   manual"). Tinggal periksa harga lalu Kirim.
+- **Tempel & Parse**: tempel teks sinyal → Tipe/Saham/Entry/TP1/TP2/SL terisi otomatis.
+- **Tombol Gemini / ChatGPT**: menyalin prompt siap-pakai ke clipboard + membuka
+  situs AI (pakai **akun inputer sendiri**, tanpa API key/biaya di sisi kita).
+  Inputer upload fotonya di sana → salin hasil → tempel ke Tempel & Parse.
 - **Foto bukti (maks 5)**: dikompres di browser lalu **dikirim ke Telegram** admin
   (`sendMediaGroup`) untuk validasi. **Foto TIDAK disimpan** di Sheet/Drive — hanya
   lewat ke chat Telegram. Butuh secret `TELEGRAM_BOT_TOKEN` & `TELEGRAM_CHAT_ID`
@@ -135,13 +122,8 @@ URL hasil deploy: `https://tracker-input.<subdomain-akun>.workers.dev/`
 |--------|---------------|--------------|-------------------------------------|
 | GET    | `/`           | Cookie/login | Login form atau form input          |
 | POST   | `/login`      | Public       | Submit password → set cookie        |
-| GET    | `/login`      | Public       | Redirect ke `/` (hindari 404)       |
 | GET    | `/logout`     | Public       | Hapus cookie                        |
 | POST   | `/api/submit` | Cookie       | Kirim rekomendasi (JSON) → GAS      |
-
-> Router dibungkus `try/catch` (tidak membocorkan stack trace), method yang
-> salah dibalas `405`, dan `/api/submit` non-POST / tanpa cookie dibalas
-> `405` / `401`.
 
 Cookie `ti_auth`: HttpOnly + Secure + SameSite=Lax, berlaku 12 jam. Token
 di-derive dari `APP_PASSWORD` — ganti password ⇒ semua sesi lama invalid.
