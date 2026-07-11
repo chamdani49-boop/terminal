@@ -290,6 +290,22 @@ ${STYLE}
   </div>
 
   <div class="card">
+    <div style="font-weight:700;margin-bottom:6px">⚡ Tempel &amp; Parse <span style="color:var(--text3);font-weight:500;font-size:11px">(cara cepat)</span></div>
+    <div class="hint" style="margin-bottom:8px">Tempel teks sinyal (mis. dari Telegram/WhatsApp). Sistem otomatis mengisi Tipe, Saham, Entry, TP1/TP2, SL — tinggal periksa, isi Nama Analis, lalu Kirim.</div>
+    <textarea id="rawParse" rows="5" placeholder="Contoh:
+BUY BBCA
+Entry: 9.500
+TP1: 9.800
+TP2: 10.100
+SL: 9.300"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button type="button" class="btn" id="parseBtn" style="width:auto">⚡ Parse &amp; Isi Form</button>
+      <button type="button" class="btn btn-ghost" id="parseDemoBtn">Contoh</button>
+    </div>
+    <div id="parseInfo" class="hint" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
     <div id="msg"></div>
     <form id="form" autocomplete="off">
       <div class="field">
@@ -377,6 +393,53 @@ ${STYLE}
   function setMsg(text, cls){ msg.innerHTML = text ? '<div class="'+cls+'">'+text+'</div>' : ''; }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
 
+  // ── Tempel & Parse: ekstrak Tipe/Saham/Entry/TP/SL dari teks bebas ──
+  // Bersihkan angka: pemisah ribuan (mis. 9.500 / 9,500) → integer;
+  // desimal koma (mis. 1,08) → titik.
+  function cleanNum(s){
+    if(s==null) return '';
+    s = String(s).replace(/\s/g,'');
+    if(/^\d{1,3}([.,]\d{3})+$/.test(s)) return String(parseInt(s.replace(/[.,]/g,''),10));
+    if(/^\d+,\d{1,2}$/.test(s)) return s.replace(',', '.');
+    return s.replace(/,/g,'');
+  }
+  function parseSignalText(text){
+    text = String(text||'');
+    var U = text.toUpperCase();
+    var out = { tipe:'', ticker:'', entry:'', tps:[], sl:'' };
+    if(/\b(SELL|SHORT|JUAL)\b/.test(U)) out.tipe='SELL';
+    if(/\b(BUY|LONG|BELI)\b/.test(U)) out.tipe='BUY';   // BUY diprioritaskan bila keduanya ada
+    var em = text.match(/(?:ENTRY|BUY\s*AREA|AREA|BELI|OP|OPEN)\s*[:=]?\s*([\d.,]+)/i);
+    if(em) out.entry = cleanNum(em[1]);
+    var tpRe = /(?:TP|TARGET)\s*\d*\s*[:=]?\s*([\d.,]+)/ig, m;
+    while((m = tpRe.exec(text))){ if(out.tps.length<2) out.tps.push(cleanNum(m[1])); }
+    var sm = text.match(/(?:SL|STOP\s*LOSS|STOPLOSS|STOP|CUT\s*LOSS|CUTLOSS|CL)\s*[:=]?\s*([\d.,]+)/i);
+    if(sm) out.sl = cleanNum(sm[1]);
+    // Ticker: token 2–5 huruf kapital pertama yg bukan kata kunci
+    var STOP={BUY:1,SELL:1,LONG:1,SHORT:1,TP:1,SL:1,ENTRY:1,TARGET:1,STOP:1,LOSS:1,BELI:1,JUAL:1,AREA:1,OP:1,OPEN:1,CL:1,IDX:1,WA:1,RR:1,CUT:1};
+    var toks = U.match(/\b[A-Z]{2,5}\b/g) || [];
+    for(var i=0;i<toks.length;i++){ if(!STOP[toks[i]]){ out.ticker=toks[i]; break; } }
+    return out;
+  }
+  var parseInfo = document.getElementById('parseInfo');
+  var parseBtn = document.getElementById('parseBtn');
+  if(parseBtn) parseBtn.onclick = function(){
+    var out = parseSignalText(document.getElementById('rawParse').value);
+    var filled = [];
+    if(out.tipe){ f.tipe.value = out.tipe; filled.push('Tipe'); }
+    if(out.ticker){ f.ticker.value = out.ticker; filled.push('Saham'); }
+    if(out.entry){ f.entry.value = out.entry; filled.push('Entry'); }
+    if(out.tps[0]){ f.tp1.value = out.tps[0]; filled.push('TP1'); }
+    if(out.tps[1]){ f.tp2.value = out.tps[1]; filled.push('TP2'); }
+    if(out.sl){ f.sl.value = out.sl; filled.push('SL'); }
+    if(filled.length){ parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terisi otomatis: '+esc(filled.join(', '))+'. Periksa angkanya, isi <b>Nama Analis</b>, lalu Kirim.</span>'; }
+    else { parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terdeteksi. Pastikan ada BUY/SELL + Entry/TP/SL, atau isi manual di form bawah.</span>'; }
+  };
+  var parseDemoBtn = document.getElementById('parseDemoBtn');
+  if(parseDemoBtn) parseDemoBtn.onclick = function(){
+    document.getElementById('rawParse').value = 'BUY BBCA\nEntry: 9.500\nTP1: 9.800\nTP2: 10.100\nSL: 9.300';
+  };
+
   f.addEventListener('submit', async function(e){
     e.preventDefault();
     setMsg('', '');
@@ -401,6 +464,8 @@ ${STYLE}
       f.reset();
       f.analis.value=keepA; f.firm.value=keepF; f.sertifikasi.value=keepS; f.submitted_by.value=keepBy;
       f.tanggal.value = new Date().toISOString().slice(0,10);
+      var rp=document.getElementById('rawParse'); if(rp) rp.value='';
+      if(parseInfo) parseInfo.innerHTML='';
       window.scrollTo({top:0, behavior:'smooth'});
     }catch(err){
       setMsg('Gagal: '+esc(err.message), 'err');
