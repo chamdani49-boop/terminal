@@ -307,6 +307,12 @@ const STYLE = `
   .small{font-size:11px;color:var(--text3);text-align:center;margin-top:14px}
   .hint{font-size:11px;color:var(--text3);margin-top:4px}
   .link{color:var(--accent2);cursor:pointer;text-decoration:underline;font-size:12.5px}
+  .summary{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px 14px;margin-bottom:14px}
+  .srow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+  .srow:last-child{border-bottom:0}
+  .srow>span{color:var(--text2);flex:0 0 auto}
+  .srow>b{color:var(--text);text-align:right;word-break:break-word}
+  .srow.miss>b{color:var(--yellow)}
   code{background:var(--bg2);padding:1px 6px;border-radius:4px;font-size:12px;font-family:ui-monospace,monospace;color:var(--accent2)}
   .btn-sec{display:inline-flex;align-items:center;justify-content:center;background:var(--bg2);border:1px solid var(--border);color:var(--accent2);width:auto;padding:9px 14px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;text-decoration:none}
   .btn-sec:hover{background:var(--card);color:var(--text)}
@@ -443,14 +449,16 @@ ${escapeHtml(demoText)}"></textarea>
   </div>
 
   <div id="reviewWrap">
+    <div id="msg"></div>
     <div class="hint" style="text-align:center;margin-bottom:10px">Belum punya foto/AI? <span class="link" id="manualLink">Isi manual</span>.</div>
   </div>
 
   <div class="card" id="reviewCard" style="display:none">
     <div class="cardhead"><span class="step">4</span> Periksa &amp; Kirim</div>
-    <div class="hint" style="margin-bottom:12px">Data di bawah terisi dari Parse. Periksa sebentar (terutama harga), lalu Kirim.</div>
-    <div id="msg"></div>
+    <div class="hint" style="margin-bottom:12px">Ringkasan hasil Parse di bawah. Kalau sudah benar, langsung <b>Kirim</b>. Ada yang keliru? Tekan <span class="link" id="editToggle">✏️ Koreksi data</span>.</div>
+    <div id="summary" class="summary"></div>
     <form id="form" autocomplete="off">
+      <div id="editFields" style="display:none">
       <div class="grid2">
         <div class="field">
           <label class="req" for="analis">Nama Analis</label>
@@ -513,6 +521,7 @@ ${escapeHtml(demoText)}"></textarea>
         <label for="catatan">Catatan / Tesis</label>
         <textarea id="catatan" name="catatan" maxlength="500" placeholder="opsional — alasan singkat rekomendasi"></textarea>
       </div>
+      </div><!-- /editFields -->
 
       <div class="field">
         <label for="submitted_by">Diinput oleh</label>
@@ -538,9 +547,44 @@ ${escapeHtml(demoText)}"></textarea>
   var aiInfo = document.getElementById('aiInfo');
   var parseInfo = document.getElementById('parseInfo');
 
+  var summaryEl = document.getElementById('summary');
+  var editFields = document.getElementById('editFields');
+  var editToggle = document.getElementById('editToggle');
+  var HLABEL = { '1H':'1 Hari','1M':'1 Minggu','1Bln':'1 Bulan','3Bln':'3 Bulan','6Bln':'6 Bulan','1Th':'1 Tahun' };
+
   function setMsg(text, cls){ if(msg) msg.innerHTML = text ? '<div class="'+cls+'">'+text+'</div>' : ''; }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
   function showReview(){ if(reviewCard) reviewCard.style.display=''; }
+  function showEdit(){ if(editFields) editFields.style.display=''; }
+  function hideEdit(){ if(editFields) editFields.style.display='none'; }
+  function val(id){ return f && f[id] ? String(f[id].value||'').trim() : ''; }
+
+  // Ringkasan read-only hasil Parse (pengganti form banyak-kolom). Field wajib
+  // yang masih kosong ditandai kuning + ⚠ supaya jelas apa yg perlu dikoreksi.
+  function renderSummary(){
+    if(!summaryEl) return;
+    var rows = [
+      ['Tipe / Saham', ((val('tipe')||'—')+'  '+(val('ticker')||'—')), !val('ticker')||!val('tipe')],
+      ['Entry', val('entry')||'—', !val('entry')],
+      ['TP1', val('tp1')||'—', !val('tp1')],
+      ['TP2', val('tp2')||'—', false],
+      ['SL', val('sl')||'—', !val('sl')],
+      ['Tanggal', val('tanggal')||'—', !val('tanggal')],
+      ['Horizon', (HLABEL[val('horizon')]||'—'), false],
+      ['Analis', val('analis')||'—', !val('analis')],
+      ['Firm', val('firm')||'—', false],
+      ['Sertifikasi', val('sertifikasi')||'—', false],
+      ['Catatan', val('catatan')||'—', false]
+    ];
+    summaryEl.innerHTML = rows.map(function(r){
+      return '<div class="srow'+(r[2]?' miss':'')+'"><span>'+r[0]+'</span><b>'+esc(r[1])+(r[2]?' ⚠':'')+'</b></div>';
+    }).join('');
+  }
+  if(editToggle) editToggle.onclick = function(){
+    if(!editFields) return;
+    if(editFields.style.display==='none'){ showEdit(); } else { hideEdit(); }
+  };
+  // Jaga ringkasan tetap sinkron saat user mengedit lewat "Koreksi data".
 
   // ── Copy util yang ANDAL (clipboard API dulu, fallback execCommand) ──
   function copyText(text){
@@ -554,13 +598,20 @@ ${escapeHtml(demoText)}"></textarea>
   }
   function fallbackCopy(text){
     try{
-      var ta=document.createElement('textarea');
-      ta.value=text; ta.setAttribute('readonly',''); 
-      ta.style.position='fixed'; ta.style.top='0'; ta.style.left='0'; ta.style.opacity='0';
-      document.body.appendChild(ta);
-      ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+      // Pakai textarea prompt yang SUDAH terlihat bila memungkinkan — lebih
+      // andal di iOS/Safari daripada elemen tersembunyi.
+      var el = document.getElementById('aiPrompt');
+      var ta, created = false;
+      if(el && el.value === text){ ta = el; }
+      else {
+        ta = document.createElement('textarea'); ta.value = text;
+        ta.style.position='fixed'; ta.style.top='0'; ta.style.left='0'; ta.style.opacity='0';
+        document.body.appendChild(ta); created = true;
+      }
+      var wasRO = ta.hasAttribute('readonly'); ta.removeAttribute('readonly');
+      ta.focus(); ta.select(); try{ ta.setSelectionRange(0, text.length); }catch(_){}
       var ok=false; try{ ok=document.execCommand('copy'); }catch(_){}
-      document.body.removeChild(ta);
+      if(created) document.body.removeChild(ta); else if(wasRO) ta.setAttribute('readonly','');
       return ok;
     }catch(_){ return false; }
   }
@@ -638,12 +689,15 @@ ${escapeHtml(demoText)}"></textarea>
     var out = { analis:'', firm:'', sertifikasi:'', tanggal:'', tipe:'', ticker:'', entry:'', tps:[], sl:'', horizon:'', catatan:'' };
 
     // ── 1) Baris berlabel "Label: value" (format keluaran AI) ──
+    // Tahan banting terhadap gaya keluaran AI: bullet (- * •), penomoran (1.),
+    // markdown bold (**), heading (#), dan backtick — semua dibersihkan dulu.
     var map = {};
     text.split('\n').forEach(function(line){
-      var m = line.match(/^\s*([^:=]+?)\s*[:=]\s*(.*)$/);   // hanya nilai di baris yg SAMA
+      var raw = line.replace(/[*#\`]/g, '').replace(/^\s*(?:[-–—•·>]+|\d+[.)])\s+/, '');
+      var m = raw.match(/^\s*([^:=]+?)\s*[:=]\s*(.*)$/);   // hanya nilai di baris yg SAMA
       if(!m) return;
-      var key = m[1].trim(), val = clean(m[2]);
-      for(var k in LABELS){ if(map[k] === undefined && LABELS[k].test(key)){ map[k] = val; break; } }
+      var key = m[1].trim(), value = clean(m[2]);
+      for(var k in LABELS){ if(map[k] === undefined && LABELS[k].test(key)){ map[k] = value; break; } }
     });
 
     out.analis      = map.analis || '';
@@ -653,7 +707,7 @@ ${escapeHtml(demoText)}"></textarea>
     if(map.tanggal){ var dm = map.tanggal.match(/[0-9]{1,4}[-\/][0-9]{1,2}[-\/][0-9]{1,4}/); if(dm){ var d=normDate(dm[0]); if(d) out.tanggal=d; } }
     if(map.horizon) out.horizon = normHorizon(map.horizon);
     if(map.tipe){ out.tipe = /SELL|SHORT|JUAL/i.test(map.tipe) ? 'SELL' : (/BUY|LONG|BELI/i.test(map.tipe) ? 'BUY' : ''); }
-    if(map.saham){ var sm2 = map.saham.match(/[A-Za-z0-9.\-]{2,12}/); if(sm2) out.ticker = sm2[0].toUpperCase(); }
+    if(map.saham){ var sm2 = map.saham.match(/[A-Za-z]{2,6}/); if(sm2) out.ticker = sm2[0].toUpperCase(); }
     if(map.entry) out.entry = firstNum(map.entry);
     if(map.tp1) { var v1=firstNum(map.tp1); if(v1) out.tps[0]=v1; }
     if(map.tp2) { var v2=firstNum(map.tp2); if(v2) out.tps[1]=v2; }
@@ -692,19 +746,25 @@ ${escapeHtml(demoText)}"></textarea>
     if(out.sl){ f.sl.value = out.sl; filled.push('SL'); }
     if(out.horizon){ f.horizon.value = out.horizon; filled.push('Horizon'); }
     if(out.catatan){ f.catatan.value = out.catatan; filled.push('Catatan'); }
+    hideEdit();
     showReview();
+    renderSummary();
+    reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
     if(filled.length){
-      parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terisi otomatis: '+esc(filled.join(', '))+'. Periksa di Langkah 4, lalu Kirim.</span>';
-      reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
+      parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terbaca: '+esc(filled.join(', '))+'. Cek ringkasan di Langkah 4, lalu Kirim.</span>';
     } else {
-      parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terdeteksi. Pastikan kamu menempel hasil AI yang berlabel (Analis:, Tipe:, Saham:, Entry:, TP1:, SL: …), atau isi manual di Langkah 4.</span>';
+      showEdit();
+      parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terbaca. Tempel hasil AI yang berlabel (Analis:, Tipe:, Saham:, Entry:, TP1:, SL: …), atau isi lewat "Koreksi data".</span>';
     }
   };
   var parseDemoBtn = document.getElementById('parseDemoBtn');
   if(parseDemoBtn) parseDemoBtn.onclick = function(){ document.getElementById('rawParse').value = DEMO; };
 
   var manualLink = document.getElementById('manualLink');
-  if(manualLink) manualLink.onclick = function(){ showReview(); reviewCard.scrollIntoView({behavior:'smooth', block:'start'}); };
+  if(manualLink) manualLink.onclick = function(){ showReview(); renderSummary(); showEdit(); reviewCard.scrollIntoView({behavior:'smooth', block:'start'}); };
+
+  // Sinkronkan ringkasan saat user mengoreksi lewat form edit.
+  if(f) f.addEventListener('input', renderSummary);
 
   // Kode saham selalu tampil kapital saat diketik.
   if(f && f.ticker) f.ticker.addEventListener('input', function(){ this.value = this.value.toUpperCase(); });
@@ -754,6 +814,15 @@ ${escapeHtml(demoText)}"></textarea>
   if(f) f.addEventListener('submit', async function(e){
     e.preventDefault();
     setMsg('', '');
+    // Validasi ringan di klien; kalau ada yg kurang, buka "Koreksi data".
+    var need = [['analis','Nama Analis'],['ticker','Kode Saham'],['tipe','Tipe'],['entry','Entry'],['tp1','TP1'],['sl','SL'],['tanggal','Tanggal']];
+    var miss = need.filter(function(n){ return !val(n[0]); }).map(function(n){ return n[1]; });
+    if(miss.length){
+      setMsg('Data belum lengkap: '+esc(miss.join(', '))+'. Perbaiki lewat "Koreksi data".', 'err');
+      renderSummary(); showEdit();
+      reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
     var data = {
       analis: f.analis.value, firm: f.firm.value, sertifikasi: f.sertifikasi.value,
       ticker: f.ticker.value, tipe: f.tipe.value,
@@ -778,6 +847,9 @@ ${escapeHtml(demoText)}"></textarea>
       var rp=document.getElementById('rawParse'); if(rp) rp.value='';
       if(parseInfo) parseInfo.innerHTML='';
       photos.length=0; renderThumbs();
+      hideEdit();
+      if(summaryEl) summaryEl.innerHTML='';
+      if(reviewCard) reviewCard.style.display='none';
       window.scrollTo({top:0, behavior:'smooth'});
     }catch(err){
       setMsg('Gagal: '+esc(err.message), 'err');
