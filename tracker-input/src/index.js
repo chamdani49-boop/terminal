@@ -112,7 +112,9 @@ async function apiSubmit(request, env) {
   const ticker = String(body.ticker || '').trim().toUpperCase();
   const tipe   = String(body.tipe || '').trim().toUpperCase();
   const entry  = Number(body.entry);
-  const tp     = Number(body.tp);
+  const tp1    = Number(body.tp1);
+  const tp2raw = String(body.tp2 == null ? '' : body.tp2).trim();
+  const tp2    = tp2raw === '' ? null : Number(tp2raw);   // TP2 opsional
   const sl     = Number(body.sl);
   const tanggal = String(body.tanggal || '').trim();
 
@@ -121,13 +123,20 @@ async function apiSubmit(request, env) {
   if (!/^[A-Z0-9.\-]{1,12}$/.test(ticker)) errs.push('Kode saham tidak valid.');
   if (!TIPE_OPTS.includes(tipe)) errs.push('Tipe harus BUY atau SELL.');
   if (!(entry > 0)) errs.push('Entry harus angka > 0.');
-  if (!(tp > 0)) errs.push('Target (TP) harus angka > 0.');
+  if (!(tp1 > 0)) errs.push('Target 1 (TP1) harus angka > 0.');
+  if (tp2 !== null && !(tp2 > 0)) errs.push('Target 2 (TP2) harus angka > 0 bila diisi.');
   if (!(sl > 0)) errs.push('Stop Loss (SL) harus angka > 0.');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) errs.push('Tanggal harus format YYYY-MM-DD.');
-  // Sanity arah TP/SL relatif entry (peringatan, tetap divalidasi).
-  if (entry > 0 && tp > 0 && sl > 0) {
-    if (tipe === 'BUY' && !(tp > entry && sl < entry)) errs.push('Untuk BUY: TP harus di atas Entry, SL di bawah Entry.');
-    if (tipe === 'SELL' && !(tp < entry && sl > entry)) errs.push('Untuk SELL: TP harus di bawah Entry, SL di atas Entry.');
+  // Sanity arah TP/SL relatif entry (TP2 harus lebih jauh dari TP1).
+  if (entry > 0 && tp1 > 0 && sl > 0) {
+    if (tipe === 'BUY') {
+      if (!(tp1 > entry && sl < entry)) errs.push('Untuk BUY: TP1 harus di atas Entry, SL di bawah Entry.');
+      if (tp2 !== null && !(tp2 > tp1)) errs.push('Untuk BUY: TP2 harus di atas TP1.');
+    }
+    if (tipe === 'SELL') {
+      if (!(tp1 < entry && sl > entry)) errs.push('Untuk SELL: TP1 harus di bawah Entry, SL di atas Entry.');
+      if (tp2 !== null && !(tp2 < tp1)) errs.push('Untuk SELL: TP2 harus di bawah TP1.');
+    }
   }
   if (errs.length) return jsonRes({ error: errs.join(' ') }, 400);
 
@@ -141,7 +150,8 @@ async function apiSubmit(request, env) {
     ticker,
     tipe,
     entry,
-    tp,
+    tp1,
+    tp2: tp2 == null ? '' : tp2,
     sl,
     tanggal,
     horizon,
@@ -308,21 +318,27 @@ ${STYLE}
         </div>
       </div>
 
-      <div class="grid3">
+      <div class="grid2">
         <div class="field">
           <label class="req" for="entry">Entry</label>
           <input id="entry" name="entry" type="number" step="any" min="0" required inputmode="decimal">
-        </div>
-        <div class="field">
-          <label class="req" for="tp">Target (TP)</label>
-          <input id="tp" name="tp" type="number" step="any" min="0" required inputmode="decimal">
         </div>
         <div class="field">
           <label class="req" for="sl">Stop Loss (SL)</label>
           <input id="sl" name="sl" type="number" step="any" min="0" required inputmode="decimal">
         </div>
       </div>
-      <div class="hint" id="dirHint">BUY: TP di atas Entry, SL di bawah. SELL: kebalikannya.</div>
+      <div class="grid2">
+        <div class="field">
+          <label class="req" for="tp1">Target 1 (TP1)</label>
+          <input id="tp1" name="tp1" type="number" step="any" min="0" required inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="tp2">Target 2 (TP2)</label>
+          <input id="tp2" name="tp2" type="number" step="any" min="0" inputmode="decimal" placeholder="opsional">
+        </div>
+      </div>
+      <div class="hint" id="dirHint">BUY: TP di atas Entry, SL di bawah (TP2 lebih jauh dari TP1). SELL: kebalikannya.</div>
 
       <div class="grid2" style="margin-top:14px">
         <div class="field">
@@ -367,7 +383,7 @@ ${STYLE}
     var data = {
       analis: f.analis.value, firm: f.firm.value, sertifikasi: f.sertifikasi.value,
       ticker: f.ticker.value, tipe: f.tipe.value,
-      entry: f.entry.value, tp: f.tp.value, sl: f.sl.value,
+      entry: f.entry.value, tp1: f.tp1.value, tp2: f.tp2.value, sl: f.sl.value,
       tanggal: f.tanggal.value, horizon: f.horizon.value,
       catatan: f.catatan.value, submitted_by: f.submitted_by.value
     };
