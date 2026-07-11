@@ -551,10 +551,23 @@ SL: 9.300"></textarea>
   var copyPromptBtn = document.getElementById('copyPrompt');
   if(copyPromptBtn) copyPromptBtn.onclick = function(){
     function ok(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--green)">✓ Prompt tersalin. Buka Gemini/ChatGPT, upload foto, tempel prompt, lalu salin hasilnya ke kotak Tempel &amp; Parse.</span>'; }
-    function manual(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--yellow)">Salin manual: blok teks di kotak prompt lalu tekan Ctrl+C.</span>'; }
-    function fallback(){ try{ aiPromptEl.focus(); aiPromptEl.select(); if(document.execCommand('copy')){ ok(); } else { manual(); } }catch(e){ manual(); } }
-    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(AI_PROMPT).then(ok, fallback); }
-    else { fallback(); }
+    function manual(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--yellow)">Auto-salin gagal. Teks prompt sudah diblok — tekan Ctrl+C (di HP: tahan lalu Copy).</span>'; }
+    // Seleksi teks di kotak (readonly dilepas sementara agar bisa di HP/iOS).
+    function selectBox(){
+      try{
+        aiPromptEl.removeAttribute('readonly');
+        aiPromptEl.focus();
+        aiPromptEl.setSelectionRange(0, (aiPromptEl.value||'').length);
+        var okc=false; try{ okc=document.execCommand('copy'); }catch(_){}
+        aiPromptEl.setAttribute('readonly','readonly');
+        return okc;
+      }catch(e){ try{ aiPromptEl.setAttribute('readonly','readonly'); }catch(_){}; return false; }
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(AI_PROMPT).then(ok, function(){ if(selectBox()) ok(); else manual(); });
+    } else {
+      if(selectBox()) ok(); else manual();
+    }
   };
 
   // ── Upload & kompres foto (maks 5) ──
