@@ -2794,8 +2794,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="period-tabs">
             <div class="period-tab" onclick="setPeriod(12)">1T</div>
             <div class="period-tab" onclick="setPeriod(36)">3T</div>
-            <div class="period-tab active" onclick="setPeriod(60)">5T</div>
-            <div class="period-tab" onclick="setPeriod(0)">All</div>
+            <div class="period-tab" onclick="setPeriod(60)">5T</div>
+            <div class="period-tab active" onclick="setPeriod(0)">All</div>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
@@ -4297,7 +4297,7 @@ function chartColors() {
 // ═══════════════════════════════════════════
 let DATA = null;
 let currentStock = 'TLKM';
-let currentPeriod = 60;
+let currentPeriod = 0;
 let savingMode = 'dca';
 let mainChartInstance = null;
 // Watchlist filter state:
