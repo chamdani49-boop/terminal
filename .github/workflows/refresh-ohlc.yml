@@ -11,20 +11,23 @@ name: Refresh OHLC harian dari Yahoo Finance
 #   - Sumber beda: Yahoo Finance (bukan Google Sheets).
 #   - Isolasi: kalau Yahoo error, refresh data.json utama tidak terganggu.
 #
-# JADWAL:
-#   - 10:00 UTC = 17:00 WIB (jam 5 sore) — data candle final Yahoo biasanya
-#     sudah tersedia 30 menit setelah bursa IDX tutup jam 16:30 WIB.
-#     Tarik jam 17:00 WIB lebih hemat kuota & menghindari blokir karena
-#     traffic Yahoo saat peak-hour belum seramai sore/malam.
-#   - Hanya Senin–Jumat (skip Sabtu & Minggu) — bursa libur, tidak ada
-#     candle baru, tidak ada gunanya tarik data.
+# JADWAL (dipicu eksternal via cron-job.org — lihat blok `on:` di bawah):
+#   - Cron bawaan GitHub DINONAKTIFKAN karena sering telat/tidak presisi.
+#     Sekarang cron-job.org memanggil workflow_dispatch pada jam presisi WIB.
+#   - Idealnya sore hari setelah bursa IDX tutup (16:30 WIB) — data candle
+#     final Yahoo biasanya tersedia ~30 menit setelahnya. Hanya hari bursa
+#     (Senin–Jumat); Sabtu/Minggu tidak ada candle baru.
 # ═══════════════════════════════════════════════════════════════════════
 
 on:
-  schedule:
-    # 10:00 UTC = 17:00 WIB, Senin–Jumat (0=Sun,1=Mon,...,5=Fri,6=Sat)
-    # Cron GitHub tidak support filter hari kerja langsung → filter di step bash.
-    - cron: '0 10 * * 1-5'
+  # ── PENJADWALAN via cron-job.org (BUKAN cron bawaan GitHub) ─────────────
+  # Cron terjadwal GitHub Actions sering telat/tidak presisi. Pemicu harian
+  # dipindah ke cron-job.org yang memanggil workflow_dispatch di bawah pada
+  # jam presisi (WIB, Senin–Jumat). Blok `schedule` lama sengaja dinonaktifkan
+  # agar tidak ada run ganda (GitHub + cron-job.org).
+  #
+  # schedule:
+  #   - cron: '0 10 * * 1-5'   # (nonaktif) 10:00 UTC = 17:00 WIB, Sen–Jum
   workflow_dispatch:
     inputs:
       full:
