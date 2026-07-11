@@ -15052,6 +15052,9 @@ document.addEventListener('keydown', (e) => {
         if(!r.ok || !d.ok) throw new Error(d.error||('HTTP '+r.status));
         ov.classList.remove('open');
         try{ document.body.style.overflow=''; }catch(_){}
+        // Beri tahu panduan bahwa consent sudah disetujui → panduan boleh muncul
+        // sekarang (menghindari popup privasi & panduan tampil bersamaan).
+        try{ if(window.__ES_PROFILE) window.__ES_PROFILE.tos_accepted=true; }catch(_){}
       }catch(e){
         err.textContent='Gagal menyimpan persetujuan: '+(e.message||e)+'. Coba lagi.';
         err.style.display='block';
