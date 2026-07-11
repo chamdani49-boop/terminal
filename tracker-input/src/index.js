@@ -29,6 +29,10 @@ const HORIZON_LABEL = {
   '3Bln': '3 Bulan', '6Bln': '6 Bulan', '1Th': '1 Tahun',
 };
 
+// Penanda versi yang tampil di kaki halaman. Naikkan setiap kali ada perubahan
+// berarti supaya mudah memastikan versi mana yang sedang live setelah deploy.
+const BUILD_TAG = 'parse-v2';
+
 // ── Helpers ────────────────────────────────────────────────────────────
 
 async function sha256Hex(s) {
@@ -349,7 +353,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin.</div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.55">build ${BUILD_TAG}</span></div>
 </div>
 </body></html>`;
 }
@@ -532,7 +536,7 @@ ${escapeHtml(demoText)}"></textarea>
     </form>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin.</div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.55">build ${BUILD_TAG}</span></div>
 </div>
 
 <script>
