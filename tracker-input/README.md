@@ -1,7 +1,7 @@
 # tracker-input
 
 Cloudflare Worker berisi **halaman web sederhana** untuk kontributor meng-input
-rekomendasi trading (Entry / TP / SL) menu **Tracker**, tanpa harus buka Google
+rekomendasi trading (Entry / TP1 · TP2 / SL) menu **Tracker**, tanpa harus buka Google
 Sheet langsung.
 
 Alur:
@@ -43,7 +43,8 @@ Dibuat otomatis oleh GAS (`setup()` / submit pertama). Kolom:
 | `ticker`       | kode saham (mis. `BBCA`)                         |
 | `tipe`         | `BUY` / `SELL`                                   |
 | `entry`        | harga entry                                      |
-| `tp`           | target price                                     |
+| `tp1`          | target price 1                                   |
+| `tp2`          | target price 2 (opsional)                        |
 | `sl`           | stop loss                                        |
 | `tanggal`      | tanggal rilis `YYYY-MM-DD`                        |
 | `horizon`      | `1H`/`1M`/`1Bln`/`3Bln`/`6Bln`/`1Th` (opsional)  |
@@ -115,11 +116,11 @@ di-derive dari `APP_PASSWORD` — ganti password ⇒ semua sesi lama invalid.
 
 ## Validasi (server-side)
 
-- `analis`, `ticker`, `tipe`, `entry`, `tp`, `sl`, `tanggal` wajib.
+- `analis`, `ticker`, `tipe`, `entry`, `tp1`, `sl`, `tanggal` wajib. `tp2` opsional.
 - `ticker` di-uppercase, pola `[A-Z0-9.\-]{1,12}`.
-- Arah TP/SL dicek relatif Entry:
-  - **BUY** → TP di atas Entry, SL di bawah Entry.
-  - **SELL** → TP di bawah Entry, SL di atas Entry.
+- Arah TP/SL dicek relatif Entry (TP2, bila diisi, harus lebih jauh dari TP1):
+  - **BUY** → TP1 di atas Entry, SL di bawah Entry, TP2 > TP1.
+  - **SELL** → TP1 di bawah Entry, SL di atas Entry, TP2 < TP1.
 
 ---
 

@@ -42,7 +42,8 @@ var HEADERS = [
   'ticker',
   'tipe',          // BUY | SELL
   'entry',
-  'tp',            // target price
+  'tp1',           // target price 1
+  'tp2',           // target price 2 (opsional)
   'sl',            // stop loss
   'tanggal',       // tanggal rilis (YYYY-MM-DD)
   'horizon',       // 1H | 1M | 1Bln | 3Bln | 6Bln | 1Th  (opsional)
