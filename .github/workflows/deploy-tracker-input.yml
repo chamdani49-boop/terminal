@@ -1,0 +1,53 @@
+# ════════════════════════════════════════════════════════════════════════
+# Auto-deploy Worker "tracker-input" ke Cloudflare.
+# Sekali merge ke `main`, worker langsung ter-deploy otomatis — tanpa CMD.
+# ════════════════════════════════════════════════════════════════════════
+#
+# SATU KALI SETUP (wajib, hanya sekali seumur hidup):
+#   Tambahkan repo secret bernama CLOUDFLARE_API_TOKEN di GitHub:
+#     GitHub ▸ repo ini ▸ Settings ▸ Secrets and variables ▸ Actions
+#       ▸ "New repository secret"
+#       Name : CLOUDFLARE_API_TOKEN
+#       Value: (token dari Cloudflare, lihat cara buat di bawah)
+#
+#   Cara buat token di Cloudflare:
+#     Cloudflare dashboard ▸ ikon profil (kanan atas) ▸ "My Profile"
+#       ▸ "API Tokens" ▸ "Create Token"
+#       ▸ pakai template "Edit Cloudflare Workers" ▸ Continue ▸ Create Token
+#       ▸ COPY token-nya, tempel jadi value secret di GitHub tadi.
+#
+#   account_id sudah ada di tracker-input/wrangler.toml, jadi tidak perlu di-set.
+#   Secret Worker (APP_PASSWORD, GAS_URL, GAS_TOKEN, TELEGRAM_*) TIDAK tersentuh
+#   deploy ini — nilainya tetap seperti yang sudah kamu set via CLI.
+#
+# SETELAH TOKEN DI-SET:
+#   • Setiap ada perubahan di tracker-input/** yang masuk ke main → auto-deploy.
+#   • Atau jalankan manual: tab "Actions" ▸ "Deploy tracker-input" ▸ "Run workflow".
+
+name: Deploy tracker-input
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tracker-input/**"
+      - ".github/workflows/deploy-tracker-input.yml"
+  workflow_dispatch: {} # tombol "Run workflow" manual di tab Actions
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Deploy ke Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: tracker-input
