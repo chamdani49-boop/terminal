@@ -66,6 +66,7 @@ function onOpen() {
       .addItem('✅ Tandai baris terpilih → APPROVED', 'approveSelected')
       .addItem('🚫 Tandai baris terpilih → REJECTED', 'rejectSelected')
       .addSeparator()
+      .addItem('🔧 Perbaiki Header (tp1/tp2)', 'fixHeader')
       .addItem('ℹ️ Cek koneksi', 'showInfo')
       .addToUi();
   } catch (e) { /* abaikan */ }
@@ -157,11 +158,38 @@ function _sheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) sh = ss.insertSheet(SHEET_NAME);
-  if (sh.getLastRow() === 0) {
+  var lastRow = sh.getLastRow();
+  if (lastRow === 0) {
     sh.appendRow(HEADERS);
     sh.setFrozenRows(1);
+  } else if (lastRow === 1) {
+    // Baru ada baris header (belum ada data) → SEGARKAN agar sesuai HEADERS
+    // terbaru (mis. setelah kolom 'tp' diganti 'tp1'/'tp2'). Aman: tanpa data.
+    sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+    sh.setFrozenRows(1);
   }
+  // Jika sudah ada data (lastRow > 1), header TIDAK diubah otomatis supaya data
+  // lama tidak bergeser. Pakai menu "🔧 Perbaiki Header" bila memang perlu.
   return sh;
+}
+
+/**
+ * Paksa tulis ulang baris header menjadi HEADERS terbaru (tp1/tp2).
+ * ⚠️ Kalau sudah ada data dgn susunan kolom lama, nilai bisa jadi tidak
+ * sejajar dgn header baru — konfirmasi dulu.
+ */
+function fixHeader() {
+  var ui = SpreadsheetApp.getUi();
+  var sh = _sheet();
+  if (sh.getLastRow() > 1) {
+    var r = ui.alert('Perbaiki Header',
+      'Sudah ada data. Menulis ulang header ke tp1/tp2 bisa membuat kolom lama tidak sejajar. Lanjutkan?',
+      ui.ButtonSet.YES_NO);
+    if (r !== ui.Button.YES) return;
+  }
+  sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  sh.setFrozenRows(1);
+  ui.alert('✓ Header diperbarui ke: ' + HEADERS.join(', '));
 }
 
 function _json(obj) {
