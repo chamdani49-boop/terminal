@@ -1,0 +1,45 @@
+name: Deploy tracker-input worker
+
+# ════════════════════════════════════════════════════════════════════════
+# Auto-deploy worker "tracker-input" (halaman input rekomendasi) tiap ada
+# perubahan di folder tracker-input/ yang masuk ke main.
+#
+# Jadi kamu cukup MERGE → worker update sendiri (seperti situs utama).
+# Tidak perlu lagi `wrangler deploy` manual / copy-paste di dashboard.
+#
+# Butuh SATU secret di GitHub repo (Settings ▸ Secrets and variables ▸
+# Actions ▸ New repository secret):
+#   CLOUDFLARE_API_TOKEN  — token Cloudflare dgn izin "Edit Cloudflare Workers"
+#
+# account_id sudah di-set di tracker-input/wrangler.toml (bukan rahasia).
+# Secret worker (APP_PASSWORD, GAS_URL, GAS_TOKEN, TELEGRAM_*) TIDAK terhapus
+# oleh deploy — tetap aman.
+# ════════════════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tracker-input/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-tracker-input
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: tracker-input
+          command: deploy
