@@ -29,6 +29,19 @@ Kontributor  →  Worker (login password + form)  →  GAS Web App  →  Google 
 
 ---
 
+## Fitur bantu input (mengurangi ketik manual)
+
+- **Tempel & Parse**: tempel teks sinyal → Tipe/Saham/Entry/TP1/TP2/SL terisi otomatis.
+- **Tombol Gemini / ChatGPT**: menyalin prompt siap-pakai ke clipboard + membuka
+  situs AI (pakai **akun inputer sendiri**, tanpa API key/biaya di sisi kita).
+  Inputer upload fotonya di sana → salin hasil → tempel ke Tempel & Parse.
+- **Foto bukti (maks 5)**: dikompres di browser lalu **dikirim ke Telegram** admin
+  (`sendMediaGroup`) untuk validasi. **Foto TIDAK disimpan** di Sheet/Drive — hanya
+  lewat ke chat Telegram. Butuh secret `TELEGRAM_BOT_TOKEN` & `TELEGRAM_CHAT_ID`
+  (nilai sama dgn worker terminal); bila tidak di-set, fitur foto diam-diam dilewati.
+
+---
+
 ## Skema Google Sheet (tab `Tracker`)
 
 Dibuat otomatis oleh GAS (`setup()` / submit pertama). Kolom:
@@ -87,12 +100,15 @@ cd tracker-input
 npx wrangler deploy
 ```
 
-Set 3 secret (sekali saja):
+Set secret (sekali saja):
 
 ```bash
-npx wrangler secret put APP_PASSWORD   # password login halaman input
-npx wrangler secret put GAS_URL        # URL Web App GAS (…/exec)
-npx wrangler secret put GAS_TOKEN      # HARUS sama dgn TOKEN di gas/Code.gs
+npx wrangler secret put APP_PASSWORD        # password login halaman input
+npx wrangler secret put GAS_URL             # URL Web App GAS (…/exec)
+npx wrangler secret put GAS_TOKEN           # HARUS sama dgn TOKEN di gas/Code.gs
+# Opsional — untuk fitur kirim foto bukti ke Telegram:
+npx wrangler secret put TELEGRAM_BOT_TOKEN  # sama dgn worker terminal
+npx wrangler secret put TELEGRAM_CHAT_ID    # sama dgn worker terminal
 ```
 
 URL hasil deploy: `https://tracker-input.<subdomain-akun>.workers.dev/`

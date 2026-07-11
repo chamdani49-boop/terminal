@@ -75,6 +75,53 @@ function escapeHtml(s) {
   })[c]);
 }
 
+// Kirim foto ke Telegram (album bila >1) untuk validasi admin. Foto TIDAK
+// disimpan di mana pun — hanya diteruskan ke chat admin. Butuh secret
+// TELEGRAM_BOT_TOKEN & TELEGRAM_CHAT_ID (nilai sama dgn worker terminal).
+async function sendPhotosTelegram(env, photos, caption) {
+  const token = (env.TELEGRAM_BOT_TOKEN || '').trim();
+  const chatId = (env.TELEGRAM_CHAT_ID || '').trim();
+  if (!token || !chatId) return { sent: 0, skipped: true, reason: 'telegram belum di-set' };
+
+  // data URL / base64 → Uint8Array
+  const toBytes = (dataUrl) => {
+    const b64 = String(dataUrl).replace(/^data:[^,]*,/, '');
+    let bin;
+    try { bin = atob(b64); } catch (_) { return new Uint8Array(0); }
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return arr;
+  };
+
+  try {
+    const items = photos.slice(0, 5).map(toBytes).filter(a => a.length > 0);
+    if (!items.length) return { sent: 0 };
+
+    if (items.length === 1) {
+      const fd = new FormData();
+      fd.append('chat_id', chatId);
+      fd.append('caption', caption);
+      fd.append('parse_mode', 'HTML');
+      fd.append('photo', new Blob([items[0]], { type: 'image/jpeg' }), 'signal.jpg');
+      const r = await fetch('https://api.telegram.org/bot' + token + '/sendPhoto', { method: 'POST', body: fd });
+      return { sent: r.ok ? 1 : 0, ok: r.ok };
+    }
+
+    const fd = new FormData();
+    fd.append('chat_id', chatId);
+    const media = items.map((_, i) => Object.assign(
+      { type: 'photo', media: 'attach://f' + i },
+      i === 0 ? { caption, parse_mode: 'HTML' } : {}
+    ));
+    fd.append('media', JSON.stringify(media));
+    items.forEach((a, i) => fd.append('f' + i, new Blob([a], { type: 'image/jpeg' }), 'f' + i + '.jpg'));
+    const r = await fetch('https://api.telegram.org/bot' + token + '/sendMediaGroup', { method: 'POST', body: fd });
+    return { sent: r.ok ? items.length : 0, ok: r.ok };
+  } catch (e) {
+    return { sent: 0, error: String((e && e.message) || e) };
+  }
+}
+
 // ── Handlers ────────────────────────────────────────────────────────────
 
 async function handleLogin(request, env) {
@@ -179,7 +226,21 @@ async function apiSubmit(request, env) {
     return jsonRes({ error: (gasBody && gasBody.error) || ('GAS menolak (HTTP ' + gasRes.status + ')'), detail: gasBody }, 502);
   }
 
-  return jsonRes({ ok: true, ticker, tipe });
+  // ── Kirim foto ke Telegram utk validasi admin (best-effort; foto TIDAK disimpan) ──
+  let photoStatus = { sent: 0 };
+  try {
+    const photos = Array.isArray(body.photos) ? body.photos.slice(0, 5) : [];
+    if (photos.length) {
+      const caption =
+        '🆕 <b>Rekomendasi Tracker</b> (pending)\n' +
+        tipe + ' <b>' + escapeHtml(ticker) + '</b>\n' +
+        'Entry ' + entry + ' · TP1 ' + tp1 + (tp2 != null ? ' · TP2 ' + tp2 : '') + ' · SL ' + sl + '\n' +
+        'Analis: ' + escapeHtml(analis) + (payload.submitted_by ? ' · oleh: ' + escapeHtml(payload.submitted_by) : '') + ' · ' + tanggal;
+      photoStatus = await sendPhotosTelegram(env, photos, caption);
+    }
+  } catch (_) { /* jangan gagalkan submit hanya karena Telegram */ }
+
+  return jsonRes({ ok: true, ticker, tipe, photos: photoStatus });
 }
 
 // ── HTML ─────────────────────────────────────────────────────────────
@@ -234,6 +295,14 @@ const STYLE = `
   .small{font-size:11px;color:var(--text3);text-align:center;margin-top:14px}
   .hint{font-size:11px;color:var(--text3);margin-top:4px}
   code{background:var(--bg2);padding:1px 6px;border-radius:4px;font-size:12px;font-family:ui-monospace,monospace;color:var(--accent2)}
+  .btn-sec{background:var(--bg2);border:1px solid var(--border);color:var(--accent2);width:auto;padding:9px 14px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer}
+  .btn-sec:hover{background:var(--card);color:var(--text)}
+  .photo-drop{display:block;border:1px dashed var(--border);border-radius:8px;padding:14px;text-align:center;color:var(--text2);cursor:pointer;font-size:13px;background:var(--bg2)}
+  .photo-drop:hover{border-color:var(--accent);color:var(--text)}
+  .thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .thumb{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--bg2)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb-x{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;border:0;cursor:pointer;font-size:11px;line-height:18px;padding:0;text-align:center}
   @media(max-width:480px){.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
 </style>
 `;
@@ -291,7 +360,12 @@ ${STYLE}
 
   <div class="card">
     <div style="font-weight:700;margin-bottom:6px">⚡ Tempel &amp; Parse <span style="color:var(--text3);font-weight:500;font-size:11px">(cara cepat)</span></div>
-    <div class="hint" style="margin-bottom:8px">Tempel teks sinyal (mis. dari Telegram/WhatsApp). Sistem otomatis mengisi Tipe, Saham, Entry, TP1/TP2, SL — tinggal periksa, isi Nama Analis, lalu Kirim.</div>
+    <div class="hint" style="margin-bottom:8px">Punya screenshot sinyal? Klik tombol AI (pakai akun Gemini/ChatGPT-mu sendiri): prompt otomatis tersalin — upload fotomu di sana, salin hasilnya, lalu tempel ke kotak ini. Atau ketik/tempel manual.</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <button type="button" class="btn-sec" id="aiGemini">✨ Prompt + Buka Gemini</button>
+      <button type="button" class="btn-sec" id="aiChatgpt">✨ Prompt + Buka ChatGPT</button>
+    </div>
+    <div id="aiInfo" class="hint" style="margin-bottom:8px"></div>
     <textarea id="rawParse" rows="5" placeholder="Contoh:
 BUY BBCA
 Entry: 9.500
@@ -303,6 +377,15 @@ SL: 9.300"></textarea>
       <button type="button" class="btn btn-ghost" id="parseDemoBtn">Contoh</button>
     </div>
     <div id="parseInfo" class="hint" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:700;margin-bottom:6px">📷 Foto Bukti <span style="color:var(--text3);font-weight:500;font-size:11px">(opsional, maks 5)</span></div>
+    <div class="hint" style="margin-bottom:8px">Lampirkan screenshot sinyal. Foto <b>dikirim ke admin via Telegram</b> untuk validasi — <b>tidak disimpan</b> di database/Sheet.</div>
+    <label class="photo-drop" for="photoInput">📎 Pilih foto (bisa lebih dari satu, maks 5)</label>
+    <input id="photoInput" type="file" accept="image/*" multiple style="display:none">
+    <div class="thumbs" id="thumbs"></div>
+    <div id="photoInfo" class="hint" style="margin-top:6px"></div>
   </div>
 
   <div class="card">
@@ -440,6 +523,76 @@ SL: 9.300"></textarea>
     document.getElementById('rawParse').value = 'BUY BBCA\nEntry: 9.500\nTP1: 9.800\nTP2: 10.100\nSL: 9.300';
   };
 
+  // ── Tombol AI: salin prompt + buka Gemini/ChatGPT (pakai akun inputer) ──
+  var AI_PROMPT = [
+    'Baca screenshot rekomendasi saham ini. Tulis ULANG datanya PERSIS dengan format di bawah, tanpa kalimat lain. Kalau ada nilai yang tidak ada di gambar, biarkan kosong setelah titik dua.',
+    '',
+    '<BUY atau SELL> <KODE SAHAM>',
+    'Entry: <harga>',
+    'TP1: <harga target pertama/terdekat>',
+    'TP2: <harga target kedua, bila ada>',
+    'SL: <harga stop loss>',
+    '',
+    'Aturan:',
+    '- Harga angka polos tanpa pemisah ribuan (contoh: 9500, bukan 9.500).',
+    '- Bila target lebih dari 2, ambil 2 yang terdekat ke Entry sebagai TP1 & TP2.',
+    '- Bila entry berupa rentang (mis. 9500-9600), pakai angka pertama.'
+  ].join('\n');
+  var aiInfo = document.getElementById('aiInfo');
+  function openAI(url){
+    function done(msg,cls){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--'+cls+')">'+msg+'</span>'; }
+    try{
+      navigator.clipboard.writeText(AI_PROMPT).then(function(){
+        done('✓ Prompt tersalin. Di tab yang terbuka: upload fotomu, tempel prompt (Ctrl+V), lalu salin hasilnya ke kotak Tempel & Parse di atas.', 'green');
+      }, function(){ done('Prompt gagal disalin otomatis — salin manual. Situsnya tetap dibuka.', 'yellow'); });
+    }catch(e){ done('Prompt gagal disalin otomatis. Situsnya tetap dibuka.', 'yellow'); }
+    window.open(url, '_blank', 'noopener');
+  }
+  var aiG = document.getElementById('aiGemini'); if(aiG) aiG.onclick=function(){ openAI('https://gemini.google.com/app'); };
+  var aiC = document.getElementById('aiChatgpt'); if(aiC) aiC.onclick=function(){ openAI('https://chatgpt.com/'); };
+
+  // ── Upload & kompres foto (maks 5) ──
+  var MAX_PHOTOS = 5;
+  var photos = [];   // array data URL (base64) terkompres
+  var photoInput = document.getElementById('photoInput');
+  var thumbs = document.getElementById('thumbs');
+  var photoInfo = document.getElementById('photoInfo');
+  function renderThumbs(){
+    thumbs.innerHTML = photos.map(function(src,i){
+      return '<div class="thumb"><img src="'+src+'"><button type="button" class="thumb-x" data-i="'+i+'" title="Hapus">✕</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(thumbs.querySelectorAll('.thumb-x'), function(b){
+      b.onclick=function(){ photos.splice(parseInt(b.getAttribute('data-i'),10),1); renderThumbs(); };
+    });
+    if(photoInfo) photoInfo.textContent = photos.length ? (photos.length+' foto siap dikirim ke Telegram saat Kirim.') : '';
+  }
+  function compress(file){
+    return new Promise(function(resolve){
+      var img = new Image(); var url = URL.createObjectURL(file);
+      img.onload = function(){
+        var max=1280, w=img.width, h=img.height;
+        if(w>max||h>max){ if(w>=h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } }
+        var c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        URL.revokeObjectURL(url);
+        try{ resolve(c.toDataURL('image/jpeg', 0.72)); }catch(e){ resolve(null); }
+      };
+      img.onerror=function(){ URL.revokeObjectURL(url); resolve(null); };
+      img.src=url;
+    });
+  }
+  if(photoInput) photoInput.onchange = async function(){
+    var files = Array.prototype.slice.call(photoInput.files||[]);
+    for(var i=0;i<files.length;i++){
+      if(photos.length>=MAX_PHOTOS){ if(photoInfo) photoInfo.innerHTML='<span style="color:var(--yellow)">Maksimal '+MAX_PHOTOS+' foto.</span>'; break; }
+      if(!/^image\//.test(files[i].type)) continue;
+      var d = await compress(files[i]);
+      if(d) photos.push(d);
+    }
+    photoInput.value='';
+    renderThumbs();
+  };
+
   f.addEventListener('submit', async function(e){
     e.preventDefault();
     setMsg('', '');
@@ -448,7 +601,8 @@ SL: 9.300"></textarea>
       ticker: f.ticker.value, tipe: f.tipe.value,
       entry: f.entry.value, tp1: f.tp1.value, tp2: f.tp2.value, sl: f.sl.value,
       tanggal: f.tanggal.value, horizon: f.horizon.value,
-      catatan: f.catatan.value, submitted_by: f.submitted_by.value
+      catatan: f.catatan.value, submitted_by: f.submitted_by.value,
+      photos: photos
     };
     btn.disabled = true; var lbl = btn.textContent; btn.textContent = 'Mengirim…';
     try{
@@ -458,7 +612,7 @@ SL: 9.300"></textarea>
       });
       var j = await res.json().catch(function(){ return {}; });
       if(!res.ok || j.error){ throw new Error(j.error || ('HTTP '+res.status)); }
-      setMsg('✓ Terkirim: <b>'+esc(j.tipe)+' '+esc(j.ticker)+'</b>. Menunggu approve admin. Form dikosongkan untuk input berikutnya.', 'ok');
+      setMsg('✓ Terkirim: <b>'+esc(j.tipe)+' '+esc(j.ticker)+'</b>.'+((j.photos&&j.photos.sent)?(' '+j.photos.sent+' foto dikirim ke Telegram.'):'')+' Menunggu approve admin. Form dikosongkan untuk input berikutnya.', 'ok');
       // Reset tapi pertahankan nama analis, firm, sertifikasi, & "diinput oleh"
       var keepA=f.analis.value, keepF=f.firm.value, keepS=f.sertifikasi.value, keepBy=f.submitted_by.value;
       f.reset();
@@ -466,6 +620,7 @@ SL: 9.300"></textarea>
       f.tanggal.value = new Date().toISOString().slice(0,10);
       var rp=document.getElementById('rawParse'); if(rp) rp.value='';
       if(parseInfo) parseInfo.innerHTML='';
+      photos.length=0; renderThumbs();
       window.scrollTo({top:0, behavior:'smooth'});
     }catch(err){
       setMsg('Gagal: '+esc(err.message), 'err');
