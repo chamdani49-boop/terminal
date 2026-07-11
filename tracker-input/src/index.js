@@ -360,10 +360,12 @@ ${STYLE}
 
   <div class="card">
     <div style="font-weight:700;margin-bottom:6px">⚡ Tempel &amp; Parse <span style="color:var(--text3);font-weight:500;font-size:11px">(cara cepat)</span></div>
-    <div class="hint" style="margin-bottom:8px">Punya screenshot sinyal? Klik tombol AI (pakai akun Gemini/ChatGPT-mu sendiri): prompt otomatis tersalin — upload fotomu di sana, salin hasilnya, lalu tempel ke kotak ini. Atau ketik/tempel manual.</div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <button type="button" class="btn-sec" id="aiGemini">✨ Prompt + Buka Gemini</button>
-      <button type="button" class="btn-sec" id="aiChatgpt">✨ Prompt + Buka ChatGPT</button>
+    <div class="hint" style="margin-bottom:8px">Punya screenshot sinyal? <b>1)</b> Salin prompt di bawah → <b>2)</b> buka Gemini/ChatGPT (akunmu sendiri) → <b>3)</b> di sana upload foto + tempel prompt → <b>4)</b> salin hasilnya → tempel ke kotak "Tempel &amp; Parse" di bawah. Atau ketik manual.</div>
+    <textarea id="aiPrompt" rows="4" readonly style="font-size:12px;background:var(--bg2)"></textarea>
+    <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;align-items:center">
+      <button type="button" class="btn-sec" id="copyPrompt">📋 Salin Prompt</button>
+      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Buka Gemini ↗</a>
+      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Buka ChatGPT ↗</a>
     </div>
     <div id="aiInfo" class="hint" style="margin-bottom:8px"></div>
     <textarea id="rawParse" rows="5" placeholder="Contoh:
@@ -538,18 +540,20 @@ SL: 9.300"></textarea>
     '- Bila target lebih dari 2, ambil 2 yang terdekat ke Entry sebagai TP1 & TP2.',
     '- Bila entry berupa rentang (mis. 9500-9600), pakai angka pertama.'
   ].join('\n');
+  // Tampilkan prompt di kotak readonly (selalu bisa disalin manual).
+  var aiPromptEl = document.getElementById('aiPrompt');
+  if(aiPromptEl) aiPromptEl.value = AI_PROMPT;
   var aiInfo = document.getElementById('aiInfo');
-  function openAI(url){
-    function done(msg,cls){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--'+cls+')">'+msg+'</span>'; }
-    try{
-      navigator.clipboard.writeText(AI_PROMPT).then(function(){
-        done('✓ Prompt tersalin. Di tab yang terbuka: upload fotomu, tempel prompt (Ctrl+V), lalu salin hasilnya ke kotak Tempel & Parse di atas.', 'green');
-      }, function(){ done('Prompt gagal disalin otomatis — salin manual. Situsnya tetap dibuka.', 'yellow'); });
-    }catch(e){ done('Prompt gagal disalin otomatis. Situsnya tetap dibuka.', 'yellow'); }
-    window.open(url, '_blank', 'noopener');
-  }
-  var aiG = document.getElementById('aiGemini'); if(aiG) aiG.onclick=function(){ openAI('https://gemini.google.com/app'); };
-  var aiC = document.getElementById('aiChatgpt'); if(aiC) aiC.onclick=function(){ openAI('https://chatgpt.com/'); };
+  // Tombol SALIN saja (murni gesture user → clipboard andal). Buka situs
+  // ditangani link <a target=_blank> di HTML (tidak pernah diblokir popup).
+  var copyPromptBtn = document.getElementById('copyPrompt');
+  if(copyPromptBtn) copyPromptBtn.onclick = function(){
+    function ok(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--green)">✓ Prompt tersalin. Buka Gemini/ChatGPT, upload foto, tempel prompt, lalu salin hasilnya ke kotak Tempel &amp; Parse.</span>'; }
+    function manual(){ if(aiInfo) aiInfo.innerHTML='<span style="color:var(--yellow)">Salin manual: blok teks di kotak prompt lalu tekan Ctrl+C.</span>'; }
+    function fallback(){ try{ aiPromptEl.focus(); aiPromptEl.select(); if(document.execCommand('copy')){ ok(); } else { manual(); } }catch(e){ manual(); } }
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(AI_PROMPT).then(ok, fallback); }
+    else { fallback(); }
+  };
 
   // ── Upload & kompres foto (maks 5) ──
   var MAX_PHOTOS = 5;
