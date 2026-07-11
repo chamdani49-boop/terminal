@@ -60,13 +60,20 @@ Dibuat otomatis oleh GAS (`setup()` / submit pertama). Kolom:
 
 1. Buat **Google Sheet baru** khusus tracker (mis. "Tracker DB").
 2. Menu **Extensions ▸ Apps Script**.
-3. Tempel seluruh isi [`gas/Code.gs`](gas/Code.gs).
+3. Tempel seluruh isi [`gas/Code.gs`](gas/Code.gs), lalu **Simpan** (Ctrl+S).
 4. Ganti `TOKEN` di file itu dengan token rahasia (bebas, panjang).
-5. **Deploy ▸ New deployment ▸ Web app**
+5. Kembali ke tab Google Sheet → **muat ulang halaman (refresh)** → muncul
+   menu baru **🎯 Tracker** di bar menu. *(Ini "efek" setelah paste kode.)*
+6. Klik **🎯 Tracker ▸ 1) Setup / Buat Tabel** → saat diminta, **Authorize**
+   (Review permissions ▸ pilih akun ▸ Advanced ▸ Go to project ▸ Allow) →
+   tab `Tracker` + header dibuat otomatis.
+7. **Deploy ▸ New deployment ▸ Web app**
    - Execute as: **Me**
    - Who has access: **Anyone**
    - Salin URL yang berakhiran `/exec`.
-6. Jalankan fungsi `setup()` sekali dari editor (buat header tab).
+
+> Menu **🎯 Tracker** juga menyediakan **✅ Approve / 🚫 Reject** untuk menandai
+> baris yang sedang dipilih — memudahkan alur persetujuan tanpa ketik manual.
 
 ---
 
