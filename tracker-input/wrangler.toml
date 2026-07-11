@@ -25,6 +25,8 @@
 #   npx wrangler secret put APP_PASSWORD   # password login halaman input
 #   npx wrangler secret put GAS_URL        # URL Web App GAS (…/exec)
 #   npx wrangler secret put GAS_TOKEN      # token, samakan dgn TOKEN di gas/Code.gs
+#   npx wrangler secret put TELEGRAM_BOT_TOKEN  # (opsional) kirim foto ke Telegram
+#   npx wrangler secret put TELEGRAM_CHAT_ID    # (opsional) nilai SAMA dgn terminal
 #
 # URL hasil deploy: https://tracker-input.<sub>.workers.dev/
 # (untuk akun chamdani49 → https://tracker-input.chamdani49.workers.dev/)
@@ -44,3 +46,5 @@ APP_TITLE = "Input Rekomendasi Tracker"
 #   npx wrangler secret put APP_PASSWORD
 #   npx wrangler secret put GAS_URL
 #   npx wrangler secret put GAS_TOKEN
+#   npx wrangler secret put TELEGRAM_BOT_TOKEN   # (opsional) utk kirim foto ke Telegram
+#   npx wrangler secret put TELEGRAM_CHAT_ID     # (opsional) nilai SAMA dgn worker terminal
