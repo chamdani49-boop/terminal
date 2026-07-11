@@ -367,17 +367,21 @@
     if (params.get('panduan') === '1') { setTimeout(launch, 700); return; }
     var done; try { done = localStorage.getItem(DONE_KEY); } catch (e) {}
     if (done) return;
-    var tries = 0;
+    var tries = 0, authed = false;
     var t = setInterval(function () {
-      tries++;
       var p = W.__ES_PROFILE;
       if (p && p.authenticated) {
-        clearInterval(t);
+        authed = true;
         // Kunci by EMAIL/akun: server bilang sudah pernah lihat → jangan tampilkan lagi
         // (refresh / ganti perangkat tidak berpengaruh).
-        if (p.guide_seen) { try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {} return; }
+        if (p.guide_seen) { clearInterval(t); try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {} return; }
+        // TUNGGU user menyetujui Ketentuan & Kebijakan Privasi dulu. Consent gate
+        // (di index.html) meng-update __ES_PROFILE.tos_accepted=true setelah setuju,
+        // supaya popup panduan tidak muncul bersamaan / menumpuk consent gate.
+        if (p.tos_accepted === false) return;
+        clearInterval(t);
         showWelcome();
-      } else if (tries > 25) { clearInterval(t); }
+      } else if (!authed && ++tries > 25) { clearInterval(t); }
     }, 400);
   }
 
