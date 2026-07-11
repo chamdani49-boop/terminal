@@ -345,18 +345,20 @@ function renderFormPage(env) {
   // Prompt untuk Gemini/ChatGPT — dirender langsung ke HTML (server-side) supaya
   // SELALU tampil, tidak bergantung JS. Dipakai juga oleh tombol Salin Prompt.
   const aiPromptText = [
-    'Baca screenshot rekomendasi saham ini. Tulis ULANG datanya PERSIS dengan format di bawah, tanpa kalimat lain. Kalau ada nilai yang tidak ada di gambar, biarkan kosong setelah titik dua.',
+    'Baca screenshot rekomendasi saham ini. Tulis ULANG datanya PERSIS dengan format label di bawah (satu per baris), tanpa kalimat lain. Kosongkan (biarkan kosong setelah titik dua) bila datanya memang tidak ada di gambar.',
     '',
-    '<BUY atau SELL> <KODE SAHAM>',
-    'Entry: <harga>',
-    'TP1: <harga target pertama/terdekat>',
-    'TP2: <harga target kedua, bila ada>',
-    'SL: <harga stop loss>',
+    'Analis: <nama analis / sumber sinyal>',
+    'Firm: <sekuritas / komunitas, bila ada>',
+    'Tanggal: <tanggal rilis, format YYYY-MM-DD>',
+    'Tipe: <BUY atau SELL>',
+    'Saham: <kode saham, mis. BBCA>',
+    'Entry: <harga masuk>',
+    'TP1: <target pertama/terdekat>',
+    'TP2: <target kedua, bila ada>',
+    'SL: <stop loss>',
+    'Catatan: <alasan/tesis singkat, bila ada>',
     '',
-    'Aturan:',
-    '- Harga angka polos tanpa pemisah ribuan (contoh: 9500, bukan 9.500).',
-    '- Bila target lebih dari 2, ambil 2 yang terdekat ke Entry sebagai TP1 & TP2.',
-    '- Bila entry berupa rentang (mis. 9500-9600), pakai angka pertama.'
+    'Aturan harga: tulis angka polos tanpa pemisah ribuan (contoh: 9500, bukan 9.500).'
   ].join('\n');
   return `<!DOCTYPE html>
 <html lang="id"><head>
@@ -384,12 +386,17 @@ ${STYLE}
       <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Buka ChatGPT ↗</a>
     </div>
     <div id="aiInfo" class="hint" style="margin-bottom:8px"></div>
-    <textarea id="rawParse" rows="5" placeholder="Contoh:
-BUY BBCA
-Entry: 9.500
-TP1: 9.800
-TP2: 10.100
-SL: 9.300"></textarea>
+    <textarea id="rawParse" rows="6" placeholder="Tempel hasil AI di sini, mis.:
+Analis: Budi Santoso
+Firm: XYZ Sekuritas
+Tanggal: 2026-07-11
+Tipe: BUY
+Saham: BBCA
+Entry: 9500
+TP1: 9800
+TP2: 10100
+SL: 9300
+Catatan: breakout resistance"></textarea>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
       <button type="button" class="btn" id="parseBtn" style="width:auto">⚡ Parse &amp; Isi Form</button>
       <button type="button" class="btn btn-ghost" id="parseDemoBtn">Contoh</button>
@@ -504,22 +511,46 @@ SL: 9.300"></textarea>
     if(/^\d+,\d{1,2}$/.test(s)) return s.replace(',', '.');
     return s.replace(/,/g,'');
   }
+  // Normalisasi tanggal apa pun → YYYY-MM-DD (dukung DD/MM/YYYY & YYYY-MM-DD).
+  function normDate(s){
+    s=String(s).trim().replace(/\//g,'-');
+    var p=s.split('-'); if(p.length!==3) return '';
+    var y,mo,d;
+    if(p[0].length===4){ y=p[0]; mo=p[1]; d=p[2]; } else { d=p[0]; mo=p[1]; y=p[2]; }
+    if(y.length===2) y='20'+y;
+    mo=('0'+mo).slice(-2); d=('0'+d).slice(-2);
+    if(!/^\d{4}$/.test(y)|| +mo<1 || +mo>12 || +d<1 || +d>31) return '';
+    return y+'-'+mo+'-'+d;
+  }
   function parseSignalText(text){
     text = String(text||'');
     var U = text.toUpperCase();
-    var out = { tipe:'', ticker:'', entry:'', tps:[], sl:'' };
-    if(/\b(SELL|SHORT|JUAL)\b/.test(U)) out.tipe='SELL';
-    if(/\b(BUY|LONG|BELI)\b/.test(U)) out.tipe='BUY';   // BUY diprioritaskan bila keduanya ada
+    var out = { analis:'', firm:'', tanggal:'', tipe:'', ticker:'', entry:'', tps:[], sl:'', catatan:'' };
+    function grab(re){ var m=text.match(re); return m ? m[1].trim() : ''; }
+    // Field berlabel (dari output AI atau teks sinyal)
+    out.analis  = grab(/(?:ANALIS|ANALYST|OLEH)\s*[:=]\s*(.+)/i);
+    out.firm    = grab(/(?:FIRM|SEKURITAS|BROKER|INSTANSI|KOMUNITAS)\s*[:=]\s*(.+)/i);
+    out.catatan = grab(/(?:CATATAN|NOTE|TESIS|ALASAN)\s*[:=]\s*(.+)/i);
+    var td = grab(/(?:TANGGAL|TGL|DATE)\s*[:=]\s*([0-9]{1,4}[-\/][0-9]{1,2}[-\/][0-9]{1,4})/i);
+    if(td) out.tanggal = normDate(td);
+    // Tipe: label dulu, lalu kata kunci di teks
+    var tl = grab(/(?:TIPE|TYPE|ARAH|SINYAL|SIGNAL|POSISI)\s*[:=]\s*(BUY|SELL|LONG|SHORT|BELI|JUAL)/i);
+    if(tl){ out.tipe = /SELL|SHORT|JUAL/i.test(tl)?'SELL':'BUY'; }
+    else { if(/\b(SELL|SHORT|JUAL)\b/.test(U)) out.tipe='SELL'; if(/\b(BUY|LONG|BELI)\b/.test(U)) out.tipe='BUY'; }
+    // Saham: label dulu, lalu tebak token 2–5 huruf kapital
+    var sh = grab(/(?:SAHAM|TICKER|KODE|EMITEN|STOCK)\s*[:=]\s*([A-Za-z0-9.\-]{2,12})/i);
+    if(sh){ out.ticker = sh.toUpperCase(); }
+    else {
+      var STOP={BUY:1,SELL:1,LONG:1,SHORT:1,TP:1,SL:1,ENTRY:1,TARGET:1,STOP:1,LOSS:1,BELI:1,JUAL:1,AREA:1,OP:1,OPEN:1,CL:1,IDX:1,WA:1,RR:1,CUT:1,ANALIS:1,FIRM:1,TIPE:1,SAHAM:1,TANGGAL:1,CATATAN:1,TGL:1,DATE:1,NOTE:1};
+      var toks = U.match(/\b[A-Z]{2,5}\b/g) || [];
+      for(var i=0;i<toks.length;i++){ if(!STOP[toks[i]]){ out.ticker=toks[i]; break; } }
+    }
     var em = text.match(/(?:ENTRY|BUY\s*AREA|AREA|BELI|OP|OPEN)\s*[:=]?\s*([\d.,]+)/i);
     if(em) out.entry = cleanNum(em[1]);
     var tpRe = /(?:TP|TARGET)\s*\d*\s*[:=]?\s*([\d.,]+)/ig, m;
     while((m = tpRe.exec(text))){ if(out.tps.length<2) out.tps.push(cleanNum(m[1])); }
     var sm = text.match(/(?:SL|STOP\s*LOSS|STOPLOSS|STOP|CUT\s*LOSS|CUTLOSS|CL)\s*[:=]?\s*([\d.,]+)/i);
     if(sm) out.sl = cleanNum(sm[1]);
-    // Ticker: token 2–5 huruf kapital pertama yg bukan kata kunci
-    var STOP={BUY:1,SELL:1,LONG:1,SHORT:1,TP:1,SL:1,ENTRY:1,TARGET:1,STOP:1,LOSS:1,BELI:1,JUAL:1,AREA:1,OP:1,OPEN:1,CL:1,IDX:1,WA:1,RR:1,CUT:1};
-    var toks = U.match(/\b[A-Z]{2,5}\b/g) || [];
-    for(var i=0;i<toks.length;i++){ if(!STOP[toks[i]]){ out.ticker=toks[i]; break; } }
     return out;
   }
   var parseInfo = document.getElementById('parseInfo');
@@ -527,18 +558,22 @@ SL: 9.300"></textarea>
   if(parseBtn) parseBtn.onclick = function(){
     var out = parseSignalText(document.getElementById('rawParse').value);
     var filled = [];
+    if(out.analis){ f.analis.value = out.analis; filled.push('Analis'); }
+    if(out.firm){ f.firm.value = out.firm; filled.push('Firm'); }
+    if(out.tanggal){ f.tanggal.value = out.tanggal; filled.push('Tanggal'); }
     if(out.tipe){ f.tipe.value = out.tipe; filled.push('Tipe'); }
     if(out.ticker){ f.ticker.value = out.ticker; filled.push('Saham'); }
     if(out.entry){ f.entry.value = out.entry; filled.push('Entry'); }
     if(out.tps[0]){ f.tp1.value = out.tps[0]; filled.push('TP1'); }
     if(out.tps[1]){ f.tp2.value = out.tps[1]; filled.push('TP2'); }
     if(out.sl){ f.sl.value = out.sl; filled.push('SL'); }
-    if(filled.length){ parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terisi otomatis: '+esc(filled.join(', '))+'. Periksa angkanya, isi <b>Nama Analis</b>, lalu Kirim.</span>'; }
-    else { parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terdeteksi. Pastikan ada BUY/SELL + Entry/TP/SL, atau isi manual di form bawah.</span>'; }
+    if(out.catatan){ f.catatan.value = out.catatan; filled.push('Catatan'); }
+    if(filled.length){ parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terisi otomatis: '+esc(filled.join(', '))+'. Periksa sebentar, lalu Kirim.</span>'; }
+    else { parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terdeteksi. Tempel hasil AI (format berlabel Analis/Tipe/Saham/Entry/TP1/SL), atau isi manual.</span>'; }
   };
   var parseDemoBtn = document.getElementById('parseDemoBtn');
   if(parseDemoBtn) parseDemoBtn.onclick = function(){
-    document.getElementById('rawParse').value = 'BUY BBCA\nEntry: 9.500\nTP1: 9.800\nTP2: 10.100\nSL: 9.300';
+    document.getElementById('rawParse').value = 'Analis: Budi Santoso\nFirm: XYZ Sekuritas\nTanggal: 2026-07-11\nTipe: BUY\nSaham: BBCA\nEntry: 9500\nTP1: 9800\nTP2: 10100\nSL: 9300\nCatatan: breakout resistance';
   };
 
   // Prompt AI — dari server (sama dgn isi #aiPrompt yg sudah dirender HTML).
