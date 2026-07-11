@@ -36,6 +36,8 @@ name = "tracker-input"
 main = "src/index.js"
 compatibility_date = "2025-05-01"
 workers_dev = true
+# Account Cloudflare (dipakai auto-deploy GitHub Actions; account id bukan rahasia).
+account_id = "1b2515ab92c6d6c1c776a9ab160f1dec"
 
 # Variabel non-rahasia (boleh ada di repo).
 [vars]
