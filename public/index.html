@@ -1353,8 +1353,31 @@ select.form-control option{background:var(--card);color:var(--text)}
 .firm-chart-legend-dot{
   width:10px;height:3px;border-radius:2px;flex-shrink:0;
 }
+/* ── Filter chart firm: Semua / Sudah Target / Floating ── */
+.firm-chart-filter-bar{
+  display:inline-flex;gap:4px;flex-wrap:wrap;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius-pill);padding:3px;
+}
+.fcf-btn{
+  border:0;background:transparent;cursor:pointer;
+  padding:5px 12px;border-radius:var(--radius-pill);
+  font-size:11px;font-weight:700;color:var(--text2);
+  white-space:nowrap;transition:background .15s,color .15s;
+}
+.fcf-btn:hover{color:var(--text);}
+.fcf-btn.active{background:var(--grad);color:#fff;box-shadow:0 2px 6px rgba(109,40,217,.25);}
+/* ── Badge status rec: sudah target / masih floating ── */
+.firm-status{
+  display:inline-block;padding:2px 9px;border-radius:var(--radius-pill);
+  font-size:10.5px;font-weight:700;white-space:nowrap;border:1px solid transparent;
+}
+.firm-status.target{color:var(--green);background:var(--green-bg);border-color:var(--green);}
+.firm-status.floating{color:var(--yellow);background:var(--bg2);border-color:var(--border);}
+.firm-status.na{color:var(--text3);background:var(--bg2);border-color:var(--border);}
 @media(max-width:640px){
   .firm-chart-wrap{height:200px}
+  .fcf-btn{padding:5px 9px;font-size:10.5px}
 }
 
 /* ── Mobile: consensus semua sub-menu — khusus max-width 640px ── */
@@ -3266,6 +3289,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
           <div class="card-title" style="margin-bottom:0">Avg Performance Rekomendasi Aktif</div>
           <div id="firmChartBadge" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></div>
+        </div>
+        <div class="firm-chart-filter-bar" id="firmChartFilterBar" style="margin-bottom:10px">
+          <button type="button" class="fcf-btn active" data-fcf="all" onclick="setFirmChartFilter('all')">Semua</button>
+          <button type="button" class="fcf-btn" data-fcf="target" onclick="setFirmChartFilter('target')">Sudah Target</button>
+          <button type="button" class="fcf-btn" data-fcf="floating" onclick="setFirmChartFilter('floating')">Floating</button>
         </div>
         <div class="firm-chart-wrap">
           <canvas id="firmPerfChart"></canvas>
@@ -8109,6 +8137,42 @@ function escapeHtml(s) {
 // ═══════════════════════════════════════════
 let firmPerfChartInstance = null;
 let firmDistDonutInstance = null;
+let firmChartFilter = 'all';     // filter chart firm: all | target | floating
+let _firmChartRecs = [];         // rec firm yang sedang ditampilkan (untuk re-filter)
+let _firmChartName = '';
+
+// Status sebuah rec untuk kolom list & filter chart:
+//   'target'   = harga sudah menembus target analis (rating.done, dari data harian)
+//   'floating' = posisi masih berjalan, target belum tercapai
+//   'na'       = tak relevan (NEUTRAL/HOLD atau tanpa target)
+function firmRecStatus(r) {
+  const sugg = (r.suggestion || '').toUpperCase();
+  if (/NEUTRAL|HOLD|MARKET/.test(sugg)) return 'na';
+  if (!(r.target_price > 0)) return 'na';
+  const rating = getRecRating(r, r.code);
+  if (!rating) return 'na';
+  return rating.done ? 'target' : 'floating';
+}
+
+// Saring rec sesuai filter chart aktif.
+function filterFirmRecs(recs, mode) {
+  if (!mode || mode === 'all') return recs;
+  return recs.filter(r => firmRecStatus(r) === mode);
+}
+
+// Sinkronkan status aktif tombol filter.
+function updateFirmFilterButtons() {
+  document.querySelectorAll('#firmChartFilterBar .fcf-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.fcf === firmChartFilter);
+  });
+}
+
+// Ganti filter chart firm (dipanggil dari tombol) → re-render chart.
+function setFirmChartFilter(mode) {
+  firmChartFilter = mode || 'all';
+  updateFirmFilterButtons();
+  buildFirmChart(_firmChartName, filterFirmRecs(_firmChartRecs, firmChartFilter));
+}
 
 // Donat distribusi rating (BUY/NEUTRAL/SELL) di stat card firm detail.
 function renderFirmDistDonut(buyCount, neuCount, sellCount) {
@@ -8146,6 +8210,15 @@ function getFirmSeriesAvg(allRecs) {
   const ph = DATA.price_history || [];
   // series[i] = array panjang (ageMonths+1) nilai normalized [100, ..., curVal]
   const seriesList = [];
+
+  // IHSG pada baris ph[idx]; bulan terakhir ditambal dari live bila kosong
+  // (sama seperti renderChart) supaya benchmark ikut segar.
+  const ihsgAt = (idx) => {
+    if (idx < 0 || idx >= ph.length) return null;
+    let v = ph[idx].IHSG;
+    if (!(v > 0) && idx === ph.length - 1 && DATA.live && DATA.live.IHSG && DATA.live.IHSG.price > 0) v = DATA.live.IHSG.price;
+    return v > 0 ? v : null;
+  };
 
   for (const r of allRecs) {
     if (!r.date || !r.code) continue;
@@ -8189,35 +8262,53 @@ function getFirmSeriesAvg(allRecs) {
     // - Saat target tercapai → DIBEKUKAN di tgtIdx untuk semua bulan berikutnya
     //   (gain/loss di-stop; asumsi posisi ditutup di target).
     const norm = [];
-    let frozen = null;
+    const ihsg = [];                 // benchmark IHSG (base=100 di bulan rilis)
+    const ihsgRelease = ihsgAt(releaseIdx);
+    let frozen = null;               // nilai index rec setelah target tercapai
+    let ihsgFrozen = null;           // nilai IHSG dibekukan lockstep saat rec hit
     for (let k = 0; k <= ageMonths; k++) {
+      // ── Garis rec ──
       const price = ph[releaseIdx + k][r.code];
-      if (frozen != null) { norm.push(frozen); continue; }
-      if (!(price > 0)) { norm.push(null); continue; }
-      const rawIdx = isSell ? (2 - price / releasePrice) * 100 : (price / releasePrice) * 100;
-      const hit = tgtIdx != null && (isSell ? price <= target : price >= target);
-      if (hit) { frozen = tgtIdx; norm.push(frozen); }
-      else norm.push(rawIdx);
+      let hitNow = false;
+      if (frozen != null) { norm.push(frozen); }
+      else if (!(price > 0)) { norm.push(null); }
+      else {
+        const rawIdx = isSell ? (2 - price / releasePrice) * 100 : (price / releasePrice) * 100;
+        const hit = tgtIdx != null && (isSell ? price <= target : price >= target);
+        if (hit) { frozen = tgtIdx; hitNow = true; norm.push(frozen); }
+        else norm.push(rawIdx);
+      }
+      // ── Benchmark IHSG (dibekukan pada bulan yang sama saat rec take-profit,
+      //    supaya pembanding mewakili periode holding yang identik) ──
+      if (!(ihsgRelease > 0)) { ihsg.push(null); continue; }
+      if (ihsgFrozen != null) { ihsg.push(ihsgFrozen); continue; }
+      const ihsgK = ihsgAt(releaseIdx + k);
+      const ihsgIdx = (ihsgK > 0) ? (ihsgK / ihsgRelease) * 100 : null;
+      if (hitNow && ihsgIdx != null) ihsgFrozen = ihsgIdx;
+      ihsg.push(ihsgIdx);
     }
-    seriesList.push({ norm, ageMonths, code: r.code, suggestion: sugg });
+    seriesList.push({ norm, ihsg, ageMonths, code: r.code, suggestion: sugg });
   }
 
-  if (!seriesList.length) return { avgNorm: [], countPerMonth: [], maxAge: 0, seriesList: [] };
+  if (!seriesList.length) return { avgNorm: [], avgIhsg: [], countPerMonth: [], maxAge: 0, seriesList: [] };
 
   // avgNorm[k] = rata-rata nilai normalized di offset bulan ke-k
   // Hanya rata-rata dari rec yang punya data di bulan tersebut (ageMonths >= k)
   const maxAge = Math.max(...seriesList.map(s => s.ageMonths));
   const avgNorm = [];
+  const avgIhsg = [];          // rata-rata benchmark IHSG (offset yang sama)
   const countPerMonth = [];
   for (let k = 0; k <= maxAge; k++) {
-    let sum = 0, cnt = 0;
+    let sum = 0, cnt = 0, iSum = 0, iCnt = 0;
     for (const s of seriesList) {
       if (k <= s.ageMonths && s.norm[k] != null) { sum += s.norm[k]; cnt++; }
+      if (k <= s.ageMonths && s.ihsg && s.ihsg[k] != null) { iSum += s.ihsg[k]; iCnt++; }
     }
     avgNorm.push(cnt > 0 ? sum / cnt : null);
+    avgIhsg.push(iCnt > 0 ? iSum / iCnt : null);
     countPerMonth.push(cnt);
   }
-  return { avgNorm, countPerMonth, maxAge, seriesList };
+  return { avgNorm, avgIhsg, countPerMonth, maxAge, seriesList };
 }
 
 // Render keterangan performa per periode 1..maxMonths bln (gaya tabel di foto).
@@ -8240,12 +8331,25 @@ function buildFirmChart(firm, allRecs) {
   const ct   = chartColors();
 
   // ── Kumpulkan series per rec + avg per bulan (helper bersama) ─────────
-  const { avgNorm, countPerMonth, maxAge, seriesList } = getFirmSeriesAvg(allRecs);
+  const { avgNorm, avgIhsg, countPerMonth, maxAge, seriesList } = getFirmSeriesAvg(allRecs);
 
   if (!seriesList.length) {
-    // Tidak ada rec aktif — sembunyikan card
     const card = document.getElementById('firmChartCard');
-    if (card) card.style.display = 'none';
+    if (firmChartFilter === 'all') {
+      // Firm tidak punya rec aktif sama sekali — sembunyikan card
+      if (card) card.style.display = 'none';
+      return;
+    }
+    // Filter spesifik (target/floating) tak menghasilkan rec — tetap tampilkan
+    // card + tombol filter, tapi kosongkan chart & tampilkan pesan.
+    if (card) card.style.display = '';
+    if (firmPerfChartInstance) { firmPerfChartInstance.destroy(); firmPerfChartInstance = null; }
+    const badgeEl0 = document.getElementById('firmChartBadge');
+    if (badgeEl0) badgeEl0.innerHTML = '';
+    const legendEl0 = document.getElementById('firmChartLegend');
+    if (legendEl0) legendEl0.innerHTML = '<span style="color:var(--text3);font-size:12px">Tidak ada rekomendasi pada kategori ini.</span>';
+    const periodsEl0 = document.getElementById('firmChartPeriods');
+    if (periodsEl0) periodsEl0.innerHTML = '';
     return;
   }
 
@@ -8265,6 +8369,9 @@ function buildFirmChart(firm, allRecs) {
   const lineColor  = isUp ? '#059669' : '#e11d48';
   const fillColorA = isUp ? 'rgba(5,150,105,0.18)' : 'rgba(225,29,72,0.15)';
   const fillColorB = isUp ? 'rgba(5,150,105,0)'    : 'rgba(225,29,72,0)';
+  // Warna garis benchmark IHSG (biru langit) — kontras dgn hijau/merah rec.
+  const isDarkC    = document.documentElement.getAttribute('data-theme') === 'dark';
+  const ihsgColor  = isDarkC ? '#38bdf8' : '#0284c7';
 
   // ── Badge: total return + sample size ────────────────────────────────
   const badgeEl = document.getElementById('firmChartBadge');
@@ -8319,6 +8426,18 @@ function buildFirmChart(firm, allRecs) {
           fill: false,
           tension: 0,
         },
+        {
+          // Benchmark IHSG (dataset index 2) — periode holding identik dgn rec.
+          label: 'IHSG',
+          data: avgIhsg,
+          borderColor: ihsgColor,
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: avgIhsg.map((_, i) => (i === avgIhsg.length - 1) ? 4 : 0),
+          pointBackgroundColor: ihsgColor,
+          fill: false,
+          tension: 0.35,
+        },
       ],
     },
     options: {
@@ -8343,9 +8462,12 @@ function buildFirmChart(firm, allRecs) {
               if (v == null) return null;
               const ret = v - 100;
               const sign = ret >= 0 ? '+' : '';
+              if (item.datasetIndex === 2) {           // garis IHSG (pembanding)
+                return ` IHSG: ${v.toFixed(2)} (${sign}${ret.toFixed(2)}%)`;
+              }
               const n = countPerMonth[item.dataIndex] || 0;
               return [
-                ` Index: ${v.toFixed(2)}`,
+                ` Rec: ${v.toFixed(2)}`,
                 ` Return: ${sign}${ret.toFixed(2)}%`,
                 ` Sample: ${n} rec`,
               ];
@@ -8426,6 +8548,10 @@ function buildFirmChart(firm, allRecs) {
         <span class="firm-chart-legend-item">
           <span class="firm-chart-legend-dot" style="background:${lineColor}"></span>
           Avg normalized index
+        </span>
+        <span class="firm-chart-legend-item">
+          <span class="firm-chart-legend-dot" style="background:${ihsgColor}"></span>
+          IHSG (pembanding)
         </span>
         <span class="firm-chart-legend-item">
           <span class="firm-chart-legend-dot" style="background:${ct.grid};border:1px dashed"></span>
@@ -8569,9 +8695,14 @@ function showFirmDetail(firm) {
   `;
 
   // Chart — render setelah firmStats (allRecs sudah tersedia)
-  // Pakai requestAnimationFrame supaya canvas sudah visible & punya dimensi
+  // Pakai requestAnimationFrame supaya canvas sudah visible & punya dimensi.
+  // Simpan state agar tombol filter (Semua/Sudah Target/Floating) bisa re-render.
+  _firmChartRecs = allRecs;
+  _firmChartName = firm;
+  firmChartFilter = 'all';
   requestAnimationFrame(() => {
-    buildFirmChart(firm, allRecs);
+    updateFirmFilterButtons();
+    buildFirmChart(firm, filterFirmRecs(allRecs, firmChartFilter));
     renderFirmDistDonut(buyCount, neuCount, sellCount);
   });
 
@@ -8588,6 +8719,7 @@ function showFirmDetail(firm) {
         <th class="right">%∆</th>
         <th>Returns</th>
         <th>Risk</th>
+        <th>Status</th>
       </tr>
     </thead>
     <tbody>
@@ -8608,6 +8740,16 @@ function showFirmDetail(firm) {
         const riskBars = renderRatingBars(rating ? rating.risk    : null, 'red',   'sm');
         const codeEsc = escapeHtml(r.code);
 
+        // Status: Sudah Target / Floating / — (pakai rating.done yang sudah dihitung)
+        const _sugg = (r.suggestion || '').toUpperCase();
+        const _recStat = (/NEUTRAL|HOLD|MARKET/.test(_sugg) || !(r.target_price > 0) || !rating)
+          ? 'na' : (rating.done ? 'target' : 'floating');
+        const statusHtml = _recStat === 'target'
+          ? '<span class="firm-status target">Sudah Target</span>'
+          : _recStat === 'floating'
+            ? '<span class="firm-status floating">Floating</span>'
+            : '<span class="firm-status na" title="NEUTRAL/HOLD atau tanpa target">—</span>';
+
         return `<tr style="cursor:pointer" onclick="showRecDetail('${codeEsc}', ${recIdx >= 0 ? recIdx : 0})" title="Klik untuk detail rekomendasi ${codeEsc}">
           <td class="mono" style="color:var(--text3);text-align:center">${i + 1}</td>
           <td onclick="event.stopPropagation()">
@@ -8620,6 +8762,7 @@ function showFirmDetail(firm) {
           <td class="mono ${pctCls}">${pct != null ? (pct >= 0 ? '+' : '') + (pct * 100).toFixed(1) + '%' : '-'}</td>
           <td>${retBars}</td>
           <td>${riskBars}</td>
+          <td>${statusHtml}</td>
         </tr>`;
       }).join('')}
     </tbody>
