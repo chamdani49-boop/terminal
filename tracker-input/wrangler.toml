@@ -1,0 +1,46 @@
+#:schema node_modules/wrangler/config-schema.json
+# ════════════════════════════════════════════════════════════════════════
+# tracker-input — Worker halaman input rekomendasi trading (menu Tracker)
+# ════════════════════════════════════════════════════════════════════════
+# Worker ini SEPENUHNYA TERPISAH dari site statis utama (terminal), dari
+# Worker terminal-live, dan dari valuation-uploader. Tujuannya: kasih halaman
+# web SEDERHANA ke kontributor untuk submit rekomendasi trading (Entry/TP/SL)
+# tanpa harus buka Google Sheet langsung.
+#
+# ⚠️  TIDAK menyentuh apa pun yang sudah live. Deploy-nya manual & terpisah.
+#
+# Cara kerja:
+#   1. Kontributor buka URL Worker → login pakai password (APP_PASSWORD).
+#   2. Isi form rekomendasi → submit.
+#   3. Worker meneruskan data ke Google Apps Script (GAS) Web App (GAS_URL),
+#      diproteksi token (GAS_TOKEN).
+#   4. GAS menambahkan 1 baris ke Google Sheet "Tracker" dengan
+#      status = "pending" → menunggu approve owner.
+#
+# Cara deploy:
+#   cd tracker-input/
+#   npx wrangler deploy
+#
+# Setelah deploy, set rahasia (sekali saja):
+#   npx wrangler secret put APP_PASSWORD   # password login halaman input
+#   npx wrangler secret put GAS_URL        # URL Web App GAS (…/exec)
+#   npx wrangler secret put GAS_TOKEN      # token, samakan dgn TOKEN di gas/Code.gs
+#
+# URL hasil deploy: https://tracker-input.<sub>.workers.dev/
+# (untuk akun chamdani49 → https://tracker-input.chamdani49.workers.dev/)
+# ════════════════════════════════════════════════════════════════════════
+
+name = "tracker-input"
+main = "src/index.js"
+compatibility_date = "2025-05-01"
+workers_dev = true
+
+# Variabel non-rahasia (boleh ada di repo).
+[vars]
+# Judul yang tampil di halaman (kosmetik).
+APP_TITLE = "Input Rekomendasi Tracker"
+
+# ── Rahasia (JANGAN ditaruh di file ini) — set lewat CLI ──
+#   npx wrangler secret put APP_PASSWORD
+#   npx wrangler secret put GAS_URL
+#   npx wrangler secret put GAS_TOKEN
