@@ -211,6 +211,14 @@ async function apiSubmit(request, env, cookieAuthed) {
   const parsed = parseRecords(text);
   const records = parsed.length ? parsed : [{ catatan: text }];
 
+  // Cap 20 saham per submission. Alasan: Cloudflare Worker punya budget 50
+  // sub-request per invocation; tiap saham = 1 fetch ke GAS + Telegram butuh
+  // sisanya. 20 adalah batas aman + realistis (input harian jarang > 20).
+  const MAX_RECORDS = 20;
+  if (records.length > MAX_RECORDS) {
+    return jsonRes({ error: 'Terlalu banyak saham dalam sekali kirim: ' + records.length + ' (maks ' + MAX_RECORDS + '). Pecah jadi beberapa kali Kirim.' }, 400);
+  }
+
   // Kirim tiap record ke GAS berurutan (biar urutan di Sheet konsisten).
   const results = [];
   for (const rec of records) {
@@ -359,7 +367,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v14</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v15</span></div>
 </div>
 </body></html>`;
 }
@@ -413,15 +421,15 @@ ${STYLE}
     <textarea id="aiPrompt" rows="6" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
     <div style="display:flex;gap:8px;margin:10px 0 0;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-sec" onclick="tiCopy()">📋 Salin Prompt</button>
-      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return tiGo(this)">Buka Gemini ↗</a>
-      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener" onclick="return tiGo(this)">Buka ChatGPT ↗</a>
+      <a class="btn-sec" href="https://gemini.google.com" target="_blank" rel="noopener">Buka Gemini ↗</a>
+      <a class="btn-sec" href="https://chatgpt.com" target="_blank" rel="noopener">Buka ChatGPT ↗</a>
     </div>
     <div id="aiInfo" class="hint" style="margin-top:8px"></div>
   </div>
 
   <div class="card">
     <div class="cardhead"><span class="step">2</span> Data rekomendasi</div>
-    <div class="hint" style="margin-bottom:8px">Tempel hasil dari AI di sini. <b>Boleh lebih dari satu saham.</b> Edit langsung di kotak ini bila perlu — isi kotak inilah yang dikirim ke admin.</div>
+    <div class="hint" style="margin-bottom:8px">Tempel hasil dari AI di sini. <b>Boleh 1–20 saham</b> sekaligus (setiap saham jadi 1 baris di Sheet). Edit langsung di kotak ini bila perlu.</div>
     <textarea id="dataText" rows="12" placeholder="Tempel hasil dari Gemini/ChatGPT di sini…"></textarea>
     <div id="parseInfo" class="hint" style="margin-top:8px">Belum ada data. Tiap saham jadi 1 baris di Sheet.</div>
   </div>
@@ -444,7 +452,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code>. Approve di Google Sheet: menu <b>🎯 Tracker</b> → <b>✅ Tandai baris terpilih → APPROVED</b>. · <span style="opacity:.5">build parse-v14</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code>. Approve di Google Sheet: menu <b>🎯 Tracker</b> → <b>✅ Tandai baris terpilih → APPROVED</b>. · <span style="opacity:.5">build parse-v15</span></div>
 </div>
 
 <script>
@@ -475,24 +483,7 @@ function tiCopy(){
       : '<span style="color:var(--yellow)">Teks prompt sudah dipilih — tekan Ctrl+C (di HP: tahan lalu Copy).</span>';
   }catch(e){}
 }
-// Buka situs AI. Di laptop: biarkan link default (buka tab baru).
-// Di HP: navigasi ke situsnya di HP kerap di-intercept ke app-Gemini yang lalu
-// gagal ("mau buka jendela baru lalu balik"). Solusi paling andal: SALIN URL
-// ke clipboard, biar user tempel sendiri di tab kosong.
-function tiGo(a){
-  try{
-    if(!/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')) return true; // laptop
-    var url = a.href;
-    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url).catch(function(){}); }
-    var ta=document.createElement('textarea'); ta.value=url; ta.style.cssText='position:fixed;left:0;top:0;opacity:0';
-    document.body.appendChild(ta); ta.focus(); ta.select();
-    try{ document.execCommand('copy'); }catch(e){}
-    document.body.removeChild(ta);
-    var i=document.getElementById('aiInfo');
-    if(i) i.innerHTML='<span style="color:var(--green)">✓ URL tersalin: <b>'+url+'</b>. Buka tab kosong di Chrome, tempel URL, lalu Enter. (Tombol langsung sering gagal di HP karena Android meng-<i>intercept</i> ke app.)</span>';
-  }catch(e){}
-  return false;
-}
+
 </script>
 
 <script>
@@ -542,7 +533,8 @@ function tiGo(a){
     var rs=clientParse(t);
     if(!rs.length){ parseInfo.innerHTML='<span style="color:var(--yellow)">Tidak ada label yg dikenali. Data akan masuk sebagai 1 baris ke kolom "catatan" (tanpa TP/SL/dst).</span>'; return; }
     var names=rs.map(function(r){ return (r.saham||'?').toUpperCase(); }).join(', ');
-    parseInfo.innerHTML='<span style="color:var(--green)">→ '+rs.length+' saham terdeteksi: <b>'+esc(names)+'</b>. Akan dikirim sebagai '+rs.length+' baris terpisah.</span>';
+    var over = rs.length > 20;
+    parseInfo.innerHTML='<span style="color:'+(over?'var(--red)':'var(--green)')+'">→ '+rs.length+' saham terdeteksi: <b>'+esc(names)+'</b>. Akan dikirim sebagai '+rs.length+' baris terpisah.'+(over?' <b>Melebihi batas 20 — pecah jadi beberapa kali Kirim.</b>':'')+'</span>';
   }
   if(dataText) dataText.addEventListener('input', refreshPreview);
   refreshPreview();
