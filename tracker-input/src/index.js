@@ -367,7 +367,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v15</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v16</span></div>
 </div>
 </body></html>`;
 }
@@ -452,7 +452,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code>. Approve di Google Sheet: menu <b>🎯 Tracker</b> → <b>✅ Tandai baris terpilih → APPROVED</b>. · <span style="opacity:.5">build parse-v15</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code>. Approved by admin. · <span style="opacity:.5">build parse-v16</span></div>
 </div>
 
 <script>
