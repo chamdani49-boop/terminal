@@ -354,7 +354,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v5</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v6</span></div>
 </div>
 </body></html>`;
 }
@@ -404,7 +404,10 @@ function renderFormPage(env) {
     'Horizon: 1 Bulan', 'Catatan: breakout resistance'
   ].join('\n');
 
-  return `<!DOCTYPE html>
+  // PENTING: String.raw agar backslash di skrip inline (regex \d \s \b, \n, dst)
+  // TIDAK dimakan oleh template literal. Tanpa ini, JS yang dikirim ke browser
+  // rusak (syntax error) → semua tombol mati.
+  return String.raw`<!DOCTYPE html>
 <html lang="id"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -534,7 +537,7 @@ ${escapeHtml(demoText)}"></textarea>
     </form>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v5</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v6</span></div>
 </div>
 
 <script>
