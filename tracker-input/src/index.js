@@ -296,7 +296,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v8</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v9</span></div>
 </div>
 </body></html>`;
 }
@@ -342,14 +342,16 @@ ${STYLE}
     <a href="/logout" class="btn btn-ghost">Keluar</a>
   </div>
 
+  <div id="authStatus" class="hint" style="margin-bottom:10px">Mengecek status login…</div>
+
   <div class="card">
     <div class="cardhead"><span class="step">1</span> Salin prompt &amp; buka AI</div>
     <div class="hint" style="margin-bottom:8px">Tekan <b>Salin Prompt</b> → buka Gemini/ChatGPT (akunmu sendiri) → di sana tempel prompt + upload screenshot sinyal → salin hasilnya.</div>
     <textarea id="aiPrompt" rows="6" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
     <div style="display:flex;gap:8px;margin:10px 0 0;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-sec" onclick="tiCopy()">📋 Salin Prompt</button>
-      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">Buka Gemini ↗</a>
-      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Buka ChatGPT ↗</a>
+      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return tiOpen('https://gemini.google.com/app')">Buka Gemini ↗</a>
+      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener" onclick="return tiOpen('https://chatgpt.com/')">Buka ChatGPT ↗</a>
     </div>
     <div id="aiInfo" class="hint" style="margin-top:8px"></div>
   </div>
@@ -378,7 +380,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v8</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v9</span></div>
 </div>
 
 <script>
@@ -409,6 +411,9 @@ function tiCopy(){
       : '<span style="color:var(--yellow)">Teks prompt sudah dipilih — tekan Ctrl+C (di HP: tahan lalu Copy).</span>';
   }catch(e){}
 }
+// Buka situs AI: utamakan window.open (buka tab baru lebih andal di HP);
+// kalau diblok, kembalikan true agar link <a target=_blank> yang jalan.
+function tiOpen(u){ try{ var w=window.open(u,'_blank'); if(w){ try{ w.opener=null; }catch(e){} return false; } }catch(e){} return true; }
 </script>
 
 <script>
@@ -416,6 +421,20 @@ function tiCopy(){
   var msg = document.getElementById('msg');
   var btn = document.getElementById('submitBtn');
   function setMsg(t,c){ if(msg) msg.innerHTML = t ? '<div class="'+c+'">'+t+'</div>' : ''; }
+
+  // Cek status login → mengungkap kalau cookie TIDAK terkirim browser (inilah
+  // sumber "unauthorized" saat Kirim). Ditampilkan di bawah judul.
+  (function(){
+    var as = document.getElementById('authStatus');
+    fetch('/api/whoami', { credentials:'same-origin', cache:'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!as) return;
+        if(d && d.authed){ as.innerHTML = '<span style="color:var(--green)">● Login aktif — siap kirim.</span>'; }
+        else { as.innerHTML = '<span style="color:var(--yellow)">● Sesi login TIDAK aktif — cookie ' + ((d&&d.cookiePresent)?'ADA tapi tak cocok':'TIDAK dikirim browser') + '. <a href="/" style="color:var(--accent2);text-decoration:underline">Login ulang</a></span>'; }
+      })
+      .catch(function(){ if(as) as.innerHTML='<span style="color:var(--yellow)">Tak bisa cek status login (jaringan?).</span>'; });
+  })();
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
 
   // ── Upload & kompres foto (maks 5) ──
@@ -529,6 +548,13 @@ export default {
       if (path === '/logout') return handleLogout();
 
       const authed = await isAuthed(request, env);
+
+      // Diagnostik: apakah cookie login terkirim & cocok? Dipakai halaman form
+      // untuk menampilkan status login + membantu debug "unauthorized".
+      if (path === '/api/whoami') {
+        const rawCookie = request.headers.get('Cookie') || '';
+        return jsonRes({ authed, cookiePresent: /(?:^|;\s*)ti_auth=/.test(rawCookie) });
+      }
 
       if (path === '/api/submit') {
         if (method !== 'POST') return jsonRes({ error: 'method not allowed' }, 405);
