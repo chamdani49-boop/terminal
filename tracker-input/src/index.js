@@ -354,7 +354,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v3</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v4</span></div>
 </div>
 </body></html>`;
 }
@@ -425,7 +425,7 @@ ${STYLE}
     <div class="hint" style="margin-bottom:8px">Tekan <b>Salin Prompt</b> → buka Gemini/ChatGPT (akunmu sendiri) → di sana tempel prompt + upload screenshot sinyal → salin hasilnya, lalu tempel di Langkah 2.</div>
     <textarea id="aiPrompt" rows="7" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
     <div style="display:flex;gap:8px;margin:10px 0 0;flex-wrap:wrap;align-items:center">
-      <button type="button" class="btn-sec" id="copyPrompt">📋 Salin Prompt</button>
+      <button type="button" class="btn-sec" onclick="tiCopy()">📋 Salin Prompt</button>
       <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener">Buka Gemini ↗</a>
       <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener">Buka ChatGPT ↗</a>
     </div>
@@ -447,9 +447,9 @@ ${escapeHtml(demoText)}"></textarea>
   <div class="card">
     <div class="cardhead"><span class="step">3</span> Foto bukti <span style="color:var(--text3);font-weight:500;font-size:11px;margin-left:6px">(opsional, maks 5)</span></div>
     <div class="hint" style="margin-bottom:8px">Foto <b>dikirim ke admin via Telegram</b> untuk validasi — <b>tidak disimpan</b> di database/Sheet.</div>
-    <div class="pslots" id="photoSlots"></div>
+    <div class="pslots" id="photoSlots"><label class="pslot empty" for="photoInput">+</label><label class="pslot empty" for="photoInput">+</label><label class="pslot empty" for="photoInput">+</label><label class="pslot empty" for="photoInput">+</label><label class="pslot empty" for="photoInput">+</label></div>
     <input id="photoInput" type="file" accept="image/*" multiple style="display:none">
-    <div id="photoInfo" class="hint" style="margin-top:8px">0/5 foto. Ketuk kotak bertanda + untuk menambah.</div>
+    <div id="photoInfo" class="hint" style="margin-top:8px">0/5 foto — ketuk kotak + untuk menambah.</div>
   </div>
 
   <div id="reviewWrap">
@@ -458,9 +458,10 @@ ${escapeHtml(demoText)}"></textarea>
 
   <div class="card" id="reviewCard">
     <div class="cardhead"><span class="step">4</span> Periksa &amp; Kirim</div>
-    <div class="hint" style="margin-bottom:12px">Kolom di bawah terisi otomatis dari Parse (atau isi manual). Periksa sebentar — terutama harga — lalu tekan <b>Kirim Rekomendasi</b> di bawah.</div>
+    <div class="hint" style="margin-bottom:12px">Hasil Parse tampil sebagai ringkasan di bawah. Kalau sudah benar, langsung tekan <b>Kirim Rekomendasi</b>. Perlu ubah manual? Tekan <span class="link" id="editToggle">✏️ Koreksi</span>.</div>
+    <div id="summary" class="summary"></div>
     <form id="form" autocomplete="off">
-      <div id="editFields">
+      <div id="editFields" style="display:none">
       <div class="grid2">
         <div class="field">
           <label class="req" for="analis">Nama Analis</label>
@@ -523,19 +524,37 @@ ${escapeHtml(demoText)}"></textarea>
         <label for="catatan">Catatan / Tesis</label>
         <textarea id="catatan" name="catatan" maxlength="500" placeholder="opsional — alasan singkat rekomendasi"></textarea>
       </div>
-      </div><!-- /editFields -->
-
       <div class="field">
         <label for="submitted_by">Diinput oleh</label>
         <input id="submitted_by" name="submitted_by" type="text" maxlength="60" placeholder="opsional — nama kamu">
       </div>
+      </div><!-- /editFields -->
 
       <button class="btn" id="submitBtn" type="submit">Kirim Rekomendasi</button>
     </form>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v3</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v4</span></div>
 </div>
+
+<script>
+// Salin Prompt sebagai fungsi GLOBAL di blok terpisah — tetap jalan walau
+// skrip utama di bawah bermasalah karena alasan apa pun.
+function tiCopy(){
+  try{
+    var t=document.getElementById('aiPrompt'); if(!t) return;
+    t.removeAttribute('readonly'); t.focus(); t.select();
+    try{ t.setSelectionRange(0, (t.value||'').length); }catch(e){}
+    var ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+    t.setAttribute('readonly','');
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t.value).catch(function(){}); }
+    var i=document.getElementById('aiInfo');
+    if(i) i.innerHTML = ok
+      ? '<span style="color:var(--green)">\u2713 Prompt tersalin! Tinggal tempel di Gemini/ChatGPT.</span>'
+      : '<span style="color:var(--yellow)">Teks prompt sudah dipilih \u2014 tekan Ctrl+C (di HP: tahan lalu Copy).</span>';
+  }catch(e){}
+}
+</script>
 
 <script>
 (function(){
@@ -613,14 +632,6 @@ ${escapeHtml(demoText)}"></textarea>
     }catch(_){ return false; }
   }
 
-  var copyBtn = document.getElementById('copyPrompt');
-  if(copyBtn) copyBtn.onclick = function(){
-    copyText(AI_PROMPT).then(function(ok){
-      if(aiInfo) aiInfo.innerHTML = ok
-        ? '<span style="color:var(--green)">✓ Prompt tersalin. Buka Gemini/ChatGPT, upload foto + tempel prompt, lalu salin hasilnya ke Langkah 2.</span>'
-        : '<span style="color:var(--yellow)">Gagal menyalin otomatis. Klik area prompt di atas (otomatis terblok), lalu tekan Ctrl+C / (di HP: tahan → Copy).</span>';
-    });
-  };
   // ── Bersih-bersih angka & tanggal ──
   function cleanNum(s){
     if(s==null) return '';
@@ -734,16 +745,23 @@ ${escapeHtml(demoText)}"></textarea>
     if(out.sl){ f.sl.value = out.sl; filled.push('SL'); }
     if(out.horizon){ f.horizon.value = out.horizon; filled.push('Horizon'); }
     if(out.catatan){ f.catatan.value = out.catatan; filled.push('Catatan'); }
+    renderSummary();
     if(reviewCard) reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
     if(filled.length){
-      parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terbaca: '+esc(filled.join(', '))+'. Periksa di Langkah 4, lalu Kirim.</span>';
+      parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terbaca: '+esc(filled.join(', '))+'. Cek ringkasan di Langkah 4, lalu Kirim.</span>';
     } else {
-      parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terbaca. Pastikan menempel hasil AI yang berlabel (Analis:, Tipe:, Saham:, Entry:, TP1:, SL: …), atau isi kolom di Langkah 4 secara manual.</span>';
+      showEdit();
+      parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terbaca. Tempel hasil AI berlabel (Analis:, Tipe:, Saham:, Entry:, TP1:, SL: …), atau tekan "Koreksi" untuk isi manual.</span>';
     }
   };
   var parseDemoBtn = document.getElementById('parseDemoBtn');
   if(parseDemoBtn) parseDemoBtn.onclick = function(){ document.getElementById('rawParse').value = DEMO; };
 
+  // "Koreksi": tampil/sembunyikan kolom edit (tersembunyi secara default).
+  if(editToggle) editToggle.onclick = function(){ if(editFields) editFields.style.display = (editFields.style.display==='none' ? '' : 'none'); };
+  // Perbarui ringkasan tiap kali kolom diubah manual + tampilkan ringkasan awal.
+  if(f) f.addEventListener('input', renderSummary);
+  renderSummary();
   // Kode saham selalu tampil kapital saat diketik.
   if(f && f.ticker) f.ticker.addEventListener('input', function(){ this.value = this.value.toUpperCase(); });
 
@@ -762,17 +780,14 @@ ${escapeHtml(demoText)}"></textarea>
       if(photos[i]){
         html += '<div class="pslot"><img src="'+photos[i]+'"><button type="button" class="thumb-x" data-i="'+i+'" title="Hapus">✕</button></div>';
       } else {
-        html += '<div class="pslot empty" title="Tambah foto">+</div>';
+        html += '<label class="pslot empty" for="photoInput" title="Tambah foto">+</label>';
       }
     }
     photoSlots.innerHTML = html;
     Array.prototype.forEach.call(photoSlots.querySelectorAll('.thumb-x'), function(b){
-      b.onclick=function(ev){ ev.stopPropagation(); photos.splice(parseInt(b.getAttribute('data-i'),10),1); renderThumbs(); };
+      b.onclick=function(ev){ ev.stopPropagation(); ev.preventDefault(); photos.splice(parseInt(b.getAttribute('data-i'),10),1); renderThumbs(); };
     });
-    Array.prototype.forEach.call(photoSlots.querySelectorAll('.pslot.empty'), function(s){
-      s.onclick=function(){ if(photoInput) photoInput.click(); };
-    });
-    if(photoInfo) photoInfo.innerHTML = photos.length + '/5 foto' + (photos.length ? ' — siap dikirim ke Telegram saat Kirim.' : '. Ketuk kotak + untuk menambah.');
+    if(photoInfo) photoInfo.innerHTML = photos.length + '/5 foto' + (photos.length ? ' — siap dikirim ke Telegram saat Kirim.' : ' — ketuk kotak + untuk menambah.');
   }
   function compress(file){
     return new Promise(function(resolve){
@@ -809,7 +824,8 @@ ${escapeHtml(demoText)}"></textarea>
     var need = [['analis','Nama Analis'],['ticker','Kode Saham'],['tipe','Tipe'],['entry','Entry'],['tp1','TP1'],['sl','SL'],['tanggal','Tanggal']];
     var miss = need.filter(function(n){ return !val(n[0]); }).map(function(n){ return n[1]; });
     if(miss.length){
-      setMsg('Data belum lengkap: '+esc(miss.join(', '))+'. Lengkapi kolom bertanda * lalu Kirim lagi.', 'err');
+      setMsg('Data belum lengkap: '+esc(miss.join(', '))+'. Tekan "Koreksi" untuk melengkapi, lalu Kirim lagi.', 'err');
+      showEdit(); renderSummary();
       if(reviewCard) reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
       return;
     }
@@ -837,6 +853,7 @@ ${escapeHtml(demoText)}"></textarea>
       var rp=document.getElementById('rawParse'); if(rp) rp.value='';
       if(parseInfo) parseInfo.innerHTML='';
       photos.length=0; renderThumbs();
+      hideEdit(); renderSummary();
       window.scrollTo({top:0, behavior:'smooth'});
     }catch(err){
       setMsg('Gagal: '+esc(err.message), 'err');
