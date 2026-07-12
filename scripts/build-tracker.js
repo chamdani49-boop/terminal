@@ -304,8 +304,9 @@ function normalizeRejectReason(row) {
   const entry   = toNumber(row.entry);
   const tp1     = toNumber(row.tp1);
   const sl      = toNumber(row.sl);
+  const firm    = String(row.firm || '').trim();
   const openDate = parseDate(row.tanggal) || parseDate(row.timestamp) || null;
-  if (!analyst)         return 'analis-kosong';
+  if (!firm && !analyst) return 'sumber-kosong'; // butuh minimal firm ATAU analis
   if (!ticker)          return 'ticker-kosong';
   if (!openDate)        return 'tanggal-invalid';
   if (entry == null)    return 'entry-kosong';
@@ -328,7 +329,7 @@ function diagnoseRejections(rawRows, ohlc) {
       total++;
       reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
       if (samples.length < 10) {
-        samples.push({ _row: row._row || null, ticker: row.ticker || '', analis: row.analis || '', status: row.status || '', reason });
+        samples.push({ _row: row._row || null, ticker: row.ticker || '', firm: row.firm || '', analis: row.analis || '', status: row.status || '', reason });
       }
     } else {
       const tk = String(row.ticker || '').trim().toUpperCase().replace(/\.JK$/i, '').replace(/^\$/, '');
@@ -391,17 +392,24 @@ function normalizeRow(row) {
   const submittedBy = String(row.submitted_by || '').trim();
   const approvedBy  = String(row.approved_by || '').trim();
 
-  // Validasi minimal: analis, ticker, entry, tp1, sl, openDate WAJIB.
-  if (!analyst || !ticker || !openDate || entry == null || tp1 == null || sl == null) return null;
+  // Validasi minimal: (firm ATAU analis), ticker, entry, tp1, sl, openDate WAJIB.
+  // FIRM-FIRST: riset AI sering hanya menyebut sekuritas tanpa nama analis —
+  // baris seperti itu TETAP valid. Analis = pelengkap/fallback attribution,
+  // bukan syarat wajib. (Dulu wajib analis → 21 baris valid ikut terbuang.)
+  if ((!firm && !analyst) || !ticker || !openDate || entry == null || tp1 == null || sl == null) return null;
   // Tolak BUY dgn TP <= entry atau SL >= entry (data invalid).
   if (tipe === 'BUY' && (tp1 <= entry || sl >= entry)) return null;
   if (tipe === 'SELL' && (tp1 >= entry || sl <= entry)) return null;
+
+  // Firm-first: kalau kolom firm kosong, pakai nama analis sbg label sumber
+  // (fallback). Menjamin leaderboard sekuritas selalu punya label non-kosong.
+  const firmLabel = firm || analyst || 'Lainnya';
 
   return {
     id: `${ticker}-${openDate}-${row._row || row._ts || Math.random().toString(36).slice(2,8)}`,
     _row: row._row || null,
     _ts: row._ts || 0,
-    analyst, firm, ticker, type: tipe,
+    analyst, firm: firmLabel, ticker, type: tipe,
     entry, tp1, tp2, sl, openDate, horizon, horizonDays,
     cert, note, submittedBy, approvedBy,
     verified: !!(cert && !/^-+$/.test(cert)),
