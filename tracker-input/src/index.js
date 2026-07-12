@@ -152,13 +152,21 @@ function handleLogout() {
 // Terima teks rekomendasi (bisa berisi >1 saham, hasil edit inputer) + nama
 // inputer + foto. Teks dikirim apa adanya ke Sheet (kolom "catatan"); foto ke
 // Telegram. Tidak ada validasi per-kolom — inputer bebas mengetik/edit.
-async function apiSubmit(request, env) {
+async function apiSubmit(request, env, cookieAuthed) {
   if (!env.GAS_URL || !env.GAS_TOKEN) {
     return jsonRes({ error: 'GAS_URL / GAS_TOKEN belum di-set di Worker secret.' }, 500);
   }
 
   let body;
   try { body = await request.json(); } catch (_) { return jsonRes({ error: 'Body bukan JSON valid.' }, 400); }
+
+  // Auth: cookie ATAU token yang ditanam di halaman form. Token dipakai bila
+  // browser tidak mengirim cookie pada POST (terjadi di sebagian browser HP).
+  // Token = nilai yang sama dgn cookie & hanya ada di halaman yang sudah login.
+  const tokenOk = body && typeof body.authToken === 'string' && body.authToken.length > 10 && body.authToken === await expectedToken(env);
+  if (!cookieAuthed && !tokenOk) {
+    return jsonRes({ error: 'unauthorized' }, 401);
+  }
 
   const text = String(body.text || '').trim();
   const submitted_by = String(body.submitted_by || '').trim().slice(0, 80);
@@ -296,12 +304,12 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v9</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v10</span></div>
 </div>
 </body></html>`;
 }
 
-function renderFormPage(env) {
+function renderFormPage(env, submitToken) {
   const title = escapeHtml(env.APP_TITLE || 'Input Rekomendasi Tracker');
 
   // Prompt untuk Gemini/ChatGPT. Hasilnya ditempel apa adanya ke kotak data.
@@ -380,7 +388,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v9</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v10</span></div>
 </div>
 
 <script>
@@ -418,6 +426,7 @@ function tiOpen(u){ try{ var w=window.open(u,'_blank'); if(w){ try{ w.opener=nul
 
 <script>
 (function(){
+  var SUBMIT_TOKEN = ${JSON.stringify(submitToken || '')};
   var msg = document.getElementById('msg');
   var btn = document.getElementById('submitBtn');
   function setMsg(t,c){ if(msg) msg.innerHTML = t ? '<div class="'+c+'">'+t+'</div>' : ''; }
@@ -511,7 +520,7 @@ function tiOpen(u){ try{ var w=window.open(u,'_blank'); if(w){ try{ w.opener=nul
       var res = await fetch('/api/submit', {
         method:'POST', credentials:'same-origin',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ text: text, submitted_by: inputer, photos: photos })
+        body: JSON.stringify({ text: text, submitted_by: inputer, photos: photos, authToken: SUBMIT_TOKEN })
       });
       if(res.status===401){ setMsg('Sesi login sudah habis. Halaman akan dimuat ulang untuk login lagi…','err'); setTimeout(function(){ location.href='/'; }, 1600); return; }
       var j = await res.json().catch(function(){ return {}; });
@@ -558,15 +567,16 @@ export default {
 
       if (path === '/api/submit') {
         if (method !== 'POST') return jsonRes({ error: 'method not allowed' }, 405);
-        if (!authed) return jsonRes({ error: 'unauthorized' }, 401);
-        return apiSubmit(request, env);
+        return apiSubmit(request, env, authed); // auth (cookie/token) dicek di dalam
       }
 
       if (path === '/' || path === '/index.html') {
         if (method !== 'GET' && method !== 'HEAD') {
           return new Response('Method not allowed', { status: 405 });
         }
-        return htmlRes(authed ? renderFormPage(env) : renderLoginPage(env, null));
+        if (!authed) return htmlRes(renderLoginPage(env, null));
+        const submitToken = await expectedToken(env);
+        return htmlRes(renderFormPage(env, submitToken));
       }
 
       return new Response('Not found', { status: 404 });
