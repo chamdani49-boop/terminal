@@ -1,0 +1,108 @@
+name: Refresh Tracker data (Sheet -> tracker.json)
+
+# ═══════════════════════════════════════════════════════════════════════
+# Fetch baris "approved" dari Google Sheet Tracker (public read via GViz),
+# gabung dengan harga saham live (public/ohlc.json) + IHSG (^JKSE), lalu
+# tulis public/tracker.json. Dipakai frontend untuk render tab
+# Live/Performa/Akun di menu Tracker.
+#
+# JADWAL:
+#   - Cron GitHub tiap 60 menit menit ke-05 (best-effort; sering telat).
+#   - Bisa dipicu manual dari tab Actions → Run workflow.
+#
+# PRASYARAT (sekali saja):
+#   1. Google Sheet Tracker di-share "Anyone with the link → Viewer"
+#      (menu File → Share → Get link → General access: Anyone with the link).
+#      Ini bikin sheet BISA DIBACA publik via URL (read-only) tanpa OAuth.
+#      Editing tetap terbatas — hanya yang di-invite yang bisa edit.
+#   2. Set 1 GH secret di Settings → Secrets and variables → Actions:
+#        TRACKER_SHEET_ID = ID sheet (potong dari URL antara /d/ dan /edit).
+#      Contoh URL sheet:
+#        https://docs.google.com/spreadsheets/d/1AbCdEf.../edit#gid=0
+#                                              └─ SHEET_ID ─┘
+#   3. (Opsional) Set TRACKER_SHEET_TAB kalau nama tab bukan "Tracker".
+#
+# TIDAK PERLU Apps Script, TIDAK PERLU OAuth, TIDAK PERLU token.
+# Halaman input (tracker-input.chamdani49.workers.dev) TIDAK terganggu.
+# ═══════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    - cron: '5 * * * *'   # tiap jam menit ke-5 (menghindari puncak jam)
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Set "true" untuk rebuild penuh (abaikan cache lama)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-tracker
+  cancel-in-progress: false
+
+jobs:
+  refresh-tracker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── Build tracker.json ─────────────────────────────────────────────
+      # Env secret di-set di GitHub Repo Settings. Kalau belum di-set atau
+      # sheet belum di-share public, script akan tetap jalan tapi
+      # menghasilkan tracker.json dgn pending:true (bukan error).
+      - name: Build tracker.json
+        env:
+          TRACKER_SHEET_ID:  ${{ secrets.TRACKER_SHEET_ID }}
+          TRACKER_SHEET_TAB: ${{ secrets.TRACKER_SHEET_TAB }}
+        run: |
+          node scripts/build-tracker.js
+
+      # ── Commit hanya kalau berubah ─────────────────────────────────────
+      - name: Commit & push if changed
+        id: commit
+        run: |
+          if git diff --quiet -- public/tracker.json; then
+            echo "⏭  No tracker.json changes — skip commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "tracker-refresh[bot]"
+          git config user.email "tracker-refresh@economstock.local"
+          git add public/tracker.json
+          git commit -m "tracker: refresh $(date -u +%FT%TZ)"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "✓ Pushed on attempt $attempt"
+              pushed=true
+              break
+            fi
+            echo "⚠️  Push gagal (attempt $attempt) — rebase ke origin/main lalu retry…"
+            git pull --rebase --autostash origin main || true
+            sleep $(( (RANDOM % 5) + 2 ))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "FATAL: push gagal setelah 5 percobaan."
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # ── Purge jsDelivr CDN cache ───────────────────────────────────────
+      - name: Purge jsDelivr CDN cache
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          response=$(curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/public/tracker.json" || true)
+          echo "Purge tracker.json: $response"
