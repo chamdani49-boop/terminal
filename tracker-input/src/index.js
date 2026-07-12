@@ -304,7 +304,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v10</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v11</span></div>
 </div>
 </body></html>`;
 }
@@ -358,8 +358,8 @@ ${STYLE}
     <textarea id="aiPrompt" rows="6" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
     <div style="display:flex;gap:8px;margin:10px 0 0;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-sec" onclick="tiCopy()">📋 Salin Prompt</button>
-      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return tiOpen('https://gemini.google.com/app')">Buka Gemini ↗</a>
-      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener" onclick="return tiOpen('https://chatgpt.com/')">Buka ChatGPT ↗</a>
+      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener">Buka Gemini ↗</a>
+      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener">Buka ChatGPT ↗</a>
     </div>
     <div id="aiInfo" class="hint" style="margin-top:8px"></div>
   </div>
@@ -388,7 +388,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v10</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v11</span></div>
 </div>
 
 <script>
@@ -522,9 +522,15 @@ function tiOpen(u){ try{ var w=window.open(u,'_blank'); if(w){ try{ w.opener=nul
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ text: text, submitted_by: inputer, photos: photos, authToken: SUBMIT_TOKEN })
       });
-      if(res.status===401){ setMsg('Sesi login sudah habis. Halaman akan dimuat ulang untuk login lagi…','err'); setTimeout(function(){ location.href='/'; }, 1600); return; }
+      if(res.status===401){
+        var punyaToken = (typeof SUBMIT_TOKEN==='string' && SUBMIT_TOKEN.length>10);
+        setMsg('Gagal (parse-v11): UNAUTHORIZED · token di halaman: <b>'+(punyaToken?'ADA':'KOSONG')+'</b>. ' + (punyaToken
+          ? 'Token dikirim tapi ditolak server — screenshot ini ke admin.'
+          : 'Halaman ini masih versi LAMA (belum ada token). Buka di jendela <b>Incognito/Penyamaran</b> lalu login, pastikan footer tertulis <b>build parse-v11</b>.'), 'err');
+        return;
+      }
       var j = await res.json().catch(function(){ return {}; });
-      if(!res.ok || j.error){ throw new Error(j.error || ('HTTP '+res.status)); }
+      if(!res.ok || j.error){ throw new Error('parse-v11 · HTTP '+res.status+' · '+(j.error||'')); }
       setMsg('✓ Terkirim ke admin.' + ((j.photos&&j.photos.sent)?(' '+j.photos.sent+' foto dikirim ke Telegram.'):'') + ' Menunggu approve. Kotak dikosongkan untuk input berikutnya.', 'ok');
       document.getElementById('dataText').value='';
       photos.length=0; renderThumbs();
