@@ -199,7 +199,12 @@ async function apiSubmit(request, env, cookieAuthed) {
   let gasBody = null;
   try { gasBody = JSON.parse(gasText); } catch (_) { gasBody = { _raw: gasText }; }
   if (!gasRes.ok || !gasBody || gasBody.ok !== true) {
-    return jsonRes({ error: (gasBody && gasBody.error) || ('Sheet menolak (HTTP ' + gasRes.status + ')'), detail: gasBody }, 502);
+    // Kasus paling sering di deploy baru: GAS_TOKEN Worker ≠ TOKEN gas/Code.gs.
+    // Beri pesan spesifik supaya user tak menyangka soal login.
+    if (gasBody && gasBody.error === 'unauthorized') {
+      return jsonRes({ error: 'Google Sheet MENOLAK (bukan soal login halaman): nilai GAS_TOKEN di Worker tidak cocok dengan TOKEN di gas/Code.gs. Perbaikan: (1) buka Sheet ▸ Extensions ▸ Apps Script; salin nilai TOKEN di baris "var TOKEN=..."; (2) di Worker, jalankan sekali: `npx wrangler secret put GAS_TOKEN` lalu tempel nilai yang SAMA persis, lalu deploy ulang worker. Setelah itu Kirim akan sukses.' }, 502);
+    }
+    return jsonRes({ error: 'Google Sheet menolak: ' + ((gasBody && gasBody.error) || ('HTTP ' + gasRes.status)), detail: gasBody }, 502);
   }
 
   // Foto → Telegram (best-effort; tidak menggagalkan submit).
@@ -304,7 +309,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v12</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v13</span></div>
 </div>
 </body></html>`;
 }
@@ -388,7 +393,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v12</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v13</span></div>
 </div>
 
 <script>
@@ -522,15 +527,12 @@ function tiGo(a){ try{ if(/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAg
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ text: text, submitted_by: inputer, photos: photos, authToken: SUBMIT_TOKEN })
       });
-      if(res.status===401){
-        var punyaToken = (typeof SUBMIT_TOKEN==='string' && SUBMIT_TOKEN.length>10);
-        setMsg('Gagal (parse-v11): UNAUTHORIZED · token di halaman: <b>'+(punyaToken?'ADA':'KOSONG')+'</b>. ' + (punyaToken
-          ? 'Token dikirim tapi ditolak server — screenshot ini ke admin.'
-          : 'Halaman ini masih versi LAMA (belum ada token). Buka di jendela <b>Incognito/Penyamaran</b> lalu login, pastikan footer tertulis <b>build parse-v12</b>.'), 'err');
-        return;
-      }
       var j = await res.json().catch(function(){ return {}; });
-      if(!res.ok || j.error){ throw new Error('parse-v11 · HTTP '+res.status+' · '+(j.error||'')); }
+      if(res.status===401){
+        setMsg('Sesi login habis. Halaman dimuat ulang untuk login lagi…','err');
+        setTimeout(function(){ location.href='/'; }, 1600); return;
+      }
+      if(!res.ok || j.error){ throw new Error(j.error || ('HTTP '+res.status)); }
       setMsg('✓ Terkirim ke admin.' + ((j.photos&&j.photos.sent)?(' '+j.photos.sent+' foto dikirim ke Telegram.'):'') + ' Menunggu approve. Kotak dikosongkan untuk input berikutnya.', 'ok');
       document.getElementById('dataText').value='';
       photos.length=0; renderThumbs();
