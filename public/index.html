@@ -2787,6 +2787,23 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-live-tp-price{font-size:10px;font-weight:700;color:var(--text);word-break:break-all;line-height:1.15}
 .tr-live-tp-pct{font-size:10px;font-weight:700}
 
+/* ── STATE BADGES (state machine v2) ─────────────────────────────
+   Menandai status rekomendasi: PENDING / MISSED / TRIGGERED / TP / SL / EXPIRED
+   Tampil di sebelah ticker + BUY/SELL badge. */
+.tr-state-badge{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:800;padding:2.5px 6px;border-radius:5px;letter-spacing:.4px;white-space:nowrap;text-transform:uppercase}
+.tr-state-badge.pending{background:rgba(245,158,11,.14);color:#f59e0b;border:1px solid rgba(245,158,11,.35)}
+.tr-state-badge.missed{background:rgba(148,163,184,.14);color:#94a3b8;border:1px solid rgba(148,163,184,.35)}
+.tr-state-badge.active{background:rgba(59,130,246,.14);color:#60a5fa;border:1px solid rgba(59,130,246,.35)}
+.tr-state-badge.tp{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.35)}
+.tr-state-badge.sl{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.35)}
+.tr-state-badge.expired{background:rgba(148,163,184,.10);color:#94a3b8;border:1px solid rgba(148,163,184,.28)}
+
+/* Varian kartu unfilled: outline tipis, opasitas lebih rendah */
+.tr-live-card.unfilled{background:linear-gradient(180deg,var(--card),rgba(245,158,11,.02));border-style:dashed;border-color:rgba(245,158,11,.28)}
+.tr-live-card.unfilled.missed{background:linear-gradient(180deg,var(--card),rgba(148,163,184,.02));border-color:rgba(148,163,184,.28)}
+.tr-live-card.unfilled .tr-live-card-float{font-size:18px;color:#f59e0b}
+.tr-live-card.unfilled.missed .tr-live-card-float{color:#94a3b8}
+
 /* Market Intelligence bar */
 .tr-live-mi-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:14px}
 .tr-live-mi-h{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-weight:700}
@@ -5070,8 +5087,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function updateLiveChip(data){
     var el = $('trSubLiveN'); if (!el) return;
     if (!data || data.pending) { el.textContent = '—'; return; }
-    var n = data.open || (data.openList ? data.openList.length : 0);
-    el.textContent = String(n);
+    // v2: chip Live = TRIGGERED + PENDING + MISSED (semua yg belum closed)
+    var triggered = data.open || (data.openList ? data.openList.length : 0);
+    var pending = data.pendingCount || (data.pendingList ? data.pendingList.length : 0);
+    var missed = data.missedCount || (data.missedList ? data.missedList.length : 0);
+    el.textContent = String(triggered + pending + missed);
   }
 
   // ── Update status hint di semua pane empty state ───────────────────
@@ -5318,19 +5338,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
       pfEl.textContent = (pf == null || !Number.isFinite(+pf)) ? '—' : (pf >= 999 ? '∞' : pf.toFixed(2));
       pfEl.style.color = pf >= 1.5 ? 'var(--green)' : (pf >= 1 ? 'var(--yellow)' : 'var(--red)');
     }
-    // Total signals hero
-    var total = (data.open || 0) + (data.totalClosed || 0);
+    // Total signals hero (v2: triggered + pending + missed + closed)
+    var triggered = data.open || 0;
+    var pendingC = data.pendingCount || 0;
+    var missedC  = data.missedCount  || 0;
+    var closedC  = data.totalClosed || 0;
+    var total = triggered + pendingC + missedC + closedC;
     var tv = $('trLiveTotalVal'); if (tv) tv.textContent = total;
-    var oN = $('trLiveOpenN'); if (oN) oN.textContent = data.open || 0;
-    var cN = $('trLiveClosedN'); if (cN) cN.textContent = data.totalClosed || 0;
+    var oN = $('trLiveOpenN');
+    if (oN) {
+      // Show breakdown: X aktif · Y menunggu · Z terlewat
+      var parts = [triggered + ' aktif'];
+      if (pendingC) parts.push(pendingC + ' menunggu');
+      if (missedC)  parts.push(missedC  + ' terlewat');
+      oN.textContent = parts.join(' · ');
+    }
+    var cN = $('trLiveClosedN'); if (cN) cN.textContent = closedC;
     var hi = $('trLiveHiScore'); if (hi) hi.textContent = data.highScore || 0;
     var openBar = $('trLiveSideBuy'); var closedBar = $('trLiveSideClosed');
     if (openBar && closedBar) {
-      var openPct = total ? (data.open || 0) / total * 100 : 50;
+      var openPct = total ? (triggered + pendingC + missedC) / total * 100 : 50;
       openBar.style.width = openPct + '%';
       closedBar.style.width = (100 - openPct) + '%';
     }
-    var oSub = $('trLiveOpenSub'); if (oSub) oSub.textContent = (data.open || 0) + ' aktif dipantau';
+    var oSub = $('trLiveOpenSub'); if (oSub) oSub.textContent = triggered + ' aktif dipantau';
   }
 
   // ── Render Live Signal Terminal ──
@@ -5358,8 +5389,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       ? (openList.length + ' posisi terbuka · ' + profit + ' profit · ' + loss + ' loss')
       : (openList.length + ' posisi terbuka');
 
-    // Stream heading
-    var sc = $('trLiveStreamCount'); if (sc) sc.textContent = openList.length;
+    // Stream heading — v2: total = triggered + unfilled
+    var unfilled = data.unfilledList || [];
+    var totalCards = openList.length + unfilled.length;
+    var sc = $('trLiveStreamCount'); if (sc) sc.textContent = totalCards;
     var sf = $('trLiveStreamFloat');
     if (sf) {
       var avg = openList.length ? (totalFloat / openList.length) : 0;
@@ -5368,12 +5401,32 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
   }
 
-  // ── Render kartu rekomendasi aktif ──
+  // ── State badge helper (untuk state machine v2) ──
+  // state: TRIGGERED | PENDING | RUNNING_MISSED | TP_HIT | SL_HIT | EXPIRED
+  function stateBadge(state, closedBy, tpHits){
+    tpHits = tpHits || [];
+    switch (state) {
+      case 'PENDING':        return { icon: '⏳', label: 'Menunggu Entry',      cls: 'pending' };
+      case 'RUNNING_MISSED': return { icon: '🚀', label: 'Harga Lari',          cls: 'missed'  };
+      case 'TRIGGERED':      return { icon: '●',  label: 'Entry Tercapai',      cls: 'active'  };
+      case 'TP_HIT':
+        if (tpHits.indexOf('TP2') >= 0)  return { icon: '🏆', label: 'Kena TP2', cls: 'tp'    };
+        if (closedBy === 'SL_TRAIL')     return { icon: '🛡', label: 'SL Trailing (WIN)', cls: 'tp' };
+        return { icon: '🎯', label: 'Kena TP1', cls: 'tp' };
+      case 'SL_HIT':         return { icon: '✕',  label: 'Kena SL',             cls: 'sl'      };
+      case 'EXPIRED':        return { icon: '⏰', label: 'Expired',             cls: 'expired' };
+      default:               return { icon: '●',  label: 'Aktif',               cls: 'active'  };
+    }
+  }
+
+  // ── Render kartu rekomendasi (aktif + pending + missed) ──
   function renderCard(o){
     var isBuy = (o.type || 'BUY').toUpperCase() === 'BUY';
-    var floating = +o.floatingPct || 0;
-    var cls = floating >= 0 ? 'up' : 'dn';
-    var cardCls = floating >= 0 ? '' : 'dn';
+    // State machine v2: derive dari `state`, fallback ke legacy status
+    var stateStr = o.state || (o.status === 'OPEN' ? 'TRIGGERED' : 'TRIGGERED');
+    var isUnfilled = stateStr === 'PENDING' || stateStr === 'RUNNING_MISSED';
+    var badge = stateBadge(stateStr, o.closedBy, o.tpHits);
+
     var pctTo = function(price){
       if (price == null || !Number.isFinite(+price) || !o.entry) return '—';
       return fmtPct(((price - o.entry) / o.entry) * 100 * (isBuy ? 1 : -1), { dec: 1 });
@@ -5381,11 +5434,31 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     var hasT2 = o.tp2 != null && o.tp2 !== o.tp1;
     var tpHits = o.tpHits || [];
-    var slHit  = tpHits.includes('SL');
     var tp1Hit = tpHits.includes('TP1');
     var tp2Hit = tpHits.includes('TP2');
 
-    var slBox = '<div class="tr-live-tp sl' + (slHit ? ' hit' : '') + '">'
+    // Right-panel: floating P&L untuk TRIGGERED, distance-to-entry untuk PENDING/MISSED
+    var rightPanel;
+    var cardCls = '';
+    if (isUnfilled) {
+      var dist = (o.distanceToEntryPct == null) ? 0 : +o.distanceToEntryPct;
+      // BUY: distance > 0 = harga di atas entry (belum turun), < 0 = harga di bawah (sudah lewat)
+      // Untuk display: gunakan absolute + arah simbolik.
+      var distAbs = Math.abs(dist).toFixed(2);
+      var distIcon = (isBuy ? (dist > 0 ? '↑' : '↓') : (dist > 0 ? '↑' : '↓'));
+      var distCls = stateStr === 'RUNNING_MISSED' ? 'dn' : '';
+      cardCls = 'unfilled ' + (stateStr === 'RUNNING_MISSED' ? 'missed' : 'pending');
+      rightPanel = '<div class="tr-live-card-float ' + distCls + '" style="font-size:20px">' + distIcon + ' ' + distAbs + '%</div>'
+                 + '<div class="tr-live-card-float-lbl">jarak ke entry</div>';
+    } else {
+      var floating = +o.floatingPct || 0;
+      var cls = floating >= 0 ? 'up' : 'dn';
+      cardCls = floating >= 0 ? '' : 'dn';
+      rightPanel = '<div class="tr-live-card-float ' + cls + '">' + fmtPct(floating) + '</div>'
+                 + '<div class="tr-live-card-float-lbl">floating P&amp;L</div>';
+    }
+
+    var slBox = '<div class="tr-live-tp sl">'
       + '<div class="tr-live-tp-lbl">🛡️ SL</div>'
       + '<div class="tr-live-tp-price">' + fmtN(o.sl) + '</div>'
       + '<div class="tr-live-tp-pct">' + pctTo(o.sl) + '</div>'
@@ -5406,7 +5479,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var horizonLine = o.horizon ? ('  ·  ' + esc(o.horizon)) : '';
 
     // ── FIRM-FIRST: sekuritas primary (bold), analis pelengkap. ────────
-    // Kalau firm kosong, analis jadi fallback primary.
     var hasFirm = o.firm && String(o.firm).trim();
     var primaryEntity = hasFirm ? firmShort(o.firm) : (o.analyst || '—');
     var primaryIcon = hasFirm ? '🏢' : '👤';
@@ -5414,16 +5486,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
       ? '<span class="tr-live-card-attr">oleh ' + esc(o.analyst) + '</span>'
       : '';
 
+    // State badge chip (di atas kartu)
+    var stateBadgeHtml = '<span class="tr-state-badge tr-state-' + badge.cls + '">'
+      + badge.icon + ' ' + badge.label + '</span>';
+
     return '<div class="tr-live-card ' + cardCls + '">'
       + '<div class="tr-live-card-top">'
         + '<div class="tr-live-card-l">'
-          + '<div class="tr-live-card-tick">' + esc(o.ticker) + ' <span class="tr-live-card-badge ' + (isBuy ? 'buy' : 'sell') + '">' + (isBuy ? 'BUY' : 'SELL') + '</span></div>'
+          + '<div class="tr-live-card-tick">' + esc(o.ticker) + ' <span class="tr-live-card-badge ' + (isBuy ? 'buy' : 'sell') + '">' + (isBuy ? 'BUY' : 'SELL') + '</span> ' + stateBadgeHtml + '</div>'
           + (o.tickerName ? '<div class="tr-live-card-sub">' + esc(o.tickerName) + '</div>' : '')
           + '<div class="tr-live-card-firm">' + primaryIcon + ' <b>' + esc(primaryEntity) + '</b>' + certLine + verified + '</div>'
         + '</div>'
         + '<div class="tr-live-card-r">'
-          + '<div class="tr-live-card-float ' + cls + '">' + fmtPct(floating) + '</div>'
-          + '<div class="tr-live-card-float-lbl">floating P&amp;L</div>'
+          + rightPanel
         + '</div>'
       + '</div>'
       + '<div class="tr-live-card-meta">'
@@ -5442,16 +5517,29 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   function renderGrid(data){
     var el = $('trLiveGrid'); if (!el) return;
-    var list = data.openList || [];
-    if (!list.length) {
+    // Gabungkan aktif (TRIGGERED) + unfilled (PENDING + MISSED) supaya user lihat
+    // semua rekomendasi yang belum closed. Sort: TRIGGERED (score desc) → PENDING (dist asc) → MISSED.
+    var openList  = data.openList || [];
+    var unfilled  = data.unfilledList || [];
+    var priority = { TRIGGERED: 0, PENDING: 1, RUNNING_MISSED: 2 };
+    var combined = openList.concat(unfilled);
+    if (!combined.length) {
       el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px 12px;color:var(--text3);font-family:\'IBM Plex Mono\',monospace;font-size:12px">Tidak ada rekomendasi aktif saat ini.</div>';
       return;
     }
-    // Sort: score desc → tanggal desc (terbaru dulu untuk score sama)
-    var sorted = list.slice().sort(function(a, b){
-      var sd = (b.score || 0) - (a.score || 0);
-      if (sd !== 0) return sd;
-      return String(b.openDate || '').localeCompare(String(a.openDate || ''));
+    var sorted = combined.slice().sort(function(a, b){
+      var pa = priority[a.state || 'TRIGGERED'] || 0;
+      var pb = priority[b.state || 'TRIGGERED'] || 0;
+      if (pa !== pb) return pa - pb;
+      // Dalam grup sama:
+      //   TRIGGERED: score desc → openDate desc
+      //   PENDING/MISSED: distance asc (yang dekat entry duluan)
+      if ((a.state || 'TRIGGERED') === 'TRIGGERED') {
+        var sd = (b.score || 0) - (a.score || 0);
+        if (sd !== 0) return sd;
+        return String(b.openDate || '').localeCompare(String(a.openDate || ''));
+      }
+      return Math.abs(+a.distanceToEntryPct || 0) - Math.abs(+b.distanceToEntryPct || 0);
     });
     el.innerHTML = sorted.map(renderCard).join('');
   }
