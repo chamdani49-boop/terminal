@@ -20,7 +20,7 @@
  */
 
 const COOKIE_NAME = 'ti_auth';
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 hari (biar inputer tak sering login ulang)
+const COOKIE_MAX_AGE = 60 * 60 * 24; // 24 jam (wajib login ulang tiap hari)
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -367,7 +367,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v16</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v17</span></div>
 </div>
 </body></html>`;
 }
@@ -452,7 +452,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code>. Approved by admin. · <span style="opacity:.5">build parse-v16</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code>. Approved by admin. · <span style="opacity:.5">build parse-v17</span></div>
 </div>
 
 <script>
