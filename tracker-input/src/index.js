@@ -321,7 +321,12 @@ const STYLE = `
   .thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
   .thumb{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--bg2)}
   .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-  .thumb-x{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;border:0;cursor:pointer;font-size:11px;line-height:18px;padding:0;text-align:center}
+  .thumb-x{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;border:0;cursor:pointer;font-size:12px;line-height:20px;padding:0;text-align:center;z-index:2}
+  .pslots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px}
+  .pslot{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:center}
+  .pslot.empty{border-style:dashed;color:var(--text3);font-size:26px;cursor:pointer;font-weight:300}
+  .pslot.empty:hover{border-color:var(--accent);color:var(--accent2)}
+  .pslot img{width:100%;height:100%;object-fit:cover;display:block}
   @media(max-width:480px){.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
 </style>
 `;
@@ -349,7 +354,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin.</div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v3</span></div>
 </div>
 </body></html>`;
 }
@@ -417,12 +422,12 @@ ${STYLE}
 
   <div class="card">
     <div class="cardhead"><span class="step">1</span> Salin prompt &amp; buka AI</div>
-    <div class="hint" style="margin-bottom:8px">Tekan <b>Salin Prompt</b> → buka Gemini/ChatGPT (akunmu sendiri) → upload screenshot sinyal + tempel prompt → salin hasilnya. Tombol "Salin &amp; buka" akan menyalin prompt lalu membuka situsnya sekaligus.</div>
+    <div class="hint" style="margin-bottom:8px">Tekan <b>Salin Prompt</b> → buka Gemini/ChatGPT (akunmu sendiri) → di sana tempel prompt + upload screenshot sinyal → salin hasilnya, lalu tempel di Langkah 2.</div>
     <textarea id="aiPrompt" rows="7" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
     <div style="display:flex;gap:8px;margin:10px 0 0;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-sec" id="copyPrompt">📋 Salin Prompt</button>
-      <a class="btn-sec" id="openGemini" href="https://gemini.google.com/app" target="_blank" rel="noopener">Salin &amp; buka Gemini ↗</a>
-      <a class="btn-sec" id="openGpt" href="https://chatgpt.com/" target="_blank" rel="noopener">Salin &amp; buka ChatGPT ↗</a>
+      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener">Buka Gemini ↗</a>
+      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener">Buka ChatGPT ↗</a>
     </div>
     <div id="aiInfo" class="hint" style="margin-top:8px"></div>
   </div>
@@ -442,23 +447,20 @@ ${escapeHtml(demoText)}"></textarea>
   <div class="card">
     <div class="cardhead"><span class="step">3</span> Foto bukti <span style="color:var(--text3);font-weight:500;font-size:11px;margin-left:6px">(opsional, maks 5)</span></div>
     <div class="hint" style="margin-bottom:8px">Foto <b>dikirim ke admin via Telegram</b> untuk validasi — <b>tidak disimpan</b> di database/Sheet.</div>
-    <label class="photo-drop" for="photoInput">📎 Pilih foto (bisa lebih dari satu, maks 5)</label>
+    <div class="pslots" id="photoSlots"></div>
     <input id="photoInput" type="file" accept="image/*" multiple style="display:none">
-    <div class="thumbs" id="thumbs"></div>
-    <div id="photoInfo" class="hint" style="margin-top:6px"></div>
+    <div id="photoInfo" class="hint" style="margin-top:8px">0/5 foto. Ketuk kotak bertanda + untuk menambah.</div>
   </div>
 
   <div id="reviewWrap">
     <div id="msg"></div>
-    <div class="hint" style="text-align:center;margin-bottom:10px">Belum punya foto/AI? <span class="link" id="manualLink">Isi manual</span>.</div>
   </div>
 
-  <div class="card" id="reviewCard" style="display:none">
+  <div class="card" id="reviewCard">
     <div class="cardhead"><span class="step">4</span> Periksa &amp; Kirim</div>
-    <div class="hint" style="margin-bottom:12px">Ringkasan hasil Parse di bawah. Kalau sudah benar, langsung <b>Kirim</b>. Ada yang keliru? Tekan <span class="link" id="editToggle">✏️ Koreksi data</span>.</div>
-    <div id="summary" class="summary"></div>
+    <div class="hint" style="margin-bottom:12px">Kolom di bawah terisi otomatis dari Parse (atau isi manual). Periksa sebentar — terutama harga — lalu tekan <b>Kirim Rekomendasi</b> di bawah.</div>
     <form id="form" autocomplete="off">
-      <div id="editFields" style="display:none">
+      <div id="editFields">
       <div class="grid2">
         <div class="field">
           <label class="req" for="analis">Nama Analis</label>
@@ -532,7 +534,7 @@ ${escapeHtml(demoText)}"></textarea>
     </form>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin.</div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v3</span></div>
 </div>
 
 <script>
@@ -580,11 +582,6 @@ ${escapeHtml(demoText)}"></textarea>
       return '<div class="srow'+(r[2]?' miss':'')+'"><span>'+r[0]+'</span><b>'+esc(r[1])+(r[2]?' ⚠':'')+'</b></div>';
     }).join('');
   }
-  if(editToggle) editToggle.onclick = function(){
-    if(!editFields) return;
-    if(editFields.style.display==='none'){ showEdit(); } else { hideEdit(); }
-  };
-  // Jaga ringkasan tetap sinkron saat user mengedit lewat "Koreksi data".
 
   // ── Copy util yang ANDAL (clipboard API dulu, fallback execCommand) ──
   function copyText(text){
@@ -624,15 +621,6 @@ ${escapeHtml(demoText)}"></textarea>
         : '<span style="color:var(--yellow)">Gagal menyalin otomatis. Klik area prompt di atas (otomatis terblok), lalu tekan Ctrl+C / (di HP: tahan → Copy).</span>';
     });
   };
-  // "Salin & buka": salin prompt lalu biarkan link <a target=_blank> membuka situs.
-  ['openGemini','openGpt'].forEach(function(id){
-    var a=document.getElementById(id);
-    if(a) a.addEventListener('click', function(){
-      copyText(AI_PROMPT);
-      if(aiInfo) aiInfo.innerHTML='<span style="color:var(--green)">✓ Prompt tersalin & situs AI dibuka di tab baru. Di sana: upload foto + tempel prompt (Ctrl+V).</span>';
-    });
-  });
-
   // ── Bersih-bersih angka & tanggal ──
   function cleanNum(s){
     if(s==null) return '';
@@ -746,25 +734,15 @@ ${escapeHtml(demoText)}"></textarea>
     if(out.sl){ f.sl.value = out.sl; filled.push('SL'); }
     if(out.horizon){ f.horizon.value = out.horizon; filled.push('Horizon'); }
     if(out.catatan){ f.catatan.value = out.catatan; filled.push('Catatan'); }
-    hideEdit();
-    showReview();
-    renderSummary();
-    reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
+    if(reviewCard) reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
     if(filled.length){
-      parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terbaca: '+esc(filled.join(', '))+'. Cek ringkasan di Langkah 4, lalu Kirim.</span>';
+      parseInfo.innerHTML = '<span style="color:var(--green)">✓ Terbaca: '+esc(filled.join(', '))+'. Periksa di Langkah 4, lalu Kirim.</span>';
     } else {
-      showEdit();
-      parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terbaca. Tempel hasil AI yang berlabel (Analis:, Tipe:, Saham:, Entry:, TP1:, SL: …), atau isi lewat "Koreksi data".</span>';
+      parseInfo.innerHTML = '<span style="color:var(--yellow)">Tidak terbaca. Pastikan menempel hasil AI yang berlabel (Analis:, Tipe:, Saham:, Entry:, TP1:, SL: …), atau isi kolom di Langkah 4 secara manual.</span>';
     }
   };
   var parseDemoBtn = document.getElementById('parseDemoBtn');
   if(parseDemoBtn) parseDemoBtn.onclick = function(){ document.getElementById('rawParse').value = DEMO; };
-
-  var manualLink = document.getElementById('manualLink');
-  if(manualLink) manualLink.onclick = function(){ showReview(); renderSummary(); showEdit(); reviewCard.scrollIntoView({behavior:'smooth', block:'start'}); };
-
-  // Sinkronkan ringkasan saat user mengoreksi lewat form edit.
-  if(f) f.addEventListener('input', renderSummary);
 
   // Kode saham selalu tampil kapital saat diketik.
   if(f && f.ticker) f.ticker.addEventListener('input', function(){ this.value = this.value.toUpperCase(); });
@@ -773,16 +751,28 @@ ${escapeHtml(demoText)}"></textarea>
   var MAX_PHOTOS = 5;
   var photos = [];
   var photoInput = document.getElementById('photoInput');
-  var thumbs = document.getElementById('thumbs');
+  var photoSlots = document.getElementById('photoSlots');
   var photoInfo = document.getElementById('photoInfo');
+  // Selalu tampilkan 5 kotak: yang terisi = thumbnail + tombol hapus,
+  // yang kosong = kotak "+" yang bisa diketuk untuk menambah foto.
   function renderThumbs(){
-    thumbs.innerHTML = photos.map(function(src,i){
-      return '<div class="thumb"><img src="'+src+'"><button type="button" class="thumb-x" data-i="'+i+'" title="Hapus">✕</button></div>';
-    }).join('');
-    Array.prototype.forEach.call(thumbs.querySelectorAll('.thumb-x'), function(b){
-      b.onclick=function(){ photos.splice(parseInt(b.getAttribute('data-i'),10),1); renderThumbs(); };
+    if(!photoSlots) return;
+    var html='';
+    for(var i=0;i<MAX_PHOTOS;i++){
+      if(photos[i]){
+        html += '<div class="pslot"><img src="'+photos[i]+'"><button type="button" class="thumb-x" data-i="'+i+'" title="Hapus">✕</button></div>';
+      } else {
+        html += '<div class="pslot empty" title="Tambah foto">+</div>';
+      }
+    }
+    photoSlots.innerHTML = html;
+    Array.prototype.forEach.call(photoSlots.querySelectorAll('.thumb-x'), function(b){
+      b.onclick=function(ev){ ev.stopPropagation(); photos.splice(parseInt(b.getAttribute('data-i'),10),1); renderThumbs(); };
     });
-    if(photoInfo) photoInfo.textContent = photos.length ? (photos.length+' foto siap dikirim ke Telegram saat Kirim.') : '';
+    Array.prototype.forEach.call(photoSlots.querySelectorAll('.pslot.empty'), function(s){
+      s.onclick=function(){ if(photoInput) photoInput.click(); };
+    });
+    if(photoInfo) photoInfo.innerHTML = photos.length + '/5 foto' + (photos.length ? ' — siap dikirim ke Telegram saat Kirim.' : '. Ketuk kotak + untuk menambah.');
   }
   function compress(file){
     return new Promise(function(resolve){
@@ -810,6 +800,7 @@ ${escapeHtml(demoText)}"></textarea>
     photoInput.value='';
     renderThumbs();
   };
+  renderThumbs(); // tampilkan 5 slot kosong saat halaman dibuka
 
   if(f) f.addEventListener('submit', async function(e){
     e.preventDefault();
@@ -818,9 +809,8 @@ ${escapeHtml(demoText)}"></textarea>
     var need = [['analis','Nama Analis'],['ticker','Kode Saham'],['tipe','Tipe'],['entry','Entry'],['tp1','TP1'],['sl','SL'],['tanggal','Tanggal']];
     var miss = need.filter(function(n){ return !val(n[0]); }).map(function(n){ return n[1]; });
     if(miss.length){
-      setMsg('Data belum lengkap: '+esc(miss.join(', '))+'. Perbaiki lewat "Koreksi data".', 'err');
-      renderSummary(); showEdit();
-      reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
+      setMsg('Data belum lengkap: '+esc(miss.join(', '))+'. Lengkapi kolom bertanda * lalu Kirim lagi.', 'err');
+      if(reviewCard) reviewCard.scrollIntoView({behavior:'smooth', block:'start'});
       return;
     }
     var data = {
@@ -847,9 +837,6 @@ ${escapeHtml(demoText)}"></textarea>
       var rp=document.getElementById('rawParse'); if(rp) rp.value='';
       if(parseInfo) parseInfo.innerHTML='';
       photos.length=0; renderThumbs();
-      hideEdit();
-      if(summaryEl) summaryEl.innerHTML='';
-      if(reviewCard) reviewCard.style.display='none';
       window.scrollTo({top:0, behavior:'smooth'});
     }catch(err){
       setMsg('Gagal: '+esc(err.message), 'err');
