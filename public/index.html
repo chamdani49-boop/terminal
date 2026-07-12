@@ -2499,6 +2499,89 @@ select.form-control option{background:var(--card);color:var(--text)}
   from{opacity:0;transform:translateX(-50%) rotate(-7deg) scale(1.6)}
   to  {opacity:1;transform:translateX(-50%) rotate(-7deg) scale(1)}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MENU TRACKER — UI performa rekomendasi trading (Entry/TP/SL) vs IHSG.
+   Prefix `.tr-` khusus supaya tak konflik dgn class lain. Warna & spacing
+   mengikuti tema terminal (--accent ungu, --card, --border, --green/red).
+   Belum live: menu default HIDDEN; aktif hanya bila body.tr-admin (admin).
+═══════════════════════════════════════════════════════════════════════ */
+.tr-menu{display:none !important}
+body.tr-admin .tr-menu{display:inline-flex !important}
+body.tr-admin .bottom-nav-item.tr-menu{display:flex !important}
+
+#page-tracker{padding:20px 24px 40px;max-width:1200px;margin:0 auto}
+@media(max-width:640px){ #page-tracker{padding:14px 12px 90px} }
+
+.tr-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.tr-title-wrap h1{font-size:20px;font-weight:800;margin:0;letter-spacing:-.3px}
+.tr-title-wrap .tr-sub{font-size:12px;color:var(--text3);margin-top:3px;font-family:'IBM Plex Mono',monospace;letter-spacing:.5px}
+.tr-preview-badge{font-size:10px;font-weight:700;color:var(--yellow);background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);padding:4px 10px;border-radius:var(--radius-pill);letter-spacing:.4px}
+.tr-period{background:var(--card);border:1px solid var(--border);color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:7px 11px;border-radius:8px}
+
+/* KPI row */
+.tr-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:800px){.tr-kpi-row{grid-template-columns:repeat(2,1fr)}}
+.tr-kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.tr-kpi.hi{background:linear-gradient(135deg,rgba(124,58,237,.14),var(--card) 65%);border-color:rgba(124,58,237,.35)}
+.tr-kpi .k{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;letter-spacing:.5px;font-weight:600}
+.tr-kpi .v{font-size:24px;font-weight:800;margin-top:5px;letter-spacing:-.5px;font-family:'IBM Plex Mono',monospace}
+.tr-kpi .s{font-size:11px;color:var(--text3);margin-top:3px}
+.tr-up{color:var(--green)}.tr-dn{color:var(--red)}.tr-neu{color:var(--text2)}
+
+/* Card generik utk chart, simulator, list */
+.tr-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.tr-card-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.tr-card-title{font-size:14px;font-weight:800;letter-spacing:-.2px;margin:0}
+.tr-card-desc{font-size:11px;color:var(--text3);margin-top:2px}
+.tr-chart-wrap{position:relative;height:240px}
+.tr-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text2);margin-top:10px;font-family:'IBM Plex Mono',monospace}
+.tr-lg-dot{display:inline-block;width:11px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+/* Simulator gaya eksekusi */
+.tr-seg{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-top:6px}
+.tr-seg-btn{flex:1;text-align:center;font-size:12px;font-weight:700;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--text2);border:0;background:transparent;transition:all .15s}
+.tr-seg-btn:hover{color:var(--text)}
+.tr-seg-btn.active{background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(124,58,237,.28)}
+.tr-sim-note{font-size:11.5px;color:var(--text2);line-height:1.6;margin-top:10px;padding:10px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)}
+
+/* Section title */
+.tr-sec-title{font-size:14px;font-weight:800;letter-spacing:-.2px;margin:22px 2px 10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.tr-sec-title .tag{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);font-weight:500;letter-spacing:.4px}
+
+/* Papan peringkat analis */
+.tr-lb-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:11px;margin-bottom:8px;transition:border-color .15s;cursor:pointer}
+.tr-lb-item:hover{border-color:var(--accent)}
+.tr-lb-rank{font-weight:800;font-size:15px;color:var(--text3);width:22px;text-align:center;font-family:'IBM Plex Mono',monospace}
+.tr-lb-rank.top1{color:#f5c518}.tr-lb-rank.top2{color:#c7cbd6}.tr-lb-rank.top3{color:#c08a5a}
+.tr-lb-av{width:36px;height:36px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;flex-shrink:0;font-family:'IBM Plex Mono',monospace}
+.tr-lb-info{flex:1;min-width:0}
+.tr-lb-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.tr-lb-firm{font-size:11px;color:var(--text3);margin-top:1px}
+.tr-lb-ver{font-size:9px;font-weight:700;color:var(--green);background:rgba(16,185,129,.14);padding:1px 6px;border-radius:4px;letter-spacing:.3px}
+.tr-lb-stat{text-align:right;flex-shrink:0}
+.tr-lb-alpha{font-weight:800;font-size:14px;font-family:'IBM Plex Mono',monospace}
+.tr-lb-meta{font-size:10px;color:var(--text3);margin-top:2px;font-family:'IBM Plex Mono',monospace}
+
+/* Skenario per saham */
+.tr-scn{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.tr-scn-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.tr-scn-tick{font-size:15px;font-weight:800;letter-spacing:-.2px}
+.tr-scn-name{font-size:11px;color:var(--text3);font-weight:400;margin-left:6px}
+.tr-scn-st{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;letter-spacing:.3px;font-family:'IBM Plex Mono',monospace}
+.tr-scn-st.pending{color:var(--yellow);background:rgba(245,158,11,.14)}
+.tr-scn-st.trig{color:var(--accent2);background:rgba(167,139,250,.14)}
+.tr-scn-st.missed{color:var(--text2);background:var(--bg2)}
+.tr-scn-cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:520px){.tr-scn-cmp{grid-template-columns:1fr}}
+.tr-scn-col{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.tr-scn-col .h{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;letter-spacing:.3px;margin-bottom:6px;font-weight:600}
+.tr-scn-row{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;font-family:'IBM Plex Mono',monospace}
+.tr-scn-row .k{color:var(--text3)}
+.tr-scn-ret{font-weight:800;font-size:14px;margin-top:5px;font-family:'IBM Plex Mono',monospace}
+.tr-scn-note{font-size:11.5px;color:var(--text2);line-height:1.5}
+
+.tr-disclaimer{margin-top:16px;font-size:11px;color:var(--text3);line-height:1.55;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:11px 13px}
 </style>
 
 <!-- ═══════════════════════════════════════════
@@ -2744,6 +2827,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
     <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
+    <!-- TRACKER (preview admin-only; hidden utk user biasa via body.tr-admin). -->
+    <div class="nav-tab tr-menu" id="tabTracker" onclick="showPage('tracker')">📈 Tracker</div>
     <!-- Menu Global disembunyikan sementara (banyak baris masih snapshot statis).
          Untuk memunculkan kembali: hapus komentar di bawah ini. -->
     <!-- <div class="nav-tab" onclick="showPage('global');glEnsure()">Global</div> -->
@@ -3311,6 +3396,278 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
   </div>
 </div>
+
+
+<!-- ═══════════════════════════════════════════
+     PAGE: TRACKER — performa rekomendasi trading (Entry/TP/SL) vs IHSG.
+     STATUS: PREVIEW (admin-only). Menu tersembunyi utk user biasa via
+     kombinasi CSS `.tr-menu` + body.tr-admin. Data masih DUMMY — akan
+     diganti dgn tracker.json setelah pipeline Sheet→JSON siap.
+═══════════════════════════════════════════ -->
+<div class="page" id="page-tracker">
+  <div class="tr-head">
+    <div class="tr-title-wrap">
+      <h1>Tracker <span class="tr-preview-badge">PREVIEW</span></h1>
+      <div class="tr-sub">PERFORMA REKOMENDASI · VS BENCHMARK IHSG</div>
+    </div>
+    <select class="tr-period" id="trPeriod">
+      <option value="1m">1 Bulan</option>
+      <option value="3m" selected>3 Bulan</option>
+      <option value="6m">6 Bulan</option>
+      <option value="ytd">YTD</option>
+    </select>
+  </div>
+
+  <div class="tr-kpi-row">
+    <div class="tr-kpi hi">
+      <div class="k">RETURN KONSENSUS</div>
+      <div class="v tr-up" id="trKpiCons">+9.4%</div>
+      <div class="s tr-up" id="trKpiConsSub">Blended · 3 bulan</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">RETURN IHSG</div>
+      <div class="v" id="trKpiIhsg">+3.1%</div>
+      <div class="s tr-neu">Benchmark pasar</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">ALPHA (OUTPERFORMANCE)</div>
+      <div class="v tr-up" id="trKpiAlpha">+6.3%</div>
+      <div class="s tr-neu">vs IHSG · periode sama</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">WIN RATE</div>
+      <div class="v" id="trKpiWr">64%</div>
+      <div class="s tr-neu" id="trKpiWrSub">32 dari 50 rekomendasi</div>
+    </div>
+  </div>
+
+  <div class="tr-card">
+    <div class="tr-card-h">
+      <div>
+        <div class="tr-card-title">Return Kumulatif</div>
+        <div class="tr-card-desc">Konsensus analis (blended, sesuai gaya eksekusi terpilih) vs IHSG</div>
+      </div>
+    </div>
+    <div class="tr-chart-wrap"><canvas id="trChart"></canvas></div>
+    <div class="tr-legend">
+      <span><span class="tr-lg-dot" style="background:var(--accent)"></span>Konsensus Analis</span>
+      <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
+      <span><span class="tr-lg-dot" style="background:rgba(124,58,237,.22);height:8px;border-radius:2px"></span>Zona Alpha</span>
+    </div>
+  </div>
+
+  <div class="tr-card">
+    <div class="tr-card-h">
+      <div>
+        <div class="tr-card-title">Simulator Gaya Eksekusi</div>
+        <div class="tr-card-desc">Bandingkan hasil bila eksekusi berbeda dari desain rekomendasi.</div>
+      </div>
+    </div>
+    <div class="tr-seg" id="trSeg">
+      <button type="button" class="tr-seg-btn active" data-mode="pure">Entry Murni</button>
+      <button type="button" class="tr-seg-btn" data-mode="avg">Average 1:1</button>
+      <button type="button" class="tr-seg-btn" data-mode="haka">Beli di Open</button>
+    </div>
+    <div class="tr-sim-note" id="trSimNote"></div>
+  </div>
+
+  <div class="tr-sec-title">Papan Peringkat Analis <span class="tag">ALPHA VS IHSG · 3 BULAN</span></div>
+  <div id="trLb"></div>
+
+  <div class="tr-sec-title">Skenario Eksekusi per Saham <span class="tag">CONTOH TERKINI</span></div>
+  <div id="trScn"></div>
+
+  <div class="tr-disclaimer">
+    Simulasi bersifat ilustratif berdasarkan agregasi rekomendasi trading yang diinput ke sistem. Kinerja masa lalu tidak menjamin hasil di masa depan — bukan ajakan jual/beli. Halaman ini masih <b>PREVIEW</b> (data dummy); akan diaktifkan penuh setelah pipeline data siap.
+  </div>
+</div>
+
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER UI (preview) — data dummy, akan diganti dgn tracker.json.
+// Isolasi lewat IIFE. Semua id/handler pakai prefix `tr` supaya tak bentrok.
+// ═══════════════════════════════════════════
+(function(){
+  var trChartInstance = null;
+
+  // --- Dummy series (return kumulatif harian ~60 hari trading) -------
+  function genSeries(n, drift, vol, seed){
+    var arr=[0], s=seed;
+    for(var i=1;i<n;i++){ s=(s*9301+49297)%233280; var r=s/233280; arr.push(+(arr[i-1]+drift+(r-0.5)*vol).toFixed(2)); }
+    return arr;
+  }
+  var N=60;
+  var ihsg = genSeries(N, 0.05, 0.5, 42);
+  var pure = genSeries(N, 0.16, 0.8, 17).map(function(v,i){ return +(v+ihsg[i]*0.4).toFixed(2); });
+  var avg  = pure.map(function(v){ return +(v*0.88).toFixed(2); });
+  var haka = pure.map(function(v){ return +(v*0.72).toFixed(2); });
+  var labels = Array.from({length:N}, function(_,i){ return i%10===0 ? 'H-'+(N-i) : ''; });
+  var seriesByMode = { pure:pure, avg:avg, haka:haka };
+  var notesByMode = {
+    pure: 'Entry murni: posisi baru dianggap terbuka bila harga benar-benar menyentuh zona entry yang direkomendasikan. RR paling konsisten dgn desain analis, tapi bisa "kelewatan" saat harga tidak pernah pullback.',
+    avg:  'Average 1:1: separuh posisi masuk di harga open, separuh menunggu entry rekomendasi. Return blended — lebih rendah dari entry murni saat entry tersentuh, tapi tidak pernah kelewatan sepenuhnya.',
+    haka: 'Beli di open (HAKA): seluruh posisi masuk begitu market buka, tanpa menunggu entry. Tidak pernah kelewatan momentum, tapi RR menyimpang paling jauh dari desain rekomendasi analis.'
+  };
+
+  function trColors(){
+    // Ambil warna aktual tema (dark/light) dari CSS variables.
+    var s = getComputedStyle(document.documentElement);
+    return {
+      accent: s.getPropertyValue('--accent').trim() || '#7c3aed',
+      accentBg: 'rgba(124,58,237,0.14)',
+      text3: s.getPropertyValue('--text3').trim() || '#6e6890',
+      grid: s.getPropertyValue('--border').trim() || '#2a2856',
+      tick: s.getPropertyValue('--text2').trim() || '#a09cc3',
+      tooltipBg: s.getPropertyValue('--card').trim() || '#1a1840',
+    };
+  }
+
+  function renderTrChart(mode){
+    if (typeof Chart === 'undefined') return; // Chart.js belum siap
+    var data = seriesByMode[mode] || pure;
+    var ctx = document.getElementById('trChart');
+    if (!ctx) return;
+    var c = trColors();
+    if (trChartInstance) { trChartInstance.destroy(); trChartInstance = null; }
+    trChartInstance = new Chart(ctx, {
+      type:'line',
+      data:{ labels:labels,
+        datasets:[
+          { label:'Konsensus', data:data, borderColor:c.accent, backgroundColor:c.accentBg, fill:'+1', tension:0.3, pointRadius:0, borderWidth:2.5 },
+          { label:'IHSG', data:ihsg, borderColor:c.text3, backgroundColor:'transparent', fill:false, tension:0.3, pointRadius:0, borderWidth:2, borderDash:[4,3] },
+        ]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{ mode:'index', intersect:false, backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1,
+            callbacks:{ label:function(it){ var y=it.parsed.y; return it.dataset.label+': '+(y>=0?'+':'')+y+'%'; } } }
+        },
+        scales:{
+          x:{ grid:{display:false}, ticks:{ color:c.text3, font:{size:10, family:"'IBM Plex Mono',monospace"}, maxRotation:0 } },
+          y:{ grid:{color:c.grid}, ticks:{ color:c.tick, font:{size:10, family:"'IBM Plex Mono',monospace"}, callback:function(v){return v+'%';} } }
+        },
+        interaction:{ mode:'index', intersect:false }
+      }
+    });
+    var last=data[data.length-1], lastIhsg=ihsg[ihsg.length-1];
+    var alpha=last-lastIhsg;
+    var kC=document.getElementById('trKpiCons'), kI=document.getElementById('trKpiIhsg'), kA=document.getElementById('trKpiAlpha'), sN=document.getElementById('trSimNote');
+    if(kC){ kC.textContent=(last>=0?'+':'')+last+'%'; kC.className='v '+(last>=0?'tr-up':'tr-dn'); }
+    if(kI){ kI.textContent=(lastIhsg>=0?'+':'')+lastIhsg+'%'; }
+    if(kA){ kA.textContent=(alpha>=0?'+':'')+alpha.toFixed(1)+'%'; kA.className='v '+(alpha>=0?'tr-up':'tr-dn'); }
+    if(sN) sN.textContent=notesByMode[mode]||'';
+  }
+
+  // --- Papan peringkat analis (dummy) --------------------------------
+  var analysts = [
+    {name:'Budi Santoso, CTA®', firm:'RHB Sekuritas',        verified:true,  alpha:11.2, recs:14, wr:71},
+    {name:'Sari Handoko, CSA®', firm:'Reliance Sekuritas',   verified:true,  alpha: 8.6, recs:11, wr:64},
+    {name:'Dedi Kusuma',        firm:'Mandiri Sekuritas',    verified:false, alpha: 6.9, recs: 9, wr:67},
+    {name:'Rani Pratama, CFTe', firm:'Mirae Asset Sekuritas',verified:true,  alpha: 4.1, recs:10, wr:55},
+    {name:'Nadia Aditya',       firm:'BCA Sekuritas',        verified:false, alpha: 1.8, recs: 8, wr:50},
+    {name:'Tomi Santoso',       firm:'Indo Premier',         verified:false, alpha:-2.3, recs: 7, wr:43}
+  ];
+  function initials(n){ return n.replace(/[,®]/g,'').split(/\s+/).filter(Boolean).slice(0,2).map(function(w){return w[0];}).join('').toUpperCase(); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function renderLb(){
+    var el = document.getElementById('trLb'); if(!el) return;
+    var sorted = analysts.slice().sort(function(a,b){return b.alpha-a.alpha;});
+    el.innerHTML = sorted.map(function(a,i){
+      var rc = i===0?'top1':i===1?'top2':i===2?'top3':'';
+      var up = a.alpha>=0;
+      var ver = a.verified ? '<span class="tr-lb-ver">✓ VERIF</span>' : '';
+      return '<div class="tr-lb-item">'
+        + '<div class="tr-lb-rank '+rc+'">'+(i+1)+'</div>'
+        + '<div class="tr-lb-av">'+esc(initials(a.name))+'</div>'
+        + '<div class="tr-lb-info">'
+          + '<div class="tr-lb-name">'+esc(a.name)+' '+ver+'</div>'
+          + '<div class="tr-lb-firm">'+esc(a.firm)+'</div>'
+        + '</div>'
+        + '<div class="tr-lb-stat">'
+          + '<div class="tr-lb-alpha '+(up?'tr-up':'tr-dn')+'">'+(up?'+':'')+a.alpha+'%</div>'
+          + '<div class="tr-lb-meta">'+a.recs+' rekom · WR '+a.wr+'%</div>'
+        + '</div>'
+      + '</div>';
+    }).join('');
+  }
+
+  // --- Skenario per saham (dummy) ------------------------------------
+  var scenarios = [
+    { tick:'ANTM', name:'Aneka Tambang',    st:'missed',  stLbl:'Belum Tersentuh', open:2870, live:2910, entry:2790 },
+    { tick:'ISAT', name:'Indosat Ooredoo',  st:'pending', stLbl:'Menunggu Entry',  open:1890, live:1855, entry:1835 },
+    { tick:'BRPT', name:'Barito Pacific',   st:'trig',    stLbl:'Entry Tercapai',  open:1565, live:1612, entry:1550, pureRet:3.9, avgRet:1.8 }
+  ];
+  function fmtN(n){ return Number(n).toLocaleString('id-ID'); }
+  function renderScn(){
+    var el = document.getElementById('trScn'); if(!el) return;
+    el.innerHTML = scenarios.map(function(s){
+      var body;
+      if (s.st === 'missed') {
+        body = '<div class="tr-scn-col" style="grid-column:1/-1">'
+          + '<div class="h">CATATAN</div>'
+          + '<div class="tr-scn-note">Open '+fmtN(s.open)+' sudah di atas zona entry '+fmtN(s.entry)+' — harga tidak pernah pullback. Kedua gaya eksekusi tidak pernah terisi; return tidak dihitung karena posisi belum pernah terbuka.</div>'
+          + '</div>';
+      } else if (s.st === 'pending') {
+        var dist = ((s.live - s.entry)/s.entry*100).toFixed(1);
+        body = '<div class="tr-scn-col" style="grid-column:1/-1">'
+          + '<div class="h">JARAK KE ENTRY</div>'
+          + '<div class="tr-scn-note">Live <b>'+fmtN(s.live)+'</b> — zona entry '+fmtN(s.entry)+'. Masih <b style="color:var(--yellow)">'+dist+'%</b> lagi. Belum ada posisi terbuka.</div>'
+          + '</div>';
+      } else {
+        body = ''
+          + '<div class="tr-scn-col">'
+            + '<div class="h">ENTRY MURNI</div>'
+            + '<div class="tr-scn-row"><span class="k">Harga masuk</span><span>'+fmtN(s.entry)+'</span></div>'
+            + '<div class="tr-scn-row"><span class="k">Live</span><span>'+fmtN(s.live)+'</span></div>'
+            + '<div class="tr-scn-ret tr-up">+'+s.pureRet+'%</div>'
+          + '</div>'
+          + '<div class="tr-scn-col">'
+            + '<div class="h">AVERAGE 1:1</div>'
+            + '<div class="tr-scn-row"><span class="k">Rata² masuk</span><span>'+fmtN(Math.round((s.open+s.entry)/2))+'</span></div>'
+            + '<div class="tr-scn-row"><span class="k">Live</span><span>'+fmtN(s.live)+'</span></div>'
+            + '<div class="tr-scn-ret tr-up">+'+s.avgRet+'%</div>'
+          + '</div>';
+      }
+      var cls = s.st==='pending' ? 'pending' : s.st==='trig' ? 'trig' : 'missed';
+      return '<div class="tr-scn">'
+        + '<div class="tr-scn-top">'
+          + '<div><span class="tr-scn-tick">'+esc(s.tick)+'</span><span class="tr-scn-name">'+esc(s.name)+'</span></div>'
+          + '<span class="tr-scn-st '+cls+'">'+esc(s.stLbl)+'</span>'
+        + '</div>'
+        + '<div class="tr-scn-cmp">'+body+'</div>'
+      + '</div>';
+    }).join('');
+  }
+
+  // Segmented control gaya eksekusi
+  var seg = document.getElementById('trSeg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('.tr-seg-btn'); if(!b) return;
+    seg.querySelectorAll('.tr-seg-btn').forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    renderTrChart(b.getAttribute('data-mode'));
+  });
+
+  // Init sekali saat page pertama dibuka (chart butuh canvas terlihat).
+  var _trInit = false;
+  function trEnsure(){ if(_trInit) return; _trInit=true; renderLb(); renderScn(); renderTrChart('pure'); }
+
+  // Panggil trEnsure saat page-tracker aktif. Kita hook ke showPage lama
+  // dgn wrapper defensif — kalau showPage belum ada, coba lagi nanti.
+  function hook(){
+    if (typeof window.showPage !== 'function') { setTimeout(hook, 200); return; }
+    var orig = window.showPage;
+    window.showPage = function(name){
+      var r = orig.apply(this, arguments);
+      if (name === 'tracker') { try { trEnsure(); } catch(_){} }
+      return r;
+    };
+  }
+  hook();
+})();
+</script>
 
 
 <script>
@@ -4585,6 +4942,8 @@ async function _ensureAccess() {
     const j = await r.json();
     if (!j || !j.authenticated) { location.replace('/login'); return false; }
     window.__ES_IS_ADMIN = !!j.is_admin;
+    // Menu Tracker masih preview → hanya admin yg lihat tab-nya.
+    if (window.__ES_IS_ADMIN) try { document.body.classList.add('tr-admin'); } catch(_){}
     const active = j.subscription && j.subscription.active;
     if (!active && !j.is_admin) { location.replace('/billing'); return false; }
     window.__ES_PROFILE = j;
@@ -15012,6 +15371,9 @@ body.vl-maxing{overflow:hidden}
   </button>
   <button class="bottom-nav-item" id="bn-menabung" onclick="showPageMobile('menabung',this)">
     <span class="bn-icon">💰</span>Simulasi
+  </button>
+  <button class="bottom-nav-item tr-menu" id="bn-tracker" onclick="showPageMobile('tracker',this)">
+    <span class="bn-icon">📈</span>Tracker
   </button>
   <!-- Menu Global disembunyikan sementara — hapus komentar untuk memunculkan kembali.
   <button class="bottom-nav-item" id="bn-global" onclick="showPageMobile('global',this);glEnsure()">
