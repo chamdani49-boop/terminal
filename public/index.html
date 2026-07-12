@@ -2582,6 +2582,65 @@ body.tr-admin .bottom-nav-item.tr-menu{display:flex !important}
 .tr-scn-note{font-size:11.5px;color:var(--text2);line-height:1.5}
 
 .tr-disclaimer{margin-top:16px;font-size:11px;color:var(--text3);line-height:1.55;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:11px 13px}
+
+/* ── DETAIL PROFIL ANALIS (sub-view di dalam #page-tracker) ─────────── */
+.tr-profile{display:none}
+body.tr-profile-open #tr-view-main{display:none}
+body.tr-profile-open #tr-view-profile{display:block}
+
+.tr-back{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:14px;transition:all .15s;font-family:inherit}
+.tr-back:hover{border-color:var(--accent);color:var(--accent)}
+.tr-back .arr{display:inline-block;width:20px;height:20px;line-height:18px;text-align:center;border-radius:50%;background:var(--bg2);color:var(--text2);font-size:13px}
+
+.tr-pcard{background:linear-gradient(160deg,rgba(124,58,237,.16),var(--card) 60%);border:1px solid var(--border);border-radius:14px;padding:18px 16px;position:relative;overflow:hidden;margin-bottom:14px}
+.tr-pcard::before{content:'';position:absolute;top:-40px;right:-40px;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.24),transparent 70%);pointer-events:none}
+.tr-ptop{display:flex;gap:14px;align-items:flex-start;position:relative}
+.tr-p-av{width:60px;height:60px;border-radius:14px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#fff;flex-shrink:0;font-family:'IBM Plex Mono',monospace;box-shadow:0 4px 14px rgba(124,58,237,.32)}
+.tr-p-nrow{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tr-p-name{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.tr-p-vbadge{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,.14);color:var(--green);font-size:9.5px;font-weight:700;font-family:'IBM Plex Mono',monospace;padding:2.5px 7px;border-radius:6px;letter-spacing:.3px}
+.tr-p-firm{font-size:12px;color:var(--text3);margin-top:2px}
+.tr-p-certs{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.tr-p-cert{font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:600;padding:4px 9px;border-radius:7px;background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+.tr-p-cert.primary{background:rgba(124,58,237,.16);color:var(--accent2);border-color:transparent}
+.tr-p-sectors{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;position:relative}
+.tr-p-sector{font-size:10.5px;padding:5px 10px;border-radius:20px;background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+
+.tr-p-verify{margin-top:14px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.28);border-radius:12px;padding:12px 14px}
+.tr-p-verify-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--green)}
+.tr-p-verify-g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px;font-family:'IBM Plex Mono',monospace}
+.tr-p-verify-g .k{font-size:9.5px;color:var(--text3);letter-spacing:.3px}
+.tr-p-verify-g .v{font-size:11.5px;margin-top:2px;color:var(--text2)}
+
+.tr-bd{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 14px}
+.tr-bd-row{margin-bottom:10px}
+.tr-bd-row:last-child{margin-bottom:0}
+.tr-bd-top{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:5px}
+.tr-bd-top .n{color:var(--text2)}
+.tr-bd-top .w{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--text)}
+.tr-bd-bar{height:6px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.tr-bd-fill{height:100%;border-radius:4px}
+
+.tr-tabs{display:flex;gap:6px;margin:4px 0}
+.tr-tab{font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:9px;color:var(--text3);cursor:pointer;border:1px solid transparent;background:transparent;font-family:inherit}
+.tr-tab.active{background:var(--card);color:var(--text);border-color:var(--border)}
+.tr-rec-list{display:flex;flex-direction:column;gap:9px;margin-top:10px}
+.tr-rec{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 13px}
+.tr-rec-top{display:flex;justify-content:space-between;align-items:center}
+.tr-rec-tk{font-weight:800;font-size:14px;letter-spacing:-.2px}
+.tr-rec-nm{font-size:10.5px;color:var(--text3);margin-top:1px}
+.tr-rec-b{font-size:9.5px;font-family:'IBM Plex Mono',monospace;font-weight:700;padding:4px 8px;border-radius:6px;letter-spacing:.3px}
+.tr-rec-b.buy{background:rgba(16,185,129,.14);color:var(--green)}
+.tr-rec-b.sell{background:rgba(239,68,68,.14);color:var(--red)}
+.tr-rec-g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px;font-family:'IBM Plex Mono',monospace}
+.tr-rec-g > div{text-align:center}
+.tr-rec-g .k{font-size:9px;color:var(--text3);letter-spacing:.3px}
+.tr-rec-g .v{font-size:12px;font-weight:700;margin-top:2px}
+.tr-rec-d{font-size:10px;color:var(--text3);margin-top:8px;font-family:'IBM Plex Mono',monospace;display:flex;justify-content:space-between;align-items:center}
+.tr-rec-o{font-weight:700}
+.tr-rec-o.active{color:var(--accent2)}
+.tr-rec-o.tp{color:var(--green)}
+.tr-rec-o.sl{color:var(--red)}
 </style>
 
 <!-- ═══════════════════════════════════════════
@@ -3405,6 +3464,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
      diganti dgn tracker.json setelah pipeline Sheet→JSON siap.
 ═══════════════════════════════════════════ -->
 <div class="page" id="page-tracker">
+
+<!-- ── TRACKER MAIN VIEW (dashboard performa) ─────────────────────── -->
+<div id="tr-view-main">
   <div class="tr-head">
     <div class="tr-title-wrap">
       <h1>Tracker <span class="tr-preview-badge">PREVIEW</span></h1>
@@ -3480,6 +3542,94 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <div class="tr-disclaimer">
     Simulasi bersifat ilustratif berdasarkan agregasi rekomendasi trading yang diinput ke sistem. Kinerja masa lalu tidak menjamin hasil di masa depan — bukan ajakan jual/beli. Halaman ini masih <b>PREVIEW</b> (data dummy); akan diaktifkan penuh setelah pipeline data siap.
   </div>
+</div><!-- /tr-view-main -->
+
+<!-- ── TRACKER PROFILE VIEW (detail per analis) ───────────────────────
+     Muncul saat user klik kartu di papan peringkat. Ditutup dgn tombol
+     kembali. Konten diisi via JS berdasarkan data-key. -->
+<div id="tr-view-profile" class="tr-profile">
+  <button type="button" class="tr-back" id="trBack">
+    <span class="arr">←</span>
+    <span>Kembali ke Tracker</span>
+  </button>
+
+  <div class="tr-pcard">
+    <div class="tr-ptop">
+      <div class="tr-p-av" id="trPAv">AW</div>
+      <div style="min-width:0;flex:1">
+        <div class="tr-p-nrow">
+          <div class="tr-p-name" id="trPName">A. Wijaya</div>
+          <span class="tr-p-vbadge" id="trPVBadge">✓ TERVERIFIKASI</span>
+        </div>
+        <div class="tr-p-firm" id="trPFirm">—</div>
+        <div class="tr-p-certs" id="trPCerts"></div>
+      </div>
+    </div>
+    <div class="tr-p-sectors" id="trPSectors"></div>
+  </div>
+
+  <div class="tr-kpi-row">
+    <div class="tr-kpi hi">
+      <div class="k">ALPHA VS IHSG</div>
+      <div class="v" id="trPKpiAlpha">+0%</div>
+      <div class="s tr-neu" id="trPKpiAlphaSub">Peringkat #— dari — analis</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">WIN RATE</div>
+      <div class="v" id="trPKpiWr">0%</div>
+      <div class="s tr-neu" id="trPKpiWrSub">— dari — rekomendasi</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">RATA² RETURN / TRADE</div>
+      <div class="v" id="trPKpiAvg">+0%</div>
+      <div class="s tr-neu">Realized · entry murni</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">TOTAL REKOMENDASI</div>
+      <div class="v" id="trPKpiTotal">0</div>
+      <div class="s tr-neu" id="trPKpiTotalSub">— aktif · 90 hari</div>
+    </div>
+  </div>
+
+  <div class="tr-p-verify" id="trPVerify">
+    <div class="tr-p-verify-h">🛡️ Status Verifikasi Sertifikasi</div>
+    <div class="tr-p-verify-g">
+      <div><div class="k">JENIS SERTIFIKASI</div><div class="v" id="trPVCert">—</div></div>
+      <div><div class="k">AFILIASI</div><div class="v" id="trPVFirm">—</div></div>
+      <div><div class="k">MASA BERLAKU</div><div class="v" id="trPVValid">—</div></div>
+      <div><div class="k">SUMBER DATA</div><div class="v" id="trPVSource">Publikasi riset resmi sekuritas</div></div>
+    </div>
+  </div>
+
+  <div class="tr-card" style="margin-top:14px">
+    <div class="tr-card-h">
+      <div>
+        <div class="tr-card-title">Performa vs IHSG <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);font-weight:500;margin-left:6px">90 HARI</span></div>
+        <div class="tr-card-desc">Return kumulatif rekomendasi analis ini vs IHSG.</div>
+      </div>
+    </div>
+    <div class="tr-chart-wrap"><canvas id="trProfileChart"></canvas></div>
+    <div class="tr-legend">
+      <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPChartLbl">Analis</span></span>
+      <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
+    </div>
+  </div>
+
+  <div class="tr-sec-title">Fokus Sektor <span class="tag" id="trPBdTag">DARI — REKOMENDASI</span></div>
+  <div class="tr-bd" id="trPBreakdown"></div>
+
+  <div class="tr-sec-title" style="margin-bottom:6px">Rekomendasi</div>
+  <div class="tr-tabs" id="trPTabs">
+    <button type="button" class="tr-tab active" data-tab="active">Aktif (<span id="trPTabActN">0</span>)</button>
+    <button type="button" class="tr-tab" data-tab="history">Riwayat (<span id="trPTabHistN">0</span>)</button>
+  </div>
+  <div class="tr-rec-list" id="trPRecList"></div>
+
+  <div class="tr-disclaimer">
+    Data performa diagregasi dari publikasi riset resmi sekuritas tempat analis berafiliasi. Status <b>Terverifikasi</b> menandakan sertifikasi & afiliasi telah dicocokkan dengan publikasi resmi — bukan jaminan akurasi rekomendasi ke depan. Halaman ini masih <b>PREVIEW</b>; data dummy.
+  </div>
+</div><!-- /tr-view-profile -->
+
 </div>
 
 
@@ -3561,24 +3711,173 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // --- Papan peringkat analis (dummy) --------------------------------
+  // Field inti (name/firm/verified/alpha/recs/wr) dipakai untuk kartu papan
+  // peringkat. Field profil (role/certs/sectors/avgRet/activeCount/since/
+  // breakdown/recsActive/recsHistory) dipakai halaman Detail Profil Analis.
   var analysts = [
-    {name:'Budi Santoso, CTA®', firm:'RHB Sekuritas',        verified:true,  alpha:11.2, recs:14, wr:71},
-    {name:'Sari Handoko, CSA®', firm:'Reliance Sekuritas',   verified:true,  alpha: 8.6, recs:11, wr:64},
-    {name:'Dedi Kusuma',        firm:'Mandiri Sekuritas',    verified:false, alpha: 6.9, recs: 9, wr:67},
-    {name:'Rani Pratama, CFTe', firm:'Mirae Asset Sekuritas',verified:true,  alpha: 4.1, recs:10, wr:55},
-    {name:'Nadia Aditya',       firm:'BCA Sekuritas',        verified:false, alpha: 1.8, recs: 8, wr:50},
-    {name:'Tomi Santoso',       firm:'Indo Premier',         verified:false, alpha:-2.3, recs: 7, wr:43}
+    {
+      name:'Budi Santoso, CTA®', firm:'RHB Sekuritas', role:'Analis Teknikal',
+      verified:true, alpha:11.2, recs:14, wr:71, avgRet:6.8, activeCount:3, since:'2027',
+      certs:[{label:'CTA® — Certified Technical Analyst',primary:true},{label:'WPPE'}],
+      sectors:[{icon:'🏦',name:'Perbankan'},{icon:'⛏️',name:'Metal & Mining'},{icon:'🏭',name:'Basic Industry'},{icon:'📡',name:'Telekomunikasi'}],
+      breakdown:[
+        {name:'Perbankan',       pct:36, color:'var(--accent)'},
+        {name:'Metal & Mining',  pct:29, color:'var(--green)'},
+        {name:'Basic Industry',  pct:21, color:'var(--yellow)'},
+        {name:'Telekomunikasi',  pct:14, color:'var(--accent3)'}
+      ],
+      recsActive:[
+        {tk:'INKP',nm:'Indah Kiat Pulp & Paper',type:'BUY',entry:7225,tp:8275,sl:6600,date:'2026-07-08'},
+        {tk:'ASII',nm:'Astra International',    type:'BUY',entry:4840,tp:5325,sl:4550,date:'2026-07-08'},
+        {tk:'BBCA',nm:'Bank Central Asia',      type:'BUY',entry:6200,tp:6850,sl:5850,date:'2026-07-08'}
+      ],
+      recsHistory:[
+        {tk:'BRPT',nm:'Barito Pacific',type:'BUY',entry:1550,tp:1800,sl:1440,date:'2026-07-05',outcome:'tp'},
+        {tk:'TINS',nm:'Timah',         type:'BUY',entry:3500,tp:3800,sl:3300,date:'2026-06-22',outcome:'tp'},
+        {tk:'ELSA',nm:'Elnusa',        type:'BUY',entry: 580,tp: 660,sl: 540,date:'2026-06-18',outcome:'sl'},
+        {tk:'MDKA',nm:'Merdeka Copper Gold',type:'BUY',entry:2350,tp:2680,sl:2200,date:'2026-06-05',outcome:'tp'},
+        {tk:'INDF',nm:'Indofood Sukses Makmur',type:'BUY',entry:7100,tp:7700,sl:6800,date:'2026-05-24',outcome:'tp'},
+        {tk:'BMRI',nm:'Bank Mandiri',type:'BUY',entry:5450,tp:6050,sl:5100,date:'2026-05-12',outcome:'tp'},
+        {tk:'ANTM',nm:'Aneka Tambang',type:'BUY',entry:1500,tp:1720,sl:1400,date:'2026-04-28',outcome:'tp'},
+        {tk:'PGAS',nm:'Perusahaan Gas Negara',type:'BUY',entry:1620,tp:1800,sl:1520,date:'2026-04-14',outcome:'sl'},
+        {tk:'KLBF',nm:'Kalbe Farma',type:'BUY',entry:1550,tp:1700,sl:1470,date:'2026-04-02',outcome:'tp'},
+        {tk:'TLKM',nm:'Telkom Indonesia',type:'BUY',entry:3080,tp:3350,sl:2920,date:'2026-03-19',outcome:'tp'},
+        {tk:'ADRO',nm:'Adaro Energy',type:'BUY',entry:2650,tp:2950,sl:2500,date:'2026-03-04',outcome:'sl'}
+      ]
+    },
+    {
+      name:'Sari Handoko, CSA®', firm:'Reliance Sekuritas', role:'Analis Fundamental',
+      verified:true, alpha:8.6, recs:11, wr:64, avgRet:5.4, activeCount:2, since:'2028',
+      certs:[{label:'CSA® — Certified Securities Analyst',primary:true},{label:'WMI'}],
+      sectors:[{icon:'🏦',name:'Perbankan'},{icon:'🏗️',name:'Property'},{icon:'🛒',name:'Consumer'}],
+      breakdown:[
+        {name:'Perbankan', pct:45, color:'var(--accent)'},
+        {name:'Property',  pct:32, color:'var(--green)'},
+        {name:'Consumer',  pct:23, color:'var(--yellow)'}
+      ],
+      recsActive:[
+        {tk:'BBRI',nm:'Bank Rakyat Indonesia',type:'BUY',entry:4200,tp:4700,sl:3980,date:'2026-07-09'},
+        {tk:'CTRA',nm:'Ciputra Development',  type:'BUY',entry:1180,tp:1350,sl:1090,date:'2026-07-04'}
+      ],
+      recsHistory:[
+        {tk:'ICBP',nm:'Indofood CBP',type:'BUY',entry:10800,tp:11800,sl:10300,date:'2026-06-27',outcome:'tp'},
+        {tk:'PWON',nm:'Pakuwon Jati',type:'BUY',entry:462,tp:520,sl:435,date:'2026-06-10',outcome:'tp'},
+        {tk:'BBNI',nm:'Bank Negara Indonesia',type:'BUY',entry:5250,tp:5750,sl:5000,date:'2026-05-22',outcome:'tp'},
+        {tk:'UNVR',nm:'Unilever Indonesia',type:'BUY',entry:2100,tp:2300,sl:2000,date:'2026-05-06',outcome:'sl'},
+        {tk:'BSDE',nm:'Bumi Serpong Damai',type:'BUY',entry:980,tp:1120,sl:920,date:'2026-04-18',outcome:'tp'},
+        {tk:'MYOR',nm:'Mayora Indah',type:'BUY',entry:2510,tp:2780,sl:2400,date:'2026-04-01',outcome:'tp'},
+        {tk:'BJTM',nm:'Bank Jawa Timur',type:'BUY',entry:695,tp:770,sl:650,date:'2026-03-14',outcome:'sl'},
+        {tk:'APLN',nm:'Agung Podomoro Land',type:'BUY',entry:132,tp:150,sl:124,date:'2026-02-28',outcome:'tp'},
+        {tk:'BBTN',nm:'Bank Tabungan Negara',type:'BUY',entry:1370,tp:1520,sl:1290,date:'2026-02-11',outcome:'tp'}
+      ]
+    },
+    {
+      name:'Dedi Kusuma', firm:'Mandiri Sekuritas', role:'Analis Fundamental',
+      verified:false, alpha:6.9, recs:9, wr:67, avgRet:5.1, activeCount:2, since:'—',
+      certs:[{label:'WPPE',primary:false}],
+      sectors:[{icon:'⛏️',name:'Metal & Mining'},{icon:'⚡',name:'Energi'}],
+      breakdown:[
+        {name:'Metal & Mining', pct:56, color:'var(--accent)'},
+        {name:'Energi',         pct:44, color:'var(--green)'}
+      ],
+      recsActive:[
+        {tk:'MDKA',nm:'Merdeka Copper Gold',type:'BUY',entry:2280,tp:2600,sl:2150,date:'2026-07-06'},
+        {tk:'PTBA',nm:'Bukit Asam',         type:'BUY',entry:2820,tp:3150,sl:2680,date:'2026-07-01'}
+      ],
+      recsHistory:[
+        {tk:'INCO',nm:'Vale Indonesia',type:'BUY',entry:4100,tp:4600,sl:3900,date:'2026-06-20',outcome:'tp'},
+        {tk:'HRUM',nm:'Harum Energy',type:'BUY',entry:1250,tp:1400,sl:1180,date:'2026-06-02',outcome:'tp'},
+        {tk:'ITMG',nm:'Indo Tambangraya',type:'BUY',entry:26500,tp:29000,sl:25000,date:'2026-05-18',outcome:'tp'},
+        {tk:'BUMI',nm:'Bumi Resources',type:'BUY',entry:172,tp:200,sl:160,date:'2026-05-02',outcome:'sl'},
+        {tk:'MEDC',nm:'Medco Energi',type:'BUY',entry:1470,tp:1650,sl:1380,date:'2026-04-14',outcome:'tp'},
+        {tk:'ADMR',nm:'Adaro Minerals',type:'BUY',entry:1330,tp:1480,sl:1250,date:'2026-03-27',outcome:'tp'},
+        {tk:'TINS',nm:'Timah',type:'BUY',entry:1140,tp:1280,sl:1070,date:'2026-03-10',outcome:'tp'}
+      ]
+    },
+    {
+      name:'Rani Pratama, CFTe', firm:'Mirae Asset Sekuritas', role:'Analis Teknikal',
+      verified:true, alpha:4.1, recs:10, wr:55, avgRet:3.2, activeCount:2, since:'2027',
+      certs:[{label:'CFTe — Certified Financial Technician',primary:true},{label:'WPPE'}],
+      sectors:[{icon:'🚗',name:'Automotive'},{icon:'🏭',name:'Basic Industry'},{icon:'🛒',name:'Consumer'}],
+      breakdown:[
+        {name:'Automotive',     pct:38, color:'var(--accent)'},
+        {name:'Basic Industry', pct:34, color:'var(--green)'},
+        {name:'Consumer',       pct:28, color:'var(--yellow)'}
+      ],
+      recsActive:[
+        {tk:'ASII',nm:'Astra International',type:'BUY',entry:4780,tp:5300,sl:4520,date:'2026-07-10'},
+        {tk:'INTP',nm:'Indocement Tunggal',type:'BUY',entry:7550,tp:8200,sl:7250,date:'2026-07-07'}
+      ],
+      recsHistory:[
+        {tk:'SMGR',nm:'Semen Indonesia',type:'BUY',entry:4200,tp:4650,sl:4000,date:'2026-06-24',outcome:'tp'},
+        {tk:'AUTO',nm:'Astra Otoparts',type:'BUY',entry:2680,tp:2950,sl:2540,date:'2026-06-05',outcome:'sl'},
+        {tk:'GGRM',nm:'Gudang Garam',type:'BUY',entry:19800,tp:21500,sl:19000,date:'2026-05-16',outcome:'tp'},
+        {tk:'HMSP',nm:'HM Sampoerna',type:'BUY',entry:820,tp:900,sl:770,date:'2026-04-29',outcome:'sl'},
+        {tk:'JPFA',nm:'Japfa Comfeed',type:'BUY',entry:1350,tp:1500,sl:1270,date:'2026-04-11',outcome:'tp'},
+        {tk:'IMAS',nm:'Indomobil Sukses',type:'BUY',entry:1230,tp:1380,sl:1160,date:'2026-03-24',outcome:'sl'},
+        {tk:'SIDO',nm:'Sido Muncul',type:'BUY',entry:660,tp:740,sl:620,date:'2026-03-08',outcome:'tp'},
+        {tk:'AKRA',nm:'AKR Corporindo',type:'BUY',entry:1520,tp:1680,sl:1440,date:'2026-02-19',outcome:'sl'}
+      ]
+    },
+    {
+      name:'Nadia Aditya', firm:'BCA Sekuritas', role:'Analis Teknikal',
+      verified:false, alpha:1.8, recs:8, wr:50, avgRet:1.9, activeCount:1, since:'—',
+      certs:[{label:'WPPE'}],
+      sectors:[{icon:'📡',name:'Telekomunikasi'},{icon:'🏥',name:'Healthcare'}],
+      breakdown:[
+        {name:'Telekomunikasi', pct:62, color:'var(--accent)'},
+        {name:'Healthcare',     pct:38, color:'var(--green)'}
+      ],
+      recsActive:[
+        {tk:'TLKM',nm:'Telkom Indonesia',type:'BUY',entry:3050,tp:3320,sl:2900,date:'2026-07-09'}
+      ],
+      recsHistory:[
+        {tk:'EXCL',nm:'XL Axiata',type:'BUY',entry:2280,tp:2500,sl:2180,date:'2026-06-15',outcome:'tp'},
+        {tk:'ISAT',nm:'Indosat',type:'BUY',entry:1900,tp:2100,sl:1810,date:'2026-05-29',outcome:'sl'},
+        {tk:'MIKA',nm:'Mitra Keluarga',type:'BUY',entry:2810,tp:3050,sl:2700,date:'2026-05-08',outcome:'tp'},
+        {tk:'HEAL',nm:'Medikaloka Hermina',type:'BUY',entry:1550,tp:1700,sl:1470,date:'2026-04-20',outcome:'sl'},
+        {tk:'FREN',nm:'Smartfren',type:'BUY',entry:60,tp:68,sl:56,date:'2026-04-02',outcome:'tp'},
+        {tk:'KAEF',nm:'Kimia Farma',type:'BUY',entry:1080,tp:1200,sl:1020,date:'2026-03-15',outcome:'sl'},
+        {tk:'PYFA',nm:'Pyridam Farma',type:'BUY',entry:970,tp:1080,sl:920,date:'2026-02-25',outcome:'tp'}
+      ]
+    },
+    {
+      name:'Tomi Santoso', firm:'Indo Premier', role:'Analis Teknikal',
+      verified:false, alpha:-2.3, recs:7, wr:43, avgRet:-1.2, activeCount:1, since:'—',
+      certs:[{label:'WPPE'}],
+      sectors:[{icon:'🏗️',name:'Property'},{icon:'⚡',name:'Energi'}],
+      breakdown:[
+        {name:'Property', pct:57, color:'var(--accent)'},
+        {name:'Energi',   pct:43, color:'var(--green)'}
+      ],
+      recsActive:[
+        {tk:'PWON',nm:'Pakuwon Jati',type:'BUY',entry:450,tp:500,sl:425,date:'2026-07-11'}
+      ],
+      recsHistory:[
+        {tk:'BSDE',nm:'Bumi Serpong Damai',type:'BUY',entry:1010,tp:1150,sl:950,date:'2026-06-18',outcome:'sl'},
+        {tk:'SMRA',nm:'Summarecon Agung',type:'BUY',entry:610,tp:680,sl:575,date:'2026-05-30',outcome:'sl'},
+        {tk:'ADRO',nm:'Adaro Energy',type:'BUY',entry:2680,tp:2950,sl:2540,date:'2026-05-12',outcome:'tp'},
+        {tk:'PTRO',nm:'Petrosea',type:'BUY',entry:5100,tp:5600,sl:4850,date:'2026-04-24',outcome:'sl'},
+        {tk:'ELSA',nm:'Elnusa',type:'BUY',entry:465,tp:520,sl:440,date:'2026-04-05',outcome:'sl'},
+        {tk:'DILD',nm:'Intiland Development',type:'BUY',entry:174,tp:200,sl:162,date:'2026-03-16',outcome:'tp'}
+      ]
+    }
   ];
+  // Expose ke IIFE profil analis (window scope). Sertakan versi asli TANPA
+  // mutasi supaya kalau nanti diganti dgn tracker.json, tinggal replace ini.
+  try { window.__TR_ANALYSTS__ = analysts; } catch(_){}
   function initials(n){ return n.replace(/[,®]/g,'').split(/\s+/).filter(Boolean).slice(0,2).map(function(w){return w[0];}).join('').toUpperCase(); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
   function renderLb(){
     var el = document.getElementById('trLb'); if(!el) return;
-    var sorted = analysts.slice().sort(function(a,b){return b.alpha-a.alpha;});
+    // Simpan indeks asli sebelum sort → dipakai profile view sbg data-key.
+    var sorted = analysts.map(function(a,i){ var c=Object.assign({},a); c._key=i; return c; })
+                          .sort(function(a,b){return b.alpha-a.alpha;});
     el.innerHTML = sorted.map(function(a,i){
       var rc = i===0?'top1':i===1?'top2':i===2?'top3':'';
       var up = a.alpha>=0;
       var ver = a.verified ? '<span class="tr-lb-ver">✓ VERIF</span>' : '';
-      return '<div class="tr-lb-item">'
+      return '<div class="tr-lb-item" data-key="'+a._key+'" data-rank="'+(i+1)+'">'
         + '<div class="tr-lb-rank '+rc+'">'+(i+1)+'</div>'
         + '<div class="tr-lb-av">'+esc(initials(a.name))+'</div>'
         + '<div class="tr-lb-info">'
@@ -3666,6 +3965,242 @@ body.is-mobile-device.force-desktop .pl-col-main{
     };
   }
   hook();
+})();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER — DETAIL PROFIL ANALIS (preview)
+// IIFE terpisah supaya isolasi bersih dari kode tracker utama.
+// Data diambil dari window.__TR_ANALYSTS__ yang di-set di IIFE tracker utama.
+// ═══════════════════════════════════════════
+(function(){
+  var profileChart = null;
+  var currentKey = null;
+  var currentTab = 'active';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function initials(n){ return String(n).replace(/[,®]/g,'').split(/\s+/).filter(Boolean).slice(0,2).map(function(w){return w[0];}).join('').toUpperCase(); }
+  function fmtN(n){ return Number(n).toLocaleString('id-ID'); }
+  function analysts(){ return (window.__TR_ANALYSTS__ || []); }
+
+  function genSeries(n, drift, vol, seed){
+    var arr=[0], s=seed;
+    for (var i=1;i<n;i++){ s=(s*9301+49297)%233280; var r=s/233280; arr.push(+(arr[i-1]+drift+(r-0.5)*vol).toFixed(2)); }
+    return arr;
+  }
+
+  function trColors(){
+    var s = getComputedStyle(document.documentElement);
+    return {
+      accent: s.getPropertyValue('--accent').trim() || '#7c3aed',
+      accentBg: 'rgba(124,58,237,0.14)',
+      text3: s.getPropertyValue('--text3').trim() || '#6e6890',
+      grid: s.getPropertyValue('--border').trim() || '#2a2856',
+      tick: s.getPropertyValue('--text2').trim() || '#a09cc3',
+      tooltipBg: s.getPropertyValue('--card').trim() || '#1a1840'
+    };
+  }
+
+  function renderProfileChart(seedIdx, name, alpha){
+    if (typeof Chart === 'undefined') return;
+    var N = 45;
+    var ihsg = genSeries(N, 0.05, 0.5, 88);
+    // Drift disesuaikan dgn alpha analis — lebih tinggi utk analis top.
+    var drift = 0.12 + (Number(alpha)||0) * 0.012;
+    var mine = genSeries(N, drift, 0.7, 20 + seedIdx*7)
+                .map(function(v,i){ return +(v + ihsg[i]*0.4).toFixed(2); });
+    var labels = [];
+    for (var i=0;i<N;i++){ labels.push(i%6===0 ? ('H-'+(N-i)) : ''); }
+    var ctx = $('trProfileChart'); if (!ctx) return;
+    var c = trColors();
+    if (profileChart) { profileChart.destroy(); profileChart = null; }
+    profileChart = new Chart(ctx, {
+      type:'line',
+      data:{ labels:labels, datasets:[
+        { label: name || 'Analis', data: mine, borderColor:c.accent, backgroundColor:c.accentBg, fill:'+1', tension:0.3, pointRadius:0, borderWidth:2.5 },
+        { label:'IHSG', data: ihsg, borderColor:c.text3, backgroundColor:'transparent', fill:false, tension:0.3, pointRadius:0, borderWidth:2, borderDash:[4,3] }
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ mode:'index', intersect:false, backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1,
+            callbacks:{ label:function(it){ var y=it.parsed.y; return it.dataset.label+': '+(y>=0?'+':'')+y+'%'; } } }
+        },
+        scales:{
+          x:{ grid:{display:false}, ticks:{ color:c.text3, font:{size:10, family:"'IBM Plex Mono',monospace"}, maxRotation:0 } },
+          y:{ grid:{color:c.grid}, ticks:{ color:c.tick, font:{size:10, family:"'IBM Plex Mono',monospace"}, callback:function(v){return v+'%';} } }
+        },
+        interaction:{ mode:'index', intersect:false }
+      }
+    });
+  }
+
+  function renderRecs(a, tab){
+    var el = $('trPRecList'); if (!el) return;
+    var list = tab === 'active' ? (a.recsActive||[]) : (a.recsHistory||[]);
+    if (!list.length) {
+      el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:14px 4px;text-align:center">Belum ada rekomendasi di kategori ini.</div>';
+      return;
+    }
+    el.innerHTML = list.map(function(r){
+      var pot = r.entry ? (((r.tp - r.entry) / r.entry) * 100) : 0;
+      var potSign = pot>=0 ? '+' : '';
+      var potColor = (r.type === 'SELL') ? 'var(--red)' : 'var(--green)';
+      var badgeCls = (r.type === 'SELL') ? 'sell' : 'buy';
+      var outcome;
+      if (tab === 'active') {
+        outcome = '<span class="tr-rec-o active">● Aktif</span>';
+      } else if (r.outcome === 'tp') {
+        outcome = '<span class="tr-rec-o tp">✓ Kena TP</span>';
+      } else if (r.outcome === 'sl') {
+        outcome = '<span class="tr-rec-o sl">✕ Kena SL</span>';
+      } else {
+        outcome = '<span class="tr-rec-o">— Selesai</span>';
+      }
+      return '<div class="tr-rec">'
+        + '<div class="tr-rec-top">'
+          + '<div style="min-width:0"><div class="tr-rec-tk">'+esc(r.tk)+'</div><div class="tr-rec-nm">'+esc(r.nm)+'</div></div>'
+          + '<span class="tr-rec-b '+badgeCls+'">'+esc(r.type)+'</span>'
+        + '</div>'
+        + '<div class="tr-rec-g">'
+          + '<div><div class="k">ENTRY</div><div class="v">'+fmtN(r.entry)+'</div></div>'
+          + '<div><div class="k">TARGET</div><div class="v" style="color:var(--green)">'+fmtN(r.tp)+'</div></div>'
+          + '<div><div class="k">STOP LOSS</div><div class="v" style="color:var(--red)">'+fmtN(r.sl)+'</div></div>'
+          + '<div><div class="k">POTENSI</div><div class="v" style="color:'+potColor+'">'+potSign+pot.toFixed(1)+'%</div></div>'
+        + '</div>'
+        + '<div class="tr-rec-d"><span>'+esc(r.date)+'</span>'+outcome+'</div>'
+      + '</div>';
+    }).join('');
+  }
+
+  function openProfile(key){
+    var all = analysts();
+    var a = all[key]; if (!a) return;
+    currentKey = key;
+    currentTab = 'active';
+
+    // Header identitas
+    $('trPAv').textContent = initials(a.name);
+    $('trPName').textContent = a.name;
+    $('trPFirm').textContent = a.firm + (a.role ? ' · ' + a.role : '');
+    var vb = $('trPVBadge'); if (vb) vb.style.display = a.verified ? '' : 'none';
+
+    // Sertifikasi
+    $('trPCerts').innerHTML = (a.certs||[]).map(function(c){
+      return '<span class="tr-p-cert'+(c.primary?' primary':'')+'">'+esc(c.label)+'</span>';
+    }).join('');
+
+    // Sektor cakupan
+    $('trPSectors').innerHTML = (a.sectors||[]).map(function(s){
+      return '<span class="tr-p-sector">'+esc(s.icon)+' '+esc(s.name)+'</span>';
+    }).join('');
+
+    // KPI
+    var sorted = all.slice().sort(function(x,y){ return y.alpha - x.alpha; });
+    var rank = sorted.indexOf(a) + 1;
+    var alphaUp = a.alpha >= 0;
+    $('trPKpiAlpha').textContent = (alphaUp?'+':'')+a.alpha+'%';
+    $('trPKpiAlpha').className = 'v ' + (alphaUp?'tr-up':'tr-dn');
+    $('trPKpiAlphaSub').textContent = 'Peringkat #'+rank+' dari '+all.length+' analis';
+    $('trPKpiWr').textContent = a.wr+'%';
+    var hit = Math.round(a.recs * a.wr / 100);
+    $('trPKpiWrSub').textContent = hit+' dari '+a.recs+' rekomendasi';
+    var avgUp = a.avgRet >= 0;
+    $('trPKpiAvg').textContent = (avgUp?'+':'')+a.avgRet+'%';
+    $('trPKpiAvg').className = 'v ' + (avgUp?'tr-up':'tr-dn');
+    $('trPKpiTotal').textContent = a.recs;
+    $('trPKpiTotalSub').textContent = (a.activeCount||0)+' aktif · 90 hari';
+
+    // Kotak Verifikasi (hanya kalau verified)
+    var vBox = $('trPVerify');
+    if (a.verified) {
+      vBox.style.display = '';
+      var primary = null;
+      for (var i=0;i<(a.certs||[]).length;i++){ if(a.certs[i].primary){ primary=a.certs[i]; break; } }
+      var certLabel = primary ? primary.label : ((a.certs && a.certs[0]) ? a.certs[0].label : '—');
+      $('trPVCert').textContent = certLabel;
+      $('trPVFirm').textContent = a.firm || '—';
+      $('trPVValid').textContent = (a.since && a.since !== '—') ? ('Aktif s.d. ' + a.since) : '—';
+    } else {
+      vBox.style.display = 'none';
+    }
+
+    // Breakdown sektor
+    $('trPBdTag').textContent = 'DARI '+a.recs+' REKOMENDASI';
+    $('trPBreakdown').innerHTML = (a.breakdown||[]).map(function(b){
+      return '<div class="tr-bd-row">'
+        + '<div class="tr-bd-top"><span class="n">'+esc(b.name)+'</span><span class="w">'+b.pct+'%</span></div>'
+        + '<div class="tr-bd-bar"><div class="tr-bd-fill" style="width:'+b.pct+'%;background:'+esc(b.color)+'"></div></div>'
+      + '</div>';
+    }).join('');
+
+    // Tabs + rec list
+    $('trPTabActN').textContent = (a.recsActive||[]).length;
+    $('trPTabHistN').textContent = (a.recsHistory||[]).length;
+    var tabs = document.querySelectorAll('#trPTabs .tr-tab');
+    for (var t=0;t<tabs.length;t++){
+      tabs[t].classList.toggle('active', tabs[t].getAttribute('data-tab')==='active');
+    }
+    $('trPChartLbl').textContent = a.name;
+    renderRecs(a, 'active');
+    renderProfileChart(key, a.name, a.alpha);
+
+    // Tampilkan sub-view
+    document.body.classList.add('tr-profile-open');
+    try { window.scrollTo({top:0, behavior:'auto'}); } catch(_){ try { window.scrollTo(0,0); } catch(__){} }
+  }
+
+  function closeProfile(){
+    if (profileChart) { try { profileChart.destroy(); } catch(_){} profileChart = null; }
+    document.body.classList.remove('tr-profile-open');
+    currentKey = null;
+  }
+
+  // Delegasi klik global — kartu papan peringkat, tombol back, tab.
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+
+    // Klik kartu papan peringkat → buka profil.
+    var item = t.closest('#trLb .tr-lb-item');
+    if (item) {
+      var k = parseInt(item.getAttribute('data-key'), 10);
+      if (!isNaN(k)) openProfile(k);
+      return;
+    }
+
+    // Tombol kembali.
+    if (t.closest('#trBack')) { closeProfile(); return; }
+
+    // Tab Aktif / Riwayat.
+    var tab = t.closest('#trPTabs .tr-tab');
+    if (tab && currentKey !== null) {
+      var all = analysts();
+      var a = all[currentKey]; if (!a) return;
+      var tabs = document.querySelectorAll('#trPTabs .tr-tab');
+      for (var i=0;i<tabs.length;i++){ tabs[i].classList.remove('active'); }
+      tab.classList.add('active');
+      currentTab = tab.getAttribute('data-tab');
+      renderRecs(a, currentTab);
+    }
+  });
+
+  // Reset profil kalau user pindah menu — supaya masuk Tracker lagi
+  // langsung ke main view, bukan tersisa di detail profil.
+  function hookReset(){
+    if (typeof window.showPage !== 'function') { setTimeout(hookReset, 200); return; }
+    var orig = window.showPage;
+    window.showPage = function(name){
+      if (name !== 'tracker' && document.body.classList.contains('tr-profile-open')) {
+        try { closeProfile(); } catch(_){}
+      }
+      return orig.apply(this, arguments);
+    };
+  }
+  hookReset();
 })();
 </script>
 
