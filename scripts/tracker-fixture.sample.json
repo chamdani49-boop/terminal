@@ -1,0 +1,94 @@
+{
+  "ok": true, "count": 8,
+  "headers": ["timestamp","status","analis","firm","sertifikasi","ticker","tipe","entry","tp1","tp2","sl","tanggal","horizon","catatan","submitted_by","approved_by"],
+  "items": [
+    {
+      "_row": 2, "_ts": 1748828400000,
+      "timestamp": "2026-06-02T00:00:00.000Z", "status": "approved",
+      "analis": "Budi Santoso, CTA®", "firm": "RHB Sekuritas Indonesia",
+      "sertifikasi": "CTA (Certified Technical Analyst)",
+      "ticker": "BBCA", "tipe": "BUY",
+      "entry": 6000, "tp1": 6150, "tp2": 6300, "sl": 5800,
+      "tanggal": "2026-06-01", "horizon": "3 Bulan",
+      "catatan": "Breakout resistance 6000 dgn volume tinggi, konfirmasi trend MA200. Target dekat 6150 lalu 6300 kalau lolos.",
+      "submitted_by": "budi", "approved_by": "owner"
+    },
+    {
+      "_row": 3, "_ts": 1748914800000,
+      "timestamp": "2026-06-03T00:00:00.000Z", "status": "approved",
+      "analis": "Sari Wardhani, CSA®", "firm": "RHB Sekuritas Indonesia",
+      "sertifikasi": "CSA (Certified Securities Analyst)",
+      "ticker": "BMRI", "tipe": "BUY",
+      "entry": 4200, "tp1": 5000, "tp2": null, "sl": 4100,
+      "tanggal": "2026-06-01", "horizon": "2 Bulan",
+      "catatan": "Fundamental Q1 solid + trend perbankan menguat.",
+      "submitted_by": "sari", "approved_by": "owner"
+    },
+    {
+      "_row": 4, "_ts": 1750037600000,
+      "timestamp": "2026-06-16T00:00:00.000Z", "status": "approved",
+      "analis": "Andi Wijaya", "firm": "Mandiri Sekuritas",
+      "sertifikasi": "WPPE",
+      "ticker": "BBRI", "tipe": "BUY",
+      "entry": 2800, "tp1": 3200, "tp2": null, "sl": 2600,
+      "tanggal": "2026-06-15", "horizon": "1 Bulan",
+      "catatan": "Support kuat di 2700, target teknikal 3200.",
+      "submitted_by": "andi", "approved_by": "owner"
+    },
+    {
+      "_row": 5, "_ts": 1744732800000,
+      "timestamp": "2026-04-15T00:00:00.000Z", "status": "approved",
+      "analis": "Rina Prasetyo", "firm": "Mandiri Sekuritas",
+      "sertifikasi": "",
+      "ticker": "TLKM", "tipe": "BUY",
+      "entry": 3050, "tp1": 3300, "tp2": null, "sl": 2900,
+      "tanggal": "2026-04-15", "horizon": "2 Bulan",
+      "catatan": "Undervalued.",
+      "submitted_by": "rina", "approved_by": "owner"
+    },
+    {
+      "_row": 6, "_ts": 1749772800000,
+      "timestamp": "2026-06-13T00:00:00.000Z", "status": "approved",
+      "analis": "Dedi Kusuma, CFTe", "firm": "Mirae Asset Sekuritas",
+      "sertifikasi": "CFTe (Certified Financial Technician)",
+      "ticker": "ASII", "tipe": "BUY",
+      "entry": 4800, "tp1": 5300, "tp2": null, "sl": 4550,
+      "tanggal": "2026-06-15", "horizon": "3 Bulan",
+      "catatan": "Konsolidasi lama dgn volume rendah — siap breakout jika berhasil menembus 4850. Risk-reward menarik dgn RR 1:2.",
+      "submitted_by": "dedi", "approved_by": "owner"
+    },
+    {
+      "_row": 7, "_ts": 1751328000000,
+      "timestamp": "2026-07-01T00:00:00.000Z", "status": "approved",
+      "analis": "Nadya Iskandar", "firm": "Mirae Asset Sekuritas",
+      "sertifikasi": "",
+      "ticker": "ANTM", "tipe": "BUY",
+      "entry": 2900, "tp1": 3300, "tp2": null, "sl": 2700,
+      "tanggal": "2026-07-01", "horizon": "3 Bulan",
+      "catatan": "Tren komoditas nikel positif.",
+      "submitted_by": "nadya", "approved_by": "owner"
+    },
+    {
+      "_row": 8, "_ts": 1747872000000,
+      "timestamp": "2026-05-22T00:00:00.000Z", "status": "approved",
+      "analis": "Budi Santoso, CTA®", "firm": "RHB Sekuritas Indonesia",
+      "sertifikasi": "CTA (Certified Technical Analyst)",
+      "ticker": "INDF", "tipe": "BUY",
+      "entry": 6500, "tp1": 6800, "tp2": 7200, "sl": 6250,
+      "tanggal": "2026-05-22", "horizon": "2 Bulan",
+      "catatan": "Konsolidasi range 6300-6600 → siap breakout.",
+      "submitted_by": "budi", "approved_by": "owner"
+    },
+    {
+      "_row": 9, "_ts": 1751673600000,
+      "timestamp": "2026-07-05T00:00:00.000Z", "status": "approved",
+      "analis": "Andi Wijaya", "firm": "Mandiri Sekuritas",
+      "sertifikasi": "WPPE",
+      "ticker": "BBCA", "tipe": "BUY",
+      "entry": 6150, "tp1": 6400, "tp2": null, "sl": 6000,
+      "tanggal": "2026-07-05", "horizon": "1 Bulan",
+      "catatan": "Konsolidasi di atas 6100, target 6400.",
+      "submitted_by": "andi", "approved_by": "owner"
+    }
+  ]
+}

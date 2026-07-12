@@ -1,0 +1,104 @@
+name: Refresh Tracker data (Sheet -> tracker.json)
+
+# ═══════════════════════════════════════════════════════════════════════
+# Fetch baris "approved" dari Google Sheet Tracker via GAS Web App,
+# gabung dengan harga saham live (public/ohlc.json) + IHSG (^JKSE),
+# lalu tulis public/tracker.json. Dipakai frontend untuk render tab
+# Live/Performa/Akun di menu Tracker.
+#
+# JADWAL:
+#   - Cron GitHub tiap 60 menit (best-effort; sering telat 5–15 mnt).
+#   - Bisa dipicu manual dari tab Actions → Run workflow.
+#   - Ideally dipicu juga oleh cron-job.org tiap 30 menit untuk presisi
+#     (mirip refresh-ohlc). Belum aku-set otomatis di sini; bisa
+#     ditambahkan owner setelah confidence tinggi.
+#
+# PRASYARAT (sekali saja):
+#   - Set 2 secret di GitHub Settings → Secrets and variables → Actions:
+#       TRACKER_GAS_URL    → URL /exec Web App (sama dgn worker GAS_URL)
+#       TRACKER_GAS_TOKEN  → token GAS (sama dgn worker GAS_TOKEN)
+#   - Update tracker-input/gas/Code.gs (paste versi terbaru) & re-deploy
+#     Web App (Manage deployments → Edit → Save → Deploy). Ini yg buka
+#     endpoint doGet(?action=list).
+# ═══════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    - cron: '5 * * * *'   # tiap jam menit ke-5 (menghindari puncak jam)
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Set "true" untuk rebuild penuh (abaikan cache lama)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-tracker
+  cancel-in-progress: false
+
+jobs:
+  refresh-tracker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── Build tracker.json ─────────────────────────────────────────────
+      # Env secret di-set di GitHub Repo Settings. Kalau belum di-set,
+      # script akan tetap jalan tapi menghasilkan tracker.json dgn
+      # pending:true (bukan error) — cukup owner set secret lalu re-run.
+      - name: Build tracker.json
+        env:
+          TRACKER_GAS_URL:   ${{ secrets.TRACKER_GAS_URL }}
+          TRACKER_GAS_TOKEN: ${{ secrets.TRACKER_GAS_TOKEN }}
+        run: |
+          node scripts/build-tracker.js
+
+      # ── Commit hanya kalau berubah ─────────────────────────────────────
+      - name: Commit & push if changed
+        id: commit
+        run: |
+          if git diff --quiet -- public/tracker.json; then
+            echo "⏭  No tracker.json changes — skip commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "tracker-refresh[bot]"
+          git config user.email "tracker-refresh@economstock.local"
+          git add public/tracker.json
+          git commit -m "tracker: refresh $(date -u +%FT%TZ)"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "✓ Pushed on attempt $attempt"
+              pushed=true
+              break
+            fi
+            echo "⚠️  Push gagal (attempt $attempt) — rebase ke origin/main lalu retry…"
+            git pull --rebase --autostash origin main || true
+            sleep $(( (RANDOM % 5) + 2 ))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "FATAL: push gagal setelah 5 percobaan."
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # ── Purge jsDelivr CDN cache ───────────────────────────────────────
+      - name: Purge jsDelivr CDN cache
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          response=$(curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/public/tracker.json" || true)
+          echo "Purge tracker.json: $response"
