@@ -304,7 +304,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v11</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v12</span></div>
 </div>
 </body></html>`;
 }
@@ -358,8 +358,8 @@ ${STYLE}
     <textarea id="aiPrompt" rows="6" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
     <div style="display:flex;gap:8px;margin:10px 0 0;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-sec" onclick="tiCopy()">📋 Salin Prompt</button>
-      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener">Buka Gemini ↗</a>
-      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener">Buka ChatGPT ↗</a>
+      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return tiGo(this)">Buka Gemini ↗</a>
+      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener" onclick="return tiGo(this)">Buka ChatGPT ↗</a>
     </div>
     <div id="aiInfo" class="hint" style="margin-top:8px"></div>
   </div>
@@ -388,7 +388,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v11</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v12</span></div>
 </div>
 
 <script>
@@ -419,9 +419,9 @@ function tiCopy(){
       : '<span style="color:var(--yellow)">Teks prompt sudah dipilih — tekan Ctrl+C (di HP: tahan lalu Copy).</span>';
   }catch(e){}
 }
-// Buka situs AI: utamakan window.open (buka tab baru lebih andal di HP);
-// kalau diblok, kembalikan true agar link <a target=_blank> yang jalan.
-function tiOpen(u){ try{ var w=window.open(u,'_blank'); if(w){ try{ w.opener=null; }catch(e){} return false; } }catch(e){} return true; }
+// Buka situs AI. Di HP: buka di tab yang SAMA (paling andal; di HP tab baru
+// sering "kebuka lalu gagal & kembali"). Di laptop: biarkan buka tab baru.
+function tiGo(a){ try{ if(/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')){ window.location.href = a.href; return false; } }catch(e){} return true; }
 </script>
 
 <script>
@@ -526,7 +526,7 @@ function tiOpen(u){ try{ var w=window.open(u,'_blank'); if(w){ try{ w.opener=nul
         var punyaToken = (typeof SUBMIT_TOKEN==='string' && SUBMIT_TOKEN.length>10);
         setMsg('Gagal (parse-v11): UNAUTHORIZED · token di halaman: <b>'+(punyaToken?'ADA':'KOSONG')+'</b>. ' + (punyaToken
           ? 'Token dikirim tapi ditolak server — screenshot ini ke admin.'
-          : 'Halaman ini masih versi LAMA (belum ada token). Buka di jendela <b>Incognito/Penyamaran</b> lalu login, pastikan footer tertulis <b>build parse-v11</b>.'), 'err');
+          : 'Halaman ini masih versi LAMA (belum ada token). Buka di jendela <b>Incognito/Penyamaran</b> lalu login, pastikan footer tertulis <b>build parse-v12</b>.'), 'err');
         return;
       }
       var j = await res.json().catch(function(){ return {}; });
