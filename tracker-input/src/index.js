@@ -259,10 +259,17 @@ async function apiSubmit(request, env, cookieAuthed) {
     return jsonRes({ error: 'Google Sheet menolak semua data: ' + (err || 'unknown') }, 502);
   }
 
-  // Foto → Telegram (tanpa caption; kirim foto polos saja).
+  // Foto → Telegram sekali dgn caption ringkas (tampil sbg keterangan di admin).
   let photoStatus = { sent: 0 };
   try {
-    if (photos.length) photoStatus = await sendPhotosTelegram(env, photos, '');
+    if (photos.length) {
+      const tickers = results.filter(r => r.ok).map(r => r.ticker || '(tanpa ticker)');
+      const caption =
+        '🆕 <b>Rekomendasi Tracker</b> (pending)\n' +
+        'oleh: <b>' + escapeHtml(submitted_by) + '</b> · ' + today + '\n' +
+        okCount + ' baris' + (tickers.length ? ': <b>' + escapeHtml(tickers.join(', ')) + '</b>' : '');
+      photoStatus = await sendPhotosTelegram(env, photos, caption);
+    }
   } catch (_) { /* jangan gagalkan submit hanya karena Telegram */ }
 
   return jsonRes({
@@ -429,7 +436,7 @@ ${STYLE}
 
   <div class="card">
     <div class="cardhead"><span class="step">3</span> Foto bukti <span style="color:var(--text3);font-weight:500;font-size:11px;margin-left:6px">(opsional, maks 5)</span></div>
-    <div class="hint" style="margin-bottom:8px">Foto <b>dikirim ke admin via Telegram</b> untuk validasi — <b>tidak disimpan</b> di Sheet.</div>
+    <div class="hint" style="margin-bottom:8px">Foto untuk validasi admin — <b>tidak disimpan</b> di Sheet.</div>
     <div class="pslots" id="photoSlots"><label class="pslot empty" for="photoInput">+</label><label class="pslot empty" for="photoInput">+</label><label class="pslot empty" for="photoInput">+</label><label class="pslot empty" for="photoInput">+</label><label class="pslot empty" for="photoInput">+</label></div>
     <input id="photoInput" type="file" accept="image/*" multiple style="display:none">
     <div id="photoInfo" class="hint" style="margin-top:8px">0/5 foto — ketuk kotak + untuk menambah.</div>
@@ -554,7 +561,7 @@ function tiCopy(){
     Array.prototype.forEach.call(photoSlots.querySelectorAll('.thumb-x'), function(b){
       b.onclick=function(ev){ ev.stopPropagation(); ev.preventDefault(); photos.splice(parseInt(b.getAttribute('data-i'),10),1); renderThumbs(); };
     });
-    if(photoInfo) photoInfo.innerHTML = photos.length + '/5 foto' + (photos.length ? ' — siap dikirim ke Telegram saat Kirim.' : ' — ketuk kotak + untuk menambah.');
+    if(photoInfo) photoInfo.innerHTML = photos.length + '/5 foto' + (photos.length ? ' — siap dikirim saat Kirim.' : ' — ketuk kotak + untuk menambah.');
   }
 
   function compress(file){
@@ -618,7 +625,7 @@ function tiCopy(){
       var added = (j && typeof j.added==='number') ? j.added : 1;
       var tickers = (j && j.tickers && j.tickers.length) ? ' ('+esc(j.tickers.join(', '))+')' : '';
       var failedTxt = (j && j.failed) ? ' · '+j.failed+' gagal' : '';
-      var telTxt = (j.photos && j.photos.sent) ? ' · '+j.photos.sent+' foto ke Telegram' : '';
+      var telTxt = (j.photos && j.photos.sent) ? ' · '+j.photos.sent+' foto terkirim' : '';
       setMsg('✓ Terkirim <b>'+added+' baris</b>'+tickers+failedTxt+telTxt+'. Menunggu approve admin. Kotak dikosongkan.', 'ok');
       document.getElementById('dataText').value=''; refreshPreview();
       photos.length=0; renderThumbs();
