@@ -2747,8 +2747,15 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-live-stream-hd .count{color:var(--text2)}
 .tr-live-stream-hd .float-agg{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)}
 
-/* ── Toolbar Live: cari saham + list sekuritas (filter) ── */
+/* ── Toolbar Live: pilih tanggal + cari saham + list sekuritas (filter) ── */
 .tr-live-toolbar{display:flex;flex-direction:column;gap:10px;margin:0 2px 14px}
+.tr-live-ctrls{display:flex;gap:8px;align-items:stretch}
+.tr-live-ctrls .tr-live-search{flex:1;min-width:0}
+.tr-live-datewrap{position:relative;display:flex;align-items:center;flex-shrink:0}
+.tr-live-datewrap .ico{position:absolute;left:11px;font-size:13px;pointer-events:none;z-index:1}
+.tr-live-date{appearance:none;-webkit-appearance:none;padding:10px 28px 10px 32px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;max-width:210px;transition:border-color .15s,box-shadow .15s}
+.tr-live-date:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.13)}
+@media(max-width:640px){.tr-live-ctrls{flex-direction:column}.tr-live-date{max-width:none;width:100%}}
 .tr-live-search{position:relative;display:flex;align-items:center}
 .tr-live-search .ico{position:absolute;left:12px;font-size:13px;color:var(--text3);pointer-events:none}
 .tr-live-search input{width:100%;padding:10px 34px 10px 34px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13.5px;font-family:inherit;transition:border-color .15s,box-shadow .15s}
@@ -2883,6 +2890,45 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-perf-firm-card.rank-1 .tr-perf-firm-rank{color:#f5c518}
 .tr-perf-firm-card.rank-2 .tr-perf-firm-rank{color:#c7cbd6}
 .tr-perf-firm-card.rank-3 .tr-perf-firm-rank{color:#c08a5a}
+
+/* ── Detail drawer: lookup saham (siapa yg rekom) / detail firm (semua rekomnya) ── */
+.tr-live-card{cursor:pointer}
+.tr-dt-overlay{position:fixed;inset:0;z-index:10060;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);display:none;opacity:0;transition:opacity .18s}
+.tr-dt-overlay.open{display:block;opacity:1}
+.tr-dt-panel{position:absolute;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);border-left:1px solid var(--border);box-shadow:-12px 0 40px rgba(0,0,0,.35);display:flex;flex-direction:column;transform:translateX(24px);transition:transform .22s}
+.tr-dt-overlay.open .tr-dt-panel{transform:translateX(0)}
+.tr-dt-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;background:var(--card)}
+.tr-dt-head-l{min-width:0;flex:1}
+.tr-dt-kicker{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.tr-dt-title{font-size:20px;font-weight:800;color:var(--text);margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tr-dt-sub{font-size:12px;color:var(--text2);margin-top:3px}
+.tr-dt-close{width:32px;height:32px;border:none;background:var(--bg2);color:var(--text2);border-radius:9px;cursor:pointer;font-size:15px;flex-shrink:0;transition:background .15s}
+.tr-dt-close:hover{background:var(--red);color:#fff}
+.tr-dt-body{padding:14px 18px 30px;overflow-y:auto;flex:1}
+.tr-dt-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.tr-dt-kpi{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:10px 11px}
+.tr-dt-kpi-lbl{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.tr-dt-kpi-val{font-size:16px;font-weight:800;color:var(--text);margin-top:3px}
+.tr-dt-sec-title{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);font-weight:700;margin:18px 2px 9px}
+.tr-dt-row{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,transform .12s}
+.tr-dt-row:hover{border-color:var(--accent);transform:translateY(-1px)}
+.tr-dt-row-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
+.tr-dt-row-name{font-weight:700;font-size:13.5px;color:var(--text);display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tr-dt-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:3px 8px;border-radius:var(--radius-pill);white-space:nowrap}
+.tr-dt-badge.buy{background:rgba(5,150,105,.15);color:var(--green)}
+.tr-dt-badge.sell{background:rgba(225,29,72,.15);color:var(--red)}
+.tr-dt-badge.st-active{background:rgba(37,99,235,.15);color:var(--accent2)}
+.tr-dt-badge.st-pending{background:rgba(202,138,4,.16);color:var(--yellow)}
+.tr-dt-badge.st-missed{background:rgba(120,120,130,.18);color:var(--text2)}
+.tr-dt-badge.st-tp{background:rgba(5,150,105,.15);color:var(--green)}
+.tr-dt-badge.st-sl{background:rgba(225,29,72,.15);color:var(--red)}
+.tr-dt-badge.st-exp{background:rgba(120,120,130,.18);color:var(--text2)}
+.tr-dt-row-lvls{display:flex;gap:14px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)}
+.tr-dt-row-lvls b{color:var(--text2);font-weight:600}
+.tr-dt-row-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:7px;font-size:10.5px;color:var(--text3)}
+.tr-dt-row-foot .r{display:flex;align-items:center;gap:8px}
+.tr-dt-pnl{font-family:'IBM Plex Mono',monospace;font-weight:700}
+.tr-dt-empty{text-align:center;color:var(--text3);font-size:12px;padding:18px 10px;font-family:'IBM Plex Mono',monospace}
 .tr-perf-firm-name{font-size:15px;font-weight:800;letter-spacing:-.3px;line-height:1.2;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .tr-perf-firm-verified{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:700;color:var(--green);background:rgba(16,185,129,.14);padding:2px 6px;border-radius:5px;letter-spacing:.3px;border:1px solid rgba(16,185,129,.28)}
 .tr-perf-firm-meta-top{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px;letter-spacing:.3px}
@@ -4105,12 +4151,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <span>📡 Rekomendasi Aktif · <span class="count" id="trLiveStreamCount">0</span></span>
       <span class="float-agg">Total floating <span id="trLiveStreamFloat">—</span></span>
     </div>
-    <!-- Toolbar: cari saham + list sekuritas (filter). Di-populate & di-wire via JS. -->
+    <!-- Toolbar: pilih tanggal + cari saham + list sekuritas (filter). Di-wire via JS. -->
     <div class="tr-live-toolbar">
-      <div class="tr-live-search">
-        <span class="ico">🔍</span>
-        <input type="text" id="trLiveSearch" placeholder="Cari saham (mis. ANTM, BBCA)…" autocomplete="off" spellcheck="false" aria-label="Cari saham">
-        <button type="button" class="tr-live-search-clear" id="trLiveSearchClear" aria-label="Bersihkan pencarian" style="display:none">✕</button>
+      <div class="tr-live-ctrls">
+        <div class="tr-live-search">
+          <span class="ico">🔍</span>
+          <input type="text" id="trLiveSearch" placeholder="Cari saham (mis. ANTM, BBCA)…" autocomplete="off" spellcheck="false" aria-label="Cari saham">
+          <button type="button" class="tr-live-search-clear" id="trLiveSearchClear" aria-label="Bersihkan pencarian" style="display:none">✕</button>
+        </div>
+        <div class="tr-live-datewrap">
+          <span class="ico">📅</span>
+          <select id="trLiveDate" class="tr-live-date" aria-label="Pilih tanggal rekomendasi"></select>
+        </div>
       </div>
       <div class="tr-live-firmbar">
         <span class="tr-live-firmbar-lbl">🏢 Sekuritas</span>
@@ -4504,6 +4556,172 @@ body.is-mobile-device.force-desktop .pl-col-main{
     Data performa diagregasi dari publikasi riset resmi sekuritas tempat analis berafiliasi. Status <b>Terverifikasi</b> menandakan sertifikasi & afiliasi telah dicocokkan dengan publikasi resmi — bukan jaminan akurasi rekomendasi ke depan. Halaman ini masih <b>PREVIEW</b>; data dummy.
   </div>
 </div><!-- /tr-view-profile -->
+
+<!-- ── DETAIL DRAWER: lookup saham / detail firm (real data tracker.json) ── -->
+<div id="trDetail" class="tr-dt-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="tr-dt-panel">
+    <div class="tr-dt-head">
+      <div class="tr-dt-head-l">
+        <div class="tr-dt-kicker" id="trDtKicker">DETAIL</div>
+        <div class="tr-dt-title" id="trDtTitle">—</div>
+        <div class="tr-dt-sub" id="trDtSub"></div>
+      </div>
+      <button type="button" class="tr-dt-close" id="trDtClose" aria-label="Tutup">✕</button>
+    </div>
+    <div class="tr-dt-body" id="trDtBody"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER — DETAIL DRAWER (real data tracker.json)
+//   window.__TR_openStock(ticker)   → siapa saja yg rekomendasi saham itu
+//   window.__TR_openFirm(idOrName)  → semua rekomendasi 1 sekuritas/analis
+// Isolasi IIFE, prefix .tr-dt-*. Baca data via window.__TR_getData().
+// ═══════════════════════════════════════════
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function fmtN(n){ return (n == null || !Number.isFinite(+n)) ? '—' : Number(n).toLocaleString('id-ID'); }
+  function fmtPct(n, opts){ if (n == null || !Number.isFinite(+n)) return '—'; var v=+n, dec=(opts&&opts.dec!=null)?opts.dec:2; return (v>=0?'+':'')+v.toFixed(dec)+'%'; }
+  function fmtShortDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }catch(_){ return String(iso); } }
+  function firmShort(name){ if(!name) return '—'; return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim(); }
+  function getData(){ try{ return (window.__TR_getData && window.__TR_getData()) || window.__TR_DATA__ || null; }catch(_){ return null; } }
+  function firmLabel(r){ var f=r&&r.firm&&String(r.firm).trim(); return f?f:(r&&r.analyst?String(r.analyst).trim():'—'); }
+
+  function allRecs(d){
+    var a=(d.openList||[]).map(function(r){return Object.assign({_cat:'active'},r);});
+    var u=(d.unfilledList||[]).map(function(r){return Object.assign({_cat:'unfilled'},r);});
+    var h=(d.historyList||[]).map(function(r){return Object.assign({_cat:'closed'},r);});
+    return a.concat(u,h);
+  }
+  function stInfo(r){
+    if(r._cat==='closed'){
+      var cb=r.closedBy, tp=r.tpHits||[];
+      if(cb==='TP2'||tp.indexOf('TP2')>=0) return {cls:'st-tp',lbl:'🏆 TP2'};
+      if(cb==='TP1') return {cls:'st-tp',lbl:'🎯 TP1'};
+      if(cb==='SL_TRAIL') return {cls:'st-tp',lbl:'🛡 SL Trail'};
+      if(cb==='SL') return {cls:'st-sl',lbl:'✕ SL'};
+      if(cb==='EXPIRED') return {cls:'st-exp',lbl:'⏰ Expired'};
+      return {cls:'st-exp',lbl:'Selesai'};
+    }
+    var s=r.state||'TRIGGERED';
+    if(s==='PENDING') return {cls:'st-pending',lbl:'⏳ Menunggu'};
+    if(s==='RUNNING_MISSED') return {cls:'st-missed',lbl:'🚀 Harga Lari'};
+    return {cls:'st-active',lbl:'● Aktif'};
+  }
+  function perfHtml(r){
+    if(r._cat==='closed'){ var p=+r.pnlPct||0; return '<span class="tr-dt-pnl" style="color:var(--'+(p>=0?'green':'red')+')">'+fmtPct(p)+'</span>'; }
+    if(r._cat==='active'){ var fl=+r.floatingPct||0; return '<span class="tr-dt-pnl" style="color:var(--'+(fl>=0?'green':'red')+')">'+fmtPct(fl)+'</span>'; }
+    var dd=r.distanceToEntryPct; return '<span style="color:var(--text3)">'+(dd!=null?(Math.abs(+dd).toFixed(1)+'% ke entry'):'—')+'</span>';
+  }
+  function recRow(r, ctx){
+    var isBuy=(r.type||'BUY').toUpperCase()==='BUY';
+    var st=stInfo(r);
+    var leftName, leftIc, dataAttr;
+    if(ctx==='stock'){ leftName=firmShort(firmLabel(r)); leftIc=(r.firm&&String(r.firm).trim())?'🏢':'👤'; dataAttr=' data-tr-firm-name="'+esc(firmLabel(r))+'"'; }
+    else { leftName=r.ticker+(r.tickerName?(' · '+r.tickerName):''); leftIc='📈'; dataAttr=' data-tr-stock="'+esc(r.ticker)+'"'; }
+    var attr=(ctx==='stock'&&r.firm&&String(r.firm).trim()&&r.analyst)?('<span style="color:var(--text3);font-weight:500"> · '+esc(r.analyst)+'</span>'):'';
+    return '<div class="tr-dt-row"'+dataAttr+'>'
+      +'<div class="tr-dt-row-top">'
+        +'<div class="tr-dt-row-name"><span class="ic">'+leftIc+'</span><span>'+esc(leftName)+'</span>'+attr+'</div>'
+        +'<span class="tr-dt-badge '+(isBuy?'buy':'sell')+'">'+(isBuy?'BUY':'SELL')+'</span>'
+      +'</div>'
+      +'<div class="tr-dt-row-lvls"><span>Entry <b>'+fmtN(r.entry)+'</b></span><span>TP <b>'+fmtN(r.tp1)+(r.tp2?(' / '+fmtN(r.tp2)):'')+'</b></span><span>SL <b>'+fmtN(r.sl)+'</b></span></div>'
+      +'<div class="tr-dt-row-foot"><span>📅 '+esc(fmtShortDate(r.openDate))+'</span><span class="r"><span class="tr-dt-badge '+st.cls+'">'+st.lbl+'</span>'+perfHtml(r)+'</span></div>'
+    +'</div>';
+  }
+  function kpi(lbl,val,color){ return '<div class="tr-dt-kpi"><div class="tr-dt-kpi-lbl">'+esc(lbl)+'</div><div class="tr-dt-kpi-val"'+(color?(' style="color:'+color+'"'):'')+'>'+val+'</div></div>'; }
+  function section(title, list, ctx){ if(!list||!list.length) return ''; return '<div class="tr-dt-sec-title">'+esc(title)+' ('+list.length+')</div>'+list.map(function(r){return recRow(r,ctx);}).join(''); }
+  function show(){ var o=$('trDetail'); if(!o) return; o.classList.add('open'); o.setAttribute('aria-hidden','false'); try{document.body.style.overflow='hidden';}catch(_){} $('trDtBody').scrollTop=0; }
+  function hide(){ var o=$('trDetail'); if(!o) return; o.classList.remove('open'); o.setAttribute('aria-hidden','true'); try{document.body.style.overflow='';}catch(_){} }
+
+  function openStock(ticker){
+    var d=getData(); if(!d||d.pending) return;
+    var tk=String(ticker||'').toUpperCase();
+    var recs=allRecs(d).filter(function(r){ return String(r.ticker||'').toUpperCase()===tk; });
+    if(!recs.length) return;
+    var nm=(recs.find(function(r){return r.tickerName;})||{}).tickerName||'';
+    var buy=recs.filter(function(r){return (r.type||'BUY').toUpperCase()==='BUY';}).length;
+    var sell=recs.length-buy;
+    var firms={}; recs.forEach(function(r){ firms[firmLabel(r)]=1; });
+    var firmCount=Object.keys(firms).length;
+    var closed=recs.filter(function(r){return r._cat==='closed';});
+    var wins=closed.filter(function(r){return (+r.pnlPct||0)>0;}).length;
+    var wr=closed.length?Math.round(wins/closed.length*100):null;
+    $('trDtKicker').textContent='SAHAM';
+    $('trDtTitle').innerHTML=esc(tk)+' <span class="tr-dt-badge '+(buy>=sell?'buy':'sell')+'">'+(buy>=sell?'BIAS BELI':'BIAS JUAL')+'</span>';
+    $('trDtSub').textContent=(nm?nm+' · ':'')+firmCount+' sekuritas · '+recs.length+' rekomendasi';
+    var body='<div class="tr-dt-kpis">'
+      +kpi('Sekuritas rekom',firmCount)
+      +kpi('Buy / Sell',buy+' / '+sell)
+      +kpi('Winrate selesai',wr==null?'—':(wr+'%'))
+      +'</div>';
+    body+=section('● Sedang berjalan', recs.filter(function(r){return r._cat==='active';}),'stock');
+    body+=section('⏳ Menunggu / harga lari', recs.filter(function(r){return r._cat==='unfilled';}),'stock');
+    body+=section('✓ Riwayat selesai', recs.filter(function(r){return r._cat==='closed';}),'stock');
+    $('trDtBody').innerHTML=body || '<div class="tr-dt-empty">Tidak ada data.</div>';
+    show();
+  }
+
+  function tagFirmRecs(f){
+    var a=(f.recsActive||[]).map(function(r){return Object.assign({_cat:'active'},r);});
+    var p=(f.recsPending||[]).map(function(r){return Object.assign({_cat:'unfilled',state:'PENDING'},r);});
+    var m=(f.recsMissed||[]).map(function(r){return Object.assign({_cat:'unfilled',state:'RUNNING_MISSED'},r);});
+    var h=(f.recsHistory||[]).map(function(r){return Object.assign({_cat:'closed'},r);});
+    return { active:a, unfilled:p.concat(m), closed:h };
+  }
+  function openFirm(key){
+    var d=getData(); if(!d||d.pending) return;
+    var bf=d.byFirm||{};
+    var f=bf[key];
+    if(!f){ for(var kk in bf){ var x=bf[kk]; if(x && (x.id===key || x.name===key || firmShort(x.name)===firmShort(key))){ f=x; break; } } }
+    var name, verified, groups, wr, net;
+    if(f){
+      name=f.name; verified=f.verified; groups=tagFirmRecs(f);
+      wr=(f.trades||0)>0?Math.round(f.winrate):null; net=(f.trades||0)>0?f.net:null;
+    } else {
+      var recs=allRecs(d).filter(function(r){ return firmLabel(r)===key; });
+      if(!recs.length) return;
+      name=key; verified=false;
+      groups={ active:recs.filter(function(r){return r._cat==='active';}), unfilled:recs.filter(function(r){return r._cat==='unfilled';}), closed:recs.filter(function(r){return r._cat==='closed';}) };
+      var w=groups.closed.filter(function(r){return (+r.pnlPct||0)>0;}).length;
+      wr=groups.closed.length?Math.round(w/groups.closed.length*100):null;
+      net=groups.closed.length?groups.closed.reduce(function(s,r){return s+(+r.pnlPct||0);},0):null;
+    }
+    var actT=groups.active.filter(function(r){return Number.isFinite(+r.floatingPct);});
+    var floatAvg=actT.length?actT.reduce(function(s,r){return s+(+r.floatingPct||0);},0)/actT.length:null;
+    $('trDtKicker').textContent='SEKURITAS';
+    $('trDtTitle').innerHTML=esc(firmShort(name))+(verified?' <span class="tr-dt-badge st-tp">✓ VERIF</span>':'');
+    $('trDtSub').textContent=groups.closed.length+' selesai · '+groups.active.length+' aktif · '+groups.unfilled.length+' menunggu';
+    var body='<div class="tr-dt-kpis">'
+      +kpi('Winrate', wr==null?'—':(wr+'%'), wr==null?'':('var(--'+(wr>=50?'green':'red')+')'))
+      +kpi('Net (selesai)', net==null?'—':fmtPct(net), net==null?'':('var(--'+(net>=0?'green':'red')+')'))
+      +kpi('Floating aktif', floatAvg==null?'—':fmtPct(floatAvg,{dec:1}), floatAvg==null?'':('var(--'+(floatAvg>=0?'green':'red')+')'))
+      +'</div>';
+    body+=section('● Sedang berjalan', groups.active,'firm');
+    body+=section('⏳ Menunggu / harga lari', groups.unfilled,'firm');
+    body+=section('✓ Riwayat selesai', groups.closed,'firm');
+    $('trDtBody').innerHTML=body || '<div class="tr-dt-empty">Tidak ada data.</div>';
+    show();
+  }
+
+  window.__TR_openStock=openStock;
+  window.__TR_openFirm=openFirm;
+
+  document.addEventListener('click', function(e){
+    var t=e.target; if(!t||!t.closest) return;
+    if(t.closest('#trDtClose')){ hide(); return; }
+    var ov=$('trDetail');
+    if(ov && ov.classList.contains('open') && t===ov){ hide(); return; }
+    var frow=t.closest('[data-tr-firm-name]');
+    if(frow){ var fn=frow.getAttribute('data-tr-firm-name'); if(fn) openFirm(fn); return; }
+    var srow=t.closest('[data-tr-stock]');
+    if(srow){ var s=srow.getAttribute('data-tr-stock'); if(s) openStock(s); return; }
+  });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ var o=$('trDetail'); if(o&&o.classList.contains('open')) hide(); } });
+})();
+</script>
 
 </div>
 
@@ -5520,7 +5738,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var stateBadgeHtml = '<span class="tr-state-badge tr-state-' + badge.cls + '">'
       + badge.icon + ' ' + badge.label + '</span>';
 
-    return '<div class="tr-live-card ' + cardCls + '">'
+    return '<div class="tr-live-card ' + cardCls + '" data-tr-stock="' + esc(o.ticker) + '" title="Lihat semua yang rekomendasi ' + esc(o.ticker) + '">'
       + '<div class="tr-live-card-top">'
         + '<div class="tr-live-card-l">'
           + '<div class="tr-live-card-tick">' + esc(o.ticker) + ' <span class="tr-live-card-badge ' + (isBuy ? 'buy' : 'sell') + '">' + (isBuy ? 'BUY' : 'SELL') + '</span> ' + stateBadgeHtml + '</div>'
@@ -5545,20 +5763,40 @@ body.is-mobile-device.force-desktop .pl-col-main{
       + '</div>';
   }
 
-  // ── Filter state (cari saham + list sekuritas) ──
-  var trFilter = { q: '', firm: null };  // firm=null → semua sekuritas
-  var trCombined = [];                    // openList + unfilledList terakhir
+  // ── Filter state (tanggal + cari saham + list sekuritas) ──
+  var trFilter = { q: '', firm: null, date: null };  // firm=null → semua; date=null → tgl terbaru
+  var trCombined = [];                                 // openList + unfilledList terakhir
 
   // Label sumber sebuah rekomendasi: firm (primary) atau analis (fallback).
   function firmOf(o){
     var f = o && o.firm && String(o.firm).trim();
     return f ? f : (o && o.analyst ? String(o.analyst).trim() : '—');
   }
+  // Tanggal sinyal (YYYY-MM-DD).
+  function dayOf(o){ return String((o && o.openDate) || '').slice(0, 10); }
+  // Tanggal terbaru di antara semua rekomendasi.
+  function latestDay(){
+    var mx = ''; for (var i = 0; i < trCombined.length; i++){ var d = dayOf(trCombined[i]); if (d > mx) mx = d; } return mx;
+  }
+  // Resolusi tanggal terpilih: null/'__latest__' → terbaru; '__all__' → semua; else spesifik.
+  function resolvedDate(){
+    var d = trFilter.date;
+    if (d === '__all__') return null;
+    if (d == null || d === '__latest__') return latestDay();
+    return d;
+  }
+  // Subset rekomendasi sesuai tanggal terpilih (untuk hitung chip firm).
+  function dateScoped(){
+    var dw = resolvedDate();
+    return dw ? trCombined.filter(function(o){ return dayOf(o) === dw; }) : trCombined.slice();
+  }
 
-  // Terapkan filter query + sekuritas ke daftar rekomendasi.
+  // Terapkan filter tanggal + sekuritas + query ke daftar rekomendasi.
   function applyFilter(list){
     var q = (trFilter.q || '').trim().toLowerCase();
+    var dw = resolvedDate();
     return list.filter(function(o){
+      if (dw && dayOf(o) !== dw) return false;
       if (trFilter.firm != null && firmOf(o) !== trFilter.firm) return false;
       if (q) {
         var hay = (String(o.ticker || '') + ' ' + String(o.tickerName || '')).toLowerCase();
@@ -5568,18 +5806,38 @@ body.is-mobile-device.force-desktop .pl-col-main{
     });
   }
 
-  // Bangun chip "list sekuritas" dari data (Semua + per firm, dgn count).
+  // Bangun opsi dropdown tanggal (Terbaru + Semua + tiap tanggal, desc).
+  function buildDateOptions(){
+    var sel = $('trLiveDate'); if (!sel) return;
+    var days = {};
+    trCombined.forEach(function(o){ var d = dayOf(o); if (d) days[d] = (days[d] || 0) + 1; });
+    var list = Object.keys(days).sort().reverse();
+    var latest = list[0] || '';
+    var cur = (trFilter.date == null) ? '__latest__' : trFilter.date;
+    var html = '';
+    if (latest) html += '<option value="__latest__">📅 Terbaru — ' + esc(fmtShortDate(latest)) + ' (' + days[latest] + ')</option>';
+    html += '<option value="__all__">Semua tanggal (' + trCombined.length + ')</option>';
+    html += list.map(function(d){ return '<option value="' + esc(d) + '">' + esc(fmtShortDate(d)) + ' (' + days[d] + ')</option>'; }).join('');
+    sel.innerHTML = html;
+    // Pilih sesuai state; kalau tanggal lama hilang di data baru → balik ke Terbaru.
+    var exists = Array.prototype.some.call(sel.options, function(op){ return op.value === cur; });
+    if (!exists) { cur = '__latest__'; trFilter.date = null; }
+    sel.value = cur;
+  }
+
+  // Bangun chip "list sekuritas" dari subset tanggal terpilih (Semua + per firm, dgn count).
   function buildFirmChips(){
     var el = $('trLiveFirmChips'); if (!el) return;
+    var scoped = dateScoped();
     var counts = {}, order = [];
-    trCombined.forEach(function(o){
+    scoped.forEach(function(o){
       var k = firmOf(o);
       if (!(k in counts)) { counts[k] = 0; order.push(k); }
       counts[k]++;
     });
     order.sort(function(a, b){ return counts[b] - counts[a] || a.localeCompare(b); });
     var html = '<button type="button" class="tr-live-firmchip' + (trFilter.firm == null ? ' active' : '')
-      + '" data-firm="__all__">Semua <span class="n">' + trCombined.length + '</span></button>';
+      + '" data-firm="__all__">Semua <span class="n">' + scoped.length + '</span></button>';
     html += order.map(function(k){
       var lbl = (k === '—') ? 'Tanpa sekuritas' : firmShort(k);
       return '<button type="button" class="tr-live-firmchip' + (trFilter.firm === k ? ' active' : '')
@@ -5624,6 +5882,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (trFilter.firm != null && !trCombined.some(function(o){ return firmOf(o) === trFilter.firm; })) {
       trFilter.firm = null;
     }
+    buildDateOptions();
     buildFirmChips();
     paintGrid();
   }
@@ -5717,6 +5976,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
     paintGrid();
   });
 
+  // ── Filter: pilih tanggal (select) ──
+  document.addEventListener('change', function(e){
+    if (!e.target || e.target.id !== 'trLiveDate') return;
+    trFilter.date = e.target.value;
+    buildFirmChips(); // count chip ikut tanggal
+    paintGrid();
+  });
+
   // ── Filter: klik chip sekuritas / clear search / reset ──
   document.addEventListener('click', function(e){
     if (!e.target || !e.target.closest) return;
@@ -5724,9 +5991,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var reset = e.target.closest('#trLiveFilterReset');
     if (reset) {
       e.preventDefault();
-      trFilter.q = ''; trFilter.firm = null;
+      trFilter.q = ''; trFilter.firm = null; trFilter.date = '__all__';
       var inp = $('trLiveSearch'); if (inp) inp.value = '';
       var clr0 = $('trLiveSearchClear'); if (clr0) clr0.style.display = 'none';
+      var dsel = $('trLiveDate'); if (dsel) dsel.value = '__all__';
       buildFirmChips(); paintGrid();
       return;
     }
@@ -5837,7 +6105,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var avg = f.avg || 0;
       var activeCount = (f.recsActive || []).length;
       var analystCount = (f.analysts || []).length;
-      var pfHint = ''; // reserved slot untuk PF/rata2 future
+      // Performa BERJALAN (floating) untuk firm yg belum punya trade selesai —
+      // supaya RHB dkk tidak tampil "0" padahal punya posisi aktif.
+      var activeTrig = (f.recsActive || []).filter(function(r){ return Number.isFinite(+r.floatingPct); });
+      var floatAvg = activeTrig.length ? activeTrig.reduce(function(s, r){ return s + (+r.floatingPct || 0); }, 0) / activeTrig.length : null;
+      var greenN = activeTrig.filter(function(r){ return (+r.floatingPct || 0) > 0; }).length;
+      var greenPct = activeTrig.length ? Math.round(greenN / activeTrig.length * 100) : 0;
 
       return '<div class="tr-perf-firm-card ' + rankCls + '" data-firm-id="' + esc(f.id) + '">'
         + '<div class="tr-perf-firm-top">'
@@ -5850,14 +6123,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
         + '<div class="tr-perf-firm-stats">'
           + '<div class="tr-perf-firm-stat">'
-            + '<div class="tr-perf-firm-stat-lbl">WIN RATE</div>'
-            + '<div class="tr-perf-firm-stat-val big" style="color:' + (hasTrades ? pctColor(wr - 50) : 'var(--text3)') + '">' + (hasTrades ? wr.toFixed(0) + '%' : '—') + '</div>'
-            + '<div class="tr-perf-firm-stat-sub">' + (hasTrades ? f.wins + '/' + f.trades + ' menang' : 'menunggu selesai') + '</div>'
+            + '<div class="tr-perf-firm-stat-lbl">' + (hasTrades ? 'WIN RATE' : 'RETURN BERJALAN') + '</div>'
+            + '<div class="tr-perf-firm-stat-val big" style="color:' + (hasTrades ? pctColor(wr - 50) : (floatAvg == null ? 'var(--text3)' : pctColor(floatAvg))) + '">' + (hasTrades ? wr.toFixed(0) + '%' : (floatAvg == null ? '—' : fmtPct(floatAvg, { dec: 1 }))) + '</div>'
+            + '<div class="tr-perf-firm-stat-sub">' + (hasTrades ? f.wins + '/' + f.trades + ' menang' : (activeTrig.length + ' posisi aktif')) + '</div>'
           + '</div>'
           + '<div class="tr-perf-firm-stat">'
-            + '<div class="tr-perf-firm-stat-lbl">NET RETURN</div>'
-            + '<div class="tr-perf-firm-stat-val big" style="color:' + (hasTrades ? pctColor(net) : 'var(--text3)') + '">' + (hasTrades ? fmtPct(net) : '—') + '</div>'
-            + '<div class="tr-perf-firm-stat-sub">' + (hasTrades ? 'total gain/loss' : 'belum ada data') + '</div>'
+            + '<div class="tr-perf-firm-stat-lbl">' + (hasTrades ? 'NET RETURN' : 'POSISI HIJAU') + '</div>'
+            + '<div class="tr-perf-firm-stat-val big" style="color:' + (hasTrades ? pctColor(net) : (greenN > 0 ? 'var(--green)' : 'var(--text3)')) + '">' + (hasTrades ? fmtPct(net) : (activeTrig.length ? (greenN + '/' + activeTrig.length) : '—')) + '</div>'
+            + '<div class="tr-perf-firm-stat-sub">' + (hasTrades ? 'total gain/loss' : 'sedang profit') + '</div>'
           + '</div>'
           + '<div class="tr-perf-firm-stat">'
             + '<div class="tr-perf-firm-stat-lbl">RATA² TRADE</div>'
@@ -6075,9 +6348,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   document.addEventListener('click', function(e){
     var card = e.target && e.target.closest && e.target.closest('#trPerfFirmGrid .tr-perf-firm-card');
     if (!card) return;
-    // Placeholder: highlight briefly + scroll to top. Detail modal akan dibangun di PR berikutnya.
-    card.style.outline = '2px solid var(--accent)';
-    setTimeout(function(){ card.style.outline = ''; }, 600);
+    var fid = card.getAttribute('data-firm-id');
+    if (fid && window.__TR_openFirm) window.__TR_openFirm(fid);
   });
 
   // ── Re-render chart saat tab Performa dibuka (canvas butuh ukuran benar) ──
@@ -6286,9 +6558,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   document.addEventListener('click', function(e){
     var item = e.target && e.target.closest && e.target.closest('#trLb .tr-lb-item[data-firm-id]');
     if (!item) return;
-    if (typeof window.__TR_switchTab === 'function') {
-      window.__TR_switchTab('perf');
-    }
+    var fid = item.getAttribute('data-firm-id');
+    if (fid && window.__TR_openFirm) window.__TR_openFirm(fid);
   });
 
   // ── Subscribe ke data ──
