@@ -20,7 +20,7 @@
  */
 
 const COOKIE_NAME = 'ti_auth';
-const COOKIE_MAX_AGE = 60 * 60 * 12; // 12 jam
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 hari (biar inputer tak sering login ulang)
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -296,7 +296,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v7</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v8</span></div>
 </div>
 </body></html>`;
 }
@@ -348,8 +348,8 @@ ${STYLE}
     <textarea id="aiPrompt" rows="6" readonly onclick="this.select()" style="font-size:12px;background:var(--bg2)">${escapeHtml(aiPromptText)}</textarea>
     <div style="display:flex;gap:8px;margin:10px 0 0;flex-wrap:wrap;align-items:center">
       <button type="button" class="btn-sec" onclick="tiCopy()">📋 Salin Prompt</button>
-      <a class="btn-sec" href="https://gemini.google.com/app">Buka Gemini ↗</a>
-      <a class="btn-sec" href="https://chatgpt.com/">Buka ChatGPT ↗</a>
+      <a class="btn-sec" href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">Buka Gemini ↗</a>
+      <a class="btn-sec" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Buka ChatGPT ↗</a>
     </div>
     <div id="aiInfo" class="hint" style="margin-top:8px"></div>
   </div>
@@ -378,7 +378,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v7</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v8</span></div>
 </div>
 
 <script>
@@ -494,6 +494,7 @@ function tiCopy(){
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ text: text, submitted_by: inputer, photos: photos })
       });
+      if(res.status===401){ setMsg('Sesi login sudah habis. Halaman akan dimuat ulang untuk login lagi…','err'); setTimeout(function(){ location.href='/'; }, 1600); return; }
       var j = await res.json().catch(function(){ return {}; });
       if(!res.ok || j.error){ throw new Error(j.error || ('HTTP '+res.status)); }
       setMsg('✓ Terkirim ke admin.' + ((j.photos&&j.photos.sent)?(' '+j.photos.sent+' foto dikirim ke Telegram.'):'') + ' Menunggu approve. Kotak dikosongkan untuk input berikutnya.', 'ok');
