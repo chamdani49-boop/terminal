@@ -152,6 +152,40 @@ function handleLogout() {
 // Terima teks rekomendasi (bisa berisi >1 saham, hasil edit inputer) + nama
 // inputer + foto. Teks dikirim apa adanya ke Sheet (kolom "catatan"); foto ke
 // Telegram. Tidak ada validasi per-kolom — inputer bebas mengetik/edit.
+// Parser teks berlabel → array record. Dipakai server (kirim ke Sheet) &
+// dicerminkan di klien (live preview). Aturan:
+//   - blok dipisah baris kosong; kalau tak ada baris kosong tapi ada banyak
+//     "Analis:", pecah per "Analis:".
+//   - normalisasi whitespace dalam blok jadi satu spasi.
+//   - tiap label capture nilai sampai label berikutnya.
+function parseRecords(text) {
+  const LABELS_RE = /\b(Analis|Firm|Sertifikasi|Tanggal|Tipe|Saham|Ticker|Entry|TP1|TP2|SL|Horizon|Catatan|Note)\s*:\s*/gi;
+  let blocks = String(text || '').split(/\n\s*\n+/).map(s => s.trim()).filter(Boolean);
+  if (blocks.length === 1) {
+    const b = blocks[0];
+    if ((b.match(/\bAnalis\s*:/gi) || []).length > 1) {
+      blocks = b.split(/(?=\bAnalis\s*:)/i).map(s => s.trim()).filter(Boolean);
+    }
+  }
+  const records = [];
+  for (const block of blocks) {
+    const norm = block.replace(/\s+/g, ' ').trim();
+    LABELS_RE.lastIndex = 0;
+    const marks = []; let m;
+    while ((m = LABELS_RE.exec(norm)) !== null) marks.push({ k: m[1].toLowerCase(), s: m.index, e: m.index + m[0].length });
+    const rec = {};
+    for (let i = 0; i < marks.length; i++) {
+      const val = norm.slice(marks[i].e, i + 1 < marks.length ? marks[i + 1].s : norm.length).trim();
+      rec[marks[i].k] = val;
+    }
+    if (rec.ticker && !rec.saham) rec.saham = rec.ticker;
+    if (rec.note && !rec.catatan) rec.catatan = rec.note;
+    if (rec.saham || rec.tipe || rec.entry) records.push(rec);
+  }
+  return records;
+}
+function cleanNum(s) { return String(s || '').replace(/[<>]/g, '').trim(); }
+
 async function apiSubmit(request, env, cookieAuthed) {
   if (!env.GAS_URL || !env.GAS_TOKEN) {
     return jsonRes({ error: 'GAS_URL / GAS_TOKEN belum di-set di Worker secret.' }, 500);
@@ -162,65 +196,81 @@ async function apiSubmit(request, env, cookieAuthed) {
 
   // Auth: cookie ATAU token yang ditanam di halaman form. Token dipakai bila
   // browser tidak mengirim cookie pada POST (terjadi di sebagian browser HP).
-  // Token = nilai yang sama dgn cookie & hanya ada di halaman yang sudah login.
   const tokenOk = body && typeof body.authToken === 'string' && body.authToken.length > 10 && body.authToken === await expectedToken(env);
-  if (!cookieAuthed && !tokenOk) {
-    return jsonRes({ error: 'unauthorized' }, 401);
-  }
+  if (!cookieAuthed && !tokenOk) return jsonRes({ error: 'unauthorized' }, 401);
 
   const text = String(body.text || '').trim();
   const submitted_by = String(body.submitted_by || '').trim().slice(0, 80);
   const photos = Array.isArray(body.photos) ? body.photos.slice(0, 5) : [];
-
   if (!submitted_by) return jsonRes({ error: 'Nama inputer wajib diisi.' }, 400);
   if (!text) return jsonRes({ error: 'Data rekomendasi masih kosong.' }, 400);
 
-  // Teks apa adanya → kolom "catatan" di Sheet. GAS akan menambah 1 baris.
-  const tanggal = new Date().toISOString().slice(0, 10);
-  const payload = {
-    token: env.GAS_TOKEN,
-    catatan: text,
-    submitted_by,
-    tanggal,
-  };
+  const today = new Date().toISOString().slice(0, 10);
+  // Kalau parser tak menemukan label sama sekali (mis. teks bebas), fallback:
+  // kirim sebagai 1 baris dengan seluruh teks di kolom "catatan".
+  const parsed = parseRecords(text);
+  const records = parsed.length ? parsed : [{ catatan: text }];
 
-  let gasRes, gasText;
-  try {
-    gasRes = await fetch(env.GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    gasText = await gasRes.text();
-  } catch (e) {
-    return jsonRes({ error: 'Gagal menghubungi Sheet (GAS): ' + (e && e.message || e) }, 502);
+  // Kirim tiap record ke GAS berurutan (biar urutan di Sheet konsisten).
+  const results = [];
+  for (const rec of records) {
+    const payload = {
+      token: env.GAS_TOKEN,
+      analis: rec.analis || '',
+      firm: rec.firm || '',
+      sertifikasi: rec.sertifikasi || '',
+      ticker: (rec.saham || '').toUpperCase(),
+      tipe: (rec.tipe || '').toUpperCase(),
+      entry: cleanNum(rec.entry),
+      tp1: cleanNum(rec.tp1),
+      tp2: cleanNum(rec.tp2),
+      sl: cleanNum(rec.sl),
+      tanggal: rec.tanggal || today,
+      horizon: rec.horizon || '',
+      catatan: rec.catatan || '',
+      submitted_by,
+    };
+    let ok = false, err = null;
+    try {
+      const r = await fetch(env.GAS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const t = await r.text();
+      try { const j = JSON.parse(t); ok = j.ok === true; if (!ok) err = j.error || 'gagal'; } catch (_) { err = 'respons GAS bukan JSON'; }
+    } catch (e) { err = String((e && e.message) || e); }
+    results.push({ ticker: payload.ticker, ok, err });
   }
 
-  let gasBody = null;
-  try { gasBody = JSON.parse(gasText); } catch (_) { gasBody = { _raw: gasText }; }
-  if (!gasRes.ok || !gasBody || gasBody.ok !== true) {
-    // Kasus paling sering di deploy baru: GAS_TOKEN Worker ≠ TOKEN gas/Code.gs.
-    // Beri pesan spesifik supaya user tak menyangka soal login.
-    if (gasBody && gasBody.error === 'unauthorized') {
-      return jsonRes({ error: 'Google Sheet MENOLAK (bukan soal login halaman): nilai GAS_TOKEN di Worker tidak cocok dengan TOKEN di gas/Code.gs. Perbaikan: (1) buka Sheet ▸ Extensions ▸ Apps Script; salin nilai TOKEN di baris "var TOKEN=..."; (2) di Worker, jalankan sekali: `npx wrangler secret put GAS_TOKEN` lalu tempel nilai yang SAMA persis, lalu deploy ulang worker. Setelah itu Kirim akan sukses.' }, 502);
+  const okCount = results.filter(r => r.ok).length;
+  const failCount = results.length - okCount;
+
+  // Semua gagal → 502 dgn pesan konkret (khususnya untuk GAS unauthorized).
+  if (okCount === 0) {
+    const err = results[0] && results[0].err;
+    if (err === 'unauthorized') {
+      return jsonRes({ error: 'Google Sheet MENOLAK (bukan soal login halaman): nilai GAS_TOKEN di Worker tidak cocok dengan TOKEN di gas/Code.gs. Perbaikan: (1) buka Sheet ▸ Extensions ▸ Apps Script; salin nilai TOKEN di baris "var TOKEN=..."; (2) di Worker: `npx wrangler secret put GAS_TOKEN` tempel nilai yg SAMA persis; deploy ulang.' }, 502);
     }
-    return jsonRes({ error: 'Google Sheet menolak: ' + ((gasBody && gasBody.error) || ('HTTP ' + gasRes.status)), detail: gasBody }, 502);
+    return jsonRes({ error: 'Google Sheet menolak semua data: ' + (err || 'unknown') }, 502);
   }
 
-  // Foto → Telegram (best-effort; tidak menggagalkan submit).
+  // Foto → Telegram sekali dgn caption ringkas.
   let photoStatus = { sent: 0 };
   try {
     if (photos.length) {
-      const preview = text.length > 700 ? text.slice(0, 700) + '…' : text;
+      const tickers = results.filter(r => r.ok).map(r => r.ticker || '(tanpa ticker)');
       const caption =
         '🆕 <b>Rekomendasi Tracker</b> (pending)\n' +
-        'oleh: <b>' + escapeHtml(submitted_by) + '</b> · ' + tanggal + '\n\n' +
-        escapeHtml(preview);
+        'oleh: <b>' + escapeHtml(submitted_by) + '</b> · ' + today + '\n' +
+        okCount + ' baris' + (tickers.length ? ': <b>' + escapeHtml(tickers.join(', ')) + '</b>' : '');
       photoStatus = await sendPhotosTelegram(env, photos, caption);
     }
   } catch (_) { /* jangan gagalkan submit hanya karena Telegram */ }
 
-  return jsonRes({ ok: true, submitted_by, photos: photoStatus });
+  return jsonRes({
+    ok: true,
+    added: okCount,
+    failed: failCount,
+    tickers: results.filter(r => r.ok).map(r => r.ticker),
+    photos: photoStatus,
+  });
 }
 
 // ── HTML ─────────────────────────────────────────────────────────────
@@ -309,7 +359,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v13</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v14</span></div>
 </div>
 </body></html>`;
 }
@@ -373,6 +423,7 @@ ${STYLE}
     <div class="cardhead"><span class="step">2</span> Data rekomendasi</div>
     <div class="hint" style="margin-bottom:8px">Tempel hasil dari AI di sini. <b>Boleh lebih dari satu saham.</b> Edit langsung di kotak ini bila perlu — isi kotak inilah yang dikirim ke admin.</div>
     <textarea id="dataText" rows="12" placeholder="Tempel hasil dari Gemini/ChatGPT di sini…"></textarea>
+    <div id="parseInfo" class="hint" style="margin-top:8px">Belum ada data. Tiap saham jadi 1 baris di Sheet.</div>
   </div>
 
   <div class="card">
@@ -393,7 +444,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v13</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code>. Approve di Google Sheet: menu <b>🎯 Tracker</b> → <b>✅ Tandai baris terpilih → APPROVED</b>. · <span style="opacity:.5">build parse-v14</span></div>
 </div>
 
 <script>
@@ -424,9 +475,24 @@ function tiCopy(){
       : '<span style="color:var(--yellow)">Teks prompt sudah dipilih — tekan Ctrl+C (di HP: tahan lalu Copy).</span>';
   }catch(e){}
 }
-// Buka situs AI. Di HP: buka di tab yang SAMA (paling andal; di HP tab baru
-// sering "kebuka lalu gagal & kembali"). Di laptop: biarkan buka tab baru.
-function tiGo(a){ try{ if(/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')){ window.location.href = a.href; return false; } }catch(e){} return true; }
+// Buka situs AI. Di laptop: biarkan link default (buka tab baru).
+// Di HP: navigasi ke situsnya di HP kerap di-intercept ke app-Gemini yang lalu
+// gagal ("mau buka jendela baru lalu balik"). Solusi paling andal: SALIN URL
+// ke clipboard, biar user tempel sendiri di tab kosong.
+function tiGo(a){
+  try{
+    if(!/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')) return true; // laptop
+    var url = a.href;
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url).catch(function(){}); }
+    var ta=document.createElement('textarea'); ta.value=url; ta.style.cssText='position:fixed;left:0;top:0;opacity:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    var i=document.getElementById('aiInfo');
+    if(i) i.innerHTML='<span style="color:var(--green)">✓ URL tersalin: <b>'+url+'</b>. Buka tab kosong di Chrome, tempel URL, lalu Enter. (Tombol langsung sering gagal di HP karena Android meng-<i>intercept</i> ke app.)</span>';
+  }catch(e){}
+  return false;
+}
 </script>
 
 <script>
@@ -436,19 +502,50 @@ function tiGo(a){ try{ if(/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAg
   var btn = document.getElementById('submitBtn');
   function setMsg(t,c){ if(msg) msg.innerHTML = t ? '<div class="'+c+'">'+t+'</div>' : ''; }
 
-  // Cek status login → mengungkap kalau cookie TIDAK terkirim browser (inilah
-  // sumber "unauthorized" saat Kirim). Ditampilkan di bawah judul.
+  // Cek status login.
   (function(){
     var as = document.getElementById('authStatus');
     fetch('/api/whoami', { credentials:'same-origin', cache:'no-store' })
       .then(function(r){ return r.json(); })
       .then(function(d){
         if(!as) return;
-        if(d && d.authed){ as.innerHTML = '<span style="color:var(--green)">● Login aktif — siap kirim.</span>'; }
-        else { as.innerHTML = '<span style="color:var(--yellow)">● Sesi login TIDAK aktif — cookie ' + ((d&&d.cookiePresent)?'ADA tapi tak cocok':'TIDAK dikirim browser') + '. <a href="/" style="color:var(--accent2);text-decoration:underline">Login ulang</a></span>'; }
+        as.innerHTML = (d && d.authed)
+          ? '<span style="color:var(--green)">● Login aktif — siap kirim.</span>'
+          : '<span style="color:var(--yellow)">● Sesi login TIDAK aktif. <a href="/" style="color:var(--accent2);text-decoration:underline">Login ulang</a></span>';
       })
       .catch(function(){ if(as) as.innerHTML='<span style="color:var(--yellow)">Tak bisa cek status login (jaringan?).</span>'; });
   })();
+
+  // Parser klien (cerminan server-side). Jalankan tiap kali teks berubah,
+  // tampilkan HITUNGAN saham yang akan dikirim → user langsung tahu apakah
+  // formatnya benar sebelum klik Kirim.
+  var LABELS_RE = /\b(Analis|Firm|Sertifikasi|Tanggal|Tipe|Saham|Ticker|Entry|TP1|TP2|SL|Horizon|Catatan|Note)\s*:\s*/gi;
+  function clientParse(text){
+    var blocks = String(text||'').split(/\n\s*\n+/).map(function(s){return s.trim();}).filter(Boolean);
+    if(blocks.length===1){ var b=blocks[0]; if((b.match(/\bAnalis\s*:/gi)||[]).length>1) blocks=b.split(/(?=\bAnalis\s*:)/i).map(function(s){return s.trim();}).filter(Boolean); }
+    var out=[];
+    for(var bi=0;bi<blocks.length;bi++){
+      var norm=blocks[bi].replace(/\s+/g,' ').trim(); LABELS_RE.lastIndex=0;
+      var marks=[], m; while((m=LABELS_RE.exec(norm))!==null) marks.push({k:m[1].toLowerCase(),s:m.index,e:m.index+m[0].length});
+      var rec={}; for(var i=0;i<marks.length;i++){ rec[marks[i].k]=norm.slice(marks[i].e, i+1<marks.length?marks[i+1].s:norm.length).trim(); }
+      if(rec.ticker&&!rec.saham) rec.saham=rec.ticker;
+      if(rec.saham||rec.tipe||rec.entry) out.push(rec);
+    }
+    return out;
+  }
+  var dataText = document.getElementById('dataText');
+  var parseInfo = document.getElementById('parseInfo');
+  function refreshPreview(){
+    if(!parseInfo) return;
+    var t=(dataText&&dataText.value||'').trim();
+    if(!t){ parseInfo.innerHTML='Belum ada data. Tiap saham jadi 1 baris di Sheet.'; return; }
+    var rs=clientParse(t);
+    if(!rs.length){ parseInfo.innerHTML='<span style="color:var(--yellow)">Tidak ada label yg dikenali. Data akan masuk sebagai 1 baris ke kolom "catatan" (tanpa TP/SL/dst).</span>'; return; }
+    var names=rs.map(function(r){ return (r.saham||'?').toUpperCase(); }).join(', ');
+    parseInfo.innerHTML='<span style="color:var(--green)">→ '+rs.length+' saham terdeteksi: <b>'+esc(names)+'</b>. Akan dikirim sebagai '+rs.length+' baris terpisah.</span>';
+  }
+  if(dataText) dataText.addEventListener('input', refreshPreview);
+  refreshPreview();
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
 
   // ── Upload & kompres foto (maks 5) ──
@@ -533,8 +630,12 @@ function tiGo(a){ try{ if(/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAg
         setTimeout(function(){ location.href='/'; }, 1600); return;
       }
       if(!res.ok || j.error){ throw new Error(j.error || ('HTTP '+res.status)); }
-      setMsg('✓ Terkirim ke admin.' + ((j.photos&&j.photos.sent)?(' '+j.photos.sent+' foto dikirim ke Telegram.'):'') + ' Menunggu approve. Kotak dikosongkan untuk input berikutnya.', 'ok');
-      document.getElementById('dataText').value='';
+      var added = (j && typeof j.added==='number') ? j.added : 1;
+      var tickers = (j && j.tickers && j.tickers.length) ? ' ('+esc(j.tickers.join(', '))+')' : '';
+      var failedTxt = (j && j.failed) ? ' · '+j.failed+' gagal' : '';
+      var telTxt = (j.photos && j.photos.sent) ? ' · '+j.photos.sent+' foto ke Telegram' : '';
+      setMsg('✓ Terkirim <b>'+added+' baris</b>'+tickers+failedTxt+telTxt+'. Menunggu approve admin. Kotak dikosongkan.', 'ok');
+      document.getElementById('dataText').value=''; refreshPreview();
       photos.length=0; renderThumbs();
       window.scrollTo({top:0, behavior:'smooth'});
     }catch(err){
