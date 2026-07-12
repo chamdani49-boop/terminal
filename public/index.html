@@ -2641,6 +2641,41 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-rec-o.active{color:var(--accent2)}
 .tr-rec-o.tp{color:var(--green)}
 .tr-rec-o.sl{color:var(--red)}
+
+/* ── SUB-TAB SHELL (Ringkasan / Live / Performa / Akun) ─────────────
+   Sub-nav di dalam #page-tracker, di atas semua pane. Existing tracker
+   content pane "Ringkasan" (#tr-view-main) tidak diubah. Pane baru
+   Live/Performa/Akun mulai dari empty state; diisi di PR berikutnya. */
+.tr-subtabs{display:flex;gap:5px;overflow-x:auto;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:5px;margin:0 auto 14px;max-width:1200px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tr-subtabs::-webkit-scrollbar{display:none}
+.tr-subtab-btn{flex:1;min-width:max-content;padding:9px 15px;border:0;background:transparent;color:var(--text2);cursor:pointer;border-radius:8px;font-family:inherit;font-weight:700;font-size:12.5px;letter-spacing:.2px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .18s ease;white-space:nowrap}
+.tr-subtab-btn:hover{color:var(--text);background:var(--bg2)}
+.tr-subtab-btn.active{background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(124,58,237,.24)}
+.tr-subtab-btn .tr-subtab-chip{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(255,255,255,.16);color:#fff;letter-spacing:.3px}
+.tr-subtab-btn:not(.active) .tr-subtab-chip{background:var(--bg3);color:var(--text3)}
+@media(max-width:640px){
+  .tr-subtabs{margin:0 -2px 12px;border-radius:10px}
+  .tr-subtab-btn{padding:8px 10px;font-size:12px}
+}
+/* Semua pane pakai .tr-subpane; yang aktif dapat .active. #tr-view-main
+   (pane Ringkasan) juga ikut pola ini supaya konsisten. */
+.tr-subpane{display:none;animation:trSubFade .2s ease}
+.tr-subpane.active{display:block}
+@keyframes trSubFade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+/* Saat profile detail terbuka: sub-tab bar & pane ikut disembunyikan. */
+body.tr-profile-open .tr-subtabs,
+body.tr-profile-open .tr-subpane{display:none !important}
+
+/* ── EMPTY STATE untuk pane baru (Live/Performa/Akun) ─────────────── */
+.tr-empty{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:clamp(28px,6vw,54px) 20px;text-align:center;max-width:640px;margin:14px auto}
+.tr-empty-ico{font-size:42px;line-height:1;margin-bottom:12px;opacity:.85}
+.tr-empty-title{font-size:16px;font-weight:800;letter-spacing:-.2px;margin-bottom:6px}
+.tr-empty-desc{font-size:12.5px;color:var(--text2);line-height:1.65;max-width:520px;margin:0 auto}
+.tr-empty-hint{margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:.3px}
+.tr-empty-hint .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--yellow);box-shadow:0 0 0 3px rgba(245,158,11,.16);margin-right:6px;vertical-align:middle;animation:trDotPulse 1.6s ease-in-out infinite}
+@keyframes trDotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.88)}}
+.tr-empty-hint.ok .status-dot{background:var(--green);box-shadow:0 0 0 3px rgba(16,185,129,.16)}
+.tr-empty-hint.err .status-dot{background:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.16);animation:none}
 </style>
 
 <!-- ═══════════════════════════════════════════
@@ -3465,8 +3500,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
 ═══════════════════════════════════════════ -->
 <div class="page" id="page-tracker">
 
-<!-- ── TRACKER MAIN VIEW (dashboard performa) ─────────────────────── -->
-<div id="tr-view-main">
+<!-- ── SUB-TAB NAV (Ringkasan / Live / Performa / Akun) ─────────────
+     Default aktif: Ringkasan (isi = konten Tracker existing utuh).
+     Live/Performa/Akun = skeleton empty state; diisi di PR berikutnya. -->
+<div class="tr-subtabs" id="tr-subtabs" role="tablist" aria-label="Tracker sections">
+  <button type="button" class="tr-subtab-btn active" data-subtab="ringkasan"
+    role="tab" aria-selected="true" aria-controls="tr-view-main">📋 Ringkasan</button>
+  <button type="button" class="tr-subtab-btn" data-subtab="live"
+    role="tab" aria-selected="false" aria-controls="tr-view-live">🚀 Live <span class="tr-subtab-chip" id="trSubLiveN">—</span></button>
+  <button type="button" class="tr-subtab-btn" data-subtab="perf"
+    role="tab" aria-selected="false" aria-controls="tr-view-perf">📊 Performa</button>
+  <button type="button" class="tr-subtab-btn" data-subtab="acc"
+    role="tab" aria-selected="false" aria-controls="tr-view-acc">💰 Akun</button>
+</div>
+
+<!-- ── TRACKER MAIN VIEW (dashboard performa) — pane RINGKASAN ─────── -->
+<div id="tr-view-main" class="tr-subpane active" role="tabpanel" aria-labelledby="tab-ringkasan">
   <div class="tr-head">
     <div class="tr-title-wrap">
       <h1>Tracker <span class="tr-preview-badge">PREVIEW</span></h1>
@@ -3543,6 +3592,51 @@ body.is-mobile-device.force-desktop .pl-col-main{
     Simulasi bersifat ilustratif berdasarkan agregasi rekomendasi trading yang diinput ke sistem. Kinerja masa lalu tidak menjamin hasil di masa depan — bukan ajakan jual/beli. Halaman ini masih <b>PREVIEW</b> (data dummy); akan diaktifkan penuh setelah pipeline data siap.
   </div>
 </div><!-- /tr-view-main -->
+
+<!-- ── PANE LIVE (skeleton empty state) ─────────────────────────────
+     Diisi di PR berikutnya (adopsi robotlive: ticker IHSG, hero WR firm,
+     terminal profit/loss/accuracy, kartu rekomendasi aktif real-time,
+     market intel, watchlist). -->
+<div id="tr-view-live" class="tr-subpane" role="tabpanel" aria-hidden="true">
+  <div class="tr-empty">
+    <div class="tr-empty-ico">🚀</div>
+    <div class="tr-empty-title">Live 24/7 — menunggu data</div>
+    <div class="tr-empty-desc">
+      Halaman ini akan menampilkan rekomendasi aktif dari semua sekuritas, harga live per saham, floating P&amp;L, market intel bullish/bearish, dan watchlist saham yang sedang dipantau — auto-refresh saat pipeline data aktif.
+    </div>
+    <div class="tr-empty-hint" id="trLiveStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
+  </div>
+</div>
+
+<!-- ── PANE PERFORMA (skeleton empty state) ─────────────────────────
+     Diisi di PR berikutnya (adopsi robotlive: TP hit distribution, chart
+     30-hari performa, papan peringkat SEKURITAS (firm-first), top/bottom
+     sekuritas, safety net RR, score bracket). -->
+<div id="tr-view-perf" class="tr-subpane" role="tabpanel" aria-hidden="true">
+  <div class="tr-empty">
+    <div class="tr-empty-ico">📊</div>
+    <div class="tr-empty-title">Performa — menunggu data</div>
+    <div class="tr-empty-desc">
+      TP hit distribution (TP1 / TP2 / SL), grafik 30-hari performa konsensus, papan peringkat sekuritas (per firm), safety net RR, dan performa per bracket score validitas.
+    </div>
+    <div class="tr-empty-hint" id="trPerfStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
+  </div>
+</div>
+
+<!-- ── PANE AKUN (skeleton empty state) ─────────────────────────────
+     Diisi di PR berikutnya (adopsi robotlive: simulator modal Rp
+     equal-weight, log rekomendasi filterable+paginated, ringkasan
+     bulanan). -->
+<div id="tr-view-acc" class="tr-subpane" role="tabpanel" aria-hidden="true">
+  <div class="tr-empty">
+    <div class="tr-empty-ico">💰</div>
+    <div class="tr-empty-title">Akun — menunggu data</div>
+    <div class="tr-empty-desc">
+      Simulator modal (default Rp10 juta, alokasi equal-weight per slot), log rekomendasi (Aktif / Selesai) dgn filter &amp; pagination, dan ringkasan performa per bulan.
+    </div>
+    <div class="tr-empty-hint" id="trAccStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
+  </div>
+</div>
 
 <!-- ── TRACKER PROFILE VIEW (detail per analis) ───────────────────────
      Muncul saat user klik kartu di papan peringkat. Ditutup dgn tombol
@@ -4201,6 +4295,179 @@ body.is-mobile-device.force-desktop .pl-col-main{
     };
   }
   hookReset();
+})();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER — SUB-TAB SHELL (Ringkasan / Live / Performa / Akun)
+// - Tab switcher (localStorage remember, restore saat page-tracker aktif).
+// - Fetch public/tracker.json sekali per session (cache di window),
+//   update empty-state hint + chip count, expose ke IIFE PR berikutnya.
+// - Isolasi dari IIFE existing (tracker preview + profile analis).
+// ═══════════════════════════════════════════
+(function(){
+  var VALID_PANES = {
+    ringkasan: 'tr-view-main',
+    live:      'tr-view-live',
+    perf:      'tr-view-perf',
+    acc:       'tr-view-acc'
+  };
+  var LS_KEY = 'tr_subtab_active';
+  var DATA_URL = 'tracker.json';
+
+  // ── State registry global ─────────────────────────────────────────
+  // PR-3/4/5 dapat baca ini + register callback ketika data tersedia.
+  if (typeof window.__TR_DATA__ === 'undefined')      window.__TR_DATA__ = null;
+  if (typeof window.__TR_DATA_STATE__ === 'undefined') window.__TR_DATA_STATE__ = 'idle';
+  if (typeof window.__TR_DATA_CALLBACKS__ === 'undefined') window.__TR_DATA_CALLBACKS__ = [];
+  window.__TR_getData = function(){ return window.__TR_DATA__; };
+  window.__TR_onData  = function(cb){
+    if (typeof cb !== 'function') return;
+    window.__TR_DATA_CALLBACKS__.push(cb);
+    // Kalau data sudah ada, panggil segera.
+    if (window.__TR_DATA__) { try { cb(window.__TR_DATA__); } catch(_){} }
+  };
+
+  function $(id){ return document.getElementById(id); }
+
+  // ── Update chip count di tab Live ──────────────────────────────────
+  function updateLiveChip(data){
+    var el = $('trSubLiveN'); if (!el) return;
+    if (!data || data.pending) { el.textContent = '—'; return; }
+    var n = data.open || (data.openList ? data.openList.length : 0);
+    el.textContent = String(n);
+  }
+
+  // ── Update status hint di semua pane empty state ───────────────────
+  function updateStatusHint(state, data, errMsg){
+    var panes = ['trLiveStatus', 'trPerfStatus', 'trAccStatus'];
+    panes.forEach(function(id){
+      var el = $(id); if (!el) return;
+      el.classList.remove('ok', 'err');
+      var txt = el.querySelector('.status-txt') || el;
+      if (state === 'loading') {
+        txt.textContent = 'Memuat tracker.json…';
+      } else if (state === 'ok') {
+        el.classList.add('ok');
+        var when = data && data.updatedAt
+          ? new Date(data.updatedAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
+          : '—';
+        var nOpen = (data && (data.open || 0)) || 0;
+        var nClosed = (data && (data.totalClosed || 0)) || 0;
+        txt.textContent = 'Data siap · ' + nOpen + ' aktif · ' + nClosed + ' selesai · update ' + when;
+      } else if (state === 'pending') {
+        var msg = (data && data.pendingMessage) || 'Pipeline data belum aktif.';
+        // Trim msg biar tidak terlalu panjang di UI empty state
+        if (msg.length > 160) msg = msg.slice(0, 157) + '…';
+        txt.textContent = msg;
+      } else if (state === 'error') {
+        el.classList.add('err');
+        txt.textContent = 'Gagal memuat tracker.json' + (errMsg ? ' — ' + errMsg : '');
+      }
+    });
+  }
+
+  // ── Fetch tracker.json (sekali per session) ────────────────────────
+  function loadTrackerData(force){
+    if (window.__TR_DATA_STATE__ === 'loading') return;
+    if (window.__TR_DATA__ && !force) return; // sudah dimuat
+    window.__TR_DATA_STATE__ = 'loading';
+    updateStatusHint('loading');
+
+    fetch(DATA_URL + '?t=' + Date.now(), { headers: { 'Accept': 'application/json' } })
+      .then(function(r){
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(json){
+        window.__TR_DATA__ = json;
+        window.__TR_DATA_STATE__ = json && json.pending ? 'pending' : 'ok';
+        updateStatusHint(window.__TR_DATA_STATE__, json);
+        updateLiveChip(json);
+        // Panggil semua callback yg sudah register.
+        (window.__TR_DATA_CALLBACKS__ || []).forEach(function(cb){
+          try { cb(json); } catch(_){}
+        });
+      })
+      .catch(function(e){
+        window.__TR_DATA_STATE__ = 'error';
+        updateStatusHint('error', null, e && e.message);
+      });
+  }
+
+  // ── Tab switcher ──────────────────────────────────────────────────
+  function switchTab(name){
+    if (!VALID_PANES[name]) name = 'ringkasan';
+
+    var btns = document.querySelectorAll('#tr-subtabs .tr-subtab-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var isActive = btns[i].getAttribute('data-subtab') === name;
+      btns[i].classList.toggle('active', isActive);
+      btns[i].setAttribute('aria-selected', isActive ? 'true' : 'false');
+    }
+    for (var k in VALID_PANES) {
+      var el = $(VALID_PANES[k]);
+      if (!el) continue;
+      var isActive = (k === name);
+      el.classList.toggle('active', isActive);
+      el.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+    }
+    try { localStorage.setItem(LS_KEY, name); } catch(_){}
+    try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch(_){}
+  }
+  // Expose supaya PR berikutnya bisa panggil (mis. dari deep-link).
+  window.__TR_switchTab = switchTab;
+
+  // Delegasi klik tab.
+  document.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest && e.target.closest('#tr-subtabs .tr-subtab-btn');
+    if (btn) {
+      var name = btn.getAttribute('data-subtab');
+      if (name) switchTab(name);
+    }
+  });
+
+  // ── Aktivasi saat page-tracker dibuka ──────────────────────────────
+  function activateTracker(){
+    // Kalau profile detail sedang terbuka, tidak intervensi (biar hook profile
+    // di IIFE lain yg atur). Sub-tab bar sudah di-hide via CSS body.tr-profile-open.
+    if (document.body.classList.contains('tr-profile-open')) return;
+
+    var saved = null;
+    try { saved = localStorage.getItem(LS_KEY); } catch(_){}
+    if (saved && !VALID_PANES[saved]) saved = null;
+    switchTab(saved || 'ringkasan');
+
+    // Fetch data (idempotent — sudah di-guard).
+    loadTrackerData();
+  }
+
+  function hookTracker(){
+    if (typeof window.showPage !== 'function') { setTimeout(hookTracker, 200); return; }
+    var orig = window.showPage;
+    window.showPage = function(name){
+      var ret = orig.apply(this, arguments);
+      if (name === 'tracker') {
+        // Delay kecil biar DOM sudah settle setelah showPage.
+        setTimeout(activateTracker, 40);
+      }
+      return ret;
+    };
+    // Edge case: kalau page-tracker sudah terlihat saat script load (mis. reload),
+    // tetap coba aktivasi setelah document siap.
+    var trigger = function(){
+      var pt = document.getElementById('page-tracker');
+      if (pt && pt.classList && pt.classList.contains('active')) activateTracker();
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function(){ setTimeout(trigger, 120); });
+    } else {
+      setTimeout(trigger, 120);
+    }
+  }
+  hookTracker();
 })();
 </script>
 
