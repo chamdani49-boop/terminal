@@ -95,11 +95,11 @@ async function sendPhotosTelegram(env, photos, caption) {
     const items = photos.slice(0, 5).map(toBytes).filter(a => a.length > 0);
     if (!items.length) return { sent: 0 };
 
+    const hasCaption = !!(caption && String(caption).trim());
     if (items.length === 1) {
       const fd = new FormData();
       fd.append('chat_id', chatId);
-      fd.append('caption', caption);
-      fd.append('parse_mode', 'HTML');
+      if (hasCaption) { fd.append('caption', caption); fd.append('parse_mode', 'HTML'); }
       fd.append('photo', new Blob([items[0]], { type: 'image/jpeg' }), 'signal.jpg');
       const r = await fetch('https://api.telegram.org/bot' + token + '/sendPhoto', { method: 'POST', body: fd });
       return { sent: r.ok ? 1 : 0, ok: r.ok };
@@ -109,7 +109,7 @@ async function sendPhotosTelegram(env, photos, caption) {
     fd.append('chat_id', chatId);
     const media = items.map((_, i) => Object.assign(
       { type: 'photo', media: 'attach://f' + i },
-      i === 0 ? { caption, parse_mode: 'HTML' } : {}
+      (i === 0 && hasCaption) ? { caption, parse_mode: 'HTML' } : {}
     ));
     fd.append('media', JSON.stringify(media));
     items.forEach((a, i) => fd.append('f' + i, new Blob([a], { type: 'image/jpeg' }), 'f' + i + '.jpg'));
@@ -259,17 +259,10 @@ async function apiSubmit(request, env, cookieAuthed) {
     return jsonRes({ error: 'Google Sheet menolak semua data: ' + (err || 'unknown') }, 502);
   }
 
-  // Foto → Telegram sekali dgn caption ringkas.
+  // Foto → Telegram (tanpa caption; kirim foto polos saja).
   let photoStatus = { sent: 0 };
   try {
-    if (photos.length) {
-      const tickers = results.filter(r => r.ok).map(r => r.ticker || '(tanpa ticker)');
-      const caption =
-        '🆕 <b>Rekomendasi Tracker</b> (pending)\n' +
-        'oleh: <b>' + escapeHtml(submitted_by) + '</b> · ' + today + '\n' +
-        okCount + ' baris' + (tickers.length ? ': <b>' + escapeHtml(tickers.join(', ')) + '</b>' : '');
-      photoStatus = await sendPhotosTelegram(env, photos, caption);
-    }
+    if (photos.length) photoStatus = await sendPhotosTelegram(env, photos, '');
   } catch (_) { /* jangan gagalkan submit hanya karena Telegram */ }
 
   return jsonRes({
@@ -367,7 +360,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v17</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">v1</span></div>
 </div>
 </body></html>`;
 }
@@ -452,7 +445,7 @@ ${STYLE}
     <button class="btn" id="submitBtn" type="button">Kirim ke Admin</button>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code>. Approved by admin. · <span style="opacity:.5">build parse-v17</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code>. Approved by admin. · <span style="opacity:.5">v1</span></div>
 </div>
 
 <script>
