@@ -2676,6 +2676,139 @@ body.tr-profile-open .tr-subpane{display:none !important}
 @keyframes trDotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.88)}}
 .tr-empty-hint.ok .status-dot{background:var(--green);box-shadow:0 0 0 3px rgba(16,185,129,.16)}
 .tr-empty-hint.err .status-dot{background:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.16);animation:none}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TAB LIVE — konten real-time (adopsi robotlive page-live, di-skin
+   terminal). Prefix `.tr-live-*` supaya isolasi bersih.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Status bar atas pane Live */
+.tr-live-status{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.tr-live-status-l{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text3)}
+.tr-live-status-l .k{color:var(--text3)}.tr-live-status-l .v{color:var(--text2)}
+.tr-live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 0 3px rgba(16,185,129,.16);animation:trDotPulse 1.6s ease-in-out infinite;vertical-align:middle}
+.tr-live-dot.stale{background:var(--yellow);box-shadow:0 0 0 3px rgba(245,158,11,.16)}
+.tr-live-dot.off{background:var(--text3);box-shadow:none;animation:none}
+.tr-live-refresh{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px}
+.tr-live-refresh:hover{border-color:var(--accent);color:var(--accent)}
+.tr-live-refresh:disabled{opacity:.5;cursor:not-allowed}
+
+/* IHSG live ticker */
+.tr-live-ihsg{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;position:relative;overflow:hidden}
+.tr-live-ihsg::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.12),transparent 70%);pointer-events:none}
+.tr-live-ihsg-l{display:flex;align-items:center;gap:12px;min-width:0;position:relative}
+.tr-live-ihsg-logo{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#f5c518,#ffa500);color:#1a1200;display:grid;place-items:center;font-weight:800;font-size:11px;font-family:'IBM Plex Mono',monospace;flex-shrink:0;letter-spacing:-.3px;box-shadow:0 4px 12px rgba(245,197,24,.28)}
+.tr-live-ihsg-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:1px;color:var(--text3);font-weight:700}
+.tr-live-ihsg-px{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;letter-spacing:-.3px;line-height:1.1;margin-top:1px}
+.tr-live-ihsg-r{text-align:right;position:relative}
+.tr-live-ihsg-chg{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:800}
+.tr-live-ihsg-sub{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);margin-top:2px}
+@media(max-width:480px){
+  .tr-live-ihsg-px{font-size:18px}
+  .tr-live-ihsg-chg{font-size:16px}
+  .tr-live-ihsg-logo{width:32px;height:32px;font-size:10px}
+}
+
+/* Hero cards (Winrate + System Signals) */
+.tr-live-hero-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:640px){.tr-live-hero-row{grid-template-columns:1fr}}
+.tr-live-hero{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden}
+.tr-live-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad)}
+.tr-live-hero-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.4px;color:var(--text3);font-weight:700;text-transform:uppercase}
+.tr-live-hero-top{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:6px}
+.tr-live-hero-val{font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:800;letter-spacing:-1.2px;line-height:1}
+@media(max-width:640px){.tr-live-hero-val{font-size:28px}}
+.tr-live-hero-side{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);text-align:right;line-height:1.4}
+.tr-live-hero-side .sub{color:var(--text3);font-size:10px}
+.tr-live-hero-bar{display:flex;height:6px;border-radius:3px;background:var(--bg2);overflow:hidden;margin-top:14px}
+.tr-live-hero-bar > div{height:100%;transition:width .5s ease}
+.tr-live-hero-foot{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:5px}
+
+/* Live Signal Terminal cells */
+.tr-live-terminal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.tr-live-terminal-h{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px;font-weight:700}
+.tr-live-terminal-h::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0}
+.tr-live-terminal-cells{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:640px){.tr-live-terminal-cells{grid-template-columns:1fr}}
+.tr-live-cell{text-align:center;padding:16px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg2);position:relative;overflow:hidden}
+.tr-live-cell.green{background:linear-gradient(180deg,rgba(16,185,129,.09),var(--bg2));border-color:rgba(16,185,129,.28)}
+.tr-live-cell.red{background:linear-gradient(180deg,rgba(239,68,68,.09),var(--bg2));border-color:rgba(239,68,68,.28)}
+.tr-live-cell.blue{background:linear-gradient(180deg,rgba(37,99,235,.09),var(--bg2));border-color:rgba(37,99,235,.28)}
+.tr-live-cell-ico{font-size:14px;opacity:.85;margin-bottom:3px}
+.tr-live-cell-val{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1}
+@media(max-width:640px){.tr-live-cell-val{font-size:24px}}
+.tr-live-cell-sub{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);margin-top:6px;letter-spacing:1px;text-transform:uppercase;font-weight:700}
+.tr-live-strip{height:4px;border-radius:2px;background:var(--bg2);overflow:hidden;margin:12px 0 4px}
+.tr-live-strip > div{height:100%;background:var(--grad);transition:width .5s ease}
+.tr-live-strip-txt{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);text-align:center;margin-bottom:2px}
+
+/* Real-time P&L Stream header */
+.tr-live-stream-hd{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin:16px 2px 10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-weight:700}
+.tr-live-stream-hd .count{color:var(--text2)}
+.tr-live-stream-hd .float-agg{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)}
+
+/* Position cards (rekomendasi aktif) */
+.tr-live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+@media(max-width:640px){.tr-live-grid{grid-template-columns:1fr}}
+.tr-live-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 15px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s}
+.tr-live-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:var(--green)}
+.tr-live-card.dn::before{background:var(--red)}
+.tr-live-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.28);border-color:var(--accent)}
+.tr-live-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
+.tr-live-card-l{min-width:0}
+.tr-live-card-tick{font-weight:800;font-size:16px;letter-spacing:-.4px;display:flex;align-items:center;gap:6px}
+.tr-live-card-badge{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:800;padding:2.5px 6px;border-radius:5px;letter-spacing:.6px}
+.tr-live-card-badge.buy{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.28)}
+.tr-live-card-badge.sell{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.28)}
+.tr-live-card-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px}
+.tr-live-card-firm{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text2);margin-top:2px}
+.tr-live-card-verif{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:700;color:var(--green);background:rgba(16,185,129,.14);padding:1.5px 5px;border-radius:4px;letter-spacing:.3px}
+.tr-live-card-r{text-align:right;flex-shrink:0}
+.tr-live-card-float{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:16px;letter-spacing:-.3px}
+.tr-live-card-float.up{color:var(--green)}
+.tr-live-card-float.dn{color:var(--red)}
+.tr-live-card-float-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);margin-top:1px}
+.tr-live-card-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;margin-top:2px}
+.tr-live-card-meta .k{color:var(--text3);font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;font-weight:600}
+.tr-live-card-meta .v{color:var(--text);font-size:12px;margin-top:1px}
+.tr-live-card-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px}
+.tr-live-card-date .lbl{color:var(--text2);font-weight:600}
+.tr-live-card-tp-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:10px}
+.tr-live-card-tp-row.no-tp2{grid-template-columns:1fr 1fr}
+.tr-live-tp{padding:7px 5px;border-radius:8px;text-align:center;background:var(--bg2);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tr-live-tp.sl{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.05)}
+.tr-live-tp.sl .tr-live-tp-pct{color:var(--red)}
+.tr-live-tp.tp .tr-live-tp-pct{color:var(--green)}
+.tr-live-tp.hit{background:rgba(16,185,129,.16);border-color:rgba(16,185,129,.5)}
+.tr-live-tp.hit .tr-live-tp-lbl{color:var(--green)}
+.tr-live-tp-lbl{font-size:9px;letter-spacing:.5px;color:var(--text3);display:flex;align-items:center;gap:2px;font-weight:700}
+.tr-live-tp-price{font-size:10px;font-weight:700;color:var(--text);word-break:break-all;line-height:1.15}
+.tr-live-tp-pct{font-size:10px;font-weight:700}
+
+/* Market Intelligence bar */
+.tr-live-mi-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:14px}
+.tr-live-mi-h{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-weight:700}
+.tr-live-mi-h::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0;margin-right:8px}
+.tr-live-mi-h > span:first-of-type{flex:1}
+.tr-live-mi-tag{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);background:var(--bg2);border:1px solid var(--border);padding:2px 8px;border-radius:12px;letter-spacing:.4px;text-transform:none}
+.tr-live-mi-topline{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:6px}
+.tr-live-mi-topline .up{color:var(--green);font-weight:700}
+.tr-live-mi-topline .dn{color:var(--red);font-weight:700}
+.tr-live-mi-bar{position:relative;height:24px;border-radius:12px;background:linear-gradient(90deg,rgba(16,185,129,.18),rgba(245,158,11,.12) 50%,rgba(239,68,68,.18));border:1px solid var(--border);overflow:visible}
+.tr-live-mi-fill{position:absolute;top:0;bottom:0;left:0;border-radius:12px 0 0 12px;background:linear-gradient(90deg,var(--green),rgba(16,185,129,0));transition:width .5s ease}
+.tr-live-mi-marker{position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:var(--text);box-shadow:0 0 0 3px rgba(255,255,255,.06);transition:left .5s ease}
+.tr-live-mi-foot{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11.5px;margin-top:8px;color:var(--text3)}
+.tr-live-mi-foot .up{color:var(--green);font-weight:700}
+.tr-live-mi-foot .dn{color:var(--red);font-weight:700}
+.tr-live-mi-foot .neu{color:var(--text2);font-weight:600}
+
+/* Watchlist chips */
+.tr-live-wl-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:12px}
+.tr-live-wl-h{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px;font-weight:700}
+.tr-live-wl-h::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0}
+.tr-live-wl-h .count{color:var(--text2);margin-left:auto;background:var(--bg2);padding:1.5px 8px;border-radius:10px;font-size:10px;letter-spacing:.4px}
+.tr-live-wl-chips{display:flex;flex-wrap:wrap;gap:6px}
+.tr-live-wl-chip{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:4px 9px;border-radius:16px;background:var(--bg2);color:var(--text2);border:1px solid var(--border);letter-spacing:.3px}
 </style>
 
 <!-- ═══════════════════════════════════════════
@@ -3598,7 +3731,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
      terminal profit/loss/accuracy, kartu rekomendasi aktif real-time,
      market intel, watchlist). -->
 <div id="tr-view-live" class="tr-subpane" role="tabpanel" aria-hidden="true">
-  <div class="tr-empty">
+
+  <!-- Fallback empty state — visible saat data.pending===true atau belum di-fetch. -->
+  <div class="tr-empty" id="trLivePending">
     <div class="tr-empty-ico">🚀</div>
     <div class="tr-empty-title">Live 24/7 — menunggu data</div>
     <div class="tr-empty-desc">
@@ -3606,6 +3741,138 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
     <div class="tr-empty-hint" id="trLiveStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
   </div>
+
+  <!-- Content real — visible saat data ready (pending===false). Populate via IIFE. -->
+  <div id="trLiveContent" style="display:none">
+
+    <!-- Status bar -->
+    <div class="tr-live-status">
+      <div class="tr-live-status-l">
+        <span><span id="trLiveDot" class="tr-live-dot"></span><span id="trLiveState">AKTIF</span></span>
+        <span><span class="k">Update:</span> <span class="v" id="trLiveUpdated">—</span></span>
+        <span><span class="k">Sumber:</span> <span class="v" id="trLiveSource">Google Sheets</span></span>
+      </div>
+      <button type="button" class="tr-live-refresh" id="trLiveRefresh">🔄 Refresh</button>
+    </div>
+
+    <!-- IHSG live ticker -->
+    <div class="tr-live-ihsg">
+      <div class="tr-live-ihsg-l">
+        <div class="tr-live-ihsg-logo">JKSE</div>
+        <div>
+          <div class="tr-live-ihsg-lbl">IHSG · JAKARTA COMPOSITE</div>
+          <div class="tr-live-ihsg-px" id="trLiveIhsgPx">—</div>
+        </div>
+      </div>
+      <div class="tr-live-ihsg-r">
+        <div class="tr-live-ihsg-chg" id="trLiveIhsgChg">—</div>
+        <div class="tr-live-ihsg-sub">perubahan hari ini</div>
+      </div>
+    </div>
+
+    <!-- Hero: WinRate + System Signals -->
+    <div class="tr-live-hero-row">
+      <div class="tr-live-hero">
+        <div class="tr-live-hero-lbl">WIN RATE KONSENSUS</div>
+        <div class="tr-live-hero-top">
+          <div class="tr-live-hero-val" id="trLiveWrVal">—</div>
+          <div class="tr-live-hero-side">
+            <div>Net <span id="trLiveNet">—</span></div>
+            <div class="sub">Overall winrate</div>
+          </div>
+        </div>
+        <div class="tr-live-hero-bar"><div id="trLiveWrBar" style="background:var(--grad);width:0%"></div></div>
+        <div class="tr-live-hero-foot">
+          <span id="trLiveWrSub">— trade selesai</span>
+          <span>PF <span id="trLivePf">—</span></span>
+        </div>
+      </div>
+      <div class="tr-live-hero">
+        <div class="tr-live-hero-lbl">TOTAL SIGNAL</div>
+        <div class="tr-live-hero-top">
+          <div class="tr-live-hero-val" id="trLiveTotalVal">—</div>
+          <div class="tr-live-hero-side">
+            <div><span id="trLiveOpenN">0</span> aktif · <span id="trLiveClosedN">0</span> selesai</div>
+            <div class="sub">Skor tertinggi <span id="trLiveHiScore">—</span></div>
+          </div>
+        </div>
+        <div class="tr-live-hero-bar">
+          <div id="trLiveSideBuy" style="background:var(--accent);width:50%"></div>
+          <div id="trLiveSideClosed" style="background:var(--text3);width:50%"></div>
+        </div>
+        <div class="tr-live-hero-foot">
+          <span id="trLiveOpenSub">total tracked</span>
+          <span>Rekomendasi</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Signal Terminal -->
+    <div class="tr-live-terminal">
+      <div class="tr-live-terminal-h">⚡ Live Signal Terminal</div>
+      <div class="tr-live-terminal-cells">
+        <div class="tr-live-cell green">
+          <div class="tr-live-cell-ico">📈</div>
+          <div class="tr-live-cell-val" id="trLiveLtProfit">0</div>
+          <div class="tr-live-cell-sub">POSISI PROFIT</div>
+        </div>
+        <div class="tr-live-cell red">
+          <div class="tr-live-cell-ico">📉</div>
+          <div class="tr-live-cell-val" id="trLiveLtLoss">0</div>
+          <div class="tr-live-cell-sub">POSISI LOSS</div>
+        </div>
+        <div class="tr-live-cell blue">
+          <div class="tr-live-cell-ico">🎯</div>
+          <div class="tr-live-cell-val" id="trLiveLtAcc">—</div>
+          <div class="tr-live-cell-sub">AKURASI LIVE</div>
+        </div>
+      </div>
+      <div class="tr-live-strip"><div id="trLiveLtStripFill" style="width:0%"></div></div>
+      <div class="tr-live-strip-txt" id="trLiveLtStripTxt">— posisi terbuka</div>
+    </div>
+
+    <!-- Real-time P&L Stream heading + grid -->
+    <div class="tr-live-stream-hd">
+      <span>📡 Rekomendasi Aktif · <span class="count" id="trLiveStreamCount">0</span></span>
+      <span class="float-agg">Total floating <span id="trLiveStreamFloat">—</span></span>
+    </div>
+    <div class="tr-live-grid" id="trLiveGrid">
+      <!-- Kartu-kartu rekomendasi aktif di-render via JS -->
+    </div>
+
+    <!-- Market Intelligence -->
+    <div class="tr-live-mi-card">
+      <div class="tr-live-mi-h">
+        <span>🌐 Sentimen Konsensus</span>
+        <span class="tr-live-mi-tag" id="trLiveMiSample">recent 48h</span>
+      </div>
+      <div class="tr-live-mi-topline">
+        <span class="up">BULLISH BIAS</span>
+        <span class="dn">BEARISH BIAS</span>
+      </div>
+      <div class="tr-live-mi-bar">
+        <div class="tr-live-mi-fill" id="trLiveMiFill"></div>
+        <div class="tr-live-mi-marker" id="trLiveMiMarker"></div>
+      </div>
+      <div class="tr-live-mi-foot">
+        <span class="up" id="trLiveMiBull">—</span>
+        <span class="neu" id="trLiveMiLabel">NEUTRAL</span>
+        <span class="dn" id="trLiveMiBear">—</span>
+      </div>
+    </div>
+
+    <!-- Watchlist -->
+    <div class="tr-live-wl-card">
+      <div class="tr-live-wl-h">
+        <span>👀 Watchlist Dipantau</span>
+        <span class="count"><span id="trLiveWlCount">0</span> saham</span>
+      </div>
+      <div class="tr-live-wl-chips" id="trLiveWlChips">
+        <span class="tr-live-wl-chip" style="color:var(--text3)">—</span>
+      </div>
+    </div>
+
+  </div><!-- /trLiveContent -->
 </div>
 
 <!-- ── PANE PERFORMA (skeleton empty state) ─────────────────────────
@@ -4468,6 +4735,347 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
   }
   hookTracker();
+})();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER — TAB LIVE RENDERER (adopsi robotlive page-live)
+// Subscribe ke window.__TR_onData(cb) → render semua section saat data siap.
+// Saham IDX: BUY-only, 1-2 TP (bukan 3 TP crypto).
+// ═══════════════════════════════════════════
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function fmtN(n){
+    if (n == null || !Number.isFinite(+n)) return '—';
+    return Number(n).toLocaleString('id-ID');
+  }
+  function fmtPct(n, opts){
+    if (n == null || !Number.isFinite(+n)) return '—';
+    var v = +n; var sign = v >= 0 ? '+' : '';
+    var dec = (opts && opts.dec != null) ? opts.dec : 2;
+    return sign + v.toFixed(dec) + '%';
+  }
+  function timeAgo(iso){
+    if (!iso) return '—';
+    var t = new Date(iso).getTime();
+    if (isNaN(t)) return '—';
+    var sec = Math.max(0, Math.floor((Date.now() - t) / 1000));
+    if (sec < 60) return sec + ' dtk lalu';
+    if (sec < 3600) return Math.floor(sec/60) + ' mnt lalu';
+    if (sec < 86400) return Math.floor(sec/3600) + ' jam lalu';
+    return Math.floor(sec/86400) + ' hari lalu';
+  }
+  function fmtDT(iso){
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    try {
+      return d.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch(_) { return iso; }
+  }
+  function fmtShortDate(iso){
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    try {
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch(_) { return iso; }
+  }
+  function pctClass(v){ return v > 0 ? 'up' : (v < 0 ? 'dn' : ''); }
+  function firmShort(name){
+    if (!name) return '—';
+    return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim();
+  }
+
+  // ── Toggle pending vs content ──
+  function setLiveView(state){
+    var pending = $('trLivePending'); var content = $('trLiveContent');
+    if (!pending || !content) return;
+    if (state === 'ready') { pending.style.display = 'none'; content.style.display = 'block'; }
+    else { pending.style.display = ''; content.style.display = 'none'; }
+  }
+
+  // ── Render status bar ──
+  function renderStatus(data){
+    var dot = $('trLiveDot'); if (dot) {
+      dot.classList.remove('stale', 'off');
+      var ageMin = data.updatedAt ? (Date.now() - new Date(data.updatedAt).getTime()) / 60000 : 999;
+      if (ageMin > 90) dot.classList.add('stale');
+    }
+    var state = $('trLiveState');
+    if (state) {
+      var ageMin = data.updatedAt ? (Date.now() - new Date(data.updatedAt).getTime()) / 60000 : 999;
+      state.textContent = ageMin < 90 ? 'AKTIF' : 'Data tertunda';
+    }
+    var up = $('trLiveUpdated'); if (up) up.textContent = timeAgo(data.updatedAt);
+    var src = $('trLiveSource'); if (src) src.textContent = data.source === 'gviz' ? 'Google Sheets' : (data.source || '—');
+  }
+
+  // ── Render IHSG ticker ──
+  function renderIhsg(data){
+    var px = $('trLiveIhsgPx'); var chg = $('trLiveIhsgChg');
+    if (!data.ihsg) {
+      if (px) px.textContent = '—';
+      if (chg) { chg.textContent = '—'; chg.style.color = 'var(--text3)'; }
+      return;
+    }
+    if (px) px.textContent = fmtN(Math.round(data.ihsg.last));
+    if (chg) {
+      var v = data.ihsg.chgPct;
+      chg.textContent = fmtPct(v, { dec: 2 });
+      chg.style.color = v >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+  }
+
+  // ── Render hero cards ──
+  function renderHeroes(data){
+    var wrEl = $('trLiveWrVal'); var wr = data.winrate || 0;
+    if (wrEl) {
+      wrEl.textContent = wr.toFixed(1) + '%';
+      wrEl.style.color = wr >= 55 ? 'var(--green)' : wr >= 45 ? 'var(--yellow)' : (wr > 0 ? 'var(--red)' : 'var(--text2)');
+    }
+    var wrBar = $('trLiveWrBar'); if (wrBar) wrBar.style.width = Math.max(2, Math.min(100, wr)) + '%';
+    var net = $('trLiveNet');
+    if (net) {
+      var n = data.netReturn || 0;
+      net.textContent = fmtPct(n);
+      net.style.color = n >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+    var wrSub = $('trLiveWrSub'); if (wrSub) wrSub.textContent = (data.totalClosed || 0) + ' trade selesai';
+    var pfEl = $('trLivePf');
+    if (pfEl) {
+      var pf = data.profitFactor;
+      pfEl.textContent = (pf == null || !Number.isFinite(+pf)) ? '—' : (pf >= 999 ? '∞' : pf.toFixed(2));
+      pfEl.style.color = pf >= 1.5 ? 'var(--green)' : (pf >= 1 ? 'var(--yellow)' : 'var(--red)');
+    }
+    // Total signals hero
+    var total = (data.open || 0) + (data.totalClosed || 0);
+    var tv = $('trLiveTotalVal'); if (tv) tv.textContent = total;
+    var oN = $('trLiveOpenN'); if (oN) oN.textContent = data.open || 0;
+    var cN = $('trLiveClosedN'); if (cN) cN.textContent = data.totalClosed || 0;
+    var hi = $('trLiveHiScore'); if (hi) hi.textContent = data.highScore || 0;
+    var openBar = $('trLiveSideBuy'); var closedBar = $('trLiveSideClosed');
+    if (openBar && closedBar) {
+      var openPct = total ? (data.open || 0) / total * 100 : 50;
+      openBar.style.width = openPct + '%';
+      closedBar.style.width = (100 - openPct) + '%';
+    }
+    var oSub = $('trLiveOpenSub'); if (oSub) oSub.textContent = (data.open || 0) + ' aktif dipantau';
+  }
+
+  // ── Render Live Signal Terminal ──
+  function renderTerminal(data){
+    var openList = data.openList || [];
+    var profit = 0, loss = 0;
+    var totalFloat = 0;
+    for (var i = 0; i < openList.length; i++) {
+      var f = +openList[i].floatingPct || 0;
+      if (f > 0) profit++; else if (f < 0) loss++;
+      totalFloat += f;
+    }
+    var acc = (profit + loss) ? Math.round(profit / (profit + loss) * 100) : 0;
+    var p = $('trLiveLtProfit'); if (p) p.textContent = profit;
+    var l = $('trLiveLtLoss');   if (l) l.textContent = loss;
+    var a = $('trLiveLtAcc');
+    if (a) {
+      a.textContent = (profit + loss) ? (acc + '%') : '—';
+      a.style.color = acc >= 60 ? 'var(--green)' : acc >= 40 ? 'var(--accent2)' : (acc > 0 ? 'var(--yellow)' : 'var(--text3)');
+    }
+    var fill = $('trLiveLtStripFill');
+    if (fill) fill.style.width = ((profit + loss) ? (profit / (profit + loss) * 100) : 0) + '%';
+    var txt = $('trLiveLtStripTxt');
+    if (txt) txt.textContent = (profit + loss)
+      ? (openList.length + ' posisi terbuka · ' + profit + ' profit · ' + loss + ' loss')
+      : (openList.length + ' posisi terbuka');
+
+    // Stream heading
+    var sc = $('trLiveStreamCount'); if (sc) sc.textContent = openList.length;
+    var sf = $('trLiveStreamFloat');
+    if (sf) {
+      var avg = openList.length ? (totalFloat / openList.length) : 0;
+      sf.textContent = fmtPct(avg);
+      sf.style.color = avg >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+  }
+
+  // ── Render kartu rekomendasi aktif ──
+  function renderCard(o){
+    var isBuy = (o.type || 'BUY').toUpperCase() === 'BUY';
+    var floating = +o.floatingPct || 0;
+    var cls = floating >= 0 ? 'up' : 'dn';
+    var cardCls = floating >= 0 ? '' : 'dn';
+    var pctTo = function(price){
+      if (price == null || !Number.isFinite(+price) || !o.entry) return '—';
+      return fmtPct(((price - o.entry) / o.entry) * 100 * (isBuy ? 1 : -1), { dec: 1 });
+    };
+
+    var hasT2 = o.tp2 != null && o.tp2 !== o.tp1;
+    var tpHits = o.tpHits || [];
+    var slHit  = tpHits.includes('SL');
+    var tp1Hit = tpHits.includes('TP1');
+    var tp2Hit = tpHits.includes('TP2');
+
+    var slBox = '<div class="tr-live-tp sl' + (slHit ? ' hit' : '') + '">'
+      + '<div class="tr-live-tp-lbl">🛡️ SL</div>'
+      + '<div class="tr-live-tp-price">' + fmtN(o.sl) + '</div>'
+      + '<div class="tr-live-tp-pct">' + pctTo(o.sl) + '</div>'
+      + '</div>';
+    var tp1Box = '<div class="tr-live-tp tp' + (tp1Hit ? ' hit' : '') + '">'
+      + '<div class="tr-live-tp-lbl">' + (tp1Hit ? '✅' : '🎯') + ' TP' + (hasT2 ? '1' : '') + '</div>'
+      + '<div class="tr-live-tp-price">' + fmtN(o.tp1) + '</div>'
+      + '<div class="tr-live-tp-pct">' + pctTo(o.tp1) + '</div>'
+      + '</div>';
+    var tp2Box = hasT2 ? ('<div class="tr-live-tp tp' + (tp2Hit ? ' hit' : '') + '">'
+      + '<div class="tr-live-tp-lbl">' + (tp2Hit ? '✅' : '🎯') + ' TP2</div>'
+      + '<div class="tr-live-tp-price">' + fmtN(o.tp2) + '</div>'
+      + '<div class="tr-live-tp-pct">' + pctTo(o.tp2) + '</div>'
+      + '</div>') : '';
+
+    var verified = o.verified ? '<span class="tr-live-card-verif">✓ VERIF</span>' : '';
+    var certLine = o.cert ? (' · ' + esc(String(o.cert).split(/[(-]/)[0].trim())) : '';
+    var horizonLine = o.horizon ? ('  ·  ' + esc(o.horizon)) : '';
+
+    return '<div class="tr-live-card ' + cardCls + '">'
+      + '<div class="tr-live-card-top">'
+        + '<div class="tr-live-card-l">'
+          + '<div class="tr-live-card-tick">' + esc(o.ticker) + ' <span class="tr-live-card-badge ' + (isBuy ? 'buy' : 'sell') + '">' + (isBuy ? 'BUY' : 'SELL') + '</span></div>'
+          + (o.tickerName ? '<div class="tr-live-card-sub">' + esc(o.tickerName) + '</div>' : '')
+          + '<div class="tr-live-card-firm">' + esc(o.analyst || '—') + certLine + verified + '</div>'
+        + '</div>'
+        + '<div class="tr-live-card-r">'
+          + '<div class="tr-live-card-float ' + cls + '">' + fmtPct(floating) + '</div>'
+          + '<div class="tr-live-card-float-lbl">floating P&amp;L</div>'
+        + '</div>'
+      + '</div>'
+      + '<div class="tr-live-card-meta">'
+        + '<div><div class="k">ENTRY</div><div class="v">' + fmtN(o.entry) + '</div></div>'
+        + '<div><div class="k">HARGA LIVE</div><div class="v">' + fmtN(o.lastPrice) + '</div></div>'
+      + '</div>'
+      + '<div class="tr-live-card-tp-row ' + (hasT2 ? '' : 'no-tp2') + '">'
+        + slBox + tp1Box + tp2Box
+      + '</div>'
+      + '<div class="tr-live-card-date">'
+        + '<span><span class="lbl">📅 Sinyal:</span> ' + fmtShortDate(o.openDate) + horizonLine + '</span>'
+        + '<span>' + esc(firmShort(o.firm)) + '</span>'
+      + '</div>'
+      + '</div>';
+  }
+
+  function renderGrid(data){
+    var el = $('trLiveGrid'); if (!el) return;
+    var list = data.openList || [];
+    if (!list.length) {
+      el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px 12px;color:var(--text3);font-family:\'IBM Plex Mono\',monospace;font-size:12px">Tidak ada rekomendasi aktif saat ini.</div>';
+      return;
+    }
+    // Sort: score desc → tanggal desc (terbaru dulu untuk score sama)
+    var sorted = list.slice().sort(function(a, b){
+      var sd = (b.score || 0) - (a.score || 0);
+      if (sd !== 0) return sd;
+      return String(b.openDate || '').localeCompare(String(a.openDate || ''));
+    });
+    el.innerHTML = sorted.map(renderCard).join('');
+  }
+
+  // ── Render Market Intelligence bar ──
+  function renderMarketIntel(data){
+    var mi = data.marketBias || { bullish: 50, bearish: 50, sample: '—', count: 0 };
+    var fill = $('trLiveMiFill'); if (fill) fill.style.width = mi.bullish + '%';
+    var marker = $('trLiveMiMarker');
+    if (marker) marker.style.left = 'calc(' + mi.bullish + '% - 1.5px)';
+    var bull = $('trLiveMiBull'); if (bull) bull.textContent = mi.bullish + '%';
+    var bear = $('trLiveMiBear'); if (bear) bear.textContent = mi.bearish + '%';
+    var lbl = $('trLiveMiLabel');
+    if (lbl) {
+      var l = 'NEUTRAL';
+      if (mi.bullish >= 65) l = 'STRONG BULLISH';
+      else if (mi.bullish >= 55) l = 'BULLISH BIAS';
+      else if (mi.bullish <= 35) l = 'STRONG BEARISH';
+      else if (mi.bullish <= 45) l = 'BEARISH BIAS';
+      lbl.textContent = l;
+    }
+    var samp = $('trLiveMiSample');
+    if (samp) {
+      var label = mi.sample === 'recent_48h' ? 'recent 48h' : (mi.sample === 'recent_30d' ? 'recent 30h' : mi.sample);
+      samp.textContent = label + ' · ' + (mi.count || 0) + ' trade';
+    }
+  }
+
+  // ── Render watchlist chips ──
+  function renderWatchlist(data){
+    var el = $('trLiveWlChips'); if (!el) return;
+    var wl = data.watchlist || [];
+    var cnt = $('trLiveWlCount'); if (cnt) cnt.textContent = wl.length;
+    if (!wl.length) {
+      el.innerHTML = '<span class="tr-live-wl-chip" style="color:var(--text3)">Tidak ada saham dipantau</span>';
+      return;
+    }
+    el.innerHTML = wl.map(function(t){ return '<span class="tr-live-wl-chip">' + esc(t) + '</span>'; }).join('');
+  }
+
+  // ── Master render function ──
+  function renderLive(data){
+    if (!data) { setLiveView('pending'); return; }
+    if (data.pending) { setLiveView('pending'); return; }
+    setLiveView('ready');
+    renderStatus(data);
+    renderIhsg(data);
+    renderHeroes(data);
+    renderTerminal(data);
+    renderGrid(data);
+    renderMarketIntel(data);
+    renderWatchlist(data);
+  }
+
+  // ── Refresh button ──
+  document.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest && e.target.closest('#trLiveRefresh');
+    if (!btn) return;
+    btn.disabled = true;
+    var origText = btn.textContent;
+    btn.textContent = '⏳ Memuat…';
+    // Reset state supaya loadTrackerData proceed
+    try {
+      window.__TR_DATA__ = null;
+      window.__TR_DATA_STATE__ = 'idle';
+    } catch(_){}
+    // Fetch langsung + re-render setelah dapat.
+    fetch('tracker.json?t=' + Date.now(), { headers: { 'Accept': 'application/json' } })
+      .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(json){
+        try { window.__TR_DATA__ = json; window.__TR_DATA_STATE__ = json && json.pending ? 'pending' : 'ok'; } catch(_){}
+        renderLive(json);
+        // Update chip di sub-tab bar juga
+        var chip = document.getElementById('trSubLiveN');
+        if (chip) chip.textContent = json && !json.pending ? String(json.open || 0) : '—';
+        btn.textContent = '✓ Diperbarui';
+        setTimeout(function(){ btn.textContent = origText; btn.disabled = false; }, 1200);
+      })
+      .catch(function(err){
+        btn.textContent = '⚠ Gagal';
+        setTimeout(function(){ btn.textContent = origText; btn.disabled = false; }, 1500);
+      });
+  });
+
+  // ── Subscribe ke data pipeline ──
+  if (window.__TR_onData) {
+    window.__TR_onData(renderLive);
+  } else {
+    // Sub-tab IIFE belum load — retry sebentar
+    var tries = 0;
+    var wait = setInterval(function(){
+      tries++;
+      if (window.__TR_onData) {
+        clearInterval(wait);
+        window.__TR_onData(renderLive);
+      } else if (tries > 30) {
+        clearInterval(wait);
+      }
+    }, 100);
+  }
 })();
 </script>
 
