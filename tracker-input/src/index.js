@@ -354,7 +354,7 @@ ${STYLE}
       <button class="btn" type="submit">Masuk</button>
     </form>
   </div>
-  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v4</span></div>
+  <div class="small">Password diberikan oleh admin. · <span style="opacity:.5">build parse-v5</span></div>
 </div>
 </body></html>`;
 }
@@ -534,10 +534,21 @@ ${escapeHtml(demoText)}"></textarea>
     </form>
   </div>
 
-  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v4</span></div>
+  <div class="small">Data masuk sebagai <code>pending</code> → tayang setelah di-approve admin. · <span style="opacity:.5">build parse-v5</span></div>
 </div>
 
 <script>
+// Penangkap error global: tampilkan pesan error DI LAYAR (bukan cuma console),
+// supaya kalau ada yang rusak, langsung kelihatan & bisa di-screenshot.
+window.__tiErr=function(e){
+  try{
+    var b=document.getElementById('tiErrBar');
+    if(!b){ b=document.createElement('div'); b.id='tiErrBar'; b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#7f1d1d;color:#fff;font:12px/1.4 ui-monospace,monospace;padding:8px 12px;white-space:pre-wrap;max-height:45vh;overflow:auto'; (document.body||document.documentElement).appendChild(b); }
+    b.textContent='⚠ Error skrip halaman (screenshot ke admin):\n'+((e&&e.message)?e.message:e)+((e&&e.stack)?('\n'+e.stack):'');
+  }catch(_){}
+};
+window.onerror=function(msg,url,line,col,err){ window.__tiErr((err&&err.stack)?err.stack:(msg+' @'+line+':'+col)); return false; };
+
 // Salin Prompt sebagai fungsi GLOBAL di blok terpisah — tetap jalan walau
 // skrip utama di bawah bermasalah karena alasan apa pun.
 function tiCopy(){
@@ -760,8 +771,8 @@ function tiCopy(){
   // "Koreksi": tampil/sembunyikan kolom edit (tersembunyi secara default).
   if(editToggle) editToggle.onclick = function(){ if(editFields) editFields.style.display = (editFields.style.display==='none' ? '' : 'none'); };
   // Perbarui ringkasan tiap kali kolom diubah manual + tampilkan ringkasan awal.
-  if(f) f.addEventListener('input', renderSummary);
-  renderSummary();
+  if(f) f.addEventListener('input', function(){ try{ renderSummary(); }catch(e){ window.__tiErr&&window.__tiErr(e); } });
+  try{ renderSummary(); }catch(e){ window.__tiErr&&window.__tiErr(e); }
   // Kode saham selalu tampil kapital saat diketik.
   if(f && f.ticker) f.ticker.addEventListener('input', function(){ this.value = this.value.toUpperCase(); });
 
@@ -791,16 +802,23 @@ function tiCopy(){
   }
   function compress(file){
     return new Promise(function(resolve){
-      var img = new Image(); var url = URL.createObjectURL(file);
+      // Fallback: baca file apa adanya (base64) tanpa kompres — untuk format
+      // yang tak bisa digambar ke canvas (mis. HEIC dari iPhone).
+      function raw(){ try{ var fr=new FileReader(); fr.onload=function(){ resolve(fr.result); }; fr.onerror=function(){ resolve(null); }; fr.readAsDataURL(file); }catch(e){ resolve(null); } }
+      var img = new Image(); var url;
+      try{ url = URL.createObjectURL(file); }catch(e){ return raw(); }
       img.onload = function(){
-        var max=1280, w=img.width, h=img.height;
-        if(w>max||h>max){ if(w>=h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } }
-        var c=document.createElement('canvas'); c.width=w; c.height=h;
-        c.getContext('2d').drawImage(img,0,0,w,h);
-        URL.revokeObjectURL(url);
-        try{ resolve(c.toDataURL('image/jpeg', 0.72)); }catch(e){ resolve(null); }
+        try{
+          var max=1280, w=img.width, h=img.height;
+          if(!w || !h){ URL.revokeObjectURL(url); return raw(); }
+          if(w>max||h>max){ if(w>=h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } }
+          var c=document.createElement('canvas'); c.width=w; c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          URL.revokeObjectURL(url);
+          resolve(c.toDataURL('image/jpeg', 0.72));
+        }catch(e){ try{URL.revokeObjectURL(url);}catch(_){} raw(); }
       };
-      img.onerror=function(){ URL.revokeObjectURL(url); resolve(null); };
+      img.onerror=function(){ try{URL.revokeObjectURL(url);}catch(_){} raw(); };
       img.src=url;
     });
   }
@@ -815,7 +833,7 @@ function tiCopy(){
     photoInput.value='';
     renderThumbs();
   };
-  renderThumbs(); // tampilkan 5 slot kosong saat halaman dibuka
+  try{ renderThumbs(); }catch(e){ window.__tiErr&&window.__tiErr(e); } // 5 slot awal
 
   if(f) f.addEventListener('submit', async function(e){
     e.preventDefault();
