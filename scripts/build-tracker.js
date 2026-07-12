@@ -75,7 +75,12 @@ async function fetchSheetRows() {
   if (fixture) {
     console.log(`  ℹ Using fixture: ${fixture}`);
     const raw = JSON.parse(fs.readFileSync(fixture, 'utf8'));
-    return { ok: true, source: 'fixture', items: raw.items || raw };
+    const all = raw.items || raw;
+    const statusCounts = tallyStatus(all);
+    const approved = all.filter(x => isApprovedStatus(x.status));
+    // Fixture tanpa kolom status → pakai semua baris (mode uji offline).
+    const items = approved.length ? approved : all;
+    return { ok: true, source: 'fixture', items, allCount: all.length, statusCounts };
   }
   if (!sheetId) {
     console.warn('  ⚠ TRACKER_SHEET_ID tidak di-set. Tulis pending:true.');
@@ -108,9 +113,11 @@ async function fetchSheetRows() {
       }
 
       const items = gvizTableToItems(payload.table);
-      const approved = items.filter(x => String(x.status || '').toLowerCase() === 'approved');
+      const statusCounts = tallyStatus(items);
+      const approved = items.filter(x => isApprovedStatus(x.status));
       console.log(`  ✓ Sheet: ${items.length} total rows, ${approved.length} approved`);
-      return { ok: true, source: 'gviz', items: approved };
+      console.log('    status breakdown:', JSON.stringify(statusCounts));
+      return { ok: true, source: 'gviz', items: approved, allCount: items.length, statusCounts };
     } catch (e) {
       lastErr = e;
       if (attempt < 3) await sleep(1500 * attempt);
@@ -259,6 +266,78 @@ function toNumber(v) {
   const s = String(v).replace(/[^\d.\-]/g, '');
   const n = parseFloat(s);
   return Number.isFinite(n) ? n : null;
+}
+
+// ── Status "approved" yang robust ──────────────────────────────────────────
+// Kolom status di Sheet default "pending" (dari form input), owner ubah jadi
+// "approved" saat siap tayang. Beberapa hal yang sering bikin baris "hilang":
+//   - Spasi tak sengaja: "approved " (trailing space) → dulu tidak match.
+//   - Beda kapital: "Approved", "APPROVED" → sudah ditangani lowercase.
+//   - Sinonim manual: "acc", "ok", "tayang", "setuju" dsb.
+// Kita trim + lowercase + terima daftar sinonim yang jelas bermakna "setujui".
+const APPROVED_STATUSES = new Set([
+  'approved', 'approve', 'acc', 'ok', 'oke', 'yes', 'ya',
+  'setuju', 'disetujui', 'tayang', 'live', 'publish', 'published',
+]);
+function isApprovedStatus(s) {
+  const v = String(s == null ? '' : s).trim().toLowerCase();
+  return APPROVED_STATUSES.has(v);
+}
+// Hitung sebaran nilai kolom status (untuk diagnostik "kenapa data sedikit").
+function tallyStatus(rows) {
+  const out = {};
+  for (const r of (rows || [])) {
+    const raw = String(r && r.status != null ? r.status : '').trim();
+    const key = raw === '' ? '(kosong)' : raw.toLowerCase();
+    out[key] = (out[key] || 0) + 1;
+  }
+  return out;
+}
+
+// Alasan kenapa sebuah baris DITOLAK normalizeRow (untuk diagnostik).
+// Mengikuti aturan validasi yang sama persis dengan normalizeRow().
+function normalizeRejectReason(row) {
+  if (!row || typeof row !== 'object') return 'baris-kosong';
+  const analyst = String(row.analis || '').trim();
+  const ticker  = String(row.ticker || '').trim();
+  const tipe    = String(row.tipe || 'BUY').trim().toUpperCase();
+  const entry   = toNumber(row.entry);
+  const tp1     = toNumber(row.tp1);
+  const sl      = toNumber(row.sl);
+  const openDate = parseDate(row.tanggal) || parseDate(row.timestamp) || null;
+  if (!analyst)         return 'analis-kosong';
+  if (!ticker)          return 'ticker-kosong';
+  if (!openDate)        return 'tanggal-invalid';
+  if (entry == null)    return 'entry-kosong';
+  if (tp1 == null)      return 'tp1-kosong';
+  if (sl == null)       return 'sl-kosong';
+  if (tipe === 'BUY'  && (tp1 <= entry || sl >= entry)) return 'arah-BUY-invalid';
+  if (tipe === 'SELL' && (tp1 >= entry || sl <= entry)) return 'arah-SELL-invalid';
+  return null; // lolos
+}
+
+// Breakdown alasan penolakan + ticker yang tidak ada di ohlc (harga live kosong).
+function diagnoseRejections(rawRows, ohlc) {
+  const reasonCounts = {};
+  const samples = [];
+  const missingOhlc = {};
+  let total = 0;
+  for (const row of (rawRows || [])) {
+    const reason = normalizeRejectReason(row);
+    if (reason) {
+      total++;
+      reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+      if (samples.length < 10) {
+        samples.push({ _row: row._row || null, ticker: row.ticker || '', analis: row.analis || '', status: row.status || '', reason });
+      }
+    } else {
+      const tk = String(row.ticker || '').trim().toUpperCase().replace(/\.JK$/i, '').replace(/^\$/, '');
+      if (tk && ohlc && ohlc.tickers && !ohlc.tickers[tk]) {
+        missingOhlc[tk] = (missingOhlc[tk] || 0) + 1;
+      }
+    }
+  }
+  return { total, reasonCounts, samples, tickersMissingOhlc: Object.keys(missingOhlc) };
 }
 
 function parseDate(v) {
@@ -904,6 +983,25 @@ async function main() {
   const recsRaw = (sheet.items || []).map(normalizeRow).filter(Boolean);
   console.log(`  normalized ${recsRaw.length}/${(sheet.items||[]).length} rows`);
 
+  // Diagnostik: kenapa baris ditolak + ticker tanpa harga (ohlc).
+  const rejectDiag = diagnoseRejections(sheet.items || [], ohlc);
+  if (rejectDiag.total) {
+    console.log('  ⚠ ditolak normalize:', rejectDiag.total, JSON.stringify(rejectDiag.reasonCounts));
+  }
+  if (rejectDiag.tickersMissingOhlc.length) {
+    console.log('  ⚠ ticker tanpa harga ohlc:', rejectDiag.tickersMissingOhlc.join(', '));
+  }
+  const diag = {
+    sheetTotalRows: sheet.allCount != null ? sheet.allCount : (sheet.items || []).length,
+    approvedRows: (sheet.items || []).length,
+    statusBreakdown: sheet.statusCounts || {},
+    normalizedOk: recsRaw.length,
+    rejectedRows: rejectDiag.total,
+    rejectReasonCounts: rejectDiag.reasonCounts,
+    rejectSamples: rejectDiag.samples,
+    tickersMissingOhlc: rejectDiag.tickersMissingOhlc,
+  };
+
   // Pass 1: derive position untuk tiap rec.
   const recs = [];
   for (const rec of recsRaw) {
@@ -1193,6 +1291,7 @@ async function main() {
     schemaVersion: 2, // v2: state machine + 3 gaya eksekusi
     pending: false,
     source: sheet.source,
+    _diag: diag, // diagnostik: total baris sheet, sebaran status, alasan tolak
     since: closed.length ? closed.map(r => r.openDate).sort()[0] : todayIso,
     totalClosed: closed.length,
     // Legacy `open` = triggered saja (backward compat). `pending`/`missed` di field terpisah.
