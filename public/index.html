@@ -2761,8 +2761,10 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-live-card-badge.buy{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.28)}
 .tr-live-card-badge.sell{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.28)}
 .tr-live-card-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px}
-.tr-live-card-firm{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text2);margin-top:2px}
-.tr-live-card-verif{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:700;color:var(--green);background:rgba(16,185,129,.14);padding:1.5px 5px;border-radius:4px;letter-spacing:.3px}
+.tr-live-card-firm{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);margin-top:3px;flex-wrap:wrap}
+.tr-live-card-firm b{font-weight:800;letter-spacing:-.2px}
+.tr-live-card-verif{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:700;color:var(--green);background:rgba(16,185,129,.14);padding:1.5px 5px;border-radius:4px;letter-spacing:.3px;border:1px solid rgba(16,185,129,.28)}
+.tr-live-card-attr{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);opacity:.75}
 .tr-live-card-r{text-align:right;flex-shrink:0}
 .tr-live-card-float{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:16px;letter-spacing:-.3px}
 .tr-live-card-float.up{color:var(--green)}
@@ -2809,6 +2811,106 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-live-wl-h .count{color:var(--text2);margin-left:auto;background:var(--bg2);padding:1.5px 8px;border-radius:10px;font-size:10px;letter-spacing:.4px}
 .tr-live-wl-chips{display:flex;flex-wrap:wrap;gap:6px}
 .tr-live-wl-chip{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:4px 9px;border-radius:16px;background:var(--bg2);color:var(--text2);border:1px solid var(--border);letter-spacing:.3px}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TAB PERFORMA — papan peringkat sekuritas (HERO) + metrik pendukung.
+   User compare "kalau ikut RHB dapat X%, kalau ikut Mandiri dapat Y%".
+   Prefix `.tr-perf-*` untuk isolasi bersih.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Section wrapper umum */
+.tr-perf-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px}
+.tr-perf-card-h{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:700;flex-wrap:wrap}
+.tr-perf-card-h::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0}
+.tr-perf-card-h .desc{color:var(--text3);font-family:inherit;font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:auto;opacity:.85}
+@media(max-width:640px){.tr-perf-card-h .desc{margin-left:0;width:100%;margin-top:4px}}
+
+/* ─── HERO: Papan Peringkat Sekuritas ─── */
+.tr-perf-firm-hero{background:linear-gradient(160deg,rgba(124,58,237,.08),var(--card) 55%);border:1px solid var(--border);border-radius:16px;padding:16px 18px;margin-bottom:14px;position:relative;overflow:hidden}
+.tr-perf-firm-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.16),transparent 70%);pointer-events:none}
+.tr-perf-firm-hero-h{position:relative;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:4px;display:flex;align-items:center;gap:8px;font-weight:700}
+.tr-perf-firm-hero-h::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0}
+.tr-perf-firm-hero-title{position:relative;font-size:17px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px}
+.tr-perf-firm-hero-desc{position:relative;font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5}
+.tr-perf-firm-grid{position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+@media(max-width:640px){.tr-perf-firm-grid{grid-template-columns:1fr;gap:10px}}
+
+.tr-perf-firm-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 15px;position:relative;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s}
+.tr-perf-firm-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad)}
+.tr-perf-firm-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.28);border-color:var(--accent)}
+.tr-perf-firm-card.rank-1::before{background:linear-gradient(90deg,#f5c518,#ffa500)}
+.tr-perf-firm-card.rank-2::before{background:linear-gradient(90deg,#c7cbd6,#94a1c0)}
+.tr-perf-firm-card.rank-3::before{background:linear-gradient(90deg,#c08a5a,#8b5a2b)}
+
+.tr-perf-firm-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px}
+.tr-perf-firm-l{min-width:0;flex:1}
+.tr-perf-firm-rank{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:var(--text3);margin-bottom:4px;letter-spacing:-.3px}
+.tr-perf-firm-card.rank-1 .tr-perf-firm-rank{color:#f5c518}
+.tr-perf-firm-card.rank-2 .tr-perf-firm-rank{color:#c7cbd6}
+.tr-perf-firm-card.rank-3 .tr-perf-firm-rank{color:#c08a5a}
+.tr-perf-firm-name{font-size:15px;font-weight:800;letter-spacing:-.3px;line-height:1.2;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tr-perf-firm-verified{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:700;color:var(--green);background:rgba(16,185,129,.14);padding:2px 6px;border-radius:5px;letter-spacing:.3px;border:1px solid rgba(16,185,129,.28)}
+.tr-perf-firm-meta-top{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px;letter-spacing:.3px}
+
+.tr-perf-firm-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-bottom:12px}
+.tr-perf-firm-stat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:9px 11px}
+.tr-perf-firm-stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;font-weight:600}
+.tr-perf-firm-stat-val{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:800;letter-spacing:-.5px;margin-top:3px;line-height:1}
+.tr-perf-firm-stat-val.big{font-size:22px}
+.tr-perf-firm-stat-sub{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);margin-top:2px}
+
+.tr-perf-firm-progress{margin-top:10px}
+.tr-perf-firm-progress-top{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:4px;letter-spacing:.5px}
+.tr-perf-firm-progress-bar{height:6px;background:var(--bg2);border-radius:3px;overflow:hidden}
+.tr-perf-firm-progress-fill{height:100%;background:var(--grad);border-radius:3px;transition:width .6s ease}
+.tr-perf-firm-progress-fill.warn{background:linear-gradient(90deg,var(--yellow),var(--accent3))}
+.tr-perf-firm-progress-fill.bad{background:linear-gradient(90deg,var(--red),#f97316)}
+
+.tr-perf-firm-foot{margin-top:11px;padding-top:10px;border-top:1px dashed var(--border);display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);flex-wrap:wrap;gap:6px}
+.tr-perf-firm-foot .k{color:var(--text3)}
+.tr-perf-firm-foot .v{color:var(--text2);font-weight:700}
+.tr-perf-firm-hint{position:relative;margin-top:10px;font-size:10.5px;color:var(--text3);text-align:center;font-family:'IBM Plex Mono',monospace;letter-spacing:.3px;opacity:.7}
+
+/* ─── TP Hit Distribution ─── */
+.tr-perf-tp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:640px){.tr-perf-tp-grid{grid-template-columns:1fr 1fr}}
+.tr-perf-tp{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 12px;text-align:center;position:relative;overflow:hidden}
+.tr-perf-tp::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.tr-perf-tp.tp1::before{background:rgba(16,185,129,.55)}
+.tr-perf-tp.tp2::before{background:var(--green)}
+.tr-perf-tp.sl::before{background:var(--red)}
+.tr-perf-tp.exp::before{background:var(--yellow)}
+.tr-perf-tp-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;font-weight:700}
+.tr-perf-tp-val{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;letter-spacing:-.5px;margin-top:4px;line-height:1}
+.tr-perf-tp.tp1 .tr-perf-tp-val,.tr-perf-tp.tp2 .tr-perf-tp-val{color:var(--green)}
+.tr-perf-tp.sl .tr-perf-tp-val{color:var(--red)}
+.tr-perf-tp.exp .tr-perf-tp-val{color:var(--yellow)}
+.tr-perf-tp-sub{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);margin-top:4px}
+
+/* ─── 30-Day Performance Chart ─── */
+.tr-perf-chart-wrap{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;height:220px}
+.tr-perf-chart-wrap canvas{width:100% !important;height:100% !important;display:block}
+.tr-perf-chart-legend{display:flex;gap:14px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);margin-top:10px}
+.tr-perf-chart-legend .lg{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.tr-perf-chart-audit{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);margin-bottom:8px;display:none;flex-wrap:wrap;gap:12px}
+.tr-perf-chart-audit.show{display:flex}
+
+/* ─── Safety Net & Score Bracket Tables ─── */
+.tr-perf-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tr-perf-table{width:100%;font-family:'IBM Plex Mono',monospace;font-size:11.5px;border-collapse:collapse}
+.tr-perf-table thead th{text-align:left;padding:8px 10px;color:var(--text3);font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;font-weight:700;border-bottom:1px solid var(--border);background:var(--bg2)}
+.tr-perf-table tbody td{padding:9px 10px;border-bottom:1px solid var(--border)}
+.tr-perf-table tbody tr:last-child td{border-bottom:none}
+.tr-perf-table tbody tr:hover{background:var(--bg2)}
+.tr-perf-table .num{text-align:right;font-weight:700}
+.tr-perf-table .ctr{text-align:center;font-weight:700}
+.tr-perf-table .up{color:var(--green)}
+.tr-perf-table .dn{color:var(--red)}
+.tr-perf-table .neu{color:var(--text2)}
+.tr-perf-note{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);margin-top:10px;line-height:1.5;letter-spacing:.2px}
+
+/* Empty state helper (kalau data 0 rows) */
+.tr-perf-empty-inline{text-align:center;padding:22px 16px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
 </style>
 
 <!-- ═══════════════════════════════════════════
@@ -3880,7 +3982,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
      30-hari performa, papan peringkat SEKURITAS (firm-first), top/bottom
      sekuritas, safety net RR, score bracket). -->
 <div id="tr-view-perf" class="tr-subpane" role="tabpanel" aria-hidden="true">
-  <div class="tr-empty">
+
+  <!-- Fallback empty state — visible saat data.pending===true. -->
+  <div class="tr-empty" id="trPerfPending">
     <div class="tr-empty-ico">📊</div>
     <div class="tr-empty-title">Performa — menunggu data</div>
     <div class="tr-empty-desc">
@@ -3888,6 +3992,133 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
     <div class="tr-empty-hint" id="trPerfStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
   </div>
+
+  <!-- Content real -->
+  <div id="trPerfContent" style="display:none">
+
+    <!-- ═══ HERO: Papan Peringkat Sekuritas ═══ -->
+    <div class="tr-perf-firm-hero">
+      <div class="tr-perf-firm-hero-h">🏆 Papan Peringkat Sekuritas</div>
+      <div class="tr-perf-firm-hero-title">Kalau ikuti rekomendasi sekuritas ini, hasilnya berapa?</div>
+      <div class="tr-perf-firm-hero-desc">
+        Bandingkan performa antar sekuritas: winrate, net return, jumlah rekomendasi.
+        Ranking berdasarkan Net Return dari trade yang sudah selesai. Klik kartu untuk lihat detail.
+      </div>
+      <div class="tr-perf-firm-grid" id="trPerfFirmGrid">
+        <!-- Firm cards di-render via JS -->
+      </div>
+      <div class="tr-perf-firm-hint">
+        Sekuritas dengan minimal 1 rekomendasi ditampilkan. Klik kartu untuk detail (versi akan datang).
+      </div>
+    </div>
+
+    <!-- ═══ TP Hit Distribution ═══ -->
+    <div class="tr-perf-card">
+      <div class="tr-perf-card-h">
+        🎯 Distribusi Hasil Rekomendasi
+        <span class="desc">breakdown status rekomendasi selesai</span>
+      </div>
+      <div class="tr-perf-tp-grid">
+        <div class="tr-perf-tp tp1">
+          <div class="tr-perf-tp-lbl">TP1 HIT</div>
+          <div class="tr-perf-tp-val" id="trPerfTp1">0</div>
+          <div class="tr-perf-tp-sub">target pertama tersentuh</div>
+        </div>
+        <div class="tr-perf-tp tp2">
+          <div class="tr-perf-tp-lbl">TP2 HIT</div>
+          <div class="tr-perf-tp-val" id="trPerfTp2">0</div>
+          <div class="tr-perf-tp-sub">target kedua tersentuh</div>
+        </div>
+        <div class="tr-perf-tp sl">
+          <div class="tr-perf-tp-lbl">SL HIT</div>
+          <div class="tr-perf-tp-val" id="trPerfSl">0</div>
+          <div class="tr-perf-tp-sub">stop loss tersentuh</div>
+        </div>
+        <div class="tr-perf-tp exp">
+          <div class="tr-perf-tp-lbl">EXPIRED</div>
+          <div class="tr-perf-tp-val" id="trPerfExp">0</div>
+          <div class="tr-perf-tp-sub">horizon lewat</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ 30-Day Performance Chart ═══ -->
+    <div class="tr-perf-card">
+      <div class="tr-perf-card-h">
+        📈 Grafik Performa Konsensus 30 Hari
+        <span class="desc">bar harian (%) + akumulasi (garis)</span>
+      </div>
+      <div class="tr-perf-chart-audit" id="trPerfChartAudit">
+        <span class="c-muted" id="trPerfChartAuditDate">—</span>
+        <span id="trPerfChartAuditEq">Akumulasi: —</span>
+        <span id="trPerfChartAuditDay">Hari ini: —</span>
+      </div>
+      <div class="tr-perf-chart-wrap">
+        <canvas id="trPerfDayChart"></canvas>
+      </div>
+      <div class="tr-perf-chart-legend">
+        <span><span class="lg" style="background:var(--green)"></span>hari + (%)</span>
+        <span><span class="lg" style="background:var(--red)"></span>hari − (%)</span>
+        <span><span class="lg" style="background:var(--accent2);height:2px"></span>akumulasi kumulatif</span>
+      </div>
+    </div>
+
+    <!-- ═══ Safety Net RR ═══ -->
+    <div class="tr-perf-card">
+      <div class="tr-perf-card-h">
+        🛡️ Jaring Pengaman (Safety Net RR)
+        <span class="desc">seberapa sering target tersentuh + ekspektansi R</span>
+      </div>
+      <div class="tr-perf-table-wrap">
+        <table class="tr-perf-table">
+          <thead>
+            <tr>
+              <th>LEVEL TARGET</th>
+              <th class="ctr">SAFETY RATIO</th>
+              <th class="ctr">HIT / MISS</th>
+              <th class="num">EKSPEKTANSI (R)</th>
+            </tr>
+          </thead>
+          <tbody id="trPerfSafetyBody">
+            <tr><td colspan="4"><div class="tr-perf-empty-inline">Belum ada data safety net.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tr-perf-note">
+        ⓘ <b>Safety Ratio</b>: persen trade yang menyentuh target. <b>Ekspektansi</b>: profit rata-rata dalam satuan R (1R = jarak entry ke SL). Positif = level ini menguntungkan.
+      </div>
+    </div>
+
+    <!-- ═══ Score Bracket Performance ═══ -->
+    <div class="tr-perf-card">
+      <div class="tr-perf-card-h">
+        📊 Performa per Skor Validitas
+        <span class="desc">rekomendasi berkualitas tinggi vs rendah</span>
+      </div>
+      <div class="tr-perf-table-wrap">
+        <table class="tr-perf-table">
+          <thead>
+            <tr>
+              <th>BRACKET</th>
+              <th class="ctr">TRADE</th>
+              <th class="ctr">TP1</th>
+              <th class="ctr">TP2</th>
+              <th class="ctr">SL</th>
+              <th class="ctr">WINRATE</th>
+              <th class="num">NET %</th>
+            </tr>
+          </thead>
+          <tbody id="trPerfBracketBody">
+            <tr><td colspan="7"><div class="tr-perf-empty-inline">Belum ada data score bracket.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tr-perf-note">
+        ⓘ Rekomendasi dikelompokkan berdasarkan skor validitas (sertifikasi + horizon + TP2 + catatan + RR + track record analis). Bracket dgn winrate tertinggi = paling efektif.
+      </div>
+    </div>
+
+  </div><!-- /trPerfContent -->
 </div>
 
 <!-- ── PANE AKUN (skeleton empty state) ─────────────────────────────
@@ -4938,12 +5169,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var certLine = o.cert ? (' · ' + esc(String(o.cert).split(/[(-]/)[0].trim())) : '';
     var horizonLine = o.horizon ? ('  ·  ' + esc(o.horizon)) : '';
 
+    // ── FIRM-FIRST: sekuritas primary (bold), analis pelengkap. ────────
+    // Kalau firm kosong, analis jadi fallback primary.
+    var hasFirm = o.firm && String(o.firm).trim();
+    var primaryEntity = hasFirm ? firmShort(o.firm) : (o.analyst || '—');
+    var primaryIcon = hasFirm ? '🏢' : '👤';
+    var attribution = hasFirm && o.analyst
+      ? '<span class="tr-live-card-attr">oleh ' + esc(o.analyst) + '</span>'
+      : '';
+
     return '<div class="tr-live-card ' + cardCls + '">'
       + '<div class="tr-live-card-top">'
         + '<div class="tr-live-card-l">'
           + '<div class="tr-live-card-tick">' + esc(o.ticker) + ' <span class="tr-live-card-badge ' + (isBuy ? 'buy' : 'sell') + '">' + (isBuy ? 'BUY' : 'SELL') + '</span></div>'
           + (o.tickerName ? '<div class="tr-live-card-sub">' + esc(o.tickerName) + '</div>' : '')
-          + '<div class="tr-live-card-firm">' + esc(o.analyst || '—') + certLine + verified + '</div>'
+          + '<div class="tr-live-card-firm">' + primaryIcon + ' <b>' + esc(primaryEntity) + '</b>' + certLine + verified + '</div>'
         + '</div>'
         + '<div class="tr-live-card-r">'
           + '<div class="tr-live-card-float ' + cls + '">' + fmtPct(floating) + '</div>'
@@ -4959,7 +5199,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       + '</div>'
       + '<div class="tr-live-card-date">'
         + '<span><span class="lbl">📅 Sinyal:</span> ' + fmtShortDate(o.openDate) + horizonLine + '</span>'
-        + '<span>' + esc(firmShort(o.firm)) + '</span>'
+        + (attribution || '<span></span>')
       + '</div>'
       + '</div>';
   }
@@ -5074,6 +5314,543 @@ body.is-mobile-device.force-desktop .pl-col-main{
       } else if (tries > 30) {
         clearInterval(wait);
       }
+    }, 100);
+  }
+})();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER — TAB PERFORMA RENDERER
+// - Papan Peringkat Sekuritas (HERO section, firm-first)
+// - TP Hit Distribution, 30-day Chart (canvas vanilla)
+// - Safety Net RR + Score Bracket tables
+// ═══════════════════════════════════════════
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function fmtN(n){ return (n == null || !Number.isFinite(+n)) ? '—' : Number(n).toLocaleString('id-ID'); }
+  function fmtPct(n, opts){
+    if (n == null || !Number.isFinite(+n)) return '—';
+    var v = +n; var sign = v >= 0 ? '+' : '';
+    var dec = (opts && opts.dec != null) ? opts.dec : 2;
+    return sign + v.toFixed(dec) + '%';
+  }
+  function firmShort(name){
+    if (!name) return '—';
+    return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim();
+  }
+  function rankBadge(i){
+    if (i === 0) return '🥇 #1';
+    if (i === 1) return '🥈 #2';
+    if (i === 2) return '🥉 #3';
+    return '#' + (i + 1);
+  }
+  function wrClass(wr){ return wr >= 55 ? '' : (wr >= 45 ? 'warn' : 'bad'); }
+  function pctColor(v){ return v > 0 ? 'var(--green)' : (v < 0 ? 'var(--red)' : 'var(--text2)'); }
+
+  // ── Toggle pending vs content ──
+  function setPerfView(state){
+    var pending = $('trPerfPending'); var content = $('trPerfContent');
+    if (!pending || !content) return;
+    if (state === 'ready') { pending.style.display = 'none'; content.style.display = 'block'; }
+    else { pending.style.display = ''; content.style.display = 'none'; }
+  }
+
+  // ── HERO: Papan Peringkat Sekuritas ──
+  function renderFirmLeaderboard(data){
+    var el = $('trPerfFirmGrid'); if (!el) return;
+    var byFirm = data.byFirm || {};
+    var firms = Object.values(byFirm);
+
+    if (!firms.length) {
+      el.innerHTML = '<div class="tr-perf-empty-inline" style="grid-column:1/-1">Belum ada data sekuritas. Approve rekomendasi di Sheet lalu jalankan workflow refresh-tracker.</div>';
+      return;
+    }
+
+    // Sort: firm dgn trades > 0 dulu (by netReturn desc); firm 0 trades di akhir.
+    var sorted = firms.slice().sort(function(a, b){
+      var aH = (a.trades || 0) > 0 ? 1 : 0;
+      var bH = (b.trades || 0) > 0 ? 1 : 0;
+      if (aH !== bH) return bH - aH;
+      // Kedua ada trade: sort by net desc.
+      if ((a.trades || 0) > 0 && (b.trades || 0) > 0) return (b.net || 0) - (a.net || 0);
+      // Kedua kosong: sort by activeCount kartu aktif atau nama.
+      return (b.recsActive || []).length - (a.recsActive || []).length;
+    });
+
+    el.innerHTML = sorted.map(function(f, i){
+      var hasTrades = (f.trades || 0) > 0;
+      var rankCls = hasTrades && i < 3 ? 'rank-' + (i + 1) : '';
+      var wr = f.winrate || 0;
+      var net = f.net || 0;
+      var avg = f.avg || 0;
+      var activeCount = (f.recsActive || []).length;
+      var analystCount = (f.analysts || []).length;
+      var pfHint = ''; // reserved slot untuk PF/rata2 future
+
+      return '<div class="tr-perf-firm-card ' + rankCls + '" data-firm-id="' + esc(f.id) + '">'
+        + '<div class="tr-perf-firm-top">'
+          + '<div class="tr-perf-firm-l">'
+            + '<div class="tr-perf-firm-rank">' + rankBadge(i) + '</div>'
+            + '<div class="tr-perf-firm-name">' + esc(firmShort(f.name)) + (f.verified ? '<span class="tr-perf-firm-verified">✓ VERIF</span>' : '') + '</div>'
+            + '<div class="tr-perf-firm-meta-top">' + (hasTrades ? f.trades + ' rekomendasi selesai · ' + activeCount + ' aktif' : activeCount + ' rekomendasi aktif · belum ada yang selesai') + '</div>'
+          + '</div>'
+        + '</div>'
+
+        + '<div class="tr-perf-firm-stats">'
+          + '<div class="tr-perf-firm-stat">'
+            + '<div class="tr-perf-firm-stat-lbl">WIN RATE</div>'
+            + '<div class="tr-perf-firm-stat-val big" style="color:' + (hasTrades ? pctColor(wr - 50) : 'var(--text3)') + '">' + (hasTrades ? wr.toFixed(0) + '%' : '—') + '</div>'
+            + '<div class="tr-perf-firm-stat-sub">' + (hasTrades ? f.wins + '/' + f.trades + ' menang' : 'menunggu selesai') + '</div>'
+          + '</div>'
+          + '<div class="tr-perf-firm-stat">'
+            + '<div class="tr-perf-firm-stat-lbl">NET RETURN</div>'
+            + '<div class="tr-perf-firm-stat-val big" style="color:' + (hasTrades ? pctColor(net) : 'var(--text3)') + '">' + (hasTrades ? fmtPct(net) : '—') + '</div>'
+            + '<div class="tr-perf-firm-stat-sub">' + (hasTrades ? 'total gain/loss' : 'belum ada data') + '</div>'
+          + '</div>'
+          + '<div class="tr-perf-firm-stat">'
+            + '<div class="tr-perf-firm-stat-lbl">RATA² TRADE</div>'
+            + '<div class="tr-perf-firm-stat-val" style="color:' + (hasTrades ? pctColor(avg) : 'var(--text3)') + '">' + (hasTrades ? fmtPct(avg, { dec: 1 }) : '—') + '</div>'
+            + '<div class="tr-perf-firm-stat-sub">per rekomendasi</div>'
+          + '</div>'
+          + '<div class="tr-perf-firm-stat">'
+            + '<div class="tr-perf-firm-stat-lbl">SKOR TINGGI</div>'
+            + '<div class="tr-perf-firm-stat-val">' + (f.highScore || 0) + '</div>'
+            + '<div class="tr-perf-firm-stat-sub">validitas rekomendasi</div>'
+          + '</div>'
+        + '</div>'
+
+        + (hasTrades ? (
+            '<div class="tr-perf-firm-progress">'
+            + '<div class="tr-perf-firm-progress-top"><span>Konsistensi WR</span><span>' + wr.toFixed(0) + '% · target 55%</span></div>'
+            + '<div class="tr-perf-firm-progress-bar"><div class="tr-perf-firm-progress-fill ' + wrClass(wr) + '" style="width:' + Math.max(2, Math.min(100, wr)) + '%"></div></div>'
+            + '</div>'
+          ) : '')
+
+        + '<div class="tr-perf-firm-foot">'
+          + '<span><span class="k">👥 Analis:</span> <span class="v">' + analystCount + '</span></span>'
+          + '<span><span class="k">📊 Total sinyal:</span> <span class="v">' + ((f.trades || 0) + activeCount) + '</span></span>'
+        + '</div>'
+      + '</div>';
+    }).join('');
+  }
+
+  // ── TP Hit Distribution ──
+  function renderTpDistribution(data){
+    var tp = data.tpCounts || { TP1: 0, TP2: 0 };
+    var closedBy = data.closedByCounts || { TP: 0, SL: 0, EXPIRED: 0 };
+    // Setup UI: TP1 = tpCounts.TP1, TP2 = tpCounts.TP2, SL = slCount, EXPIRED = closedByCounts.EXPIRED
+    var el;
+    el = $('trPerfTp1'); if (el) el.textContent = tp.TP1 || 0;
+    el = $('trPerfTp2'); if (el) el.textContent = tp.TP2 || 0;
+    el = $('trPerfSl');  if (el) el.textContent = data.slCount || 0;
+    el = $('trPerfExp'); if (el) el.textContent = closedBy.EXPIRED || 0;
+  }
+
+  // ── 30-Day Chart (vanilla canvas, adopsi dari robotlive) ──
+  function drawDayChart(dailyEquity){
+    var canvas = $('trPerfDayChart');
+    if (!canvas || !dailyEquity || !dailyEquity.length) return;
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = canvas.offsetWidth || 600;
+    var cssH = canvas.offsetHeight || 200;
+    canvas.width = cssW * dpr;
+    canvas.height = cssH * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    // Ambil warna dari CSS vars biar match tema (light/dark)
+    var css = getComputedStyle(document.documentElement);
+    var COL_GREEN = css.getPropertyValue('--green').trim() || '#059669';
+    var COL_RED   = css.getPropertyValue('--red').trim()   || '#e11d48';
+    var COL_BLUE  = css.getPropertyValue('--accent2').trim() || '#2563eb';
+    var COL_TXT3  = css.getPropertyValue('--text3').trim()  || '#a49cc0';
+    var COL_BORD  = css.getPropertyValue('--border').trim() || '#d4ccf0';
+
+    var pad = { t: 14, r: 46, b: 26, l: 42 };
+    var W = cssW - pad.l - pad.r;
+    var H = cssH - pad.t - pad.b;
+    var N = dailyEquity.length;
+
+    var dayMax = Math.max(2, ...dailyEquity.map(function(d){ return Math.abs(d.dayPnl || 0); }));
+    var dayScale = H / 2 / dayMax;
+    var zeroY = pad.t + H / 2;
+
+    var cums = dailyEquity.map(function(d){ return d.cumulative || 0; });
+    var cumMin = Math.min(0, ...cums);
+    var cumMax = Math.max(0, ...cums);
+    var cumRange = (cumMax - cumMin) || 1;
+    var cumY = function(v){ return pad.t + (1 - (v - cumMin) / cumRange) * H; };
+
+    // Grid
+    ctx.strokeStyle = COL_BORD;
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 1;
+    for (var i = 0; i <= 4; i++) {
+      var y = pad.t + (i / 4) * H;
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + W, y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Bars
+    var barW = Math.max(3, (W / N) * 0.7);
+    var gap = (W / N) - barW;
+    ctx.font = '9px "IBM Plex Mono", monospace';
+    ctx.textBaseline = 'top';
+    dailyEquity.forEach(function(d, i){
+      var x = pad.l + i * (barW + gap) + gap / 2;
+      var v = d.dayPnl || 0;
+      var h = Math.abs(v) * dayScale;
+      ctx.fillStyle = v >= 0 ? COL_GREEN : COL_RED;
+      ctx.globalAlpha = 0.85;
+      if (v >= 0) ctx.fillRect(x, zeroY - h, barW, h);
+      else ctx.fillRect(x, zeroY, barW, h);
+      ctx.globalAlpha = 1;
+      if (i % Math.max(1, Math.floor(N / 6)) === 0 || i === N - 1) {
+        ctx.fillStyle = COL_TXT3;
+        var lbl = String(d.date || '').slice(5);
+        ctx.fillText(lbl, x, pad.t + H + 6);
+      }
+    });
+
+    // Zero line
+    ctx.strokeStyle = COL_TXT3;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, zeroY); ctx.lineTo(pad.l + W, zeroY); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Cumulative line
+    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = COL_BLUE;
+    ctx.beginPath();
+    dailyEquity.forEach(function(d, i){
+      var x = pad.l + i * (barW + gap) + gap / 2 + barW / 2;
+      var y = cumY(d.cumulative || 0);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Right axis labels
+    ctx.fillStyle = COL_TXT3;
+    ctx.font = '9px "IBM Plex Mono", monospace';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(cumMax.toFixed(1) + '%', pad.l + W + 4, pad.t + 4);
+    ctx.fillText(cumMin.toFixed(1) + '%', pad.l + W + 4, pad.t + H - 4);
+
+    // Hover handler (audit panel)
+    canvas.onmousemove = function(e){
+      var r = canvas.getBoundingClientRect();
+      var mx = e.clientX - r.left;
+      var idx = Math.max(0, Math.min(N - 1, Math.floor((mx - pad.l) / (W / N))));
+      var d = dailyEquity[idx]; if (!d) return;
+      var audit = $('trPerfChartAudit'); if (!audit) return;
+      audit.classList.add('show');
+      var ad = $('trPerfChartAuditDate'); if (ad) ad.textContent = d.date;
+      var eq = d.cumulative || 0;
+      var day = d.dayPnl || 0;
+      var ae = $('trPerfChartAuditEq');
+      if (ae) ae.innerHTML = 'Akumulasi: <span style="color:' + pctColor(eq) + '">' + fmtPct(eq) + '</span>';
+      var adl = $('trPerfChartAuditDay');
+      if (adl) adl.innerHTML = 'Hari: <span style="color:' + pctColor(day) + '">' + fmtPct(day) + '</span> · ' + d.trades + ' trade';
+    };
+    canvas.onmouseleave = function(){
+      var audit = $('trPerfChartAudit'); if (audit) audit.classList.remove('show');
+    };
+  }
+
+  // ── Safety Net table ──
+  function renderSafetyNet(data){
+    var tbody = $('trPerfSafetyBody'); if (!tbody) return;
+    var rows = data.safetyNet || [];
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="4"><div class="tr-perf-empty-inline">Belum ada data safety net (butuh minimal 1 trade selesai).</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function(r, i){
+      var trophy = ['🥇', '🥈', '🥉'][i] || '🎯';
+      var sr = +r.safetyRatio || 0;
+      var srCls = sr >= 50 ? 'up' : (sr >= 25 ? 'neu' : 'dn');
+      var exp = +r.expectancy || 0;
+      var expCls = exp >= 0 ? 'up' : 'dn';
+      var expStr = (exp >= 0 ? '+' : '') + exp.toFixed(3) + 'R';
+      return '<tr>'
+        + '<td><b>' + trophy + ' ' + esc(r.level) + '</b> <span style="color:var(--text3);font-size:10px">RR 1:' + r.rr + '</span></td>'
+        + '<td class="ctr ' + srCls + '">' + sr.toFixed(1) + '%</td>'
+        + '<td class="ctr"><span class="up">' + r.hit + 'W</span> / <span class="dn">' + r.miss + 'L</span></td>'
+        + '<td class="num ' + expCls + '">' + expStr + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  // ── Score Bracket table ──
+  function renderScoreBrackets(data){
+    var tbody = $('trPerfBracketBody'); if (!tbody) return;
+    var rows = (data.scoreBrackets || []).filter(function(r){ return true; }); // tampilkan semua bracket (0 trade dimuted)
+    if (!rows.length || !rows.some(function(r){ return r.trades > 0; })) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="tr-perf-empty-inline">Belum ada data score bracket.</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function(r){
+      var wr = +r.winrate || 0;
+      var wrCls = r.trades ? (wr >= 55 ? 'up' : (wr >= 45 ? 'neu' : 'dn')) : 'neu';
+      var netCls = r.trades ? (r.net >= 0 ? 'up' : 'dn') : 'neu';
+      var dim = r.trades === 0 ? 'style="opacity:.4"' : '';
+      return '<tr ' + dim + '>'
+        + '<td><b>' + esc(r.name) + '</b></td>'
+        + '<td class="ctr">' + (r.trades || 0) + '</td>'
+        + '<td class="ctr up">' + (r.tp1 || '—') + '</td>'
+        + '<td class="ctr up">' + (r.tp2 || '—') + '</td>'
+        + '<td class="ctr dn">' + (r.sl || '—') + '</td>'
+        + '<td class="ctr ' + wrCls + '">' + (r.trades ? wr.toFixed(0) + '%' : '—') + '</td>'
+        + '<td class="num ' + netCls + '">' + (r.trades ? fmtPct(r.net) : '—') + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  // ── Master render ──
+  function renderPerf(data){
+    if (!data || data.pending) { setPerfView('pending'); return; }
+    setPerfView('ready');
+    renderFirmLeaderboard(data);
+    renderTpDistribution(data);
+    drawDayChart(data.dailyEquity || []);
+    renderSafetyNet(data);
+    renderScoreBrackets(data);
+  }
+
+  // ── Klik kartu firm → future firm detail (belum ada, sementara scroll ke atas hero) ──
+  document.addEventListener('click', function(e){
+    var card = e.target && e.target.closest && e.target.closest('#trPerfFirmGrid .tr-perf-firm-card');
+    if (!card) return;
+    // Placeholder: highlight briefly + scroll to top. Detail modal akan dibangun di PR berikutnya.
+    card.style.outline = '2px solid var(--accent)';
+    setTimeout(function(){ card.style.outline = ''; }, 600);
+  });
+
+  // ── Re-render chart saat tab Performa dibuka (canvas butuh ukuran benar) ──
+  // Delegasi via click tab.
+  document.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest && e.target.closest('#tr-subtabs .tr-subtab-btn[data-subtab="perf"]');
+    if (!btn) return;
+    // Delay biar pane tampak dulu
+    setTimeout(function(){
+      var d = window.__TR_getData && window.__TR_getData();
+      if (d && !d.pending) drawDayChart(d.dailyEquity || []);
+    }, 80);
+  });
+
+  // ── Subscribe ke data ──
+  if (window.__TR_onData) {
+    window.__TR_onData(renderPerf);
+  } else {
+    var tries = 0;
+    var wait = setInterval(function(){
+      tries++;
+      if (window.__TR_onData) { clearInterval(wait); window.__TR_onData(renderPerf); }
+      else if (tries > 30) { clearInterval(wait); }
+    }, 100);
+  }
+})();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER — SYNC RINGKASAN DGN DATA REAL
+// Override KPI + chart Chart.js (destroy+recreate) + papan peringkat
+// dari dummy → data real dari tracker.json. IIFE existing (tracker
+// preview) tetap render dummy pertama; IIFE ini override saat data ready.
+// Papan peringkat: SEKURITAS (firm-first), analis di-hapus. Klik firm
+// card → switch tab Performa (deep view).
+// ═══════════════════════════════════════════
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function fmtPct(n, opts){
+    if (n == null || !Number.isFinite(+n)) return '—';
+    var v = +n; var dec = (opts && opts.dec != null) ? opts.dec : 1;
+    return (v>=0?'+':'') + v.toFixed(dec) + '%';
+  }
+  function firmShort(name){
+    if (!name) return '—';
+    return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim();
+  }
+  function initials(name){
+    if (!name) return '?';
+    return String(name).replace(/[,®]/g,'').split(/\s+/).filter(Boolean).slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase() || '?';
+  }
+
+  // ── Update KPI cards ──
+  function updateKpi(data){
+    var netReturn = +data.netReturn || 0;
+    var ihsgSeries = (data.ihsg && data.ihsg.series30d) || [];
+    var ihsgReturn = 0;
+    if (ihsgSeries.length > 1) {
+      var first = ihsgSeries[0].close, last = ihsgSeries[ihsgSeries.length - 1].close;
+      if (first > 0) ihsgReturn = (last - first) / first * 100;
+    }
+    var alpha = netReturn - ihsgReturn;
+    var wr = +data.winrate || 0;
+    var wins = data.wins || 0;
+    var total = data.totalClosed || 0;
+
+    var kC = $('trKpiCons');
+    if (kC) { kC.textContent = fmtPct(netReturn); kC.className = 'v ' + (netReturn>=0?'tr-up':'tr-dn'); }
+    var kCSub = $('trKpiConsSub');
+    if (kCSub) kCSub.textContent = 'Blended · ' + total + ' rekom selesai';
+
+    var kI = $('trKpiIhsg');
+    if (kI) { kI.textContent = fmtPct(ihsgReturn); kI.className = 'v ' + (ihsgReturn>=0?'tr-up':'tr-dn'); }
+
+    var kA = $('trKpiAlpha');
+    if (kA) { kA.textContent = fmtPct(alpha); kA.className = 'v ' + (alpha>=0?'tr-up':'tr-dn'); }
+
+    var kW = $('trKpiWr');
+    if (kW) { kW.textContent = wr.toFixed(0) + '%'; kW.className = 'v ' + (wr>=55?'tr-up': wr>=45 ? '' : 'tr-dn'); }
+    var kWSub = $('trKpiWrSub');
+    if (kWSub) kWSub.textContent = wins + ' dari ' + total + ' rekomendasi';
+  }
+
+  // ── Update chart Chart.js (destroy existing + recreate dgn data real) ──
+  function updateChart(data){
+    if (typeof Chart === 'undefined') return;
+    var ctx = $('trChart'); if (!ctx) return;
+    var existing = Chart.getChart(ctx);
+    if (existing) { try { existing.destroy(); } catch(_){} }
+
+    var dailyEquity = data.dailyEquity || [];
+    var ihsgSeries = (data.ihsg && data.ihsg.series30d) || [];
+    var ihsgBase = ihsgSeries.length ? ihsgSeries[0].close : null;
+    var ihsgCum = ihsgSeries.map(function(d){ return (ihsgBase > 0) ? +(((d.close - ihsgBase) / ihsgBase) * 100).toFixed(2) : 0; });
+
+    // Align: pakai IHSG dates sebagai timeline (lebih lengkap 30 hari).
+    // Konsensus di-map by date; kalau tidak ada trade pada tanggal itu,
+    // pertahankan kumulatif terakhir (flat line).
+    var labels = [], consAligned = [];
+    var equityByDate = {};
+    dailyEquity.forEach(function(d){ equityByDate[d.date] = d.cumulative || 0; });
+
+    var timeline = ihsgSeries.length ? ihsgSeries.map(function(s){ return s.date; })
+                                     : dailyEquity.map(function(d){ return d.date; });
+    var runCum = 0;
+    timeline.forEach(function(date){
+      labels.push(date);
+      if (equityByDate[date] != null) runCum = equityByDate[date];
+      consAligned.push(+runCum.toFixed(2));
+    });
+
+    var css = getComputedStyle(document.documentElement);
+    var accentColor = css.getPropertyValue('--accent').trim() || '#6d28d9';
+    var text3 = css.getPropertyValue('--text3').trim() || '#a49cc0';
+    var text2 = css.getPropertyValue('--text2').trim() || '#6e6490';
+    var border = css.getPropertyValue('--border').trim() || '#d4ccf0';
+    var card = css.getPropertyValue('--card').trim() || '#ffffff';
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Konsensus', data: consAligned, borderColor: accentColor, backgroundColor: 'rgba(124,58,237,0.16)', fill: '+1', tension: 0.3, pointRadius: 0, borderWidth: 2.5 },
+          { label: 'IHSG', data: ihsgCum, borderColor: text3, backgroundColor: 'transparent', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [4, 3] }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false, backgroundColor: card, borderColor: border, borderWidth: 1,
+            callbacks: {
+              label: function(it){
+                var y = it.parsed.y;
+                return it.dataset.label + ': ' + (y >= 0 ? '+' : '') + (Number.isFinite(y) ? y.toFixed(2) : '—') + '%';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: text3, font: { size: 10, family: "'IBM Plex Mono',monospace" }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
+          y: { grid: { color: border }, ticks: { color: text2, font: { size: 10, family: "'IBM Plex Mono',monospace" }, callback: function(v){ return v + '%'; } } }
+        },
+        interaction: { mode: 'index', intersect: false }
+      }
+    });
+  }
+
+  // ── Update papan peringkat: analis dummy → SEKURITAS real ──
+  function updateLb(data){
+    var el = $('trLb'); if (!el) return;
+    var byFirm = data.byFirm || {};
+    var firms = Object.values(byFirm);
+    if (!firms.length) return; // pertahankan dummy kalau data kosong
+
+    var sorted = firms.slice().sort(function(a, b){
+      var aH = (a.trades || 0) > 0 ? 1 : 0;
+      var bH = (b.trades || 0) > 0 ? 1 : 0;
+      if (aH !== bH) return bH - aH;
+      if ((a.trades || 0) > 0 && (b.trades || 0) > 0) return (b.net || 0) - (a.net || 0);
+      return (b.recsActive || []).length - (a.recsActive || []).length;
+    });
+
+    el.innerHTML = sorted.map(function(f, i){
+      var rc = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+      var hasTrades = (f.trades || 0) > 0;
+      var net = +f.net || 0;
+      var wr = +f.winrate || 0;
+      var ver = f.verified ? '<span class="tr-lb-ver">✓ VERIF</span>' : '';
+      var name = firmShort(f.name);
+      var subLine = hasTrades
+        ? (f.trades + ' selesai · WR ' + wr.toFixed(0) + '%')
+        : ((f.recsActive || []).length + ' aktif · menunggu selesai');
+      var statVal = hasTrades ? fmtPct(net) : '—';
+      var statCls = hasTrades ? (net >= 0 ? 'tr-up' : 'tr-dn') : '';
+      // data-firm-id (bukan data-key) → tidak trigger openProfile analis lama
+      return '<div class="tr-lb-item" data-firm-id="' + esc(f.id) + '" role="button" title="Lihat detail di Tab Performa">'
+        + '<div class="tr-lb-rank ' + rc + '">' + (i + 1) + '</div>'
+        + '<div class="tr-lb-av">' + initials(f.name) + '</div>'
+        + '<div class="tr-lb-info">'
+          + '<div class="tr-lb-name">' + esc(name) + ' ' + ver + '</div>'
+          + '<div class="tr-lb-firm">' + subLine + '</div>'
+        + '</div>'
+        + '<div class="tr-lb-stat">'
+          + '<div class="tr-lb-alpha ' + statCls + '">' + statVal + '</div>'
+          + '<div class="tr-lb-meta">' + (f.analysts || []).length + ' analis</div>'
+        + '</div>'
+      + '</div>';
+    }).join('');
+  }
+
+  // ── Master render ──
+  function renderRingkasan(data){
+    if (!data || data.pending) return; // pertahankan dummy kalau pending
+    try { updateKpi(data);  } catch(e) { console.warn('[tracker.ringkasan] KPI:', e && e.message); }
+    try { updateChart(data);} catch(e) { console.warn('[tracker.ringkasan] Chart:', e && e.message); }
+    try { updateLb(data);   } catch(e) { console.warn('[tracker.ringkasan] LB:', e && e.message); }
+  }
+
+  // ── Klik kartu firm di papan peringkat → switch ke Tab Performa ──
+  document.addEventListener('click', function(e){
+    var item = e.target && e.target.closest && e.target.closest('#trLb .tr-lb-item[data-firm-id]');
+    if (!item) return;
+    if (typeof window.__TR_switchTab === 'function') {
+      window.__TR_switchTab('perf');
+    }
+  });
+
+  // ── Subscribe ke data ──
+  if (window.__TR_onData) {
+    window.__TR_onData(renderRingkasan);
+  } else {
+    var tries = 0;
+    var wait = setInterval(function(){
+      tries++;
+      if (window.__TR_onData) { clearInterval(wait); window.__TR_onData(renderRingkasan); }
+      else if (tries > 30) clearInterval(wait);
     }, 100);
   }
 })();
