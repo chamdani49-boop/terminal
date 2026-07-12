@@ -14,23 +14,30 @@
  *  10. IHSG daily last + %chgToday + series30d.
  *
  * SUMBER DATA:
- *   - GAS Web App (Sheet Tracker): GAS ?action=list&token=X
- *     → env TRACKER_GAS_URL + TRACKER_GAS_TOKEN
+ *   - Google Sheet "Tracker" via GViz JSON endpoint (public read).
+ *     URL: https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?
+ *          tqx=out:json&sheet=Tracker
+ *     Syarat: sheet di-set "Share → Anyone with the link → Viewer".
+ *     Tidak butuh token / OAuth / Apps Script — endpoint publik Google.
  *   - Harga saham daily: public/ohlc.json (auto-refresh cron 17:00 WIB)
  *   - Sector per ticker: public/screening.json
  *   - IHSG daily: Yahoo Finance ^JKSE (fallback: public/macro.json bulanan)
  *
  * GRACEFUL DEGRADATION:
- *   - Bila env GAS tidak di-set → tulis tracker.json dgn pending:true.
- *   - Bila GAS error → pertahankan file lama (jangan overwrite dgn kosong).
+ *   - Bila env TRACKER_SHEET_ID tidak di-set → tulis tracker.json dgn pending:true.
+ *   - Bila fetch gviz gagal → pertahankan file lama (jangan overwrite dgn kosong).
  *   - Bila IHSG fetch gagal → skip series30d, kolom lain tetap terisi.
  *
  * USAGE:
  *   node scripts/build-tracker.js
  *
  * ENV (opsional):
- *   TRACKER_GAS_URL       — URL /exec Web App (sama dgn worker GAS_URL)
- *   TRACKER_GAS_TOKEN     — token GAS (sama dgn worker GAS_TOKEN)
+ *   TRACKER_SHEET_ID      — Google Sheet ID (potong dari URL sheet, bagian
+ *                            antara /d/ dan /edit). Contoh:
+ *                            https://docs.google.com/spreadsheets/d/1AbC…xyZ/edit
+ *                                                               └────┬────┘
+ *                                                               SHEET_ID
+ *   TRACKER_SHEET_TAB     — nama tab dalam sheet (default: "Tracker")
  *   TRACKER_FIXTURE_PATH  — path ke fixture JSON (untuk uji offline)
  *   TRACKER_MAX_HISTORY   — batas history yg disimpan (default 500)
  */
@@ -50,11 +57,19 @@ const DAILY_EQUITY_DAYS = 30;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ─────────────────────────────────────────────────────────────────────────
-// 1) FETCH RAW ROWS DARI GAS
+// 1) FETCH RAW ROWS DARI GOOGLE SHEET VIA GVIZ (PUBLIC READ, ZERO AUTH)
 // ─────────────────────────────────────────────────────────────────────────
-async function fetchGasRows() {
-  const url = process.env.TRACKER_GAS_URL;
-  const token = process.env.TRACKER_GAS_TOKEN;
+// Endpoint gviz mengembalikan response dgn wrapper JSONP:
+//   /*O_o*/ google.visualization.Query.setResponse({...JSON...});
+// Kita strip wrapper-nya lalu parse. Format table:
+//   { cols:[{id,label,type},...], rows:[{c:[{v,f?}, ...]}, ...] }
+// - "type: datetime" → v = "Date(YYYY,M,D,h,m,s)" (M zero-indexed!)
+// - "type: number"   → v = number
+// - "type: string"   → v = string
+// ─────────────────────────────────────────────────────────────────────────
+async function fetchSheetRows() {
+  const sheetId = process.env.TRACKER_SHEET_ID;
+  const sheetTab = process.env.TRACKER_SHEET_TAB || 'Tracker';
   const fixture = process.env.TRACKER_FIXTURE_PATH;
 
   if (fixture) {
@@ -62,31 +77,99 @@ async function fetchGasRows() {
     const raw = JSON.parse(fs.readFileSync(fixture, 'utf8'));
     return { ok: true, source: 'fixture', items: raw.items || raw };
   }
-  if (!url || !token) {
-    console.warn('  ⚠ TRACKER_GAS_URL / TRACKER_GAS_TOKEN tidak di-set. Tulis pending:true.');
-    return { ok: false, source: 'gas', reason: 'no-credentials', items: [] };
+  if (!sheetId) {
+    console.warn('  ⚠ TRACKER_SHEET_ID tidak di-set. Tulis pending:true.');
+    return { ok: false, source: 'gviz', reason: 'no-credentials', items: [] };
   }
 
-  const full = url + (url.includes('?') ? '&' : '?') + 'action=list&token=' + encodeURIComponent(token);
+  const url = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}/gviz/tq`
+    + `?tqx=out:json&sheet=${encodeURIComponent(sheetTab)}`;
+
   let lastErr = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(full, {
-        headers: { 'Accept': 'application/json' },
+      const res = await fetch(url, {
+        headers: {
+          'Accept': 'text/plain,application/json,*/*',
+          'User-Agent': 'Mozilla/5.0 (compatible; TrackerBuild/1.0)',
+        },
         redirect: 'follow',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (!json || !json.ok) throw new Error(json && json.error ? json.error : 'gas returned not-ok');
-      console.log(`  ✓ GAS: ${json.count || 0} approved rows`);
-      return { ok: true, source: 'gas', items: json.items || [] };
+      const text = await res.text();
+      // Strip wrapper /*O_o*/ google.visualization.Query.setResponse(...);
+      const m = text.match(/setResponse\(([\s\S]*)\);?\s*$/);
+      if (!m) throw new Error('gviz wrapper tidak ditemukan (sheet mungkin belum di-share public?)');
+      const payload = JSON.parse(m[1]);
+      if (!payload || !payload.table) throw new Error('gviz payload tidak valid');
+      if (payload.status === 'error' || (payload.errors && payload.errors.length)) {
+        const errMsg = (payload.errors && payload.errors[0] && payload.errors[0].detailed_message) || 'gviz error';
+        throw new Error(errMsg);
+      }
+
+      const items = gvizTableToItems(payload.table);
+      const approved = items.filter(x => String(x.status || '').toLowerCase() === 'approved');
+      console.log(`  ✓ Sheet: ${items.length} total rows, ${approved.length} approved`);
+      return { ok: true, source: 'gviz', items: approved };
     } catch (e) {
       lastErr = e;
       if (attempt < 3) await sleep(1500 * attempt);
     }
   }
-  console.warn('  ⚠ GAS fetch gagal:', lastErr && lastErr.message);
-  return { ok: false, source: 'gas', reason: 'fetch-failed', error: String(lastErr), items: [] };
+  console.warn('  ⚠ Sheet fetch gagal:', lastErr && lastErr.message);
+  return { ok: false, source: 'gviz', reason: 'fetch-failed', error: String(lastErr), items: [] };
+}
+
+// Konversi table gviz → array of objects (key = header dari row 1 sheet).
+// Handle tipe kolom: datetime (Date(...) string) → ISO; number/string → as-is.
+function gvizTableToItems(table) {
+  const cols = table.cols || [];
+  const rows = table.rows || [];
+  // Ambil header: prefer cols[i].label (nama kolom dari row 1). Kalau kosong,
+  // fallback ke cols[i].id (A, B, C, ...).
+  const headers = cols.map((c, i) => {
+    const lbl = String(c.label || '').trim();
+    return lbl || `col${i}`;
+  });
+
+  const items = [];
+  rows.forEach((r, ri) => {
+    if (!r || !Array.isArray(r.c)) return;
+    const obj = { _row: ri + 2 }; // +2 karena row 1 = header
+    r.c.forEach((cell, ci) => {
+      const key = headers[ci];
+      if (!key) return;
+      if (!cell) { obj[key] = ''; return; }
+      let v = cell.v;
+      // Kolom datetime dari gviz: "Date(YYYY,M,D,h,m,s)" — M 0-indexed
+      if (typeof v === 'string' && /^Date\(\d{4},\d+,\d+/.test(v)) {
+        const parts = v.match(/Date\((\d{4}),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?/);
+        if (parts) {
+          const yy = +parts[1], mo = +parts[2], da = +parts[3];
+          const hh = parts[4] ? +parts[4] : 0;
+          const mm = parts[5] ? +parts[5] : 0;
+          const ss = parts[6] ? +parts[6] : 0;
+          // Simpan sbg ISO datetime (untuk timestamp) atau ISO date (untuk tanggal).
+          // Kalau formatted 'f' ada, gviz kadang kasih string 'YYYY-MM-DD' — pakai itu.
+          if (cell.f && /^\d{4}-\d{2}-\d{2}$/.test(String(cell.f).trim())) {
+            v = String(cell.f).trim();
+          } else if (hh === 0 && mm === 0 && ss === 0) {
+            v = `${yy}-${String(mo + 1).padStart(2, '0')}-${String(da).padStart(2, '0')}`;
+          } else {
+            v = new Date(Date.UTC(yy, mo, da, hh, mm, ss)).toISOString();
+          }
+        }
+      }
+      obj[key] = v == null ? '' : v;
+    });
+    // Timestamp field khusus: kalau ada 'timestamp' kolom & itu Date-parsed ISO, catat _ts.
+    if (obj.timestamp) {
+      const d = new Date(obj.timestamp);
+      if (!isNaN(d.getTime())) obj._ts = d.getTime();
+    }
+    items.push(obj);
+  });
+  return items;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -617,39 +700,40 @@ async function main() {
   }
 
   // Fetch data
-  const gas = await fetchGasRows();
+  const sheet = await fetchSheetRows();
   const ohlc = loadOhlc();
   const screening = loadScreening();
   let ihsgSeries = null;
   try { ihsgSeries = await fetchIhsgDaily(); }
   catch (e) { console.warn('  ⚠ ihsg fetch throw:', e.message); }
 
-  // Kalau GAS gagal & sebelumnya belum ada file → tulis pending saja.
-  if (!gas.ok && gas.reason === 'no-credentials') {
+  // Kalau sheet gagal & sebelumnya belum ada file → tulis pending saja.
+  if (!sheet.ok && sheet.reason === 'no-credentials') {
     const payload = pendingPayload(todayIso, 'no-credentials',
-      'TRACKER_GAS_URL / TRACKER_GAS_TOKEN belum di-set di GitHub Secrets. Set dulu lalu re-run workflow.',
+      'TRACKER_SHEET_ID belum di-set di GitHub Secrets. Set SHEET_ID + share sheet ke "Anyone with the link → Viewer" lalu re-run workflow.',
       ihsgSeries);
     writeOut(payload);
     return;
   }
-  if (!gas.ok) {
+  if (!sheet.ok) {
     // Fetch gagal tapi ada file lama → PRESERVE
     if (prev && !prev.pending) {
-      console.warn('  ⚠ GAS fetch gagal, PERTAHANKAN tracker.json lama.');
-      // Refresh saja updatedAt-nya, tapi tandai stale.
+      console.warn('  ⚠ Sheet fetch gagal, PERTAHANKAN tracker.json lama.');
       prev.staleAt = new Date().toISOString();
-      prev.gasError = gas.error || gas.reason;
+      prev.sheetError = sheet.error || sheet.reason;
       writeOut(prev);
       return;
     }
-    const payload = pendingPayload(todayIso, gas.reason, 'GAS fetch gagal & belum ada snapshot lama.', ihsgSeries);
+    const payload = pendingPayload(todayIso, sheet.reason,
+      'Sheet fetch gagal (kemungkinan besar: sheet belum di-share public, atau SHEET_ID salah). ' + (sheet.error || ''),
+      ihsgSeries);
     writeOut(payload);
     return;
   }
 
   // Normalisasi rows
-  const recsRaw = (gas.items || []).map(normalizeRow).filter(Boolean);
-  console.log(`  normalized ${recsRaw.length}/${(gas.items||[]).length} rows`);
+  const recsRaw = (sheet.items || []).map(normalizeRow).filter(Boolean);
+  console.log(`  normalized ${recsRaw.length}/${(sheet.items||[]).length} rows`);
 
   // Pass 1: derive position untuk tiap rec.
   const recs = [];
@@ -841,7 +925,7 @@ async function main() {
     updatedAt: new Date().toISOString(),
     generatedBy: 'scripts/build-tracker.js',
     pending: false,
-    source: gas.source,
+    source: sheet.source,
     since: closed.length ? closed.map(r => r.openDate).sort()[0] : todayIso,
     totalClosed: closed.length,
     open: active.length,

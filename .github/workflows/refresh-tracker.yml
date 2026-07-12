@@ -1,25 +1,29 @@
 name: Refresh Tracker data (Sheet -> tracker.json)
 
 # ═══════════════════════════════════════════════════════════════════════
-# Fetch baris "approved" dari Google Sheet Tracker via GAS Web App,
-# gabung dengan harga saham live (public/ohlc.json) + IHSG (^JKSE),
-# lalu tulis public/tracker.json. Dipakai frontend untuk render tab
+# Fetch baris "approved" dari Google Sheet Tracker (public read via GViz),
+# gabung dengan harga saham live (public/ohlc.json) + IHSG (^JKSE), lalu
+# tulis public/tracker.json. Dipakai frontend untuk render tab
 # Live/Performa/Akun di menu Tracker.
 #
 # JADWAL:
-#   - Cron GitHub tiap 60 menit (best-effort; sering telat 5–15 mnt).
+#   - Cron GitHub tiap 60 menit menit ke-05 (best-effort; sering telat).
 #   - Bisa dipicu manual dari tab Actions → Run workflow.
-#   - Ideally dipicu juga oleh cron-job.org tiap 30 menit untuk presisi
-#     (mirip refresh-ohlc). Belum aku-set otomatis di sini; bisa
-#     ditambahkan owner setelah confidence tinggi.
 #
 # PRASYARAT (sekali saja):
-#   - Set 2 secret di GitHub Settings → Secrets and variables → Actions:
-#       TRACKER_GAS_URL    → URL /exec Web App (sama dgn worker GAS_URL)
-#       TRACKER_GAS_TOKEN  → token GAS (sama dgn worker GAS_TOKEN)
-#   - Update tracker-input/gas/Code.gs (paste versi terbaru) & re-deploy
-#     Web App (Manage deployments → Edit → Save → Deploy). Ini yg buka
-#     endpoint doGet(?action=list).
+#   1. Google Sheet Tracker di-share "Anyone with the link → Viewer"
+#      (menu File → Share → Get link → General access: Anyone with the link).
+#      Ini bikin sheet BISA DIBACA publik via URL (read-only) tanpa OAuth.
+#      Editing tetap terbatas — hanya yang di-invite yang bisa edit.
+#   2. Set 1 GH secret di Settings → Secrets and variables → Actions:
+#        TRACKER_SHEET_ID = ID sheet (potong dari URL antara /d/ dan /edit).
+#      Contoh URL sheet:
+#        https://docs.google.com/spreadsheets/d/1AbCdEf.../edit#gid=0
+#                                              └─ SHEET_ID ─┘
+#   3. (Opsional) Set TRACKER_SHEET_TAB kalau nama tab bukan "Tracker".
+#
+# TIDAK PERLU Apps Script, TIDAK PERLU OAuth, TIDAK PERLU token.
+# Halaman input (tracker-input.chamdani49.workers.dev) TIDAK terganggu.
 # ═══════════════════════════════════════════════════════════════════════
 
 on:
@@ -53,13 +57,13 @@ jobs:
           node-version: '20'
 
       # ── Build tracker.json ─────────────────────────────────────────────
-      # Env secret di-set di GitHub Repo Settings. Kalau belum di-set,
-      # script akan tetap jalan tapi menghasilkan tracker.json dgn
-      # pending:true (bukan error) — cukup owner set secret lalu re-run.
+      # Env secret di-set di GitHub Repo Settings. Kalau belum di-set atau
+      # sheet belum di-share public, script akan tetap jalan tapi
+      # menghasilkan tracker.json dgn pending:true (bukan error).
       - name: Build tracker.json
         env:
-          TRACKER_GAS_URL:   ${{ secrets.TRACKER_GAS_URL }}
-          TRACKER_GAS_TOKEN: ${{ secrets.TRACKER_GAS_TOKEN }}
+          TRACKER_SHEET_ID:  ${{ secrets.TRACKER_SHEET_ID }}
+          TRACKER_SHEET_TAB: ${{ secrets.TRACKER_SHEET_TAB }}
         run: |
           node scripts/build-tracker.js
 
