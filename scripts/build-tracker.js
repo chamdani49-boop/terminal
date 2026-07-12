@@ -330,27 +330,43 @@ function normalizeRow(row) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 5) DERIVASI STATUS (OPEN / TP_HIT / SL_HIT / EXPIRED) DARI CANDLES
+// 5) DERIVASI STATE 6-STATUS + 3 GAYA EKSEKUSI DARI CANDLES
 // ─────────────────────────────────────────────────────────────────────────
 // Candle format di ohlc.json: [ts(unix sec), open, high, low, close]
-/**
- * Derivasi status posisi dari candles harian.
- *
- * Aturan (konservatif, tanpa data intraday):
- *   - Loop candles setelah openDate, cek batas TP/SL setiap bar (high/low).
- *   - Phase 1 (belum TP1): kalau bar sama slHit && !tp1Hit → SL_HIT (LOSS).
- *   - Single TP (tp2 null): tp1Hit → TP_HIT (WIN, close di tp1).
- *   - Staged (tp2 ada, mengikuti pola robot):
- *       TP1 kena → close 50% at tp1, trail SL ke entry (breakeven), lanjut cari TP2.
- *       Phase 2: TP2 kena → close sisa 50% at tp2 (total pnl = (tp1%+tp2%)/2, WIN).
- *                SL trailing (entry) kena → sisa 50% close at entry (pnl = tp1%/2, WIN).
- *   - Bila 1 bar mengandung TP1 + TP2 sekaligus → asumsi TP2 (max profit).
- *   - EXPIRED (horizon lewat tanpa exit): pnl = close × sisaPosisi (+ realized).
- *   - OPEN: pnl = floating dari lastPrice × sisaPosisi (+ realized).
- */
+//
+// STATE MACHINE (6 status):
+//   PENDING          — harga belum pernah sentuh entry, jarak masih wajar
+//                      (|distance| <= MISSED_THRESHOLD_PCT), masih dalam horizon.
+//   RUNNING_MISSED   — harga kabur >MISSED_THRESHOLD_PCT dari entry tanpa
+//                      pernah menyentuhnya. User yang ikuti rekomendasi
+//                      dgn limit order TIDAK PERNAH terisi.
+//   TRIGGERED        — harga PERNAH menyentuh entry (low<=entry utk BUY;
+//                      high>=entry utk SELL) → posisi resmi jalan.
+//                      Masih running, belum kena TP/SL.
+//   TP_HIT           — sudah TRIGGERED, lalu kena TP1 (single) / TP2 (staged) /
+//                      SL trailing setelah TP1 partial.
+//   SL_HIT           — sudah TRIGGERED, lalu kena SL sebelum TP1.
+//   EXPIRED          — horizon lewat. Bisa dari TRIGGERED (posisi jalan) atau
+//                      PENDING (tidak pernah terisi).
+//
+// 3 GAYA EKSEKUSI (pre-computed di sini, frontend tinggal pakai):
+//   pnlPure  → Entry Murni. Hanya ada nilai kalau state !== PENDING &&
+//              state !== RUNNING_MISSED (posisi harus pernah triggered).
+//   pnlAvg   → Average 1:1. Modal split 50/50: 50% dieksekusi pas OPEN di
+//              tanggal publish (openPriceAtPublish), 50% saat harga sentuh
+//              entry (fills). Kalau tidak pernah sentuh (MISSED/PENDING),
+//              hanya 50% terisi (yang di OPEN) → sisa 50% dianggap 0%.
+//   pnlHaka  → Beli di Open (Hajar Kanan). 100% dieksekusi di
+//              openPriceAtPublish. Selalu ada nilai (kecuali candle tanggal
+//              publish tidak tersedia).
+// ─────────────────────────────────────────────────────────────────────────
+
+const MISSED_THRESHOLD_PCT = 5; // %
+
 function derivePosition(rec, ohlcEntry, todayIso) {
   const result = {
-    status: 'OPEN',
+    state: 'PENDING',           // baru: state machine
+    status: 'PENDING',          // legacy alias (utk backward-compat lama)
     tpHits: [],
     closedBy: null,
     exitDate: null,
@@ -358,14 +374,24 @@ function derivePosition(rec, ohlcEntry, todayIso) {
     lastPrice: null,
     lastPriceTime: null,
     barsHeld: 0,
-    pnlPct: null,
-    result: null, // WIN | LOSS | NEUTRAL
+    pnlPct: null,               // legacy = pnlPure atau floating
+    result: null,               // WIN | LOSS | NEUTRAL (setelah closed)
+    // baru:
+    didTouchEntry: false,
+    entryTouchDate: null,
+    entryTouchPrice: null,
+    openPriceAtPublish: null,   // harga OPEN di candle tanggal publish
+    distanceToEntryPct: null,   // jarak live vs entry (%) — untuk PENDING/MISSED
+    pnlPure: null,              // Entry Murni
+    pnlAvg: null,               // Average 1:1
+    pnlHaka: null,              // Beli di Open (HAKA)
   };
   if (!ohlcEntry || !Array.isArray(ohlcEntry.candles) || !ohlcEntry.candles.length) {
     return result;
   }
   const openTs = Date.parse(rec.openDate + 'T00:00:00Z') / 1000;
   const horizonEndTs = openTs + rec.horizonDays * 86400;
+  const nowTs = new Date(todayIso + 'T00:00:00Z').getTime() / 1000;
   const isBuy = rec.type === 'BUY';
   const dirSign = isBuy ? 1 : -1;
   const hasT2 = rec.tp2 != null && rec.tp2 !== rec.tp1;
@@ -376,113 +402,238 @@ function derivePosition(rec, ohlcEntry, todayIso) {
   result.lastPrice = lastCandle[4];
   result.lastPriceTime = new Date(lastCandle[0] * 1000).toISOString();
 
-  const pctAt = (px) => ((px - rec.entry) / rec.entry * 100) * dirSign;
+  // Cari candle tanggal publish (untuk openPriceAtPublish) — bar pertama pada/setelah openTs
+  // yang tanggalnya == openDate (same day). Kalau tidak ada, ambil bar pertama >= openTs.
+  const publishBar = relevant[0] || null;
+  if (publishBar) result.openPriceAtPublish = +publishBar[1];
 
+  const pctAt = (px) => ((px - rec.entry) / rec.entry * 100) * dirSign;
+  const pctFromOpen = (px) => result.openPriceAtPublish
+    ? ((px - result.openPriceAtPublish) / result.openPriceAtPublish * 100) * dirSign
+    : null;
+
+  // Distance live ke entry (sign-aware terhadap direction):
+  //   BUY: negatif = harga di bawah entry (siap entry); positif = harga sudah lari naik.
+  //   SELL: sebaliknya. Untuk konsistensi kita simpan absolute-signed thd expected direction.
+  // Definisi sederhana: (lastPrice - entry) / entry * 100.
+  //   BUY dgn distance > 0 = harga masih di atas entry (menunggu turun / atau kabur naik).
+  //   BUY dgn distance < 0 = harga sudah di bawah entry (harusnya sudah triggered — kecuali baru saja).
+  result.distanceToEntryPct = +(((result.lastPrice - rec.entry) / rec.entry) * 100).toFixed(2);
+
+  // ── Iterasi bar untuk cari:
+  //    (1) apakah entry pernah tersentuh (touchDate + touchPrice)
+  //    (2) simulasi phase1/phase2 TP/SL setelah triggered
+  // Note: bar tanggal publish DIIKUTKAN — kita anggap harga di sesi itu bisa
+  // menyentuh entry. Kalau OPEN sudah di bawah entry (BUY), berarti gap-down
+  // masuk zona entry → tetap dianggap triggered pada OPEN (touchPrice = min(open, entry)).
   let phase = 'phase1';
   let effectiveSl = rec.sl;
   let realizedPct = 0; // dari partial TP1
+  let triggered = false;
+  let triggeredIdx = -1;
 
-  for (const c of relevant) {
+  for (let i = 0; i < relevant.length; i++) {
+    const c = relevant[i];
     if (c[0] > horizonEndTs) break;
     result.barsHeld++;
-    const high = c[2], low = c[3], ts = c[0];
+    const openPx = c[1], high = c[2], low = c[3], close = c[4], ts = c[0];
+
+    // Cek entry-touch (hanya sekali)
+    if (!triggered) {
+      // BUY: low <= entry (harga pernah turun ke entry)
+      //   Edge case: OPEN sudah <= entry (gap down) → fill di open.
+      // SELL: high >= entry
+      const touched = isBuy ? (low <= rec.entry) : (high >= rec.entry);
+      if (touched) {
+        triggered = true;
+        triggeredIdx = i;
+        result.didTouchEntry = true;
+        result.entryTouchDate = new Date(ts * 1000).toISOString().slice(0, 10);
+        // Kalau OPEN sudah melampaui entry (gap-past entry), fill di OPEN, bukan entry (worse fill).
+        if (isBuy && openPx <= rec.entry)      result.entryTouchPrice = +openPx;
+        else if (!isBuy && openPx >= rec.entry) result.entryTouchPrice = +openPx;
+        else result.entryTouchPrice = +rec.entry;
+      }
+    }
+
+    // Kalau belum triggered → lanjut ke bar berikutnya (jangan cek TP/SL)
+    if (!triggered) continue;
+
     const slHit = isBuy ? low <= effectiveSl : high >= effectiveSl;
     const tp1Hit = isBuy ? high >= rec.tp1 : low <= rec.tp1;
     const tp2Hit = hasT2 && (isBuy ? high >= rec.tp2 : low <= rec.tp2);
 
+    // Jangan pakai SL di bar yang sama saat baru triggered kalau OPEN sudah di luar SL
+    // (fill terjadi di harga entry, langsung SL di bar yg sama = LOSS penuh — tapi
+    // kita perbolehkan).
+
     if (phase === 'phase1') {
-      // Full SL (belum TP1 kena)
       if (slHit && !tp1Hit) {
+        result.state = 'SL_HIT';
         result.status = 'SL_HIT';
         result.closedBy = 'SL';
         result.exitDate = new Date(ts * 1000).toISOString().slice(0, 10);
         result.exitPrice = effectiveSl;
-        result.pnlPct = pctAt(effectiveSl);
+        result.pnlPure = pctAt(effectiveSl);
         result.result = 'LOSS';
         break;
       }
-      // Single TP mode
       if (tp1Hit && !hasT2) {
+        result.state = 'TP_HIT';
         result.status = 'TP_HIT';
         result.tpHits = ['TP1'];
         result.closedBy = 'TP1';
         result.exitDate = new Date(ts * 1000).toISOString().slice(0, 10);
         result.exitPrice = rec.tp1;
-        result.pnlPct = pctAt(rec.tp1);
+        result.pnlPure = pctAt(rec.tp1);
         result.result = 'WIN';
         break;
       }
-      // Staged: TP1 kena → partial 50% + trail SL ke entry
       if (tp1Hit && hasT2) {
-        // Kalau bar yang sama TP2 juga kena → langsung close full (best case)
         if (tp2Hit) {
           realizedPct = pctAt(rec.tp1) * 0.5 + pctAt(rec.tp2) * 0.5;
           result.tpHits = ['TP1', 'TP2'];
+          result.state = 'TP_HIT';
           result.status = 'TP_HIT';
           result.closedBy = 'TP2';
           result.exitDate = new Date(ts * 1000).toISOString().slice(0, 10);
           result.exitPrice = rec.tp2;
-          result.pnlPct = realizedPct;
+          result.pnlPure = realizedPct;
           result.result = 'WIN';
           break;
         }
-        // Hanya TP1 kena di bar ini → partial + lanjut ke phase2
         realizedPct += pctAt(rec.tp1) * 0.5;
         result.tpHits.push('TP1');
-        effectiveSl = rec.entry; // trail ke breakeven
+        effectiveSl = rec.entry;
         phase = 'phase2';
         continue;
       }
     } else {
-      // phase2: sisa 50%, cari TP2 atau SL trailing (entry)
+      // phase2 (setelah TP1 partial)
       if (tp2Hit) {
         realizedPct += pctAt(rec.tp2) * 0.5;
         result.tpHits.push('TP2');
+        result.state = 'TP_HIT';
         result.status = 'TP_HIT';
         result.closedBy = 'TP2';
         result.exitDate = new Date(ts * 1000).toISOString().slice(0, 10);
         result.exitPrice = rec.tp2;
-        result.pnlPct = realizedPct;
+        result.pnlPure = realizedPct;
         result.result = 'WIN';
         break;
       }
       if (slHit) {
-        // SL trailing (entry) kena → sisa 50% close at entry (0%).
-        // Overall pnl = realizedPct dari TP1 partial saja (positif → WIN).
+        result.state = 'TP_HIT';
         result.status = 'TP_HIT';
         result.closedBy = 'SL_TRAIL';
         result.exitDate = new Date(ts * 1000).toISOString().slice(0, 10);
         result.exitPrice = rec.entry;
-        result.pnlPct = realizedPct;
+        result.pnlPure = realizedPct;
         result.result = realizedPct > 0.1 ? 'WIN' : 'NEUTRAL';
         break;
       }
     }
   }
 
-  // Belum ada exit → EXPIRED atau OPEN
+  // ── Belum exit: klasifikasikan state ──
   if (!result.exitDate) {
-    const nowTs = new Date(todayIso + 'T00:00:00Z').getTime() / 1000;
-    if (nowTs > horizonEndTs) {
-      const inHorizon = relevant.filter(c => c[0] <= horizonEndTs);
-      const exitCandle = inHorizon.length ? inHorizon[inHorizon.length - 1] : relevant[relevant.length - 1] || lastCandle;
-      const exitClose = exitCandle[4];
-      result.status = 'EXPIRED';
-      result.closedBy = 'EXPIRED';
-      result.exitDate = new Date(exitCandle[0] * 1000).toISOString().slice(0, 10);
-      result.exitPrice = exitClose;
-      const closePct = pctAt(exitClose);
-      // Kalau sudah phase2 (TP1 partial), sisa 50% pakai exitClose.
-      result.pnlPct = phase === 'phase2' ? (realizedPct + closePct * 0.5) : closePct;
-      result.result = result.pnlPct > 0.1 ? 'WIN' : (result.pnlPct < -0.1 ? 'LOSS' : 'NEUTRAL');
+    if (triggered) {
+      // Posisi jalan (belum kena TP/SL)
+      if (nowTs > horizonEndTs) {
+        // EXPIRED (dari TRIGGERED)
+        const inHorizon = relevant.filter(c => c[0] <= horizonEndTs);
+        const exitCandle = inHorizon.length ? inHorizon[inHorizon.length - 1] : lastCandle;
+        const exitClose = exitCandle[4];
+        result.state = 'EXPIRED';
+        result.status = 'EXPIRED';
+        result.closedBy = 'EXPIRED';
+        result.exitDate = new Date(exitCandle[0] * 1000).toISOString().slice(0, 10);
+        result.exitPrice = exitClose;
+        const closePct = pctAt(exitClose);
+        result.pnlPure = phase === 'phase2' ? (realizedPct + closePct * 0.5) : closePct;
+        result.result = result.pnlPure > 0.1 ? 'WIN' : (result.pnlPure < -0.1 ? 'LOSS' : 'NEUTRAL');
+      } else {
+        // TRIGGERED (posisi aktif jalan, floating)
+        result.state = 'TRIGGERED';
+        result.status = 'OPEN'; // legacy alias
+        const floatPct = pctAt(result.lastPrice);
+        result.pnlPure = phase === 'phase2' ? (realizedPct + floatPct * 0.5) : floatPct;
+      }
     } else {
-      // OPEN — floating dari lastPrice
-      const floatPct = pctAt(result.lastPrice);
-      result.pnlPct = phase === 'phase2' ? (realizedPct + floatPct * 0.5) : floatPct;
+      // Belum triggered — PENDING vs RUNNING_MISSED
+      const dist = Math.abs(result.distanceToEntryPct || 0);
+      // Arah kabur: untuk BUY, kabur naik = lastPrice > entry & jauh (> threshold).
+      //             untuk SELL, kabur turun = lastPrice < entry & jauh.
+      const awayFromEntry = isBuy
+        ? (result.lastPrice - rec.entry > 0)
+        : (rec.entry - result.lastPrice > 0);
+      const missed = awayFromEntry && dist > MISSED_THRESHOLD_PCT;
+      if (nowTs > horizonEndTs) {
+        // EXPIRED tanpa pernah triggered → tidak ada posisi Pure sama sekali.
+        result.state = 'EXPIRED';
+        result.status = 'EXPIRED';
+        result.closedBy = 'EXPIRED_UNFILLED';
+        const inHorizon = relevant.filter(c => c[0] <= horizonEndTs);
+        const exitCandle = inHorizon.length ? inHorizon[inHorizon.length - 1] : lastCandle;
+        result.exitDate = new Date(exitCandle[0] * 1000).toISOString().slice(0, 10);
+        result.exitPrice = exitCandle[4];
+        result.pnlPure = null; // Pure tidak triggered
+        result.result = null;
+      } else if (missed) {
+        result.state = 'RUNNING_MISSED';
+        result.status = 'MISSED';
+      } else {
+        result.state = 'PENDING';
+        result.status = 'PENDING';
+      }
     }
   }
 
-  if (result.pnlPct != null) result.pnlPct = +result.pnlPct.toFixed(2);
+  // ── Hitung pnlAvg & pnlHaka ──
+  // pnlHaka: harga sekarang / exit vs openPriceAtPublish. Selalu ada (kalau openPx ada).
+  const referencePx = result.exitPrice != null ? result.exitPrice : result.lastPrice;
+  if (result.openPriceAtPublish != null && referencePx != null) {
+    result.pnlHaka = +(((referencePx - result.openPriceAtPublish) / result.openPriceAtPublish) * 100 * dirSign).toFixed(2);
+  }
+
+  // pnlAvg (Average 1:1): 50% at OPEN price + 50% at entry (kalau triggered) else 50% x0 (unfilled).
+  //   Kalau state = TP_HIT / SL_HIT → sisa 50% exit di harga yang sama (asumsi close full di exit).
+  //   Kalau state = TRIGGERED → 50% at open (floating) + 50% at entry (floating), keduanya vs lastPrice.
+  //   Kalau state = PENDING / MISSED → hanya 50% at open (floating), sisa 50% belum terisi = 0.
+  //   Kalau state = EXPIRED unfilled → sisa 50% belum terisi = 0. Kalau EXPIRED filled → normal.
+  if (result.openPriceAtPublish != null) {
+    const openPx = result.openPriceAtPublish;
+    let leg1 = 0, leg2 = 0;
+    if (result.state === 'TP_HIT' || result.state === 'SL_HIT') {
+      // Full close di exit
+      leg1 = ((result.exitPrice - openPx) / openPx) * 100 * dirSign;
+      leg2 = ((result.exitPrice - rec.entry) / rec.entry) * 100 * dirSign;
+      result.pnlAvg = +((leg1 + leg2) / 2).toFixed(2);
+    } else if (result.state === 'EXPIRED') {
+      if (result.didTouchEntry) {
+        leg1 = ((result.exitPrice - openPx) / openPx) * 100 * dirSign;
+        leg2 = ((result.exitPrice - rec.entry) / rec.entry) * 100 * dirSign;
+        result.pnlAvg = +((leg1 + leg2) / 2).toFixed(2);
+      } else {
+        // Hanya leg1 terisi
+        leg1 = ((result.exitPrice - openPx) / openPx) * 100 * dirSign;
+        result.pnlAvg = +(leg1 / 2).toFixed(2);
+      }
+    } else if (result.state === 'TRIGGERED') {
+      leg1 = ((result.lastPrice - openPx) / openPx) * 100 * dirSign;
+      leg2 = ((result.lastPrice - rec.entry) / rec.entry) * 100 * dirSign;
+      result.pnlAvg = +((leg1 + leg2) / 2).toFixed(2);
+    } else {
+      // PENDING / RUNNING_MISSED: hanya leg1 floating
+      leg1 = ((result.lastPrice - openPx) / openPx) * 100 * dirSign;
+      result.pnlAvg = +(leg1 / 2).toFixed(2);
+    }
+  }
+
+  // pnlPct legacy alias: untuk PENDING/MISSED tetap null.
+  if (result.pnlPure != null) result.pnlPure = +result.pnlPure.toFixed(2);
+  result.pnlPct = result.pnlPure;
+
   return result;
 }
 
@@ -524,16 +675,27 @@ function idOf(s) {
 }
 
 function initAgg() {
-  return { trades: 0, wins: 0, losses: 0, neutral: 0, sumPnl: 0, bestPct: -Infinity, worstPct: Infinity };
+  return {
+    trades: 0, wins: 0, losses: 0, neutral: 0,
+    sumPnl: 0,               // = sumPure (legacy)
+    sumPure: 0, cntPure: 0,  // Entry Murni (butuh triggered)
+    sumAvg: 0,  cntAvg: 0,   // Average 1:1
+    sumHaka: 0, cntHaka: 0,  // Beli di Open (HAKA)
+    bestPct: -Infinity, worstPct: Infinity,
+  };
 }
 function acc(agg, rec) {
   agg.trades++;
   if (rec.result === 'WIN') agg.wins++;
   else if (rec.result === 'LOSS') agg.losses++;
   else agg.neutral++;
-  agg.sumPnl += rec.pnlPct || 0;
-  if ((rec.pnlPct || 0) > agg.bestPct) agg.bestPct = rec.pnlPct || 0;
-  if ((rec.pnlPct || 0) < agg.worstPct) agg.worstPct = rec.pnlPct || 0;
+  const pnl = rec.pnlPct || 0;
+  agg.sumPnl += pnl;
+  if (rec.pnlPure != null)  { agg.sumPure += rec.pnlPure;  agg.cntPure++; }
+  if (rec.pnlAvg  != null)  { agg.sumAvg  += rec.pnlAvg;   agg.cntAvg++;  }
+  if (rec.pnlHaka != null)  { agg.sumHaka += rec.pnlHaka;  agg.cntHaka++; }
+  if (pnl > agg.bestPct) agg.bestPct = pnl;
+  if (pnl < agg.worstPct) agg.worstPct = pnl;
 }
 function summary(agg) {
   const totalNonNeutral = agg.wins + agg.losses;
@@ -542,7 +704,14 @@ function summary(agg) {
     trades: agg.trades, wins: agg.wins, losses: agg.losses, neutral: agg.neutral,
     winrate: wr,
     net: +agg.sumPnl.toFixed(2),
+    netPure: +agg.sumPure.toFixed(2),
+    netAvg:  +agg.sumAvg.toFixed(2),
+    netHaka: +agg.sumHaka.toFixed(2),
+    cntPure: agg.cntPure, cntAvg: agg.cntAvg, cntHaka: agg.cntHaka,
     avg: agg.trades ? +(agg.sumPnl / agg.trades).toFixed(2) : 0,
+    avgPure: agg.cntPure ? +(agg.sumPure / agg.cntPure).toFixed(2) : 0,
+    avgAvg:  agg.cntAvg  ? +(agg.sumAvg  / agg.cntAvg).toFixed(2)  : 0,
+    avgHaka: agg.cntHaka ? +(agg.sumHaka / agg.cntHaka).toFixed(2) : 0,
     best: agg.bestPct === -Infinity ? 0 : +agg.bestPct.toFixed(2),
     worst: agg.worstPct === Infinity ? 0 : +agg.worstPct.toFixed(2),
   };
@@ -748,10 +917,17 @@ async function main() {
     recs.push(enriched);
   }
 
-  // Split active vs closed
-  const active = recs.filter(r => r.status === 'OPEN');
-  const closed = recs.filter(r => r.status !== 'OPEN');
-  console.log(`  ${active.length} active + ${closed.length} closed`);
+  // Split berdasarkan state baru:
+  //   active   = TRIGGERED (posisi jalan, floating live)
+  //   pending  = PENDING (belum sentuh entry, masih menunggu)
+  //   missed   = RUNNING_MISSED (harga kabur, entry tidak akan terisi)
+  //   closed   = TP_HIT / SL_HIT / EXPIRED
+  const active  = recs.filter(r => r.state === 'TRIGGERED');
+  const pending = recs.filter(r => r.state === 'PENDING');
+  const missed  = recs.filter(r => r.state === 'RUNNING_MISSED');
+  const closed  = recs.filter(r => r.state === 'TP_HIT' || r.state === 'SL_HIT' || r.state === 'EXPIRED');
+  const unfilled = [...pending, ...missed]; // gabungan untuk display
+  console.log(`  ${active.length} triggered + ${pending.length} pending + ${missed.length} missed + ${closed.length} closed`);
 
   // Pass 2: hitung analystStats untuk scoring (dari closed).
   const { byFirm, byAnalyst, byTicker } = buildAggregations(closed);
@@ -796,26 +972,38 @@ async function main() {
   for (const r of active) openFloating += (r.pnlPct || 0);
   openFloating = active.length ? +(openFloating / active.length).toFixed(2) : 0;
 
-  // byFirm sekarang dilengkapi list rekomendasi + analyst names
+  // byFirm sekarang dilengkapi list rekomendasi + analyst names + 3 gaya eksekusi
   const firmMap = new Map(); // fId -> obj
   for (const [fId, f] of byFirm) {
     const summ = summary(f.agg);
     firmMap.set(fId, {
       id: fId, name: f.name, verified: f.verified,
       trades: summ.trades, wins: summ.wins, losses: summ.losses, neutral: summ.neutral,
-      winrate: summ.winrate, net: summ.net, avg: summ.avg, best: summ.best, worst: summ.worst,
-      analysts: [], recsActive: [], recsHistory: [], watchlist: [], sectorFocus: [], highScore: 0,
+      winrate: summ.winrate,
+      net: summ.net,
+      netPure: summ.netPure, netAvg: summ.netAvg, netHaka: summ.netHaka,
+      cntPure: summ.cntPure, cntAvg: summ.cntAvg, cntHaka: summ.cntHaka,
+      avg: summ.avg, avgPure: summ.avgPure, avgAvg: summ.avgAvg, avgHaka: summ.avgHaka,
+      best: summ.best, worst: summ.worst,
+      alpha: 0, // diisi setelah IHSG dihitung
+      analysts: [], recsActive: [], recsPending: [], recsMissed: [],
+      recsHistory: [], watchlist: [], sectorFocus: [], highScore: 0,
     });
   }
-  // Tambah firm dari active (yg belum punya trade closed)
-  for (const rec of active) {
+  // Tambah firm dari active/pending/missed (yg belum punya trade closed)
+  for (const rec of [...active, ...pending, ...missed]) {
     const fId = idOf(rec.firm);
     if (!firmMap.has(fId)) {
       firmMap.set(fId, {
         id: fId, name: rec.firm, verified: rec.verified,
         trades: 0, wins: 0, losses: 0, neutral: 0,
-        winrate: 0, net: 0, avg: 0, best: 0, worst: 0,
-        analysts: [], recsActive: [], recsHistory: [], watchlist: [], sectorFocus: [], highScore: 0,
+        winrate: 0,
+        net: 0, netPure: 0, netAvg: 0, netHaka: 0,
+        cntPure: 0, cntAvg: 0, cntHaka: 0,
+        avg: 0, avgPure: 0, avgAvg: 0, avgHaka: 0,
+        best: 0, worst: 0, alpha: 0,
+        analysts: [], recsActive: [], recsPending: [], recsMissed: [],
+        recsHistory: [], watchlist: [], sectorFocus: [], highScore: 0,
       });
     }
     if (rec.verified) firmMap.get(fId).verified = true;
@@ -848,6 +1036,25 @@ async function main() {
     if (f) {
       f.recsActive.push(makeRecActiveObj(rec));
       if (!f.watchlist.includes(rec.ticker)) f.watchlist.push(rec.ticker);
+      if (rec.sector && !f.sectorFocus.includes(rec.sector)) f.sectorFocus.push(rec.sector);
+      if ((rec.score || 0) > f.highScore) f.highScore = rec.score;
+    }
+  }
+  for (const rec of pending) {
+    const fId = idOf(rec.firm);
+    const f = firmMap.get(fId);
+    if (f) {
+      f.recsPending.push(makeRecActiveObj(rec));
+      if (!f.watchlist.includes(rec.ticker)) f.watchlist.push(rec.ticker);
+      if (rec.sector && !f.sectorFocus.includes(rec.sector)) f.sectorFocus.push(rec.sector);
+      if ((rec.score || 0) > f.highScore) f.highScore = rec.score;
+    }
+  }
+  for (const rec of missed) {
+    const fId = idOf(rec.firm);
+    const f = firmMap.get(fId);
+    if (f) {
+      f.recsMissed.push(makeRecActiveObj(rec));
       if (rec.sector && !f.sectorFocus.includes(rec.sector)) f.sectorFocus.push(rec.sector);
       if ((rec.score || 0) > f.highScore) f.highScore = rec.score;
     }
@@ -904,35 +1111,101 @@ async function main() {
   // Score brackets
   const scoreBrackets = buildScoreBrackets(closed);
 
-  // IHSG snapshot
+  // IHSG snapshot + kalkulasi return per periode
   let ihsgObj = null;
+  let ihsgReturnByDate = null; // { openDate -> ihsg%change dari openDate ke exitDate/today }
   if (ihsgSeries && ihsgSeries.length) {
     const last = ihsgSeries[ihsgSeries.length - 1];
     const prevDay = ihsgSeries.length > 1 ? ihsgSeries[ihsgSeries.length - 2].close : last.open;
     const chgPct = prevDay ? +(((last.close - prevDay) / prevDay) * 100).toFixed(2) : 0;
+    // Full series (sampai 3 bulan) — untuk lookup periode custom
     ihsgObj = {
       last: +last.close.toFixed(2),
       chgPct,
       date: last.date,
       series30d: ihsgSeries.slice(-30).map(d => ({ date: d.date, close: +d.close.toFixed(2) })),
+      seriesFull: ihsgSeries.map(d => ({ date: d.date, close: +d.close.toFixed(2) })),
     };
+    // Buat helper cepat: index by date untuk lookup
+    ihsgReturnByDate = new Map();
+    for (const d of ihsgSeries) ihsgReturnByDate.set(d.date, d.close);
   } else if (prev && prev.ihsg) {
-    ihsgObj = prev.ihsg; // pertahankan
+    ihsgObj = prev.ihsg;
+    if (prev.ihsg.seriesFull) {
+      ihsgReturnByDate = new Map();
+      for (const d of prev.ihsg.seriesFull) ihsgReturnByDate.set(d.date, d.close);
+    }
+  }
+
+  // Helper: return IHSG dari openDate ke exitDate/today (%)
+  //   Ambil close terdekat SEBELUM/PADA tanggal itu (kalau hari libur, pakai bar sebelumnya).
+  function ihsgReturnBetween(openDate, exitDate) {
+    if (!ihsgReturnByDate || !ihsgReturnByDate.size) return null;
+    const sortedDates = [...ihsgReturnByDate.keys()].sort();
+    const findClose = (target) => {
+      if (!target) return null;
+      if (ihsgReturnByDate.has(target)) return ihsgReturnByDate.get(target);
+      // Cari yang <= target (paling recent sebelumnya)
+      for (let i = sortedDates.length - 1; i >= 0; i--) {
+        if (sortedDates[i] <= target) return ihsgReturnByDate.get(sortedDates[i]);
+      }
+      return null;
+    };
+    const startClose = findClose(openDate);
+    const endClose = findClose(exitDate || todayIso);
+    if (startClose == null || endClose == null || startClose === 0) return null;
+    return +(((endClose - startClose) / startClose) * 100).toFixed(2);
+  }
+
+  // Hitung alpha per firm: rata-rata (netFirm - ihsgReturn) per rekomendasi closed.
+  //   Cara sederhana: sum(pnlPure_i - ihsgReturn_i) untuk semua closed di firm itu.
+  for (const rec of closed) {
+    const ihsgRet = ihsgReturnBetween(rec.openDate, rec.exitDate);
+    rec.ihsgReturn = ihsgRet;
+    rec.alpha = (rec.pnlPure != null && ihsgRet != null) ? +(rec.pnlPure - ihsgRet).toFixed(2) : null;
+  }
+  // Total alpha per firm
+  for (const f of firmMap.values()) {
+    let sumAlpha = 0, cnt = 0;
+    for (const rh of f.recsHistory) {
+      // recsHistory belum di-populate dgn alpha; kita cari dari closed set
+      // Skip di sini, kita akan compute langsung dari `closed` group.
+    }
+    let firmAlphaSum = 0, firmAlphaCnt = 0;
+    for (const rec of closed) {
+      if (idOf(rec.firm) !== f.id) continue;
+      if (rec.alpha != null) { firmAlphaSum += rec.alpha; firmAlphaCnt++; }
+    }
+    f.alpha = firmAlphaCnt ? +firmAlphaSum.toFixed(2) : 0;
+    f.alphaAvg = firmAlphaCnt ? +(firmAlphaSum / firmAlphaCnt).toFixed(2) : 0;
+  }
+  // IHSG return untuk periode konsensus (dari trade terlama sampai sekarang)
+  let ihsgReturnPeriod = null;
+  if (closed.length && ihsgReturnByDate) {
+    const dates = closed.map(r => r.openDate).sort();
+    ihsgReturnPeriod = ihsgReturnBetween(dates[0], todayIso);
   }
 
   // ── Build final payload ──
   const payload = {
     updatedAt: new Date().toISOString(),
     generatedBy: 'scripts/build-tracker.js',
+    schemaVersion: 2, // v2: state machine + 3 gaya eksekusi
     pending: false,
     source: sheet.source,
     since: closed.length ? closed.map(r => r.openDate).sort()[0] : todayIso,
     totalClosed: closed.length,
+    // Legacy `open` = triggered saja (backward compat). `pending`/`missed` di field terpisah.
     open: active.length,
+    pendingCount: pending.length,
+    missedCount: missed.length,
     wins: globalSummary.wins,
     losses: globalSummary.losses,
     winrate: globalSummary.winrate,
     netReturn: globalSummary.net,
+    netReturnPure: globalSummary.netPure,
+    netReturnAvg: globalSummary.netAvg,
+    netReturnHaka: globalSummary.netHaka,
     profitFactor: pf,
     avgReturn: globalSummary.avg,
     bestPct: globalSummary.best,
@@ -943,6 +1216,8 @@ async function main() {
     openFloatingPct: openFloating,
     highScore,
     ihsg: ihsgObj,
+    ihsgReturnPeriod, // return IHSG selama periode konsensus (dari trade terlama)
+    alphaVsIhsg: (ihsgReturnPeriod != null) ? +(globalSummary.net - ihsgReturnPeriod).toFixed(2) : null,
     marketBias,
     safetyNet,
     dailyEquity,
@@ -954,6 +1229,9 @@ async function main() {
     topTickers, bottomTickers,
     watchlist: watchlistUnion,
     openList: active.sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')).map(makeOpenListObj),
+    pendingList: pending.sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')).map(makeOpenListObj),
+    missedList: missed.sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')).map(makeOpenListObj),
+    unfilledList: unfilled.sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')).map(makeOpenListObj),
     historyList: closed.sort((a, b) => (b.exitDate || '').localeCompare(a.exitDate || '')).slice(0, MAX_HISTORY).map(makeHistoryListObj),
   };
 
@@ -966,6 +1244,11 @@ function makeRecActiveObj(rec) {
     type: rec.type, entry: rec.entry, tp1: rec.tp1, tp2: rec.tp2, sl: rec.sl,
     openDate: rec.openDate, horizon: rec.horizon, horizonDays: rec.horizonDays,
     lastPrice: rec.lastPrice, floatingPct: rec.pnlPct,
+    state: rec.state, didTouchEntry: rec.didTouchEntry,
+    entryTouchDate: rec.entryTouchDate, entryTouchPrice: rec.entryTouchPrice,
+    openPriceAtPublish: rec.openPriceAtPublish,
+    distanceToEntryPct: rec.distanceToEntryPct,
+    pnlPure: rec.pnlPure, pnlAvg: rec.pnlAvg, pnlHaka: rec.pnlHaka,
     score: rec.score, validity: rec.validity,
     analyst: rec.analyst, cert: rec.cert, verified: rec.verified,
   };
@@ -976,6 +1259,10 @@ function makeRecHistoryObj(rec) {
     type: rec.type, entry: rec.entry, tp1: rec.tp1, tp2: rec.tp2, sl: rec.sl,
     openDate: rec.openDate, exitDate: rec.exitDate, exitPrice: rec.exitPrice,
     closedBy: rec.closedBy, tpHits: rec.tpHits, pnlPct: rec.pnlPct, result: rec.result,
+    state: rec.state, didTouchEntry: rec.didTouchEntry,
+    openPriceAtPublish: rec.openPriceAtPublish,
+    pnlPure: rec.pnlPure, pnlAvg: rec.pnlAvg, pnlHaka: rec.pnlHaka,
+    ihsgReturn: rec.ihsgReturn, alpha: rec.alpha,
     score: rec.score, validity: rec.validity,
     analyst: rec.analyst, cert: rec.cert, verified: rec.verified,
   };
@@ -990,6 +1277,14 @@ function makeOpenListObj(rec) {
     openDate: rec.openDate, horizon: rec.horizon, horizonDays: rec.horizonDays,
     lastPrice: rec.lastPrice, lastPriceTime: rec.lastPriceTime,
     floatingPct: rec.pnlPct,
+    // state machine + 3 gaya
+    state: rec.state,
+    didTouchEntry: rec.didTouchEntry,
+    entryTouchDate: rec.entryTouchDate,
+    entryTouchPrice: rec.entryTouchPrice,
+    openPriceAtPublish: rec.openPriceAtPublish,
+    distanceToEntryPct: rec.distanceToEntryPct,
+    pnlPure: rec.pnlPure, pnlAvg: rec.pnlAvg, pnlHaka: rec.pnlHaka,
     tpHits: rec.tpHits || [],
     status: rec.status,
     score: rec.score, validity: rec.validity,
@@ -1007,6 +1302,14 @@ function makeHistoryListObj(rec) {
     openDate: rec.openDate, exitDate: rec.exitDate, exitPrice: rec.exitPrice,
     closedBy: rec.closedBy, tpHits: rec.tpHits || [],
     pnlPct: rec.pnlPct, result: rec.result,
+    // state machine + 3 gaya
+    state: rec.state,
+    didTouchEntry: rec.didTouchEntry,
+    entryTouchDate: rec.entryTouchDate,
+    entryTouchPrice: rec.entryTouchPrice,
+    openPriceAtPublish: rec.openPriceAtPublish,
+    pnlPure: rec.pnlPure, pnlAvg: rec.pnlAvg, pnlHaka: rec.pnlHaka,
+    ihsgReturn: rec.ihsgReturn, alpha: rec.alpha,
     score: rec.score, validity: rec.validity,
     note: rec.note,
   };
@@ -1022,12 +1325,16 @@ function pendingPayload(todayIso, reason, message, ihsgSeries) {
   return {
     updatedAt: new Date().toISOString(),
     generatedBy: 'scripts/build-tracker.js',
+    schemaVersion: 2,
     pending: true,
     pendingReason: reason,
     pendingMessage: message,
     since: todayIso,
-    totalClosed: 0, open: 0, wins: 0, losses: 0,
-    winrate: 0, netReturn: 0, profitFactor: 0, avgReturn: 0,
+    totalClosed: 0, open: 0, pendingCount: 0, missedCount: 0,
+    wins: 0, losses: 0,
+    winrate: 0, netReturn: 0,
+    netReturnPure: 0, netReturnAvg: 0, netReturnHaka: 0,
+    profitFactor: 0, avgReturn: 0,
     bestPct: 0, worstPct: 0,
     tpCounts: { TP1: 0, TP2: 0 }, slCount: 0,
     closedByCounts: { TP: 0, SL: 0, EXPIRED: 0 },
@@ -1038,11 +1345,14 @@ function pendingPayload(todayIso, reason, message, ihsgSeries) {
       date: ihsgSeries[ihsgSeries.length - 1].date,
       series30d: ihsgSeries.slice(-30).map(d => ({ date: d.date, close: +d.close.toFixed(2) })),
     } : null,
+    ihsgReturnPeriod: null,
+    alphaVsIhsg: null,
     marketBias: { bullish: 50, bearish: 50, sample: 'recent_48h', count: 0 },
     safetyNet: [], dailyEquity: [], scoreBrackets: [],
     byFirm: {}, topFirms: [], bottomFirms: [],
     byAnalyst: {}, byTicker: {}, topTickers: [], bottomTickers: [],
-    watchlist: [], openList: [], historyList: [],
+    watchlist: [], openList: [], pendingList: [], missedList: [], unfilledList: [],
+    historyList: [],
   };
 }
 
