@@ -8002,6 +8002,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _timeSub = null;
   var _currentRec = null;
   var _keyHandler = null;
+  var _lastCandleIndex = -1;  // utk proyeksi 5 candle ke depan di drawZones
   var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
 
   function $(id){ return document.getElementById(id); }
@@ -8075,6 +8076,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (_chart) { try { _chart.remove(); } catch(_){} _chart = null; _series = null; }
     var zones = $('trRecModalZones'); if (zones) zones.innerHTML = '';
     var chartEl = $('trRecModalChart'); if (chartEl) chartEl.innerHTML = '';
+    _lastCandleIndex = -1;
   }
 
   function hideModal(){
@@ -8104,19 +8106,49 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var yTP2 = Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1 ? _series.priceToCoordinate(+rec.tp2) : null;
     var ySL  = Number.isFinite(+rec.sl)  && +rec.sl  > 0 ? _series.priceToCoordinate(+rec.sl)  : null;
 
-    // X range: dari openDate ke ujung kanan plot area
+    // ── X range ──────────────────────────────────────────────────
+    // Start : tanggal rilis rec (openDate)
+    // End   : - kalau rec closed by TP/SL → berhenti di exitDate
+    //         - kalau belum kena TP/SL     → memanjang 5 candle ke depan
+    //           dari candle terakhir (rec masih running / expired-tanpa-hit)
     var xEntry = 0;
     if (rec.openDate){
       var xC = _chart.timeScale().timeToCoordinate(rec.openDate);
       if (xC != null) xEntry = xC;
     }
-    var xRight;
-    try { xRight = _chart.timeScale().width(); } catch(_){ xRight = 0; }
-    if (!xRight || xRight <= 0){
-      var wrap = document.querySelector('.tr-recmodal-chart-wrap');
-      xRight = wrap ? wrap.clientWidth : 400;
-    }
     if (xEntry < 0) xEntry = 0;
+
+    var st = statusOfRec(rec);
+    var closedByHit = (st === 'TP' || st === 'SL');
+    var xRight = null;
+
+    // 1) Kalau kena TP/SL → gunakan exitDate sebagai batas kanan
+    if (closedByHit && rec.exitDate){
+      var xExit = _chart.timeScale().timeToCoordinate(rec.exitDate);
+      if (xExit != null && Number.isFinite(xExit) && xExit > xEntry){
+        xRight = xExit;
+      }
+    }
+    // 2) Belum kena → projek 5 candle setelah candle terakhir via
+    //    logicalToCoordinate(lastIdx + 5). rightOffset:8 di chart config
+    //    menjamin ada ruang buat proyeksi ini.
+    if (xRight == null && _lastCandleIndex >= 0){
+      try {
+        var xProj = _chart.timeScale().logicalToCoordinate(_lastCandleIndex + 5);
+        if (xProj != null && Number.isFinite(xProj) && xProj > xEntry){
+          xRight = xProj;
+        }
+      } catch(_){}
+    }
+    // 3) Ultimate fallback (harusnya nggak sampai sini)
+    if (xRight == null || xRight <= xEntry){
+      try { xRight = _chart.timeScale().width(); } catch(_){}
+      if (!xRight || xRight <= xEntry){
+        var wrap = document.querySelector('.tr-recmodal-chart-wrap');
+        xRight = wrap ? wrap.clientWidth : 400;
+      }
+    }
+
     var width = xRight - xEntry;
     if (width <= 0) return;
 
@@ -8219,6 +8251,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
       rightPriceScale: { borderColor: borderColor, scaleMargins: { top: 0.15, bottom: 0.12 } },
       timeScale: {
         borderColor: borderColor, timeVisible: false, secondsVisible: false,
+        // Sisakan 8 slot kosong di kanan candle terakhir supaya zona
+        // rec yg masih AKTIF bisa memanjang 5 candle ke depan tanpa terpotong.
+        rightOffset: 8,
         tickMarkFormatter: function(time){
           var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
           if (time && typeof time === 'object' && 'day' in time) return time.day + ' ' + months[time.month - 1];
@@ -8259,25 +8294,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     lwData.sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
     _series.setData(lwData);
 
-    // Price lines (label muncul di price scale kanan):
-    // - Entry: dashed accent (garis referensi utama di batas zona hijau/merah)
-    // - TP1  : solid tebal (target profit — garis yg diminta user, tidak
-    //          bergabung dgn edge zona krn zona tidak lagi punya border)
-    // - TP2  : dashed tipis (extended target, opsional)
-    // - SL   : solid tebal (stop-loss)
-    var accentPurple = isDark ? '#c4a3ff' : '#6d28d9';
-    if (Number.isFinite(+rec.entry) && +rec.entry > 0){
-      _series.createPriceLine({ price: +rec.entry, color: accentPurple, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Entry' });
-    }
-    if (Number.isFinite(+rec.tp1) && +rec.tp1 > 0){
-      _series.createPriceLine({ price: +rec.tp1, color: upColor, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: true, title: 'TP1' });
-    }
-    if (Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1){
-      _series.createPriceLine({ price: +rec.tp2, color: upColor, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'TP2' });
-    }
-    if (Number.isFinite(+rec.sl) && +rec.sl > 0){
-      _series.createPriceLine({ price: +rec.sl, color: downColor, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: true, title: 'SL' });
-    }
+    // Save posisi candle terakhir — dipakai drawZones utk proyeksi 5 candle
+    _lastCandleIndex = lwData.length > 0 ? (lwData.length - 1) : -1;
+
+    // Price lines di-hilangkan sesuai request user — biar chart bersih,
+    // hanya candles + zona kotak sebagai visual utama. Info entry/TP/SL
+    // sudah ada di zona chip labels + level cards di bawah chart.
 
     // Marker exit kalau rec sudah closed
     if (rec.exitDate && Number.isFinite(+rec.exitPrice) && +rec.exitPrice > 0){
