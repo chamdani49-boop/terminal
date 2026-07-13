@@ -8008,6 +8008,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _keyHandler = null;
   var _lastCandleIndex = -1;  // index candle terakhir (utk proyeksi 5 candle)
   var _entryIndex = -1;       // index candle di/ setelah tanggal rilis rec
+  var _zoneEls = null;        // { tp:{box,lbl}, tp2:{...}, sl:{...} }
+  var _zoneRaf = null;        // requestAnimationFrame id (loop layout zona)
   var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
 
   function $(id){ return document.getElementById(id); }
@@ -8073,6 +8075,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   };
 
   function cleanupChart(){
+    stopZoneRaf();
     if (_resizeObs) { try { _resizeObs.disconnect(); } catch(_){} _resizeObs = null; }
     if (_timeSub && _chart){
       try { _chart.timeScale().unsubscribeVisibleTimeRangeChange(_timeSub); } catch(_){}
@@ -8083,6 +8086,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var chartEl = $('trRecModalChart'); if (chartEl) chartEl.innerHTML = '';
     _lastCandleIndex = -1;
     _entryIndex = -1;
+    _zoneEls = null;
   }
 
   function hideModal(){
@@ -8096,31 +8100,66 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   window.__TR_hideRec = hideModal;
 
-  // Draw zones (green entry→TP, red entry→SL, optional TP2 lighter green).
-  // Label lengkap "TP1 · price · +pct%" biar user tidak perlu lihat axis kanan.
-  // Dipanggil setelah chart siap + tiap kali user pan/zoom atau resize.
-  function drawZones(){
-    var rec = _currentRec;
-    if (!rec || !_series || !_chart) return;
+  // ── ZONA: build sekali per rec, layout tiap frame ─────────────────
+  // buildZones() bikin elemen div + label (statis per rec). layoutZones()
+  // reposisi tiap frame via RAF loop supaya zona MELEKAT ke candle saat
+  // user geser, zoom, atau drag price-scale vertikal (lightweight-charts
+  // tak punya event utk drag price-scale → RAF loop solusi paling robust).
+  function buildZones(rec){
     var zonesEl = $('trRecModalZones'); if (!zonesEl) return;
     zonesEl.innerHTML = '';
+    _zoneEls = {};
+
+    var isBuy = String(rec.type || 'BUY').toUpperCase() !== 'SELL';
+    var entryPrice = +rec.entry;
+    var pctFromEntry = function(v){
+      if (!Number.isFinite(+v) || !Number.isFinite(entryPrice) || entryPrice <= 0) return null;
+      return ((+v - entryPrice) / entryPrice) * 100 * (isBuy ? 1 : -1);
+    };
+    var labelHtml = function(prefix, price){
+      var pctVal = pctFromEntry(price);
+      var pctHtml = '';
+      if (pctVal != null){
+        var sign = pctVal >= 0 ? '+' : '';
+        pctHtml = ' <span class="pct">(' + sign + pctVal.toFixed(1) + '%)</span>';
+      }
+      return '<b>' + prefix + '</b> ' + esc(fmtN(price)) + pctHtml;
+    };
+    var mk = function(cls, html){
+      var box = document.createElement('div');
+      box.className = 'tr-recmodal-zone ' + cls;
+      box.style.visibility = 'hidden';
+      var lbl = document.createElement('span');
+      lbl.className = 'tr-recmodal-zone-lbl';
+      lbl.innerHTML = html;
+      box.appendChild(lbl);
+      zonesEl.appendChild(box);
+      return { box: box, lbl: lbl };
+    };
+
+    if (Number.isFinite(+rec.tp1) && +rec.tp1 > 0) _zoneEls.tp = mk('tp', labelHtml('TP1', rec.tp1));
+    if (Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1) _zoneEls.tp2 = mk('tp2', labelHtml('TP2', rec.tp2));
+    if (Number.isFinite(+rec.sl) && +rec.sl > 0) _zoneEls.sl = mk('sl', labelHtml('SL', rec.sl));
+  }
+
+  function layoutZones(){
+    var rec = _currentRec;
+    if (!rec || !_series || !_chart || !_zoneEls) return;
 
     var yEntry = Number.isFinite(+rec.entry) ? _series.priceToCoordinate(+rec.entry) : null;
-    if (yEntry == null) return;
+    var hideAll = function(){
+      ['tp','tp2','sl'].forEach(function(k){ if (_zoneEls[k]) _zoneEls[k].box.style.visibility = 'hidden'; });
+    };
+    if (yEntry == null){ hideAll(); return; }
 
     var yTP1 = Number.isFinite(+rec.tp1) && +rec.tp1 > 0 ? _series.priceToCoordinate(+rec.tp1) : null;
     var yTP2 = Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1 ? _series.priceToCoordinate(+rec.tp2) : null;
     var ySL  = Number.isFinite(+rec.sl)  && +rec.sl  > 0 ? _series.priceToCoordinate(+rec.sl)  : null;
 
-    // ── X range ──────────────────────────────────────────────────
-    // Start : tanggal rilis rec (openDate)
-    // End   : - kalau rec closed by TP/SL → berhenti di exitDate
-    //         - kalau belum kena TP/SL     → memanjang 5 candle ke depan
-    //           dari candle terakhir (rec masih running / expired-tanpa-hit)
     var ts = _chart.timeScale();
+
+    // xEntry: koordinat by tanggal rilis (fallback logicalToCoordinate)
     var xEntry = null;
-    // Prioritas: koordinat by tanggal rilis. Kalau openDate bukan hari bursa
-    // persis (timeToCoordinate null), fallback ke logicalToCoordinate(entryIdx).
     if (rec.openDate){
       var xC = ts.timeToCoordinate(rec.openDate);
       if (xC != null && Number.isFinite(xC)) xEntry = xC;
@@ -8131,23 +8170,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (xEntry == null) xEntry = 0;
     if (xEntry < 0) xEntry = 0;
 
+    // xRight: exitDate kalau kena TP/SL, else projek 5 candle stlh candle akhir
     var st = statusOfRec(rec);
     var closedByHit = (st === 'TP' || st === 'SL');
     var xRight = null;
-
-    // 1) Kalau kena TP/SL → batas kanan = exitDate
     if (closedByHit && rec.exitDate){
       var xExit = ts.timeToCoordinate(rec.exitDate);
       if (xExit != null && Number.isFinite(xExit) && xExit > xEntry) xRight = xExit;
     }
-    // 2) Belum kena → projek 5 candle setelah candle terakhir
     if (xRight == null && _lastCandleIndex >= 0){
       try {
         var xProj = ts.logicalToCoordinate(_lastCandleIndex + 5);
         if (xProj != null && Number.isFinite(xProj) && xProj > xEntry) xRight = xProj;
       } catch(_){}
     }
-    // 3) Fallback terakhir
     if (xRight == null || xRight <= xEntry){
       try { xRight = ts.width(); } catch(_){}
       if (!xRight || xRight <= xEntry){
@@ -8157,58 +8193,57 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
 
     var width = xRight - xEntry;
-    if (width <= 0) return;
+    if (width <= 0){ hideAll(); return; }
 
-    // Label formatter: "TP1 · 2,950 (+7.2%)" — keterangan lengkap per level
-    var isBuy = String(rec.type || 'BUY').toUpperCase() !== 'SELL';
-    var entryPrice = +rec.entry;
-    var pctFromEntry = function(v){
-      if (!Number.isFinite(+v) || !Number.isFinite(entryPrice) || entryPrice <= 0) return null;
-      return ((+v - entryPrice) / entryPrice) * 100 * (isBuy ? 1 : -1);
-    };
-    var makeLabel = function(prefix, price){
-      var pctVal = pctFromEntry(price);
-      var pctHtml = '';
-      if (pctVal != null){
-        var sign = pctVal >= 0 ? '+' : '';
-        pctHtml = ' <span class="pct">(' + sign + pctVal.toFixed(1) + '%)</span>';
-      }
-      return '<span class="tr-recmodal-zone-lbl"><b>' + prefix + '</b> ' + esc(fmtN(price)) + pctHtml + '</span>';
+    // Label ditaruh SETELAH candle terakhir (di area proyeksi kosong) supaya
+    // tidak tumpang tindih dgn candle. Offset relatif thd kiri zona (xEntry).
+    var labelLeft = 8;
+    if (_lastCandleIndex >= 0){
+      try {
+        var xLast = ts.logicalToCoordinate(_lastCandleIndex);
+        if (xLast != null && Number.isFinite(xLast)){
+          labelLeft = Math.max(8, (xLast - xEntry) + 10);
+        }
+      } catch(_){}
+    }
+
+    var place = function(ref, top, height){
+      if (!ref) return;
+      ref.box.style.visibility = '';
+      ref.box.style.left   = xEntry + 'px';
+      ref.box.style.top    = top + 'px';
+      ref.box.style.width  = width + 'px';
+      ref.box.style.height = height + 'px';
+      ref.lbl.style.left   = labelLeft + 'px';
     };
 
-    // TP zone: top edge di TP1, bottom edge di entry
-    if (yTP1 != null && yTP1 < yEntry){
-      var zTp = document.createElement('div');
-      zTp.className = 'tr-recmodal-zone tp';
-      zTp.style.left = xEntry + 'px';
-      zTp.style.top = yTP1 + 'px';
-      zTp.style.width = width + 'px';
-      zTp.style.height = (yEntry - yTP1) + 'px';
-      zTp.innerHTML = makeLabel('TP1', rec.tp1);
-      zonesEl.appendChild(zTp);
-    }
-    // TP2 extension: dari TP2 ke TP1 (lighter green di atas TP zone utama)
-    if (yTP2 != null && yTP1 != null && yTP2 < yTP1){
-      var zTp2 = document.createElement('div');
-      zTp2.className = 'tr-recmodal-zone tp2';
-      zTp2.style.left = xEntry + 'px';
-      zTp2.style.top = yTP2 + 'px';
-      zTp2.style.width = width + 'px';
-      zTp2.style.height = (yTP1 - yTP2) + 'px';
-      zTp2.innerHTML = makeLabel('TP2', rec.tp2);
-      zonesEl.appendChild(zTp2);
-    }
-    // SL zone: top edge di entry, bottom edge di SL
-    if (ySL != null && ySL > yEntry){
-      var zSl = document.createElement('div');
-      zSl.className = 'tr-recmodal-zone sl';
-      zSl.style.left = xEntry + 'px';
-      zSl.style.top = yEntry + 'px';
-      zSl.style.width = width + 'px';
-      zSl.style.height = (ySL - yEntry) + 'px';
-      zSl.innerHTML = makeLabel('SL', rec.sl);
-      zonesEl.appendChild(zSl);
-    }
+    // TP zone: TP1 (atas) → entry (bawah)
+    if (_zoneEls.tp && yTP1 != null && yTP1 < yEntry) place(_zoneEls.tp, yTP1, yEntry - yTP1);
+    else if (_zoneEls.tp) _zoneEls.tp.box.style.visibility = 'hidden';
+
+    // TP2 extension: TP2 (atas) → TP1 (bawah)
+    if (_zoneEls.tp2 && yTP2 != null && yTP1 != null && yTP2 < yTP1) place(_zoneEls.tp2, yTP2, yTP1 - yTP2);
+    else if (_zoneEls.tp2) _zoneEls.tp2.box.style.visibility = 'hidden';
+
+    // SL zone: entry (atas) → SL (bawah)
+    if (_zoneEls.sl && ySL != null && ySL > yEntry) place(_zoneEls.sl, yEntry, ySL - yEntry);
+    else if (_zoneEls.sl) _zoneEls.sl.box.style.visibility = 'hidden';
+  }
+
+  // RAF loop — jalan terus selama modal terbuka supaya zona melekat ke
+  // candle pada SEMUA interaksi (pan/zoom time-axis + drag price-scale
+  // vertikal yg tak punya event khusus di lightweight-charts).
+  function startZoneRaf(){
+    stopZoneRaf();
+    var tick = function(){
+      if (!_chart || !_currentRec){ _zoneRaf = null; return; }
+      layoutZones();
+      _zoneRaf = requestAnimationFrame(tick);
+    };
+    _zoneRaf = requestAnimationFrame(tick);
+  }
+  function stopZoneRaf(){
+    if (_zoneRaf){ cancelAnimationFrame(_zoneRaf); _zoneRaf = null; }
   }
 
   async function renderChart(rec){
@@ -8302,7 +8337,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     _series.setData(lwData);
 
     // Save posisi candle terakhir + candle di/setelah tanggal rilis rec.
-    // Dipakai drawZones utk proyeksi 5 candle & setVisibleLogicalRange.
+    // Dipakai layoutZones utk proyeksi 5 candle & setVisibleLogicalRange.
     _lastCandleIndex = lwData.length > 0 ? (lwData.length - 1) : -1;
     _entryIndex = -1;
     if (rec.openDate){
@@ -8347,28 +8382,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     if (!fitDone){ try { _chart.timeScale().fitContent(); } catch(_){} }
 
-    // Draw zones dgn retry — priceToCoordinate bisa return null sampai chart
-    // benar-benar layout selesai. Coba beberapa kali sampai koordinat valid.
-    function drawZonesWithRetry(attempt){
-      attempt = attempt || 0;
-      if (!_currentRec || !_series || !_chart) return;
-      var y = Number.isFinite(+_currentRec.entry) ? _series.priceToCoordinate(+_currentRec.entry) : null;
-      if (y == null && attempt < 12){
-        setTimeout(function(){ drawZonesWithRetry(attempt + 1); }, 40);
-        return;
-      }
-      drawZones();
-    }
-    requestAnimationFrame(function(){ drawZonesWithRetry(0); });
+    // Bangun elemen zona (statis per rec), lalu jalankan RAF loop yang
+    // terus reposisi zona tiap frame → melekat ke candle pada semua
+    // interaksi (geser, zoom, drag price-scale vertikal).
+    buildZones(rec);
+    startZoneRaf();
 
-    // Redraw zones saat user pan/zoom
-    _timeSub = drawZones;
-    try { _chart.timeScale().subscribeVisibleTimeRangeChange(_timeSub); } catch(_){}
-
-    // Redraw zones + resize chart saat container ukurannya berubah
+    // Resize chart saat container berubah ukuran (RAF loop handle zona-nya)
     _resizeObs = new ResizeObserver(function(){
       if (_chart) _chart.applyOptions({ width: chartEl.clientWidth, height: chartEl.clientHeight });
-      requestAnimationFrame(drawZones);
     });
     _resizeObs.observe(chartEl);
   }
