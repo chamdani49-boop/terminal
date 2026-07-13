@@ -2706,21 +2706,19 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-anl-hero-meta b{color:var(--text);font-weight:800}
 .tr-anl-hero-r{flex-shrink:0;display:flex;flex-direction:column;gap:6px;position:relative;z-index:1;min-width:220px}
 .tr-anl-hero-r-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);font-weight:700}
-.tr-anl-ticksel{
-  appearance:none;-webkit-appearance:none;
-  padding:11px 34px 11px 14px;
-  background-color:var(--bg2);
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%2394a3b8' d='M0 0l5 6 5-6z'/></svg>");
-  background-repeat:no-repeat;background-position:right 12px center;
-  border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px;font-weight:700;
-  font-family:inherit;cursor:pointer;transition:border-color .15s,box-shadow .15s;min-width:220px
-}
-.tr-anl-ticksel:hover{border-color:var(--accent)}
-.tr-anl-ticksel:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.13)}
+/* Search saham (reuse .search-wrap + .search-drop + .search-item dari header
+   dashboard). Override lebar supaya pas di kolom kanan hero, plus tambah
+   state .active buat keyboard navigation (ArrowUp/Down). */
+.tr-anl-searchwrap{flex:none !important;max-width:none !important;min-width:220px;width:100%}
+.tr-anl-searchwrap .search-drop{max-height:320px}
+.tr-anl-searchwrap .search-item.active{background:var(--bg2)}
+.tr-anl-searchwrap .search-item .code{width:auto;min-width:52px}
+.tr-anl-searchwrap .search-item .cnt{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);background:var(--bg2);padding:2px 8px;border-radius:var(--radius-pill);font-weight:700;flex-shrink:0;margin-left:auto}
+.tr-anl-searchwrap .search-empty{padding:14px;text-align:center;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:11.5px}
 @media(max-width:640px){
   .tr-anl-hero{padding:12px 14px}
   .tr-anl-hero-r{width:100%;min-width:0}
-  .tr-anl-ticksel{width:100%;min-width:0}
+  .tr-anl-searchwrap{min-width:0}
   .tr-anl-hero-tick{font-size:24px}
 }
 
@@ -4206,7 +4204,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
       <div class="tr-anl-hero-r">
         <span class="tr-anl-hero-r-lbl">🔎 Pilih Saham</span>
-        <select id="trAnlTickSel" class="tr-anl-ticksel" aria-label="Pilih saham untuk analisis"></select>
+        <div class="search-wrap tr-anl-searchwrap">
+          <span class="ico">⌕</span>
+          <input type="text" id="trAnlSearch" placeholder="Cari kode atau nama saham..." autocomplete="off" spellcheck="false" aria-label="Cari saham untuk analisis">
+          <div class="search-drop" id="trAnlSearchDrop" role="listbox"></div>
+        </div>
       </div>
     </div>
 
@@ -7402,6 +7404,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _statusChart = null;  // Chart.js donut (row-3)
   var _firmChart = null;    // Chart.js horizontal bar (row-3)
   var _consDonut = null;    // Chart.js donut (widget konsensus, right of chart)
+  var _searchList = [];     // hasil filter search saham yg sedang tampil
+  var _searchActive = -1;   // index item aktif utk keyboard nav
   var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
 
   // ── Aggregate & rank ──────────────────────────────────────────────
@@ -7442,16 +7446,66 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return null;
   }
 
-  // ── Populate ticker selector ──────────────────────────────────────
-  function buildTickSelect(){
-    var sel = $('trAnlTickSel'); if (!sel) return;
-    var html = _tickers.map(function(t){
+  // ── Search saham (kolom pencarian ala header dashboard) ───────────
+  // Filter list _tickers by kode + tickerName. Empty query → tampilkan
+  // top 20 by rec count (sudah tersorted di _tickers).
+  function filterSearch(q){
+    q = String(q || '').trim().toUpperCase();
+    if (!q) return _tickers.slice(0, 20);
+    var starts = [], contains = [];
+    for (var i = 0; i < _tickers.length; i++){
+      var t = _tickers[i];
+      var recs = _recsByTicker[t] || [];
+      var name = String((recs[0] && recs[0].tickerName) || '').toUpperCase();
+      if (t.indexOf(q) === 0)                              starts.push(t);
+      else if (t.indexOf(q) > 0 || name.indexOf(q) >= 0)   contains.push(t);
+      if (starts.length + contains.length >= 30) break;
+    }
+    return starts.concat(contains).slice(0, 20);
+  }
+
+  function renderSearchResults(){
+    var drop = $('trAnlSearchDrop'); if (!drop) return;
+    if (!_searchList.length){
+      drop.innerHTML = '<div class="search-empty">Tidak ada saham cocok.</div>';
+      drop.classList.add('open');
+      return;
+    }
+    drop.innerHTML = _searchList.map(function(t, i){
       var recs = _recsByTicker[t] || [];
       var name = (recs[0] && recs[0].tickerName) || '';
-      var nameSuffix = name ? ' · ' + name.slice(0, 32) : '';
-      return '<option value="' + esc(t) + '">' + esc(t) + esc(nameSuffix) + ' (' + recs.length + ')</option>';
+      var sector = (recs[0] && recs[0].sector) || '';
+      var activeCls = (i === _searchActive) ? ' active' : '';
+      return '<div class="search-item' + activeCls + '" role="option" data-ticker="' + esc(t) + '" data-idx="' + i + '">'
+        + '<span class="code">' + esc(t) + '</span>'
+        + '<span class="sname">' + esc(name || '—') + '</span>'
+        + (sector ? '<span class="sector">' + esc(sector) + '</span>' : '')
+        + '<span class="cnt">' + recs.length + ' rec</span>'
+        + '</div>';
     }).join('');
-    sel.innerHTML = html;
+    drop.classList.add('open');
+    // Scroll item aktif ke view kalau keyboard nav mendorong ke luar area
+    var actEl = drop.querySelector('.search-item.active');
+    if (actEl && typeof actEl.scrollIntoView === 'function') {
+      try { actEl.scrollIntoView({ block: 'nearest' }); } catch(_){}
+    }
+  }
+
+  function openSearch(){
+    var inp = $('trAnlSearch'); if (!inp) return;
+    _searchList = filterSearch(inp.value);
+    _searchActive = _searchList.length ? 0 : -1;
+    renderSearchResults();
+  }
+  function closeSearch(){
+    var drop = $('trAnlSearchDrop'); if (drop) drop.classList.remove('open');
+  }
+  function pickSearchItem(ticker){
+    if (!ticker || !_recsByTicker[ticker]) return;
+    switchTicker(ticker);
+    var inp = $('trAnlSearch');
+    if (inp){ inp.value = ''; try { inp.blur(); } catch(_){} }
+    closeSearch();
   }
 
   // ── KPI compute + render (strip 5 tile) ───────────────────────────
@@ -7868,7 +7922,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     renderFirmBar(k);
     renderRecTable(recs);
     renderChart(ticker, recs);
-    try { $('trAnlTickSel').value = ticker; } catch(_){}
     try { localStorage.setItem('tr_anl_ticker', ticker); } catch(_){}
   }
 
@@ -7887,26 +7940,86 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     $('trAnlPending').style.display = 'none';
     $('trAnlContent').style.display = '';
-    buildTickSelect();
     var saved = null; try { saved = localStorage.getItem('tr_anl_ticker'); } catch(_){}
     var pick = (saved && _recsByTicker[saved]) ? saved : _tickers[0];
     switchTicker(pick);
   }
 
   // ── Wire events ───────────────────────────────────────────────────
-  document.addEventListener('change', function(e){
-    if (e && e.target && e.target.id === 'trAnlTickSel'){
-      switchTicker(e.target.value);
+  // Search input: ketik → filter, focus → open, keyboard nav
+  document.addEventListener('input', function(e){
+    if (e && e.target && e.target.id === 'trAnlSearch') openSearch();
+  });
+  document.addEventListener('focusin', function(e){
+    if (e && e.target && e.target.id === 'trAnlSearch') openSearch();
+  });
+  document.addEventListener('keydown', function(e){
+    if (!e.target || e.target.id !== 'trAnlSearch') return;
+    if (e.key === 'ArrowDown'){
+      e.preventDefault();
+      if (!_searchList.length){ openSearch(); return; }
+      _searchActive = Math.min(_searchList.length - 1, _searchActive + 1);
+      renderSearchResults();
+    } else if (e.key === 'ArrowUp'){
+      e.preventDefault();
+      if (!_searchList.length) return;
+      _searchActive = Math.max(0, _searchActive - 1);
+      renderSearchResults();
+    } else if (e.key === 'Enter'){
+      e.preventDefault();
+      var t = null;
+      if (_searchActive >= 0 && _searchActive < _searchList.length){
+        t = _searchList[_searchActive];
+      } else {
+        var q = String(e.target.value || '').trim().toUpperCase();
+        if (q && _recsByTicker[q]) t = q;      // exact match
+        else if (_searchList.length)          t = _searchList[0]; // fallback
+      }
+      if (t) pickSearchItem(t);
+    } else if (e.key === 'Escape'){
+      e.preventDefault();
+      closeSearch();
+      try { e.target.blur(); } catch(_){}
     }
   });
+
+  // Click: pilih item search / row rec / dismiss dropdown
   document.addEventListener('click', function(e){
-    var row = e.target && e.target.closest && e.target.closest('#trAnlRecsBody tr[data-recid]');
-    if (!row) return;
-    var id = row.getAttribute('data-recid') || '';
-    _selectedRecId = (_selectedRecId === id) ? null : id;
-    var recs = _recsByTicker[_current] || [];
-    renderRecTable(recs);
-    renderChart(_current, recs);
+    if (!e.target || !e.target.closest) return;
+    // 1) Klik item search → switch ticker
+    var item = e.target.closest('#trAnlSearchDrop .search-item[data-ticker]');
+    if (item){
+      e.preventDefault();
+      pickSearchItem(item.getAttribute('data-ticker'));
+      return;
+    }
+    // 2) Klik di luar search box → tutup dropdown
+    if (!e.target.closest('.tr-anl-searchwrap')) closeSearch();
+    // 3) Klik row rec → toggle overlay entry/TP/SL di chart
+    var row = e.target.closest('#trAnlRecsBody tr[data-recid]');
+    if (row){
+      var id = row.getAttribute('data-recid') || '';
+      _selectedRecId = (_selectedRecId === id) ? null : id;
+      var recs = _recsByTicker[_current] || [];
+      renderRecTable(recs);
+      renderChart(_current, recs);
+    }
+  });
+
+  // Mouseover di item dropdown: sync _searchActive supaya sinkron dgn keyboard
+  document.addEventListener('mouseover', function(e){
+    var item = e.target && e.target.closest && e.target.closest('#trAnlSearchDrop .search-item[data-idx]');
+    if (!item) return;
+    var idx = parseInt(item.getAttribute('data-idx'), 10);
+    if (!isNaN(idx) && idx !== _searchActive){
+      _searchActive = idx;
+      // Update highlight tanpa full re-render biar tidak lag saat mouse move
+      var drop = $('trAnlSearchDrop');
+      if (drop) {
+        var items = drop.querySelectorAll('.search-item');
+        for (var i = 0; i < items.length; i++) items[i].classList.toggle('active', i === idx);
+      }
+    }
   });
 
   // ── Subscribe ke data pipeline ────────────────────────────────────
