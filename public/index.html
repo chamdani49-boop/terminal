@@ -2763,14 +2763,22 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-live-search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.13)}
 .tr-live-search-clear{position:absolute;right:8px;width:22px;height:22px;border:none;background:var(--border);color:var(--text2);border-radius:50%;cursor:pointer;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .tr-live-search-clear:hover{background:var(--red);color:#fff}
-.tr-live-firmbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tr-live-firmbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .tr-live-firmbar-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);font-weight:700;flex-shrink:0}
-.tr-live-firmchips{display:flex;gap:7px;flex-wrap:wrap;min-width:0}
-.tr-live-firmchip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-pill);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
-.tr-live-firmchip:hover{border-color:var(--accent);color:var(--text)}
-.tr-live-firmchip.active{background:var(--grad);border-color:transparent;color:#fff}
-.tr-live-firmchip .n{font-family:'IBM Plex Mono',monospace;font-size:10.5px;opacity:.85;background:rgba(0,0,0,.16);padding:1px 6px;border-radius:var(--radius-pill)}
-.tr-live-firmchip.active .n{background:rgba(255,255,255,.22)}
+.tr-live-firmselect{
+  flex:1;min-width:220px;max-width:420px;
+  appearance:none;-webkit-appearance:none;
+  padding:10px 34px 10px 12px;
+  background-color:var(--bg2);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%2394a3b8' d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat:no-repeat;background-position:right 12px center;
+  border:1px solid var(--border);border-radius:12px;
+  color:var(--text);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;
+  transition:border-color .15s,box-shadow .15s;
+}
+.tr-live-firmselect:hover{border-color:var(--accent)}
+.tr-live-firmselect:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.13)}
+@media(max-width:640px){.tr-live-firmselect{max-width:none;width:100%;flex:1 1 100%}}
 
 /* Position cards (rekomendasi aktif) */
 .tr-live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
@@ -4166,7 +4174,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
       <div class="tr-live-firmbar">
         <span class="tr-live-firmbar-lbl">🏢 Sekuritas</span>
-        <div class="tr-live-firmchips" id="trLiveFirmChips"></div>
+        <select id="trLiveFirmSelect" class="tr-live-firmselect" aria-label="Pilih sekuritas"></select>
       </div>
     </div>
     <div class="tr-live-grid" id="trLiveGrid">
@@ -5825,9 +5833,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     sel.value = cur;
   }
 
-  // Bangun chip "list sekuritas" dari subset tanggal terpilih (Semua + per firm, dgn count).
+  // Bangun dropdown "list sekuritas" dari subset tanggal terpilih (Semua + per firm, dgn count).
   function buildFirmChips(){
-    var el = $('trLiveFirmChips'); if (!el) return;
+    var el = $('trLiveFirmSelect'); if (!el) return;
     var scoped = dateScoped();
     var counts = {}, order = [];
     scoped.forEach(function(o){
@@ -5836,14 +5844,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
       counts[k]++;
     });
     order.sort(function(a, b){ return counts[b] - counts[a] || a.localeCompare(b); });
-    var html = '<button type="button" class="tr-live-firmchip' + (trFilter.firm == null ? ' active' : '')
-      + '" data-firm="__all__">Semua <span class="n">' + scoped.length + '</span></button>';
+    var html = '<option value="__all__">Semua Sekuritas (' + scoped.length + ')</option>';
     html += order.map(function(k){
       var lbl = (k === '—') ? 'Tanpa sekuritas' : firmShort(k);
-      return '<button type="button" class="tr-live-firmchip' + (trFilter.firm === k ? ' active' : '')
-        + '" data-firm="' + esc(k) + '">' + esc(lbl) + ' <span class="n">' + counts[k] + '</span></button>';
+      return '<option value="' + esc(k) + '">' + esc(lbl) + ' (' + counts[k] + ')</option>';
     }).join('');
     el.innerHTML = html;
+    // Pertahankan pilihan aktif kalau masih valid, kalau tidak fallback ke Semua.
+    var cur = (trFilter.firm == null) ? '__all__' : trFilter.firm;
+    var exists = Array.prototype.some.call(el.options, function(op){ return op.value === cur; });
+    if (!exists) { cur = '__all__'; trFilter.firm = null; }
+    el.value = cur;
   }
 
   // Render grid kartu sesuai filter aktif (dipanggil saat data baru & saat filter berubah).
@@ -5976,15 +5987,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
     paintGrid();
   });
 
-  // ── Filter: pilih tanggal (select) ──
+  // ── Filter: pilih tanggal / pilih sekuritas (select) ──
   document.addEventListener('change', function(e){
-    if (!e.target || e.target.id !== 'trLiveDate') return;
-    trFilter.date = e.target.value;
-    buildFirmChips(); // count chip ikut tanggal
-    paintGrid();
+    if (!e.target) return;
+    if (e.target.id === 'trLiveDate') {
+      trFilter.date = e.target.value;
+      buildFirmChips(); // opsi sekuritas ikut tanggal
+      paintGrid();
+      return;
+    }
+    if (e.target.id === 'trLiveFirmSelect') {
+      var f = e.target.value;
+      trFilter.firm = (f === '__all__') ? null : f;
+      paintGrid();
+      return;
+    }
   });
 
-  // ── Filter: klik chip sekuritas / clear search / reset ──
+  // ── Filter: clear search / reset filter ──
   document.addEventListener('click', function(e){
     if (!e.target || !e.target.closest) return;
     // Reset filter link (di empty result)
@@ -6006,14 +6026,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
       clrBtn.style.display = 'none';
       paintGrid();
       return;
-    }
-    // Chip sekuritas
-    var chip = e.target.closest('.tr-live-firmchip');
-    if (chip) {
-      var f = chip.getAttribute('data-firm');
-      trFilter.firm = (f === '__all__') ? null : f;
-      buildFirmChips();
-      paintGrid();
     }
   });
 
