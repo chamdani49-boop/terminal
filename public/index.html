@@ -8002,7 +8002,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _timeSub = null;
   var _currentRec = null;
   var _keyHandler = null;
-  var _lastCandleIndex = -1;  // utk proyeksi 5 candle ke depan di drawZones
+  var _lastCandleIndex = -1;  // index candle terakhir (utk proyeksi 5 candle)
+  var _entryIndex = -1;       // index candle di/ setelah tanggal rilis rec
   var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
 
   function $(id){ return document.getElementById(id); }
@@ -8077,6 +8078,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var zones = $('trRecModalZones'); if (zones) zones.innerHTML = '';
     var chartEl = $('trRecModalChart'); if (chartEl) chartEl.innerHTML = '';
     _lastCandleIndex = -1;
+    _entryIndex = -1;
   }
 
   function hideModal(){
@@ -8111,38 +8113,39 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // End   : - kalau rec closed by TP/SL → berhenti di exitDate
     //         - kalau belum kena TP/SL     → memanjang 5 candle ke depan
     //           dari candle terakhir (rec masih running / expired-tanpa-hit)
-    var xEntry = 0;
+    var ts = _chart.timeScale();
+    var xEntry = null;
+    // Prioritas: koordinat by tanggal rilis. Kalau openDate bukan hari bursa
+    // persis (timeToCoordinate null), fallback ke logicalToCoordinate(entryIdx).
     if (rec.openDate){
-      var xC = _chart.timeScale().timeToCoordinate(rec.openDate);
-      if (xC != null) xEntry = xC;
+      var xC = ts.timeToCoordinate(rec.openDate);
+      if (xC != null && Number.isFinite(xC)) xEntry = xC;
     }
+    if (xEntry == null && _entryIndex >= 0){
+      try { var xE = ts.logicalToCoordinate(_entryIndex); if (xE != null && Number.isFinite(xE)) xEntry = xE; } catch(_){}
+    }
+    if (xEntry == null) xEntry = 0;
     if (xEntry < 0) xEntry = 0;
 
     var st = statusOfRec(rec);
     var closedByHit = (st === 'TP' || st === 'SL');
     var xRight = null;
 
-    // 1) Kalau kena TP/SL → gunakan exitDate sebagai batas kanan
+    // 1) Kalau kena TP/SL → batas kanan = exitDate
     if (closedByHit && rec.exitDate){
-      var xExit = _chart.timeScale().timeToCoordinate(rec.exitDate);
-      if (xExit != null && Number.isFinite(xExit) && xExit > xEntry){
-        xRight = xExit;
-      }
+      var xExit = ts.timeToCoordinate(rec.exitDate);
+      if (xExit != null && Number.isFinite(xExit) && xExit > xEntry) xRight = xExit;
     }
-    // 2) Belum kena → projek 5 candle setelah candle terakhir via
-    //    logicalToCoordinate(lastIdx + 5). rightOffset:8 di chart config
-    //    menjamin ada ruang buat proyeksi ini.
+    // 2) Belum kena → projek 5 candle setelah candle terakhir
     if (xRight == null && _lastCandleIndex >= 0){
       try {
-        var xProj = _chart.timeScale().logicalToCoordinate(_lastCandleIndex + 5);
-        if (xProj != null && Number.isFinite(xProj) && xProj > xEntry){
-          xRight = xProj;
-        }
+        var xProj = ts.logicalToCoordinate(_lastCandleIndex + 5);
+        if (xProj != null && Number.isFinite(xProj) && xProj > xEntry) xRight = xProj;
       } catch(_){}
     }
-    // 3) Ultimate fallback (harusnya nggak sampai sini)
+    // 3) Fallback terakhir
     if (xRight == null || xRight <= xEntry){
-      try { xRight = _chart.timeScale().width(); } catch(_){}
+      try { xRight = ts.width(); } catch(_){}
       if (!xRight || xRight <= xEntry){
         var wrap = document.querySelector('.tr-recmodal-chart-wrap');
         xRight = wrap ? wrap.clientWidth : 400;
@@ -8294,8 +8297,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
     lwData.sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
     _series.setData(lwData);
 
-    // Save posisi candle terakhir — dipakai drawZones utk proyeksi 5 candle
+    // Save posisi candle terakhir + candle di/setelah tanggal rilis rec.
+    // Dipakai drawZones utk proyeksi 5 candle & setVisibleLogicalRange.
     _lastCandleIndex = lwData.length > 0 ? (lwData.length - 1) : -1;
+    _entryIndex = -1;
+    if (rec.openDate){
+      for (var ei = 0; ei < lwData.length; ei++){
+        if (lwData[ei].time >= rec.openDate){ _entryIndex = ei; break; }
+      }
+      if (_entryIndex < 0) _entryIndex = _lastCandleIndex;
+    }
 
     // Price lines di-hilangkan sesuai request user — biar chart bersih,
     // hanya candles + zona kotak sebagai visual utama. Info entry/TP/SL
@@ -8315,10 +8326,36 @@ body.is-mobile-device.force-desktop .pl-col-main{
       } catch(_){}
     }
 
-    _chart.timeScale().fitContent();
+    // ── Atur visible range biar zona jadi pita LEBAR yg jelas kelihatan ──
+    // Tampilkan ~18 candle sebelum entry (konteks) sampai 6 candle setelah
+    // candle terakhir (ruang proyeksi). Dgn ini titik entry ada di
+    // kiri-tengah dan zona (entry → last+5) mengisi bagian kanan chart —
+    // mirip referensi "position tool", bukan sliver tipis di pinggir.
+    var fitDone = false;
+    if (_entryIndex >= 0 && _lastCandleIndex >= 0){
+      try {
+        _chart.timeScale().setVisibleLogicalRange({
+          from: Math.max(0, _entryIndex - 18),
+          to:   _lastCandleIndex + 6
+        });
+        fitDone = true;
+      } catch(_){}
+    }
+    if (!fitDone){ try { _chart.timeScale().fitContent(); } catch(_){} }
 
-    // Draw zones once chart sudah stable
-    requestAnimationFrame(drawZones);
+    // Draw zones dgn retry — priceToCoordinate bisa return null sampai chart
+    // benar-benar layout selesai. Coba beberapa kali sampai koordinat valid.
+    function drawZonesWithRetry(attempt){
+      attempt = attempt || 0;
+      if (!_currentRec || !_series || !_chart) return;
+      var y = Number.isFinite(+_currentRec.entry) ? _series.priceToCoordinate(+_currentRec.entry) : null;
+      if (y == null && attempt < 12){
+        setTimeout(function(){ drawZonesWithRetry(attempt + 1); }, 40);
+        return;
+      }
+      drawZones();
+    }
+    requestAnimationFrame(function(){ drawZonesWithRetry(0); });
 
     // Redraw zones saat user pan/zoom
     _timeSub = drawZones;
