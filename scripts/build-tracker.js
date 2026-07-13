@@ -143,8 +143,15 @@ function gvizTableToItems(table) {
   rows.forEach((r, ri) => {
     if (!r || !Array.isArray(r.c)) return;
     const obj = { _row: ri + 2 }; // +2 karena row 1 = header
+    // Preservasi nilai kolom per-index (0-based) → aksesnya independen dari
+    // label header. Berguna utk fallback "kolom Q" (index 16) ketika label
+    // sheet bisa berubah tanpa pemberitahuan.
+    obj._cols = [];
     r.c.forEach((cell, ci) => {
       const key = headers[ci];
+      // Raw value (untuk _cols), tetap disimpan meski key tak dipakai
+      var rawV = (cell && cell.v != null) ? cell.v : '';
+      obj._cols[ci] = rawV;
       if (!key) return;
       if (!cell) { obj[key] = ''; return; }
       let v = cell.v;
@@ -391,6 +398,10 @@ function normalizeRow(row) {
   const note     = String(row.catatan || '').trim();
   const submittedBy = String(row.submitted_by || '').trim();
   const approvedBy  = String(row.approved_by || '').trim();
+  // Kolom Q sheet (0-based index = 16) → fallback nama analis kalau kosong.
+  // Sengaja index-based bukan label-based, karena user bisa saja rename
+  // header sheet-nya sewaktu-waktu; posisi kolom stabil.
+  const sheetQ      = String((row._cols && row._cols[16] != null) ? row._cols[16] : '').trim();
 
   // Validasi minimal: (firm ATAU analis), ticker, entry, tp1, sl, openDate WAJIB.
   // FIRM-FIRST: riset AI sering hanya menyebut sekuritas tanpa nama analis —
@@ -411,7 +422,7 @@ function normalizeRow(row) {
     _ts: row._ts || 0,
     analyst, firm: firmLabel, ticker, type: tipe,
     entry, tp1, tp2, sl, openDate, horizon, horizonDays,
-    cert, note, submittedBy, approvedBy,
+    cert, note, submittedBy, approvedBy, sheetQ,
     verified: !!(cert && !/^-+$/.test(cert)),
   };
 }
@@ -812,7 +823,8 @@ function buildAggregations(closed) {
     const fId = idOf(rec.firm);
     const aId = idOf(rec.analyst);
     if (!byFirm.has(fId))     byFirm.set(fId, { id: fId, name: rec.firm, analystSet: new Set(), verified: false, agg: initAgg() });
-    if (!byAnalyst.has(aId))  byAnalyst.set(aId, { id: aId, name: rec.analyst, firm: rec.firm, firmId: fId, cert: rec.cert, verified: rec.verified, agg: initAgg() });
+    if (!byAnalyst.has(aId))  byAnalyst.set(aId, { id: aId, name: rec.analyst, firm: rec.firm, firmId: fId, cert: rec.cert, verified: rec.verified, sheetQ: rec.sheetQ || '', agg: initAgg() });
+    else if (!byAnalyst.get(aId).sheetQ && rec.sheetQ) byAnalyst.get(aId).sheetQ = rec.sheetQ;
     if (!byTicker.has(rec.ticker)) byTicker.set(rec.ticker, { ticker: rec.ticker, agg: initAgg() });
 
     acc(byFirm.get(fId).agg, rec);
@@ -1121,6 +1133,7 @@ async function main() {
     const s = summary(a.agg);
     analystObjMap.set(aid, {
       id: aid, name: a.name, firm: a.firm, firmId: a.firmId, cert: a.cert, verified: a.verified,
+      sheetQ: a.sheetQ || '',
       trades: s.trades, winrate: s.winrate, net: s.net, avg: s.avg,
     });
   }
@@ -1131,8 +1144,11 @@ async function main() {
       analystObjMap.set(aid, {
         id: aid, name: rec.analyst, firm: rec.firm, firmId: idOf(rec.firm),
         cert: rec.cert, verified: rec.verified,
+        sheetQ: rec.sheetQ || '',
         trades: 0, winrate: 0, net: 0, avg: 0,
       });
+    } else if (!analystObjMap.get(aid).sheetQ && rec.sheetQ) {
+      analystObjMap.get(aid).sheetQ = rec.sheetQ;
     }
   }
 
