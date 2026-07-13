@@ -2627,6 +2627,15 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-daychart-wrap canvas{width:100% !important;height:100% !important;display:block}
 .tr-pf-daychart-empty{text-align:center;padding:70px 12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
 
+/* 2 chart card di detail firm (Grafik Performa 30 Hari + Return Kumulatif)
+   sejajar berdampingan mulai layar ≥1100px (PC). Di bawah itu stack vertikal
+   biar tetap enak dibaca ketika sidebar + detail bagi ruang sempit. */
+.tr-pf-charts-row{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
+@media(min-width:1100px){
+  .tr-pf-charts-row{grid-template-columns:1fr 1fr;align-items:start}
+  .tr-pf-charts-row > .tr-card{margin-top:0 !important}
+}
+
 /* ── Master-detail layout (tab Analis: kiri list sekuritas, kanan detail firm) ── */
 .tr-mdet{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:flex-start}
 @media(max-width:900px){.tr-mdet{grid-template-columns:1fr;gap:12px}}
@@ -4954,37 +4963,40 @@ body.is-mobile-device.force-desktop .pl-col-main{
           </div>
         </div>
 
-        <div class="tr-card" style="margin-top:14px">
-          <div class="tr-card-h">
-            <div>
-              <div class="tr-card-title">📈 Grafik Performa Konsensus 30 Hari</div>
-              <div class="tr-card-desc">P/L harian dari rekomendasi sekuritas ini + garis kumulatif (mode Entry murni).</div>
+        <!-- 2 chart card sejajar berdampingan di PC (≥1100px). Di bawahnya stack. -->
+        <div class="tr-pf-charts-row">
+          <div class="tr-card" style="margin-top:14px">
+            <div class="tr-card-h">
+              <div>
+                <div class="tr-card-title">📈 Grafik Performa Konsensus 30 Hari</div>
+                <div class="tr-card-desc">P/L harian dari rekomendasi sekuritas ini + garis kumulatif (mode Entry murni).</div>
+              </div>
             </div>
+            <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
           </div>
-          <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
-        </div>
 
-        <div class="tr-card" style="margin-top:14px">
-          <div class="tr-card-h">
-            <div>
-              <div class="tr-card-title">Return Kumulatif · Simulator Eksekusi</div>
-              <div class="tr-card-desc">Bandingkan strategi eksekusi: nunggu entry vs. beli HAKA saat tgl rekom vs. beli saat TP1/TP2.</div>
+          <div class="tr-card" style="margin-top:14px">
+            <div class="tr-card-h">
+              <div>
+                <div class="tr-card-title">Return Kumulatif · Simulator Eksekusi</div>
+                <div class="tr-card-desc">Bandingkan strategi eksekusi: nunggu entry vs. beli HAKA saat tgl rekom vs. beli saat TP1/TP2.</div>
+              </div>
             </div>
+            <div class="tr-pf-seg" id="trPfSeg" role="tablist" aria-label="Mode eksekusi">
+              <button type="button" class="tr-pf-seg-btn active" data-mode="pure">📍 Beli di Entry</button>
+              <button type="button" class="tr-pf-seg-btn" data-mode="haka">⚡ Beli HAKA (Open)</button>
+              <button type="button" class="tr-pf-seg-btn" data-mode="tp1">🎯 Beli Saat TP1</button>
+              <button type="button" class="tr-pf-seg-btn" data-mode="tp2">🏆 Beli Saat TP2</button>
+            </div>
+            <div class="tr-chart-wrap" style="margin-top:10px"><canvas id="trPfCumChart"></canvas></div>
+            <div class="tr-legend">
+              <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Sekuritas</span></span>
+              <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
+            </div>
+            <div class="tr-pf-mode-stats" id="trPfModeStats"></div>
+            <div class="tr-pf-mode-note" id="trPfModeNote"></div>
           </div>
-          <div class="tr-pf-seg" id="trPfSeg" role="tablist" aria-label="Mode eksekusi">
-            <button type="button" class="tr-pf-seg-btn active" data-mode="pure">📍 Beli di Entry</button>
-            <button type="button" class="tr-pf-seg-btn" data-mode="haka">⚡ Beli HAKA (Open)</button>
-            <button type="button" class="tr-pf-seg-btn" data-mode="tp1">🎯 Beli Saat TP1</button>
-            <button type="button" class="tr-pf-seg-btn" data-mode="tp2">🏆 Beli Saat TP2</button>
-          </div>
-          <div class="tr-chart-wrap" style="margin-top:10px"><canvas id="trPfCumChart"></canvas></div>
-          <div class="tr-legend">
-            <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Sekuritas</span></span>
-            <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
-          </div>
-          <div class="tr-pf-mode-stats" id="trPfModeStats"></div>
-          <div class="tr-pf-mode-note" id="trPfModeNote"></div>
-        </div>
+        </div><!-- /tr-pf-charts-row -->
 
         <div class="tr-sec-title" style="margin-top:14px;margin-bottom:6px">Rekomendasi Sekuritas</div>
         <div class="tr-tabs" id="trPfTabs">
