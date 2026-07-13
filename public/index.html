@@ -2599,11 +2599,8 @@ body.tr-profile-open #tr-view-profile{display:block}
      Menggantikan drawer overlay lama utk konteks firm. Sub-tab bar +
      semua sub-pane disembunyikan saat pane ini aktif, seperti pola
      .tr-profile-open. */
-#tr-view-profile-firm{display:none}
-body.tr-profile-firm-open #tr-subtabs,
-body.tr-profile-firm-open .tr-subpane,
-body.tr-profile-firm-open #tr-view-profile{display:none !important}
-body.tr-profile-firm-open #tr-view-profile-firm{display:block}
+/* Firm profile dulu overlay; sekarang di-embed di sub-tab Analis (master-detail).
+   Rule berikut ditinggalkan sbg no-op utk backward compat class body lama. */
 
 /* Segmented control 4 opsi eksekusi (Beli di Entry / Haka / TP1 / TP2) */
 .tr-pf-seg{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:4px;flex-wrap:wrap}
@@ -2629,6 +2626,37 @@ body.tr-profile-firm-open #tr-view-profile-firm{display:block}
 .tr-pf-daychart-wrap{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;height:220px;margin-top:10px}
 .tr-pf-daychart-wrap canvas{width:100% !important;height:100% !important;display:block}
 .tr-pf-daychart-empty{text-align:center;padding:70px 12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
+
+/* ── Master-detail layout (tab Analis: kiri list sekuritas, kanan detail firm) ── */
+.tr-mdet{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:flex-start}
+@media(max-width:900px){.tr-mdet{grid-template-columns:1fr;gap:12px}}
+.tr-mdet-side{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;position:sticky;top:12px;max-height:calc(100vh - 40px);min-height:400px}
+@media(max-width:900px){.tr-mdet-side{position:static;max-height:none}}
+.tr-mdet-head{display:flex;justify-content:space-between;align-items:center}
+.tr-mdet-title{font-weight:800;font-size:13px;letter-spacing:-.2px}
+.tr-mdet-count{font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:var(--text3);background:var(--bg2);border:1px solid var(--border);padding:2px 7px;border-radius:6px;font-weight:700}
+.tr-mdet-search{width:100%}
+.tr-mdet-list{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:4px;padding-right:2px;min-height:0}
+.tr-mdet-list::-webkit-scrollbar{width:6px}
+.tr-mdet-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.tr-mdet-list::-webkit-scrollbar-track{background:transparent}
+.tr-mdet-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:all .15s;border:1px solid transparent;background:transparent}
+.tr-mdet-item:hover{background:var(--bg2);border-color:var(--border)}
+.tr-mdet-item.active{background:linear-gradient(90deg,rgba(124,58,237,.16),rgba(124,58,237,.04));border-color:rgba(124,58,237,.35);box-shadow:0 2px 8px rgba(124,58,237,.08)}
+.tr-mdet-item .av{width:32px;height:32px;flex-shrink:0;border-radius:8px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text2);letter-spacing:-.3px}
+.tr-mdet-item.active .av{background:var(--grad);color:#fff;border-color:transparent}
+.tr-mdet-item .m{min-width:0;flex:1}
+.tr-mdet-item .nm{font-weight:700;font-size:12.5px;letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.tr-mdet-item .st{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:1px;display:flex;gap:6px}
+.tr-mdet-item .st .up{color:var(--green);font-weight:700}
+.tr-mdet-item .st .dn{color:var(--red);font-weight:700}
+.tr-mdet-item .vb{display:inline-block;font-size:8.5px;color:var(--green);margin-left:5px;letter-spacing:.3px;font-weight:700;vertical-align:1px}
+.tr-mdet-list-empty{padding:24px 10px;text-align:center;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:11px}
+.tr-mdet-detail{min-width:0}
+.tr-mdet-hint{padding:60px 20px;text-align:center;background:var(--card);border:1px dashed var(--border);border-radius:12px}
+.tr-mdet-hint-ico{font-size:34px;margin-bottom:10px;opacity:.6}
+.tr-mdet-hint-title{font-weight:800;font-size:15px;margin-bottom:4px;letter-spacing:-.2px}
+.tr-mdet-hint-desc{color:var(--text3);font-size:12.5px;line-height:1.5;max-width:340px;margin:0 auto}
 
 /* ── Slim variant .tr-rec (dipakai di halaman detail sekuritas — Rekomendasi Sekuritas) ── */
 .tr-rec-list.slim{gap:6px}
@@ -4377,6 +4405,46 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-sim-note" id="trSimNote"></div>
   </div>
 
+  <!-- ── Direktori Analis (real data dari byAnalyst tracker.json) ────
+       Variant Ringkasan: ID suffix "R" agar tidak bentrok kalau kelak
+       ada tabel lain. Renderer di IIFE bawah menargetkan ID2 ini. -->
+  <div class="tr-sec-title">Direktori Analis <span class="tag">TRACKER · REAL DATA</span></div>
+  <div id="trAnalisPendingR" class="tr-empty" style="padding:20px 12px;text-align:center">
+    <div class="tr-empty-desc">Menunggu data tracker.json…</div>
+  </div>
+  <div id="trAnalisContentR" style="display:none">
+    <div class="tr-anlz-head">
+      <div>
+        <div class="tr-sub" id="trAnalisSubR">— analis · — sekuritas</div>
+      </div>
+      <div class="search-wrap tr-anlz-search">
+        <span class="ico">⌕</span>
+        <input type="text" id="trAnalisSearchR" placeholder="Cari nama analis atau sekuritas..." autocomplete="off" spellcheck="false" aria-label="Cari analis">
+      </div>
+    </div>
+    <div class="tr-anlz-table-wrap">
+      <table class="tr-anlz-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Analis</th>
+            <th>Sekuritas</th>
+            <th class="num">Trade</th>
+            <th class="num">Winrate</th>
+            <th class="num">Net</th>
+            <th class="num">Rata²/Trade</th>
+          </tr>
+        </thead>
+        <tbody id="trAnalisBodyR">
+          <tr><td colspan="7" class="tr-anlz-empty">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tr-disclaimer" style="margin-top:10px">
+      Nama analis kosong → dipakai isi <b>kolom Q</b> sheet (tag <span class="tr-anlz-fallback-tag">fallback Q</span>). Nama sekuritas kosong → dipakai nama analis. Klik baris untuk buka detail sekuritas di tab Analis.
+    </div>
+  </div>
+
   <div class="tr-sec-title">Papan Peringkat Analis <span class="tag">ALPHA VS IHSG · 3 BULAN</span></div>
   <div id="trLb"></div>
 
@@ -4803,60 +4871,135 @@ body.is-mobile-device.force-desktop .pl-col-main{
   </div><!-- /trPerfContent -->
 </div>
 
-<!-- ── PANE ANALIS (direktori analis dari byAnalyst tracker.json) ────
-     Menampilkan daftar analis + sekuritas afiliasi. Fallback:
-       • Sekuritas kosong → pakai nama analis (di-set di build script line 406)
-       • Analis kosong    → pakai kolom Q sheet (row._cols[16] via build script)
-     Klik baris → buka halaman detail sekuritas. -->
+<!-- ── PANE ANALIS (master-detail): kiri list sekuritas, kanan detail firm.
+     Detail firm = konten yg tadinya di overlay #tr-view-profile-firm, dipindah
+     ke sini agar klik card di Performa langsung buka di tab ini. -->
 <div id="tr-view-analis" class="tr-subpane" role="tabpanel" aria-hidden="true">
 
   <!-- Fallback empty state — visible saat data belum siap -->
   <div class="tr-empty" id="trAnalisPending">
-    <div class="tr-empty-ico">👤</div>
-    <div class="tr-empty-title">Analis — menunggu data</div>
+    <div class="tr-empty-ico">🏢</div>
+    <div class="tr-empty-title">Detail Sekuritas — menunggu data</div>
     <div class="tr-empty-desc">
-      Direktori seluruh analis dari <b>tracker.json</b> beserta sekuritas afiliasi, jumlah trade, winrate, dan return.
-      <br>Kalau kolom sekuritas kosong → dipakai nama analis. Kalau nama analis kosong → dipakai isi <b>kolom Q</b> sheet.
+      Direktori sekuritas + halaman detail per-sekuritas (track record, chart 30 hari, simulator eksekusi, daftar rekomendasi).
     </div>
     <div class="tr-empty-hint" id="trAnalisStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
   </div>
 
-  <!-- Konten real -->
-  <div id="trAnalisContent" style="display:none">
-    <div class="tr-anlz-head">
-      <div>
-        <h1>Direktori Analis <span class="tr-preview-badge">TRACKER</span></h1>
-        <div class="tr-sub" id="trAnalisSub">— analis · — sekuritas</div>
+  <!-- Master-detail -->
+  <div id="trAnalisContent" class="tr-mdet" style="display:none">
+
+    <!-- KIRI: list sekuritas (searchable) -->
+    <aside class="tr-mdet-side">
+      <div class="tr-mdet-head">
+        <div class="tr-mdet-title">Sekuritas</div>
+        <span class="tr-mdet-count" id="trMdetCount">—</span>
       </div>
-      <div class="search-wrap tr-anlz-search">
+      <div class="search-wrap tr-mdet-search">
         <span class="ico">⌕</span>
-        <input type="text" id="trAnalisSearch" placeholder="Cari nama analis atau sekuritas..." autocomplete="off" spellcheck="false" aria-label="Cari analis">
+        <input type="text" id="trMdetSearch" placeholder="Cari sekuritas..." autocomplete="off" spellcheck="false" aria-label="Cari sekuritas">
       </div>
-    </div>
+      <div class="tr-mdet-list" id="trMdetList">
+        <div class="tr-mdet-list-empty">Belum ada data.</div>
+      </div>
+    </aside>
 
-    <div class="tr-anlz-table-wrap">
-      <table class="tr-anlz-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Analis</th>
-            <th>Sekuritas</th>
-            <th class="num">Trade</th>
-            <th class="num">Winrate</th>
-            <th class="num">Net</th>
-            <th class="num">Rata²/Trade</th>
-          </tr>
-        </thead>
-        <tbody id="trAnalisBody">
-          <tr><td colspan="7" class="tr-anlz-empty">—</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <!-- KANAN: detail firm (reuse trPf* IDs — renderer sudah target ID2 ini) -->
+    <section class="tr-mdet-detail" id="trMdetDetail">
 
-    <div class="tr-disclaimer" style="margin-top:12px">
-      Kolom <b>Analis</b> = nama analis dari sheet (fallback ke <b>kolom Q</b> sheet bila kosong). Kolom <b>Sekuritas</b> = nama sekuritas (fallback ke nama analis bila kosong). Tag <span class="tr-anlz-fallback-tag">fallback Q</span> menandakan nama diambil dari kolom Q. Klik baris untuk buka halaman detail sekuritas.
-    </div>
-  </div>
+      <!-- Hint saat belum ada firm terpilih -->
+      <div class="tr-mdet-hint" id="trMdetHint">
+        <div class="tr-mdet-hint-ico">👈</div>
+        <div class="tr-mdet-hint-title">Pilih sekuritas dari daftar</div>
+        <div class="tr-mdet-hint-desc">Klik salah satu nama sekuritas di kiri untuk lihat detail track record, chart performa 30 hari, simulator eksekusi (Entry/Haka/TP1/TP2), dan daftar rekomendasi aktif+riwayat.</div>
+      </div>
+
+      <!-- Panel detail (hidden sampai firm dipilih) -->
+      <div id="trMdetPanel" style="display:none">
+
+        <div class="tr-pcard">
+          <div class="tr-ptop">
+            <div class="tr-p-av" id="trPfAv">🏢</div>
+            <div style="min-width:0;flex:1">
+              <div class="tr-p-nrow">
+                <div class="tr-p-name" id="trPfName">—</div>
+                <span class="tr-p-vbadge" id="trPfVBadge">✓ TERVERIFIKASI</span>
+              </div>
+              <div class="tr-p-firm" id="trPfMeta">—</div>
+            </div>
+          </div>
+          <div class="tr-p-sectors" id="trPfSectors"></div>
+        </div>
+
+        <div class="tr-kpi-row">
+          <div class="tr-kpi hi">
+            <div class="k">WIN RATE</div>
+            <div class="v" id="trPfKpiWr">0%</div>
+            <div class="s tr-neu" id="trPfKpiWrSub">— dari — rekomendasi selesai</div>
+          </div>
+          <div class="tr-kpi">
+            <div class="k">NET RETURN</div>
+            <div class="v" id="trPfKpiNet">+0%</div>
+            <div class="s tr-neu" id="trPfKpiNetSub">Kumulatif · mode aktif</div>
+          </div>
+          <div class="tr-kpi">
+            <div class="k">RATA² / TRADE</div>
+            <div class="v" id="trPfKpiAvg">+0%</div>
+            <div class="s tr-neu">Realized · mode aktif</div>
+          </div>
+          <div class="tr-kpi">
+            <div class="k">TOTAL REKOMENDASI</div>
+            <div class="v" id="trPfKpiTotal">0</div>
+            <div class="s tr-neu" id="trPfKpiTotalSub">— aktif · — riwayat</div>
+          </div>
+        </div>
+
+        <div class="tr-card" style="margin-top:14px">
+          <div class="tr-card-h">
+            <div>
+              <div class="tr-card-title">📈 Grafik Performa Konsensus 30 Hari</div>
+              <div class="tr-card-desc">P/L harian dari rekomendasi sekuritas ini + garis kumulatif (mode Entry murni).</div>
+            </div>
+          </div>
+          <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
+        </div>
+
+        <div class="tr-card" style="margin-top:14px">
+          <div class="tr-card-h">
+            <div>
+              <div class="tr-card-title">Return Kumulatif · Simulator Eksekusi</div>
+              <div class="tr-card-desc">Bandingkan strategi eksekusi: nunggu entry vs. beli HAKA saat tgl rekom vs. beli saat TP1/TP2.</div>
+            </div>
+          </div>
+          <div class="tr-pf-seg" id="trPfSeg" role="tablist" aria-label="Mode eksekusi">
+            <button type="button" class="tr-pf-seg-btn active" data-mode="pure">📍 Beli di Entry</button>
+            <button type="button" class="tr-pf-seg-btn" data-mode="haka">⚡ Beli HAKA (Open)</button>
+            <button type="button" class="tr-pf-seg-btn" data-mode="tp1">🎯 Beli Saat TP1</button>
+            <button type="button" class="tr-pf-seg-btn" data-mode="tp2">🏆 Beli Saat TP2</button>
+          </div>
+          <div class="tr-chart-wrap" style="margin-top:10px"><canvas id="trPfCumChart"></canvas></div>
+          <div class="tr-legend">
+            <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Sekuritas</span></span>
+            <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
+          </div>
+          <div class="tr-pf-mode-stats" id="trPfModeStats"></div>
+          <div class="tr-pf-mode-note" id="trPfModeNote"></div>
+        </div>
+
+        <div class="tr-sec-title" style="margin-top:14px;margin-bottom:6px">Rekomendasi Sekuritas</div>
+        <div class="tr-tabs" id="trPfTabs">
+          <button type="button" class="tr-tab active" data-tab="active">Aktif (<span id="trPfTabActN">0</span>)</button>
+          <button type="button" class="tr-tab" data-tab="history">Riwayat (<span id="trPfTabHistN">0</span>)</button>
+        </div>
+        <div class="tr-rec-list slim" id="trPfRecList"></div>
+
+        <div class="tr-disclaimer">
+          Semua P/L dihitung dari harga penutupan resmi. <b>Beli di Entry</b> hanya menghitung rekomendasi di mana harga benar-benar menyentuh zona entry (paling konsisten dengan desain analis). <b>Beli HAKA</b> mengasumsikan eksekusi di open pada hari rilis (tidak pernah kelewatan, tapi RR menyimpang). <b>Beli Saat TP1 / TP2</b> mengasumsikan pembeli baru masuk saat target tercapai — hanya untuk rekomendasi yang benar-benar menyentuh entry & TP terkait; jika tak tersentuh, fallback ke P/L Entry murni.
+        </div>
+
+      </div><!-- /trMdetPanel -->
+    </section>
+  </div><!-- /trAnalisContent -->
 </div><!-- /tr-view-analis -->
 
 <!-- ── PANE AKUN (skeleton empty state) ─────────────────────────────
@@ -5064,93 +5207,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   </div>
 </div><!-- /tr-view-profile -->
 
-<!-- ── FIRM PROFILE PAGE (halaman detail sekuritas, menggantikan pop-up drawer utk klik card di Tab Performa / LB Ringkasan) ── -->
-<div id="tr-view-profile-firm" class="tr-profile">
-  <button type="button" class="tr-back" id="trFirmBack">
-    <span class="arr">←</span>
-    <span>Kembali ke Tracker</span>
-  </button>
-
-  <div class="tr-pcard">
-    <div class="tr-ptop">
-      <div class="tr-p-av" id="trPfAv">🏢</div>
-      <div style="min-width:0;flex:1">
-        <div class="tr-p-nrow">
-          <div class="tr-p-name" id="trPfName">—</div>
-          <span class="tr-p-vbadge" id="trPfVBadge">✓ TERVERIFIKASI</span>
-        </div>
-        <div class="tr-p-firm" id="trPfMeta">—</div>
-      </div>
-    </div>
-    <div class="tr-p-sectors" id="trPfSectors"></div>
-  </div>
-
-  <div class="tr-kpi-row">
-    <div class="tr-kpi hi">
-      <div class="k">WIN RATE</div>
-      <div class="v" id="trPfKpiWr">0%</div>
-      <div class="s tr-neu" id="trPfKpiWrSub">— dari — rekomendasi selesai</div>
-    </div>
-    <div class="tr-kpi">
-      <div class="k">NET RETURN</div>
-      <div class="v" id="trPfKpiNet">+0%</div>
-      <div class="s tr-neu" id="trPfKpiNetSub">Kumulatif · mode aktif</div>
-    </div>
-    <div class="tr-kpi">
-      <div class="k">RATA² / TRADE</div>
-      <div class="v" id="trPfKpiAvg">+0%</div>
-      <div class="s tr-neu">Realized · mode aktif</div>
-    </div>
-    <div class="tr-kpi">
-      <div class="k">TOTAL REKOMENDASI</div>
-      <div class="v" id="trPfKpiTotal">0</div>
-      <div class="s tr-neu" id="trPfKpiTotalSub">— aktif · — riwayat</div>
-    </div>
-  </div>
-
-  <div class="tr-card" style="margin-top:14px">
-    <div class="tr-card-h">
-      <div>
-        <div class="tr-card-title">📈 Grafik Performa Konsensus 30 Hari</div>
-        <div class="tr-card-desc">P/L harian dari rekomendasi sekuritas ini + garis kumulatif (mode Entry murni).</div>
-      </div>
-    </div>
-    <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
-  </div>
-
-  <div class="tr-card" style="margin-top:14px">
-    <div class="tr-card-h">
-      <div>
-        <div class="tr-card-title">Return Kumulatif · Simulator Eksekusi</div>
-        <div class="tr-card-desc">Bandingkan strategi eksekusi: nunggu entry vs. beli HAKA saat tgl rekom vs. beli saat TP1/TP2.</div>
-      </div>
-    </div>
-    <div class="tr-pf-seg" id="trPfSeg" role="tablist" aria-label="Mode eksekusi">
-      <button type="button" class="tr-pf-seg-btn active" data-mode="pure">📍 Beli di Entry</button>
-      <button type="button" class="tr-pf-seg-btn" data-mode="haka">⚡ Beli HAKA (Open)</button>
-      <button type="button" class="tr-pf-seg-btn" data-mode="tp1">🎯 Beli Saat TP1</button>
-      <button type="button" class="tr-pf-seg-btn" data-mode="tp2">🏆 Beli Saat TP2</button>
-    </div>
-    <div class="tr-chart-wrap" style="margin-top:10px"><canvas id="trPfCumChart"></canvas></div>
-    <div class="tr-legend">
-      <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Sekuritas</span></span>
-      <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
-    </div>
-    <div class="tr-pf-mode-stats" id="trPfModeStats"></div>
-    <div class="tr-pf-mode-note" id="trPfModeNote"></div>
-  </div>
-
-  <div class="tr-sec-title" style="margin-top:14px;margin-bottom:6px">Rekomendasi Sekuritas</div>
-  <div class="tr-tabs" id="trPfTabs">
-    <button type="button" class="tr-tab active" data-tab="active">Aktif (<span id="trPfTabActN">0</span>)</button>
-    <button type="button" class="tr-tab" data-tab="history">Riwayat (<span id="trPfTabHistN">0</span>)</button>
-  </div>
-  <div class="tr-rec-list slim" id="trPfRecList"></div>
-
-  <div class="tr-disclaimer">
-    Semua P/L dihitung dari harga penutupan resmi. <b>Beli di Entry</b> hanya menghitung rekomendasi di mana harga benar-benar menyentuh zona entry (paling konsisten dengan desain analis). <b>Beli HAKA</b> mengasumsikan eksekusi di open pada hari rilis (tidak pernah kelewatan, tapi RR menyimpang). <b>Beli Saat TP1 / TP2</b> mengasumsikan pembeli baru masuk saat target tercapai — hanya untuk rekomendasi yang benar-benar menyentuh entry & TP terkait; jika tak tersentuh, fallback ke P/L Entry murni.
-  </div>
-</div><!-- /tr-view-profile-firm -->
+<!-- Firm profile dulu overlay pane #tr-view-profile-firm; sekarang embedded di
+     tab Analis (master-detail). Markup detail firm ada di #trMdetPanel. -->
 
 <!-- ── DETAIL DRAWER: lookup saham / detail firm (real data tracker.json) ── -->
 <div id="trDetail" class="tr-dt-overlay" role="dialog" aria-modal="true" aria-hidden="true">
@@ -5785,21 +5843,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(_rafHandle){ try{ cancelAnimationFrame(_rafHandle); }catch(_){} }
     _rafHandle = requestAnimationFrame(function(){
       _rafHandle = null;
-      if(_currentFirm && document.body.classList.contains('tr-profile-firm-open')){
+      var panel = document.getElementById('trMdetPanel');
+      if(_currentFirm && panel && panel.style.display !== 'none'){
         renderDayChart(_currentFirm);
       }
     });
   }
 
+  // Render firm ke panel embedded (#trMdetPanel) di tab Analis.
+  // TIDAK lagi overlay — bagian dari master-detail.
   function openFirmPage(key){
     var firm = resolveFirm(key);
     if(!firm){
-      // Data belum siap? tunggu sebentar lalu retry sekali.
       var d = getData();
       if(!d || d.pending) return;
-      // Kalau bener2 tidak ada firm, fallback ke drawer lama tak dilakukan (biar user tahu miss).
       return;
     }
+
+    // Pastikan user berada di tab Analis dulu (kalau dipanggil dari luar tab).
+    try{
+      if(window.__TR_switchTab && typeof window.__TR_switchTab === 'function'){
+        window.__TR_switchTab('analis');
+      }
+    }catch(_){}
+
     _currentFirm = firm;
     _currentMode = 'pure';
     _currentTab  = 'active';
@@ -5807,28 +5874,38 @@ body.is-mobile-device.force-desktop .pl-col-main{
     populateHero(firm);
     renderKpi(firm, _currentMode);
     renderModeStats(firm, _currentMode);
-    // Sync seg active
+
+    // Sync seg + tab UI state
     var segButtons = document.querySelectorAll('#trPfSeg .tr-pf-seg-btn');
     segButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mode')===_currentMode); });
-    // Sync tab active
     var tabButtons = document.querySelectorAll('#trPfTabs .tr-tab');
     tabButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===_currentTab); });
 
-    document.body.classList.add('tr-profile-firm-open');
-    // Draw charts (butuh element visible utk offsetWidth). RAF supaya width ok.
+    // Reveal panel, hide hint
+    var hint = document.getElementById('trMdetHint');
+    var panel = document.getElementById('trMdetPanel');
+    if(hint) hint.style.display = 'none';
+    if(panel) panel.style.display = '';
+
+    // Notify sidebar to sync active state (dispatched below)
+    try{
+      var ev = new CustomEvent('tr-firm-open', { detail: { firm: firm } });
+      document.dispatchEvent(ev);
+    }catch(_){}
+
     scheduleDayChartRedraw();
     setTimeout(function(){
       if(_currentFirm){ renderCumChart(_currentFirm, _currentMode); renderDayChart(_currentFirm); }
     }, 30);
     renderRecList(firm, _currentTab);
 
-    try{ window.scrollTo({ top:0, left:0, behavior:'smooth' }); }catch(_){ window.scrollTo(0,0); }
-  }
-
-  function closeFirmPage(){
-    if(_cumChart){ try{ _cumChart.destroy(); }catch(_){} _cumChart=null; }
-    document.body.classList.remove('tr-profile-firm-open');
-    _currentFirm = null;
+    // Scroll target: kalau viewport mobile → scroll ke panel; kalau desktop → biarkan (sidebar sticky).
+    if(window.innerWidth < 900){
+      var detail = document.getElementById('trMdetDetail');
+      if(detail){
+        try{ detail.scrollIntoView({ behavior:'smooth', block:'start' }); }catch(_){ detail.scrollIntoView(); }
+      }
+    }
   }
 
   function switchMode(mode){
@@ -5840,7 +5917,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     renderModeStats(_currentFirm, mode);
     renderCumChart(_currentFirm, mode);
   }
-  function switchTab(tab){
+  function switchRecTab(tab){
     if(!_currentFirm || (tab!=='active' && tab!=='history')) return;
     _currentTab = tab;
     var tabButtons = document.querySelectorAll('#trPfTabs .tr-tab');
@@ -5851,55 +5928,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // ── Global overrides & delegates ───────────────────
   window.__TR_openFirmPage = openFirmPage;
   window.__TR_openFirm = openFirmPage;  // override drawer.__TR_openFirm
-  window.__TR_closeFirmPage = closeFirmPage;
 
-  // Delegated click handlers (idempotent, only fire when relevant target)
+  // Delegated click handlers (idempotent)
   document.addEventListener('click', function(e){
     var t = e.target; if(!t || !t.closest) return;
-    if(t.closest('#trFirmBack')){ e.preventDefault(); closeFirmPage(); return; }
     var seg = t.closest('#trPfSeg .tr-pf-seg-btn');
     if(seg){ var m=seg.getAttribute('data-mode'); if(m){ switchMode(m); } return; }
     var tab = t.closest('#trPfTabs .tr-tab');
-    if(tab){ var tb=tab.getAttribute('data-tab'); if(tb){ switchTab(tb); } return; }
+    if(tab){ var tb=tab.getAttribute('data-tab'); if(tb){ switchRecTab(tb); } return; }
   });
 
-  // ESC → close firm page (only when open, dan overlay drawer tidak aktif)
-  document.addEventListener('keydown', function(e){
-    if(e.key==='Escape' && document.body.classList.contains('tr-profile-firm-open')){
-      var dt = document.getElementById('trDetail');
-      if(!(dt && dt.classList.contains('open'))){ closeFirmPage(); }
-    }
-  });
-
-  // Resize → redraw canvas day chart
+  // Resize → redraw canvas day chart (kalau panel visible)
   window.addEventListener('resize', function(){
-    if(document.body.classList.contains('tr-profile-firm-open')) scheduleDayChartRedraw();
+    var panel = document.getElementById('trMdetPanel');
+    if(panel && panel.style.display !== 'none') scheduleDayChartRedraw();
   });
-
-  // Auto-close saat pindah page (mis. user klik nav lain)
-  function hookShowPage(){
-    if(typeof window.showPage !== 'function' || window.__TR_firmHookedShowPage) return;
-    var orig = window.showPage;
-    window.showPage = function(pageId){
-      try{
-        if(pageId !== 'page-tracker' && document.body.classList.contains('tr-profile-firm-open')){
-          closeFirmPage();
-        }
-      }catch(_){}
-      return orig.apply(this, arguments);
-    };
-    window.__TR_firmHookedShowPage = true;
-  }
-  // Try immediately + retry ketika showPage ready
-  hookShowPage();
-  if(!window.__TR_firmHookedShowPage){
-    var _tries=0;
-    var _iv=setInterval(function(){
-      _tries++;
-      hookShowPage();
-      if(window.__TR_firmHookedShowPage || _tries>50) clearInterval(_iv);
-    }, 200);
-  }
 })();
 </script>
 
@@ -6658,22 +6701,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
 <script>
 // ═══════════════════════════════════════════
-// TRACKER — TAB ANALIS (direktori analis dari byAnalyst tracker.json)
-//   Kolom: # · Analis · Sekuritas · Trade · Winrate · Net · Rata²/Trade
+// TRACKER — TAB ANALIS (master-detail) + DIREKTORI ANALIS (Ringkasan)
+//   Tab Analis:
+//     - Kiri  : list sekuritas (searchable, sortable-by-trades) → #trMdetList
+//     - Kanan : detail firm → dirender via window.__TR_openFirm(firmId)
+//   Ringkasan tab:
+//     - Tabel Direktori Analis (variant "R"-suffix ID) menampilkan
+//       byAnalyst tracker.json: Analis · Sekuritas · Trade · WR · Net · Avg.
 //   Fallback:
-//     • Sekuritas kosong → pakai nama analis (sudah di-set build script)
+//     • Sekuritas kosong → pakai nama analis (di-set build script line 406)
 //     • Analis kosong    → pakai kolom Q sheet (analyst.sheetQ)
-//   Klik baris → window.__TR_openFirm(firmId) → halaman detail sekuritas.
+//   Klik baris di Ringkasan / klik item di sidebar → __TR_openFirm(id) →
+//   auto switchTab('analis') + render detail.
 // ═══════════════════════════════════════════
 (function(){
   function $id(x){ return document.getElementById(x); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
   function firmShort(name){ if(!name) return '—'; return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sek.').replace(/\s+Sekuritas\b/i,' Sek.').trim(); }
+  function initials(s){ if(!s) return '🏢'; var parts=String(s).replace(/PT\s*/i,'').trim().split(/\s+/); var a=(parts[0]||'')[0]||''; var b=(parts[1]||'')[0]||''; return (a+b).toUpperCase()||'🏢'; }
   function fmtPct(n,dec){ if(n==null||!Number.isFinite(+n)) return '—'; var v=+n; var d=(dec==null)?2:dec; return (v>=0?'+':'')+v.toFixed(d)+'%'; }
   function fmtWr(n){ if(n==null||!Number.isFinite(+n)) return '—'; return (+n).toFixed(1)+'%'; }
-  function fmtN(n){ if(n==null||!Number.isFinite(+n)) return '—'; return Number(n).toLocaleString('id-ID'); }
 
-  // pickName menghasilkan { display, fromQ } berdasarkan fallback rules.
   function pickAnalystName(a){
     var raw = (a && a.name || '').trim();
     if(raw) return { display: raw, fromQ: false };
@@ -6682,11 +6730,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return { display: '(tanpa nama)', fromQ: false, empty: true };
   }
   function pickFirmName(a){
-    // Build script sudah set a.firm = firm || analyst || 'Lainnya', jadi selalu ada.
     return (a && a.firm || '').trim() || (a && a.name || '').trim() || '—';
   }
 
-  function currentList(query){
+  // ── DIREKTORI ANALIS (tabel di Ringkasan) ─────────
+  function analystList(query){
     var d = window.__TR_getData && window.__TR_getData();
     if(!d || d.pending) return [];
     var byA = d.byAnalyst || {};
@@ -6699,7 +6747,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
         return n.indexOf(q)>=0 || f.indexOf(q)>=0;
       });
     }
-    // Sort: trade desc, then net desc
     arr.sort(function(a,b){
       var tdiff = (b.trades||0) - (a.trades||0);
       if(tdiff!==0) return tdiff;
@@ -6708,8 +6755,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return arr;
   }
 
-  function renderTable(list){
-    var body = $id('trAnalisBody'); if(!body) return;
+  function renderDirectoryTable(bodyId, list){
+    var body = $id(bodyId); if(!body) return;
     if(!list.length){
       body.innerHTML = '<tr><td colspan="7" class="tr-anlz-empty">Tidak ada analis yang cocok dengan pencarian.</td></tr>';
       return;
@@ -6736,11 +6783,81 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }).join('');
   }
 
-  function updateSub(list){
-    var sub = $id('trAnalisSub'); if(!sub) return;
-    var firmSet = {};
-    list.forEach(function(a){ if(a.firm) firmSet[a.firm] = 1; });
-    sub.textContent = list.length + ' analis · ' + Object.keys(firmSet).length + ' sekuritas';
+  function renderDirectoryR(){
+    var d = window.__TR_getData && window.__TR_getData();
+    var pending = $id('trAnalisPendingR'), content = $id('trAnalisContentR');
+    if(!d || d.pending){
+      if(pending) pending.style.display = '';
+      if(content) content.style.display = 'none';
+      return;
+    }
+    if(pending) pending.style.display = 'none';
+    if(content) content.style.display = '';
+    var q = ($id('trAnalisSearchR') && $id('trAnalisSearchR').value) || '';
+    var list = analystList(q);
+    var subR = $id('trAnalisSubR');
+    if(subR){
+      var firmSet={}; list.forEach(function(a){ if(a.firm) firmSet[a.firm]=1; });
+      subR.textContent = list.length + ' analis · ' + Object.keys(firmSet).length + ' sekuritas';
+    }
+    renderDirectoryTable('trAnalisBodyR', list);
+  }
+
+  // ── SIDEBAR SEKURITAS (tab Analis, kiri) ─────────────
+  function firmList(query){
+    var d = window.__TR_getData && window.__TR_getData();
+    if(!d || d.pending) return [];
+    var byF = d.byFirm || {};
+    var arr = Object.keys(byF).map(function(k){ return byF[k]; });
+    var q = (query||'').trim().toLowerCase();
+    if(q){
+      arr = arr.filter(function(f){
+        return (f.name||'').toLowerCase().indexOf(q)>=0
+            || (f.id||'').toLowerCase().indexOf(q)>=0;
+      });
+    }
+    arr.sort(function(a,b){
+      var tdiff = (b.trades||0) - (a.trades||0);
+      if(tdiff!==0) return tdiff;
+      return (+b.netPure||b.net||0) - (+a.netPure||a.net||0);
+    });
+    return arr;
+  }
+
+  function _activeFirmId(){
+    // Cari dari #trPfName teks / dari __TR_openFirm state (bila global exposed).
+    // Fallback: baca data-firm-id di item .active.
+    var act = document.querySelector('#trMdetList .tr-mdet-item.active');
+    return act ? act.getAttribute('data-firm-id') : null;
+  }
+
+  function renderSidebar(){
+    var list = $id('trMdetList'); if(!list) return;
+    var q = ($id('trMdetSearch') && $id('trMdetSearch').value) || '';
+    var arr = firmList(q);
+    var cnt = $id('trMdetCount'); if(cnt) cnt.textContent = String(arr.length);
+    if(!arr.length){
+      list.innerHTML = '<div class="tr-mdet-list-empty">'+(q?'Tidak ada sekuritas yang cocok.':'Belum ada data sekuritas.')+'</div>';
+      return;
+    }
+    var activeId = _activeFirmId();
+    list.innerHTML = arr.map(function(f){
+      var short = firmShort(f.name);
+      var wr = f.winrate;
+      var net = (f.netPure!=null) ? f.netPure : f.net;
+      var wrStr = (wr==null||!Number.isFinite(+wr)) ? '—' : (+wr).toFixed(0)+'%';
+      var netStr = fmtPct(net,1);
+      var netCls = (+net>=0) ? 'up' : 'dn';
+      var vb = f.verified ? '<span class="vb">✓</span>' : '';
+      var actCls = (f.id === activeId) ? ' active' : '';
+      return '<div class="tr-mdet-item'+actCls+'" data-firm-id="'+esc(f.id||'')+'" title="'+esc(f.name||'')+'">'
+        + '<div class="av">'+esc(initials(f.name))+'</div>'
+        + '<div class="m">'
+          + '<div class="nm">'+esc(short)+vb+'</div>'
+          + '<div class="st"><span>'+(f.trades||0)+' trd</span><span>WR '+wrStr+'</span><span class="'+netCls+'">'+netStr+'</span></div>'
+        + '</div>'
+      + '</div>';
+    }).join('');
   }
 
   function updateChip(data){
@@ -6750,44 +6867,72 @@ body.is-mobile-device.force-desktop .pl-col-main{
     el.textContent = String(Object.keys(byA).length);
   }
 
-  function render(){
+  function renderAll(){
     var d = window.__TR_getData && window.__TR_getData();
+    updateChip(d);
+
+    // Ringkasan directory table
+    renderDirectoryR();
+
+    // Analis sidebar
     var pending = $id('trAnalisPending'), content = $id('trAnalisContent');
     if(!d || d.pending){
       if(pending) pending.style.display = '';
       if(content) content.style.display = 'none';
-      updateChip(d);
       return;
     }
     if(pending) pending.style.display = 'none';
     if(content) content.style.display = '';
-    updateChip(d);
-    var q = ($id('trAnalisSearch') && $id('trAnalisSearch').value) || '';
-    var list = currentList(q);
-    updateSub(list);
-    renderTable(list);
+    renderSidebar();
   }
 
-  // Search (debounced)
-  var _t = null;
+  // ── Event handlers ─────────────────────────────
+  var _tR=null, _tS=null;
   document.addEventListener('input', function(e){
-    if(e.target && e.target.id === 'trAnalisSearch'){
-      if(_t) clearTimeout(_t);
-      _t = setTimeout(render, 120);
+    if(!e.target || !e.target.id) return;
+    if(e.target.id === 'trAnalisSearchR'){
+      if(_tR) clearTimeout(_tR);
+      _tR = setTimeout(renderDirectoryR, 120);
+    } else if(e.target.id === 'trMdetSearch'){
+      if(_tS) clearTimeout(_tS);
+      _tS = setTimeout(renderSidebar, 120);
     }
   });
 
-  // Click row → open firm detail page
+  // Klik row Direktori (Ringkasan) → openFirm + switch ke tab Analis
   document.addEventListener('click', function(e){
-    var tr = e.target && e.target.closest && e.target.closest('#trAnalisBody tr[data-firm-id]');
-    if(!tr) return;
-    var fid = tr.getAttribute('data-firm-id') || tr.getAttribute('data-firm-name');
-    if(fid && window.__TR_openFirm){ window.__TR_openFirm(fid); }
+    var trR = e.target && e.target.closest && e.target.closest('#trAnalisBodyR tr[data-firm-id]');
+    if(trR){
+      var fid = trR.getAttribute('data-firm-id') || trR.getAttribute('data-firm-name');
+      if(fid && window.__TR_openFirm){ window.__TR_openFirm(fid); }
+      return;
+    }
+    var item = e.target && e.target.closest && e.target.closest('#trMdetList .tr-mdet-item');
+    if(item){
+      var fid2 = item.getAttribute('data-firm-id');
+      if(fid2 && window.__TR_openFirm){ window.__TR_openFirm(fid2); }
+      return;
+    }
+  });
+
+  // Sinkronisasi highlight active di sidebar ketika firm dibuka
+  document.addEventListener('tr-firm-open', function(e){
+    var firm = e && e.detail && e.detail.firm;
+    if(!firm) return;
+    var items = document.querySelectorAll('#trMdetList .tr-mdet-item');
+    items.forEach(function(it){
+      it.classList.toggle('active', it.getAttribute('data-firm-id') === firm.id);
+    });
+    // Kalau active tak terlihat, scroll ke sana
+    var act = document.querySelector('#trMdetList .tr-mdet-item.active');
+    if(act){
+      try{ act.scrollIntoView({ behavior:'smooth', block:'nearest' }); }catch(_){ act.scrollIntoView(); }
+    }
   });
 
   // Subscribe ke data event
   function hook(){
-    if(window.__TR_onData){ window.__TR_onData(function(){ render(); }); return true; }
+    if(window.__TR_onData){ window.__TR_onData(function(){ renderAll(); }); return true; }
     return false;
   }
   if(!hook()){
