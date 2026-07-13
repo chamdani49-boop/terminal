@@ -3309,22 +3309,26 @@ body.tr-profile-open .tr-subpane{display:none !important}
 
 /* Chart + zones */
 .tr-recmodal-chart-wrap{
-  position:relative;width:100%;height:min(400px, 52vh);
+  position:relative;width:100%;height:clamp(300px, 46vh, 420px);
   background:var(--bg2);border-radius:12px;overflow:hidden;
   border:1px solid var(--border);
 }
 .tr-recmodal-chart{width:100%;height:100%}
-.tr-recmodal-zones{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+/* z-index tinggi supaya zona SELALU di atas canvas chart lightweight-charts
+   (canvas kadang punya z-index sendiri). Tanpa ini zona ada di DOM tapi
+   ketutup canvas → keliatan 'hilang'. */
+.tr-recmodal-zones{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
 .tr-recmodal-zone{position:absolute;pointer-events:none;box-sizing:border-box}
-/* Zona samar solid (bukan gradient) — meniru TradingView 'position tool'.
-   Border dibiarkan absen supaya transisi hijau→merah di garis entry
-   terbaca natural dari perubahan warna, bukan dari garis putih dashed. */
-.tr-recmodal-zone.tp{background:rgba(5,150,105,0.28)}
-.tr-recmodal-zone.tp2{background:rgba(5,150,105,0.15)}
-.tr-recmodal-zone.sl{background:rgba(225,29,72,0.24)}
-[data-theme="dark"] .tr-recmodal-zone.tp{background:rgba(74,222,128,0.14)}
-[data-theme="dark"] .tr-recmodal-zone.tp2{background:rgba(74,222,128,0.08)}
-[data-theme="dark"] .tr-recmodal-zone.sl{background:rgba(251,113,133,0.15)}
+/* Zona samar solid + border tipis di tepi (TP1 di atas zona hijau, SL di
+   bawah zona merah) — meniru TradingView 'position tool'. Border bantu
+   zona yg tipis tetap kebaca sebagai garis level. Opacity dinaikkan biar
+   jelas kelihatan (versi lama 0.14 di dark nyaris tak terlihat). */
+.tr-recmodal-zone.tp{background:rgba(5,150,105,0.30);border-top:2px solid rgba(5,150,105,0.85)}
+.tr-recmodal-zone.tp2{background:rgba(5,150,105,0.16);border-top:1px dashed rgba(5,150,105,0.7)}
+.tr-recmodal-zone.sl{background:rgba(225,29,72,0.26);border-bottom:2px solid rgba(225,29,72,0.85)}
+[data-theme="dark"] .tr-recmodal-zone.tp{background:rgba(45,212,150,0.26);border-top-color:rgba(74,222,128,0.9)}
+[data-theme="dark"] .tr-recmodal-zone.tp2{background:rgba(45,212,150,0.14);border-top-color:rgba(74,222,128,0.6)}
+[data-theme="dark"] .tr-recmodal-zone.sl{background:rgba(251,113,133,0.24);border-bottom-color:rgba(251,113,133,0.9)}
 /* Label chip di kiri atas zona (dan kiri bawah utk SL) berisi
    nama level + harga + % dari entry — biar user langsung tahu
    arti setiap zona tanpa harus lihat price scale kanan. */
