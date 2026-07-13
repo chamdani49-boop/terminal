@@ -2753,18 +2753,21 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-anl-cons-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;line-height:1}
 .tr-anl-cons-center .tick{display:block;font-size:14px;font-weight:800;color:var(--accent);letter-spacing:-.2px}
 .tr-anl-cons-center .note{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.4px;text-transform:uppercase;font-weight:700;margin-top:3px}
+/* Widget status: balik gradient (kiri=merah/loss, kanan=hijau/profit) supaya
+   intuisi "makin ke kanan makin bagus" sesuai konteks P&L. */
+.tr-anl-consensus .cs-axis-track{
+  background:linear-gradient(90deg,
+    var(--red) 0%,
+    rgba(225,29,72,.55) 28%,
+    var(--bg3) 50%,
+    rgba(5,150,105,.55) 72%,
+    var(--green) 100%);
+}
+.tr-anl-consensus .cs-axis-avg-label{color:var(--text2)}
+.tr-anl-consensus .cs-axis-avg-label .cs-avg-val{color:var(--text2)}
+.tr-anl-consensus .cs-axis-avg-line{border-left-color:var(--text2)}
 
-/* Row: 2-col grid — donut & bar (consensus-overview style) */
-.tr-anl-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
-@media(max-width:820px){.tr-anl-grid-2{grid-template-columns:1fr}}
-.tr-anl-donut-wrap{position:relative;height:180px;display:flex;align-items:center;justify-content:center;padding:8px 0}
-.tr-anl-donut-wrap canvas{max-height:180px}
-.tr-anl-donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
-.tr-anl-donut-center .dc-val{display:block;font-size:22px;font-weight:800;color:var(--text);line-height:1}
-.tr-anl-donut-center .dc-lbl{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);margin-top:3px}
-.tr-anl-donut-legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:10.5px}
-.tr-anl-donut-legend span{display:inline-flex;align-items:center;gap:5px;color:var(--text2)}
-.tr-anl-donut-legend i{display:inline-block;width:10px;height:10px;border-radius:2px}
+/* Firm bar wrap (tinggi diatur inline sesuai jumlah bar) */
 .tr-anl-bar-wrap{height:200px;position:relative}
 
 /* Rec table (dashboard analyst-table style) */
@@ -4232,9 +4235,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="tr-anl-chart" id="trAnlChart">
           <div class="anl-empty">📡 Menunggu data OHLC…</div>
         </div>
-        <!-- Widget konsensus (mirror Consensus Analyst dari dashboard, data dari tracker) -->
+        <!-- Widget status rekomendasi (donut TP/SL/EXPIRED/AKTIF + P&L meter + 3 kotak) -->
         <div class="tr-anl-consensus" id="trAnlConsensus">
-          <div class="tr-anl-consensus-hd">📊 Konsensus Analis · <b id="trAnlConsN">— rec</b></div>
+          <div class="tr-anl-consensus-hd">🎯 Status Rekomendasi · <b id="trAnlConsN">— rec</b></div>
           <div class="consensus-grid">
             <div class="consensus-chart-wrap">
               <canvas id="trAnlConsDonut"></canvas>
@@ -4251,34 +4254,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
     </div>
 
-    <!-- 2-col grid: status donut + firm bar (consensus-overview style) -->
-    <div class="tr-anl-grid-2">
-      <div class="tr-card">
-        <div class="tr-card-h">
-          <div>
-            <div class="tr-card-title">Status Rekomendasi</div>
-            <div class="tr-card-desc">Distribusi outcome untuk ticker ini</div>
-          </div>
+    <!-- Firm bar (full width — status donut sudah pindah ke widget kanan chart) -->
+    <div class="tr-card" style="margin-top:14px">
+      <div class="tr-card-h">
+        <div>
+          <div class="tr-card-title">🏢 Firm Paling Aktif</div>
+          <div class="tr-card-desc">Jumlah rec per firm untuk ticker ini (top 12)</div>
         </div>
-        <div class="tr-anl-donut-wrap">
-          <canvas id="trAnlStatusDonut"></canvas>
-          <div class="tr-anl-donut-center">
-            <span class="dc-val" id="trAnlDonutVal">—</span>
-            <span class="dc-lbl">total rec</span>
-          </div>
-        </div>
-        <div class="tr-anl-donut-legend" id="trAnlDonutLegend"></div>
       </div>
-      <div class="tr-card">
-        <div class="tr-card-h">
-          <div>
-            <div class="tr-card-title">Firm Paling Aktif</div>
-            <div class="tr-card-desc">Jumlah rec per firm (top 8)</div>
-          </div>
-        </div>
-        <div class="tr-anl-bar-wrap">
-          <canvas id="trAnlFirmBar"></canvas>
-        </div>
+      <div class="tr-anl-bar-wrap" style="height:280px">
+        <canvas id="trAnlFirmBar"></canvas>
       </div>
     </div>
 
@@ -7401,8 +7386,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _selectedRecId = null;// klik row → overlay entry/TP/SL
   var _chart = null;        // LightweightCharts chart instance
   var _candleSeries = null;
-  var _statusChart = null;  // Chart.js donut (row-3)
-  var _firmChart = null;    // Chart.js horizontal bar (row-3)
+  var _firmChart = null;    // Chart.js horizontal bar (row bawah)
   var _consDonut = null;    // Chart.js donut (widget konsensus, right of chart)
   var _searchList = [];     // hasil filter search saham yg sedang tampil
   var _searchActive = -1;   // index item aktif utk keyboard nav
@@ -7555,42 +7539,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     $('trAnlFirmCnt').textContent = Object.keys(k.firms).length;
   }
 
-  // ── Donut: status distribution (Chart.js) ─────────────────────────
-  function renderDonut(k){
-    var el = $('trAnlStatusDonut'); if (!el || typeof Chart === 'undefined') return;
-    $('trAnlDonutVal').textContent = k.n;
-    if (_statusChart) { try { _statusChart.destroy(); } catch(_){} _statusChart = null; }
-    var labels = ['TP', 'SL', 'Expired', 'Aktif'];
-    var data   = [k.tpN, k.slN, k.expN, k.active];
-    var colors = _isDark()
-      ? ['#4ade80','#fb7185','#8b7eb8','#c4a3ff']
-      : ['#059669','#e11d48','#94a3b8','#6d28d9'];
-    _statusChart = new Chart(el, {
-      type: 'doughnut',
-      data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 0, cutout: '68%' }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: function(ctx){
-            var total = k.n || 1;
-            return ctx.label + ': ' + ctx.parsed + ' (' + (ctx.parsed / total * 100).toFixed(0) + '%)';
-          } } }
-        }
-      }
-    });
-    var lg = $('trAnlDonutLegend');
-    if (lg) lg.innerHTML = labels.map(function(l, i){
-      return '<span><i style="background:' + colors[i] + '"></i>' + l + ' · ' + data[i] + '</span>';
-    }).join('');
-  }
-
   // ── Bar: top firm (Chart.js horizontal) ───────────────────────────
   function renderFirmBar(k){
     var el = $('trAnlFirmBar'); if (!el || typeof Chart === 'undefined') return;
     if (_firmChart) { try { _firmChart.destroy(); } catch(_){} _firmChart = null; }
     var pairs = Object.keys(k.firms).map(function(f){ return [f, k.firms[f]]; })
-      .sort(function(a,b){ return b[1]-a[1]; }).slice(0, 8);
+      .sort(function(a,b){ return b[1]-a[1]; }).slice(0, 12);
     if (!pairs.length) return;
     _firmChart = new Chart(el, {
       type: 'bar',
@@ -7599,7 +7553,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         datasets: [{
           data: pairs.map(function(p){ return p[1]; }),
           backgroundColor: _isDark() ? 'rgba(196,163,255,.75)' : 'rgba(109,40,217,.75)',
-          borderRadius: 5, borderSkipped: false, barThickness: 14
+          borderRadius: 5, borderSkipped: false, barThickness: 16
         }]
       },
       options: {
@@ -7646,114 +7600,110 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }).join('');
   }
 
-  // ── Widget konsensus (di kanan chart): donut BUY/NEUTRAL/SELL + gradient
-  //    bar LOW/AVG/HIGH target + 3 kotak. Reuse .consensus-* / .cs-axis
-  //    / .consensus-numbers dari card-consensus dashboard.
-  function renderConsensusWidget(ticker, recs, k){
-    // Donut: distribusi arah rekomendasi (type)
-    var buy = 0, neu = 0, sell = 0;
-    var tp1s = [];
-    var current = null;
+  // ── Widget status rekomendasi (di kanan chart): donut TP/SL/EXPIRED/AKTIF
+  //    + gradient bar avg P&L (red→green) + 3 kotak (win rate, avg P&L, avg
+  //    durasi). Reuse .consensus-* / .cs-axis / .consensus-numbers CSS.
+  function renderStatusWidget(ticker, recs, k){
+    // Hitung durasi rata-rata utk rec yang sudah close (openDate→exitDate)
+    var durations = [];
+    var pnls = [];
     recs.forEach(function(r){
-      var t = String(r.type || 'BUY').toUpperCase();
-      if      (t === 'BUY')  buy++;
-      else if (t === 'SELL') sell++;
-      else                   neu++;
-      if (Number.isFinite(+r.tp1) && +r.tp1 > 0) tp1s.push(+r.tp1);
-      if (current == null && Number.isFinite(+r.lastPrice) && +r.lastPrice > 0) current = +r.lastPrice;
+      if (r.openDate && r.exitDate){
+        var d1 = new Date(r.openDate + 'T00:00:00Z');
+        var d2 = new Date(r.exitDate + 'T00:00:00Z');
+        var t1 = d1.getTime(), t2 = d2.getTime();
+        if (!isNaN(t1) && !isNaN(t2) && t2 >= t1){
+          durations.push(Math.round((t2 - t1) / 86400000));
+        }
+      }
+      var p = pnlOf(r); if (p != null) pnls.push(p);
     });
-    var lo = tp1s.length ? Math.min.apply(null, tp1s) : null;
-    var hi = tp1s.length ? Math.max.apply(null, tp1s) : null;
-    var avg = tp1s.length ? tp1s.reduce(function(a,b){ return a+b; }, 0) / tp1s.length : null;
+    var avgDur = durations.length ? durations.reduce(function(a,b){ return a+b; },0) / durations.length : null;
+    var avgPnl = pnls.length ? pnls.reduce(function(a,b){ return a+b; },0) / pnls.length : null;
+    var closedN = k.tpN + k.slN + k.expN;
+    var winRate = closedN > 0 ? (k.tpN / closedN * 100) : null;
 
     // Header + center donut
     $('trAnlConsN').textContent = k.n + ' rec';
     $('trAnlConsCenterTick').textContent = ticker;
     $('trAnlConsCenterN').textContent = k.n + ' rec';
 
-    // Donut render (Chart.js)
+    // Donut render — TP / SL / EXPIRED / AKTIF (Chart.js)
     if (_consDonut) { try { _consDonut.destroy(); } catch(_){} _consDonut = null; }
     if (typeof Chart !== 'undefined'){
       var isDark = _isDark();
-      var cBuy  = isDark ? '#4ade80' : '#059669';
-      var cNeu  = isDark ? '#fbbf24' : '#d97706';
-      var cSell = isDark ? '#fb7185' : '#e11d48';
+      var cTp  = isDark ? '#4ade80' : '#059669';
+      var cSl  = isDark ? '#fb7185' : '#e11d48';
+      var cExp = isDark ? '#8b7eb8' : '#94a3b8';
+      var cAct = isDark ? '#c4a3ff' : '#6d28d9';
       _consDonut = new Chart($('trAnlConsDonut'), {
         type: 'doughnut',
         data: {
-          labels: ['BUY', 'NEUTRAL', 'SELL'],
-          datasets: [{ data: [buy, neu, sell], backgroundColor: [cBuy, cNeu, cSell], borderWidth: 0, cutout: '68%' }]
+          labels: ['Target Hit (TP)', 'Stop-Loss (SL)', 'Expired', 'Masih Aktif'],
+          datasets: [{ data: [k.tpN, k.slN, k.expN, k.active], backgroundColor: [cTp, cSl, cExp, cAct], borderWidth: 0, cutout: '68%' }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { label: function(ctx){
-              var total = buy + neu + sell || 1;
+              var total = k.n || 1;
               return ctx.label + ': ' + ctx.parsed + ' (' + (ctx.parsed / total * 100).toFixed(0) + '%)';
             } } }
           }
         }
       });
 
-      // Stats list (kanan donut: NEUTRAL / BUY / SELL sesuai urutan foto)
+      // Stats list (kanan donut): 4 baris status dgn count
       $('trAnlConsStats').innerHTML = ''
-        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cNeu  + '"></span><span class="consensus-name">NEUTRAL</span><span class="consensus-count">' + neu  + '</span></div>'
-        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cBuy  + '"></span><span class="consensus-name">BUY</span><span class="consensus-count">' + buy  + '</span></div>'
-        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cSell + '"></span><span class="consensus-name">SELL</span><span class="consensus-count">' + sell + '</span></div>';
+        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cTp  + '"></span><span class="consensus-name">TP</span><span class="consensus-count">' + k.tpN    + '</span></div>'
+        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cSl  + '"></span><span class="consensus-name">SL</span><span class="consensus-count">' + k.slN    + '</span></div>'
+        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cExp + '"></span><span class="consensus-name">EXPIRED</span><span class="consensus-count">' + k.expN   + '</span></div>'
+        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cAct + '"></span><span class="consensus-name">AKTIF</span><span class="consensus-count">' + k.active + '</span></div>';
     }
 
-    // Gradient bar (cs-axis) — posisi dot = current price di rentang LOW–HIGH
+    // Gradient bar (cs-axis) — dot di posisi avg P&L pada skala −20% → +20%
+    // Kiri (0%) = LOSS berat, tengah (50%) = BEP (break-even), kanan (100%) = PROFIT tinggi
     var axis = $('trAnlConsAxis'); if (!axis) return;
-    if (lo == null || hi == null){
-      axis.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;font-family:\'IBM Plex Mono\',monospace;padding:22px 8px">Target belum tersedia</div>';
+    if (avgPnl == null){
+      axis.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;font-family:\'IBM Plex Mono\',monospace;padding:22px 8px">Data P&L belum tersedia</div>';
     } else {
-      var avgPct, curPct;
-      if (lo === hi){
-        // Semua rec target harganya sama — center-kan avg, dot ikut avg posisinya
-        avgPct = 50;
-        curPct = 50;
-      } else {
-        avgPct = ((avg - lo) / (hi - lo)) * 100;
-        if (current == null)          curPct = avgPct;
-        else if (current <= lo)       curPct = 0;
-        else if (current >= hi)       curPct = 100;
-        else                          curPct = ((current - lo) / (hi - lo)) * 100;
-      }
-      // Clamp ke [2..98] biar dot & badge tidak keluar dari track
+      // Mapping: −20% → 0%, 0% → 50%, +20% → 100% (clamp di luar range)
+      var RANGE = 20;
+      var rawPct = 50 + (avgPnl / RANGE) * 50;
       var clamp = function(v){ return Math.max(2, Math.min(98, v)); };
-      var dotPct = clamp(curPct);
-      var avgPctClamped = clamp(avgPct);
-      var curTxt = current != null ? fmtN(current) : '—';
+      var dotPct = clamp(rawPct);
+      var pnlColor = avgPnl > 0 ? 'var(--green)' : avgPnl < 0 ? 'var(--red)' : 'var(--text2)';
+      var pnlTxt = (avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(1) + '%';
       axis.innerHTML = ''
         + '<div class="cs-axis-track"></div>'
-        + '<div class="cs-axis-cur" style="left:' + dotPct + '%">' + esc(curTxt) + '</div>'
+        + '<div class="cs-axis-cur" style="left:' + dotPct + '%;color:' + pnlColor + '">' + esc(pnlTxt) + '</div>'
         + '<div class="cs-axis-tick" style="left:' + dotPct + '%"></div>'
-        + '<div class="cs-axis-dot" style="left:' + dotPct + '%"></div>'
-        + '<div class="cs-axis-avg-line" style="left:' + avgPctClamped + '%"></div>'
-        + '<div class="cs-axis-avg-label" style="left:' + avgPctClamped + '%">Rata-Rata<span class="cs-avg-val">' + esc(fmtN(avg)) + '</span></div>'
-        + '<div class="cs-axis-end lo">LOW<span class="v">' + esc(fmtN(lo)) + '</span></div>'
-        + '<div class="cs-axis-end hi">HIGH<span class="v">' + esc(fmtN(hi)) + '</span></div>';
+        + '<div class="cs-axis-dot" style="left:' + dotPct + '%;background:' + pnlColor + '"></div>'
+        + '<div class="cs-axis-avg-line" style="left:50%"></div>'
+        + '<div class="cs-axis-avg-label" style="left:50%">BEP<span class="cs-avg-val">0.0%</span></div>'
+        + '<div class="cs-axis-end lo">LOSS<span class="v">−' + RANGE + '%</span></div>'
+        + '<div class="cs-axis-end hi">PROFIT<span class="v">+' + RANGE + '%</span></div>';
     }
 
-    // 3 kotak LOW / TARGET / HIGH dengan % vs current price
-    var pctFrom = function(target){
-      if (!Number.isFinite(target) || !Number.isFinite(current) || current <= 0) return null;
-      return ((target - current) / current) * 100;
+    // 3 kotak: WIN RATE / AVG P&L / AVG DURASI
+    var pnlColorFor = function(v){
+      if (v == null) return 'var(--text3)';
+      return v > 0 ? 'var(--green)' : v < 0 ? 'var(--red)' : 'var(--text2)';
     };
-    var pctBox = function(v){
-      if (v == null) return '<div class="cn-gap" style="color:var(--text3)">—</div>';
-      var color = v > 0 ? 'var(--green)' : v < 0 ? 'var(--red)' : 'var(--text2)';
-      var sym = v > 0 ? '+' : '';
-      return '<div class="cn-gap" style="color:' + color + '">' + sym + v.toFixed(1) + '%</div>';
-    };
-    var loPct  = pctFrom(lo);
-    var avgPct2 = pctFrom(avg);
-    var hiPct  = pctFrom(hi);
+    var wrColor = winRate == null ? 'var(--text3)' : winRate >= 60 ? 'var(--green)' : winRate < 40 ? 'var(--red)' : 'var(--text2)';
+    var wrTxt = winRate == null ? '—' : winRate.toFixed(0) + '%';
+    var pnlTxt = avgPnl == null ? '—' : (avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(1) + '%';
+    var durTxt = avgDur == null ? '—' : Math.round(avgDur) + 'h';
+
+    var wrSub = winRate == null ? '—' : k.tpN + '/' + closedN + ' hit TP';
+    var pnlSub = avgPnl == null ? '—' : pnls.length + ' rec dihitung';
+    var durSub = avgDur == null ? '—' : durations.length + ' rec ditutup';
+
     $('trAnlConsNums').innerHTML = ''
-      + '<div class="cn-box"><div class="cn-label">LOW</div><div class="cn-val" style="color:var(--red)">' + esc(fmtN(lo)) + '</div>' + pctBox(loPct) + '</div>'
-      + '<div class="cn-box"><div class="cn-label">TARGET</div><div class="cn-val" style="color:var(--accent)">' + esc(fmtN(avg)) + '</div>' + pctBox(avgPct2) + '</div>'
-      + '<div class="cn-box"><div class="cn-label">HIGH</div><div class="cn-val" style="color:var(--green)">' + esc(fmtN(hi)) + '</div>' + pctBox(hiPct) + '</div>';
+      + '<div class="cn-box"><div class="cn-label">WIN RATE</div><div class="cn-val" style="color:' + wrColor + '">' + wrTxt + '</div><div class="cn-gap" style="color:var(--text3);font-size:9.5px;font-weight:600">' + esc(wrSub) + '</div></div>'
+      + '<div class="cn-box"><div class="cn-label">AVG P&L</div><div class="cn-val" style="color:' + pnlColorFor(avgPnl) + '">' + pnlTxt + '</div><div class="cn-gap" style="color:var(--text3);font-size:9.5px;font-weight:600">' + esc(pnlSub) + '</div></div>'
+      + '<div class="cn-box"><div class="cn-label">AVG DURASI</div><div class="cn-val" style="color:var(--accent)">' + durTxt + '</div><div class="cn-gap" style="color:var(--text3);font-size:9.5px;font-weight:600">' + esc(durSub) + '</div></div>';
   }
 
   // ── Chart: candlestick + markers per rec, price lines untuk selected rec ─
@@ -7917,8 +7867,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var k = computeKpi(recs);
     renderHero(ticker, recs, k);
     renderKpiStrip(k);
-    renderConsensusWidget(ticker, recs, k);
-    renderDonut(k);
+    renderStatusWidget(ticker, recs, k);
     renderFirmBar(k);
     renderRecTable(recs);
     renderChart(ticker, recs);
