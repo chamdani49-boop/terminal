@@ -7,6 +7,13 @@
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="apple-icon.png">
 <meta name="theme-color" content="#6d28d9">
+<!-- Preconnect ke domain TradingView agar TLS+DNS handshake terjadi lebih awal.
+     Membuat load widget (di Pasar Live & tab Analisis Tracker) terasa lebih cepat
+     saat pertama kali user buka halaman terkait. -->
+<link rel="preconnect" href="https://s3.tradingview.com" crossorigin>
+<link rel="preconnect" href="https://www.tradingview.com" crossorigin>
+<link rel="dns-prefetch" href="https://s3.tradingview.com">
+<link rel="dns-prefetch" href="https://www.tradingview.com">
 <script>
   // Set theme as early as possible to prevent flash of wrong theme.
   (function() {
@@ -2733,10 +2740,16 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-anl-kpi .val.dn{color:var(--red)}
 .tr-anl-kpi .sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* Chart card — TradingView iframe embed */
+/* Chart card — TradingView Advanced Chart widget (script embed, sama pola dgn
+   .pl-chart-host di Pasar Live). Widget bikin iframe internal, kita force
+   full width/height via override selector di dalam .tr-anl-tv-wrap. */
 .tr-anl-chartcard .tr-card-h{align-items:flex-start}
 .tr-anl-tv-wrap{width:100%;height:520px;position:relative;background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
-.tr-anl-tv-frame{width:100%;height:100%;border:0;display:block}
+.tr-anl-tv-wrap .tradingview-widget-container,
+.tr-anl-tv-wrap .tradingview-widget-container__widget,
+.tr-anl-tv-wrap iframe{height:100%!important;width:100%!important;display:block}
+.tr-anl-tv-wrap .tradingview-widget-copyright{display:none!important}
+.tr-anl-tv-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px;pointer-events:none;z-index:1}
 @media(max-width:640px){.tr-anl-tv-wrap{height:380px}}
 
 /* Chart row: chart kiri + widget konsensus kanan (2-col responsif) */
@@ -4338,11 +4351,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div>
       </div>
       <div class="tr-anl-chart-row">
-        <div class="tr-anl-tv-wrap">
-          <iframe id="trAnlTvFrame" class="tr-anl-tv-frame" title="TradingView Chart"
-                  frameborder="0" allowtransparency="true" scrolling="no"
-                  allowfullscreen loading="lazy"></iframe>
-        </div>
+        <!-- Host untuk TradingView widget (script embed, di-inject via JS) -->
+        <div class="tr-anl-tv-wrap" id="trAnlTvHost"></div>
         <!-- Widget status rekomendasi (donut TP/SL/EXPIRED/AKTIF + P&L meter + 3 kotak) -->
         <div class="tr-anl-consensus" id="trAnlConsensus">
           <div class="tr-anl-consensus-hd">🎯 Status Rekomendasi · <b id="trAnlConsN">— rec</b></div>
@@ -7789,28 +7799,46 @@ body.is-mobile-device.force-desktop .pl-col-main{
       + '<div class="cn-box"><div class="cn-label">AVG DURASI</div><div class="cn-val" style="color:var(--accent)">' + durTxt + '</div><div class="cn-gap" style="color:var(--text3);font-size:9.5px;font-weight:600">' + esc(durSub) + '</div></div>';
   }
 
-  // ── Chart: embed TradingView widget via iframe. Simple src update
-  //    saat ticker ganti. Peta rec (marker & overlay entry/TP/SL) di-move
-  //    ke pop-up detail yg muncul saat user klik row di tabel bawah.
+  // ── Chart: embed TradingView Advanced Chart widget (script-based, sama
+  //    pola dgn plTvInHost di Pasar Live). Widget di-rebuild tiap ticker
+  //    ganti atau theme toggle → widget baru dgn config baru sehingga tema
+  //    dark/light benar-benar ikut. Peta rec (marker & overlay entry/TP/SL)
+  //    pindah ke pop-up detail yg muncul saat klik row di tabel bawah.
   function renderTvChart(ticker){
-    var iframe = $('trAnlTvFrame'); if (!iframe) return;
-    var isDark = _isDark();
-    var q = [
-      'symbol=' + encodeURIComponent('IDX:' + ticker),
-      'interval=D',
-      'hidesidetoolbar=0',
-      'symboledit=0',
-      'saveimage=0',
-      'toolbarbg=' + (isDark ? '150f33' : 'f1eefc'),
-      'studies=%5B%5D',
-      'theme=' + (isDark ? 'dark' : 'light'),
-      'style=1',
-      'timezone=' + encodeURIComponent('Asia/Jakarta'),
-      'locale=id',
-      'withdateranges=1',
-      'hideideas=1'
-    ].join('&');
-    iframe.src = 'https://s.tradingview.com/widgetembed/?' + q;
+    var host = $('trAnlTvHost'); if (!host || !ticker) return;
+    // Loading placeholder sementara script fetch + iframe init
+    host.innerHTML = '<div class="tr-anl-tv-loading">📡 Memuat chart ' + esc(ticker) + '…</div>';
+
+    var container = document.createElement('div');
+    container.className = 'tradingview-widget-container';
+
+    var widgetDiv = document.createElement('div');
+    widgetDiv.className = 'tradingview-widget-container__widget';
+    container.appendChild(widgetDiv);
+
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.async = true;
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    script.text = JSON.stringify({
+      autosize: true,
+      symbol: 'IDX:' + ticker,
+      interval: 'D',
+      timezone: 'Asia/Jakarta',
+      theme: _isDark() ? 'dark' : 'light',
+      style: '1',
+      locale: 'id',
+      withdateranges: true,
+      hide_side_toolbar: true,
+      allow_symbol_change: false,
+      studies: [],
+      support_host: 'https://www.tradingview.com'
+    });
+    container.appendChild(script);
+
+    // Bersihkan placeholder loading + append widget baru
+    host.innerHTML = '';
+    host.appendChild(container);
   }
 
   // ── Switch active ticker ──────────────────────────────────────────
@@ -7915,6 +7943,29 @@ body.is-mobile-device.force-desktop .pl-col-main{
       }
     }
   });
+
+  // ── Theme toggle listener: rebuild TV widget saat user ganti dark/light,
+  //    hanya kalau halaman tracker & tab Analisis lagi aktif (biar tidak
+  //    reload widget yg tidak keliatan). Pola sama dgn Pasar Live. ───────
+  function attachTvThemeListener(){
+    var tt = document.getElementById('themeToggle');
+    if (!tt){ setTimeout(attachTvThemeListener, 200); return; }
+    tt.addEventListener('click', function(){
+      // Delay 80ms biar toggleTheme() sudah update data-theme di documentElement
+      setTimeout(function(){
+        var page = document.getElementById('page-tracker');
+        var pane = document.getElementById('tr-view-analisis');
+        if (!page || !page.classList.contains('active')) return;
+        if (!pane || !pane.classList.contains('active')) return;
+        if (_current) renderTvChart(_current);
+      }, 80);
+    });
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', attachTvThemeListener);
+  } else {
+    attachTvThemeListener();
+  }
 
   // ── Subscribe ke data pipeline ────────────────────────────────────
   if (window.__TR_onData){
