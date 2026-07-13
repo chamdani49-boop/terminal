@@ -2733,14 +2733,11 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-anl-kpi .val.dn{color:var(--red)}
 .tr-anl-kpi .sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* Chart card (candlestick + overlay markers + legend) */
+/* Chart card — TradingView iframe embed */
 .tr-anl-chartcard .tr-card-h{align-items:flex-start}
-.tr-anl-legend{display:flex;gap:12px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.3px}
-.tr-anl-legend span{display:inline-flex;align-items:center;gap:5px}
-.tr-anl-legend i{display:inline-block;width:12px;height:2px;border-radius:1px}
-.tr-anl-chart{width:100%;height:380px;position:relative;background:var(--bg2);border-radius:12px;overflow:hidden}
-.tr-anl-chart .anl-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text3);font-size:12px;font-family:'IBM Plex Mono',monospace;text-align:center;padding:12px}
-@media(max-width:640px){.tr-anl-chart{height:300px}}
+.tr-anl-tv-wrap{width:100%;height:520px;position:relative;background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.tr-anl-tv-frame{width:100%;height:100%;border:0;display:block}
+@media(max-width:640px){.tr-anl-tv-wrap{height:380px}}
 
 /* Chart row: chart kiri + widget konsensus kanan (2-col responsif) */
 .tr-anl-chart-row{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:stretch;margin-top:6px}
@@ -2903,7 +2900,7 @@ body.tr-profile-open .tr-subpane{display:none !important}
 /* Position cards (rekomendasi aktif) */
 .tr-live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 @media(max-width:640px){.tr-live-grid{grid-template-columns:1fr}}
-.tr-live-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 15px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s}
+.tr-live-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 15px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s;cursor:pointer}
 .tr-live-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:var(--green)}
 .tr-live-card.dn::before{background:var(--red)}
 .tr-live-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.28);border-color:var(--accent)}
@@ -3252,6 +3249,120 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-sim-monthly-table .neu{color:var(--text2)}
 
 .tr-sim-note{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);margin-top:10px;line-height:1.6;letter-spacing:.2px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
+
+/* ═══════════════════════════════════════════════════════════════════
+   POP-UP DETAIL REKOMENDASI (dari row tabel Analisis / card Live)
+   Chart candlestick + overlay zona risk/reward (hijau entry→TP, merah
+   entry→SL). Overlay pakai HTML absolute di atas chart lightweight-charts.
+   ═══════════════════════════════════════════════════════════════════ */
+.tr-recmodal{position:fixed;inset:0;z-index:12000;display:none;opacity:0;transition:opacity .18s ease}
+.tr-recmodal.open{display:block;opacity:1}
+.tr-recmodal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.tr-recmodal-body{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(920px, calc(100vw - 24px));
+  max-height:calc(100vh - 40px);
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:18px 20px 16px;
+  box-shadow:var(--shadow-card-lg);
+  display:flex;flex-direction:column;gap:12px;overflow-y:auto;
+}
+.tr-recmodal-close{
+  position:absolute;top:12px;right:12px;
+  width:34px;height:34px;border-radius:50%;
+  background:var(--bg2);border:1px solid var(--border);
+  color:var(--text2);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  z-index:3;transition:all .15s;
+}
+.tr-recmodal-close:hover{background:rgba(225,29,72,.14);color:var(--red);border-color:rgba(225,29,72,.4)}
+.tr-recmodal-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding-right:42px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.tr-recmodal-hd-l{min-width:0;flex:1}
+.tr-recmodal-tick{font-size:26px;font-weight:800;letter-spacing:-.6px;color:var(--accent);line-height:1.05}
+.tr-recmodal-name{font-size:13px;color:var(--text2);font-weight:600;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr-recmodal-firm{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);font-weight:600;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr-recmodal-hd-r{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.tr-recmodal-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:800;padding:3px 9px;border-radius:5px;letter-spacing:.6px}
+.tr-recmodal-badge.buy{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.28)}
+.tr-recmodal-badge.sell{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.28)}
+.tr-recmodal-status{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;padding:2.5px 7px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase}
+.tr-recmodal-status.tp{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.28)}
+.tr-recmodal-status.sl{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.28)}
+.tr-recmodal-status.exp{background:rgba(148,163,184,.12);color:#94a3b8;border:1px solid rgba(148,163,184,.28)}
+.tr-recmodal-status.active{background:rgba(59,130,246,.14);color:#60a5fa;border:1px solid rgba(59,130,246,.35)}
+.tr-recmodal-status.pending{background:rgba(245,158,11,.14);color:#f59e0b;border:1px solid rgba(245,158,11,.35)}
+.tr-recmodal-status.missed{background:rgba(148,163,184,.14);color:#94a3b8;border:1px solid rgba(148,163,184,.35)}
+.tr-recmodal-date{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);font-weight:700;letter-spacing:.3px}
+
+/* Chart + zones */
+.tr-recmodal-chart-wrap{
+  position:relative;width:100%;height:min(400px, 52vh);
+  background:var(--bg2);border-radius:12px;overflow:hidden;
+  border:1px solid var(--border);
+}
+.tr-recmodal-chart{width:100%;height:100%}
+.tr-recmodal-zones{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.tr-recmodal-zone{position:absolute;pointer-events:none;box-sizing:border-box}
+.tr-recmodal-zone.tp{
+  background:linear-gradient(180deg,rgba(5,150,105,0.32) 0%,rgba(5,150,105,0.22) 100%);
+  border-top:1px solid rgba(5,150,105,0.75);
+  border-bottom:1px dashed rgba(255,255,255,0.4);
+}
+.tr-recmodal-zone.tp2{
+  background:linear-gradient(180deg,rgba(5,150,105,0.20) 0%,rgba(5,150,105,0.12) 100%);
+  border-top:1px solid rgba(5,150,105,0.5);
+}
+.tr-recmodal-zone.sl{
+  background:linear-gradient(180deg,rgba(225,29,72,0.22) 0%,rgba(225,29,72,0.32) 100%);
+  border-top:1px dashed rgba(255,255,255,0.4);
+  border-bottom:1px solid rgba(225,29,72,0.75);
+}
+.tr-recmodal-zone-lbl{
+  position:absolute;top:5px;right:8px;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;
+  padding:2.5px 7px;border-radius:5px;color:#fff;letter-spacing:.5px;pointer-events:none;
+}
+.tr-recmodal-zone.tp .tr-recmodal-zone-lbl{background:rgba(5,150,105,0.9)}
+.tr-recmodal-zone.tp2 .tr-recmodal-zone-lbl{background:rgba(5,150,105,0.7)}
+.tr-recmodal-zone.sl .tr-recmodal-zone-lbl{top:auto;bottom:5px;background:rgba(225,29,72,0.9)}
+.tr-recmodal-empty{
+  position:absolute;inset:0;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  color:var(--text3);font-size:12px;font-family:'IBM Plex Mono',monospace;
+  background:var(--bg2);pointer-events:none;text-align:center;padding:12px;
+}
+.tr-recmodal-empty.show{display:flex}
+
+/* Level cards (Entry / TP1 / TP2 / SL) */
+.tr-recmodal-levels{display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:8px}
+.tr-recmodal-level{padding:10px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);display:flex;flex-direction:column;gap:2px;position:relative}
+.tr-recmodal-level.entry{border-color:rgba(109,40,217,.4);background:linear-gradient(135deg,rgba(109,40,217,.08),var(--bg2))}
+.tr-recmodal-level.tp{border-color:rgba(5,150,105,.4);background:linear-gradient(135deg,rgba(5,150,105,.07),var(--bg2))}
+.tr-recmodal-level.sl{border-color:rgba(225,29,72,.4);background:linear-gradient(135deg,rgba(225,29,72,.07),var(--bg2))}
+.tr-recmodal-level .lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.tr-recmodal-level .val{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:800;color:var(--text);margin-top:2px}
+.tr-recmodal-level.entry .val{color:var(--accent)}
+.tr-recmodal-level.tp .val{color:var(--green)}
+.tr-recmodal-level.sl .val{color:var(--red)}
+.tr-recmodal-level .ret{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;margin-top:1px}
+.tr-recmodal-level.tp .ret{color:var(--green)}
+.tr-recmodal-level.sl .ret{color:var(--red)}
+
+/* Footer info */
+.tr-recmodal-foot{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border)}
+.tr-recmodal-foot-item{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tr-recmodal-foot-item .lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.tr-recmodal-foot-item .val{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text);font-weight:800}
+.tr-recmodal-foot-item .val.up{color:var(--green)}
+.tr-recmodal-foot-item .val.dn{color:var(--red)}
+
+@media (max-width:640px){
+  .tr-recmodal-body{padding:14px 14px 12px;max-height:calc(100vh - 20px)}
+  .tr-recmodal-hd{padding-right:38px}
+  .tr-recmodal-tick{font-size:22px}
+  .tr-recmodal-chart-wrap{height:min(320px, 44vh)}
+  .tr-recmodal-level .val{font-size:15px}
+}
 </style>
 
 <!-- ═══════════════════════════════════════════
@@ -4217,22 +4328,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <!-- KPI strip: 5 tile mini (mirror consensus overview) -->
     <div class="tr-anl-kpi-strip" id="trAnlKpiStrip"></div>
 
-    <!-- Chart card: candlestick + marker rec + widget konsensus di kanan -->
+    <!-- Chart card: TradingView widget + widget status di kanan.
+         Marker per rec di-move ke popup detail (klik row di tabel bawah). -->
     <div class="tr-card tr-anl-chartcard">
       <div class="tr-card-h">
         <div>
-          <div class="tr-card-title">📊 Chart Candlestick + Peta Rekomendasi</div>
-          <div class="tr-card-desc">Marker panah = tanggal rilis rec (max 40 terakhir). Klik baris di tabel bawah untuk overlay entry/TP/SL rec tersebut.</div>
-        </div>
-        <div class="tr-anl-legend">
-          <span><i style="background:var(--accent)"></i>Entry</span>
-          <span><i style="background:#f59e0b"></i>Target</span>
-          <span><i style="background:var(--red)"></i>Stop-Loss</span>
+          <div class="tr-card-title">📊 Chart Candlestick (TradingView)</div>
+          <div class="tr-card-desc">Chart interaktif TradingView. Klik salah satu baris rekomendasi di bawah untuk lihat peta entry/TP/SL di pop-up.</div>
         </div>
       </div>
       <div class="tr-anl-chart-row">
-        <div class="tr-anl-chart" id="trAnlChart">
-          <div class="anl-empty">📡 Menunggu data OHLC…</div>
+        <div class="tr-anl-tv-wrap">
+          <iframe id="trAnlTvFrame" class="tr-anl-tv-frame" title="TradingView Chart"
+                  frameborder="0" allowtransparency="true" scrolling="no"
+                  allowfullscreen loading="lazy"></iframe>
         </div>
         <!-- Widget status rekomendasi (donut TP/SL/EXPIRED/AKTIF + P&L meter + 3 kotak) -->
         <div class="tr-anl-consensus" id="trAnlConsensus">
@@ -5978,7 +6087,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var stateBadgeHtml = '<span class="tr-state-badge tr-state-' + badge.cls + '">'
       + badge.icon + ' ' + badge.label + '</span>';
 
-    return '<div class="tr-live-card ' + cardCls + '" data-tr-stock="' + esc(o.ticker) + '" title="Lihat semua yang rekomendasi ' + esc(o.ticker) + '">'
+    return '<div class="tr-live-card ' + cardCls + '" data-recid="' + esc(o.id || '') + '" title="Klik untuk detail rekomendasi ' + esc(o.ticker) + '">'
       + '<div class="tr-live-card-top">'
         + '<div class="tr-live-card-l">'
           + '<div class="tr-live-card-tick">' + esc(o.ticker) + ' <span class="tr-live-card-badge ' + (isBuy ? 'buy' : 'sell') + '">' + (isBuy ? 'BUY' : 'SELL') + '</span> ' + stateBadgeHtml + '</div>'
@@ -7371,11 +7480,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _recsByTicker = {};   // { TICKER: [rec...] }
   var _tickers = [];        // sorted list by rec count
   var _current = null;      // active ticker
-  var _selectedRecId = null;// klik row → overlay entry/TP/SL
-  var _chart = null;        // LightweightCharts chart instance
-  var _candleSeries = null;
 
-  var _consDonut = null;    // Chart.js donut (widget konsensus, right of chart)
+  var _consDonut = null;    // Chart.js donut (widget status di kanan chart)
   var _searchList = [];     // hasil filter search saham yg sedang tampil
   var _searchActive = -1;   // index item aktif utk keyboard nav
   var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
@@ -7564,8 +7670,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var p = pnlOf(r);
       var pCls = p==null ? '' : (p > 0 ? 'up' : p < 0 ? 'dn' : '');
       var pTxt = p==null ? '—' : fmtPct(p, 1);
-      var activeCls = (_selectedRecId && r.id === _selectedRecId) ? ' active' : '';
-      return '<tr class="' + activeCls.trim() + '" data-recid="' + esc(r.id || '') + '">'
+      return '<tr data-recid="' + esc(r.id || '') + '">'
         + '<td class="n">' + esc(r.openDate || '—') + '</td>'
         + '<td>' + esc(firmShort(r.firm)) + '</td>'
         + '<td class="n">' + fmtN(r.entry) + '</td>'
@@ -7684,170 +7789,41 @@ body.is-mobile-device.force-desktop .pl-col-main{
       + '<div class="cn-box"><div class="cn-label">AVG DURASI</div><div class="cn-val" style="color:var(--accent)">' + durTxt + '</div><div class="cn-gap" style="color:var(--text3);font-size:9.5px;font-weight:600">' + esc(durSub) + '</div></div>';
   }
 
-  // ── Chart: candlestick + markers per rec, price lines untuk selected rec ─
-  async function renderChart(ticker, recs){
-    var el = $('trAnlChart'); if (!el) return;
-    if (typeof LightweightCharts === 'undefined'){
-      el.innerHTML = '<div class="anl-empty">Library chart belum siap</div>';
-      return;
-    }
-
-    // Hitung fromDate: rec terlama - 30 hari (biar ada konteks pre-rec)
-    var dates = recs.map(function(r){ return r.openDate; }).filter(Boolean).sort();
-    var fromDate;
-    if (dates.length) {
-      var d = new Date(dates[0] + 'T00:00:00Z');
-      d.setUTCDate(d.getUTCDate() - 30);
-      fromDate = d.toISOString().slice(0, 10);
-    } else {
-      fromDate = '2024-01-01';
-    }
-
-    el.innerHTML = '<div class="anl-empty"><span style="font-size:22px">📡</span><span>Memuat candle ' + esc(ticker) + '…</span></div>';
-
-    var candles = [];
-    try {
-      if (typeof fetchOhlcForModal === 'function') {
-        candles = await fetchOhlcForModal(ticker, fromDate);
-      }
-    } catch(e) {
-      console.warn('[tr-anl] gagal ambil OHLC', ticker, e);
-    }
-
-    // Cleanup chart lama sebelum render ulang
-    if (_chart) { try { _chart.remove(); } catch(_){} _chart = null; _candleSeries = null; }
-    if (el._chartRo) { try { el._chartRo.disconnect(); } catch(_){} el._chartRo = null; }
-    el.innerHTML = '';
-
-    if (!candles || !candles.length){
-      el.innerHTML = '<div class="anl-empty"><span style="font-size:22px">📡</span><span>Data OHLC untuk ' + esc(ticker) + ' tidak tersedia</span></div>';
-      return;
-    }
-
+  // ── Chart: embed TradingView widget via iframe. Simple src update
+  //    saat ticker ganti. Peta rec (marker & overlay entry/TP/SL) di-move
+  //    ke pop-up detail yg muncul saat user klik row di tabel bawah.
+  function renderTvChart(ticker){
+    var iframe = $('trAnlTvFrame'); if (!iframe) return;
     var isDark = _isDark();
-    var bg          = isDark ? '#150f33' : '#f1eefc';
-    var textColor   = isDark ? '#c4b8e8' : '#6e6490';
-    var gridColor   = isDark ? 'rgba(164,156,192,0.12)' : 'rgba(164,156,192,0.18)';
-    var borderColor = isDark ? '#4a3590' : '#d4ccf0';
-    var upColor     = isDark ? '#4ade80' : '#059669';
-    var downColor   = isDark ? '#fb7185' : '#e11d48';
-
-    _chart = LightweightCharts.createChart(el, {
-      width:  el.clientWidth  || 400,
-      height: el.clientHeight || 380,
-      layout: { background: { color: bg }, textColor: textColor, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, attributionLogo: false },
-      grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } },
-      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-      rightPriceScale: { borderColor: borderColor, scaleMargins: { top: 0.1, bottom: 0.1 } },
-      timeScale: {
-        borderColor: borderColor, timeVisible: false, secondsVisible: false,
-        tickMarkFormatter: function(time){
-          var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-          if (time && typeof time === 'object' && 'day' in time) return time.day + ' ' + months[time.month - 1];
-          var d = new Date(typeof time === 'number' ? time * 1000 : time);
-          return d.getUTCDate() + ' ' + months[d.getUTCMonth()];
-        }
-      },
-      handleScroll: true, handleScale: true
-    });
-
-    _candleSeries = _chart.addCandlestickSeries({
-      upColor: upColor, downColor: downColor,
-      borderUpColor: upColor, borderDownColor: downColor,
-      wickUpColor: upColor, wickDownColor: downColor
-    });
-
-    // Dedupe + sort candles ascending
-    var seen = {}; var lwData = [];
-    for (var i = 0; i < candles.length; i++){
-      var c = candles[i];
-      if (!c || !c.date || seen[c.date]) continue;
-      if (!Number.isFinite(c.open) || !Number.isFinite(c.close)) continue;
-      seen[c.date] = 1;
-      lwData.push({ time: c.date, open: c.open, high: c.high, low: c.low, close: c.close });
-    }
-    lwData.sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
-    _candleSeries.setData(lwData);
-
-    // ── Markers per rec (max 40 terakhir biar tidak crowded) ────────
-    var candleDateSet = {}; lwData.forEach(function(d){ candleDateSet[d.time] = 1; });
-    var candleDates = lwData.map(function(d){ return d.time; });
-    var markers = recs.filter(function(r){ return r.openDate; }).map(function(r){
-      var st = statusOf(r);
-      var color = st === 'TP' ? upColor
-                : st === 'SL' ? downColor
-                : (isDark ? '#c4a3ff' : '#6d28d9');
-      // Kalau tanggal rec bukan hari bursa, snap ke candle terdekat sebelumnya
-      var t = r.openDate;
-      if (!candleDateSet[t]){
-        var earlier = null;
-        for (var j = candleDates.length - 1; j >= 0; j--){
-          if (candleDates[j] <= t){ earlier = candleDates[j]; break; }
-        }
-        t = earlier || (candleDates.length ? candleDates[0] : null);
-      }
-      if (!t) return null;
-      return { time: t, position: 'belowBar', color: color, shape: 'arrowUp', text: firmShort(r.firm) };
-    }).filter(Boolean)
-      .sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
-
-    // Dedupe: kalau banyak marker di tanggal yg sama, gabung text singkat
-    var dedup = {}; markers.forEach(function(m){
-      if (!dedup[m.time]) dedup[m.time] = m;
-      else if (dedup[m.time].text !== m.text && !dedup[m.time].text.includes('+'))
-        dedup[m.time] = { time: m.time, position: 'belowBar', color: m.color, shape: 'arrowUp', text: dedup[m.time].text + ' +' };
-    });
-    var mArr = Object.keys(dedup).sort().map(function(k){ return dedup[k]; });
-    if (mArr.length > 40) mArr = mArr.slice(-40);
-    try { _candleSeries.setMarkers(mArr); } catch(_){}
-
-    // ── Overlay entry/TP/SL rec yang dipilih ───────────────────────
-    if (_selectedRecId){
-      var sel = null;
-      for (var m = 0; m < recs.length; m++){ if (recs[m].id === _selectedRecId){ sel = recs[m]; break; } }
-      if (sel){
-        var accentPurple = isDark ? '#c4a3ff' : '#6d28d9';
-        var tpColor      = isDark ? '#fbbf24' : '#d97706';
-        var lineOpts = function(price, color, title){
-          return {
-            price: +price, color: color, lineWidth: 1,
-            lineStyle: LightweightCharts.LineStyle.Dashed,
-            axisLabelVisible: true, title: title
-          };
-        };
-        if (Number.isFinite(+sel.entry) && +sel.entry > 0)
-          _candleSeries.createPriceLine(lineOpts(sel.entry, accentPurple, 'Entry'));
-        if (Number.isFinite(+sel.tp1) && +sel.tp1 > 0)
-          _candleSeries.createPriceLine(lineOpts(sel.tp1, tpColor, 'TP1'));
-        if (Number.isFinite(+sel.tp2) && +sel.tp2 > 0)
-          _candleSeries.createPriceLine(lineOpts(sel.tp2, tpColor, 'TP2'));
-        if (Number.isFinite(+sel.sl) && +sel.sl > 0)
-          _candleSeries.createPriceLine(lineOpts(sel.sl, downColor, 'SL'));
-      }
-    }
-
-    _chart.timeScale().fitContent();
-
-    // Responsive
-    var ro = new ResizeObserver(function(){
-      if (_chart) _chart.applyOptions({ width: el.clientWidth });
-    });
-    ro.observe(el);
-    el._chartRo = ro;
+    var q = [
+      'symbol=' + encodeURIComponent('IDX:' + ticker),
+      'interval=D',
+      'hidesidetoolbar=0',
+      'symboledit=0',
+      'saveimage=0',
+      'toolbarbg=' + (isDark ? '150f33' : 'f1eefc'),
+      'studies=%5B%5D',
+      'theme=' + (isDark ? 'dark' : 'light'),
+      'style=1',
+      'timezone=' + encodeURIComponent('Asia/Jakarta'),
+      'locale=id',
+      'withdateranges=1',
+      'hideideas=1'
+    ].join('&');
+    iframe.src = 'https://s.tradingview.com/widgetembed/?' + q;
   }
 
   // ── Switch active ticker ──────────────────────────────────────────
   function switchTicker(ticker){
     if (!ticker || !_recsByTicker[ticker]) return;
     _current = ticker;
-    _selectedRecId = null;
     var recs = _recsByTicker[ticker] || [];
     var k = computeKpi(recs);
     renderHero(ticker, recs, k);
     renderKpiStrip(k);
     renderStatusWidget(ticker, recs, k);
     renderRecTable(recs);
-    renderChart(ticker, recs);
+    renderTvChart(ticker);
     try { localStorage.setItem('tr_anl_ticker', ticker); } catch(_){}
   }
 
@@ -7919,17 +7895,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
       pickSearchItem(item.getAttribute('data-ticker'));
       return;
     }
-    // 2) Klik di luar search box → tutup dropdown
+    // 2) Klik di luar search box → tutup dropdown. Klik row rec sekarang
+    //    di-handle global popup modal handler (bukan overlay lagi).
     if (!e.target.closest('.tr-anl-searchwrap')) closeSearch();
-    // 3) Klik row rec → toggle overlay entry/TP/SL di chart
-    var row = e.target.closest('#trAnlRecsBody tr[data-recid]');
-    if (row){
-      var id = row.getAttribute('data-recid') || '';
-      _selectedRecId = (_selectedRecId === id) ? null : id;
-      var recs = _recsByTicker[_current] || [];
-      renderRecTable(recs);
-      renderChart(_current, recs);
-    }
   });
 
   // Mouseover di item dropdown: sync _searchActive supaya sinkron dgn keyboard
@@ -7959,6 +7927,418 @@ body.is-mobile-device.force-desktop .pl-col-main{
       else if (tries > 30) clearInterval(wait);
     }, 100);
   }
+})();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER — POP-UP DETAIL REKOMENDASI
+// Dibuka saat klik row di tabel Analisis atau klik card di tab Live.
+// Chart candlestick (lightweight-charts) + overlay zona hijau dari
+// harga entry ke TP dan zona merah dari entry ke SL, mengikuti gaya
+// TradingView "position tool". Overlay pakai HTML absolute di atas
+// chart canvas — di-reposition tiap kali user pan/zoom atau resize.
+// Expose ke global: window.__TR_showRec(rec), window.__TR_hideRec(),
+// window.__TR_findRecById(id).
+// ═══════════════════════════════════════════
+(function(){
+  var _chart = null;
+  var _series = null;
+  var _resizeObs = null;
+  var _timeSub = null;
+  var _currentRec = null;
+  var _keyHandler = null;
+  var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function fmtN(n){ return (n==null||!Number.isFinite(+n)) ? '—' : Number(n).toLocaleString('id-ID'); }
+  function fmtPct(n, dec){
+    if (n==null || !Number.isFinite(+n)) return '—';
+    var v=+n; var s=v>=0?'+':'';
+    return s + v.toFixed(dec==null?1:dec) + '%';
+  }
+  function fmtDate(iso){
+    if (!iso) return '—';
+    var d = new Date(iso + 'T00:00:00Z');
+    if (isNaN(d.getTime())) return iso;
+    var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    return d.getUTCDate() + ' ' + months[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+  }
+  function firmShort(f){
+    if (!f) return '—';
+    return String(f).replace(/^PT\s+/i,'').replace(/\s+(Tbk\.?|Indonesia)$/i,'').replace(/\s+Sekuritas$/i,'').trim();
+  }
+  function statusOfRec(r){
+    if (r._bucket === 'pendingList') return 'PENDING';
+    if (r._bucket === 'missedList')  return 'MISSED';
+    if (r._bucket === 'unfilledList'){
+      if (r.state === 'RUNNING_MISSED') return 'MISSED';
+      if (r.state === 'PENDING')        return 'PENDING';
+    }
+    if (r.state === 'TP' || r.closedBy === 'TP')      return 'TP';
+    if (r.state === 'SL' || r.closedBy === 'SL')      return 'SL';
+    if (r.state === 'EXPIRED' || r.closedBy === 'EXPIRED') return 'EXPIRED';
+    if (r.state === 'RUNNING_MISSED') return 'MISSED';
+    if (r.state === 'PENDING') return 'PENDING';
+    return 'ACTIVE';
+  }
+  function statusCls(st){
+    return st === 'TP' ? 'tp'
+         : st === 'SL' ? 'sl'
+         : st === 'EXPIRED' ? 'exp'
+         : st === 'PENDING' ? 'pending'
+         : st === 'MISSED'  ? 'missed'
+         : 'active';
+  }
+
+  // Global lookup: cari rec by id di semua tracker list (dedupe by
+  // priority order sama dgn aggregate() di Analisis IIFE).
+  window.__TR_findRecById = function(id){
+    if (!id || !window.__TR_getData) return null;
+    var data = window.__TR_getData();
+    if (!data) return null;
+    var lists = ['openList','historyList','pendingList','missedList','unfilledList'];
+    for (var i = 0; i < lists.length; i++){
+      var arr = data[lists[i]]; if (!Array.isArray(arr)) continue;
+      for (var j = 0; j < arr.length; j++){
+        if (arr[j] && arr[j].id === id){
+          var copy = {}; for (var p in arr[j]) if (Object.prototype.hasOwnProperty.call(arr[j],p)) copy[p] = arr[j][p];
+          copy._bucket = lists[i];
+          return copy;
+        }
+      }
+    }
+    return null;
+  };
+
+  function cleanupChart(){
+    if (_resizeObs) { try { _resizeObs.disconnect(); } catch(_){} _resizeObs = null; }
+    if (_timeSub && _chart){
+      try { _chart.timeScale().unsubscribeVisibleTimeRangeChange(_timeSub); } catch(_){}
+      _timeSub = null;
+    }
+    if (_chart) { try { _chart.remove(); } catch(_){} _chart = null; _series = null; }
+    var zones = $('trRecModalZones'); if (zones) zones.innerHTML = '';
+    var chartEl = $('trRecModalChart'); if (chartEl) chartEl.innerHTML = '';
+  }
+
+  function hideModal(){
+    var m = $('trRecModal'); if (!m) return;
+    m.classList.remove('open');
+    m.setAttribute('aria-hidden', 'true');
+    try { document.body.style.overflow = ''; } catch(_){}
+    if (_keyHandler){ document.removeEventListener('keydown', _keyHandler); _keyHandler = null; }
+    // Delay cleanup sedikit biar animasi fade selesai
+    setTimeout(function(){ cleanupChart(); _currentRec = null; }, 200);
+  }
+  window.__TR_hideRec = hideModal;
+
+  // Draw zones (green entry→TP, red entry→SL, optional TP2 lighter green).
+  // Dipanggil setelah chart siap + tiap kali user pan/zoom atau resize.
+  function drawZones(){
+    var rec = _currentRec;
+    if (!rec || !_series || !_chart) return;
+    var zonesEl = $('trRecModalZones'); if (!zonesEl) return;
+    zonesEl.innerHTML = '';
+
+    var yEntry = Number.isFinite(+rec.entry) ? _series.priceToCoordinate(+rec.entry) : null;
+    if (yEntry == null) return;
+
+    var yTP1 = Number.isFinite(+rec.tp1) && +rec.tp1 > 0 ? _series.priceToCoordinate(+rec.tp1) : null;
+    var yTP2 = Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1 ? _series.priceToCoordinate(+rec.tp2) : null;
+    var ySL  = Number.isFinite(+rec.sl)  && +rec.sl  > 0 ? _series.priceToCoordinate(+rec.sl)  : null;
+
+    // X range: dari openDate ke ujung kanan plot area
+    var xEntry = 0;
+    if (rec.openDate){
+      var xC = _chart.timeScale().timeToCoordinate(rec.openDate);
+      if (xC != null) xEntry = xC;
+    }
+    var xRight;
+    try { xRight = _chart.timeScale().width(); } catch(_){ xRight = 0; }
+    if (!xRight || xRight <= 0){
+      var wrap = document.querySelector('.tr-recmodal-chart-wrap');
+      xRight = wrap ? wrap.clientWidth : 400;
+    }
+    if (xEntry < 0) xEntry = 0;
+    var width = xRight - xEntry;
+    if (width <= 0) return;
+
+    // TP zone: top edge di TP1, bottom edge di entry
+    if (yTP1 != null && yTP1 < yEntry){
+      var zTp = document.createElement('div');
+      zTp.className = 'tr-recmodal-zone tp';
+      zTp.style.left = xEntry + 'px';
+      zTp.style.top = yTP1 + 'px';
+      zTp.style.width = width + 'px';
+      zTp.style.height = (yEntry - yTP1) + 'px';
+      zTp.innerHTML = '<span class="tr-recmodal-zone-lbl">TP1 ' + esc(fmtN(rec.tp1)) + '</span>';
+      zonesEl.appendChild(zTp);
+    }
+    // TP2 extension: dari TP2 ke TP1 (lighter green di atas TP zone utama)
+    if (yTP2 != null && yTP1 != null && yTP2 < yTP1){
+      var zTp2 = document.createElement('div');
+      zTp2.className = 'tr-recmodal-zone tp2';
+      zTp2.style.left = xEntry + 'px';
+      zTp2.style.top = yTP2 + 'px';
+      zTp2.style.width = width + 'px';
+      zTp2.style.height = (yTP1 - yTP2) + 'px';
+      zTp2.innerHTML = '<span class="tr-recmodal-zone-lbl">TP2 ' + esc(fmtN(rec.tp2)) + '</span>';
+      zonesEl.appendChild(zTp2);
+    }
+    // SL zone: top edge di entry, bottom edge di SL
+    if (ySL != null && ySL > yEntry){
+      var zSl = document.createElement('div');
+      zSl.className = 'tr-recmodal-zone sl';
+      zSl.style.left = xEntry + 'px';
+      zSl.style.top = yEntry + 'px';
+      zSl.style.width = width + 'px';
+      zSl.style.height = (ySL - yEntry) + 'px';
+      zSl.innerHTML = '<span class="tr-recmodal-zone-lbl">SL ' + esc(fmtN(rec.sl)) + '</span>';
+      zonesEl.appendChild(zSl);
+    }
+  }
+
+  async function renderChart(rec){
+    var chartEl = $('trRecModalChart'); if (!chartEl) return;
+    var loading = $('trRecModalLoading');
+    if (typeof LightweightCharts === 'undefined'){
+      if (loading){ loading.innerHTML = '<span>Chart library belum siap</span>'; loading.classList.add('show'); }
+      return;
+    }
+    if (loading){ loading.innerHTML = '<span style="font-size:22px">📡</span><span>Memuat candle ' + esc(rec.ticker || '') + '…</span>'; loading.classList.add('show'); }
+
+    // fromDate = openDate − 60 hari; kalau openDate kosong pakai default lama
+    var fromDate = '2024-01-01';
+    if (rec.openDate){
+      var d = new Date(rec.openDate + 'T00:00:00Z');
+      if (!isNaN(d.getTime())){ d.setUTCDate(d.getUTCDate() - 60); fromDate = d.toISOString().slice(0,10); }
+    }
+
+    var candles = [];
+    try {
+      if (typeof fetchOhlcForModal === 'function'){
+        candles = await fetchOhlcForModal(rec.ticker, fromDate);
+      }
+    } catch(e){ console.warn('[trRecModal] fetch OHLC gagal', e); }
+
+    if (loading) loading.classList.remove('show');
+
+    if (!candles || !candles.length){
+      if (loading){ loading.innerHTML = '<span style="font-size:22px">📡</span><span>Data OHLC untuk ' + esc(rec.ticker || '') + ' tidak tersedia</span>'; loading.classList.add('show'); }
+      return;
+    }
+
+    var isDark = _isDark();
+    var bg          = isDark ? '#0f0a26' : '#f8f5ff';
+    var textColor   = isDark ? '#c4b8e8' : '#6e6490';
+    var gridColor   = isDark ? 'rgba(164,156,192,0.10)' : 'rgba(164,156,192,0.16)';
+    var borderColor = isDark ? '#4a3590' : '#d4ccf0';
+    var upColor     = isDark ? '#4ade80' : '#059669';
+    var downColor   = isDark ? '#fb7185' : '#e11d48';
+
+    _chart = LightweightCharts.createChart(chartEl, {
+      width:  chartEl.clientWidth  || 400,
+      height: chartEl.clientHeight || 400,
+      layout: { background: { color: bg }, textColor: textColor, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, attributionLogo: false },
+      grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      rightPriceScale: { borderColor: borderColor, scaleMargins: { top: 0.15, bottom: 0.12 } },
+      timeScale: {
+        borderColor: borderColor, timeVisible: false, secondsVisible: false,
+        tickMarkFormatter: function(time){
+          var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+          if (time && typeof time === 'object' && 'day' in time) return time.day + ' ' + months[time.month - 1];
+          var d = new Date(typeof time === 'number' ? time * 1000 : time);
+          return d.getUTCDate() + ' ' + months[d.getUTCMonth()];
+        }
+      },
+      handleScroll: true, handleScale: true
+    });
+
+    _series = _chart.addCandlestickSeries({
+      upColor: upColor, downColor: downColor,
+      borderUpColor: upColor, borderDownColor: downColor,
+      wickUpColor: upColor, wickDownColor: downColor,
+      // Include entry/TP/SL di autoscale range biar zona selalu keliatan
+      autoscaleInfoProvider: function(orig){
+        var res = orig();
+        if (!res || !res.priceRange) return res;
+        var mn = res.priceRange.minValue, mx = res.priceRange.maxValue;
+        [rec.entry, rec.tp1, rec.tp2, rec.sl].forEach(function(p){
+          if (Number.isFinite(+p) && +p > 0){
+            mn = Math.min(mn, +p);
+            mx = Math.max(mx, +p);
+          }
+        });
+        return { priceRange: { minValue: mn, maxValue: mx } };
+      }
+    });
+
+    // Dedupe + sort candles
+    var seen = {}; var lwData = [];
+    candles.forEach(function(c){
+      if (!c || !c.date || seen[c.date]) return;
+      if (!Number.isFinite(c.open) || !Number.isFinite(c.close)) return;
+      seen[c.date] = 1;
+      lwData.push({ time: c.date, open: c.open, high: c.high, low: c.low, close: c.close });
+    });
+    lwData.sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
+    _series.setData(lwData);
+
+    // Price lines (label di axis kanan): entry dotted, TP solid, TP2 dashed, SL solid
+    var accentPurple = isDark ? '#c4a3ff' : '#6d28d9';
+    if (Number.isFinite(+rec.entry) && +rec.entry > 0){
+      _series.createPriceLine({ price: +rec.entry, color: accentPurple, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, axisLabelVisible: true, title: 'Entry' });
+    }
+    if (Number.isFinite(+rec.tp1) && +rec.tp1 > 0){
+      _series.createPriceLine({ price: +rec.tp1, color: upColor, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: true, title: 'TP1' });
+    }
+    if (Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1){
+      _series.createPriceLine({ price: +rec.tp2, color: upColor, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'TP2' });
+    }
+    if (Number.isFinite(+rec.sl) && +rec.sl > 0){
+      _series.createPriceLine({ price: +rec.sl, color: downColor, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: true, title: 'SL' });
+    }
+
+    // Marker exit kalau rec sudah closed
+    if (rec.exitDate && Number.isFinite(+rec.exitPrice) && +rec.exitPrice > 0){
+      try {
+        var closedBy = String(rec.closedBy || '').toUpperCase();
+        _series.setMarkers([{
+          time: rec.exitDate,
+          position: closedBy === 'TP' ? 'aboveBar' : 'belowBar',
+          color: closedBy === 'TP' ? upColor : (closedBy === 'SL' ? downColor : '#94a3b8'),
+          shape: closedBy === 'TP' ? 'arrowUp' : (closedBy === 'SL' ? 'arrowDown' : 'circle'),
+          text: closedBy || 'Close'
+        }]);
+      } catch(_){}
+    }
+
+    _chart.timeScale().fitContent();
+
+    // Draw zones once chart sudah stable
+    requestAnimationFrame(drawZones);
+
+    // Redraw zones saat user pan/zoom
+    _timeSub = drawZones;
+    try { _chart.timeScale().subscribeVisibleTimeRangeChange(_timeSub); } catch(_){}
+
+    // Redraw zones + resize chart saat container ukurannya berubah
+    _resizeObs = new ResizeObserver(function(){
+      if (_chart) _chart.applyOptions({ width: chartEl.clientWidth, height: chartEl.clientHeight });
+      requestAnimationFrame(drawZones);
+    });
+    _resizeObs.observe(chartEl);
+  }
+
+  function fillInfo(rec){
+    $('trRecModalTick').textContent = rec.ticker || '—';
+    $('trRecModalName').textContent = rec.tickerName || '';
+    var firmLine = firmShort(rec.firm || '');
+    if (rec.analyst) firmLine += (firmLine ? ' · ' : '') + rec.analyst;
+    $('trRecModalFirm').textContent = firmLine || '—';
+
+    var type = String(rec.type || 'BUY').toUpperCase();
+    var typeEl = $('trRecModalType');
+    typeEl.textContent = type;
+    typeEl.className = 'tr-recmodal-badge ' + (type === 'SELL' ? 'sell' : 'buy');
+
+    var st = statusOfRec(rec);
+    var stEl = $('trRecModalStatus');
+    stEl.textContent = st;
+    stEl.className = 'tr-recmodal-status ' + statusCls(st);
+
+    $('trRecModalDate').textContent = 'Rilis: ' + fmtDate(rec.openDate);
+
+    // Level cards
+    var entryPrice = +rec.entry;
+    var pctFromEntry = function(v){
+      if (!Number.isFinite(+v) || !Number.isFinite(entryPrice) || entryPrice <= 0) return null;
+      var isBuy = type !== 'SELL';
+      return ((+v - entryPrice) / entryPrice) * 100 * (isBuy ? 1 : -1);
+    };
+    var makeLevel = function(cls, label, price, showRet){
+      var hasVal = Number.isFinite(+price) && +price > 0;
+      var retTxt = '';
+      if (showRet && hasVal){
+        var p = pctFromEntry(price);
+        if (p != null){
+          retTxt = '<div class="ret">' + esc(fmtPct(p, 1)) + '</div>';
+        }
+      }
+      return '<div class="tr-recmodal-level ' + cls + '">'
+        + '<div class="lbl">' + label + '</div>'
+        + '<div class="val">' + (hasVal ? esc(fmtN(price)) : '—') + '</div>'
+        + retTxt
+        + '</div>';
+    };
+    var hasT2 = Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1;
+    $('trRecModalLevels').innerHTML =
+        makeLevel('entry', 'ENTRY', rec.entry, false)
+      + makeLevel('tp',   hasT2 ? 'TP1' : 'TP', rec.tp1, true)
+      + (hasT2 ? makeLevel('tp', 'TP2', rec.tp2, true) : '')
+      + makeLevel('sl',   'STOP-LOSS', rec.sl, true);
+
+    // Footer: harga sekarang, P&L, exit (kalau ada)
+    var pnl = Number.isFinite(+rec.pnlPct) ? +rec.pnlPct
+           : (Number.isFinite(+rec.floatingPct) ? +rec.floatingPct : null);
+    var pnlCls = pnl == null ? '' : pnl > 0 ? ' up' : pnl < 0 ? ' dn' : '';
+    var footHtml = ''
+      + '<div class="tr-recmodal-foot-item"><span class="lbl">Harga Sekarang</span><span class="val">' + esc(fmtN(rec.lastPrice)) + '</span></div>'
+      + '<div class="tr-recmodal-foot-item"><span class="lbl">P&amp;L</span><span class="val' + pnlCls + '">' + esc(pnl == null ? '—' : fmtPct(pnl, 1)) + '</span></div>';
+    if (rec.exitDate){
+      var exitTxt = fmtDate(rec.exitDate);
+      if (Number.isFinite(+rec.exitPrice)) exitTxt += ' @ ' + fmtN(rec.exitPrice);
+      if (rec.closedBy) exitTxt += ' (' + rec.closedBy + ')';
+      footHtml += '<div class="tr-recmodal-foot-item"><span class="lbl">Exit</span><span class="val">' + esc(exitTxt) + '</span></div>';
+    }
+    $('trRecModalFoot').innerHTML = footHtml;
+  }
+
+  function showModal(rec){
+    if (!rec) return;
+    cleanupChart();
+    _currentRec = rec;
+    fillInfo(rec);
+    var m = $('trRecModal'); if (!m) return;
+    m.classList.add('open');
+    m.setAttribute('aria-hidden', 'false');
+    try { document.body.style.overflow = 'hidden'; } catch(_){}
+    // Register Escape handler
+    if (_keyHandler) document.removeEventListener('keydown', _keyHandler);
+    _keyHandler = function(e){ if (e.key === 'Escape') hideModal(); };
+    document.addEventListener('keydown', _keyHandler);
+    // Render chart async (fetch OHLC, then draw)
+    renderChart(rec);
+  }
+  window.__TR_showRec = showModal;
+
+  // ── Klik untuk buka modal: pakai CAPTURE phase supaya kita run
+  //    SEBELUM handler openStock/drawer di IIFE lain (yg pakai bubble).
+  document.addEventListener('click', function(e){
+    if (!e.target || !e.target.closest) return;
+    // Skip klik di dalam modal itu sendiri (biar close button masih jalan)
+    if (e.target.closest('.tr-recmodal-body')) return;
+    var el = e.target.closest('[data-recid]');
+    if (!el) return;
+    var id = el.getAttribute('data-recid');
+    if (!id) return;
+    e.stopPropagation();
+    var rec = window.__TR_findRecById(id);
+    if (rec) showModal(rec);
+    // Kalau search dropdown di Analisis sedang open, tutup
+    var dd = document.getElementById('trAnlSearchDrop');
+    if (dd) dd.classList.remove('open');
+  }, true);
+
+  // Klik close button / backdrop → tutup
+  document.addEventListener('click', function(e){
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('[data-tr-recmodal-close]')) hideModal();
+  });
 })();
 </script>
 
@@ -19862,6 +20242,40 @@ document.addEventListener('keydown', (e) => {
   };
 })();
 </script>
+
+<!-- ── POP-UP DETAIL REKOMENDASI ─────────────────────────────────────
+     Dibuka saat klik row di tabel Analisis atau klik card di tab Live.
+     Chart candlestick lightweight-charts + overlay zona hijau (entry→TP)
+     dan merah (entry→SL). Dipisah dari main chart (yg pakai TradingView)
+     karena zona kustom perlu library dgn API drawing native. -->
+<div class="tr-recmodal" id="trRecModal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="tr-recmodal-backdrop" data-tr-recmodal-close></div>
+  <div class="tr-recmodal-body">
+    <button class="tr-recmodal-close" data-tr-recmodal-close type="button" aria-label="Tutup">✕</button>
+    <div class="tr-recmodal-hd">
+      <div class="tr-recmodal-hd-l">
+        <div class="tr-recmodal-tick" id="trRecModalTick">—</div>
+        <div class="tr-recmodal-name" id="trRecModalName">—</div>
+        <div class="tr-recmodal-firm" id="trRecModalFirm">—</div>
+      </div>
+      <div class="tr-recmodal-hd-r">
+        <span class="tr-recmodal-badge buy" id="trRecModalType">BUY</span>
+        <span class="tr-recmodal-status active" id="trRecModalStatus">ACTIVE</span>
+        <span class="tr-recmodal-date" id="trRecModalDate">—</span>
+      </div>
+    </div>
+    <div class="tr-recmodal-chart-wrap">
+      <div class="tr-recmodal-chart" id="trRecModalChart"></div>
+      <div class="tr-recmodal-zones" id="trRecModalZones"></div>
+      <div class="tr-recmodal-empty" id="trRecModalLoading">
+        <span style="font-size:22px">📡</span>
+        <span>Memuat candle…</span>
+      </div>
+    </div>
+    <div class="tr-recmodal-levels" id="trRecModalLevels"></div>
+    <div class="tr-recmodal-foot" id="trRecModalFoot"></div>
+  </div>
+</div>
 
 <script src="/panduan.js" defer></script>
 </body>
