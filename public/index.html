@@ -2678,6 +2678,114 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-empty-hint.err .status-dot{background:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.16);animation:none}
 
 /* ═══════════════════════════════════════════════════════════════════
+   TAB ANALISIS — chart candlestick + peta rekomendasi per ticker.
+   Gabungan style dashboard (hero + chart card) dan consensus overview
+   (KPI strip + grid 3-col + donut/bar). Data: tracker.json (semua rec
+   list) di-join dgn ohlc.json via fetchOhlcForModal(). Prefix `.tr-anl-*`.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* HERO: pilih ticker + info ringkas (dashboard-style banner) */
+.tr-anl-hero{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:14px;flex-wrap:wrap;
+  background:linear-gradient(160deg,rgba(124,58,237,.08),var(--card) 60%);
+  border:1px solid var(--border);border-radius:16px;
+  padding:14px 18px;margin-bottom:14px;position:relative;overflow:hidden
+}
+.tr-anl-hero::before{
+  content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;
+  border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.16),transparent 70%);
+  pointer-events:none
+}
+.tr-anl-hero-l{min-width:0;flex:1;position:relative;z-index:1}
+.tr-anl-hero-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:2px}
+.tr-anl-hero-tick{font-size:28px;font-weight:800;letter-spacing:-.6px;color:var(--accent);line-height:1.05}
+.tr-anl-hero-name{font-size:13px;color:var(--text2);font-weight:600;margin-top:2px}
+.tr-anl-hero-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)}
+.tr-anl-hero-meta .k{color:var(--text3)}
+.tr-anl-hero-meta b{color:var(--text);font-weight:800}
+.tr-anl-hero-r{flex-shrink:0;display:flex;flex-direction:column;gap:6px;position:relative;z-index:1;min-width:220px}
+.tr-anl-hero-r-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.tr-anl-ticksel{
+  appearance:none;-webkit-appearance:none;
+  padding:11px 34px 11px 14px;
+  background-color:var(--bg2);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%2394a3b8' d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat:no-repeat;background-position:right 12px center;
+  border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px;font-weight:700;
+  font-family:inherit;cursor:pointer;transition:border-color .15s,box-shadow .15s;min-width:220px
+}
+.tr-anl-ticksel:hover{border-color:var(--accent)}
+.tr-anl-ticksel:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.13)}
+@media(max-width:640px){
+  .tr-anl-hero{padding:12px 14px}
+  .tr-anl-hero-r{width:100%;min-width:0}
+  .tr-anl-ticksel{width:100%;min-width:0}
+  .tr-anl-hero-tick{font-size:24px}
+}
+
+/* KPI strip: 5 tile mini (mirror consensus overview .ov-kpi-strip) */
+.tr-anl-kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:900px){.tr-anl-kpi-strip{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.tr-anl-kpi-strip{grid-template-columns:repeat(2,1fr)}}
+.tr-anl-kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 13px;position:relative;overflow:hidden}
+.tr-anl-kpi .lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.tr-anl-kpi .val{font-size:20px;font-weight:800;letter-spacing:-.4px;margin-top:4px;color:var(--text);line-height:1.15}
+.tr-anl-kpi .val.up{color:var(--green)}
+.tr-anl-kpi .val.dn{color:var(--red)}
+.tr-anl-kpi .sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Chart card (candlestick + overlay markers + legend) */
+.tr-anl-chartcard .tr-card-h{align-items:flex-start}
+.tr-anl-legend{display:flex;gap:12px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.3px}
+.tr-anl-legend span{display:inline-flex;align-items:center;gap:5px}
+.tr-anl-legend i{display:inline-block;width:12px;height:2px;border-radius:1px}
+.tr-anl-chart{width:100%;height:380px;position:relative;background:var(--bg2);border-radius:12px;overflow:hidden;margin-top:6px}
+.tr-anl-chart .anl-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text3);font-size:12px;font-family:'IBM Plex Mono',monospace;text-align:center;padding:12px}
+@media(max-width:640px){.tr-anl-chart{height:300px}}
+
+/* Row: 2-col grid — donut & bar (consensus-overview style) */
+.tr-anl-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+@media(max-width:820px){.tr-anl-grid-2{grid-template-columns:1fr}}
+.tr-anl-donut-wrap{position:relative;height:180px;display:flex;align-items:center;justify-content:center;padding:8px 0}
+.tr-anl-donut-wrap canvas{max-height:180px}
+.tr-anl-donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.tr-anl-donut-center .dc-val{display:block;font-size:22px;font-weight:800;color:var(--text);line-height:1}
+.tr-anl-donut-center .dc-lbl{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);margin-top:3px}
+.tr-anl-donut-legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:10.5px}
+.tr-anl-donut-legend span{display:inline-flex;align-items:center;gap:5px;color:var(--text2)}
+.tr-anl-donut-legend i{display:inline-block;width:10px;height:10px;border-radius:2px}
+.tr-anl-bar-wrap{height:200px;position:relative}
+
+/* Rec table (dashboard analyst-table style) */
+.tr-anl-recs-scroll{overflow-x:auto;margin:0 -2px;-webkit-overflow-scrolling:touch;max-height:420px;overflow-y:auto}
+.tr-anl-recs-table{width:100%;min-width:640px;border-collapse:collapse;font-size:12px}
+.tr-anl-recs-table thead th{
+  text-align:left;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--text3);font-weight:700;
+  padding:9px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:1
+}
+.tr-anl-recs-table tbody td{padding:9px 10px;border-bottom:1px solid var(--border2);color:var(--text)}
+.tr-anl-recs-table tbody tr{cursor:pointer;transition:background .15s}
+.tr-anl-recs-table tbody tr:hover{background:var(--bg2)}
+.tr-anl-recs-table tbody tr.active{background:linear-gradient(90deg,rgba(124,58,237,.12),transparent);box-shadow:inset 3px 0 0 var(--accent)}
+.tr-anl-recs-table td.n{font-family:'IBM Plex Mono',monospace}
+.tr-anl-recs-table td .st{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:800;
+  padding:2.5px 7px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap
+}
+.tr-anl-recs-table td .st.tp{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.28)}
+.tr-anl-recs-table td .st.sl{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.28)}
+.tr-anl-recs-table td .st.exp{background:rgba(148,163,184,.12);color:#94a3b8;border:1px solid rgba(148,163,184,.28)}
+.tr-anl-recs-table td .st.active{background:rgba(59,130,246,.14);color:#60a5fa;border:1px solid rgba(59,130,246,.35)}
+.tr-anl-recs-table td .st.pending{background:rgba(245,158,11,.14);color:#f59e0b;border:1px solid rgba(245,158,11,.35)}
+.tr-anl-recs-table td .st.missed{background:rgba(148,163,184,.14);color:#94a3b8;border:1px solid rgba(148,163,184,.35)}
+.tr-anl-recs-table td.pnl.up{color:var(--green);font-weight:700}
+.tr-anl-recs-table td.pnl.dn{color:var(--red);font-weight:700}
+
+.tr-anl-empty{text-align:center;padding:32px 16px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
+
+/* ═══════════════════════════════════════════════════════════════════
    TAB LIVE — konten real-time (adopsi robotlive page-live, di-skin
    terminal). Prefix `.tr-live-*` supaya isolasi bersih.
    ═══════════════════════════════════════════════════════════════════ */
@@ -2763,14 +2871,22 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-live-search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.13)}
 .tr-live-search-clear{position:absolute;right:8px;width:22px;height:22px;border:none;background:var(--border);color:var(--text2);border-radius:50%;cursor:pointer;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .tr-live-search-clear:hover{background:var(--red);color:#fff}
-.tr-live-firmbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tr-live-firmbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .tr-live-firmbar-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);font-weight:700;flex-shrink:0}
-.tr-live-firmchips{display:flex;gap:7px;flex-wrap:wrap;min-width:0}
-.tr-live-firmchip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-pill);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
-.tr-live-firmchip:hover{border-color:var(--accent);color:var(--text)}
-.tr-live-firmchip.active{background:var(--grad);border-color:transparent;color:#fff}
-.tr-live-firmchip .n{font-family:'IBM Plex Mono',monospace;font-size:10.5px;opacity:.85;background:rgba(0,0,0,.16);padding:1px 6px;border-radius:var(--radius-pill)}
-.tr-live-firmchip.active .n{background:rgba(255,255,255,.22)}
+.tr-live-firmselect{
+  flex:1;min-width:220px;max-width:420px;
+  appearance:none;-webkit-appearance:none;
+  padding:10px 34px 10px 12px;
+  background-color:var(--bg2);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%2394a3b8' d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat:no-repeat;background-position:right 12px center;
+  border:1px solid var(--border);border-radius:12px;
+  color:var(--text);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;
+  transition:border-color .15s,box-shadow .15s;
+}
+.tr-live-firmselect:hover{border-color:var(--accent)}
+.tr-live-firmselect:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.13)}
+@media(max-width:640px){.tr-live-firmselect{max-width:none;width:100%;flex:1 1 100%}}
 
 /* Position cards (rekomendasi aktif) */
 .tr-live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
@@ -3948,12 +4064,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
 ═══════════════════════════════════════════ -->
 <div class="page" id="page-tracker">
 
-<!-- ── SUB-TAB NAV (Ringkasan / Live / Performa / Akun) ─────────────
-     Default aktif: Ringkasan (isi = konten Tracker existing utuh).
-     Live/Performa/Akun = skeleton empty state; diisi di PR berikutnya. -->
+<!-- ── SUB-TAB NAV (Ringkasan / Analisis / Live / Performa / Simulasi) ─
+     Default aktif: Ringkasan. Analisis = chart candlestick + peta rec
+     per ticker (gabungan visual dashboard + consensus overview). -->
 <div class="tr-subtabs" id="tr-subtabs" role="tablist" aria-label="Tracker sections">
   <button type="button" class="tr-subtab-btn active" data-subtab="ringkasan"
     role="tab" aria-selected="true" aria-controls="tr-view-main">📋 Ringkasan</button>
+  <button type="button" class="tr-subtab-btn" data-subtab="analisis"
+    role="tab" aria-selected="false" aria-controls="tr-view-analisis">📈 Analisis <span class="tr-subtab-chip" id="trSubAnlN">—</span></button>
   <button type="button" class="tr-subtab-btn" data-subtab="live"
     role="tab" aria-selected="false" aria-controls="tr-view-live">🚀 Live <span class="tr-subtab-chip" id="trSubLiveN">—</span></button>
   <button type="button" class="tr-subtab-btn" data-subtab="perf"
@@ -4040,6 +4158,122 @@ body.is-mobile-device.force-desktop .pl-col-main{
     Simulasi bersifat ilustratif berdasarkan agregasi rekomendasi trading yang diinput ke sistem. Kinerja masa lalu tidak menjamin hasil di masa depan — bukan ajakan jual/beli. Halaman ini masih <b>PREVIEW</b> (data dummy); akan diaktifkan penuh setelah pipeline data siap.
   </div>
 </div><!-- /tr-view-main -->
+
+<!-- ── PANE ANALISIS ─────────────────────────────────────────────────
+     Chart candlestick per ticker + overlay peta rekomendasi analis
+     (marker tgl rilis, garis entry/TP/SL saat rec dipilih). Visual =
+     dashboard hero + consensus-overview KPI strip / donut / bar +
+     dashboard analyst table. Renderer di IIFE bawah, subscribe ke
+     window.__TR_onData(). -->
+<div id="tr-view-analisis" class="tr-subpane" role="tabpanel" aria-hidden="true">
+
+  <!-- Fallback empty state — visible saat tracker.json belum siap -->
+  <div class="tr-empty" id="trAnlPending">
+    <div class="tr-empty-ico">📈</div>
+    <div class="tr-empty-title">Analisis — menunggu data</div>
+    <div class="tr-empty-desc">
+      Chart candlestick per saham dengan overlay peta rekomendasi analis: marker tanggal rilis per firm, garis entry/TP/SL, distribusi status, dan aktivitas firm. Auto-load saat tracker.json siap.
+    </div>
+    <div class="tr-empty-hint" id="trAnlStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
+  </div>
+
+  <!-- Content real -->
+  <div id="trAnlContent" style="display:none">
+
+    <!-- Hero + ticker selector (dashboard-style banner) -->
+    <div class="tr-anl-hero">
+      <div class="tr-anl-hero-l">
+        <div class="tr-anl-hero-tag">PETA REKOMENDASI</div>
+        <div class="tr-anl-hero-tick" id="trAnlTick">—</div>
+        <div class="tr-anl-hero-name" id="trAnlName">—</div>
+        <div class="tr-anl-hero-meta">
+          <span><span class="k">Sektor:</span> <b id="trAnlSector">—</b></span>
+          <span><span class="k">Harga:</span> <b id="trAnlLast">—</b></span>
+          <span><span class="k">Firm aktif:</span> <b id="trAnlFirmCnt">—</b></span>
+        </div>
+      </div>
+      <div class="tr-anl-hero-r">
+        <span class="tr-anl-hero-r-lbl">🔎 Pilih Saham</span>
+        <select id="trAnlTickSel" class="tr-anl-ticksel" aria-label="Pilih saham untuk analisis"></select>
+      </div>
+    </div>
+
+    <!-- KPI strip: 5 tile mini (mirror consensus overview) -->
+    <div class="tr-anl-kpi-strip" id="trAnlKpiStrip"></div>
+
+    <!-- Chart card: candlestick + marker rec + overlay entry/TP/SL saat rec dipilih -->
+    <div class="tr-card tr-anl-chartcard">
+      <div class="tr-card-h">
+        <div>
+          <div class="tr-card-title">📊 Chart Candlestick + Peta Rekomendasi</div>
+          <div class="tr-card-desc">Marker panah = tanggal rilis rec (max 40 terakhir). Klik baris di tabel bawah untuk overlay entry/TP/SL rec tersebut.</div>
+        </div>
+        <div class="tr-anl-legend">
+          <span><i style="background:var(--accent)"></i>Entry</span>
+          <span><i style="background:#f59e0b"></i>Target</span>
+          <span><i style="background:var(--red)"></i>Stop-Loss</span>
+        </div>
+      </div>
+      <div class="tr-anl-chart" id="trAnlChart">
+        <div class="anl-empty">📡 Menunggu data OHLC…</div>
+      </div>
+    </div>
+
+    <!-- 2-col grid: status donut + firm bar (consensus-overview style) -->
+    <div class="tr-anl-grid-2">
+      <div class="tr-card">
+        <div class="tr-card-h">
+          <div>
+            <div class="tr-card-title">Status Rekomendasi</div>
+            <div class="tr-card-desc">Distribusi outcome untuk ticker ini</div>
+          </div>
+        </div>
+        <div class="tr-anl-donut-wrap">
+          <canvas id="trAnlStatusDonut"></canvas>
+          <div class="tr-anl-donut-center">
+            <span class="dc-val" id="trAnlDonutVal">—</span>
+            <span class="dc-lbl">total rec</span>
+          </div>
+        </div>
+        <div class="tr-anl-donut-legend" id="trAnlDonutLegend"></div>
+      </div>
+      <div class="tr-card">
+        <div class="tr-card-h">
+          <div>
+            <div class="tr-card-title">Firm Paling Aktif</div>
+            <div class="tr-card-desc">Jumlah rec per firm (top 8)</div>
+          </div>
+        </div>
+        <div class="tr-anl-bar-wrap">
+          <canvas id="trAnlFirmBar"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rec table (dashboard analyst-table style) -->
+    <div class="tr-card" style="margin-top:14px">
+      <div class="tr-card-h">
+        <div>
+          <div class="tr-card-title">📋 Daftar Rekomendasi</div>
+          <div class="tr-card-desc">Klik baris untuk overlay entry/TP/SL rec di chart</div>
+        </div>
+      </div>
+      <div class="tr-anl-recs-scroll">
+        <table class="tr-anl-recs-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th><th>Firm</th><th>Entry</th><th>TP1</th><th>TP2</th><th>SL</th><th>Status</th><th style="text-align:right">P&L</th>
+            </tr>
+          </thead>
+          <tbody id="trAnlRecsBody">
+            <tr><td colspan="8" class="tr-anl-empty">Pilih saham untuk melihat rekomendasi</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /trAnlContent -->
+</div><!-- /tr-view-analisis -->
 
 <!-- ── PANE LIVE (skeleton empty state) ─────────────────────────────
      Diisi di PR berikutnya (adopsi robotlive: ticker IHSG, hero WR firm,
@@ -4166,7 +4400,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
       <div class="tr-live-firmbar">
         <span class="tr-live-firmbar-lbl">🏢 Sekuritas</span>
-        <div class="tr-live-firmchips" id="trLiveFirmChips"></div>
+        <select id="trLiveFirmSelect" class="tr-live-firmselect" aria-label="Pilih sekuritas"></select>
       </div>
     </div>
     <div class="tr-live-grid" id="trLiveGrid">
@@ -5309,6 +5543,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 (function(){
   var VALID_PANES = {
     ringkasan: 'tr-view-main',
+    analisis:  'tr-view-analisis',
     live:      'tr-view-live',
     perf:      'tr-view-perf',
     acc:       'tr-view-acc'
@@ -5344,7 +5579,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── Update status hint di semua pane empty state ───────────────────
   function updateStatusHint(state, data, errMsg){
-    var panes = ['trLiveStatus', 'trPerfStatus', 'trAccStatus'];
+    var panes = ['trAnlStatus', 'trLiveStatus', 'trPerfStatus', 'trAccStatus'];
     panes.forEach(function(id){
       var el = $(id); if (!el) return;
       el.classList.remove('ok', 'err');
@@ -5825,9 +6060,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     sel.value = cur;
   }
 
-  // Bangun chip "list sekuritas" dari subset tanggal terpilih (Semua + per firm, dgn count).
+  // Bangun dropdown "list sekuritas" dari subset tanggal terpilih (Semua + per firm, dgn count).
   function buildFirmChips(){
-    var el = $('trLiveFirmChips'); if (!el) return;
+    var el = $('trLiveFirmSelect'); if (!el) return;
     var scoped = dateScoped();
     var counts = {}, order = [];
     scoped.forEach(function(o){
@@ -5836,14 +6071,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
       counts[k]++;
     });
     order.sort(function(a, b){ return counts[b] - counts[a] || a.localeCompare(b); });
-    var html = '<button type="button" class="tr-live-firmchip' + (trFilter.firm == null ? ' active' : '')
-      + '" data-firm="__all__">Semua <span class="n">' + scoped.length + '</span></button>';
+    var html = '<option value="__all__">Semua Sekuritas (' + scoped.length + ')</option>';
     html += order.map(function(k){
       var lbl = (k === '—') ? 'Tanpa sekuritas' : firmShort(k);
-      return '<button type="button" class="tr-live-firmchip' + (trFilter.firm === k ? ' active' : '')
-        + '" data-firm="' + esc(k) + '">' + esc(lbl) + ' <span class="n">' + counts[k] + '</span></button>';
+      return '<option value="' + esc(k) + '">' + esc(lbl) + ' (' + counts[k] + ')</option>';
     }).join('');
     el.innerHTML = html;
+    // Pertahankan pilihan aktif kalau masih valid, kalau tidak fallback ke Semua.
+    var cur = (trFilter.firm == null) ? '__all__' : trFilter.firm;
+    var exists = Array.prototype.some.call(el.options, function(op){ return op.value === cur; });
+    if (!exists) { cur = '__all__'; trFilter.firm = null; }
+    el.value = cur;
   }
 
   // Render grid kartu sesuai filter aktif (dipanggil saat data baru & saat filter berubah).
@@ -5976,15 +6214,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
     paintGrid();
   });
 
-  // ── Filter: pilih tanggal (select) ──
+  // ── Filter: pilih tanggal / pilih sekuritas (select) ──
   document.addEventListener('change', function(e){
-    if (!e.target || e.target.id !== 'trLiveDate') return;
-    trFilter.date = e.target.value;
-    buildFirmChips(); // count chip ikut tanggal
-    paintGrid();
+    if (!e.target) return;
+    if (e.target.id === 'trLiveDate') {
+      trFilter.date = e.target.value;
+      buildFirmChips(); // opsi sekuritas ikut tanggal
+      paintGrid();
+      return;
+    }
+    if (e.target.id === 'trLiveFirmSelect') {
+      var f = e.target.value;
+      trFilter.firm = (f === '__all__') ? null : f;
+      paintGrid();
+      return;
+    }
   });
 
-  // ── Filter: klik chip sekuritas / clear search / reset ──
+  // ── Filter: clear search / reset filter ──
   document.addEventListener('click', function(e){
     if (!e.target || !e.target.closest) return;
     // Reset filter link (di empty result)
@@ -6006,14 +6253,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
       clrBtn.style.display = 'none';
       paintGrid();
       return;
-    }
-    // Chip sekuritas
-    var chip = e.target.closest('.tr-live-firmchip');
-    if (chip) {
-      var f = chip.getAttribute('data-firm');
-      trFilter.firm = (f === '__all__') ? null : f;
-      buildFirmChips();
-      paintGrid();
     }
   });
 
@@ -7085,6 +7324,457 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var wait = setInterval(function(){
       tries++;
       if (window.__TR_onData) { clearInterval(wait); window.__TR_onData(renderAll); }
+      else if (tries > 30) clearInterval(wait);
+    }, 100);
+  }
+})();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER — TAB ANALISIS RENDERER
+// Chart candlestick per ticker + overlay peta rekomendasi analis.
+// - Aggregate semua rec (open/pending/missed/unfilled/history) per ticker
+// - Ticker selector (default = ticker paling banyak direkomendasikan)
+// - KPI strip (5 tile: total, win rate, avg P&L, target tercapai, top firm)
+// - Chart lightweight-charts candlestick + markers per rec (max 40)
+// - Klik row rec di tabel → overlay entry/TP1/TP2/SL rec tsb di chart
+// - Donut status (TP/SL/Expired/Aktif) + bar top firm via Chart.js
+// Reuse: fetchOhlcForModal() (defined later in file — dipanggil async
+// setelah semua script load).
+// ═══════════════════════════════════════════
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function fmtN(n){ return (n==null||!Number.isFinite(+n)) ? '—' : Number(n).toLocaleString('id-ID'); }
+  function fmtPct(n, dec){
+    if (n==null || !Number.isFinite(+n)) return '—';
+    var v = +n; var sign = v >= 0 ? '+' : '';
+    return sign + v.toFixed(dec==null?1:dec) + '%';
+  }
+  function firmShort(f){
+    if (!f) return '—';
+    return String(f)
+      .replace(/^PT\s+/i,'')
+      .replace(/\s+(Tbk\.?|Indonesia)$/i,'')
+      .replace(/\s+Sekuritas$/i,'')
+      .trim().slice(0, 22);
+  }
+
+  // ── State ─────────────────────────────────────────────────────────
+  var _recsByTicker = {};   // { TICKER: [rec...] }
+  var _tickers = [];        // sorted list by rec count
+  var _current = null;      // active ticker
+  var _selectedRecId = null;// klik row → overlay entry/TP/SL
+  var _chart = null;        // LightweightCharts chart instance
+  var _candleSeries = null;
+  var _statusChart = null;  // Chart.js donut
+  var _firmChart = null;    // Chart.js horizontal bar
+  var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
+
+  // ── Aggregate & rank ──────────────────────────────────────────────
+  function aggregate(data){
+    var lists = ['openList','pendingList','missedList','unfilledList','historyList'];
+    var byTick = {};
+    lists.forEach(function(k){
+      var arr = data[k]; if (!Array.isArray(arr)) return;
+      arr.forEach(function(r){
+        var t = r && r.ticker; if (!t) return;
+        if (!byTick[t]) byTick[t] = [];
+        // Simpan bucket asal buat inferensi status
+        var copy = {}; for (var p in r) if (Object.prototype.hasOwnProperty.call(r,p)) copy[p] = r[p];
+        copy._bucket = k;
+        byTick[t].push(copy);
+      });
+    });
+    return byTick;
+  }
+  function rankTickers(byTick){
+    return Object.keys(byTick).sort(function(a,b){
+      return (byTick[b].length - byTick[a].length) || a.localeCompare(b);
+    });
+  }
+
+  function statusOf(r){
+    if (r._bucket === 'pendingList') return 'PENDING';
+    if (r._bucket === 'missedList')  return 'MISSED';
+    if (r.state === 'TP' || r.closedBy === 'TP')      return 'TP';
+    if (r.state === 'SL' || r.closedBy === 'SL')      return 'SL';
+    if (r.state === 'EXPIRED' || r.closedBy === 'EXPIRED') return 'EXPIRED';
+    if (r._bucket === 'historyList') return r.closedBy || 'CLOSED';
+    return 'ACTIVE';
+  }
+  function pnlOf(r){
+    if (Number.isFinite(+r.pnlPct))      return +r.pnlPct;
+    if (Number.isFinite(+r.floatingPct)) return +r.floatingPct;
+    return null;
+  }
+
+  // ── Populate ticker selector ──────────────────────────────────────
+  function buildTickSelect(){
+    var sel = $('trAnlTickSel'); if (!sel) return;
+    var html = _tickers.map(function(t){
+      var recs = _recsByTicker[t] || [];
+      var name = (recs[0] && recs[0].tickerName) || '';
+      var nameSuffix = name ? ' · ' + name.slice(0, 32) : '';
+      return '<option value="' + esc(t) + '">' + esc(t) + esc(nameSuffix) + ' (' + recs.length + ')</option>';
+    }).join('');
+    sel.innerHTML = html;
+  }
+
+  // ── KPI compute + render (strip 5 tile) ───────────────────────────
+  function computeKpi(recs){
+    var n = recs.length;
+    var tpN = 0, slN = 0, expN = 0, active = 0;
+    var pnls = [];
+    var firms = {};
+    recs.forEach(function(r){
+      var st = statusOf(r);
+      if (st === 'TP') tpN++;
+      else if (st === 'SL') slN++;
+      else if (st === 'EXPIRED') expN++;
+      else active++;
+      var p = pnlOf(r); if (p != null) pnls.push(p);
+      var f = r.firm || '—';
+      firms[f] = (firms[f] || 0) + 1;
+    });
+    var closed = tpN + slN + expN;
+    var winRate = closed > 0 ? (tpN / closed * 100) : null;
+    var avgPnl = pnls.length > 0 ? (pnls.reduce(function(a,b){ return a+b; },0) / pnls.length) : null;
+    var topFirm = Object.keys(firms).sort(function(a,b){ return firms[b]-firms[a]; })[0] || '—';
+    return { n:n, tpN:tpN, slN:slN, expN:expN, active:active, winRate:winRate, avgPnl:avgPnl, topFirm:topFirm, firms:firms };
+  }
+
+  function renderKpiStrip(k){
+    var wr = k.winRate;
+    var wrCls = wr==null ? '' : (wr >= 60 ? 'up' : wr < 40 ? 'dn' : '');
+    var ap = k.avgPnl;
+    var apCls = ap==null ? '' : (ap > 0 ? 'up' : ap < 0 ? 'dn' : '');
+    var closedN = k.tpN + k.slN + k.expN;
+    var html = ''
+      + '<div class="tr-anl-kpi"><div class="lbl">Total Rec</div><div class="val">' + k.n + '</div><div class="sub">' + k.active + ' aktif · ' + closedN + ' selesai</div></div>'
+      + '<div class="tr-anl-kpi"><div class="lbl">Win Rate</div><div class="val ' + wrCls + '">' + (wr==null ? '—' : wr.toFixed(0) + '%') + '</div><div class="sub">' + k.tpN + '/' + closedN + ' kena TP</div></div>'
+      + '<div class="tr-anl-kpi"><div class="lbl">Avg P&L</div><div class="val ' + apCls + '">' + (ap==null ? '—' : fmtPct(ap, 1)) + '</div><div class="sub">rata-rata semua rec</div></div>'
+      + '<div class="tr-anl-kpi"><div class="lbl">Kena Stop-Loss</div><div class="val ' + (k.slN > 0 ? 'dn' : '') + '">' + k.slN + '</div><div class="sub">rec kena SL</div></div>'
+      + '<div class="tr-anl-kpi"><div class="lbl">Firm Terbanyak</div><div class="val" style="font-size:14px">' + esc(firmShort(k.topFirm)) + '</div><div class="sub">' + (k.firms[k.topFirm] || 0) + ' rec</div></div>';
+    $('trAnlKpiStrip').innerHTML = html;
+  }
+
+  function renderHero(ticker, recs, k){
+    $('trAnlTick').textContent   = ticker;
+    var first = recs[0] || {};
+    $('trAnlName').textContent   = first.tickerName || '—';
+    $('trAnlSector').textContent = first.sector || '—';
+    $('trAnlLast').textContent   = fmtN(first.lastPrice);
+    $('trAnlFirmCnt').textContent = Object.keys(k.firms).length;
+  }
+
+  // ── Donut: status distribution (Chart.js) ─────────────────────────
+  function renderDonut(k){
+    var el = $('trAnlStatusDonut'); if (!el || typeof Chart === 'undefined') return;
+    $('trAnlDonutVal').textContent = k.n;
+    if (_statusChart) { try { _statusChart.destroy(); } catch(_){} _statusChart = null; }
+    var labels = ['TP', 'SL', 'Expired', 'Aktif'];
+    var data   = [k.tpN, k.slN, k.expN, k.active];
+    var colors = _isDark()
+      ? ['#4ade80','#fb7185','#8b7eb8','#c4a3ff']
+      : ['#059669','#e11d48','#94a3b8','#6d28d9'];
+    _statusChart = new Chart(el, {
+      type: 'doughnut',
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 0, cutout: '68%' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function(ctx){
+            var total = k.n || 1;
+            return ctx.label + ': ' + ctx.parsed + ' (' + (ctx.parsed / total * 100).toFixed(0) + '%)';
+          } } }
+        }
+      }
+    });
+    var lg = $('trAnlDonutLegend');
+    if (lg) lg.innerHTML = labels.map(function(l, i){
+      return '<span><i style="background:' + colors[i] + '"></i>' + l + ' · ' + data[i] + '</span>';
+    }).join('');
+  }
+
+  // ── Bar: top firm (Chart.js horizontal) ───────────────────────────
+  function renderFirmBar(k){
+    var el = $('trAnlFirmBar'); if (!el || typeof Chart === 'undefined') return;
+    if (_firmChart) { try { _firmChart.destroy(); } catch(_){} _firmChart = null; }
+    var pairs = Object.keys(k.firms).map(function(f){ return [f, k.firms[f]]; })
+      .sort(function(a,b){ return b[1]-a[1]; }).slice(0, 8);
+    if (!pairs.length) return;
+    _firmChart = new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: pairs.map(function(p){ return firmShort(p[0]); }),
+        datasets: [{
+          data: pairs.map(function(p){ return p[1]; }),
+          backgroundColor: _isDark() ? 'rgba(196,163,255,.75)' : 'rgba(109,40,217,.75)',
+          borderRadius: 5, borderSkipped: false, barThickness: 14
+        }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx){ return ctx.parsed.x + ' rec'; } } } },
+        scales: {
+          x: { grid: { color: _isDark() ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)' }, ticks: { color: _isDark() ? '#8b7eb8' : '#a49cc0', font: { size: 10 }, precision: 0 } },
+          y: { grid: { display: false }, ticks: { color: _isDark() ? '#c4b8e8' : '#6e6490', font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  // ── Rec table ─────────────────────────────────────────────────────
+  function renderRecTable(recs){
+    var tb = $('trAnlRecsBody'); if (!tb) return;
+    if (!recs.length){
+      tb.innerHTML = '<tr><td colspan="8" class="tr-anl-empty">Belum ada rekomendasi untuk saham ini.</td></tr>';
+      return;
+    }
+    var sorted = recs.slice().sort(function(a,b){ return String(b.openDate||'').localeCompare(String(a.openDate||'')); });
+    tb.innerHTML = sorted.map(function(r){
+      var st = statusOf(r);
+      var stCls = st === 'TP' ? 'tp'
+                : st === 'SL' ? 'sl'
+                : st === 'EXPIRED' ? 'exp'
+                : st === 'PENDING' ? 'pending'
+                : st === 'MISSED'  ? 'missed'
+                : 'active';
+      var p = pnlOf(r);
+      var pCls = p==null ? '' : (p > 0 ? 'up' : p < 0 ? 'dn' : '');
+      var pTxt = p==null ? '—' : fmtPct(p, 1);
+      var activeCls = (_selectedRecId && r.id === _selectedRecId) ? ' active' : '';
+      return '<tr class="' + activeCls.trim() + '" data-recid="' + esc(r.id || '') + '">'
+        + '<td class="n">' + esc(r.openDate || '—') + '</td>'
+        + '<td>' + esc(firmShort(r.firm)) + '</td>'
+        + '<td class="n">' + fmtN(r.entry) + '</td>'
+        + '<td class="n">' + fmtN(r.tp1) + '</td>'
+        + '<td class="n">' + fmtN(r.tp2) + '</td>'
+        + '<td class="n">' + fmtN(r.sl) + '</td>'
+        + '<td><span class="st ' + stCls + '">' + st + '</span></td>'
+        + '<td class="pnl ' + pCls + '" style="text-align:right">' + pTxt + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  // ── Chart: candlestick + markers per rec, price lines untuk selected rec ─
+  async function renderChart(ticker, recs){
+    var el = $('trAnlChart'); if (!el) return;
+    if (typeof LightweightCharts === 'undefined'){
+      el.innerHTML = '<div class="anl-empty">Library chart belum siap</div>';
+      return;
+    }
+
+    // Hitung fromDate: rec terlama - 30 hari (biar ada konteks pre-rec)
+    var dates = recs.map(function(r){ return r.openDate; }).filter(Boolean).sort();
+    var fromDate;
+    if (dates.length) {
+      var d = new Date(dates[0] + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() - 30);
+      fromDate = d.toISOString().slice(0, 10);
+    } else {
+      fromDate = '2024-01-01';
+    }
+
+    el.innerHTML = '<div class="anl-empty"><span style="font-size:22px">📡</span><span>Memuat candle ' + esc(ticker) + '…</span></div>';
+
+    var candles = [];
+    try {
+      if (typeof fetchOhlcForModal === 'function') {
+        candles = await fetchOhlcForModal(ticker, fromDate);
+      }
+    } catch(e) {
+      console.warn('[tr-anl] gagal ambil OHLC', ticker, e);
+    }
+
+    // Cleanup chart lama sebelum render ulang
+    if (_chart) { try { _chart.remove(); } catch(_){} _chart = null; _candleSeries = null; }
+    if (el._chartRo) { try { el._chartRo.disconnect(); } catch(_){} el._chartRo = null; }
+    el.innerHTML = '';
+
+    if (!candles || !candles.length){
+      el.innerHTML = '<div class="anl-empty"><span style="font-size:22px">📡</span><span>Data OHLC untuk ' + esc(ticker) + ' tidak tersedia</span></div>';
+      return;
+    }
+
+    var isDark = _isDark();
+    var bg          = isDark ? '#150f33' : '#f1eefc';
+    var textColor   = isDark ? '#c4b8e8' : '#6e6490';
+    var gridColor   = isDark ? 'rgba(164,156,192,0.12)' : 'rgba(164,156,192,0.18)';
+    var borderColor = isDark ? '#4a3590' : '#d4ccf0';
+    var upColor     = isDark ? '#4ade80' : '#059669';
+    var downColor   = isDark ? '#fb7185' : '#e11d48';
+
+    _chart = LightweightCharts.createChart(el, {
+      width:  el.clientWidth  || 400,
+      height: el.clientHeight || 380,
+      layout: { background: { color: bg }, textColor: textColor, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, attributionLogo: false },
+      grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      rightPriceScale: { borderColor: borderColor, scaleMargins: { top: 0.1, bottom: 0.1 } },
+      timeScale: {
+        borderColor: borderColor, timeVisible: false, secondsVisible: false,
+        tickMarkFormatter: function(time){
+          var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+          if (time && typeof time === 'object' && 'day' in time) return time.day + ' ' + months[time.month - 1];
+          var d = new Date(typeof time === 'number' ? time * 1000 : time);
+          return d.getUTCDate() + ' ' + months[d.getUTCMonth()];
+        }
+      },
+      handleScroll: true, handleScale: true
+    });
+
+    _candleSeries = _chart.addCandlestickSeries({
+      upColor: upColor, downColor: downColor,
+      borderUpColor: upColor, borderDownColor: downColor,
+      wickUpColor: upColor, wickDownColor: downColor
+    });
+
+    // Dedupe + sort candles ascending
+    var seen = {}; var lwData = [];
+    for (var i = 0; i < candles.length; i++){
+      var c = candles[i];
+      if (!c || !c.date || seen[c.date]) continue;
+      if (!Number.isFinite(c.open) || !Number.isFinite(c.close)) continue;
+      seen[c.date] = 1;
+      lwData.push({ time: c.date, open: c.open, high: c.high, low: c.low, close: c.close });
+    }
+    lwData.sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
+    _candleSeries.setData(lwData);
+
+    // ── Markers per rec (max 40 terakhir biar tidak crowded) ────────
+    var candleDateSet = {}; lwData.forEach(function(d){ candleDateSet[d.time] = 1; });
+    var candleDates = lwData.map(function(d){ return d.time; });
+    var markers = recs.filter(function(r){ return r.openDate; }).map(function(r){
+      var st = statusOf(r);
+      var color = st === 'TP' ? upColor
+                : st === 'SL' ? downColor
+                : (isDark ? '#c4a3ff' : '#6d28d9');
+      // Kalau tanggal rec bukan hari bursa, snap ke candle terdekat sebelumnya
+      var t = r.openDate;
+      if (!candleDateSet[t]){
+        var earlier = null;
+        for (var j = candleDates.length - 1; j >= 0; j--){
+          if (candleDates[j] <= t){ earlier = candleDates[j]; break; }
+        }
+        t = earlier || (candleDates.length ? candleDates[0] : null);
+      }
+      if (!t) return null;
+      return { time: t, position: 'belowBar', color: color, shape: 'arrowUp', text: firmShort(r.firm) };
+    }).filter(Boolean)
+      .sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
+
+    // Dedupe: kalau banyak marker di tanggal yg sama, gabung text singkat
+    var dedup = {}; markers.forEach(function(m){
+      if (!dedup[m.time]) dedup[m.time] = m;
+      else if (dedup[m.time].text !== m.text && !dedup[m.time].text.includes('+'))
+        dedup[m.time] = { time: m.time, position: 'belowBar', color: m.color, shape: 'arrowUp', text: dedup[m.time].text + ' +' };
+    });
+    var mArr = Object.keys(dedup).sort().map(function(k){ return dedup[k]; });
+    if (mArr.length > 40) mArr = mArr.slice(-40);
+    try { _candleSeries.setMarkers(mArr); } catch(_){}
+
+    // ── Overlay entry/TP/SL rec yang dipilih ───────────────────────
+    if (_selectedRecId){
+      var sel = null;
+      for (var m = 0; m < recs.length; m++){ if (recs[m].id === _selectedRecId){ sel = recs[m]; break; } }
+      if (sel){
+        var accentPurple = isDark ? '#c4a3ff' : '#6d28d9';
+        var tpColor      = isDark ? '#fbbf24' : '#d97706';
+        var lineOpts = function(price, color, title){
+          return {
+            price: +price, color: color, lineWidth: 1,
+            lineStyle: LightweightCharts.LineStyle.Dashed,
+            axisLabelVisible: true, title: title
+          };
+        };
+        if (Number.isFinite(+sel.entry) && +sel.entry > 0)
+          _candleSeries.createPriceLine(lineOpts(sel.entry, accentPurple, 'Entry'));
+        if (Number.isFinite(+sel.tp1) && +sel.tp1 > 0)
+          _candleSeries.createPriceLine(lineOpts(sel.tp1, tpColor, 'TP1'));
+        if (Number.isFinite(+sel.tp2) && +sel.tp2 > 0)
+          _candleSeries.createPriceLine(lineOpts(sel.tp2, tpColor, 'TP2'));
+        if (Number.isFinite(+sel.sl) && +sel.sl > 0)
+          _candleSeries.createPriceLine(lineOpts(sel.sl, downColor, 'SL'));
+      }
+    }
+
+    _chart.timeScale().fitContent();
+
+    // Responsive
+    var ro = new ResizeObserver(function(){
+      if (_chart) _chart.applyOptions({ width: el.clientWidth });
+    });
+    ro.observe(el);
+    el._chartRo = ro;
+  }
+
+  // ── Switch active ticker ──────────────────────────────────────────
+  function switchTicker(ticker){
+    if (!ticker || !_recsByTicker[ticker]) return;
+    _current = ticker;
+    _selectedRecId = null;
+    var recs = _recsByTicker[ticker] || [];
+    var k = computeKpi(recs);
+    renderHero(ticker, recs, k);
+    renderKpiStrip(k);
+    renderDonut(k);
+    renderFirmBar(k);
+    renderRecTable(recs);
+    renderChart(ticker, recs);
+    try { $('trAnlTickSel').value = ticker; } catch(_){}
+    try { localStorage.setItem('tr_anl_ticker', ticker); } catch(_){}
+  }
+
+  // ── Entry point: dipanggil saat tracker.json siap ────────────────
+  function renderAnalisis(data){
+    if (!data) return;
+    // Update chip count tab (jumlah ticker yg punya rec)
+    _recsByTicker = aggregate(data);
+    _tickers = rankTickers(_recsByTicker);
+    var chip = $('trSubAnlN'); if (chip) chip.textContent = _tickers.length || '—';
+
+    if (data.pending || !_tickers.length){
+      $('trAnlPending').style.display = '';
+      $('trAnlContent').style.display = 'none';
+      return;
+    }
+    $('trAnlPending').style.display = 'none';
+    $('trAnlContent').style.display = '';
+    buildTickSelect();
+    var saved = null; try { saved = localStorage.getItem('tr_anl_ticker'); } catch(_){}
+    var pick = (saved && _recsByTicker[saved]) ? saved : _tickers[0];
+    switchTicker(pick);
+  }
+
+  // ── Wire events ───────────────────────────────────────────────────
+  document.addEventListener('change', function(e){
+    if (e && e.target && e.target.id === 'trAnlTickSel'){
+      switchTicker(e.target.value);
+    }
+  });
+  document.addEventListener('click', function(e){
+    var row = e.target && e.target.closest && e.target.closest('#trAnlRecsBody tr[data-recid]');
+    if (!row) return;
+    var id = row.getAttribute('data-recid') || '';
+    _selectedRecId = (_selectedRecId === id) ? null : id;
+    var recs = _recsByTicker[_current] || [];
+    renderRecTable(recs);
+    renderChart(_current, recs);
+  });
+
+  // ── Subscribe ke data pipeline ────────────────────────────────────
+  if (window.__TR_onData){
+    window.__TR_onData(renderAnalisis);
+  } else {
+    var tries = 0;
+    var wait = setInterval(function(){
+      tries++;
+      if (window.__TR_onData){ clearInterval(wait); window.__TR_onData(renderAnalisis); }
       else if (tries > 30) clearInterval(wait);
     }, 100);
   }
