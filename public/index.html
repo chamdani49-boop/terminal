@@ -2595,6 +2595,41 @@ body.tr-admin .bottom-nav-item.tr-menu{display:flex !important}
 body.tr-profile-open #tr-view-main{display:none}
 body.tr-profile-open #tr-view-profile{display:block}
 
+/* ── DETAIL PROFIL SEKURITAS (dibuka dari card Tab Performa & LB Ringkasan)
+     Menggantikan drawer overlay lama utk konteks firm. Sub-tab bar +
+     semua sub-pane disembunyikan saat pane ini aktif, seperti pola
+     .tr-profile-open. */
+#tr-view-profile-firm{display:none}
+body.tr-profile-firm-open #tr-subtabs,
+body.tr-profile-firm-open .tr-subpane,
+body.tr-profile-firm-open #tr-view-profile{display:none !important}
+body.tr-profile-firm-open #tr-view-profile-firm{display:block}
+
+/* Segmented control 4 opsi eksekusi (Beli di Entry / Haka / TP1 / TP2) */
+.tr-pf-seg{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:4px;flex-wrap:wrap}
+.tr-pf-seg-btn{flex:1 1 auto;min-width:120px;padding:9px 12px;font-size:11.5px;font-weight:700;border:0;background:transparent;color:var(--text2);cursor:pointer;border-radius:9px;font-family:inherit;transition:all .18s;letter-spacing:.2px;white-space:nowrap}
+.tr-pf-seg-btn:hover{color:var(--text);background:var(--bg3)}
+.tr-pf-seg-btn.active{background:var(--grad);color:#fff;box-shadow:0 3px 10px rgba(124,58,237,.22)}
+@media(max-width:640px){
+  .tr-pf-seg-btn{flex:1 1 46%;font-size:10.5px;padding:8px 6px;min-width:0}
+}
+
+/* Note dinamis di bawah mode selector — deskripsi mode + stats per mode */
+.tr-pf-mode-note{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);margin-top:12px;line-height:1.65;padding:11px 13px;background:var(--bg2);border:1px solid var(--border);border-radius:10px}
+.tr-pf-mode-note b{color:var(--text)}
+.tr-pf-mode-stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:10.5px}
+.tr-pf-mode-stats span{display:inline-flex;align-items:center;gap:4px}
+.tr-pf-mode-stats .k{color:var(--text3);letter-spacing:.4px;text-transform:uppercase;font-size:9.5px;font-weight:700}
+.tr-pf-mode-stats .v{color:var(--text);font-weight:800}
+.tr-pf-mode-stats .v.up{color:var(--green)}
+.tr-pf-mode-stats .v.dn{color:var(--red)}
+
+/* Chart-wrap khusus utk 30-day per-firm (mirip .tr-perf-chart-wrap tapi
+   diberi ID sendiri supaya vanilla canvas draw bisa target unik). */
+.tr-pf-daychart-wrap{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;height:220px;margin-top:10px}
+.tr-pf-daychart-wrap canvas{width:100% !important;height:100% !important;display:block}
+.tr-pf-daychart-empty{text-align:center;padding:70px 12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
+
 .tr-back{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:14px;transition:all .15s;font-family:inherit}
 .tr-back:hover{border-color:var(--accent);color:var(--accent)}
 .tr-back .arr{display:inline-block;width:20px;height:20px;line-height:18px;text-align:center;border-radius:50%;background:var(--bg2);color:var(--text2);font-size:13px}
@@ -4921,6 +4956,94 @@ body.is-mobile-device.force-desktop .pl-col-main{
   </div>
 </div><!-- /tr-view-profile -->
 
+<!-- ── FIRM PROFILE PAGE (halaman detail sekuritas, menggantikan pop-up drawer utk klik card di Tab Performa / LB Ringkasan) ── -->
+<div id="tr-view-profile-firm" class="tr-profile">
+  <button type="button" class="tr-back" id="trFirmBack">
+    <span class="arr">←</span>
+    <span>Kembali ke Tracker</span>
+  </button>
+
+  <div class="tr-pcard">
+    <div class="tr-ptop">
+      <div class="tr-p-av" id="trPfAv">🏢</div>
+      <div style="min-width:0;flex:1">
+        <div class="tr-p-nrow">
+          <div class="tr-p-name" id="trPfName">—</div>
+          <span class="tr-p-vbadge" id="trPfVBadge">✓ TERVERIFIKASI</span>
+        </div>
+        <div class="tr-p-firm" id="trPfMeta">—</div>
+      </div>
+    </div>
+    <div class="tr-p-sectors" id="trPfSectors"></div>
+  </div>
+
+  <div class="tr-kpi-row">
+    <div class="tr-kpi hi">
+      <div class="k">WIN RATE</div>
+      <div class="v" id="trPfKpiWr">0%</div>
+      <div class="s tr-neu" id="trPfKpiWrSub">— dari — rekomendasi selesai</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">NET RETURN</div>
+      <div class="v" id="trPfKpiNet">+0%</div>
+      <div class="s tr-neu" id="trPfKpiNetSub">Kumulatif · mode aktif</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">RATA² / TRADE</div>
+      <div class="v" id="trPfKpiAvg">+0%</div>
+      <div class="s tr-neu">Realized · mode aktif</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">TOTAL REKOMENDASI</div>
+      <div class="v" id="trPfKpiTotal">0</div>
+      <div class="s tr-neu" id="trPfKpiTotalSub">— aktif · — riwayat</div>
+    </div>
+  </div>
+
+  <div class="tr-card" style="margin-top:14px">
+    <div class="tr-card-h">
+      <div>
+        <div class="tr-card-title">📈 Grafik Performa Konsensus 30 Hari</div>
+        <div class="tr-card-desc">P/L harian dari rekomendasi sekuritas ini + garis kumulatif (mode Entry murni).</div>
+      </div>
+    </div>
+    <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
+  </div>
+
+  <div class="tr-card" style="margin-top:14px">
+    <div class="tr-card-h">
+      <div>
+        <div class="tr-card-title">Return Kumulatif · Simulator Eksekusi</div>
+        <div class="tr-card-desc">Bandingkan strategi eksekusi: nunggu entry vs. beli HAKA saat tgl rekom vs. beli saat TP1/TP2.</div>
+      </div>
+    </div>
+    <div class="tr-pf-seg" id="trPfSeg" role="tablist" aria-label="Mode eksekusi">
+      <button type="button" class="tr-pf-seg-btn active" data-mode="pure">📍 Beli di Entry</button>
+      <button type="button" class="tr-pf-seg-btn" data-mode="haka">⚡ Beli HAKA (Open)</button>
+      <button type="button" class="tr-pf-seg-btn" data-mode="tp1">🎯 Beli Saat TP1</button>
+      <button type="button" class="tr-pf-seg-btn" data-mode="tp2">🏆 Beli Saat TP2</button>
+    </div>
+    <div class="tr-chart-wrap" style="margin-top:10px"><canvas id="trPfCumChart"></canvas></div>
+    <div class="tr-legend">
+      <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Sekuritas</span></span>
+      <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
+    </div>
+    <div class="tr-pf-mode-stats" id="trPfModeStats"></div>
+    <div class="tr-pf-mode-note" id="trPfModeNote"></div>
+  </div>
+
+  <div class="tr-sec-title" style="margin-top:14px;margin-bottom:6px">Rekomendasi Sekuritas</div>
+  <div class="tr-tabs" id="trPfTabs">
+    <button type="button" class="tr-tab active" data-tab="active">Aktif (<span id="trPfTabActN">0</span>)</button>
+    <button type="button" class="tr-tab" data-tab="history">Riwayat (<span id="trPfTabHistN">0</span>)</button>
+  </div>
+  <div class="tr-rec-list" id="trPfRecList"></div>
+
+  <div class="tr-disclaimer">
+    Semua P/L dihitung dari harga penutupan resmi. <b>Beli di Entry</b> hanya menghitung rekomendasi di mana harga benar-benar menyentuh zona entry (paling konsisten dengan desain analis). <b>Beli HAKA</b> mengasumsikan eksekusi di open pada hari rilis (tidak pernah kelewatan, tapi RR menyimpang). <b>Beli Saat TP1 / TP2</b> mengasumsikan pembeli baru masuk saat target tercapai — hanya untuk rekomendasi yang benar-benar menyentuh entry & TP terkait; jika tak tersentuh, fallback ke P/L Entry murni.
+  </div>
+</div><!-- /tr-view-profile-firm -->
+
 <!-- ── DETAIL DRAWER: lookup saham / detail firm (real data tracker.json) ── -->
 <div id="trDetail" class="tr-dt-overlay" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="tr-dt-panel">
@@ -5084,6 +5207,589 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(srow){ var s=srow.getAttribute('data-tr-stock'); if(s) openStock(s); return; }
   });
   document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ var o=$('trDetail'); if(o&&o.classList.contains('open')) hide(); } });
+})();
+</script>
+
+<script>
+// ═══════════════════════════════════════════
+// TRACKER — FIRM PROFILE PAGE (halaman detail sekuritas, non-overlay)
+//   Aktif via: window.__TR_openFirm(idOrName)  (override drawer di atas)
+//   Section: hero, KPI, chart Grafik Performa Konsensus 30 Hari,
+//            chart Return Kumulatif dgn 4-mode selector (pure/haka/tp1/tp2),
+//            daftar rekomendasi Aktif/Riwayat.
+// ═══════════════════════════════════════════
+(function(){
+  var _currentFirm = null;
+  var _currentMode = 'pure';
+  var _currentTab  = 'active';
+  var _cumChart    = null;
+  var _rafHandle   = null;
+
+  function $id(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function fmtN(n){ return (n==null||!Number.isFinite(+n))?'—':Number(n).toLocaleString('id-ID'); }
+  function fmtPct(n, dec){ if(n==null||!Number.isFinite(+n)) return '—'; var v=+n; var d=(dec==null)?2:dec; return (v>=0?'+':'')+v.toFixed(d)+'%'; }
+  function fmtShortDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}); }catch(_){ return String(iso); } }
+  function firmShort(name){ if(!name) return '—'; return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim(); }
+  function initials(s){ if(!s) return '🏢'; var parts=String(s).replace(/PT\s*/i,'').trim().split(/\s+/); var a=(parts[0]||'')[0]||''; var b=(parts[1]||'')[0]||''; return (a+b).toUpperCase()||'🏢'; }
+  function getData(){ try{ return (window.__TR_getData && window.__TR_getData()) || window.__TR_DATA__ || null; }catch(_){ return null; } }
+  function trColors(){
+    var s=getComputedStyle(document.documentElement);
+    return {
+      accent: (s.getPropertyValue('--accent')||'').trim()||'#7c3aed',
+      accentBg:'rgba(124,58,237,0.14)',
+      green:  (s.getPropertyValue('--green')||'').trim()||'#059669',
+      red:    (s.getPropertyValue('--red')||'').trim()||'#e11d48',
+      blue:   (s.getPropertyValue('--accent2')||'').trim()||'#2563eb',
+      text3:  (s.getPropertyValue('--text3')||'').trim()||'#6e6890',
+      grid:   (s.getPropertyValue('--border')||'').trim()||'#2a2856',
+      tick:   (s.getPropertyValue('--text2')||'').trim()||'#a09cc3',
+      tooltipBg:(s.getPropertyValue('--card')||'').trim()||'#1a1840'
+    };
+  }
+
+  // ── Mode-aware P/L per rec ─────────────────────────
+  // pure  : pnlPure (skip null)
+  // haka  : pnlHaka (skip null)
+  // tp1   : jika TP1 di tpHits & didTouchEntry → (tp1-entry)/entry*100 (BUY-adj);
+  //         fallback ke pnlPure jika tak sentuh TP1 (SL/expired/etc.)
+  // tp2   : jika TP2 hit → (tp2-entry)/entry*100; elif TP1 hit → (tp1-entry)/entry*100;
+  //         fallback ke pnlPure. Semua butuh didTouchEntry.
+  function isBuy(r){ return String(r.type||'BUY').toUpperCase()==='BUY'; }
+  function tpPct(entry, target, buy){
+    if(!Number.isFinite(+entry)||!Number.isFinite(+target)||+entry===0) return null;
+    var raw=((+target - +entry)/+entry)*100;
+    return buy ? raw : -raw;
+  }
+  function getRecPnl(rec, mode){
+    if(!rec) return null;
+    if(mode==='pure'){ return Number.isFinite(+rec.pnlPure)?+rec.pnlPure:null; }
+    if(mode==='haka'){ return Number.isFinite(+rec.pnlHaka)?+rec.pnlHaka:null; }
+    var hits=rec.tpHits||[]; var buy=isBuy(rec);
+    if(mode==='tp1'){
+      if(!rec.didTouchEntry) return null;
+      if(hits.indexOf('TP1')>=0){ var p=tpPct(rec.entry,rec.tp1,buy); if(p!=null) return p; }
+      return Number.isFinite(+rec.pnlPure)?+rec.pnlPure:null;
+    }
+    if(mode==='tp2'){
+      if(!rec.didTouchEntry) return null;
+      if(hits.indexOf('TP2')>=0){ var p2=tpPct(rec.entry,rec.tp2,buy); if(p2!=null) return p2; }
+      if(hits.indexOf('TP1')>=0){ var p1=tpPct(rec.entry,rec.tp1,buy); if(p1!=null) return p1; }
+      return Number.isFinite(+rec.pnlPure)?+rec.pnlPure:null;
+    }
+    return null;
+  }
+
+  // ── Compute cumulative series ──────────────────────
+  // Sort by exitDate asc, iterate & accumulate. Return [{date, cum}].
+  function computeCumSeries(firm, mode){
+    var recs=(firm && firm.recsHistory || []).slice()
+      .filter(function(r){ return r && r.exitDate; })
+      .sort(function(a,b){ return String(a.exitDate).localeCompare(String(b.exitDate)); });
+    var out=[]; var cum=0;
+    for(var i=0;i<recs.length;i++){
+      var p=getRecPnl(recs[i], mode);
+      if(p==null) continue;
+      cum += +p;
+      out.push({ date: recs[i].exitDate, cum: +cum.toFixed(3) });
+    }
+    return out;
+  }
+  function computeIhsgCumSeries(){
+    var d=getData(); if(!d||!d.ihsg||!Array.isArray(d.ihsg.series30d)||!d.ihsg.series30d.length) return [];
+    var s=d.ihsg.series30d.slice().sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
+    var base=+s[0].close; if(!Number.isFinite(base)||base===0) return [];
+    return s.map(function(pt){ return { date: pt.date, cum: +(((+pt.close-base)/base)*100).toFixed(3) }; });
+  }
+  // Untuk chart cum: align x-axis pakai gabungan tgl (union) dari series firm & IHSG, isi flat sebelum tgl pertama.
+  function alignSeriesToDates(series, dates){
+    // series: sorted [{date, cum}]. dates: sorted array of dates.
+    // For each date in dates, return cum value at that date, forward-filled after firm's first date; before first date → 0 (belum ada aktivitas).
+    var out=[]; var idx=0; var last=null;
+    for(var i=0;i<dates.length;i++){
+      var d=dates[i];
+      while(idx<series.length && series[idx].date<=d){ last=series[idx].cum; idx++; }
+      out.push(last==null?null:last);
+    }
+    return out;
+  }
+
+  function computeModeStats(firm, mode){
+    var recs=(firm && firm.recsHistory || []);
+    var vals=[]; var wins=0;
+    for(var i=0;i<recs.length;i++){
+      var p=getRecPnl(recs[i], mode);
+      if(p==null) continue;
+      vals.push(+p);
+      if(+p>0) wins++;
+    }
+    var total=vals.length;
+    var net = vals.reduce(function(s,v){return s+v;},0);
+    var avg = total?net/total:0;
+    var wr  = total?Math.round(wins/total*100):null;
+    return { total:total, wins:wins, wr:wr, net:net, avg:avg };
+  }
+
+  var MODE_LABEL = {
+    pure: 'Beli di Entry',
+    haka: 'Beli HAKA (Open)',
+    tp1:  'Beli Saat TP1',
+    tp2:  'Beli Saat TP2'
+  };
+  var MODE_NOTE = {
+    pure: '<b>Entry murni:</b> posisi baru dianggap terbuka bila harga benar-benar menyentuh zona entry rekomendasi. Paling konsisten dengan desain analis, tapi bisa "kelewatan" saat harga tak pernah pullback.',
+    haka: '<b>HAKA (Hantam Kanan):</b> seluruh posisi masuk begitu market buka pada tanggal rilis, tanpa menunggu entry. Tidak pernah kelewatan momentum, tapi RR menyimpang paling jauh dari desain analis.',
+    tp1:  '<b>Beli saat TP1:</b> pembeli baru masuk saat TP1 tercapai (asumsi entry di harga TP1) — hanya berlaku untuk rekomendasi yang benar-benar menyentuh entry & TP1. Jika tak menyentuh, fallback ke P/L Entry murni.',
+    tp2:  '<b>Beli saat TP2:</b> pembeli baru masuk saat TP2 tercapai; jika hanya TP1 hit maka pakai P/L TP1; jika TP tak tersentuh sama sekali, fallback ke P/L Entry murni. Butuh entry tersentuh.'
+  };
+
+  // ── HERO / KPI ─────────────────────────────────────
+  function populateHero(firm){
+    $id('trPfAv').textContent = initials(firm.name);
+    $id('trPfName').textContent = firmShort(firm.name);
+    var vb = $id('trPfVBadge'); if(vb) vb.style.display = firm.verified ? '' : 'none';
+    var analystCount = (firm.analysts||[]).length;
+    var meta = [];
+    meta.push((firm.trades||0)+' trade selesai');
+    if(analystCount) meta.push(analystCount+' analis');
+    if(firm.highScore) meta.push('High-score '+firm.highScore);
+    $id('trPfMeta').textContent = meta.join(' · ');
+
+    var secEl = $id('trPfSectors'); if(secEl){
+      var sf = firm.sectorFocus || [];
+      if(sf.length){
+        secEl.innerHTML = sf.slice(0,6).map(function(s){
+          var lbl = (typeof s==='string') ? s : (s && (s.name||s.sector) || '');
+          if(!lbl) return '';
+          return '<span class="tr-p-sector">'+esc(lbl)+'</span>';
+        }).join('');
+      } else {
+        secEl.innerHTML = '';
+      }
+    }
+  }
+  function renderKpi(firm, mode){
+    var st = computeModeStats(firm, mode);
+    var actN  = (firm.recsActive||[]).length;
+    var histN = (firm.recsHistory||[]).length;
+    var pendN = (firm.recsPending||[]).length;
+    var missN = (firm.recsMissed||[]).length;
+
+    var wrEl = $id('trPfKpiWr');
+    if(wrEl){
+      if(st.wr==null){ wrEl.textContent='—'; wrEl.className='v'; }
+      else { wrEl.textContent = st.wr+'%'; wrEl.className='v '+(st.wr>=50?'tr-up':'tr-dn'); }
+    }
+    $id('trPfKpiWrSub').textContent = (st.wins||0)+' win dari '+st.total+' rekomendasi selesai';
+
+    var netEl = $id('trPfKpiNet');
+    if(netEl){
+      if(!st.total){ netEl.textContent='—'; netEl.className='v'; }
+      else { netEl.textContent=fmtPct(st.net); netEl.className='v '+(st.net>=0?'tr-up':'tr-dn'); }
+    }
+    $id('trPfKpiNetSub').textContent = 'Mode: '+MODE_LABEL[mode];
+
+    var avgEl = $id('trPfKpiAvg');
+    if(avgEl){
+      if(!st.total){ avgEl.textContent='—'; avgEl.className='v'; }
+      else { avgEl.textContent=fmtPct(st.avg); avgEl.className='v '+(st.avg>=0?'tr-up':'tr-dn'); }
+    }
+
+    $id('trPfKpiTotal').textContent = String((actN + histN + pendN + missN) || 0);
+    var extras = [];
+    if(actN)  extras.push(actN+' aktif');
+    if(histN) extras.push(histN+' riwayat');
+    if(pendN) extras.push(pendN+' menunggu');
+    if(missN) extras.push(missN+' lari');
+    $id('trPfKpiTotalSub').textContent = extras.length ? extras.join(' · ') : '—';
+  }
+  function renderModeStats(firm, mode){
+    var st = computeModeStats(firm, mode);
+    var el = $id('trPfModeStats'); if(!el) return;
+    if(!st.total){ el.innerHTML='<span><span class="k">Belum ada rekomendasi selesai untuk mode ini.</span></span>'; return; }
+    var wrCls = (st.wr!=null && st.wr>=50) ? 'up' : 'dn';
+    var netCls = st.net>=0 ? 'up' : 'dn';
+    var avgCls = st.avg>=0 ? 'up' : 'dn';
+    el.innerHTML =
+      '<span><span class="k">Winrate</span> <span class="v '+wrCls+'">'+(st.wr==null?'—':(st.wr+'%'))+'</span></span>'
+    + '<span><span class="k">Net</span> <span class="v '+netCls+'">'+fmtPct(st.net)+'</span></span>'
+    + '<span><span class="k">Rata²</span> <span class="v '+avgCls+'">'+fmtPct(st.avg)+'</span></span>'
+    + '<span><span class="k">Trade tercatat</span> <span class="v">'+st.total+'</span></span>';
+    var note = $id('trPfModeNote'); if(note) note.innerHTML = MODE_NOTE[mode]||'';
+    var cumLbl = $id('trPfCumFirmLbl'); if(cumLbl && _currentFirm) cumLbl.textContent = firmShort(_currentFirm.name) + ' · ' + MODE_LABEL[mode];
+  }
+
+  // ── Cumulative Chart (Chart.js) ────────────────────
+  function renderCumChart(firm, mode){
+    if(typeof Chart === 'undefined'){ return; }
+    var ctx = $id('trPfCumChart'); if(!ctx) return;
+    var firmSeries = computeCumSeries(firm, mode);
+    var ihsgSeries = computeIhsgCumSeries();
+
+    // Union of dates: firm exit dates + IHSG dates
+    var dateSet = {};
+    firmSeries.forEach(function(p){ dateSet[p.date]=1; });
+    ihsgSeries.forEach(function(p){ dateSet[p.date]=1; });
+    var dates = Object.keys(dateSet).sort();
+
+    var firmVals = alignSeriesToDates(firmSeries, dates).map(function(v){ return v==null?0:v; });
+    var ihsgVals = alignSeriesToDates(ihsgSeries, dates).map(function(v){ return v==null?0:v; });
+
+    // Labels: tampilkan tgl setiap N step
+    var step = Math.max(1, Math.floor(dates.length/6));
+    var labels = dates.map(function(d,i){ return (i%step===0 || i===dates.length-1) ? fmtShortDate(d) : ''; });
+
+    var c = trColors();
+    if(_cumChart){ try{ _cumChart.destroy(); }catch(_){} _cumChart=null; }
+    _cumChart = new Chart(ctx, {
+      type:'line',
+      data:{ labels:labels, datasets:[
+        { label: firmShort(firm.name)+' · '+MODE_LABEL[mode], data: firmVals, borderColor:c.accent, backgroundColor:c.accentBg, fill:'+1', tension:0.28, pointRadius:0, borderWidth:2.5 },
+        { label:'IHSG', data: ihsgVals, borderColor:c.text3, backgroundColor:'transparent', fill:false, tension:0.28, pointRadius:0, borderWidth:2, borderDash:[4,3] }
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ mode:'index', intersect:false, backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1,
+            callbacks:{
+              title:function(items){ if(!items||!items.length) return ''; var i=items[0].dataIndex; return dates[i]||items[0].label||''; },
+              label:function(it){ var y=it.parsed.y; return it.dataset.label+': '+(y>=0?'+':'')+(+y).toFixed(2)+'%'; }
+            } }
+        },
+        scales:{
+          x:{ grid:{display:false}, ticks:{ color:c.text3, font:{size:10, family:"'IBM Plex Mono',monospace"}, maxRotation:0, autoSkip:false } },
+          y:{ grid:{color:c.grid}, ticks:{ color:c.tick, font:{size:10, family:"'IBM Plex Mono',monospace"}, callback:function(v){return v+'%';} } }
+        },
+        interaction:{ mode:'index', intersect:false }
+      }
+    });
+  }
+
+  // ── Per-firm 30-day chart (vanilla canvas, mirror drawDayChart) ──
+  // Agregasi rec.pnlPure per exitDate, lalu bar hijau/merah + garis kumulatif biru.
+  function computeFirmDailyEquity(firm){
+    var recs = (firm && firm.recsHistory || []).filter(function(r){ return r && r.exitDate && Number.isFinite(+r.pnlPure); });
+    if(!recs.length) return [];
+    // Group by exitDate
+    var byDate = {};
+    recs.forEach(function(r){
+      var d = r.exitDate;
+      if(!byDate[d]) byDate[d] = { date:d, trades:0, wins:0, losses:0, sumPnl:0 };
+      byDate[d].trades += 1;
+      byDate[d].sumPnl += +r.pnlPure;
+      if(+r.pnlPure > 0) byDate[d].wins++; else if(+r.pnlPure < 0) byDate[d].losses++;
+    });
+    var dates = Object.keys(byDate).sort();
+    // Limit to last 30 trading days
+    if(dates.length > 30) dates = dates.slice(dates.length-30);
+    var cum = 0;
+    return dates.map(function(d){
+      var row = byDate[d];
+      var dayPnl = +row.sumPnl.toFixed(3);
+      cum += dayPnl;
+      return { date:d, trades:row.trades, wins:row.wins, losses:row.losses, dayPnl:dayPnl, cumulative:+cum.toFixed(3) };
+    });
+  }
+
+  function renderDayChart(firm){
+    var canvas = $id('trPfDayChart');
+    var wrap = canvas ? canvas.parentElement : null;
+    if(!canvas || !wrap) return;
+    // Clear old empty overlay
+    var old = wrap.querySelector('.tr-pf-daychart-empty'); if(old) old.remove();
+
+    var series = computeFirmDailyEquity(firm);
+    if(!series.length){
+      canvas.width=1; canvas.height=1;
+      var em = document.createElement('div');
+      em.className = 'tr-pf-daychart-empty';
+      em.textContent = 'Belum ada rekomendasi selesai untuk sekuritas ini.';
+      wrap.appendChild(em);
+      return;
+    }
+
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = canvas.offsetWidth || wrap.clientWidth || 600;
+    var cssH = canvas.offsetHeight || 200;
+    canvas.width = Math.max(1, cssW*dpr);
+    canvas.height = Math.max(1, cssH*dpr);
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,cssW,cssH);
+
+    var c = trColors();
+    var pad={ t:14, r:46, b:26, l:42 };
+    var W = cssW - pad.l - pad.r;
+    var H = cssH - pad.t - pad.b;
+    var N = series.length;
+
+    var dayMax = 2;
+    series.forEach(function(d){ var a=Math.abs(d.dayPnl||0); if(a>dayMax) dayMax=a; });
+    var dayScale = H/2/dayMax;
+    var zeroY = pad.t + H/2;
+
+    var cums = series.map(function(d){ return d.cumulative||0; });
+    var cumMin = Math.min.apply(null, cums.concat([0]));
+    var cumMax = Math.max.apply(null, cums.concat([0]));
+    var cumRange = (cumMax - cumMin) || 1;
+    function cumY(v){ return pad.t + (1 - (v - cumMin)/cumRange) * H; }
+
+    // Grid
+    ctx.strokeStyle = c.grid;
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 1;
+    for(var i=0;i<=4;i++){ var y=pad.t+(i/4)*H; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+W,y); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+
+    // Bars
+    var barW = Math.max(3, (W/N)*0.7);
+    var gap  = (W/N) - barW;
+    ctx.font = '9px "IBM Plex Mono", monospace';
+    ctx.textBaseline = 'top';
+    series.forEach(function(d,i){
+      var x = pad.l + i*(barW+gap) + gap/2;
+      var v = d.dayPnl||0;
+      var h = Math.abs(v)*dayScale;
+      ctx.fillStyle = v>=0 ? c.green : c.red;
+      ctx.globalAlpha = 0.85;
+      if(v>=0) ctx.fillRect(x, zeroY-h, barW, h);
+      else ctx.fillRect(x, zeroY, barW, h);
+      ctx.globalAlpha = 1;
+      if(i%Math.max(1,Math.floor(N/6))===0 || i===N-1){
+        ctx.fillStyle = c.text3;
+        var lbl = String(d.date||'').slice(5);
+        ctx.fillText(lbl, x, pad.t+H+6);
+      }
+    });
+
+    // Zero line
+    ctx.strokeStyle = c.text3;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, zeroY); ctx.lineTo(pad.l+W, zeroY); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Cum line
+    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = c.blue;
+    ctx.beginPath();
+    series.forEach(function(d,i){
+      var x = pad.l + i*(barW+gap) + gap/2 + barW/2;
+      var y = cumY(d.cumulative||0);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+
+    // Right axis labels
+    ctx.fillStyle = c.text3;
+    ctx.font = '9px "IBM Plex Mono", monospace';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(cumMax.toFixed(1)+'%', pad.l+W+4, pad.t+4);
+    ctx.fillText(cumMin.toFixed(1)+'%', pad.l+W+4, pad.t+H-4);
+  }
+
+  // ── Rec list ────────────────────────────────────────
+  function stateInfo(r, isHistory){
+    if(isHistory){
+      var cb = r.closedBy; var tp = r.tpHits||[];
+      if(cb==='TP2' || tp.indexOf('TP2')>=0) return {cls:'tr-rec-o tp', lbl:'🏆 Kena TP2'};
+      if(cb==='TP1' || tp.indexOf('TP1')>=0) return {cls:'tr-rec-o tp', lbl:'🎯 Kena TP1'};
+      if(cb==='SL_TRAIL') return {cls:'tr-rec-o tp', lbl:'🛡 SL Trail'};
+      if(cb==='SL') return {cls:'tr-rec-o sl', lbl:'✕ Kena SL'};
+      if(cb==='EXPIRED') return {cls:'tr-rec-o', lbl:'⏰ Expired'};
+      return {cls:'tr-rec-o', lbl:'Selesai'};
+    }
+    var s=r.state||'TRIGGERED';
+    if(s==='PENDING') return {cls:'tr-rec-o', lbl:'⏳ Menunggu'};
+    if(s==='RUNNING_MISSED') return {cls:'tr-rec-o', lbl:'🚀 Harga Lari'};
+    return {cls:'tr-rec-o active', lbl:'● Aktif'};
+  }
+  function renderRecList(firm, tab){
+    var el = $id('trPfRecList'); if(!el) return;
+    var list;
+    if(tab==='active'){
+      list = (firm.recsActive||[])
+        .concat((firm.recsPending||[]).map(function(r){ return Object.assign({}, r, {state:'PENDING'}); }))
+        .concat((firm.recsMissed||[]).map(function(r){ return Object.assign({}, r, {state:'RUNNING_MISSED'}); }));
+    } else {
+      list = (firm.recsHistory||[]).slice().sort(function(a,b){ return String(b.exitDate||'').localeCompare(String(a.exitDate||'')); });
+    }
+    // Update tab counters
+    var actN = (firm.recsActive||[]).length + (firm.recsPending||[]).length + (firm.recsMissed||[]).length;
+    var histN = (firm.recsHistory||[]).length;
+    var an=$id('trPfTabActN'); if(an) an.textContent=actN;
+    var hn=$id('trPfTabHistN'); if(hn) hn.textContent=histN;
+
+    if(!list.length){
+      el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:14px 4px;text-align:center">Belum ada rekomendasi di kategori ini.</div>';
+      return;
+    }
+    el.innerHTML = list.map(function(r){
+      var buy = isBuy(r);
+      var potPct = (Number.isFinite(+r.entry) && Number.isFinite(+r.tp1) && +r.entry!==0)
+        ? tpPct(r.entry, r.tp1, buy) : null;
+      var potColor = potPct==null ? 'var(--text3)' : (potPct>=0?'var(--green)':'var(--red)');
+      var potStr = potPct==null ? '—' : ((potPct>=0?'+':'')+potPct.toFixed(1)+'%');
+      var st = stateInfo(r, tab==='history');
+      var pnlStr = '';
+      if(tab==='history' && Number.isFinite(+r.pnlPct)){
+        var pv=+r.pnlPct;
+        pnlStr = ' <span style="color:'+(pv>=0?'var(--green)':'var(--red)')+';font-weight:800">'+fmtPct(pv)+'</span>';
+      }
+      var tk = esc(r.ticker||'');
+      var analyst = r.analyst ? '<span style="color:var(--text3);font-size:10px;margin-left:6px">'+esc(r.analyst)+'</span>' : '';
+      var badgeCls = buy ? 'buy' : 'sell';
+      return '<div class="tr-rec" data-tr-stock="'+tk+'">'
+        + '<div class="tr-rec-top">'
+          + '<div style="min-width:0"><div class="tr-rec-tk">'+tk+analyst+'</div><div class="tr-rec-nm">'+esc(r.sector||'')+'</div></div>'
+          + '<span class="tr-rec-b '+badgeCls+'">'+(buy?'BUY':'SELL')+'</span>'
+        + '</div>'
+        + '<div class="tr-rec-g">'
+          + '<div><div class="k">ENTRY</div><div class="v">'+fmtN(r.entry)+'</div></div>'
+          + '<div><div class="k">TP1</div><div class="v" style="color:var(--green)">'+fmtN(r.tp1)+'</div></div>'
+          + '<div><div class="k">TP2</div><div class="v" style="color:var(--green)">'+(r.tp2?fmtN(r.tp2):'—')+'</div></div>'
+          + '<div><div class="k">SL</div><div class="v" style="color:var(--red)">'+fmtN(r.sl)+'</div></div>'
+          + '<div><div class="k">POTENSI</div><div class="v" style="color:'+potColor+'">'+potStr+'</div></div>'
+        + '</div>'
+        + '<div class="tr-rec-d"><span>📅 '+esc(fmtShortDate(r.openDate))+(r.exitDate?(' → '+esc(fmtShortDate(r.exitDate))):'')+'</span><span class="'+st.cls+'">'+st.lbl+pnlStr+'</span></div>'
+      + '</div>';
+    }).join('');
+  }
+
+  // ── Open / Close ────────────────────────────────────
+  function resolveFirm(key){
+    var d = getData(); if(!d) return null;
+    var bf = d.byFirm || {};
+    if(bf[key]) return bf[key];
+    // Fallback: by id or name or short-name
+    for(var k in bf){
+      var f = bf[k];
+      if(!f) continue;
+      if(f.id===key || f.name===key) return f;
+      if(firmShort(f.name)===firmShort(key)) return f;
+    }
+    return null;
+  }
+
+  function scheduleDayChartRedraw(){
+    if(_rafHandle){ try{ cancelAnimationFrame(_rafHandle); }catch(_){} }
+    _rafHandle = requestAnimationFrame(function(){
+      _rafHandle = null;
+      if(_currentFirm && document.body.classList.contains('tr-profile-firm-open')){
+        renderDayChart(_currentFirm);
+      }
+    });
+  }
+
+  function openFirmPage(key){
+    var firm = resolveFirm(key);
+    if(!firm){
+      // Data belum siap? tunggu sebentar lalu retry sekali.
+      var d = getData();
+      if(!d || d.pending) return;
+      // Kalau bener2 tidak ada firm, fallback ke drawer lama tak dilakukan (biar user tahu miss).
+      return;
+    }
+    _currentFirm = firm;
+    _currentMode = 'pure';
+    _currentTab  = 'active';
+
+    populateHero(firm);
+    renderKpi(firm, _currentMode);
+    renderModeStats(firm, _currentMode);
+    // Sync seg active
+    var segButtons = document.querySelectorAll('#trPfSeg .tr-pf-seg-btn');
+    segButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mode')===_currentMode); });
+    // Sync tab active
+    var tabButtons = document.querySelectorAll('#trPfTabs .tr-tab');
+    tabButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===_currentTab); });
+
+    document.body.classList.add('tr-profile-firm-open');
+    // Draw charts (butuh element visible utk offsetWidth). RAF supaya width ok.
+    scheduleDayChartRedraw();
+    setTimeout(function(){
+      if(_currentFirm){ renderCumChart(_currentFirm, _currentMode); renderDayChart(_currentFirm); }
+    }, 30);
+    renderRecList(firm, _currentTab);
+
+    try{ window.scrollTo({ top:0, left:0, behavior:'smooth' }); }catch(_){ window.scrollTo(0,0); }
+  }
+
+  function closeFirmPage(){
+    if(_cumChart){ try{ _cumChart.destroy(); }catch(_){} _cumChart=null; }
+    document.body.classList.remove('tr-profile-firm-open');
+    _currentFirm = null;
+  }
+
+  function switchMode(mode){
+    if(!_currentFirm || !MODE_LABEL[mode]) return;
+    _currentMode = mode;
+    var segButtons = document.querySelectorAll('#trPfSeg .tr-pf-seg-btn');
+    segButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mode')===mode); });
+    renderKpi(_currentFirm, mode);
+    renderModeStats(_currentFirm, mode);
+    renderCumChart(_currentFirm, mode);
+  }
+  function switchTab(tab){
+    if(!_currentFirm || (tab!=='active' && tab!=='history')) return;
+    _currentTab = tab;
+    var tabButtons = document.querySelectorAll('#trPfTabs .tr-tab');
+    tabButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
+    renderRecList(_currentFirm, tab);
+  }
+
+  // ── Global overrides & delegates ───────────────────
+  window.__TR_openFirmPage = openFirmPage;
+  window.__TR_openFirm = openFirmPage;  // override drawer.__TR_openFirm
+  window.__TR_closeFirmPage = closeFirmPage;
+
+  // Delegated click handlers (idempotent, only fire when relevant target)
+  document.addEventListener('click', function(e){
+    var t = e.target; if(!t || !t.closest) return;
+    if(t.closest('#trFirmBack')){ e.preventDefault(); closeFirmPage(); return; }
+    var seg = t.closest('#trPfSeg .tr-pf-seg-btn');
+    if(seg){ var m=seg.getAttribute('data-mode'); if(m){ switchMode(m); } return; }
+    var tab = t.closest('#trPfTabs .tr-tab');
+    if(tab){ var tb=tab.getAttribute('data-tab'); if(tb){ switchTab(tb); } return; }
+  });
+
+  // ESC → close firm page (only when open, dan overlay drawer tidak aktif)
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape' && document.body.classList.contains('tr-profile-firm-open')){
+      var dt = document.getElementById('trDetail');
+      if(!(dt && dt.classList.contains('open'))){ closeFirmPage(); }
+    }
+  });
+
+  // Resize → redraw canvas day chart
+  window.addEventListener('resize', function(){
+    if(document.body.classList.contains('tr-profile-firm-open')) scheduleDayChartRedraw();
+  });
+
+  // Auto-close saat pindah page (mis. user klik nav lain)
+  function hookShowPage(){
+    if(typeof window.showPage !== 'function' || window.__TR_firmHookedShowPage) return;
+    var orig = window.showPage;
+    window.showPage = function(pageId){
+      try{
+        if(pageId !== 'page-tracker' && document.body.classList.contains('tr-profile-firm-open')){
+          closeFirmPage();
+        }
+      }catch(_){}
+      return orig.apply(this, arguments);
+    };
+    window.__TR_firmHookedShowPage = true;
+  }
+  // Try immediately + retry ketika showPage ready
+  hookShowPage();
+  if(!window.__TR_firmHookedShowPage){
+    var _tries=0;
+    var _iv=setInterval(function(){
+      _tries++;
+      hookShowPage();
+      if(window.__TR_firmHookedShowPage || _tries>50) clearInterval(_iv);
+    }, 200);
+  }
 })();
 </script>
 
