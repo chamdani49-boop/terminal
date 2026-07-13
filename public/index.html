@@ -2636,6 +2636,31 @@ body.tr-profile-open #tr-view-profile{display:block}
   .tr-pf-charts-row > .tr-card{margin-top:0 !important}
 }
 
+/* Wrap mode selector — dipindah dari dalam card Return Kumulatif ke ATAS 2
+   chart (agar meng-triger kedua chart, bukan cuma cum chart). Stats mode
+   pindah ke dalam wrap ini. Keterangan (note) dihilangkan dari layout inline
+   dan hanya muncul di popup #trPfModeModal. */
+.tr-pf-seg-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-top:14px}
+.tr-pf-seg-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.tr-pf-seg-label{font-weight:800;font-size:12.5px;letter-spacing:-.1px;display:inline-flex;align-items:center;gap:6px}
+.tr-pf-seg-label .tr-pf-seg-active-lbl{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-weight:800;font-size:11.5px;background:rgba(124,58,237,.14);border:1px solid rgba(124,58,237,.28);padding:2px 8px;border-radius:5px;letter-spacing:.2px}
+.tr-pf-info-btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);cursor:pointer;padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.tr-pf-info-btn:hover{background:var(--bg3);color:var(--text);border-color:rgba(124,58,237,.4)}
+.tr-pf-seg-wrap .tr-pf-mode-stats{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);flex-wrap:wrap}
+
+/* Popup keterangan mode (menggantikan .tr-pf-mode-note inline) */
+.tr-pf-mode-modal{position:fixed;inset:0;z-index:10050;display:none}
+.tr-pf-mode-modal.open{display:block}
+.tr-pf-mode-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.tr-pf-mode-modal-card{position:relative;max-width:540px;width:calc(100% - 32px);margin:8vh auto 0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px 20px;box-shadow:0 20px 40px rgba(0,0,0,.45)}
+.tr-pf-mode-modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.tr-pf-mode-modal-title{font-weight:800;font-size:15px;letter-spacing:-.2px;display:inline-flex;align-items:center;gap:8px}
+.tr-pf-mode-modal-close{background:transparent;border:0;color:var(--text3);font-size:18px;cursor:pointer;padding:4px 9px;border-radius:6px;line-height:1;font-family:inherit}
+.tr-pf-mode-modal-close:hover{background:var(--bg2);color:var(--text)}
+.tr-pf-mode-modal-body{font-size:12.5px;line-height:1.65;color:var(--text2)}
+.tr-pf-mode-modal-body b{color:var(--text)}
+.tr-pf-mode-modal-body .m-sub{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);color:var(--text3);font-size:11.5px}
+
 /* ── Master-detail layout (tab Analis: kiri list sekuritas, kanan detail firm) ── */
 .tr-mdet{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:flex-start}
 @media(max-width:900px){.tr-mdet{grid-template-columns:1fr;gap:12px}}
@@ -4963,13 +4988,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
           </div>
         </div>
 
-        <!-- 2 chart card sejajar berdampingan di PC (≥1100px). Di bawahnya stack. -->
+        <!-- Mode selector di ATAS 2 chart — men-triger BOTH chart (day + cum).
+             Keterangan pindah ke popup #trPfModeModal. -->
+        <div class="tr-pf-seg-wrap">
+          <div class="tr-pf-seg-head">
+            <div class="tr-pf-seg-label">🎛 Mode Eksekusi <span class="tr-pf-seg-active-lbl" id="trPfSegActiveLbl">Beli di Entry</span></div>
+            <button type="button" class="tr-pf-info-btn" id="trPfInfoBtn" aria-haspopup="dialog" aria-controls="trPfModeModal" title="Buka keterangan mode aktif">ⓘ Keterangan</button>
+          </div>
+          <div class="tr-pf-seg" id="trPfSeg" role="tablist" aria-label="Mode eksekusi">
+            <button type="button" class="tr-pf-seg-btn active" data-mode="pure" role="tab" aria-selected="true">📍 Beli di Entry</button>
+            <button type="button" class="tr-pf-seg-btn" data-mode="haka" role="tab" aria-selected="false">⚡ Beli HAKA (Open)</button>
+            <button type="button" class="tr-pf-seg-btn" data-mode="tp1" role="tab" aria-selected="false">🎯 Beli Saat TP1</button>
+            <button type="button" class="tr-pf-seg-btn" data-mode="tp2" role="tab" aria-selected="false">🏆 Beli Saat TP2</button>
+          </div>
+          <div class="tr-pf-mode-stats" id="trPfModeStats"></div>
+        </div>
+
+        <!-- 2 chart card sejajar berdampingan di PC (≥1100px). Di bawahnya stack.
+             KEDUA chart mengikuti mode aktif yg dipilih di #trPfSeg atas. -->
         <div class="tr-pf-charts-row">
           <div class="tr-card" style="margin-top:14px">
             <div class="tr-card-h">
               <div>
                 <div class="tr-card-title">📈 Grafik Performa Konsensus 30 Hari</div>
-                <div class="tr-card-desc">P/L harian dari rekomendasi sekuritas ini + garis kumulatif (mode Entry murni).</div>
+                <div class="tr-card-desc">P/L harian per exitDate + garis kumulatif — ikut mode eksekusi di atas.</div>
               </div>
             </div>
             <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
@@ -4979,22 +5021,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <div class="tr-card-h">
               <div>
                 <div class="tr-card-title">Return Kumulatif · Simulator Eksekusi</div>
-                <div class="tr-card-desc">Bandingkan strategi eksekusi: nunggu entry vs. beli HAKA saat tgl rekom vs. beli saat TP1/TP2.</div>
+                <div class="tr-card-desc">Kurva P/L kumulatif sekuritas vs IHSG — ikut mode eksekusi di atas.</div>
               </div>
-            </div>
-            <div class="tr-pf-seg" id="trPfSeg" role="tablist" aria-label="Mode eksekusi">
-              <button type="button" class="tr-pf-seg-btn active" data-mode="pure">📍 Beli di Entry</button>
-              <button type="button" class="tr-pf-seg-btn" data-mode="haka">⚡ Beli HAKA (Open)</button>
-              <button type="button" class="tr-pf-seg-btn" data-mode="tp1">🎯 Beli Saat TP1</button>
-              <button type="button" class="tr-pf-seg-btn" data-mode="tp2">🏆 Beli Saat TP2</button>
             </div>
             <div class="tr-chart-wrap" style="margin-top:10px"><canvas id="trPfCumChart"></canvas></div>
             <div class="tr-legend">
               <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Sekuritas</span></span>
               <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
             </div>
-            <div class="tr-pf-mode-stats" id="trPfModeStats"></div>
-            <div class="tr-pf-mode-note" id="trPfModeNote"></div>
           </div>
         </div><!-- /tr-pf-charts-row -->
 
@@ -5007,6 +5041,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
         <div class="tr-disclaimer">
           Semua P/L dihitung dari harga penutupan resmi. <b>Beli di Entry</b> hanya menghitung rekomendasi di mana harga benar-benar menyentuh zona entry (paling konsisten dengan desain analis). <b>Beli HAKA</b> mengasumsikan eksekusi di open pada hari rilis (tidak pernah kelewatan, tapi RR menyimpang). <b>Beli Saat TP1 / TP2</b> mengasumsikan pembeli baru masuk saat target tercapai — hanya untuk rekomendasi yang benar-benar menyentuh entry & TP terkait; jika tak tersentuh, fallback ke P/L Entry murni.
+        </div>
+
+        <!-- Popup keterangan mode eksekusi (dibuka via #trPfInfoBtn) -->
+        <div id="trPfModeModal" class="tr-pf-mode-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="trPfModeModalTitle">
+          <div class="tr-pf-mode-modal-backdrop" data-close="1"></div>
+          <div class="tr-pf-mode-modal-card">
+            <div class="tr-pf-mode-modal-head">
+              <div class="tr-pf-mode-modal-title" id="trPfModeModalTitle">🎛 Mode Eksekusi</div>
+              <button type="button" class="tr-pf-mode-modal-close" id="trPfModeModalClose" aria-label="Tutup keterangan">✕</button>
+            </div>
+            <div class="tr-pf-mode-modal-body" id="trPfModeModalBody">—</div>
+          </div>
         </div>
 
       </div><!-- /trMdetPanel -->
@@ -5584,17 +5630,59 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function renderModeStats(firm, mode){
     var st = computeModeStats(firm, mode);
     var el = $id('trPfModeStats'); if(!el) return;
-    if(!st.total){ el.innerHTML='<span><span class="k">Belum ada rekomendasi selesai untuk mode ini.</span></span>'; return; }
-    var wrCls = (st.wr!=null && st.wr>=50) ? 'up' : 'dn';
-    var netCls = st.net>=0 ? 'up' : 'dn';
-    var avgCls = st.avg>=0 ? 'up' : 'dn';
-    el.innerHTML =
-      '<span><span class="k">Winrate</span> <span class="v '+wrCls+'">'+(st.wr==null?'—':(st.wr+'%'))+'</span></span>'
-    + '<span><span class="k">Net</span> <span class="v '+netCls+'">'+fmtPct(st.net)+'</span></span>'
-    + '<span><span class="k">Rata²</span> <span class="v '+avgCls+'">'+fmtPct(st.avg)+'</span></span>'
-    + '<span><span class="k">Trade tercatat</span> <span class="v">'+st.total+'</span></span>';
-    var note = $id('trPfModeNote'); if(note) note.innerHTML = MODE_NOTE[mode]||'';
+    if(!st.total){ el.innerHTML='<span><span class="k">Belum ada rekomendasi selesai untuk mode ini.</span></span>'; }
+    else {
+      var wrCls = (st.wr!=null && st.wr>=50) ? 'up' : 'dn';
+      var netCls = st.net>=0 ? 'up' : 'dn';
+      var avgCls = st.avg>=0 ? 'up' : 'dn';
+      el.innerHTML =
+        '<span><span class="k">Winrate</span> <span class="v '+wrCls+'">'+(st.wr==null?'—':(st.wr+'%'))+'</span></span>'
+      + '<span><span class="k">Net</span> <span class="v '+netCls+'">'+fmtPct(st.net)+'</span></span>'
+      + '<span><span class="k">Rata²</span> <span class="v '+avgCls+'">'+fmtPct(st.avg)+'</span></span>'
+      + '<span><span class="k">Trade tercatat</span> <span class="v">'+st.total+'</span></span>';
+    }
+    // Label mode aktif di seg-wrap header
+    var activeLbl = $id('trPfSegActiveLbl'); if(activeLbl) activeLbl.textContent = MODE_LABEL[mode] || '';
+    // Legend label di bawah cum chart
     var cumLbl = $id('trPfCumFirmLbl'); if(cumLbl && _currentFirm) cumLbl.textContent = firmShort(_currentFirm.name) + ' · ' + MODE_LABEL[mode];
+    // Kalau modal terbuka, refresh isinya
+    var modal = $id('trPfModeModal');
+    if(modal && modal.classList.contains('open')){ updateModalBody(mode); }
+  }
+
+  function updateModalBody(mode){
+    var body = $id('trPfModeModalBody'); if(!body) return;
+    var st = _currentFirm ? computeModeStats(_currentFirm, mode) : null;
+    var statHtml = '';
+    if(st && st.total){
+      statHtml =
+        '<div class="m-sub">'
+      + '<b>Statistik saat ini:</b> '
+      + 'winrate '+(st.wr==null?'—':(st.wr+'%'))+' · '
+      + 'net '+fmtPct(st.net)+' · '
+      + 'rata² '+fmtPct(st.avg)+' · '
+      + st.total+' trade tercatat.'
+      + '</div>';
+    } else if(_currentFirm){
+      statHtml = '<div class="m-sub"><b>Belum ada rekomendasi selesai untuk mode ini.</b></div>';
+    }
+    body.innerHTML = (MODE_NOTE[mode]||'') + statHtml;
+    // Update title suffix
+    var t = $id('trPfModeModalTitle');
+    if(t) t.innerHTML = '🎛 Mode Eksekusi · ' + esc(MODE_LABEL[mode]||'');
+  }
+  function openModeModal(){
+    var modal = $id('trPfModeModal'); if(!modal) return;
+    updateModalBody(_currentMode || 'pure');
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    try{ document.body.style.overflow = 'hidden'; }catch(_){}
+  }
+  function closeModeModal(){
+    var modal = $id('trPfModeModal'); if(!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+    try{ document.body.style.overflow = ''; }catch(_){}
   }
 
   // ── Cumulative Chart (Chart.js) ────────────────────
@@ -5644,21 +5732,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Per-firm 30-day chart (vanilla canvas, mirror drawDayChart) ──
-  // Agregasi rec.pnlPure per exitDate, lalu bar hijau/merah + garis kumulatif biru.
-  function computeFirmDailyEquity(firm){
-    var recs = (firm && firm.recsHistory || []).filter(function(r){ return r && r.exitDate && Number.isFinite(+r.pnlPure); });
+  // Agregasi rec P/L per exitDate (menggunakan getRecPnl untuk mode aktif),
+  // lalu bar hijau/merah + garis kumulatif biru.
+  // Rec yg gak eligible (getRecPnl==null) di-skip dari agregasi hari itu.
+  function computeFirmDailyEquity(firm, mode){
+    var recs = (firm && firm.recsHistory || []).filter(function(r){ return r && r.exitDate; });
     if(!recs.length) return [];
-    // Group by exitDate
     var byDate = {};
     recs.forEach(function(r){
+      var pnl = getRecPnl(r, mode);
+      if(pnl==null) return; // mode-eligibility filter
       var d = r.exitDate;
       if(!byDate[d]) byDate[d] = { date:d, trades:0, wins:0, losses:0, sumPnl:0 };
       byDate[d].trades += 1;
-      byDate[d].sumPnl += +r.pnlPure;
-      if(+r.pnlPure > 0) byDate[d].wins++; else if(+r.pnlPure < 0) byDate[d].losses++;
+      byDate[d].sumPnl += +pnl;
+      if(+pnl > 0) byDate[d].wins++; else if(+pnl < 0) byDate[d].losses++;
     });
     var dates = Object.keys(byDate).sort();
-    // Limit to last 30 trading days
     if(dates.length > 30) dates = dates.slice(dates.length-30);
     var cum = 0;
     return dates.map(function(d){
@@ -5669,19 +5759,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
     });
   }
 
-  function renderDayChart(firm){
+  function renderDayChart(firm, mode){
     var canvas = $id('trPfDayChart');
     var wrap = canvas ? canvas.parentElement : null;
     if(!canvas || !wrap) return;
     // Clear old empty overlay
     var old = wrap.querySelector('.tr-pf-daychart-empty'); if(old) old.remove();
 
-    var series = computeFirmDailyEquity(firm);
+    var series = computeFirmDailyEquity(firm, mode || _currentMode || 'pure');
     if(!series.length){
       canvas.width=1; canvas.height=1;
       var em = document.createElement('div');
       em.className = 'tr-pf-daychart-empty';
-      em.textContent = 'Belum ada rekomendasi selesai untuk sekuritas ini.';
+      em.textContent = 'Belum ada rekomendasi selesai untuk mode ini.';
       wrap.appendChild(em);
       return;
     }
@@ -5857,7 +5947,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       _rafHandle = null;
       var panel = document.getElementById('trMdetPanel');
       if(_currentFirm && panel && panel.style.display !== 'none'){
-        renderDayChart(_currentFirm);
+        renderDayChart(_currentFirm, _currentMode);
       }
     });
   }
@@ -5907,7 +5997,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     scheduleDayChartRedraw();
     setTimeout(function(){
-      if(_currentFirm){ renderCumChart(_currentFirm, _currentMode); renderDayChart(_currentFirm); }
+      if(_currentFirm){ renderCumChart(_currentFirm, _currentMode); renderDayChart(_currentFirm, _currentMode); }
     }, 30);
     renderRecList(firm, _currentTab);
 
@@ -5924,10 +6014,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(!_currentFirm || !MODE_LABEL[mode]) return;
     _currentMode = mode;
     var segButtons = document.querySelectorAll('#trPfSeg .tr-pf-seg-btn');
-    segButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mode')===mode); });
+    segButtons.forEach(function(b){
+      var isActive = b.getAttribute('data-mode')===mode;
+      b.classList.toggle('active', isActive);
+      b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
     renderKpi(_currentFirm, mode);
     renderModeStats(_currentFirm, mode);
     renderCumChart(_currentFirm, mode);
+    renderDayChart(_currentFirm, mode);  // KEDUA chart ikut mode
   }
   function switchRecTab(tab){
     if(!_currentFirm || (tab!=='active' && tab!=='history')) return;
@@ -5948,6 +6043,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(seg){ var m=seg.getAttribute('data-mode'); if(m){ switchMode(m); } return; }
     var tab = t.closest('#trPfTabs .tr-tab');
     if(tab){ var tb=tab.getAttribute('data-tab'); if(tb){ switchRecTab(tb); } return; }
+    if(t.closest('#trPfInfoBtn')){ e.preventDefault(); openModeModal(); return; }
+    if(t.closest('#trPfModeModalClose')){ e.preventDefault(); closeModeModal(); return; }
+    // Click backdrop (data-close="1") → close modal
+    if(t.getAttribute && t.getAttribute('data-close')==='1' && t.closest('#trPfModeModal')){
+      e.preventDefault(); closeModeModal(); return;
+    }
+  });
+
+  // ESC → close modal (kalau terbuka)
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      var m = document.getElementById('trPfModeModal');
+      if(m && m.classList.contains('open')) closeModeModal();
+    }
   });
 
   // Resize → redraw canvas day chart (kalau panel visible)
