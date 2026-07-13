@@ -3316,28 +3316,30 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-recmodal-chart{width:100%;height:100%}
 .tr-recmodal-zones{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .tr-recmodal-zone{position:absolute;pointer-events:none;box-sizing:border-box}
-.tr-recmodal-zone.tp{
-  background:linear-gradient(180deg,rgba(5,150,105,0.32) 0%,rgba(5,150,105,0.22) 100%);
-  border-top:1px solid rgba(5,150,105,0.75);
-  border-bottom:1px dashed rgba(255,255,255,0.4);
-}
-.tr-recmodal-zone.tp2{
-  background:linear-gradient(180deg,rgba(5,150,105,0.20) 0%,rgba(5,150,105,0.12) 100%);
-  border-top:1px solid rgba(5,150,105,0.5);
-}
-.tr-recmodal-zone.sl{
-  background:linear-gradient(180deg,rgba(225,29,72,0.22) 0%,rgba(225,29,72,0.32) 100%);
-  border-top:1px dashed rgba(255,255,255,0.4);
-  border-bottom:1px solid rgba(225,29,72,0.75);
-}
+/* Zona samar solid (bukan gradient) — meniru TradingView 'position tool'.
+   Border dibiarkan absen supaya transisi hijau→merah di garis entry
+   terbaca natural dari perubahan warna, bukan dari garis putih dashed. */
+.tr-recmodal-zone.tp{background:rgba(5,150,105,0.28)}
+.tr-recmodal-zone.tp2{background:rgba(5,150,105,0.15)}
+.tr-recmodal-zone.sl{background:rgba(225,29,72,0.24)}
+[data-theme="dark"] .tr-recmodal-zone.tp{background:rgba(74,222,128,0.14)}
+[data-theme="dark"] .tr-recmodal-zone.tp2{background:rgba(74,222,128,0.08)}
+[data-theme="dark"] .tr-recmodal-zone.sl{background:rgba(251,113,133,0.15)}
+/* Label chip di kiri atas zona (dan kiri bawah utk SL) berisi
+   nama level + harga + % dari entry — biar user langsung tahu
+   arti setiap zona tanpa harus lihat price scale kanan. */
 .tr-recmodal-zone-lbl{
-  position:absolute;top:5px;right:8px;
-  font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;
-  padding:2.5px 7px;border-radius:5px;color:#fff;letter-spacing:.5px;pointer-events:none;
+  position:absolute;top:6px;left:10px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+  padding:3px 8px;border-radius:5px;color:#fff;letter-spacing:.3px;
+  pointer-events:none;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:4px;
 }
-.tr-recmodal-zone.tp .tr-recmodal-zone-lbl{background:rgba(5,150,105,0.9)}
-.tr-recmodal-zone.tp2 .tr-recmodal-zone-lbl{background:rgba(5,150,105,0.7)}
-.tr-recmodal-zone.sl .tr-recmodal-zone-lbl{top:auto;bottom:5px;background:rgba(225,29,72,0.9)}
+.tr-recmodal-zone-lbl b{font-weight:800;letter-spacing:.5px}
+.tr-recmodal-zone-lbl .pct{font-size:9.5px;opacity:.88;font-weight:600}
+.tr-recmodal-zone.tp .tr-recmodal-zone-lbl{background:rgba(5,150,105,0.92)}
+.tr-recmodal-zone.tp2 .tr-recmodal-zone-lbl{background:rgba(5,150,105,0.72)}
+.tr-recmodal-zone.sl .tr-recmodal-zone-lbl{top:auto;bottom:6px;background:rgba(225,29,72,0.92)}
 .tr-recmodal-empty{
   position:absolute;inset:0;display:none;
   flex-direction:column;align-items:center;justify-content:center;gap:6px;
@@ -8087,6 +8089,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   window.__TR_hideRec = hideModal;
 
   // Draw zones (green entry→TP, red entry→SL, optional TP2 lighter green).
+  // Label lengkap "TP1 · price · +pct%" biar user tidak perlu lihat axis kanan.
   // Dipanggil setelah chart siap + tiap kali user pan/zoom atau resize.
   function drawZones(){
     var rec = _currentRec;
@@ -8117,6 +8120,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var width = xRight - xEntry;
     if (width <= 0) return;
 
+    // Label formatter: "TP1 · 2,950 (+7.2%)" — keterangan lengkap per level
+    var isBuy = String(rec.type || 'BUY').toUpperCase() !== 'SELL';
+    var entryPrice = +rec.entry;
+    var pctFromEntry = function(v){
+      if (!Number.isFinite(+v) || !Number.isFinite(entryPrice) || entryPrice <= 0) return null;
+      return ((+v - entryPrice) / entryPrice) * 100 * (isBuy ? 1 : -1);
+    };
+    var makeLabel = function(prefix, price){
+      var pctVal = pctFromEntry(price);
+      var pctHtml = '';
+      if (pctVal != null){
+        var sign = pctVal >= 0 ? '+' : '';
+        pctHtml = ' <span class="pct">(' + sign + pctVal.toFixed(1) + '%)</span>';
+      }
+      return '<span class="tr-recmodal-zone-lbl"><b>' + prefix + '</b> ' + esc(fmtN(price)) + pctHtml + '</span>';
+    };
+
     // TP zone: top edge di TP1, bottom edge di entry
     if (yTP1 != null && yTP1 < yEntry){
       var zTp = document.createElement('div');
@@ -8125,7 +8145,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       zTp.style.top = yTP1 + 'px';
       zTp.style.width = width + 'px';
       zTp.style.height = (yEntry - yTP1) + 'px';
-      zTp.innerHTML = '<span class="tr-recmodal-zone-lbl">TP1 ' + esc(fmtN(rec.tp1)) + '</span>';
+      zTp.innerHTML = makeLabel('TP1', rec.tp1);
       zonesEl.appendChild(zTp);
     }
     // TP2 extension: dari TP2 ke TP1 (lighter green di atas TP zone utama)
@@ -8136,7 +8156,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       zTp2.style.top = yTP2 + 'px';
       zTp2.style.width = width + 'px';
       zTp2.style.height = (yTP1 - yTP2) + 'px';
-      zTp2.innerHTML = '<span class="tr-recmodal-zone-lbl">TP2 ' + esc(fmtN(rec.tp2)) + '</span>';
+      zTp2.innerHTML = makeLabel('TP2', rec.tp2);
       zonesEl.appendChild(zTp2);
     }
     // SL zone: top edge di entry, bottom edge di SL
@@ -8147,7 +8167,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       zSl.style.top = yEntry + 'px';
       zSl.style.width = width + 'px';
       zSl.style.height = (ySL - yEntry) + 'px';
-      zSl.innerHTML = '<span class="tr-recmodal-zone-lbl">SL ' + esc(fmtN(rec.sl)) + '</span>';
+      zSl.innerHTML = makeLabel('SL', rec.sl);
       zonesEl.appendChild(zSl);
     }
   }
@@ -8239,19 +8259,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
     lwData.sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
     _series.setData(lwData);
 
-    // Price lines (label di axis kanan): entry dotted, TP solid, TP2 dashed, SL solid
+    // Price lines (label muncul di price scale kanan):
+    // - Entry: dashed accent (garis referensi utama di batas zona hijau/merah)
+    // - TP1  : solid tebal (target profit — garis yg diminta user, tidak
+    //          bergabung dgn edge zona krn zona tidak lagi punya border)
+    // - TP2  : dashed tipis (extended target, opsional)
+    // - SL   : solid tebal (stop-loss)
     var accentPurple = isDark ? '#c4a3ff' : '#6d28d9';
     if (Number.isFinite(+rec.entry) && +rec.entry > 0){
-      _series.createPriceLine({ price: +rec.entry, color: accentPurple, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, axisLabelVisible: true, title: 'Entry' });
+      _series.createPriceLine({ price: +rec.entry, color: accentPurple, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Entry' });
     }
     if (Number.isFinite(+rec.tp1) && +rec.tp1 > 0){
-      _series.createPriceLine({ price: +rec.tp1, color: upColor, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: true, title: 'TP1' });
+      _series.createPriceLine({ price: +rec.tp1, color: upColor, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: true, title: 'TP1' });
     }
     if (Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1){
       _series.createPriceLine({ price: +rec.tp2, color: upColor, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'TP2' });
     }
     if (Number.isFinite(+rec.sl) && +rec.sl > 0){
-      _series.createPriceLine({ price: +rec.sl, color: downColor, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: true, title: 'SL' });
+      _series.createPriceLine({ price: +rec.sl, color: downColor, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Solid, axisLabelVisible: true, title: 'SL' });
     }
 
     // Marker exit kalau rec sudah closed
