@@ -2740,9 +2740,21 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-anl-legend{display:flex;gap:12px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.3px}
 .tr-anl-legend span{display:inline-flex;align-items:center;gap:5px}
 .tr-anl-legend i{display:inline-block;width:12px;height:2px;border-radius:1px}
-.tr-anl-chart{width:100%;height:380px;position:relative;background:var(--bg2);border-radius:12px;overflow:hidden;margin-top:6px}
+.tr-anl-chart{width:100%;height:380px;position:relative;background:var(--bg2);border-radius:12px;overflow:hidden}
 .tr-anl-chart .anl-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text3);font-size:12px;font-family:'IBM Plex Mono',monospace;text-align:center;padding:12px}
 @media(max-width:640px){.tr-anl-chart{height:300px}}
+
+/* Chart row: chart kiri + widget konsensus kanan (2-col responsif) */
+.tr-anl-chart-row{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:stretch;margin-top:6px}
+@media(max-width:1024px){.tr-anl-chart-row{grid-template-columns:1fr}}
+
+/* Widget konsensus (reuse .consensus-* dari dashboard) */
+.tr-anl-consensus{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:12px;min-width:0;overflow:visible}
+.tr-anl-consensus-hd{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tr-anl-consensus-hd b{color:var(--accent);font-weight:800}
+.tr-anl-cons-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;line-height:1}
+.tr-anl-cons-center .tick{display:block;font-size:14px;font-weight:800;color:var(--accent);letter-spacing:-.2px}
+.tr-anl-cons-center .note{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.4px;text-transform:uppercase;font-weight:700;margin-top:3px}
 
 /* Row: 2-col grid — donut & bar (consensus-overview style) */
 .tr-anl-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
@@ -4201,7 +4213,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <!-- KPI strip: 5 tile mini (mirror consensus overview) -->
     <div class="tr-anl-kpi-strip" id="trAnlKpiStrip"></div>
 
-    <!-- Chart card: candlestick + marker rec + overlay entry/TP/SL saat rec dipilih -->
+    <!-- Chart card: candlestick + marker rec + widget konsensus di kanan -->
     <div class="tr-card tr-anl-chartcard">
       <div class="tr-card-h">
         <div>
@@ -4214,8 +4226,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <span><i style="background:var(--red)"></i>Stop-Loss</span>
         </div>
       </div>
-      <div class="tr-anl-chart" id="trAnlChart">
-        <div class="anl-empty">📡 Menunggu data OHLC…</div>
+      <div class="tr-anl-chart-row">
+        <div class="tr-anl-chart" id="trAnlChart">
+          <div class="anl-empty">📡 Menunggu data OHLC…</div>
+        </div>
+        <!-- Widget konsensus (mirror Consensus Analyst dari dashboard, data dari tracker) -->
+        <div class="tr-anl-consensus" id="trAnlConsensus">
+          <div class="tr-anl-consensus-hd">📊 Konsensus Analis · <b id="trAnlConsN">— rec</b></div>
+          <div class="consensus-grid">
+            <div class="consensus-chart-wrap">
+              <canvas id="trAnlConsDonut"></canvas>
+              <div class="tr-anl-cons-center">
+                <span class="tick" id="trAnlConsCenterTick">—</span>
+                <span class="note" id="trAnlConsCenterN">—</span>
+              </div>
+            </div>
+            <div class="consensus-stats" id="trAnlConsStats"></div>
+          </div>
+          <div class="cs-axis" id="trAnlConsAxis"></div>
+          <div class="consensus-numbers" id="trAnlConsNums"></div>
+        </div>
       </div>
     </div>
 
@@ -7369,8 +7399,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _selectedRecId = null;// klik row → overlay entry/TP/SL
   var _chart = null;        // LightweightCharts chart instance
   var _candleSeries = null;
-  var _statusChart = null;  // Chart.js donut
-  var _firmChart = null;    // Chart.js horizontal bar
+  var _statusChart = null;  // Chart.js donut (row-3)
+  var _firmChart = null;    // Chart.js horizontal bar (row-3)
+  var _consDonut = null;    // Chart.js donut (widget konsensus, right of chart)
   var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
 
   // ── Aggregate & rank ──────────────────────────────────────────────
@@ -7561,6 +7592,116 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }).join('');
   }
 
+  // ── Widget konsensus (di kanan chart): donut BUY/NEUTRAL/SELL + gradient
+  //    bar LOW/AVG/HIGH target + 3 kotak. Reuse .consensus-* / .cs-axis
+  //    / .consensus-numbers dari card-consensus dashboard.
+  function renderConsensusWidget(ticker, recs, k){
+    // Donut: distribusi arah rekomendasi (type)
+    var buy = 0, neu = 0, sell = 0;
+    var tp1s = [];
+    var current = null;
+    recs.forEach(function(r){
+      var t = String(r.type || 'BUY').toUpperCase();
+      if      (t === 'BUY')  buy++;
+      else if (t === 'SELL') sell++;
+      else                   neu++;
+      if (Number.isFinite(+r.tp1) && +r.tp1 > 0) tp1s.push(+r.tp1);
+      if (current == null && Number.isFinite(+r.lastPrice) && +r.lastPrice > 0) current = +r.lastPrice;
+    });
+    var lo = tp1s.length ? Math.min.apply(null, tp1s) : null;
+    var hi = tp1s.length ? Math.max.apply(null, tp1s) : null;
+    var avg = tp1s.length ? tp1s.reduce(function(a,b){ return a+b; }, 0) / tp1s.length : null;
+
+    // Header + center donut
+    $('trAnlConsN').textContent = k.n + ' rec';
+    $('trAnlConsCenterTick').textContent = ticker;
+    $('trAnlConsCenterN').textContent = k.n + ' rec';
+
+    // Donut render (Chart.js)
+    if (_consDonut) { try { _consDonut.destroy(); } catch(_){} _consDonut = null; }
+    if (typeof Chart !== 'undefined'){
+      var isDark = _isDark();
+      var cBuy  = isDark ? '#4ade80' : '#059669';
+      var cNeu  = isDark ? '#fbbf24' : '#d97706';
+      var cSell = isDark ? '#fb7185' : '#e11d48';
+      _consDonut = new Chart($('trAnlConsDonut'), {
+        type: 'doughnut',
+        data: {
+          labels: ['BUY', 'NEUTRAL', 'SELL'],
+          datasets: [{ data: [buy, neu, sell], backgroundColor: [cBuy, cNeu, cSell], borderWidth: 0, cutout: '68%' }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(ctx){
+              var total = buy + neu + sell || 1;
+              return ctx.label + ': ' + ctx.parsed + ' (' + (ctx.parsed / total * 100).toFixed(0) + '%)';
+            } } }
+          }
+        }
+      });
+
+      // Stats list (kanan donut: NEUTRAL / BUY / SELL sesuai urutan foto)
+      $('trAnlConsStats').innerHTML = ''
+        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cNeu  + '"></span><span class="consensus-name">NEUTRAL</span><span class="consensus-count">' + neu  + '</span></div>'
+        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cBuy  + '"></span><span class="consensus-name">BUY</span><span class="consensus-count">' + buy  + '</span></div>'
+        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cSell + '"></span><span class="consensus-name">SELL</span><span class="consensus-count">' + sell + '</span></div>';
+    }
+
+    // Gradient bar (cs-axis) — posisi dot = current price di rentang LOW–HIGH
+    var axis = $('trAnlConsAxis'); if (!axis) return;
+    if (lo == null || hi == null){
+      axis.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;font-family:\'IBM Plex Mono\',monospace;padding:22px 8px">Target belum tersedia</div>';
+    } else {
+      var avgPct, curPct;
+      if (lo === hi){
+        // Semua rec target harganya sama — center-kan avg, dot ikut avg posisinya
+        avgPct = 50;
+        curPct = 50;
+      } else {
+        avgPct = ((avg - lo) / (hi - lo)) * 100;
+        if (current == null)          curPct = avgPct;
+        else if (current <= lo)       curPct = 0;
+        else if (current >= hi)       curPct = 100;
+        else                          curPct = ((current - lo) / (hi - lo)) * 100;
+      }
+      // Clamp ke [2..98] biar dot & badge tidak keluar dari track
+      var clamp = function(v){ return Math.max(2, Math.min(98, v)); };
+      var dotPct = clamp(curPct);
+      var avgPctClamped = clamp(avgPct);
+      var curTxt = current != null ? fmtN(current) : '—';
+      axis.innerHTML = ''
+        + '<div class="cs-axis-track"></div>'
+        + '<div class="cs-axis-cur" style="left:' + dotPct + '%">' + esc(curTxt) + '</div>'
+        + '<div class="cs-axis-tick" style="left:' + dotPct + '%"></div>'
+        + '<div class="cs-axis-dot" style="left:' + dotPct + '%"></div>'
+        + '<div class="cs-axis-avg-line" style="left:' + avgPctClamped + '%"></div>'
+        + '<div class="cs-axis-avg-label" style="left:' + avgPctClamped + '%">Rata-Rata<span class="cs-avg-val">' + esc(fmtN(avg)) + '</span></div>'
+        + '<div class="cs-axis-end lo">LOW<span class="v">' + esc(fmtN(lo)) + '</span></div>'
+        + '<div class="cs-axis-end hi">HIGH<span class="v">' + esc(fmtN(hi)) + '</span></div>';
+    }
+
+    // 3 kotak LOW / TARGET / HIGH dengan % vs current price
+    var pctFrom = function(target){
+      if (!Number.isFinite(target) || !Number.isFinite(current) || current <= 0) return null;
+      return ((target - current) / current) * 100;
+    };
+    var pctBox = function(v){
+      if (v == null) return '<div class="cn-gap" style="color:var(--text3)">—</div>';
+      var color = v > 0 ? 'var(--green)' : v < 0 ? 'var(--red)' : 'var(--text2)';
+      var sym = v > 0 ? '+' : '';
+      return '<div class="cn-gap" style="color:' + color + '">' + sym + v.toFixed(1) + '%</div>';
+    };
+    var loPct  = pctFrom(lo);
+    var avgPct2 = pctFrom(avg);
+    var hiPct  = pctFrom(hi);
+    $('trAnlConsNums').innerHTML = ''
+      + '<div class="cn-box"><div class="cn-label">LOW</div><div class="cn-val" style="color:var(--red)">' + esc(fmtN(lo)) + '</div>' + pctBox(loPct) + '</div>'
+      + '<div class="cn-box"><div class="cn-label">TARGET</div><div class="cn-val" style="color:var(--accent)">' + esc(fmtN(avg)) + '</div>' + pctBox(avgPct2) + '</div>'
+      + '<div class="cn-box"><div class="cn-label">HIGH</div><div class="cn-val" style="color:var(--green)">' + esc(fmtN(hi)) + '</div>' + pctBox(hiPct) + '</div>';
+  }
+
   // ── Chart: candlestick + markers per rec, price lines untuk selected rec ─
   async function renderChart(ticker, recs){
     var el = $('trAnlChart'); if (!el) return;
@@ -7722,6 +7863,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var k = computeKpi(recs);
     renderHero(ticker, recs, k);
     renderKpiStrip(k);
+    renderConsensusWidget(ticker, recs, k);
     renderDonut(k);
     renderFirmBar(k);
     renderRecTable(recs);
