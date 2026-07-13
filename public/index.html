@@ -2767,8 +2767,7 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-anl-consensus .cs-axis-avg-label .cs-avg-val{color:var(--text2)}
 .tr-anl-consensus .cs-axis-avg-line{border-left-color:var(--text2)}
 
-/* Firm bar wrap (tinggi diatur inline sesuai jumlah bar) */
-.tr-anl-bar-wrap{height:200px;position:relative}
+
 
 /* Rec table (dashboard analyst-table style) */
 .tr-anl-recs-scroll{overflow-x:auto;margin:0 -2px;-webkit-overflow-scrolling:touch;max-height:420px;overflow-y:auto}
@@ -4254,18 +4253,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
     </div>
 
-    <!-- Firm bar (full width — status donut sudah pindah ke widget kanan chart) -->
-    <div class="tr-card" style="margin-top:14px">
-      <div class="tr-card-h">
-        <div>
-          <div class="tr-card-title">🏢 Firm Paling Aktif</div>
-          <div class="tr-card-desc">Jumlah rec per firm untuk ticker ini (top 12)</div>
-        </div>
-      </div>
-      <div class="tr-anl-bar-wrap" style="height:280px">
-        <canvas id="trAnlFirmBar"></canvas>
-      </div>
-    </div>
+
 
     <!-- Rec table (dashboard analyst-table style) -->
     <div class="tr-card" style="margin-top:14px">
@@ -7386,20 +7374,32 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _selectedRecId = null;// klik row → overlay entry/TP/SL
   var _chart = null;        // LightweightCharts chart instance
   var _candleSeries = null;
-  var _firmChart = null;    // Chart.js horizontal bar (row bawah)
+
   var _consDonut = null;    // Chart.js donut (widget konsensus, right of chart)
   var _searchList = [];     // hasil filter search saham yg sedang tampil
   var _searchActive = -1;   // index item aktif utk keyboard nav
   var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
 
   // ── Aggregate & rank ──────────────────────────────────────────────
+  // Rec bisa muncul di lebih dari satu list di tracker.json (contoh:
+  // unfilledList = superset dari pendingList + missedList). Kalau di-loop
+  // tanpa dedupe, satu rec bisa masuk 2x dgn status yg beda (mis. MISSED
+  // dari missedList vs ACTIVE default dari unfilledList). Solusi: iterasi
+  // dgn urutan prioritas bucket (paling spesifik dulu) + dedupe by id.
   function aggregate(data){
-    var lists = ['openList','pendingList','missedList','unfilledList','historyList'];
+    // Urutan prioritas: makin ke kiri makin spesifik/informatif.
+    var lists = ['openList','historyList','pendingList','missedList','unfilledList'];
     var byTick = {};
+    var seenIds = {};
     lists.forEach(function(k){
       var arr = data[k]; if (!Array.isArray(arr)) return;
       arr.forEach(function(r){
         var t = r && r.ticker; if (!t) return;
+        var id = r && r.id;
+        if (id){
+          if (seenIds[id]) return;   // sudah ke-tag dari bucket lebih spesifik
+          seenIds[id] = true;
+        }
         if (!byTick[t]) byTick[t] = [];
         // Simpan bucket asal buat inferensi status
         var copy = {}; for (var p in r) if (Object.prototype.hasOwnProperty.call(r,p)) copy[p] = r[p];
@@ -7418,6 +7418,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function statusOf(r){
     if (r._bucket === 'pendingList') return 'PENDING';
     if (r._bucket === 'missedList')  return 'MISSED';
+    // unfilledList superset — untuk edge case rec tanpa id yg lolos dedupe,
+    // simpulkan status dari r.state (RUNNING_MISSED → MISSED, PENDING → PENDING)
+    if (r._bucket === 'unfilledList'){
+      if (r.state === 'RUNNING_MISSED') return 'MISSED';
+      if (r.state === 'PENDING')        return 'PENDING';
+    }
     if (r.state === 'TP' || r.closedBy === 'TP')      return 'TP';
     if (r.state === 'SL' || r.closedBy === 'SL')      return 'SL';
     if (r.state === 'EXPIRED' || r.closedBy === 'EXPIRED') return 'EXPIRED';
@@ -7537,34 +7543,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     $('trAnlSector').textContent = first.sector || '—';
     $('trAnlLast').textContent   = fmtN(first.lastPrice);
     $('trAnlFirmCnt').textContent = Object.keys(k.firms).length;
-  }
-
-  // ── Bar: top firm (Chart.js horizontal) ───────────────────────────
-  function renderFirmBar(k){
-    var el = $('trAnlFirmBar'); if (!el || typeof Chart === 'undefined') return;
-    if (_firmChart) { try { _firmChart.destroy(); } catch(_){} _firmChart = null; }
-    var pairs = Object.keys(k.firms).map(function(f){ return [f, k.firms[f]]; })
-      .sort(function(a,b){ return b[1]-a[1]; }).slice(0, 12);
-    if (!pairs.length) return;
-    _firmChart = new Chart(el, {
-      type: 'bar',
-      data: {
-        labels: pairs.map(function(p){ return firmShort(p[0]); }),
-        datasets: [{
-          data: pairs.map(function(p){ return p[1]; }),
-          backgroundColor: _isDark() ? 'rgba(196,163,255,.75)' : 'rgba(109,40,217,.75)',
-          borderRadius: 5, borderSkipped: false, barThickness: 16
-        }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx){ return ctx.parsed.x + ' rec'; } } } },
-        scales: {
-          x: { grid: { color: _isDark() ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)' }, ticks: { color: _isDark() ? '#8b7eb8' : '#a49cc0', font: { size: 10 }, precision: 0 } },
-          y: { grid: { display: false }, ticks: { color: _isDark() ? '#c4b8e8' : '#6e6490', font: { size: 10 } } }
-        }
-      }
-    });
   }
 
   // ── Rec table ─────────────────────────────────────────────────────
@@ -7868,7 +7846,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     renderHero(ticker, recs, k);
     renderKpiStrip(k);
     renderStatusWidget(ticker, recs, k);
-    renderFirmBar(k);
     renderRecTable(recs);
     renderChart(ticker, recs);
     try { localStorage.setItem('tr_anl_ticker', ticker); } catch(_){}
