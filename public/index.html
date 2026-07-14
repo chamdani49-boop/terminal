@@ -2706,6 +2706,9 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-rec-pct.up{color:var(--green)}
 .tr-rec-pct.dn{color:var(--red)}
 .tr-rec-pct.dist{color:#f59e0b}
+/* Group: pct besar di atas + keterangan kecil di bawah ('beli di harga entry') */
+.tr-rec-pct-group{display:inline-flex;flex-direction:column;align-items:flex-end;line-height:1.15;gap:1px}
+.tr-rec-pct-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);font-weight:600;letter-spacing:.3px;white-space:nowrap;opacity:.85}
 .tr-rec--slim .tr-rec-top-r{display:inline-flex;align-items:center;gap:10px}
 /* Presentase kecil melekat di chip value (mis. TP1 6.925 (+3.7%)) */
 .tr-rec--slim .tr-rec-chip .v .pct{font-size:10px;font-weight:700;opacity:.85;margin-left:4px}
@@ -5617,6 +5620,56 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _cumChart    = null;
   var _rafHandle   = null;
 
+  // ── Live price/change helper — priority chain mirror dashboard ──
+  // change_pct di data.json = FRACTION (0.0199 = 1.99%), harus ×100 utk display.
+  // Priority:
+  //   Price:  DATA.live[t].price → DATA.stats[t].current
+  //   Change: DATA.stats[t].change_pct_live → DATA.live[t].change_pct
+  // Return: { price: number|null, changePct: number|null (in percent 0-100 scale) }
+  function getLive(ticker){
+    var out = { price: null, changePct: null };
+    if(typeof DATA === 'undefined' || !DATA || !ticker) return out;
+    var st = DATA.stats && DATA.stats[ticker];
+    var lv = DATA.live && DATA.live[ticker];
+    if(lv && Number.isFinite(+lv.price) && +lv.price > 0){ out.price = +lv.price; }
+    else if(st && Number.isFinite(+st.current) && +st.current > 0){ out.price = +st.current; }
+    if(st && Number.isFinite(+st.change_pct_live)){ out.changePct = +st.change_pct_live * 100; }
+    else if(lv && Number.isFinite(+lv.change_pct)){ out.changePct = +lv.change_pct * 100; }
+    return out;
+  }
+  window.__TR_getLive = getLive;
+
+  // Base price utk floating berdasarkan mode aktif.
+  // Entry mode: rec.entry (butuh didTouchEntry — kalau belum sentuh, return null)
+  // HAKA mode: rec.openPriceAtPublish (masuk di open tgl rilis regardless of entry touch)
+  function getBasePriceForMode(rec, mode){
+    if(!rec) return null;
+    if(mode === 'haka'){
+      return (Number.isFinite(+rec.openPriceAtPublish) && +rec.openPriceAtPublish > 0)
+        ? +rec.openPriceAtPublish : null;
+    }
+    // 'entry' mode
+    if(!rec.didTouchEntry) return null;
+    return (Number.isFinite(+rec.entry) && +rec.entry > 0) ? +rec.entry : null;
+  }
+  function getBaseLabelForMode(mode){
+    return mode === 'haka' ? 'beli di harga open' : 'beli di harga entry';
+  }
+  // Live floating berdasarkan mode aktif — dipakai popup + list.
+  function getModeFloating(rec, mode){
+    if(!rec) return null;
+    var live = getLive(rec.ticker);
+    if(live.price == null) return null;
+    var base = getBasePriceForMode(rec, mode);
+    if(base == null) return null;
+    var buy = String(rec.type||'BUY').toUpperCase() === 'BUY';
+    var raw = ((live.price - base) / base) * 100;
+    return buy ? raw : -raw;
+  }
+  window.__TR_getModeFloating = getModeFloating;
+  window.__TR_getBaseLabelForMode = getBaseLabelForMode;
+  window.__TR_getActiveMode = function(){ return { entry: _entryMode, exit: _exitMode }; };
+
   function $id(id){ return document.getElementById(id); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
   function fmtN(n){ return (n==null||!Number.isFinite(+n))?'—':Number(n).toLocaleString('id-ID'); }
@@ -6340,14 +6393,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var analyst = r.analyst ? '<span class="tr-rec-analyst">· '+esc(r.analyst)+'</span>' : '';
       var badgeCls = buy ? 'buy' : 'sell';
 
-      // Live price + change% today (sheet live). Untuk floating + distance realtime,
-      // dan display samping ticker.
-      var _liveObj = (typeof DATA !== 'undefined' && DATA && DATA.live && DATA.live[r.ticker]) ? DATA.live[r.ticker] : null;
-      var _livePrice = (_liveObj && Number.isFinite(+_liveObj.price) && +_liveObj.price > 0) ? +_liveObj.price : null;
-      var _liveChgPct = (_liveObj && Number.isFinite(+_liveObj.change_pct)) ? +_liveObj.change_pct : null;
+      // Live price + change% today PAKAI PRIORITY CHAIN dashboard (sinkron
+      // dgn nilai di menu Dashboard, mis. TLKM biar tidak beda).
+      var _live = getLive(r.ticker);
+      var _livePrice = _live.price;
+      var _liveChgPct = _live.changePct;  // sudah dalam scale percent (0-100)
       var _entryOk = Number.isFinite(+r.entry) && +r.entry > 0;
 
-      // Live info display samping ticker: 'Rp6.625 (+1.2%)'
+      // Live info display samping ticker: 'Rp6.625 +1.99%'
       var tkLiveHtml = '';
       if(_livePrice != null){
         var chgHtml = '';
@@ -6355,7 +6408,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           var chgCls = _liveChgPct > 0 ? 'up' : (_liveChgPct < 0 ? 'dn' : 'flat');
           chgHtml = '<span class="chg '+chgCls+'">'+((_liveChgPct>=0?'+':'')+_liveChgPct.toFixed(2))+'%</span>';
         }
-        tkLiveHtml = '<span class="tr-rec-tk-live" title="Harga live saat ini · perubahan hari ini">Rp'+fmtN(_livePrice)+chgHtml+'</span>';
+        tkLiveHtml = '<span class="tr-rec-tk-live" title="Harga live saat ini · perubahan hari ini (sinkron dgn Dashboard)">Rp'+fmtN(_livePrice)+chgHtml+'</span>';
       }
 
       // Presentase melekat di chip TP1/TP2/SL: potensi/risk vs entry.
@@ -6367,44 +6420,43 @@ body.is-mobile-device.force-desktop .pl-col-main{
         return ' <span class="pct">'+((v>=0?'+':'')+v.toFixed(1))+'%</span>';
       }
 
-      // TOP-RIGHT big percentage (sebelah kiri BUY badge). Semantik per state:
-      //   • closed (history)      → realized P&L (rec.pnlPct)
-      //   • active/missed+entry   → floating dari live price (BUY-adj)
-      //   • pending               → distance from entry (yellow, dist)
-      var topPct = null, topPctCls = 'up';
-      if(isHistory && Number.isFinite(+r.pnlPct)){
-        topPct = +r.pnlPct;
-        topPctCls = topPct >= 0 ? 'up' : 'dn';
-      } else if((isActive || isMissed) && _entryOk){
-        var _flVal = null;
-        if(_livePrice != null && r.didTouchEntry){
-          var _rawFl = ((_livePrice - +r.entry) / +r.entry) * 100;
-          _flVal = buy ? _rawFl : -_rawFl;
-        } else if(Number.isFinite(+r.floatingPct)){
-          _flVal = +r.floatingPct;
+      // TOP-RIGHT big percentage (sebelah kiri BUY badge). MODE-AWARE:
+      //   • closed (history) → getRecPnl(rec, entryMode, exitMode) [mode-aware realized]
+      //   • active/missed   → floating dari live vs base price (entry mode: entry;
+      //                        haka mode: openPriceAtPublish). Skip kalau base
+      //                        tak tersedia (mis. entry mode + belum sentuh entry).
+      //   • pending          → TIDAK ADA angka floating (posisi belum open).
+      // Semua dgn KETERANGAN kecil di bawah: 'beli di harga entry' / 'beli di harga open'.
+      var topPct = null, topPctCls = 'up', topPctLabel = '';
+      if(isHistory){
+        var _histPnl = getRecPnl(r, _entryMode, _exitMode);
+        if(Number.isFinite(_histPnl)){
+          topPct = _histPnl;
+          topPctCls = _histPnl >= 0 ? 'up' : 'dn';
+          topPctLabel = getBaseLabelForMode(_entryMode);
+        } else if(Number.isFinite(+r.pnlPct)){
+          topPct = +r.pnlPct;
+          topPctCls = topPct >= 0 ? 'up' : 'dn';
+          topPctLabel = 'realized';
         }
-        if(Number.isFinite(_flVal)){
-          topPct = _flVal;
-          topPctCls = _flVal >= 0 ? 'up' : 'dn';
-        }
-      } else if(isPending && _entryOk){
-        var _dVal = null;
-        if(_livePrice != null){
-          var _rawD = ((_livePrice - +r.entry) / +r.entry) * 100;
-          _dVal = buy ? _rawD : -_rawD;
-        } else if(Number.isFinite(+r.distanceToEntryPct)){
-          _dVal = +r.distanceToEntryPct;
-        }
-        if(Number.isFinite(_dVal)){
-          topPct = _dVal;
-          topPctCls = 'dist';
+      } else if(isActive || isMissed){
+        var _flt = getModeFloating(r, _entryMode);
+        if(Number.isFinite(_flt)){
+          topPct = _flt;
+          topPctCls = _flt >= 0 ? 'up' : 'dn';
+          topPctLabel = getBaseLabelForMode(_entryMode);
         }
       }
-      var topPctTitle = topPctCls==='dist' ? 'Jarak harga sekarang ke entry (sheet live)'
-                    : (isHistory ? 'P&L realized (sudah closed)' : 'Floating P&L realtime (sheet live)');
-      var topPctHtml = (topPct != null && Number.isFinite(topPct))
-        ? '<span class="tr-rec-pct '+topPctCls+'" title="'+topPctTitle+'">'+fmtPct(topPct,1)+'</span>'
-        : '';
+      // isPending → topPct tetap null → tidak render (per user request).
+      var topPctHtml = '';
+      if(topPct != null && Number.isFinite(topPct)){
+        var _topTitle = isHistory ? 'P&L realized (mode aktif: '+comboLabel()+')'
+                     : 'Floating realtime — base: '+topPctLabel+' (mode aktif: '+comboLabel()+')';
+        topPctHtml = '<div class="tr-rec-pct-group">'
+          + '<span class="tr-rec-pct '+topPctCls+'" title="'+esc(_topTitle)+'">'+fmtPct(topPct,1)+'</span>'
+          + (topPctLabel ? '<span class="tr-rec-pct-label">'+esc(topPctLabel)+'</span>' : '')
+        + '</div>';
+      }
 
       // Chip inline row: hanya price + suffix % (Potensi/Floating/Jarak
       // TIDAK muncul lagi di sini — pindah ke chip suffix / top-right).
@@ -10317,26 +10369,39 @@ body.is-mobile-device.force-desktop .pl-col-main{
       + makeLevel('sl',   'STOP-LOSS', rec.sl, true);
 
     // Footer: harga sekarang, P&L, exit (kalau ada).
-    // Harga Sekarang PAKAI SHEET LIVE (DATA.live[ticker].price) — sumber sama
-    // dgn candle terakhir chart. Fallback: rec.lastPrice (tracker.json snapshot,
-    // bisa drift bbrp menit setelah refresh live). Dulu pakai rec.lastPrice
-    // langsung → beda dgn chart (bug yang user report).
-    var _live = (typeof DATA !== 'undefined' && DATA && DATA.live && DATA.live[rec.ticker]) ? DATA.live[rec.ticker] : null;
-    var effectiveLastPrice = (_live && Number.isFinite(+_live.price) && +_live.price > 0)
-      ? +_live.price
-      : (Number.isFinite(+rec.lastPrice) ? +rec.lastPrice : null);
+    // Harga Sekarang PAKAI SHEET LIVE via __TR_getLive helper (priority chain
+    // sama dgn Dashboard: DATA.live.price → DATA.stats.current). Ini mem-
+    // pastikan angka sinkron dgn dashboard & chart candle terakhir.
+    var effectiveLastPrice = null;
+    if (typeof window.__TR_getLive === 'function') {
+      var _lp = window.__TR_getLive(rec.ticker);
+      if (_lp && Number.isFinite(+_lp.price) && +_lp.price > 0) effectiveLastPrice = +_lp.price;
+    }
+    if (effectiveLastPrice == null && Number.isFinite(+rec.lastPrice)) {
+      effectiveLastPrice = +rec.lastPrice;
+    }
 
-    // P&L: rec closed → pakai pnlPct final. Rec aktif (didTouchEntry) →
-    // recompute floating dari live price supaya sinkron dgn 'Harga Sekarang'
-    // yg baru. Fallback rec.floatingPct (tracker.json snapshot).
+    // P&L MODE-AWARE — sinkron dgn mode aktif di tab Analis. Kalau user
+    // di mode HAKA, floating = live vs open. Kalau mode Entry, live vs entry.
+    // Rec closed pakai getRecPnl(rec, entry, exit) via __TR_getModeFloating utk
+    // realized. Fallback rec.floatingPct / rec.pnlPct.
+    var _actMode = (typeof window.__TR_getActiveMode === 'function') ? window.__TR_getActiveMode() : { entry:'entry', exit:'tp1' };
     var pnl;
     if (rec.exitDate && Number.isFinite(+rec.pnlPct)) {
       pnl = +rec.pnlPct;
-    } else if (rec.didTouchEntry && effectiveLastPrice != null
-               && Number.isFinite(+rec.entry) && +rec.entry > 0) {
-      var _isBuyRec = String(rec.type||'BUY').toUpperCase() === 'BUY';
-      var _raw = ((effectiveLastPrice - +rec.entry) / +rec.entry) * 100;
-      pnl = _isBuyRec ? _raw : -_raw;
+    } else if (typeof window.__TR_getModeFloating === 'function') {
+      var _mf = window.__TR_getModeFloating(rec, _actMode.entry);
+      if (Number.isFinite(_mf)) {
+        pnl = _mf;
+      } else if (rec.didTouchEntry && effectiveLastPrice != null
+                 && Number.isFinite(+rec.entry) && +rec.entry > 0) {
+        var _isBuyRec = String(rec.type||'BUY').toUpperCase() === 'BUY';
+        pnl = ((effectiveLastPrice - +rec.entry) / +rec.entry) * 100 * (_isBuyRec ? 1 : -1);
+      } else if (Number.isFinite(+rec.floatingPct)) {
+        pnl = +rec.floatingPct;
+      } else {
+        pnl = null;
+      }
     } else if (Number.isFinite(+rec.floatingPct)) {
       pnl = +rec.floatingPct;
     } else {
