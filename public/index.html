@@ -2629,11 +2629,17 @@ body.tr-profile-open #tr-view-profile{display:block}
 
 /* 2 chart card di detail firm (Grafik Performa 30 Hari + Return Kumulatif)
    sejajar berdampingan mulai layar ≥1100px (PC). Di bawah itu stack vertikal
-   biar tetap enak dibaca ketika sidebar + detail bagi ruang sempit. */
+   biar tetap enak dibaca ketika sidebar + detail bagi ruang sempit.
+   Kedua card DISAMARATAKAN tinggi via align-items:stretch (default) +
+   chart-wrap height sama + card display:flex column agar area chart
+   flex-fill (kalau card kanan lebih tinggi karena legend, area chart
+   tetap sejajar). */
 .tr-pf-charts-row{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
 @media(min-width:1100px){
-  .tr-pf-charts-row{grid-template-columns:1fr 1fr;align-items:start}
-  .tr-pf-charts-row > .tr-card{margin-top:0 !important}
+  .tr-pf-charts-row{grid-template-columns:1fr 1fr}
+  .tr-pf-charts-row > .tr-card{margin-top:0 !important;display:flex;flex-direction:column}
+  .tr-pf-charts-row .tr-pf-daychart-wrap,
+  .tr-pf-charts-row .tr-chart-wrap{height:auto !important;flex:1;min-height:260px}
 }
 
 /* Wrap mode selector — dipindah dari dalam card Return Kumulatif ke ATAS 2
