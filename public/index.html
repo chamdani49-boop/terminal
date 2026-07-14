@@ -5522,6 +5522,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function fmtN(n){ return (n==null||!Number.isFinite(+n))?'—':Number(n).toLocaleString('id-ID'); }
   function fmtPct(n, dec){ if(n==null||!Number.isFinite(+n)) return '—'; var v=+n; var d=(dec==null)?2:dec; return (v>=0?'+':'')+v.toFixed(d)+'%'; }
   function fmtShortDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}); }catch(_){ return String(iso); } }
+  // Format panjang utk rec list: "13 Juli 2026". Chart axis tetap pakai fmtShortDate.
+  function fmtLongDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}); }catch(_){ return String(iso); } }
   function firmShort(name){ if(!name) return '—'; return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim(); }
   function initials(s){ if(!s) return '🏢'; var parts=String(s).replace(/PT\s*/i,'').trim().split(/\s+/); var a=(parts[0]||'')[0]||''; var b=(parts[1]||'')[0]||''; return (a+b).toUpperCase()||'🏢'; }
   function getData(){ try{ return (window.__TR_getData && window.__TR_getData()) || window.__TR_DATA__ || null; }catch(_){ return null; } }
@@ -6068,7 +6070,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         + (r.tp2 ? '<span class="tr-rec-chip tp2"><span class="k">T2</span><span class="v">'+fmtN(r.tp2)+'</span></span>' : '')
         + '<span class="tr-rec-chip sl"><span class="k">SL</span><span class="v">'+fmtN(r.sl)+'</span></span>'
         + (potPct==null ? '' : '<span class="tr-rec-chip"><span class="k">POT</span><span class="v" style="color:'+potColor+'">'+potStr+'</span></span>');
-      var dateStr = '📅 '+esc(fmtShortDate(r.openDate))+(r.exitDate?(' → '+esc(fmtShortDate(r.exitDate))):'');
+      var dateStr = '📅 '+esc(fmtLongDate(r.openDate))+(r.exitDate?(' → '+esc(fmtLongDate(r.exitDate))):'');
       var sectorStr = r.sector ? ' · '+esc(r.sector) : '';
       // data-recid → capture-phase handler di IIFE __TR_showRec akan otomatis
       // buka pop-up seperti di Tab Live (chart candlestick + zona entry/TP/SL).
@@ -6185,27 +6187,41 @@ body.is-mobile-device.force-desktop .pl-col-main{
       b.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
   }
-  function rerenderCharts(){
+  function syncRecTabButtons(){
+    document.querySelectorAll('#trPfTabs .tr-tab').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-tab')===_currentTab);
+    });
+  }
+  function rerenderAll(){
     if(!_currentFirm) return;
     renderKpi(_currentFirm);
     renderModeStats(_currentFirm);
     renderCumChart(_currentFirm);
     renderDayChart(_currentFirm);
+    renderRecList(_currentFirm, _currentTab);
   }
   // Ganti Metode Entry. User rule: default exit ke TP1 setiap ganti entry.
+  // Klik Entry/HAKA juga BROADEN rec list ke "Semua" (Entry/HAKA tidak specific
+  // ke TP hit — melebar utk lihat semua rec).
   function switchEntryMode(mode){
     if(!_currentFirm || (mode!=='entry' && mode!=='haka')) return;
     _entryMode = mode;
     _exitMode  = 'tp1';   // reset ke TP1 tiap kali user ganti entry method
+    _currentTab = 'all';  // broaden rec list → Semua
     syncSegState();
-    rerenderCharts();
+    syncRecTabButtons();
+    rerenderAll();
   }
   // Ganti Target Exit. Entry method dipertahankan.
+  // Klik TP1/TP2 juga NARROW rec list ke tab TP itu (user melihat cuma yg hit
+  // target itu). Klik "Semua" tab manual → override, kembali ke semua rec.
   function switchExitMode(mode){
     if(!_currentFirm || (mode!=='tp1' && mode!=='tp2')) return;
     _exitMode = mode;
+    _currentTab = mode;   // 'tp1' atau 'tp2' — auto-filter rec list
     syncSegState();
-    rerenderCharts();
+    syncRecTabButtons();
+    rerenderAll();
   }
   var _VALID_REC_TABS = ['all','active','pending','tp1','tp2'];
   function switchRecTab(tab){
