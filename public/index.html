@@ -6550,8 +6550,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
           topPctCls = _flt >= 0 ? 'up' : 'dn';
           topPctLabel = getBaseLabelForMode(_entryMode);
         }
+      } else if(isPending && _entryOk){
+        // Pending: BUKAN floating (posisi belum open), tapi JARAK dari harga
+        // sekarang ke entry — user bisa lihat seberapa dekat/jauh entry level.
+        // Styled yellow ('dist') + label kata 'jarak ke entry' → beda dgn
+        // active yg green/red 'beli di harga entry/open'.
+        var _live2 = getLive(r.ticker);
+        if(_live2.price != null){
+          var _rawD = ((_live2.price - +r.entry) / +r.entry) * 100;
+          topPct = buy ? _rawD : -_rawD;
+          topPctCls = 'dist';
+          topPctLabel = 'jarak ke entry';
+        } else if(Number.isFinite(+r.distanceToEntryPct)){
+          topPct = +r.distanceToEntryPct;
+          topPctCls = 'dist';
+          topPctLabel = 'jarak ke entry';
+        }
       }
-      // isPending → topPct tetap null → tidak render (per user request).
       var topPctHtml = '';
       if(topPct != null && Number.isFinite(topPct)){
         var _topTitle = isHistory ? 'P&L realized (mode aktif: '+comboLabel()+')'
