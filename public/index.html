@@ -2792,10 +2792,10 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-rec--slim .tr-rec-tk{font-size:13px;letter-spacing:-.1px}
 .tr-rec--slim .tr-rec-nm{display:none}
 .tr-rec--slim .tr-rec-b{font-size:9px;padding:2px 6px;border-radius:5px}
-.tr-rec--slim .tr-rec-inline{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center;font-family:'IBM Plex Mono',monospace}
-.tr-rec--slim .tr-rec-chip{display:inline-flex;align-items:baseline;gap:4px;padding:2px 7px;border-radius:6px;background:var(--bg2);border:1px solid var(--border);font-size:10.5px;line-height:1.4}
-.tr-rec--slim .tr-rec-chip .k{color:var(--text3);font-size:9px;letter-spacing:.4px;font-weight:700;text-transform:uppercase}
-.tr-rec--slim .tr-rec-chip .v{color:var(--text);font-weight:800}
+.tr-rec--slim .tr-rec-inline{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;align-items:center;font-family:'IBM Plex Mono',monospace}
+.tr-rec--slim .tr-rec-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);font-size:10.5px;line-height:1.3}
+.tr-rec--slim .tr-rec-chip .k{color:var(--text3);font-size:9px;letter-spacing:.5px;font-weight:700;text-transform:uppercase}
+.tr-rec--slim .tr-rec-chip .v{color:var(--text);font-weight:800;font-size:12px;letter-spacing:-.2px}
 .tr-rec--slim .tr-rec-chip.tp1 .v,
 .tr-rec--slim .tr-rec-chip.tp2 .v{color:var(--green)}
 .tr-rec--slim .tr-rec-chip.sl .v{color:var(--red)}
@@ -2803,8 +2803,9 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-rec--slim .tr-rec-analyst{color:var(--text3);font-size:9.5px;margin-left:6px;font-weight:600}
 @media(max-width:700px){
   .tr-rec--slim{padding:7px 9px}
-  .tr-rec--slim .tr-rec-chip{font-size:10px;padding:2px 6px}
-  .tr-rec--slim .tr-rec-inline{gap:4px}
+  .tr-rec--slim .tr-rec-chip{font-size:10px;padding:3px 8px;gap:5px}
+  .tr-rec--slim .tr-rec-chip .v{font-size:11.5px}
+  .tr-rec--slim .tr-rec-inline{gap:5px}
 }
 
 /* ── Direktori Analis (sub-tab baru "Analis") ── */
@@ -6268,34 +6269,41 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var pendList = (firm.recsPending||[]).map(function(r){ return Object.assign({}, r, {_bucket:'pending', state:'PENDING'}); });
     var missList = (firm.recsMissed||[]).map(function(r){ return Object.assign({}, r, {_bucket:'missed', state:'RUNNING_MISSED'}); });
     var histList = (firm.recsHistory||[]).map(function(r){ return Object.assign({}, r, {_bucket:'history'}); });
-    var histTP1  = histList.filter(_recHitTP1);
-    var histTP2  = histList.filter(_recHitTP2);
 
-    // Update tab counters
-    var allN  = actList.length + pendList.length + missList.length + histList.length;
-    var actN  = actList.length + missList.length;   // treat missed sbg 'active-ish' (masih running/floating)
-    var pendN = pendList.length;
-    var tp1N  = histTP1.length;
-    var tp2N  = histTP2.length;
+    // Apply date filter DULU sebelum hitung tab counter — supaya count ikut
+    // update saat user pilih tgl spesifik di kalender (bug fix).
+    function _byDate(arr){
+      if(!_dateFilter) return arr;
+      return arr.filter(function(r){ return String(r.openDate||'') === _dateFilter; });
+    }
+    var actListF  = _byDate(actList);
+    var pendListF = _byDate(pendList);
+    var missListF = _byDate(missList);
+    var histListF = _byDate(histList);
+    var histTP1F  = histListF.filter(_recHitTP1);
+    var histTP2F  = histListF.filter(_recHitTP2);
+
+    // Tab counters pakai LIST YG SUDAH DIFILTER TGL (reflect filter)
+    var allN  = actListF.length + pendListF.length + missListF.length + histListF.length;
+    var actN  = actListF.length + missListF.length;   // treat missed sbg 'active-ish' (masih running/floating)
+    var pendN = pendListF.length;
+    var tp1N  = histTP1F.length;
+    var tp2N  = histTP2F.length;
     var e; e=$id('trPfTabAllN');  if(e) e.textContent=allN;
     e=$id('trPfTabActN');  if(e) e.textContent=actN;
     e=$id('trPfTabPendN'); if(e) e.textContent=pendN;
     e=$id('trPfTabTp1N');  if(e) e.textContent=tp1N;
     e=$id('trPfTabTp2N');  if(e) e.textContent=tp2N;
 
-    // Pilih list sesuai tab
+    // Pilih list sesuai tab (dari yg sudah difilter tgl)
     var list;
     switch(tab){
-      case 'active':  list = actList.concat(missList); break;
-      case 'pending': list = pendList; break;
-      case 'tp1':     list = histTP1; break;
-      case 'tp2':     list = histTP2; break;
+      case 'active':  list = actListF.concat(missListF); break;
+      case 'pending': list = pendListF; break;
+      case 'tp1':     list = histTP1F; break;
+      case 'tp2':     list = histTP2F; break;
       case 'all':
-      default:        list = actList.concat(missList).concat(pendList).concat(histList); break;
-    }
-    // Apply date filter (kalau user klik chip tgl spesifik). null = semua tgl.
-    if(_dateFilter){
-      list = list.filter(function(r){ return String(r.openDate||'') === _dateFilter; });
+      default:        list = actListF.concat(missListF).concat(pendListF).concat(histListF); break;
     }
     list = _sortByDate(list, _recSortDir);
 
@@ -6328,16 +6336,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var floatingVal = +r.floatingPct;
       if(isActive && Number.isFinite(floatingVal)){
         var dnCls = floatingVal < 0 ? ' dn' : '';
-        extraChip = '<span class="tr-rec-chip flt'+dnCls+'" title="Floating P&amp;L saat ini (belum kena SL/TP)"><span class="k">FLT</span><span class="v">'+fmtPct(floatingVal,1)+'</span></span>';
+        extraChip = '<span class="tr-rec-chip flt'+dnCls+'" title="Floating P&amp;L saat ini (belum kena SL/TP)"><span class="k">Floating</span><span class="v">'+fmtPct(floatingVal,1)+'</span></span>';
       } else if(isPending && Number.isFinite(+r.distanceToEntryPct)){
-        extraChip = '<span class="tr-rec-chip dis" title="Jarak harga saat ini ke zona entry"><span class="k">DIS</span><span class="v">'+fmtPct(r.distanceToEntryPct,1)+'</span></span>';
+        extraChip = '<span class="tr-rec-chip dis" title="Jarak harga saat ini ke zona entry"><span class="k">Jarak</span><span class="v">'+fmtPct(r.distanceToEntryPct,1)+'</span></span>';
       }
       var chips = ''
-        + '<span class="tr-rec-chip"><span class="k">E</span><span class="v">'+fmtN(r.entry)+'</span></span>'
-        + '<span class="tr-rec-chip tp1"><span class="k">T1</span><span class="v">'+fmtN(r.tp1)+'</span></span>'
-        + (r.tp2 ? '<span class="tr-rec-chip tp2"><span class="k">T2</span><span class="v">'+fmtN(r.tp2)+'</span></span>' : '')
-        + '<span class="tr-rec-chip sl"><span class="k">SL</span><span class="v">'+fmtN(r.sl)+'</span></span>'
-        + (potPct==null ? '' : '<span class="tr-rec-chip"><span class="k">POT</span><span class="v" style="color:'+potColor+'">'+potStr+'</span></span>')
+        + '<span class="tr-rec-chip"><span class="k">Entry</span><span class="v">'+fmtN(r.entry)+'</span></span>'
+        + '<span class="tr-rec-chip tp1"><span class="k">TP1</span><span class="v">'+fmtN(r.tp1)+'</span></span>'
+        + (r.tp2 ? '<span class="tr-rec-chip tp2"><span class="k">TP2</span><span class="v">'+fmtN(r.tp2)+'</span></span>' : '')
+        + '<span class="tr-rec-chip sl"><span class="k">Stoploss</span><span class="v">'+fmtN(r.sl)+'</span></span>'
+        + (potPct==null ? '' : '<span class="tr-rec-chip"><span class="k">Potensi</span><span class="v" style="color:'+potColor+'">'+potStr+'</span></span>')
         + extraChip;
       var dateStr = '📅 '+esc(fmtLongDate(r.openDate))+(r.exitDate?(' → '+esc(fmtLongDate(r.exitDate))):'');
       var sectorStr = r.sector ? ' · '+esc(r.sector) : '';
