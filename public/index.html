@@ -6116,11 +6116,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
     $id('trPfName').textContent = firmShort(firm.name);
     var vb = $id('trPfVBadge'); if(vb) vb.style.display = firm.verified ? '' : 'none';
     var analystCount = (firm.analysts||[]).length;
-    var meta = [];
-    meta.push((firm.trades||0)+' trade selesai');
-    if(analystCount) meta.push(analystCount+' analis');
-    if(firm.highScore) meta.push('High-score '+firm.highScore);
-    $id('trPfMeta').textContent = meta.join(' · ');
+    // Bangun meta line dgn badge validity (STRONG/MODERATE/WEAK) inline —
+    // menggantikan text plain 'High-score N'. Badge clickable → buka modal
+    // penjelasan skor validitas yg sama dgn di Live Signal Terminal.
+    var parts = [];
+    parts.push(esc((firm.trades||0)+' trade selesai'));
+    if(analystCount) parts.push(esc(analystCount+' analis'));
+    if(firm.highScore){
+      var s = +firm.highScore || 0;
+      var bracket = s >= 70 ? 'strong' : s >= 45 ? 'moderate' : 'weak';
+      var lbl = s >= 70 ? '🏆 STRONG' : s >= 45 ? '⚡ MODERATE' : '⚠ WEAK';
+      parts.push('<button type="button" class="tr-pf-vbadge '+bracket+'" data-tr-scoremodal-open '
+        + 'title="Klik utk penjelasan skor validitas rekomendasi">'
+        + lbl+' · Skor '+s+'</button>');
+    }
+    $id('trPfMeta').innerHTML = parts.join(' · ');
 
     var secEl = $id('trPfSectors'); if(secEl){
       var sf = firm.sectorFocus || [];
@@ -23533,6 +23543,14 @@ document.addEventListener('keydown', (e) => {
 .tr-hiscore-link:hover{color:var(--accent,#c4a3ff)}
 .tr-hiscore-info{font-size:10px;opacity:.55;transition:opacity .15s}
 .tr-hiscore-link:hover .tr-hiscore-info{opacity:1}
+/* Badge validity di meta line firm profile (Analis tab). Inline di baris
+   yg sudah ada — tidak menambah kolom / memperluas layout. Klik → buka
+   modal penjelasan yg sama dgn di Live Signal Terminal. */
+.tr-pf-vbadge{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:800;letter-spacing:.4px;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text);transition:all .15s;vertical-align:baseline;line-height:1.35;font:inherit;font-family:'IBM Plex Mono',monospace}
+.tr-pf-vbadge.strong{background:rgba(16,185,129,.14);color:var(--green);border-color:rgba(16,185,129,.4)}
+.tr-pf-vbadge.moderate{background:rgba(245,158,11,.14);color:#f59e0b;border-color:rgba(245,158,11,.4)}
+.tr-pf-vbadge.weak{background:rgba(239,68,68,.12);color:var(--red);border-color:rgba(239,68,68,.36)}
+.tr-pf-vbadge:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.15)}
 @media(max-width:640px){
   .tr-scoremodal-body{margin:2vh 12px;max-height:96vh;padding:18px 16px 16px}
   .tr-scoremodal-title{font-size:16px}
@@ -23551,7 +23569,11 @@ document.addEventListener('keydown', (e) => {
   function close(){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
   document.addEventListener('click', function(e){
     if (!e.target || !e.target.closest) return;
-    if (e.target.closest('#trLiveHiScoreBtn')) { e.preventDefault(); e.stopPropagation(); open(); return; }
+    // Trigger open: tombol 'Skor tertinggi N' di Live Signal Terminal,
+    // ATAU badge validity di firm profile hero (data-tr-scoremodal-open).
+    if (e.target.closest('#trLiveHiScoreBtn') || e.target.closest('[data-tr-scoremodal-open]')) {
+      e.preventDefault(); e.stopPropagation(); open(); return;
+    }
     if (e.target.closest('[data-tr-scoremodal-close]')) { e.preventDefault(); close(); }
   }, true);
   document.addEventListener('keydown', function(e){
