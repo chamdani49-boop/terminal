@@ -2657,8 +2657,6 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-seg-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap}
 .tr-pf-seg-label{font-weight:800;font-size:12.5px;letter-spacing:-.1px;display:inline-flex;align-items:center;gap:6px}
 .tr-pf-seg-label .tr-pf-seg-active-lbl{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-weight:800;font-size:11.5px;background:rgba(124,58,237,.14);border:1px solid rgba(124,58,237,.28);padding:2px 8px;border-radius:5px;letter-spacing:.2px}
-.tr-pf-info-btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);cursor:pointer;padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
-.tr-pf-info-btn:hover{background:var(--bg3);color:var(--text);border-color:rgba(124,58,237,.4)}
 .tr-pf-seg-wrap .tr-pf-mode-stats{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);flex-wrap:wrap}
 
 /* Popup keterangan mode (menggantikan .tr-pf-mode-note inline) */
@@ -5069,7 +5067,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           Semua P/L dihitung dari harga penutupan resmi. <b>Beli di Entry</b> hanya menghitung rekomendasi di mana harga benar-benar menyentuh zona entry (paling konsisten dengan desain analis). <b>Beli HAKA</b> mengasumsikan eksekusi di open pada hari rilis (tidak pernah kelewatan, tapi RR menyimpang). <b>Beli Saat TP1 / TP2</b> mengasumsikan pembeli baru masuk saat target tercapai — hanya untuk rekomendasi yang benar-benar menyentuh entry & TP terkait; jika tak tersentuh, fallback ke P/L Entry murni.
         </div>
 
-        <!-- Popup keterangan mode eksekusi (dibuka via #trPfInfoBtn) -->
+        <!-- Popup keterangan mode eksekusi (dibuka via ikon ⓘ di tiap seg-btn) -->
         <div id="trPfModeModal" class="tr-pf-mode-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="trPfModeModalTitle">
           <div class="tr-pf-mode-modal-backdrop" data-close="1"></div>
           <div class="tr-pf-mode-modal-card">
