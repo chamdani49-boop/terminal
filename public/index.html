@@ -2903,6 +2903,15 @@ body.tr-profile-open #tr-view-profile{display:block}
    plus chip individual .tr-p-sector yang di-render sbg pill. */
 .tr-p-sectors{display:none !important}
 .tr-p-sector{display:none !important}
+/* Badge "✓ VERIF" / "✓ TERVERIFIKASI" di semua tempat menu Tracker
+   di-sembunyikan (permintaan user). Data verified saat ini tidak akurat
+   karena hasil merge firm gabungan (mis. RHB dpt verified dari 1 rec
+   dgn cert non-kosong, padahal firm-nya belum tentu verified). */
+.tr-p-vbadge,
+.tr-lb-ver,
+.tr-live-card-verif,
+.tr-perf-firm-verified,
+.tr-sim-card-verified{display:none !important}
 /* Sektor pill di dropdown pencarian saham (tab Analisis) — juga
    disembunyikan agar konsisten dgn permintaan. Screener (menu lain)
    tak terpengaruh karena pakai .pl-search-item / .scr-sector. */
@@ -5270,6 +5279,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <button type="button" class="tr-tab" data-tab="pending">Menunggu (<span id="trPfTabPendN">0</span>)</button>
           <button type="button" class="tr-tab" data-tab="tp1">TP1 (<span id="trPfTabTp1N">0</span>)</button>
           <button type="button" class="tr-tab" data-tab="tp2">TP2 (<span id="trPfTabTp2N">0</span>)</button>
+          <button type="button" class="tr-tab" data-tab="sl">SL (<span id="trPfTabSlN">0</span>)</button>
         </div>
         <div class="tr-rec-list slim" id="trPfRecList"></div>
 
@@ -5700,7 +5710,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var actT=groups.active.filter(function(r){return Number.isFinite(+r.floatingPct);});
     var floatAvg=actT.length?actT.reduce(function(s,r){return s+(+r.floatingPct||0);},0)/actT.length:null;
     $('trDtKicker').textContent='SEKURITAS';
-    $('trDtTitle').innerHTML=esc(firmShort(name))+(verified?' <span class="tr-dt-badge st-tp">✓ VERIF</span>':'');
+    // Badge "✓ VERIF" sengaja dihilangkan (permintaan user).
+    $('trDtTitle').innerHTML=esc(firmShort(name));
     $('trDtSub').textContent=groups.closed.length+' selesai · '+groups.active.length+' aktif · '+groups.unfilled.length+' menunggu';
     var body='<div class="tr-dt-kpis">'
       +kpi('Winrate', wr==null?'—':(wr+'%'), wr==null?'':('var(--'+(wr>=50?'green':'red')+')'))
@@ -6687,6 +6698,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var hits = r && r.tpHits || [];
     return hits.indexOf('TP2') >= 0 || String(r.closedBy||'')==='TP2';
   }
+  // SL murni = kena stop-loss SEBELUM TP1 (tidak termasuk SL_TRAIL yg
+  // sebenernya WIN karena TP1 sudah kena duluan lalu di-trail ke entry).
+  function _recHitSL(r){
+    return r && String(r.closedBy||'') === 'SL';
+  }
   function _sortByDate(arr, dir){
     return arr.slice().sort(function(a,b){
       var da = String(a.openDate||a.exitDate||'');
@@ -6717,6 +6733,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var histListF = _byDate(histList);
     var histTP1F  = histListF.filter(_recHitTP1);
     var histTP2F  = histListF.filter(_recHitTP2);
+    var histSlF   = histListF.filter(_recHitSL);
 
     // Tab counters pakai LIST YG SUDAH DIFILTER TGL (reflect filter)
     var allN  = actListF.length + pendListF.length + missListF.length + histListF.length;
@@ -6724,11 +6741,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var pendN = pendListF.length;
     var tp1N  = histTP1F.length;
     var tp2N  = histTP2F.length;
+    var slN   = histSlF.length;
     var e; e=$id('trPfTabAllN');  if(e) e.textContent=allN;
     e=$id('trPfTabActN');  if(e) e.textContent=actN;
     e=$id('trPfTabPendN'); if(e) e.textContent=pendN;
     e=$id('trPfTabTp1N');  if(e) e.textContent=tp1N;
     e=$id('trPfTabTp2N');  if(e) e.textContent=tp2N;
+    e=$id('trPfTabSlN');   if(e) e.textContent=slN;
 
     // Pilih list sesuai tab (dari yg sudah difilter tgl)
     var list;
@@ -6737,6 +6756,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       case 'pending': list = pendListF; break;
       case 'tp1':     list = histTP1F; break;
       case 'tp2':     list = histTP2F; break;
+      case 'sl':      list = histSlF; break;
       case 'all':
       default:        list = actListF.concat(missListF).concat(pendListF).concat(histListF); break;
     }
@@ -7023,7 +7043,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     syncRecTabButtons();
     rerenderAll();
   }
-  var _VALID_REC_TABS = ['all','active','pending','tp1','tp2'];
+  var _VALID_REC_TABS = ['all','active','pending','tp1','tp2','sl'];
   function switchRecTab(tab){
     if(!_currentFirm || _VALID_REC_TABS.indexOf(tab)<0) return;
     _currentTab = tab;
