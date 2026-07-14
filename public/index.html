@@ -7810,6 +7810,177 @@ body.is-mobile-device.force-desktop .pl-col-main{
     });
   }
 
+  // ── Canonicalize firm names (client-side fallback) ─────────────────
+  // Backend build-tracker.js sudah punya logic canonicalization tapi butuh
+  // regenerate tracker.json (via workflow). Sementara belum jalan, kita
+  // canonicalize di client jadi user LANGSUNG lihat hasil merge:
+  //   - "RHB Sekuritas" + "RHB Sekuritas Indonesia" → 1 firm
+  //   - "Samuel Sekuritas" + "Samuel Sekuritas Indonesia" → 1 firm
+  //   - "PHINTRACO SEKURITAS" + "Phintraco Sekuritas" → proper-case menang
+  //   - "PT Reliance ... Tbk" → strip PT/Tbk
+  // Prefix brand DIPERTAHANKAN: "Valbury" ≠ "KB Valbury".
+  //
+  // User note: hasil parsing AI di sheet Tracker kadang inkonsisten, jadi
+  // fallback client-side ini sekaligus jadi safety-net permanent.
+  function _canonicalFirmKey(name){
+    if(!name) return '';
+    var s = String(name).trim().toUpperCase();
+    s = s.replace(/^PT\s+/, '');
+    s = s.replace(/[.,]/g, ' ');
+    s = s.replace(/\s+TBK$/, '');
+    s = s.replace(/\s+SEKURITAS(\s+INDONESIA)?$/, '');
+    s = s.replace(/\s+INDONESIA$/, '');
+    return s.replace(/\s+/g, ' ').trim();
+  }
+  function _canonicalFirmDisplay(name){
+    if(!name) return '';
+    var s = String(name).trim();
+    s = s.replace(/^PT\s+/i, '');
+    s = s.replace(/\s+Tbk\.?$/i, '');
+    return s.replace(/\s+/g, ' ').trim();
+  }
+  function _pickBestDisplay(variants){
+    var seen = {}, cleaned = [];
+    (variants||[]).forEach(function(v){
+      var c = _canonicalFirmDisplay(v);
+      if (c && !seen[c]) { seen[c] = 1; cleaned.push(c); }
+    });
+    if (!cleaned.length) return '';
+    cleaned.sort(function(a,b){
+      var aAllUp = a === a.toUpperCase() && /[A-Z]/.test(a);
+      var bAllUp = b === b.toUpperCase() && /[A-Z]/.test(b);
+      if (aAllUp !== bAllUp) return aAllUp ? 1 : -1;
+      if (a.length !== b.length) return b.length - a.length;
+      return a.localeCompare(b);
+    });
+    return cleaned[0];
+  }
+  function _idOfFirm(s){
+    return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'') || 'unknown';
+  }
+  function normalizeFirmsInData(data){
+    if (!data || typeof data !== 'object') return data;
+    // Step 1: kumpulkan semua varian nama firm per canonical key
+    var byKey = {}; // key -> { variants: Set, oldIds: Set }
+    var listKeys = ['openList','pendingList','missedList','historyList','unfilledList'];
+    listKeys.forEach(function(k){
+      (data[k]||[]).forEach(function(r){
+        if (!r || !r.firm) return;
+        var key = _canonicalFirmKey(r.firm);
+        if (!byKey[key]) byKey[key] = { variants:{}, oldIds:{} };
+        byKey[key].variants[r.firm] = 1;
+        if (r.firmId) byKey[key].oldIds[r.firmId] = 1;
+      });
+    });
+    var oldByFirm = data.byFirm || {};
+    Object.keys(oldByFirm).forEach(function(fid){
+      var name = (oldByFirm[fid] && oldByFirm[fid].name) || '';
+      if (!name) return;
+      var key = _canonicalFirmKey(name);
+      if (!byKey[key]) byKey[key] = { variants:{}, oldIds:{} };
+      byKey[key].variants[name] = 1;
+      byKey[key].oldIds[fid] = 1;
+    });
+    // Step 2: pilih display + firmId kanonik per key
+    var canonMap = {}; // key -> { display, newFid }
+    var oldToNew = {}; // oldFid -> newFid
+    var mergeCount = 0;
+    Object.keys(byKey).forEach(function(key){
+      var variants = Object.keys(byKey[key].variants);
+      var display = _pickBestDisplay(variants);
+      var newFid = _idOfFirm(display);
+      canonMap[key] = { display: display, newFid: newFid };
+      Object.keys(byKey[key].oldIds).forEach(function(oldFid){
+        if (oldFid !== newFid) mergeCount++;
+        oldToNew[oldFid] = newFid;
+      });
+    });
+    // Step 3: rewrite firm & firmId di semua rec
+    listKeys.forEach(function(k){
+      (data[k]||[]).forEach(function(r){
+        if (!r || !r.firm) return;
+        var key = _canonicalFirmKey(r.firm);
+        var c = canonMap[key];
+        if (c) { r.firm = c.display; r.firmId = c.newFid; }
+      });
+    });
+    // Step 4: merge byFirm (sum stats untuk firm yg di-merge)
+    var STAT_KEYS = ['trades','wins','losses','neutral','net','netPure','netAvg','netHaka','cntPure','cntAvg','cntHaka'];
+    var LIST_KEYS = ['recsActive','recsPending','recsMissed','recsHistory','watchlist','analysts'];
+    var newByFirm = {};
+    Object.keys(oldByFirm).forEach(function(oldFid){
+      var f = oldByFirm[oldFid]; if (!f) return;
+      var newFid = oldToNew[oldFid] || oldFid;
+      var key = _canonicalFirmKey(f.name || '');
+      if (!newByFirm[newFid]){
+        var clone = {};
+        for (var p in f) clone[p] = f[p];
+        clone.id = newFid;
+        clone.name = (canonMap[key] && canonMap[key].display) || f.name;
+        STAT_KEYS.forEach(function(kk){ clone[kk] = 0; });
+        clone.highScore = 0;
+        LIST_KEYS.forEach(function(kk){ clone[kk] = []; });
+        newByFirm[newFid] = clone;
+      }
+      var dst = newByFirm[newFid];
+      STAT_KEYS.forEach(function(kk){ dst[kk] = (dst[kk]||0) + (f[kk]||0); });
+      dst.highScore = Math.max(dst.highScore||0, f.highScore||0);
+      if (f.verified) dst.verified = true;
+      LIST_KEYS.forEach(function(kk){
+        var arr = f[kk] || [];
+        arr.forEach(function(item){ dst[kk].push(item); });
+      });
+    });
+    // Recompute derived stats
+    Object.keys(newByFirm).forEach(function(fid){
+      var d = newByFirm[fid];
+      var wl = (d.wins||0) + (d.losses||0);
+      d.winrate = wl ? +(d.wins/wl*100).toFixed(1) : 0;
+      d.avg     = d.trades  ? +(d.net    /d.trades ).toFixed(2) : 0;
+      d.avgPure = d.cntPure ? +(d.netPure/d.cntPure).toFixed(2) : 0;
+      d.avgAvg  = d.cntAvg  ? +(d.netAvg /d.cntAvg ).toFixed(2) : 0;
+      d.avgHaka = d.cntHaka ? +(d.netHaka/d.cntHaka).toFixed(2) : 0;
+      d.watchlist = Array.from(new Set(d.watchlist||[]));
+    });
+    data.byFirm = newByFirm;
+    // Step 5: merge topFirms / bottomFirms
+    ['topFirms','bottomFirms'].forEach(function(k){
+      var arr = data[k]; if (!Array.isArray(arr)) return;
+      var acc = {};
+      arr.forEach(function(item){
+        if (!item || !item.id) return;
+        var newFid = oldToNew[item.id] || item.id;
+        var key = null;
+        for (var kk in canonMap) { if (canonMap[kk].newFid === newFid) { key = kk; break; } }
+        if (!acc[newFid]){
+          var clone = {};
+          for (var p in item) clone[p] = item[p];
+          clone.id = newFid;
+          clone.name = (key && canonMap[key].display) || item.name;
+          clone.trades = 0; clone.wins = 0; clone.losses = 0; clone.net = 0;
+          acc[newFid] = clone;
+        }
+        acc[newFid].trades += item.trades||0;
+        acc[newFid].wins   += item.wins  ||0;
+        acc[newFid].losses += item.losses||0;
+        acc[newFid].net    += item.net   ||0;
+      });
+      Object.keys(acc).forEach(function(fid){
+        var m = acc[fid]; var wl = (m.wins||0) + (m.losses||0);
+        m.winrate = wl ? +(m.wins/wl*100).toFixed(1) : 0;
+      });
+      var sorted = Object.keys(acc).map(function(fid){ return acc[fid]; });
+      if (k === 'topFirms') sorted.sort(function(a,b){ return b.net - a.net; });
+      else                  sorted.sort(function(a,b){ return a.net - b.net; });
+      data[k] = sorted.slice(0, 5);
+    });
+    if (mergeCount > 0) {
+      try { console.log('[Tracker] client-side firm merge: ' + mergeCount + ' varian di-merge'); } catch(_){}
+    }
+    return data;
+  }
+  window.__TR_normalizeFirms = normalizeFirmsInData;
+
   // ── Fetch tracker.json (sekali per session) ────────────────────────
   function loadTrackerData(force){
     if (window.__TR_DATA_STATE__ === 'loading') return;
@@ -7823,6 +7994,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
         return r.json();
       })
       .then(function(json){
+        // Canonicalize firm names SEBELUM set ke __TR_DATA__ dan panggil
+        // callbacks. Idempotent: kalau backend sudah kanonik, ini no-op.
+        try { normalizeFirmsInData(json); } catch(e){ try{ console.error('normalizeFirms failed:', e); }catch(_){} }
         window.__TR_DATA__ = json;
         window.__TR_DATA_STATE__ = json && json.pending ? 'pending' : 'ok';
         updateStatusHint(window.__TR_DATA_STATE__, json);
@@ -8816,6 +8990,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     fetch('tracker.json?t=' + Date.now(), { headers: { 'Accept': 'application/json' } })
       .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function(json){
+        // Canonicalize firm names (fallback client-side) sebelum render.
+        try { if (typeof window.__TR_normalizeFirms === 'function') window.__TR_normalizeFirms(json); } catch(_){}
         try { window.__TR_DATA__ = json; window.__TR_DATA_STATE__ = json && json.pending ? 'pending' : 'ok'; } catch(_){}
         renderLive(json);
         // Update chip di sub-tab bar juga
