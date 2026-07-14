@@ -2663,6 +2663,50 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-seg-label .tr-pf-seg-active-lbl{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-weight:800;font-size:11.5px;background:rgba(124,58,237,.14);border:1px solid rgba(124,58,237,.28);padding:2px 8px;border-radius:5px;letter-spacing:.2px}
 .tr-pf-seg-wrap .tr-pf-mode-stats{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);flex-wrap:wrap}
 
+/* Tombol trigger calendar (di header Mode Eksekusi, sebelah kanan) */
+.tr-pf-datebtn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);cursor:pointer;padding:5px 10px;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;transition:all .15s;display:inline-flex;align-items:center;gap:6px;letter-spacing:.2px;white-space:nowrap;position:relative}
+.tr-pf-datebtn:hover{background:var(--bg3);color:var(--text);border-color:rgba(124,58,237,.4)}
+.tr-pf-datebtn.filtered{background:linear-gradient(135deg,rgba(124,58,237,.16),var(--bg2));border-color:rgba(124,58,237,.4);color:var(--text)}
+.tr-pf-datebtn .arr{font-size:9px;opacity:.6}
+
+/* Calendar popup — muncul di bawah tombol, position absolute */
+.tr-pf-cal-anchor{position:relative;display:inline-block}
+.tr-pf-cal-popup{position:absolute;top:calc(100% + 6px);right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,.4);padding:14px 14px 10px;width:290px;z-index:1050;font-size:12px;color:var(--text)}
+.tr-pf-cal-popup[hidden]{display:none}
+@media(max-width:520px){.tr-pf-cal-popup{right:auto;left:0;width:min(290px,90vw)}}
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
+.cal-title{font-weight:800;font-size:13px;letter-spacing:-.1px}
+.cal-nav{display:flex;gap:4px}
+.cal-nav-btn{background:transparent;border:1px solid var(--border);color:var(--text2);width:26px;height:26px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:all .12s}
+.cal-nav-btn:hover:not(:disabled){background:var(--bg2);color:var(--text);border-color:rgba(124,58,237,.4)}
+.cal-nav-btn:disabled{opacity:.35;cursor:not-allowed}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;font-family:'IBM Plex Mono',monospace}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px}
+.cal-day{position:relative;aspect-ratio:1/1;border:0;background:transparent;color:var(--text2);cursor:pointer;border-radius:50%;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;transition:all .12s;padding:0;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.cal-day:hover:not(:disabled){background:var(--bg2);color:var(--text)}
+.cal-day:disabled{opacity:.28;cursor:default}
+.cal-day.other-month{color:var(--text3);opacity:.4}
+.cal-day.today{border:1px dashed rgba(124,58,237,.55);color:var(--text)}
+.cal-day.has-recs::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px rgba(124,58,237,.6)}
+.cal-day.selected{background:var(--grad) !important;color:#fff !important;font-weight:800;box-shadow:0 3px 12px rgba(124,58,237,.35)}
+.cal-day.selected::after{background:#fff}
+.cal-footer{border-top:1px dashed var(--border);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.cal-legend{display:flex;justify-content:center;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);letter-spacing:.3px}
+.cal-legend .dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--accent);margin-right:4px;vertical-align:middle}
+.cal-reset{background:var(--bg2);border:1px dashed rgba(124,58,237,.45);color:var(--text2);cursor:pointer;padding:8px 10px;border-radius:8px;font-family:inherit;font-size:11.5px;font-weight:700;transition:all .15s;letter-spacing:.2px}
+.cal-reset:hover{background:var(--grad);border-color:transparent;color:#fff}
+.cal-reset.active-reset{border-style:solid;border-color:transparent;background:linear-gradient(135deg,rgba(124,58,237,.16),var(--bg2));color:var(--text)}
+.cal-backdrop{position:fixed;inset:0;z-index:1040;background:transparent}
+.cal-backdrop[hidden]{display:none}
+
+/* Chip Floating P/L di rec card (active only) */
+.tr-rec-chip.flt{background:rgba(16,185,129,.16);border-color:rgba(16,185,129,.32)}
+.tr-rec-chip.flt.dn{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.32)}
+.tr-rec-chip.flt .v{color:var(--green)}
+.tr-rec-chip.flt.dn .v{color:var(--red)}
+.tr-rec-chip.dis{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.32)}
+.tr-rec-chip.dis .v{color:#f59e0b}
+
 /* Dua kelompok tombol (Metode Entry | Target Exit) dalam satu row.
    Stack vertikal di layar sempit. */
 .tr-pf-seg-groups{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
@@ -5049,6 +5093,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="tr-pf-seg-wrap">
           <div class="tr-pf-seg-head">
             <div class="tr-pf-seg-label">🎛 Mode Eksekusi <span class="tr-pf-seg-active-lbl" id="trPfSegActiveLbl">Beli di Entry → TP1</span></div>
+            <div class="tr-pf-cal-anchor">
+              <button type="button" class="tr-pf-datebtn" id="trPfDateBtn" aria-haspopup="dialog" aria-controls="trPfCalPopup" aria-expanded="false" title="Filter tanggal rekomendasi">📅 <span id="trPfDateBtnLbl">Semua Tanggal</span> <span class="arr">▾</span></button>
+              <div class="tr-pf-cal-popup" id="trPfCalPopup" role="dialog" aria-modal="false" hidden>
+                <div class="cal-head">
+                  <div class="cal-title" id="trPfCalTitle">—</div>
+                  <div class="cal-nav">
+                    <button type="button" class="cal-nav-btn" id="trPfCalPrev" aria-label="Bulan sebelumnya" title="Bulan sebelumnya">‹</button>
+                    <button type="button" class="cal-nav-btn" id="trPfCalNext" aria-label="Bulan berikutnya" title="Bulan berikutnya">›</button>
+                  </div>
+                </div>
+                <div class="cal-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div>
+                <div class="cal-grid" id="trPfCalGrid"></div>
+                <div class="cal-footer">
+                  <div class="cal-legend"><span><span class="dot"></span>ada rekomendasi</span></div>
+                  <button type="button" class="cal-reset" id="trPfCalReset" title="Tampilkan semua rekomendasi (semua tanggal, semua bulan)">🌐 All Rekomendasi</button>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="tr-pf-seg-groups">
             <div class="tr-pf-seg-group">
@@ -5113,17 +5175,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div><!-- /tr-pf-charts-row -->
 
         <div class="tr-sec-title" style="margin-top:14px;margin-bottom:6px">Rekomendasi Sekuritas</div>
-        <div class="tr-pf-rec-head">
-          <div class="tr-tabs tr-pf-rec-tabs" id="trPfTabs">
-            <button type="button" class="tr-tab active" data-tab="all">Semua (<span id="trPfTabAllN">0</span>)</button>
-            <button type="button" class="tr-tab" data-tab="active">Aktif (<span id="trPfTabActN">0</span>)</button>
-            <button type="button" class="tr-tab" data-tab="pending">Menunggu (<span id="trPfTabPendN">0</span>)</button>
-            <button type="button" class="tr-tab" data-tab="tp1">TP1 (<span id="trPfTabTp1N">0</span>)</button>
-            <button type="button" class="tr-tab" data-tab="tp2">TP2 (<span id="trPfTabTp2N">0</span>)</button>
-          </div>
-          <button type="button" class="tr-pf-rec-sort" id="trPfRecSort" title="Ubah urutan tanggal" aria-label="Urutan tanggal rekomendasi">📅 <span id="trPfRecSortLbl">Terbaru</span> <span class="arr">⇅</span></button>
+        <div class="tr-tabs tr-pf-rec-tabs" id="trPfTabs">
+          <button type="button" class="tr-tab active" data-tab="all">Semua (<span id="trPfTabAllN">0</span>)</button>
+          <button type="button" class="tr-tab" data-tab="active">Aktif (<span id="trPfTabActN">0</span>)</button>
+          <button type="button" class="tr-tab" data-tab="pending">Menunggu (<span id="trPfTabPendN">0</span>)</button>
+          <button type="button" class="tr-tab" data-tab="tp1">TP1 (<span id="trPfTabTp1N">0</span>)</button>
+          <button type="button" class="tr-tab" data-tab="tp2">TP2 (<span id="trPfTabTp2N">0</span>)</button>
         </div>
-        <div class="tr-pf-rec-datechips" id="trPfRecDateChips" role="tablist" aria-label="Filter tanggal rekomendasi"></div>
         <div class="tr-rec-list slim" id="trPfRecList"></div>
 
         <div class="tr-disclaimer">
@@ -6034,56 +6092,156 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(s==='RUNNING_MISSED') return {cls:'tr-rec-o', lbl:'🚀 Harga Lari'};
     return {cls:'tr-rec-o active', lbl:'● Aktif'};
   }
-  // Sort direction untuk daftar rec: 'desc' (Terbaru dulu) atau 'asc' (Terlama).
+  // Sort direction untuk daftar rec: default 'desc' (Terbaru dulu).
   var _recSortDir = 'desc';
   // Date filter: null = semua tgl, atau ISO date string 'YYYY-MM-DD' utk filter spesifik.
   var _dateFilter = null;
+  // Calendar state: bulan yg lagi ditampilkan {year, month} (month=0-11). Null=belum init.
+  var _calView = null;
+  // Cache set tanggal yg punya rec (Set of 'YYYY-MM-DD') utk firm aktif.
+  var _calRecDates = null;
 
-  // Format tgl utk chip: '13 Jul' (short, no year — hemat ruang chip).
-  function fmtChipDate(iso){
-    if(!iso) return '—';
-    var d = new Date(iso); if(isNaN(d.getTime())) return String(iso);
-    try{ return d.toLocaleDateString('id-ID', {day:'numeric', month:'short'}); }
-    catch(_){ return String(iso); }
-  }
-  // Renderer chip tanggal — dipanggil per firm open dan setelah _dateFilter berubah.
-  function renderDateChips(firm){
-    var el = $id('trPfRecDateChips'); if(!el) return;
-    // Kumpulkan semua rec dari semua bucket → hitung frekuensi per openDate.
+  function _buildRecDateSet(firm){
     var allRecs = (firm.recsActive||[])
       .concat(firm.recsPending||[])
       .concat(firm.recsMissed||[])
       .concat(firm.recsHistory||[]);
-    var byDate = {};
-    allRecs.forEach(function(r){
-      var d = r && r.openDate;
-      if(!d) return;
-      byDate[d] = (byDate[d]||0) + 1;
-    });
-    var dates = Object.keys(byDate).sort(function(a,b){ return b.localeCompare(a); });  // desc: terbaru dulu
-    var total = allRecs.length;
+    var set = {};
+    allRecs.forEach(function(r){ if(r && r.openDate) set[r.openDate] = true; });
+    return set;
+  }
 
-    var chips = [];
-    // Chip pertama: reset semua filter (state tab + date)
-    chips.push(
-      '<button type="button" class="tr-pf-rec-datechip reset'+(_dateFilter==null?' active':'')+'" '
-      + 'data-date-filter="" role="tab" aria-selected="'+(_dateFilter==null?'true':'false')+'" '
-      + 'title="Tampilkan semua rekomendasi (reset semua filter)">'
-      + '🌐 All Rekomendasi <span class="count">('+total+')</span></button>'
-    );
-    dates.forEach(function(d){
-      var isActive = _dateFilter === d;
-      chips.push(
-        '<button type="button" class="tr-pf-rec-datechip'+(isActive?' active':'')+'" '
-        + 'data-date-filter="'+esc(d)+'" role="tab" aria-selected="'+(isActive?'true':'false')+'" '
-        + 'title="Filter ke rekomendasi tgl '+esc(fmtLongDate(d))+'">'
-        + esc(fmtChipDate(d))+' <span class="count">('+byDate[d]+')</span></button>'
-      );
-    });
-    if(!dates.length){
-      chips.push('<span class="tr-pf-rec-datechips-empty">Belum ada tanggal rekomendasi</span>');
+  function _parseISO(iso){
+    if(!iso) return null;
+    var d = new Date(iso + 'T00:00:00');
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function _fmtISO(d){
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var dd = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+dd;
+  }
+  function _isSameDay(a, b){
+    return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  }
+
+  function renderCalendar(){
+    if(!_currentFirm) return;
+    if(!_calView){ _calView = { y: (new Date()).getFullYear(), m: (new Date()).getMonth() }; }
+    if(!_calRecDates){ _calRecDates = _buildRecDateSet(_currentFirm); }
+    var title = $id('trPfCalTitle');
+    if(title){
+      var monthName = new Date(_calView.y, _calView.m, 1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+      title.textContent = monthName;
     }
-    el.innerHTML = chips.join('');
+    var grid = $id('trPfCalGrid'); if(!grid) return;
+
+    var firstOfMonth = new Date(_calView.y, _calView.m, 1);
+    var startWeekday = firstOfMonth.getDay(); // 0=Sun...6=Sat
+    var daysInMonth = new Date(_calView.y, _calView.m+1, 0).getDate();
+    var daysInPrevMonth = new Date(_calView.y, _calView.m, 0).getDate();
+    var today = new Date();
+    var selectedDate = _dateFilter ? _parseISO(_dateFilter) : null;
+
+    var cells = [];
+    // Prev-month tail (dimmed)
+    for(var i=startWeekday-1; i>=0; i--){
+      var day = daysInPrevMonth - i;
+      var dt = new Date(_calView.y, _calView.m-1, day);
+      cells.push({ d: dt, otherMonth: true });
+    }
+    // Current month
+    for(var d=1; d<=daysInMonth; d++){
+      var dt2 = new Date(_calView.y, _calView.m, d);
+      cells.push({ d: dt2, otherMonth: false });
+    }
+    // Next-month lead — fill to 42 cells (6 weeks) atau 35 (5 weeks) — pakai 42 utk konsistensi
+    var total = cells.length;
+    var nextFill = (total % 7 === 0) ? (42 - total) : (7 - (total%7)) + (total+7-total%7 < 42 ? 7 : 0);
+    // Simpler: fill until 42 cells
+    while(cells.length < 42){
+      var last = cells[cells.length-1].d;
+      var nxt = new Date(last.getFullYear(), last.getMonth(), last.getDate()+1);
+      cells.push({ d: nxt, otherMonth: nxt.getMonth() !== _calView.m });
+    }
+
+    grid.innerHTML = cells.map(function(c){
+      var iso = _fmtISO(c.d);
+      var hasRecs = !!_calRecDates[iso];
+      var isToday = _isSameDay(c.d, today);
+      var isSelected = selectedDate && _isSameDay(c.d, selectedDate);
+      var cls = ['cal-day'];
+      if(c.otherMonth) cls.push('other-month');
+      if(isToday) cls.push('today');
+      if(hasRecs) cls.push('has-recs');
+      if(isSelected) cls.push('selected');
+      var dayNum = c.d.getDate();
+      // Non-rec days: still clickable to filter (empty result), tapi biar cleaner disable-kan
+      var disabled = hasRecs ? '' : ' disabled';
+      return '<button type="button" class="'+cls.join(' ')+'" data-cal-date="'+iso+'"'+disabled+' title="'+iso+'">'+dayNum+'</button>';
+    }).join('');
+
+    // Update Prev button state — disable kalau tak ada rec bulan-bulan sebelumnya
+    var earliestRec = Object.keys(_calRecDates).sort()[0];
+    var latestRec = Object.keys(_calRecDates).sort().pop();
+    var prevBtn = $id('trPfCalPrev');
+    if(prevBtn){
+      var firstThisView = new Date(_calView.y, _calView.m, 1);
+      prevBtn.disabled = !earliestRec || _parseISO(earliestRec) >= firstThisView;
+    }
+    var nextBtn = $id('trPfCalNext');
+    if(nextBtn){
+      var lastThisView = new Date(_calView.y, _calView.m+1, 0);
+      nextBtn.disabled = !latestRec || _parseISO(latestRec) <= lastThisView;
+    }
+
+    // Update reset button active state
+    var resetBtn = $id('trPfCalReset');
+    if(resetBtn) resetBtn.classList.toggle('active-reset', _dateFilter == null);
+  }
+
+  function updateDateBtnLabel(){
+    var lbl = $id('trPfDateBtnLbl');
+    var btn = $id('trPfDateBtn');
+    if(!lbl || !btn) return;
+    if(_dateFilter){
+      lbl.textContent = fmtLongDate(_dateFilter);
+      btn.classList.add('filtered');
+    } else {
+      lbl.textContent = 'Semua Tanggal';
+      btn.classList.remove('filtered');
+    }
+  }
+
+  function openCalPopup(){
+    var pop = $id('trPfCalPopup'); if(!pop) return;
+    // Auto-focus ke bulan dari _dateFilter atau bulan rec terakhir
+    if(!_calView){
+      var target;
+      if(_dateFilter){
+        target = _parseISO(_dateFilter);
+      } else if(_currentFirm){
+        _calRecDates = _calRecDates || _buildRecDateSet(_currentFirm);
+        var latestKey = Object.keys(_calRecDates).sort().pop();
+        target = latestKey ? _parseISO(latestKey) : new Date();
+      } else {
+        target = new Date();
+      }
+      _calView = { y: target.getFullYear(), m: target.getMonth() };
+    }
+    renderCalendar();
+    pop.hidden = false;
+    var btn = $id('trPfDateBtn'); if(btn) btn.setAttribute('aria-expanded','true');
+  }
+  function closeCalPopup(){
+    var pop = $id('trPfCalPopup'); if(!pop) return;
+    pop.hidden = true;
+    var btn = $id('trPfDateBtn'); if(btn) btn.setAttribute('aria-expanded','false');
+  }
+  function toggleCalPopup(){
+    var pop = $id('trPfCalPopup'); if(!pop) return;
+    if(pop.hidden) openCalPopup(); else closeCalPopup();
   }
 
   function _recHitTP1(r){
@@ -6148,6 +6306,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     el.innerHTML = list.map(function(r){
       var buy = isBuy(r);
       var isHistory = r._bucket === 'history';
+      var isActive  = r._bucket === 'active';
+      var isPending = r._bucket === 'pending';
+      var isMissed  = r._bucket === 'missed';
       var potPct = (Number.isFinite(+r.entry) && Number.isFinite(+r.tp1) && +r.entry!==0)
         ? tpPct(r.entry, r.tp1, buy) : null;
       var potColor = potPct==null ? 'var(--text3)' : (potPct>=0?'var(--green)':'var(--red)');
@@ -6161,12 +6322,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var tk = esc(r.ticker||'');
       var analyst = r.analyst ? '<span class="tr-rec-analyst">· '+esc(r.analyst)+'</span>' : '';
       var badgeCls = buy ? 'buy' : 'sell';
+      // Chip Floating P/L (active TRIGGERED, floating != null) atau
+      // Chip Distance-to-entry (pending, distanceToEntryPct != null).
+      var extraChip = '';
+      var floatingVal = +r.floatingPct;
+      if(isActive && Number.isFinite(floatingVal)){
+        var dnCls = floatingVal < 0 ? ' dn' : '';
+        extraChip = '<span class="tr-rec-chip flt'+dnCls+'" title="Floating P&amp;L saat ini (belum kena SL/TP)"><span class="k">FLT</span><span class="v">'+fmtPct(floatingVal,1)+'</span></span>';
+      } else if(isPending && Number.isFinite(+r.distanceToEntryPct)){
+        extraChip = '<span class="tr-rec-chip dis" title="Jarak harga saat ini ke zona entry"><span class="k">DIS</span><span class="v">'+fmtPct(r.distanceToEntryPct,1)+'</span></span>';
+      }
       var chips = ''
         + '<span class="tr-rec-chip"><span class="k">E</span><span class="v">'+fmtN(r.entry)+'</span></span>'
         + '<span class="tr-rec-chip tp1"><span class="k">T1</span><span class="v">'+fmtN(r.tp1)+'</span></span>'
         + (r.tp2 ? '<span class="tr-rec-chip tp2"><span class="k">T2</span><span class="v">'+fmtN(r.tp2)+'</span></span>' : '')
         + '<span class="tr-rec-chip sl"><span class="k">SL</span><span class="v">'+fmtN(r.sl)+'</span></span>'
-        + (potPct==null ? '' : '<span class="tr-rec-chip"><span class="k">POT</span><span class="v" style="color:'+potColor+'">'+potStr+'</span></span>');
+        + (potPct==null ? '' : '<span class="tr-rec-chip"><span class="k">POT</span><span class="v" style="color:'+potColor+'">'+potStr+'</span></span>')
+        + extraChip;
       var dateStr = '📅 '+esc(fmtLongDate(r.openDate))+(r.exitDate?(' → '+esc(fmtLongDate(r.exitDate))):'');
       var sectorStr = r.sector ? ' · '+esc(r.sector) : '';
       // data-recid → capture-phase handler di IIFE __TR_showRec akan otomatis
@@ -6238,15 +6410,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
     syncSegState();
     var tabButtons = document.querySelectorAll('#trPfTabs .tr-tab');
     tabButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===_currentTab); });
-    // Sync sort button state
+    // Reset sort/date state saat buka firm baru
     _recSortDir = 'desc';
-    var sortBtn = document.getElementById('trPfRecSort');
-    if(sortBtn){ sortBtn.classList.remove('asc'); sortBtn.classList.add('desc'); }
-    var sortLbl = document.getElementById('trPfRecSortLbl');
-    if(sortLbl) sortLbl.textContent = 'Terbaru';
-    // Reset date filter + render chips
     _dateFilter = null;
-    renderDateChips(firm);
+    _calView = null;
+    _calRecDates = null;
+    updateDateBtnLabel();
+    // Tutup popup jika kebuka dari firm sebelumnya
+    var popC = document.getElementById('trPfCalPopup');
+    if(popC && !popC.hidden){ popC.hidden = true; var db=$id('trPfDateBtn'); if(db) db.setAttribute('aria-expanded','false'); }
 
     // Reveal panel, hide hint
     var hint = document.getElementById('trMdetHint');
@@ -6331,18 +6503,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
     tabButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
     renderRecList(_currentFirm, tab);
   }
-  function toggleRecSort(){
-    if(!_currentFirm) return;
-    _recSortDir = (_recSortDir === 'desc') ? 'asc' : 'desc';
-    var btn = document.getElementById('trPfRecSort');
-    if(btn){ btn.classList.toggle('desc', _recSortDir==='desc'); btn.classList.toggle('asc', _recSortDir==='asc'); }
-    var lbl = document.getElementById('trPfRecSortLbl');
-    if(lbl) lbl.textContent = (_recSortDir==='desc') ? 'Terbaru' : 'Terlama';
-    renderRecList(_currentFirm, _currentTab);
+  function navCalMonth(delta){
+    if(!_calView) return;
+    var y = _calView.y, m = _calView.m + delta;
+    if(m < 0){ m = 11; y--; }
+    else if(m > 11){ m = 0; y++; }
+    _calView = { y: y, m: m };
+    renderCalendar();
   }
 
-  // Apply date filter (klik chip). Kalau isReset=true, juga reset state tab
-  // ke 'all' (chip "All Rekomendasi" = master reset).
+  // Apply date filter (klik chip / calendar / reset). Kalau isReset=true,
+  // juga reset state tab ke 'all' ("All Rekomendasi" = master reset).
   function applyDateFilter(dateOrNull, isReset){
     if(!_currentFirm) return;
     _dateFilter = dateOrNull;
@@ -6350,8 +6521,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
       _currentTab = 'all';
       syncRecTabButtons();
     }
-    // Refresh chip active state + rec list
-    renderDateChips(_currentFirm);
+    // Sync calendar view ke tgl yg dipilih (kalau ada)
+    if(dateOrNull){
+      var dtSel = _parseISO(dateOrNull);
+      if(dtSel){ _calView = { y: dtSel.getFullYear(), m: dtSel.getMonth() }; }
+    }
+    updateDateBtnLabel();
+    if(!document.getElementById('trPfCalPopup').hidden) renderCalendar();
     renderRecList(_currentFirm, _currentTab);
   }
 
@@ -6386,16 +6562,31 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var tab = t.closest('#trPfTabs .tr-tab');
     if(tab){ var tb=tab.getAttribute('data-tab'); if(tb){ switchRecTab(tb); } return; }
 
-    // 4) Sort toggle tanggal rec (Terbaru ⇄ Terlama)
-    if(t.closest('#trPfRecSort')){ e.preventDefault(); toggleRecSort(); return; }
-
-    // 5) Chip tanggal filter — data-date-filter attribute
-    var dchip = t.closest('#trPfRecDateChips .tr-pf-rec-datechip');
-    if(dchip){
+    // 4) Trigger tombol calendar popup
+    if(t.closest('#trPfDateBtn')){ e.preventDefault(); toggleCalPopup(); return; }
+    // 5) Navigasi bulan
+    if(t.closest('#trPfCalPrev')){ e.preventDefault(); navCalMonth(-1); return; }
+    if(t.closest('#trPfCalNext')){ e.preventDefault(); navCalMonth(+1); return; }
+    // 6) Klik tgl di grid → filter
+    var calDay = t.closest('#trPfCalGrid .cal-day');
+    if(calDay && !calDay.disabled){
       e.preventDefault();
-      var df = dchip.getAttribute('data-date-filter') || '';
-      applyDateFilter(df || null, dchip.classList.contains('reset'));
+      var isoD = calDay.getAttribute('data-cal-date');
+      if(isoD) applyDateFilter(isoD, false);
+      closeCalPopup();
       return;
+    }
+    // 7) Reset "All Rekomendasi" — clear date filter + state tab 'all'
+    if(t.closest('#trPfCalReset')){
+      e.preventDefault();
+      applyDateFilter(null, true);
+      closeCalPopup();
+      return;
+    }
+    // 8) Klik di luar popup → tutup
+    var pop = document.getElementById('trPfCalPopup');
+    if(pop && !pop.hidden && !t.closest('.tr-pf-cal-anchor')){
+      closeCalPopup();
     }
 
     // 4) Tombol close modal
@@ -6411,6 +6602,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Enter/Space di icon ⓘ (keyboard nav) → open modal
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape'){
+      var pop = document.getElementById('trPfCalPopup');
+      if(pop && !pop.hidden){ closeCalPopup(); return; }
       var m = document.getElementById('trPfModeModal');
       if(m && m.classList.contains('open')) closeModeModal();
       return;
