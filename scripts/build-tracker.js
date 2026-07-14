@@ -461,6 +461,31 @@ function normalizeRow(row) {
 
 const MISSED_THRESHOLD_PCT = 5; // %
 
+// Hitung tanggal expiry PENDING = openDate + 1 bulan kalender (tanggal yg sama).
+// Contoh: openDate = 2026-07-05 → pendingExpiresAt = 2026-08-05.
+// Kalau openDate = 2026-01-31 → 2026-02-28 (JS Date auto-clamp ke akhir bulan).
+// Digunakan untuk cap horizon rekomendasi yang MENUNGGU harga entry
+// (PENDING / RUNNING_MISSED). Kalau lewat → auto EXPIRED walau horizon
+// aslinya lebih panjang. TRIGGERED (posisi sudah jalan) TIDAK terpengaruh.
+function computePendingExpiry(openDateIso) {
+  if (!openDateIso) return null;
+  const d = new Date(openDateIso + 'T00:00:00Z');
+  if (isNaN(d.getTime())) return null;
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth();
+  const day = d.getUTCDate();
+  // Target: bulan berikutnya, tanggal yang sama. JS Date auto-clamp:
+  // new Date(Date.UTC(2026, 1, 31)) = 2026-03-03. Kita hindari itu dgn
+  // manual clamp ke akhir bulan berikutnya.
+  const lastDayOfNextMonth = new Date(Date.UTC(y, m + 2, 0)).getUTCDate();
+  const targetDay = Math.min(day, lastDayOfNextMonth);
+  const exp = new Date(Date.UTC(y, m + 1, targetDay));
+  return {
+    iso: exp.toISOString().slice(0, 10),
+    ts: exp.getTime() / 1000,
+  };
+}
+
 function derivePosition(rec, ohlcEntry, todayIso) {
   const result = {
     state: 'PENDING',           // baru: state machine
@@ -483,6 +508,11 @@ function derivePosition(rec, ohlcEntry, todayIso) {
     pnlPure: null,              // Entry Murni
     pnlAvg: null,               // Average 1:1
     pnlHaka: null,              // Beli di Open (HAKA)
+    // Expiry untuk rekomendasi yg MENUNGGU harga entry: tanggal yg sama
+    // bulan berikutnya dari openDate. Rekomendasi yg belum triggered
+    // otomatis EXPIRED bila lewat tgl ini (max ~30 hari). Berlaku HANYA
+    // untuk state PENDING & RUNNING_MISSED. TRIGGERED pakai horizon asli.
+    pendingExpiresAt: null,
   };
   if (!ohlcEntry || !Array.isArray(ohlcEntry.candles) || !ohlcEntry.candles.length) {
     return result;
@@ -493,6 +523,13 @@ function derivePosition(rec, ohlcEntry, todayIso) {
   const isBuy = rec.type === 'BUY';
   const dirSign = isBuy ? 1 : -1;
   const hasT2 = rec.tp2 != null && rec.tp2 !== rec.tp1;
+
+  // Hitung tanggal expiry untuk rekomendasi belum triggered (max 1 bulan).
+  const pendingExp = computePendingExpiry(rec.openDate);
+  result.pendingExpiresAt = pendingExp ? pendingExp.iso : null;
+  // Rekomendasi belum triggered: dianggap kadaluarsa kalau nowTs >= akhir hari
+  // dari pendingExpiresAt (jadi tanggal 5 masih hidup sampai akhir tgl 5).
+  const pendingExpiryTs = pendingExp ? (pendingExp.ts + 86400) : Infinity;
 
   const relevant = ohlcEntry.candles.filter(c => c[0] >= openTs);
   const lastCandle = ohlcEntry.candles[ohlcEntry.candles.length - 1];
@@ -658,7 +695,7 @@ function derivePosition(rec, ohlcEntry, todayIso) {
         result.pnlPure = phase === 'phase2' ? (realizedPct + floatPct * 0.5) : floatPct;
       }
     } else {
-      // Belum triggered — PENDING vs RUNNING_MISSED
+      // Belum triggered — PENDING vs RUNNING_MISSED vs EXPIRED_UNFILLED
       const dist = Math.abs(result.distanceToEntryPct || 0);
       // Arah kabur: untuk BUY, kabur naik = lastPrice > entry & jauh (> threshold).
       //             untuk SELL, kabur turun = lastPrice < entry & jauh.
@@ -666,12 +703,17 @@ function derivePosition(rec, ohlcEntry, todayIso) {
         ? (result.lastPrice - rec.entry > 0)
         : (rec.entry - result.lastPrice > 0);
       const missed = awayFromEntry && dist > MISSED_THRESHOLD_PCT;
-      if (nowTs > horizonEndTs) {
+      // Cap expiry rekomendasi belum triggered: min(horizon asli, 1 bulan
+      // dari openDate). Ini memaksa semua rekomendasi "menunggu entry"
+      // maksimum ~30 hari (1 bulan kalender). Konsisten dgn permintaan
+      // user: kalau rekom tgl 5 → expired tgl 5 bulan berikutnya.
+      const effectiveExpiryTs = Math.min(horizonEndTs, pendingExpiryTs);
+      if (nowTs > effectiveExpiryTs) {
         // EXPIRED tanpa pernah triggered → tidak ada posisi Pure sama sekali.
         result.state = 'EXPIRED';
         result.status = 'EXPIRED';
         result.closedBy = 'EXPIRED_UNFILLED';
-        const inHorizon = relevant.filter(c => c[0] <= horizonEndTs);
+        const inHorizon = relevant.filter(c => c[0] <= effectiveExpiryTs);
         const exitCandle = inHorizon.length ? inHorizon[inHorizon.length - 1] : lastCandle;
         result.exitDate = new Date(exitCandle[0] * 1000).toISOString().slice(0, 10);
         result.exitPrice = exitCandle[4];
@@ -1371,6 +1413,7 @@ function makeRecActiveObj(rec) {
     entryTouchDate: rec.entryTouchDate, entryTouchPrice: rec.entryTouchPrice,
     openPriceAtPublish: rec.openPriceAtPublish,
     distanceToEntryPct: rec.distanceToEntryPct,
+    pendingExpiresAt: rec.pendingExpiresAt,
     pnlPure: rec.pnlPure, pnlAvg: rec.pnlAvg, pnlHaka: rec.pnlHaka,
     score: rec.score, validity: rec.validity,
     analyst: rec.analyst, cert: rec.cert, verified: rec.verified,
@@ -1407,6 +1450,7 @@ function makeOpenListObj(rec) {
     entryTouchPrice: rec.entryTouchPrice,
     openPriceAtPublish: rec.openPriceAtPublish,
     distanceToEntryPct: rec.distanceToEntryPct,
+    pendingExpiresAt: rec.pendingExpiresAt,
     pnlPure: rec.pnlPure, pnlAvg: rec.pnlAvg, pnlHaka: rec.pnlHaka,
     tpHits: rec.tpHits || [],
     status: rec.status,

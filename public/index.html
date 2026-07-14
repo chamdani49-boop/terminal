@@ -3247,6 +3247,13 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-state-badge.tp{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.35)}
 .tr-state-badge.sl{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.35)}
 .tr-state-badge.expired{background:rgba(148,163,184,.10);color:#94a3b8;border:1px solid rgba(148,163,184,.28)}
+/* KADALUARSA — rec pending yang lewat 1 bulan dari openDate: MERAH & bold,
+   supaya user langsung "aware" bahwa rekomendasi ini sudah tidak relevan. */
+.tr-state-badge.pending-expired{background:rgba(239,68,68,.16);color:var(--red);border:1px solid rgba(239,68,68,.42);text-shadow:0 0 8px rgba(239,68,68,.25)}
+/* Info tgl expiry di footer kartu — kecil, tenang; jadi merah kalau <=3 hari lagi. */
+.tr-rec-exp{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);display:inline-flex;align-items:center;gap:3px;letter-spacing:.3px}
+.tr-rec-exp.soon{color:#f59e0b;font-weight:700}
+.tr-rec-exp.past{color:var(--red);font-weight:800;text-transform:uppercase;letter-spacing:.6px}
 
 /* Varian kartu unfilled: outline tipis, opasitas lebih rendah */
 .tr-live-card.unfilled{background:linear-gradient(180deg,var(--card),rgba(245,158,11,.02));border-style:dashed;border-color:rgba(245,158,11,.28)}
@@ -5568,10 +5575,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if(cb==='TP1') return {cls:'st-tp',lbl:'🎯 TP1'};
       if(cb==='SL_TRAIL') return {cls:'st-tp',lbl:'🛡 SL Trail'};
       if(cb==='SL') return {cls:'st-sl',lbl:'✕ SL'};
+      // Rec kadaluarsa tanpa pernah triggered → label KADALUARSA supaya
+      // user tahu ini bukan "posisi selesai" tapi rekom gagal terisi.
+      if(cb==='EXPIRED_UNFILLED') return {cls:'st-sl',lbl:'⏰ Kadaluarsa'};
       if(cb==='EXPIRED') return {cls:'st-exp',lbl:'⏰ Expired'};
       return {cls:'st-exp',lbl:'Selesai'};
     }
     var s=r.state||'TRIGGERED';
+    // Fallback client-side untuk rec pending yg sudah lewat 1 bulan
+    // (backend cache lama mungkin masih PENDING) — treat sbg kadaluarsa.
+    if((s==='PENDING' || s==='RUNNING_MISSED')
+        && typeof window.__TR_isPendingExpired === 'function'
+        && window.__TR_isPendingExpired(r)){
+      return {cls:'st-sl',lbl:'⏰ Kadaluarsa'};
+    }
     if(s==='PENDING') return {cls:'st-pending',lbl:'⏳ Menunggu'};
     if(s==='RUNNING_MISSED') return {cls:'st-missed',lbl:'🚀 Harga Lari'};
     return {cls:'st-active',lbl:'● Aktif'};
@@ -5757,6 +5774,68 @@ body.is-mobile-device.force-desktop .pl-col-main{
   window.__TR_getModeFloating = getModeFloating;
   window.__TR_getBaseLabelForMode = getBaseLabelForMode;
   window.__TR_getActiveMode = function(){ return { entry: _entryMode, exit: _exitMode }; };
+
+  // ── Pending expiry helpers ────────────────────────────────────────
+  // Rekomendasi "menunggu harga entry" (state PENDING/RUNNING_MISSED) punya
+  // masa berlaku maksimum 1 bulan kalender dari openDate (tanggal yg sama
+  // bulan berikutnya). Contoh: rilis 5 Jul → kadaluarsa 5 Agu.
+  // Rec yg sudah triggered (state TRIGGERED) TIDAK terpengaruh — mereka
+  // pakai horizon aslinya. Backend juga sudah auto-EXPIRED-kan rec yg
+  // sudah lewat tgl expiry, tapi helper ini dipakai frontend untuk:
+  //   - Tampilkan tgl expiry di kartu rec pending
+  //   - Fallback deteksi expired kalau backend belum re-run (cache lama)
+  function getPendingExpiryDate(openDateIso){
+    if(!openDateIso) return null;
+    var d = new Date(openDateIso + 'T00:00:00');
+    if(isNaN(d.getTime())) return null;
+    var y = d.getFullYear();
+    var m = d.getMonth();
+    var day = d.getDate();
+    // Clamp ke akhir bulan berikutnya kalau tgl overflow (mis. 31 Jan → 28/29 Feb).
+    var lastDayOfNextMonth = new Date(y, m + 2, 0).getDate();
+    var targetDay = Math.min(day, lastDayOfNextMonth);
+    return new Date(y, m + 1, targetDay);
+  }
+  // Cek apakah sebuah rec pending sudah kadaluarsa (nowDate > expiryDate).
+  // Toleransi: dianggap kadaluarsa mulai HARI SETELAH tanggal expiry
+  // (jadi rec dgn expiry 5 Ags masih hidup sepanjang tgl 5 Ags).
+  function isPendingExpired(rec){
+    if(!rec || !rec.openDate) return false;
+    // Backend sudah kasih pendingExpiresAt → pakai itu langsung kalau ada.
+    // Fallback: hitung on-the-fly kalau backend cache lama belum punya field.
+    var expIso = rec.pendingExpiresAt || null;
+    var exp = expIso ? new Date(expIso + 'T00:00:00') : getPendingExpiryDate(rec.openDate);
+    if(!exp || isNaN(exp.getTime())) return false;
+    // Anggap masih hidup sampai END-OF-DAY tgl expiry.
+    var endOfDay = new Date(exp.getFullYear(), exp.getMonth(), exp.getDate(), 23, 59, 59, 999);
+    return Date.now() > endOfDay.getTime();
+  }
+  // Ambil tgl expiry sbg ISO string ('YYYY-MM-DD') dari rec.
+  function getPendingExpiryIso(rec){
+    if(!rec) return null;
+    if(rec.pendingExpiresAt) return rec.pendingExpiresAt;
+    var d = getPendingExpiryDate(rec.openDate);
+    if(!d) return null;
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var dd = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+dd;
+  }
+  // Sisa hari sampai expiry (negative kalau sudah lewat). Untuk display
+  // ringkas: "Kadaluarsa dalam 3 hari" / "Kadaluarsa hari ini" / "Sudah kadaluarsa".
+  function pendingDaysLeft(rec){
+    var iso = getPendingExpiryIso(rec);
+    if(!iso) return null;
+    var exp = new Date(iso + 'T00:00:00');
+    if(isNaN(exp.getTime())) return null;
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var ms = exp.getTime() - today.getTime();
+    return Math.round(ms / 86400000);
+  }
+  window.__TR_getPendingExpiryIso = getPendingExpiryIso;
+  window.__TR_isPendingExpired    = isPendingExpired;
+  window.__TR_pendingDaysLeft     = pendingDaysLeft;
 
   function $id(id){ return document.getElementById(id); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
@@ -6287,6 +6366,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Rec list ────────────────────────────────────────
+  // NOTE: rec MENUNGGU ENTRY yg sudah lewat batas 1 bulan dari openDate
+  // ditandai dgn label KADALUARSA (merah). Backend juga transisi ke
+  // state EXPIRED via closedBy='EXPIRED_UNFILLED' — kita bedakan itu dari
+  // EXPIRED yg dari TRIGGERED (habis horizon setelah posisi jalan).
   function stateInfo(r, isHistory){
     if(isHistory){
       var cb = r.closedBy; var tp = r.tpHits||[];
@@ -6294,10 +6377,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if(cb==='TP1' || tp.indexOf('TP1')>=0) return {cls:'tr-rec-o tp', lbl:'🎯 Kena TP1'};
       if(cb==='SL_TRAIL') return {cls:'tr-rec-o tp', lbl:'🛡 SL Trail'};
       if(cb==='SL') return {cls:'tr-rec-o sl', lbl:'✕ Kena SL'};
+      // Rec kadaluarsa TANPA pernah triggered → khusus "KADALUARSA" merah,
+      // supaya user tahu ini bukan "posisi selesai" tapi rekom yg gagal terisi.
+      if(cb==='EXPIRED_UNFILLED') return {cls:'tr-rec-o sl', lbl:'⏰ Kadaluarsa'};
       if(cb==='EXPIRED') return {cls:'tr-rec-o', lbl:'⏰ Expired'};
       return {cls:'tr-rec-o', lbl:'Selesai'};
     }
     var s=r.state||'TRIGGERED';
+    // Fallback client-side: kalau backend cache lama masih PENDING padahal
+    // sudah lewat batas 1 bulan, treat sbg kadaluarsa di UI.
+    if((s==='PENDING' || s==='RUNNING_MISSED')
+        && typeof window.__TR_isPendingExpired === 'function'
+        && window.__TR_isPendingExpired(r)){
+      return {cls:'tr-rec-o sl', lbl:'⏰ Kadaluarsa'};
+    }
     if(s==='PENDING') return {cls:'tr-rec-o', lbl:'⏳ Menunggu'};
     if(s==='RUNNING_MISSED') return {cls:'tr-rec-o', lbl:'🚀 Harga Lari'};
     return {cls:'tr-rec-o active', lbl:'● Aktif'};
@@ -6713,6 +6806,37 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
       var dateStr = '📅 '+esc(fmtLongDate(r.openDate))+(r.exitDate?(' → '+esc(fmtLongDate(r.exitDate))):'');
       var sectorStr = r.sector ? ' · '+esc(r.sector) : '';
+
+      // Info kadaluarsa untuk rec MENUNGGU ENTRY (pending/missed): tampilkan
+      // tgl expiry + sisa hari, atau "Sudah kadaluarsa" kalau lewat.
+      // Untuk rec history dgn closedBy=EXPIRED_UNFILLED, label KADALUARSA
+      // sudah ada di st.lbl — sini kita tambahkan tgl expiry di baris tambahan.
+      var expiryLine = '';
+      var isPendMiss = (isPending || isMissed);
+      var _closedUnfilled = isHistory && r.closedBy === 'EXPIRED_UNFILLED';
+      if ((isPendMiss || _closedUnfilled) && typeof window.__TR_getPendingExpiryIso === 'function') {
+        var _expIso = window.__TR_getPendingExpiryIso(r);
+        if (_expIso) {
+          var _dl = window.__TR_pendingDaysLeft(r);
+          var _expShort = fmtShortDate(_expIso);
+          var _expCls = 'tr-rec-exp';
+          var _expTxt = '';
+          if (_closedUnfilled || (isPendMiss && window.__TR_isPendingExpired(r))) {
+            _expCls += ' past';
+            _expTxt = '⏰ Sudah kadaluarsa (batas ' + _expShort + ')';
+          } else if (_dl != null && _dl <= 3) {
+            _expCls += ' soon';
+            _expTxt = '⏰ Kadaluarsa ' + _expShort + ' · ' + (_dl <= 0 ? 'hari ini' : (_dl + ' hari lagi'));
+          } else if (_dl != null) {
+            _expTxt = '⏰ Kadaluarsa ' + _expShort + ' · ' + _dl + ' hari lagi';
+          } else {
+            _expTxt = '⏰ Kadaluarsa ' + _expShort;
+          }
+          expiryLine = '<div class="' + _expCls + '" title="Rekomendasi menunggu harga entry berlaku maksimum 1 bulan dari tanggal rilis" style="margin-top:4px">'
+                     + _expTxt + '</div>';
+        }
+      }
+
       // data-recid → capture-phase handler di IIFE __TR_showRec akan otomatis
       // buka pop-up seperti di Tab Live (chart candlestick + zona entry/TP/SL).
       return '<div class="tr-rec tr-rec--slim" data-recid="'+esc(r.id||'')+'" title="Klik utk detail rekomendasi '+tk+'" style="cursor:pointer">'
@@ -6722,6 +6846,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         + '</div>'
         + '<div class="tr-rec-inline">'+chips+'</div>'
         + '<div class="tr-rec-d"><span>'+dateStr+sectorStr+'</span><span class="'+st.cls+'">'+st.lbl+'</span></div>'
+        + expiryLine
       + '</div>';
     }).join('');
   }
@@ -8309,8 +8434,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── State badge helper (untuk state machine v2) ──
   // state: TRIGGERED | PENDING | RUNNING_MISSED | TP_HIT | SL_HIT | EXPIRED
-  function stateBadge(state, closedBy, tpHits){
+  // `rec` (opsional) dipakai untuk deteksi pending-expired (fallback client-side
+  // kalau backend cache lama). Kalau PENDING/RUNNING_MISSED sudah lewat 1 bulan
+  // dari openDate → tampilkan "KADALUARSA" merah, bukan "Menunggu Entry".
+  function stateBadge(state, closedBy, tpHits, rec){
     tpHits = tpHits || [];
+    var expiredPending = (rec && (state === 'PENDING' || state === 'RUNNING_MISSED')
+                          && typeof window.__TR_isPendingExpired === 'function'
+                          && window.__TR_isPendingExpired(rec));
+    if (expiredPending) return { icon: '⏰', label: 'Kadaluarsa', cls: 'pending-expired' };
     switch (state) {
       case 'PENDING':        return { icon: '⏳', label: 'Menunggu Entry',      cls: 'pending' };
       case 'RUNNING_MISSED': return { icon: '🚀', label: 'Harga Lari',          cls: 'missed'  };
@@ -8320,7 +8452,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
         if (closedBy === 'SL_TRAIL')     return { icon: '🛡', label: 'SL Trailing (WIN)', cls: 'tp' };
         return { icon: '🎯', label: 'Kena TP1', cls: 'tp' };
       case 'SL_HIT':         return { icon: '✕',  label: 'Kena SL',             cls: 'sl'      };
-      case 'EXPIRED':        return { icon: '⏰', label: 'Expired',             cls: 'expired' };
+      case 'EXPIRED':
+        // Bedakan EXPIRED yg dari PENDING (never triggered = KADALUARSA) vs
+        // TRIGGERED (posisi jalan lalu habis horizon = "Expired").
+        if (closedBy === 'EXPIRED_UNFILLED') return { icon: '⏰', label: 'Kadaluarsa', cls: 'pending-expired' };
+        return { icon: '⏰', label: 'Expired',             cls: 'expired' };
       default:               return { icon: '●',  label: 'Aktif',               cls: 'active'  };
     }
   }
@@ -8331,7 +8467,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // State machine v2: derive dari `state`, fallback ke legacy status
     var stateStr = o.state || (o.status === 'OPEN' ? 'TRIGGERED' : 'TRIGGERED');
     var isUnfilled = stateStr === 'PENDING' || stateStr === 'RUNNING_MISSED';
-    var badge = stateBadge(stateStr, o.closedBy, o.tpHits);
+    // Deteksi client-side apakah rec pending sudah kadaluarsa (backend cache
+    // lama mungkin masih PENDING padahal sudah >1 bulan). Kalau kadaluarsa,
+    // treat kartu ini sbg "unfilled" untuk styling merah + label KADALUARSA.
+    var pendingExpired = isUnfilled && typeof window.__TR_isPendingExpired === 'function' && window.__TR_isPendingExpired(o);
+    var badge = stateBadge(stateStr, o.closedBy, o.tpHits, o);
 
     var pctTo = function(price){
       if (price == null || !Number.isFinite(+price) || !o.entry) return '—';
@@ -8396,6 +8536,33 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var stateBadgeHtml = '<span class="tr-state-badge tr-state-' + badge.cls + '">'
       + badge.icon + ' ' + badge.label + '</span>';
 
+    // Info expiry untuk rec MENUNGGU ENTRY (PENDING/RUNNING_MISSED). Tampilkan
+    // tgl kadaluarsa + sisa hari, atau label "Sudah kadaluarsa" kalau lewat.
+    // Rec triggered/closed: tidak perlu (mereka pakai horizon aslinya).
+    var expiryHtml = '';
+    if (isUnfilled && typeof window.__TR_getPendingExpiryIso === 'function') {
+      var _expIso = window.__TR_getPendingExpiryIso(o);
+      if (_expIso) {
+        var _daysLeft = window.__TR_pendingDaysLeft(o);
+        var _expShort = fmtShortDate(_expIso);
+        var _expCls = 'tr-rec-exp';
+        var _expTxt = '';
+        if (pendingExpired) {
+          _expCls += ' past';
+          _expTxt = '⏰ Sudah kadaluarsa (batas ' + _expShort + ')';
+        } else if (_daysLeft != null && _daysLeft <= 3) {
+          _expCls += ' soon';
+          _expTxt = '⏰ Kadaluarsa ' + _expShort + ' · ' + (_daysLeft <= 0 ? 'hari ini' : ('' + _daysLeft + ' hari lagi'));
+        } else if (_daysLeft != null) {
+          _expTxt = '⏰ Kadaluarsa ' + _expShort + ' · ' + _daysLeft + ' hari lagi';
+        } else {
+          _expTxt = '⏰ Kadaluarsa ' + _expShort;
+        }
+        expiryHtml = '<div class="' + _expCls + '" style="margin-top:6px" title="Rekomendasi menunggu entry berlaku max 1 bulan dari tanggal sinyal">'
+                   + _expTxt + '</div>';
+      }
+    }
+
     return '<div class="tr-live-card ' + cardCls + '" data-recid="' + esc(o.id || '') + '" title="Klik untuk detail rekomendasi ' + esc(o.ticker) + '">'
       + '<div class="tr-live-card-top">'
         + '<div class="tr-live-card-l">'
@@ -8418,6 +8585,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         + '<span><span class="lbl">📅 Sinyal:</span> ' + fmtShortDate(o.openDate) + horizonLine + '</span>'
         + (attribution || '<span></span>')
       + '</div>'
+      + expiryHtml
       + '</div>';
   }
 
