@@ -2530,14 +2530,14 @@ body.tr-admin .bottom-nav-item.tr-menu{display:flex !important}
 .tr-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 @media(max-width:800px){.tr-kpi-row{grid-template-columns:repeat(2,1fr)}}
 /* Firm profile: 6 KPI cards (WR, Net, Floating Berjalan, Profit, Cutloss, Total).
-   Auto-fit dgn min 140px supaya 6 card MUAT sejajar 1 row di detail column
-   (~840px). Padding + font-size di card juga dikecilkan biar lebih ramping. */
-#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
-#trMdetPanel .tr-kpi{padding:12px 11px}
-#trMdetPanel .tr-kpi .k{font-size:9.5px;letter-spacing:.4px}
-#trMdetPanel .tr-kpi .v{font-size:20px;letter-spacing:-.4px}
-#trMdetPanel .tr-kpi .s{font-size:10px;line-height:1.35}
-@media(max-width:1200px){#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(3,1fr)}}
+   Auto-fit dgn min 122px + gap 8px + card padding compact → 6 card MUAT
+   sejajar 1 row di detail column ~800px+. */
+#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:8px}
+#trMdetPanel .tr-kpi{padding:10px 10px}
+#trMdetPanel .tr-kpi .k{font-size:8.5px;letter-spacing:.4px}
+#trMdetPanel .tr-kpi .v{font-size:17px;letter-spacing:-.4px;margin-top:4px}
+#trMdetPanel .tr-kpi .s{font-size:9.5px;line-height:1.35;margin-top:2px}
+@media(max-width:1100px){#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(3,1fr);gap:10px}}
 @media(max-width:700px){#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(2,1fr)}}
 .tr-kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
 .tr-kpi.hi{background:linear-gradient(135deg,rgba(124,58,237,.14),var(--card) 65%);border-color:rgba(124,58,237,.35)}
