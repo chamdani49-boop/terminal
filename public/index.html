@@ -4814,17 +4814,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <!-- Content real — visible saat data ready (pending===false). Populate via IIFE. -->
   <div id="trLiveContent" style="display:none">
 
-    <!-- Status bar (info 'Sumber: Google Sheets' dihilangkan per user req) -->
-    <div class="tr-live-status">
-      <div class="tr-live-status-l">
-        <span><span id="trLiveDot" class="tr-live-dot"></span><span id="trLiveState">AKTIF</span></span>
-        <span><span class="k">Update:</span> <span class="v" id="trLiveUpdated">—</span></span>
-      </div>
-      <button type="button" class="tr-live-refresh" id="trLiveRefresh">🔄 Refresh</button>
-    </div>
-    <!-- Elemen tersembunyi untuk backward-compat renderStatus() yg masih
-         set textContent trLiveSource — kalau di-remove, JS akan error null. -->
+    <!-- Status bar (AKTIF / Update / Refresh) dihilangkan per user req.
+         Elemen id-nya tetap ada sbg hidden <span> supaya IIFE renderStatus()
+         + click handler tombol Refresh yg reference id ini tidak error null.
+         Refresh button juga tidak muncul di UI — user cukup reload halaman
+         (feed live otomatis update per menit lewat DATA.live poll). -->
+    <span id="trLiveDot" style="display:none"></span>
+    <span id="trLiveState" style="display:none"></span>
+    <span id="trLiveUpdated" style="display:none"></span>
     <span id="trLiveSource" style="display:none"></span>
+    <button type="button" id="trLiveRefresh" style="display:none" aria-hidden="true"></button>
 
     <!-- IHSG live ticker -->
     <div class="tr-live-ihsg">
