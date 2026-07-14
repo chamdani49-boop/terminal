@@ -3174,6 +3174,19 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-live-terminal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px}
 .tr-live-terminal-h{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px;font-weight:700}
 .tr-live-terminal-h::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0}
+.tr-live-terminal-title{flex-shrink:0}
+/* IHSG pill inline di header Live Signal Terminal — kompak, di ujung kanan.
+   Warna gold utk logo JKSE (senada dgn IHSG branding), padding tipis biar
+   tidak menambah tinggi header. */
+.tr-live-terminal-ihsg{margin-left:auto;display:inline-flex;align-items:center;gap:8px;padding:3px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:none;flex-shrink:0}
+.tr-live-terminal-ihsg-logo{background:linear-gradient(135deg,#f5c518,#ffa500);color:#1a1200;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:800;letter-spacing:.3px}
+.tr-live-terminal-ihsg-px{color:var(--text);font-size:12px;font-weight:800;letter-spacing:-.2px}
+.tr-live-terminal-ihsg-chg{font-weight:800}
+@media(max-width:480px){
+  .tr-live-terminal-ihsg{padding:2px 7px;gap:5px;font-size:10px}
+  .tr-live-terminal-ihsg-logo{font-size:8px;padding:1px 4px}
+  .tr-live-terminal-ihsg-px{font-size:11px}
+}
 /* Total signal summary bar di dalam Live Signal Terminal (menggantikan
    card 'TOTAL SIGNAL' terpisah). Layout: value besar kiri, breakdown kanan. */
 .tr-live-total-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin-bottom:12px;background:linear-gradient(180deg,rgba(124,58,237,.10),var(--bg2));border:1px solid var(--border);border-radius:10px;flex-wrap:wrap}
@@ -4825,27 +4838,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <span id="trLiveSource" style="display:none"></span>
     <button type="button" id="trLiveRefresh" style="display:none" aria-hidden="true"></button>
 
-    <!-- IHSG live ticker -->
-    <div class="tr-live-ihsg">
-      <div class="tr-live-ihsg-l">
-        <div class="tr-live-ihsg-logo">JKSE</div>
-        <div>
-          <div class="tr-live-ihsg-lbl">IHSG · JAKARTA COMPOSITE</div>
-          <div class="tr-live-ihsg-px" id="trLiveIhsgPx">—</div>
-        </div>
-      </div>
-      <div class="tr-live-ihsg-r">
-        <div class="tr-live-ihsg-chg" id="trLiveIhsgChg">—</div>
-        <div class="tr-live-ihsg-sub">perubahan hari ini</div>
-      </div>
-    </div>
+    <!-- IHSG card terpisah di-hilangkan (permintaan user) — IHSG kini
+         inline di header Live Signal Terminal. Element id-nya taruh di
+         header terminal (bukan di sini) supaya renderIhsg() cukup target
+         satu tempat. -->
+
 
     <!-- ═══ Live Signal Terminal (konsolidasi TOTAL SIGNAL + posisi live) ═══
          User req: hilangkan card WIN RATE KONSENSUS; merge TOTAL SIGNAL ke sini.
          Layout: header ringkasan total signal → 4 cell metric → strip bar.
     -->
     <div class="tr-live-terminal">
-      <div class="tr-live-terminal-h">⚡ Live Signal Terminal</div>
+      <!-- Header terminal + IHSG ticker inline (lebur — permintaan user).
+           Layout: label kiri ⚡ Live Signal Terminal, IHSG pill di kanan. -->
+      <div class="tr-live-terminal-h">
+        <span class="tr-live-terminal-title">⚡ Live Signal Terminal</span>
+        <span class="tr-live-terminal-ihsg" id="trLiveTerminalIhsg" title="Indeks Harga Saham Gabungan (feed live)">
+          <span class="tr-live-terminal-ihsg-logo">JKSE</span>
+          <span class="tr-live-terminal-ihsg-px" id="trLiveIhsgPx">—</span>
+          <span class="tr-live-terminal-ihsg-chg" id="trLiveIhsgChg">—</span>
+        </span>
+      </div>
 
       <!-- Total signal summary bar (menggantikan card 'TOTAL SIGNAL' terpisah) -->
       <div class="tr-live-total-summary">
@@ -4885,8 +4898,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div>
       </div>
 
+      <!-- Progress bar akurasi (fill = rasio profit vs profit+loss).
+           Text duplikat 'X posisi terbuka · Y profit · Z loss' dihilangkan
+           (permintaan user) — angka sudah ada di 4 cell di atas. -->
       <div class="tr-live-strip"><div id="trLiveLtStripFill" style="width:0%"></div></div>
-      <div class="tr-live-strip-txt" id="trLiveLtStripTxt">— posisi terbuka</div>
     </div>
     <!-- Elemen tersembunyi (WIN RATE fields) untuk backward-compat JS renderer.
          Kartu WIN RATE KONSENSUS di-hilangkan per user request, tapi IIFE JS
@@ -8587,6 +8602,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
   //      per menit — dipakai dashboard). LEBIH REALTIME → user req.
   //   2. window.DATA.stats.IHSG.current (fallback dari data.json).
   //   3. data.ihsg (snapshot Yahoo Finance dari tracker.json — paling lama).
+  //
+  // CATATAN PENTING: change_pct di DATA.live[code] dan DATA.stats[code].change_pct_live
+  // disimpan sbg FRACTION (0.0025 = 0.25%), bukan percent. Harus DIKALI 100
+  // sebelum di-display. Bug sebelumnya: tracker treat sbg percent → tampil
+  // '+0.00%' padahal harusnya '+0.25%'. Lihat comment line 5784 di dashboard.
   function renderIhsg(data){
     var px = $('trLiveIhsgPx'); var chg = $('trLiveIhsgChg');
     // Cari sumber terbaik untuk price + change%
@@ -8594,23 +8614,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
     try {
       var D = window.DATA;
       if (D) {
-        // 1) DATA.live.IHSG — feed live dashboard (paling realtime)
+        // 1) DATA.live.IHSG — feed live dashboard (paling realtime).
+        //    change_pct disimpan sbg fraction → ×100 utk display.
         if (D.live && D.live.IHSG && Number.isFinite(D.live.IHSG.price) && D.live.IHSG.price > 0) {
           price = D.live.IHSG.price;
-          if (Number.isFinite(D.live.IHSG.change_pct)) chgPct = D.live.IHSG.change_pct;
+          if (Number.isFinite(D.live.IHSG.change_pct)) chgPct = D.live.IHSG.change_pct * 100;
         }
-        // 2) DATA.stats.IHSG (change_pct_live sinkron dgn sheet Live)
+        // 2) DATA.stats.IHSG.current — post-overlay live (mirror dari
+        //    price_history.last row + change_pct_live juga fraction).
         if (D.stats && D.stats.IHSG) {
           if (price == null && Number.isFinite(D.stats.IHSG.current) && D.stats.IHSG.current > 0) {
             price = D.stats.IHSG.current;
           }
           if (chgPct == null && Number.isFinite(D.stats.IHSG.change_pct_live)) {
-            chgPct = D.stats.IHSG.change_pct_live;
+            chgPct = D.stats.IHSG.change_pct_live * 100;
           }
         }
       }
     } catch(_){}
-    // 3) Fallback ke snapshot tracker.json (Yahoo Finance daily)
+    // 3) Fallback ke snapshot tracker.json (Yahoo Finance daily).
+    //    tracker.json.ihsg.chgPct SUDAH dalam percent (backend build-tracker.js
+    //    hitung sbg %, bukan fraction) → TIDAK perlu ×100.
     if (price == null && data && data.ihsg && Number.isFinite(data.ihsg.last)) price = data.ihsg.last;
     if (chgPct == null && data && data.ihsg && Number.isFinite(data.ihsg.chgPct)) chgPct = data.ihsg.chgPct;
 
@@ -8636,6 +8660,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       renderIhsg(d);
     } catch(_){}
   };
+  // Polling ringan tiap 15s — pastikan tracker IHSG selalu sinkron dgn
+  // DATA.live meski applyLiveFeed hook lupa memanggil, atau DATA.json baru
+  // pertama kali load setelah tracker.json sudah rendered.
+  setInterval(function(){ try { window.__TR_refreshIhsgLive(); } catch(_){} }, 15000);
 
   // ── Render hero cards ──
   function renderHeroes(data){
@@ -8717,12 +8745,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
         : 'var(--text3)';
     }
 
+    // Progress bar akurasi (fill = rasio profit vs profit+loss).
+    // Text ringkasan di bawah bar sudah dihapus (permintaan user: hindari
+    // duplikat text/jumlah — angka profit/loss sudah ada di 4 cell atas).
     var fill = $('trLiveLtStripFill');
     if (fill) fill.style.width = ((profit + loss) ? (profit / (profit + loss) * 100) : 0) + '%';
-    var txt = $('trLiveLtStripTxt');
-    if (txt) txt.textContent = (profit + loss)
-      ? (openList.length + ' posisi terbuka · ' + profit + ' profit · ' + loss + ' loss')
-      : (openList.length + ' posisi terbuka');
 
     // ── Total signal summary (dulunya card 'TOTAL SIGNAL' terpisah) ──
     var triggered = data.open || 0;
