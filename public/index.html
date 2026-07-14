@@ -2529,6 +2529,10 @@ body.tr-admin .bottom-nav-item.tr-menu{display:flex !important}
 /* KPI row */
 .tr-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 @media(max-width:800px){.tr-kpi-row{grid-template-columns:repeat(2,1fr)}}
+/* Firm profile: 5 KPI cards (WR, Net, Profit Tertinggi, Cutloss Terendah, Total).
+   Auto-fit biar rapih di layar sempit (sidebar 300px + detail column). */
+#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+@media(max-width:900px){#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(2,1fr)}}
 .tr-kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
 .tr-kpi.hi{background:linear-gradient(135deg,rgba(124,58,237,.14),var(--card) 65%);border-color:rgba(124,58,237,.35)}
 .tr-kpi .k{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;letter-spacing:.5px;font-weight:600}
@@ -5009,9 +5013,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <div class="s tr-neu" id="trPfKpiNetSub">Kumulatif · mode aktif</div>
           </div>
           <div class="tr-kpi">
-            <div class="k">RATA² / TRADE</div>
-            <div class="v" id="trPfKpiAvg">+0%</div>
-            <div class="s tr-neu">Realized · mode aktif</div>
+            <div class="k">PROFIT TERTINGGI</div>
+            <div class="v" id="trPfKpiBest">—</div>
+            <div class="s tr-neu" id="trPfKpiBestSub">Trade terbaik · mode aktif</div>
+          </div>
+          <div class="tr-kpi">
+            <div class="k">CUTLOSS TERENDAH</div>
+            <div class="v" id="trPfKpiWorst">—</div>
+            <div class="s tr-neu" id="trPfKpiWorstSub">Trade terburuk · mode aktif</div>
           </div>
           <div class="tr-kpi">
             <div class="k">TOTAL REKOMENDASI</div>
@@ -5659,17 +5668,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function computeModeStats(firm, entryMode, exitMode){
     var recs=(firm && firm.recsHistory || []);
     var vals=[]; var wins=0;
+    var best=null, worst=null, bestRec=null, worstRec=null;
     for(var i=0;i<recs.length;i++){
       var p=getRecPnl(recs[i], entryMode, exitMode);
       if(p==null) continue;
       vals.push(+p);
       if(+p>0) wins++;
+      if(best==null || +p > best){ best = +p; bestRec = recs[i]; }
+      if(worst==null || +p < worst){ worst = +p; worstRec = recs[i]; }
     }
     var total=vals.length;
     var net = vals.reduce(function(s,v){return s+v;},0);
     var avg = total?net/total:0;
     var wr  = total?Math.round(wins/total*100):null;
-    return { total:total, wins:wins, wr:wr, net:net, avg:avg };
+    return { total:total, wins:wins, wr:wr, net:net, avg:avg, best:best, worst:worst, bestRec:bestRec, worstRec:worstRec };
   }
 
   // Label & keterangan tiap dimensi mode. entry+haka = Metode Entry group.
@@ -5735,10 +5747,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     $id('trPfKpiNetSub').textContent = 'Mode: '+comboLabel();
 
-    var avgEl = $id('trPfKpiAvg');
-    if(avgEl){
-      if(!st.total){ avgEl.textContent='—'; avgEl.className='v'; }
-      else { avgEl.textContent=fmtPct(st.avg); avgEl.className='v '+(st.avg>=0?'tr-up':'tr-dn'); }
+    var bestEl = $id('trPfKpiBest');
+    if(bestEl){
+      if(st.best==null){ bestEl.textContent='—'; bestEl.className='v'; }
+      else { bestEl.textContent=fmtPct(st.best); bestEl.className='v tr-up'; }
+    }
+    var bestSub = $id('trPfKpiBestSub');
+    if(bestSub){
+      bestSub.textContent = st.bestRec
+        ? ('🏆 '+(st.bestRec.ticker||'—')+' · '+fmtShortDate(st.bestRec.openDate))
+        : 'Belum ada trade untuk mode ini';
+    }
+
+    var worstEl = $id('trPfKpiWorst');
+    if(worstEl){
+      if(st.worst==null){ worstEl.textContent='—'; worstEl.className='v'; }
+      else { worstEl.textContent=fmtPct(st.worst); worstEl.className='v tr-dn'; }
+    }
+    var worstSub = $id('trPfKpiWorstSub');
+    if(worstSub){
+      worstSub.textContent = st.worstRec
+        ? ('⚠ '+(st.worstRec.ticker||'—')+' · '+fmtShortDate(st.worstRec.openDate))
+        : 'Belum ada trade untuk mode ini';
     }
 
     $id('trPfKpiTotal').textContent = String((actN + histN + pendN + missN) || 0);
