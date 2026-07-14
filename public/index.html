@@ -2715,6 +2715,15 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-mdet-hint-title{font-weight:800;font-size:15px;margin-bottom:4px;letter-spacing:-.2px}
 .tr-mdet-hint-desc{color:var(--text3);font-size:12.5px;line-height:1.5;max-width:340px;margin:0 auto}
 
+/* Row: tabs kiri (scrollable) + sort tanggal kanan */
+.tr-pf-rec-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:4px;margin-bottom:8px;flex-wrap:wrap}
+.tr-pf-rec-tabs{margin:0;flex-wrap:wrap;flex:1 1 auto;min-width:0}
+.tr-pf-rec-sort{background:var(--card);border:1px solid var(--border);color:var(--text2);cursor:pointer;padding:6px 11px;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;transition:all .15s;display:inline-flex;align-items:center;gap:6px;letter-spacing:.2px;white-space:nowrap;flex-shrink:0}
+.tr-pf-rec-sort:hover{background:var(--bg2);color:var(--text);border-color:rgba(124,58,237,.4)}
+.tr-pf-rec-sort .arr{opacity:.5;font-size:10px;transition:transform .18s}
+.tr-pf-rec-sort.asc .arr{transform:scaleY(-1);opacity:1;color:var(--accent)}
+.tr-pf-rec-sort.desc .arr{opacity:1;color:var(--accent)}
+
 /* ── Slim variant .tr-rec (dipakai di halaman detail sekuritas — Rekomendasi Sekuritas) ── */
 .tr-rec-list.slim{gap:6px}
 .tr-rec--slim{padding:8px 11px;border-radius:9px}
@@ -5082,9 +5091,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div><!-- /tr-pf-charts-row -->
 
         <div class="tr-sec-title" style="margin-top:14px;margin-bottom:6px">Rekomendasi Sekuritas</div>
-        <div class="tr-tabs" id="trPfTabs">
-          <button type="button" class="tr-tab active" data-tab="active">Aktif (<span id="trPfTabActN">0</span>)</button>
-          <button type="button" class="tr-tab" data-tab="history">Riwayat (<span id="trPfTabHistN">0</span>)</button>
+        <div class="tr-pf-rec-head">
+          <div class="tr-tabs tr-pf-rec-tabs" id="trPfTabs">
+            <button type="button" class="tr-tab active" data-tab="all">Semua (<span id="trPfTabAllN">0</span>)</button>
+            <button type="button" class="tr-tab" data-tab="active">Aktif (<span id="trPfTabActN">0</span>)</button>
+            <button type="button" class="tr-tab" data-tab="pending">Menunggu (<span id="trPfTabPendN">0</span>)</button>
+            <button type="button" class="tr-tab" data-tab="tp1">TP1 (<span id="trPfTabTp1N">0</span>)</button>
+            <button type="button" class="tr-tab" data-tab="tp2">TP2 (<span id="trPfTabTp2N">0</span>)</button>
+          </div>
+          <button type="button" class="tr-pf-rec-sort" id="trPfRecSort" title="Ubah urutan tanggal" aria-label="Urutan tanggal rekomendasi">📅 <span id="trPfRecSortLbl">Terbaru</span> <span class="arr">⇅</span></button>
         </div>
         <div class="tr-rec-list slim" id="trPfRecList"></div>
 
@@ -5544,32 +5559,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   function getRecPnl(rec, entryMode, exitMode){
     if(!rec) return null;
+    var buy = isBuy(rec);
     var hits = rec.tpHits || [];
     var hitTP1 = hits.indexOf('TP1') >= 0;
     var hitTP2 = hits.indexOf('TP2') >= 0;
-    var buy = isBuy(rec);
+    var closedBy = String(rec.closedBy || '');
 
-    // ── Filter berdasar exit mode + tentukan exit price ──
-    var exitPrice = null;
-    if(exitMode === 'tp1'){
-      if(!hitTP1) return null;             // filter: harus hit TP1
-      exitPrice = Number.isFinite(+rec.tp1) ? +rec.tp1 : null;
-    } else if(exitMode === 'tp2'){
-      if(!Number.isFinite(+rec.tp2)) return null;  // rec tidak punya TP2 target
-      if(hitTP2){
-        exitPrice = +rec.tp2;
-      } else if(hitTP1){
-        // TP1 hit tapi TP2 gak — trailed stop di TP1 (per user rule)
-        exitPrice = +rec.tp1;
-      } else {
-        return null;                       // TP tak tersentuh sama sekali
-      }
-    } else {
-      return null;                         // unknown exit mode
-    }
-    if(!Number.isFinite(exitPrice)) return null;
-
-    // ── Tentukan entry price berdasar entry mode ──
+    // ── Step 1: entry price berdasar entry mode ──
     var entryPrice = null;
     if(entryMode === 'entry'){
       if(!rec.didTouchEntry) return null;
@@ -5582,7 +5578,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if(!openPastTP1){
         entryPrice = opn;                  // HAKA normal
       } else if(rec.didTouchEntry){
-        entryPrice = +rec.entry;           // fallback: open lewat TP1 tapi harga balik ke entry
+        entryPrice = +rec.entry;           // fallback: open lewat TP1 tapi harga balik ke entry (second chance)
       } else {
         return null;                       // kelewatan permanen
       }
@@ -5590,6 +5586,35 @@ body.is-mobile-device.force-desktop .pl-col-main{
       return null;
     }
     if(!Number.isFinite(entryPrice) || entryPrice === 0) return null;
+
+    // ── Step 2: exit price berdasar exit mode + actual outcome ──
+    // TIDAK filter cuma-TP-hit — juga hitung LOSSES (SL/expired). Ini bikin
+    // winrate realistis, bukan 100%. Simulasi lengkap: "kalau selalu aim
+    // ke TP1/TP2, gimana realized WR & net-nya?".
+    var exitPrice = null;
+    if(exitMode === 'tp1'){
+      if(hitTP1){
+        exitPrice = +rec.tp1;              // WIN at TP1 (termasuk kalau closedBy='SL_TRAIL' setelah TP1 hit)
+      } else if(closedBy === 'SL' && Number.isFinite(+rec.sl)){
+        exitPrice = +rec.sl;               // LOSS at original SL
+      } else {
+        exitPrice = Number.isFinite(+rec.exitPrice) ? +rec.exitPrice : null;  // EXPIRED / other
+      }
+    } else if(exitMode === 'tp2'){
+      if(!Number.isFinite(+rec.tp2)) return null;  // rec tidak punya TP2 target → skip
+      if(hitTP2){
+        exitPrice = +rec.tp2;              // WIN at TP2 (target penuh)
+      } else if(hitTP1){
+        // TP1 hit tapi TP2 tidak — trailed stop di TP1 (per user rule:
+        // "sebelum TP2 harga kembali ke TP1 → kena stop-nya"). Small WIN.
+        exitPrice = +rec.tp1;
+      } else if(closedBy === 'SL' && Number.isFinite(+rec.sl)){
+        exitPrice = +rec.sl;               // LOSS at SL sebelum TP1 tersentuh
+      } else {
+        exitPrice = Number.isFinite(+rec.exitPrice) ? +rec.exitPrice : null;
+      }
+    }
+    if(!Number.isFinite(exitPrice)) return null;
 
     var pnlPct = ((exitPrice - entryPrice) / entryPrice) * 100;
     return buy ? pnlPct : -pnlPct;
@@ -5656,8 +5681,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var MODE_NOTE = {
     entry: '<b>Beli di Entry:</b> posisi baru dianggap terbuka bila harga benar-benar menyentuh zona entry rekomendasi. Kalau harga tak pernah sentuh entry (analisa "kelewatan"), rekomendasi itu di-skip dari simulasi. Konsisten dengan desain analis, RR original.',
     haka:  '<b>Beli HAKA (Hantam Kanan):</b> masuk pada open tgl rilis rekomendasi. Skip kalau harga open sudah lewat TP1 (kelewatan). Namun kalau setelah kelewatan itu harga sempat balik ke zona entry sebelum SL/expired, dianggap masuk di entry sebagai <i>second chance</i>. RR menyimpang dari desain analis tapi tidak pernah kelewatan momentum awal.',
-    tp1:   '<b>Target Exit TP1:</b> hanya menghitung rekomendasi yang benar-benar menyentuh TP1 (exit di harga TP1). Butuh Metode Entry aktif (Beli di Entry atau HAKA) sebagai basis penentuan harga masuk. Cocok utk lihat konsistensi hit TP1 saja.',
-    tp2:   '<b>Target Exit TP2:</b> hanya rekomendasi yg punya TP2 target. Kalau TP2 tersentuh → exit di TP2 (target penuh). Kalau hanya TP1 tersentuh sebelum harga balik ke TP1 → exit di TP1 sebagai <i>trailed stop</i>. Kalau TP tak tersentuh sama sekali → skip dari simulasi.'
+    tp1:   '<b>Target Exit TP1:</b> simulasi strategi exit di TP1. Rec yg menyentuh TP1 → exit di TP1 (<b>WIN</b>). Rec kena SL sebelum TP1 → exit di SL (<b>LOSS</b>). Rec expired tanpa hit → exit di harga aktual. Winrate = proporsi TP1 hit terhadap semua rec yg entry-nya valid (bukan 100%). Butuh Metode Entry aktif.',
+    tp2:   '<b>Target Exit TP2:</b> simulasi strategi exit di TP2. TP2 hit → exit di TP2 (<b>WIN besar</b>). TP1 hit tapi TP2 tidak (harga balik) → exit di TP1 sebagai <i>trailed stop</i> (<b>WIN kecil</b>). Kena SL sebelum TP1 → exit di SL (<b>LOSS</b>). Skip rec yang tak punya TP2 target.'
   };
 
   // ── HERO / KPI ─────────────────────────────────────
@@ -5963,21 +5988,59 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(s==='RUNNING_MISSED') return {cls:'tr-rec-o', lbl:'🚀 Harga Lari'};
     return {cls:'tr-rec-o active', lbl:'● Aktif'};
   }
+  // Sort direction untuk daftar rec: 'desc' (Terbaru dulu) atau 'asc' (Terlama).
+  var _recSortDir = 'desc';
+
+  function _recHitTP1(r){
+    var hits = r && r.tpHits || [];
+    return hits.indexOf('TP1') >= 0 || String(r.closedBy||'')==='TP1' || String(r.closedBy||'')==='SL_TRAIL';
+  }
+  function _recHitTP2(r){
+    var hits = r && r.tpHits || [];
+    return hits.indexOf('TP2') >= 0 || String(r.closedBy||'')==='TP2';
+  }
+  function _sortByDate(arr, dir){
+    return arr.slice().sort(function(a,b){
+      var da = String(a.openDate||a.exitDate||'');
+      var db = String(b.openDate||b.exitDate||'');
+      return dir==='asc' ? da.localeCompare(db) : db.localeCompare(da);
+    });
+  }
+
   function renderRecList(firm, tab){
     var el = $id('trPfRecList'); if(!el) return;
-    var list;
-    if(tab==='active'){
-      list = (firm.recsActive||[])
-        .concat((firm.recsPending||[]).map(function(r){ return Object.assign({}, r, {state:'PENDING'}); }))
-        .concat((firm.recsMissed||[]).map(function(r){ return Object.assign({}, r, {state:'RUNNING_MISSED'}); }));
-    } else {
-      list = (firm.recsHistory||[]).slice().sort(function(a,b){ return String(b.exitDate||'').localeCompare(String(a.exitDate||'')); });
-    }
+
+    // Kelompokkan rec ke buckets berlabel status
+    var actList  = (firm.recsActive||[]).map(function(r){ return Object.assign({}, r, {_bucket:'active'}); });
+    var pendList = (firm.recsPending||[]).map(function(r){ return Object.assign({}, r, {_bucket:'pending', state:'PENDING'}); });
+    var missList = (firm.recsMissed||[]).map(function(r){ return Object.assign({}, r, {_bucket:'missed', state:'RUNNING_MISSED'}); });
+    var histList = (firm.recsHistory||[]).map(function(r){ return Object.assign({}, r, {_bucket:'history'}); });
+    var histTP1  = histList.filter(_recHitTP1);
+    var histTP2  = histList.filter(_recHitTP2);
+
     // Update tab counters
-    var actN = (firm.recsActive||[]).length + (firm.recsPending||[]).length + (firm.recsMissed||[]).length;
-    var histN = (firm.recsHistory||[]).length;
-    var an=$id('trPfTabActN'); if(an) an.textContent=actN;
-    var hn=$id('trPfTabHistN'); if(hn) hn.textContent=histN;
+    var allN  = actList.length + pendList.length + missList.length + histList.length;
+    var actN  = actList.length + missList.length;   // treat missed sbg 'active-ish' (masih running/floating)
+    var pendN = pendList.length;
+    var tp1N  = histTP1.length;
+    var tp2N  = histTP2.length;
+    var e; e=$id('trPfTabAllN');  if(e) e.textContent=allN;
+    e=$id('trPfTabActN');  if(e) e.textContent=actN;
+    e=$id('trPfTabPendN'); if(e) e.textContent=pendN;
+    e=$id('trPfTabTp1N');  if(e) e.textContent=tp1N;
+    e=$id('trPfTabTp2N');  if(e) e.textContent=tp2N;
+
+    // Pilih list sesuai tab
+    var list;
+    switch(tab){
+      case 'active':  list = actList.concat(missList); break;
+      case 'pending': list = pendList; break;
+      case 'tp1':     list = histTP1; break;
+      case 'tp2':     list = histTP2; break;
+      case 'all':
+      default:        list = actList.concat(missList).concat(pendList).concat(histList); break;
+    }
+    list = _sortByDate(list, _recSortDir);
 
     if(!list.length){
       el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:14px 4px;text-align:center">Belum ada rekomendasi di kategori ini.</div>';
@@ -5985,13 +6048,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     el.innerHTML = list.map(function(r){
       var buy = isBuy(r);
+      var isHistory = r._bucket === 'history';
       var potPct = (Number.isFinite(+r.entry) && Number.isFinite(+r.tp1) && +r.entry!==0)
         ? tpPct(r.entry, r.tp1, buy) : null;
       var potColor = potPct==null ? 'var(--text3)' : (potPct>=0?'var(--green)':'var(--red)');
       var potStr = potPct==null ? '—' : ((potPct>=0?'+':'')+potPct.toFixed(1)+'%');
-      var st = stateInfo(r, tab==='history');
+      var st = stateInfo(r, isHistory);
       var pnlStr = '';
-      if(tab==='history' && Number.isFinite(+r.pnlPct)){
+      if(isHistory && Number.isFinite(+r.pnlPct)){
         var pv=+r.pnlPct;
         pnlStr = ' <span style="color:'+(pv>=0?'var(--green)':'var(--red)')+';font-weight:800">'+fmtPct(pv)+'</span>';
       }
@@ -6006,7 +6070,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
         + (potPct==null ? '' : '<span class="tr-rec-chip"><span class="k">POT</span><span class="v" style="color:'+potColor+'">'+potStr+'</span></span>');
       var dateStr = '📅 '+esc(fmtShortDate(r.openDate))+(r.exitDate?(' → '+esc(fmtShortDate(r.exitDate))):'');
       var sectorStr = r.sector ? ' · '+esc(r.sector) : '';
-      return '<div class="tr-rec tr-rec--slim" data-tr-stock="'+tk+'">'
+      // data-recid → capture-phase handler di IIFE __TR_showRec akan otomatis
+      // buka pop-up seperti di Tab Live (chart candlestick + zona entry/TP/SL).
+      return '<div class="tr-rec tr-rec--slim" data-recid="'+esc(r.id||'')+'" title="Klik utk detail rekomendasi '+tk+'" style="cursor:pointer">'
         + '<div class="tr-rec-top">'
           + '<div style="min-width:0;display:flex;align-items:center;gap:2px;flex-wrap:wrap"><span class="tr-rec-tk">'+tk+'</span>'+analyst+'</div>'
           + '<span class="tr-rec-b '+badgeCls+'">'+(buy?'BUY':'SELL')+'</span>'
@@ -6063,7 +6129,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     _currentFirm = firm;
     _entryMode   = 'entry';
     _exitMode    = 'tp1';
-    _currentTab  = 'active';
+    _currentTab  = 'all';        // default tab jadi 'Semua' (bukan 'Aktif')
 
     populateHero(firm);
     renderKpi(firm);
@@ -6073,6 +6139,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     syncSegState();
     var tabButtons = document.querySelectorAll('#trPfTabs .tr-tab');
     tabButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===_currentTab); });
+    // Sync sort button state
+    _recSortDir = 'desc';
+    var sortBtn = document.getElementById('trPfRecSort');
+    if(sortBtn){ sortBtn.classList.remove('asc'); sortBtn.classList.add('desc'); }
+    var sortLbl = document.getElementById('trPfRecSortLbl');
+    if(sortLbl) sortLbl.textContent = 'Terbaru';
 
     // Reveal panel, hide hint
     var hint = document.getElementById('trMdetHint');
@@ -6135,12 +6207,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
     syncSegState();
     rerenderCharts();
   }
+  var _VALID_REC_TABS = ['all','active','pending','tp1','tp2'];
   function switchRecTab(tab){
-    if(!_currentFirm || (tab!=='active' && tab!=='history')) return;
+    if(!_currentFirm || _VALID_REC_TABS.indexOf(tab)<0) return;
     _currentTab = tab;
     var tabButtons = document.querySelectorAll('#trPfTabs .tr-tab');
     tabButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
     renderRecList(_currentFirm, tab);
+  }
+  function toggleRecSort(){
+    if(!_currentFirm) return;
+    _recSortDir = (_recSortDir === 'desc') ? 'asc' : 'desc';
+    var btn = document.getElementById('trPfRecSort');
+    if(btn){ btn.classList.toggle('desc', _recSortDir==='desc'); btn.classList.toggle('asc', _recSortDir==='asc'); }
+    var lbl = document.getElementById('trPfRecSortLbl');
+    if(lbl) lbl.textContent = (_recSortDir==='desc') ? 'Terbaru' : 'Terlama';
+    renderRecList(_currentFirm, _currentTab);
   }
 
   // ── Global overrides & delegates ───────────────────
@@ -6170,9 +6252,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var segExit  = t.closest('#trPfSegExit .tr-pf-seg-btn');
     if(segExit){ var xm = segExit.getAttribute('data-exit-mode'); if(xm){ switchExitMode(xm); } return; }
 
-    // 3) Tab Aktif/Riwayat rec list
+    // 3) Tab filter rec list (Semua/Aktif/Menunggu/TP1/TP2)
     var tab = t.closest('#trPfTabs .tr-tab');
     if(tab){ var tb=tab.getAttribute('data-tab'); if(tb){ switchRecTab(tb); } return; }
+
+    // 4) Sort toggle tanggal rec (Terbaru ⇄ Terlama)
+    if(t.closest('#trPfRecSort')){ e.preventDefault(); toggleRecSort(); return; }
 
     // 4) Tombol close modal
     if(t.closest('#trPfModeModalClose')){ e.preventDefault(); closeModeModal(); return; }
