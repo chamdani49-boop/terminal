@@ -2696,12 +2696,29 @@ body.tr-profile-open #tr-view-profile{display:block}
 .cal-day.has-recs::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px rgba(124,58,237,.6)}
 .cal-day.selected{background:var(--grad) !important;color:#fff !important;font-weight:800;box-shadow:0 3px 12px rgba(124,58,237,.35)}
 .cal-day.selected::after{background:#fff}
+/* Range picker: start & end anchor pakai gradient, days between di-highlight muda. */
+.cal-day.range-start,
+.cal-day.range-end{background:var(--grad) !important;color:#fff !important;font-weight:800;box-shadow:0 3px 12px rgba(124,58,237,.35);border-radius:50%;z-index:1}
+.cal-day.range-start::after,
+.cal-day.range-end::after{background:#fff}
+.cal-day.in-range{background:rgba(124,58,237,.14);color:var(--text);border-radius:0}
+.cal-day.in-range:hover{background:rgba(124,58,237,.24)}
+/* Continuous range look: sudut kanan start & sudut kiri end tetap 50% */
+.cal-day.range-start:not(.range-end){border-radius:50% 0 0 50%}
+.cal-day.range-end:not(.range-start){border-radius:0 50% 50% 0}
 .cal-footer{border-top:1px dashed var(--border);padding-top:10px;display:flex;flex-direction:column;gap:6px}
 .cal-legend{display:flex;justify-content:center;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);letter-spacing:.3px}
 .cal-legend .dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--accent);margin-right:4px;vertical-align:middle}
-.cal-reset{background:var(--bg2);border:1px dashed rgba(124,58,237,.45);color:var(--text2);cursor:pointer;padding:8px 10px;border-radius:8px;font-family:inherit;font-size:11.5px;font-weight:700;transition:all .15s;letter-spacing:.2px}
+.cal-reset{background:var(--bg2);border:1px dashed rgba(124,58,237,.45);color:var(--text2);cursor:pointer;padding:8px 10px;border-radius:8px;font-family:inherit;font-size:11.5px;font-weight:700;transition:all .15s;letter-spacing:.2px;flex:1}
 .cal-reset:hover{background:var(--grad);border-color:transparent;color:#fff}
 .cal-reset.active-reset{border-style:solid;border-color:transparent;background:linear-gradient(135deg,rgba(124,58,237,.16),var(--bg2));color:var(--text)}
+/* Tombol OK utk apply range */
+.cal-ok{background:var(--grad);border:0;color:#fff;cursor:pointer;padding:8px 14px;border-radius:8px;font-family:inherit;font-size:11.5px;font-weight:800;transition:all .15s;letter-spacing:.3px;flex:0 0 auto;box-shadow:0 3px 10px rgba(124,58,237,.24)}
+.cal-ok:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(124,58,237,.32)}
+.cal-ok:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.cal-actions{display:flex;gap:6px}
+.cal-range-info{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:4px 6px;background:var(--bg2);border-radius:6px;border:1px dashed var(--border);letter-spacing:.2px}
+.cal-range-info b{color:var(--accent);font-weight:800}
 .cal-backdrop{position:fixed;inset:0;z-index:1040;background:transparent}
 .cal-backdrop[hidden]{display:none}
 
@@ -5144,7 +5161,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
                 <div class="cal-grid" id="trPfCalGrid"></div>
                 <div class="cal-footer">
                   <div class="cal-legend"><span><span class="dot"></span>ada rekomendasi</span></div>
-                  <button type="button" class="cal-reset" id="trPfCalReset" title="Tampilkan semua rekomendasi (semua tanggal, semua bulan)">🌐 All Rekomendasi</button>
+                  <div class="cal-range-info" id="trPfCalRangeInfo">Klik tgl awal, lalu tgl akhir untuk pilih rentang</div>
+                  <div class="cal-actions">
+                    <button type="button" class="cal-reset" id="trPfCalReset" title="Tampilkan semua rekomendasi (reset filter tgl)">🌐 All</button>
+                    <button type="button" class="cal-ok" id="trPfCalOk" title="Terapkan rentang tgl yg dipilih" disabled>OK</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -5847,6 +5868,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function computeCumSeries(firm, entryMode, exitMode){
     var recs=(firm && firm.recsHistory || []).slice()
       .filter(function(r){ return r && r.exitDate; })
+      .filter(_recInDateFilter)
       .sort(function(a,b){ return String(a.exitDate).localeCompare(String(b.exitDate)); });
     var out=[]; var cum=0;
     for(var i=0;i<recs.length;i++){
@@ -5876,8 +5898,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return out;
   }
 
+  // Predicate: rec.openDate masuk _dateFilter range? null filter = accept all.
+  function _recInDateFilter(rec){
+    if(!_dateFilter) return true;
+    var d = rec && rec.openDate;
+    if(!d) return false;
+    return d >= _dateFilter.start && d <= _dateFilter.end;
+  }
+
   function computeModeStats(firm, entryMode, exitMode){
-    var recs=(firm && firm.recsHistory || []);
+    var recs=(firm && firm.recsHistory || []).filter(_recInDateFilter);
     var vals=[]; var wins=0;
     var best=null, worst=null, bestRec=null, worstRec=null;
     for(var i=0;i<recs.length;i++){
@@ -5900,7 +5930,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Setiap rec pakai base sesuai entry mode (entry/haka) via getModeFloating.
   // Rec yg base-nya tak tersedia (mis. entry mode + belum sentuh entry) di-skip.
   function computeActiveFloatingSum(firm, entryMode){
-    var recs = firm && firm.recsActive || [];
+    var recs = (firm && firm.recsActive || []).filter(_recInDateFilter);
     var sum = 0, count = 0;
     recs.forEach(function(r){
       var fl = getModeFloating(r, entryMode);
@@ -6134,7 +6164,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // lalu bar hijau/merah + garis kumulatif biru.
   // Rec yg gak eligible (getRecPnl==null) di-skip dari agregasi hari itu.
   function computeFirmDailyEquity(firm, entryMode, exitMode){
-    var recs = (firm && firm.recsHistory || []).filter(function(r){ return r && r.exitDate; });
+    var recs = (firm && firm.recsHistory || [])
+      .filter(function(r){ return r && r.exitDate; })
+      .filter(_recInDateFilter);
     if(!recs.length) return [];
     var byDate = {};
     recs.forEach(function(r){
@@ -6272,8 +6304,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   // Sort direction untuk daftar rec: default 'desc' (Terbaru dulu).
   var _recSortDir = 'desc';
-  // Date filter: null = semua tgl, atau ISO date string 'YYYY-MM-DD' utk filter spesifik.
+  // Date filter: null = semua tgl, atau {start, end} ISO strings 'YYYY-MM-DD'.
+  // Single day: start === end. Range: start < end. Apply ke rec list + KPI +
+  // chart via filter openDate rec.
   var _dateFilter = null;
+  // Temp selection state saat calendar popup terbuka. Committed ke _dateFilter
+  // hanya saat user klik OK.
+  //   null           → belum ada selection
+  //   {start, end:null} → 1 tgl dipilih (nunggu tgl akhir)
+  //   {start, end}   → 2 tgl (range siap commit)
+  var _calPending = null;
   // Calendar state: bulan yg lagi ditampilkan {year, month} (month=0-11). Null=belum init.
   var _calView = null;
   // Cache set tanggal yg punya rec (Set of 'YYYY-MM-DD') utk firm aktif.
@@ -6320,7 +6360,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var daysInMonth = new Date(_calView.y, _calView.m+1, 0).getDate();
     var daysInPrevMonth = new Date(_calView.y, _calView.m, 0).getDate();
     var today = new Date();
-    var selectedDate = _dateFilter ? _parseISO(_dateFilter) : null;
+    // Untuk highlight: prioritaskan _calPending (in-progress) daripada
+    // _dateFilter (committed) — supaya UI responsive saat user milih.
+    var rngStart = null, rngEnd = null;
+    if(_calPending && _calPending.start){
+      rngStart = _calPending.start;
+      rngEnd   = _calPending.end || null;
+    } else if(_dateFilter){
+      rngStart = _dateFilter.start;
+      rngEnd   = _dateFilter.end;
+    }
 
     var cells = [];
     // Prev-month tail (dimmed)
@@ -6348,17 +6397,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var iso = _fmtISO(c.d);
       var hasRecs = !!_calRecDates[iso];
       var isToday = _isSameDay(c.d, today);
-      var isSelected = selectedDate && _isSameDay(c.d, selectedDate);
       var cls = ['cal-day'];
       if(c.otherMonth) cls.push('other-month');
       if(isToday) cls.push('today');
       if(hasRecs) cls.push('has-recs');
-      if(isSelected) cls.push('selected');
+      // Range highlight logic (jangan tabrakan dgn `.selected` singular)
+      if(rngStart && !rngEnd && iso === rngStart){
+        // Single anchor picked — highlight solo
+        cls.push('selected');
+      } else if(rngStart && rngEnd){
+        if(iso === rngStart) cls.push('range-start');
+        if(iso === rngEnd)   cls.push('range-end');
+        if(iso > rngStart && iso < rngEnd) cls.push('in-range');
+      }
       var dayNum = c.d.getDate();
-      // Non-rec days: still clickable to filter (empty result), tapi biar cleaner disable-kan
-      var disabled = hasRecs ? '' : ' disabled';
-      return '<button type="button" class="'+cls.join(' ')+'" data-cal-date="'+iso+'"'+disabled+' title="'+iso+'">'+dayNum+'</button>';
+      // Dulu: tgl tanpa rec di-disable → user tak bisa pick sbg range boundary.
+      // Sekarang: SEMUA tgl klik-able → range picker fleksibel (mis. 3 → 13 Jul
+      // walaupun 3 Jul tak ada rec). Yg tak ada rec tetap dim visual (has-recs
+      // absent), tapi tetap interactive.
+      return '<button type="button" class="'+cls.join(' ')+'" data-cal-date="'+iso+'" title="'+iso+'">'+dayNum+'</button>';
     }).join('');
+
+    // Update OK button + range info text (jika elemen ada)
+    updateCalOkState();
+    updateCalRangeInfo();
 
     // Update Prev button state — disable kalau tak ada rec bulan-bulan sebelumnya
     var earliestRec = Object.keys(_calRecDates).sort()[0];
@@ -6384,7 +6446,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var btn = $id('trPfDateBtn');
     if(!lbl || !btn) return;
     if(_dateFilter){
-      lbl.textContent = fmtLongDate(_dateFilter);
+      if(_dateFilter.start === _dateFilter.end){
+        lbl.textContent = fmtLongDate(_dateFilter.start);
+      } else {
+        lbl.textContent = fmtChipDate(_dateFilter.start) + ' → ' + fmtChipDate(_dateFilter.end);
+      }
       btn.classList.add('filtered');
     } else {
       lbl.textContent = 'Semua Tanggal';
@@ -6392,13 +6458,80 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
   }
 
+  function updateCalOkState(){
+    var ok = $id('trPfCalOk'); if(!ok) return;
+    ok.disabled = !(_calPending && _calPending.start);
+  }
+  function updateCalRangeInfo(){
+    var info = $id('trPfCalRangeInfo'); if(!info) return;
+    if(!_calPending || !_calPending.start){
+      info.textContent = 'Klik tgl awal, lalu tgl akhir untuk pilih rentang';
+    } else if(_calPending.start && !_calPending.end){
+      info.innerHTML = 'Awal: <b>'+esc(fmtLongDate(_calPending.start))+'</b> · klik tgl akhir';
+    } else {
+      info.innerHTML = 'Dari <b>'+esc(fmtLongDate(_calPending.start))+'</b> → <b>'+esc(fmtLongDate(_calPending.end))+'</b>';
+    }
+  }
+
+  // Handler klik tgl di calendar grid. State machine:
+  //   idle           → set start
+  //   start-only     → set end (auto-swap kalau lebih awal)
+  //   both selected  → reset ke new start
+  function handleCalDayClick(iso){
+    if(!_calPending || !_calPending.start){
+      _calPending = { start: iso, end: null };
+    } else if(_calPending.start && !_calPending.end){
+      var s = _calPending.start;
+      if(iso < s){
+        _calPending = { start: iso, end: s };
+      } else if(iso === s){
+        // Klik ulang tgl yg sama → tetap single-day (biar user bisa cancel end pick)
+        _calPending = { start: iso, end: null };
+      } else {
+        _calPending = { start: s, end: iso };
+      }
+    } else {
+      // Both set → reset ke new anchor
+      _calPending = { start: iso, end: null };
+    }
+    renderCalendar();
+  }
+
+  function applyCalRange(){
+    if(!_calPending || !_calPending.start) return;
+    var s = _calPending.start;
+    var e = _calPending.end || _calPending.start; // single day fallback
+    _dateFilter = { start: s, end: e };
+    _calPending = null;
+    updateDateBtnLabel();
+    closeCalPopup();
+    // Rerender semua — rec list, KPI, kedua chart, mode stats
+    rerenderAll();
+  }
+
+  function resetCalFilter(){
+    _dateFilter = null;
+    _calPending = null;
+    _currentTab = 'all';
+    syncRecTabButtons();
+    updateDateBtnLabel();
+    closeCalPopup();
+    rerenderAll();
+  }
+
   function openCalPopup(){
     var pop = $id('trPfCalPopup'); if(!pop) return;
-    // Auto-focus ke bulan dari _dateFilter atau bulan rec terakhir
+    // Init _calPending dari filter committed → user bisa lihat state saat ini
+    // + adjust. Kalau tak ada filter, pending juga null (idle).
+    if(_dateFilter && !_calPending){
+      _calPending = { start: _dateFilter.start, end: (_dateFilter.end === _dateFilter.start ? null : _dateFilter.end) };
+    }
+    // Auto-focus ke bulan dari filter/pending atau bulan rec terakhir
     if(!_calView){
       var target;
-      if(_dateFilter){
-        target = _parseISO(_dateFilter);
+      var anchor = (_calPending && _calPending.start) || (_dateFilter && _dateFilter.start);
+      if(anchor){
+        target = _parseISO(anchor);
       } else if(_currentFirm){
         _calRecDates = _calRecDates || _buildRecDateSet(_currentFirm);
         var latestKey = Object.keys(_calRecDates).sort().pop();
@@ -6415,6 +6548,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function closeCalPopup(){
     var pop = $id('trPfCalPopup'); if(!pop) return;
     pop.hidden = true;
+    // Discard pending selection kalau user tutup tanpa OK
+    _calPending = null;
     var btn = $id('trPfDateBtn'); if(btn) btn.setAttribute('aria-expanded','false');
   }
   function toggleCalPopup(){
@@ -6448,10 +6583,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var histList = (firm.recsHistory||[]).map(function(r){ return Object.assign({}, r, {_bucket:'history'}); });
 
     // Apply date filter DULU sebelum hitung tab counter — supaya count ikut
-    // update saat user pilih tgl spesifik di kalender (bug fix).
+    // update saat user pilih range tgl di kalender. Support single-day
+    // (start===end) atau range (start<end) via helper _recInDateFilter.
     function _byDate(arr){
       if(!_dateFilter) return arr;
-      return arr.filter(function(r){ return String(r.openDate||'') === _dateFilter; });
+      return arr.filter(_recInDateFilter);
     }
     var actListF  = _byDate(actList);
     var pendListF = _byDate(pendList);
@@ -6748,24 +6884,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     renderCalendar();
   }
 
-  // Apply date filter (klik chip / calendar / reset). Kalau isReset=true,
-  // juga reset state tab ke 'all' ("All Rekomendasi" = master reset).
-  function applyDateFilter(dateOrNull, isReset){
-    if(!_currentFirm) return;
-    _dateFilter = dateOrNull;
-    if(isReset){
-      _currentTab = 'all';
-      syncRecTabButtons();
-    }
-    // Sync calendar view ke tgl yg dipilih (kalau ada)
-    if(dateOrNull){
-      var dtSel = _parseISO(dateOrNull);
-      if(dtSel){ _calView = { y: dtSel.getFullYear(), m: dtSel.getMonth() }; }
-    }
-    updateDateBtnLabel();
-    if(!document.getElementById('trPfCalPopup').hidden) renderCalendar();
-    renderRecList(_currentFirm, _currentTab);
-  }
+  // Legacy applyDateFilter DIHAPUS — diganti applyCalRange (commit) +
+  // resetCalFilter (reset). Semua filter tgl sekarang lewat calendar popup
+  // dgn range picker.
 
   // ── Global overrides & delegates ───────────────────
   window.__TR_openFirmPage = openFirmPage;
@@ -6803,20 +6924,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // 5) Navigasi bulan
     if(t.closest('#trPfCalPrev')){ e.preventDefault(); navCalMonth(-1); return; }
     if(t.closest('#trPfCalNext')){ e.preventDefault(); navCalMonth(+1); return; }
-    // 6) Klik tgl di grid → filter
+    // 6) Klik tgl di grid → pilih start/end range (belum commit sampai OK)
     var calDay = t.closest('#trPfCalGrid .cal-day');
-    if(calDay && !calDay.disabled){
+    if(calDay){
       e.preventDefault();
       var isoD = calDay.getAttribute('data-cal-date');
-      if(isoD) applyDateFilter(isoD, false);
-      closeCalPopup();
+      if(isoD) handleCalDayClick(isoD);
       return;
     }
-    // 7) Reset "All Rekomendasi" — clear date filter + state tab 'all'
+    // 7) Klik OK — commit range terpilih
+    if(t.closest('#trPfCalOk')){
+      e.preventDefault();
+      applyCalRange();
+      return;
+    }
+    // 8) Reset "All Rekomendasi" — clear date filter + state tab 'all'
     if(t.closest('#trPfCalReset')){
       e.preventDefault();
-      applyDateFilter(null, true);
-      closeCalPopup();
+      resetCalFilter();
       return;
     }
     // 8) Klik di luar popup → tutup
