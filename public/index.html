@@ -2699,13 +2699,23 @@ body.tr-profile-open #tr-view-profile{display:block}
 .cal-backdrop{position:fixed;inset:0;z-index:1040;background:transparent}
 .cal-backdrop[hidden]{display:none}
 
-/* Chip Floating P/L di rec card (active only) */
-.tr-rec-chip.flt{background:rgba(16,185,129,.16);border-color:rgba(16,185,129,.32)}
-.tr-rec-chip.flt.dn{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.32)}
-.tr-rec-chip.flt .v{color:var(--green)}
-.tr-rec-chip.flt.dn .v{color:var(--red)}
-.tr-rec-chip.dis{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.32)}
-.tr-rec-chip.dis .v{color:#f59e0b}
+/* Big P&L / Floating / Distance % di top-right kartu rec (sebelum BUY badge).
+   Tanpa background/border — cukup angka besar berwarna. Menggantikan chip
+   Floating/Potensi/Distance di inline row (yg sekarang cuma price+% suffix). */
+.tr-rec-pct{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:800;letter-spacing:-.3px;line-height:1;white-space:nowrap}
+.tr-rec-pct.up{color:var(--green)}
+.tr-rec-pct.dn{color:var(--red)}
+.tr-rec-pct.dist{color:#f59e0b}
+.tr-rec--slim .tr-rec-top-r{display:inline-flex;align-items:center;gap:10px}
+/* Presentase kecil melekat di chip value (mis. TP1 6.925 (+3.7%)) */
+.tr-rec--slim .tr-rec-chip .v .pct{font-size:10px;font-weight:700;opacity:.85;margin-left:4px}
+.tr-rec--slim .tr-rec-chip.sl .v .pct{color:var(--red)}
+.tr-rec--slim .tr-rec-chip.tp1 .v .pct,
+.tr-rec--slim .tr-rec-chip.tp2 .v .pct{color:var(--green)}
+@media(max-width:700px){
+  .tr-rec-pct{font-size:13.5px}
+  .tr-rec--slim .tr-rec-top-r{gap:7px}
+}
 
 /* Dua kelompok tombol (Metode Entry | Target Exit) dalam satu row.
    Stack vertikal di layar sempit. */
@@ -6317,58 +6327,72 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var isActive  = r._bucket === 'active';
       var isPending = r._bucket === 'pending';
       var isMissed  = r._bucket === 'missed';
-      var potPct = (Number.isFinite(+r.entry) && Number.isFinite(+r.tp1) && +r.entry!==0)
-        ? tpPct(r.entry, r.tp1, buy) : null;
-      var potColor = potPct==null ? 'var(--text3)' : (potPct>=0?'var(--green)':'var(--red)');
-      var potStr = potPct==null ? '—' : ((potPct>=0?'+':'')+potPct.toFixed(1)+'%');
       var st = stateInfo(r, isHistory);
-      var pnlStr = '';
-      if(isHistory && Number.isFinite(+r.pnlPct)){
-        var pv=+r.pnlPct;
-        pnlStr = ' <span style="color:'+(pv>=0?'var(--green)':'var(--red)')+';font-weight:800">'+fmtPct(pv)+'</span>';
-      }
       var tk = esc(r.ticker||'');
       var analyst = r.analyst ? '<span class="tr-rec-analyst">· '+esc(r.analyst)+'</span>' : '';
       var badgeCls = buy ? 'buy' : 'sell';
-      // Chip Floating P/L (active TRIGGERED) atau Distance-to-entry (pending).
-      // KEDUA-DUANYA pakai DATA.live[ticker].price sbg 'harga sekarang' (sheet
-      // live) supaya realtime & konsisten dgn popup chart. Fallback ke
-      // rec.floatingPct / rec.distanceToEntryPct kalau DATA.live tak tersedia.
-      var extraChip = '';
+
+      // Live price (sheet live). Untuk floating + distance realtime.
       var _liveObj = (typeof DATA !== 'undefined' && DATA && DATA.live && DATA.live[r.ticker]) ? DATA.live[r.ticker] : null;
       var _livePrice = (_liveObj && Number.isFinite(+_liveObj.price) && +_liveObj.price > 0) ? +_liveObj.price : null;
       var _entryOk = Number.isFinite(+r.entry) && +r.entry > 0;
-      if(isActive){
-        var floatingVal = null;
-        if(_livePrice != null && _entryOk && r.didTouchEntry){
+
+      // Presentase melekat di chip TP1/TP2/SL: potensi/risk vs entry.
+      var tp1PctV = (_entryOk && Number.isFinite(+r.tp1)) ? tpPct(r.entry, r.tp1, buy) : null;
+      var tp2PctV = (_entryOk && Number.isFinite(+r.tp2)) ? tpPct(r.entry, r.tp2, buy) : null;
+      var slPctV  = (_entryOk && Number.isFinite(+r.sl))  ? tpPct(r.entry, r.sl,  buy) : null;
+      function _pctSuffix(v){
+        if(v == null || !Number.isFinite(v)) return '';
+        return ' <span class="pct">'+((v>=0?'+':'')+v.toFixed(1))+'%</span>';
+      }
+
+      // TOP-RIGHT big percentage (sebelah kiri BUY badge). Semantik per state:
+      //   • closed (history)      → realized P&L (rec.pnlPct)
+      //   • active/missed+entry   → floating dari live price (BUY-adj)
+      //   • pending               → distance from entry (yellow, dist)
+      var topPct = null, topPctCls = 'up';
+      if(isHistory && Number.isFinite(+r.pnlPct)){
+        topPct = +r.pnlPct;
+        topPctCls = topPct >= 0 ? 'up' : 'dn';
+      } else if((isActive || isMissed) && _entryOk){
+        var _flVal = null;
+        if(_livePrice != null && r.didTouchEntry){
           var _rawFl = ((_livePrice - +r.entry) / +r.entry) * 100;
-          floatingVal = buy ? _rawFl : -_rawFl;
+          _flVal = buy ? _rawFl : -_rawFl;
         } else if(Number.isFinite(+r.floatingPct)){
-          floatingVal = +r.floatingPct;
+          _flVal = +r.floatingPct;
         }
-        if(Number.isFinite(floatingVal)){
-          var dnCls = floatingVal < 0 ? ' dn' : '';
-          extraChip = '<span class="tr-rec-chip flt'+dnCls+'" title="Floating P&amp;L realtime (sheet live)"><span class="k">Floating</span><span class="v">'+fmtPct(floatingVal,1)+'</span></span>';
+        if(Number.isFinite(_flVal)){
+          topPct = _flVal;
+          topPctCls = _flVal >= 0 ? 'up' : 'dn';
         }
-      } else if(isPending){
-        var distVal = null;
-        if(_livePrice != null && _entryOk){
+      } else if(isPending && _entryOk){
+        var _dVal = null;
+        if(_livePrice != null){
           var _rawD = ((_livePrice - +r.entry) / +r.entry) * 100;
-          distVal = buy ? _rawD : -_rawD;
+          _dVal = buy ? _rawD : -_rawD;
         } else if(Number.isFinite(+r.distanceToEntryPct)){
-          distVal = +r.distanceToEntryPct;
+          _dVal = +r.distanceToEntryPct;
         }
-        if(Number.isFinite(distVal)){
-          extraChip = '<span class="tr-rec-chip dis" title="Jarak harga sekarang (sheet live) ke zona entry"><span class="k">Jarak</span><span class="v">'+fmtPct(distVal,1)+'</span></span>';
+        if(Number.isFinite(_dVal)){
+          topPct = _dVal;
+          topPctCls = 'dist';
         }
       }
+      var topPctTitle = topPctCls==='dist' ? 'Jarak harga sekarang ke entry (sheet live)'
+                    : (isHistory ? 'P&L realized (sudah closed)' : 'Floating P&L realtime (sheet live)');
+      var topPctHtml = (topPct != null && Number.isFinite(topPct))
+        ? '<span class="tr-rec-pct '+topPctCls+'" title="'+topPctTitle+'">'+fmtPct(topPct,1)+'</span>'
+        : '';
+
+      // Chip inline row: hanya price + suffix % (Potensi/Floating/Jarak
+      // TIDAK muncul lagi di sini — pindah ke chip suffix / top-right).
       var chips = ''
         + '<span class="tr-rec-chip"><span class="k">Entry</span><span class="v">'+fmtN(r.entry)+'</span></span>'
-        + '<span class="tr-rec-chip tp1"><span class="k">TP1</span><span class="v">'+fmtN(r.tp1)+'</span></span>'
-        + (r.tp2 ? '<span class="tr-rec-chip tp2"><span class="k">TP2</span><span class="v">'+fmtN(r.tp2)+'</span></span>' : '')
-        + '<span class="tr-rec-chip sl"><span class="k">Stoploss</span><span class="v">'+fmtN(r.sl)+'</span></span>'
-        + (potPct==null ? '' : '<span class="tr-rec-chip"><span class="k">Potensi</span><span class="v" style="color:'+potColor+'">'+potStr+'</span></span>')
-        + extraChip;
+        + '<span class="tr-rec-chip tp1"><span class="k">TP1</span><span class="v">'+fmtN(r.tp1)+_pctSuffix(tp1PctV)+'</span></span>'
+        + (r.tp2 ? '<span class="tr-rec-chip tp2"><span class="k">TP2</span><span class="v">'+fmtN(r.tp2)+_pctSuffix(tp2PctV)+'</span></span>' : '')
+        + '<span class="tr-rec-chip sl"><span class="k">Stoploss</span><span class="v">'+fmtN(r.sl)+_pctSuffix(slPctV)+'</span></span>';
+
       var dateStr = '📅 '+esc(fmtLongDate(r.openDate))+(r.exitDate?(' → '+esc(fmtLongDate(r.exitDate))):'');
       var sectorStr = r.sector ? ' · '+esc(r.sector) : '';
       // data-recid → capture-phase handler di IIFE __TR_showRec akan otomatis
@@ -6376,10 +6400,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       return '<div class="tr-rec tr-rec--slim" data-recid="'+esc(r.id||'')+'" title="Klik utk detail rekomendasi '+tk+'" style="cursor:pointer">'
         + '<div class="tr-rec-top">'
           + '<div style="min-width:0;display:flex;align-items:center;gap:2px;flex-wrap:wrap"><span class="tr-rec-tk">'+tk+'</span>'+analyst+'</div>'
-          + '<span class="tr-rec-b '+badgeCls+'">'+(buy?'BUY':'SELL')+'</span>'
+          + '<div class="tr-rec-top-r">'+topPctHtml+'<span class="tr-rec-b '+badgeCls+'">'+(buy?'BUY':'SELL')+'</span></div>'
         + '</div>'
         + '<div class="tr-rec-inline">'+chips+'</div>'
-        + '<div class="tr-rec-d"><span>'+dateStr+sectorStr+'</span><span class="'+st.cls+'">'+st.lbl+pnlStr+'</span></div>'
+        + '<div class="tr-rec-d"><span>'+dateStr+sectorStr+'</span><span class="'+st.cls+'">'+st.lbl+'</span></div>'
       + '</div>';
     }).join('');
   }
