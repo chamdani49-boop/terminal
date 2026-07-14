@@ -2529,10 +2529,16 @@ body.tr-admin .bottom-nav-item.tr-menu{display:flex !important}
 /* KPI row */
 .tr-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 @media(max-width:800px){.tr-kpi-row{grid-template-columns:repeat(2,1fr)}}
-/* Firm profile: 5 KPI cards (WR, Net, Profit Tertinggi, Cutloss Terendah, Total).
-   Auto-fit biar rapih di layar sempit (sidebar 300px + detail column). */
-#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-@media(max-width:900px){#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(2,1fr)}}
+/* Firm profile: 6 KPI cards (WR, Net, Floating Berjalan, Profit, Cutloss, Total).
+   Auto-fit dgn min 140px supaya 6 card MUAT sejajar 1 row di detail column
+   (~840px). Padding + font-size di card juga dikecilkan biar lebih ramping. */
+#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+#trMdetPanel .tr-kpi{padding:12px 11px}
+#trMdetPanel .tr-kpi .k{font-size:9.5px;letter-spacing:.4px}
+#trMdetPanel .tr-kpi .v{font-size:20px;letter-spacing:-.4px}
+#trMdetPanel .tr-kpi .s{font-size:10px;line-height:1.35}
+@media(max-width:1200px){#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){#trMdetPanel .tr-kpi-row{grid-template-columns:repeat(2,1fr)}}
 .tr-kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
 .tr-kpi.hi{background:linear-gradient(135deg,rgba(124,58,237,.14),var(--card) 65%);border-color:rgba(124,58,237,.35)}
 .tr-kpi .k{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;letter-spacing:.5px;font-weight:600}
@@ -5089,7 +5095,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-kpi">
             <div class="k">NET RETURN</div>
             <div class="v" id="trPfKpiNet">+0%</div>
-            <div class="s tr-neu" id="trPfKpiNetSub">Kumulatif · mode aktif</div>
+            <div class="s tr-neu" id="trPfKpiNetSub">Kumulatif realized · mode aktif</div>
+          </div>
+          <div class="tr-kpi">
+            <div class="k">FLOATING BERJALAN</div>
+            <div class="v" id="trPfKpiFloat">—</div>
+            <div class="s tr-neu" id="trPfKpiFloatSub">Akumulasi rec aktif · realtime</div>
           </div>
           <div class="tr-kpi">
             <div class="k">PROFIT TERTINGGI</div>
@@ -5828,6 +5839,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return { total:total, wins:wins, wr:wr, net:net, avg:avg, best:best, worst:worst, bestRec:bestRec, worstRec:worstRec };
   }
 
+  // AKUMULASI floating dari SEMUA rec aktif (state TRIGGERED, position open,
+  // belum kena SL/TP2). Bukan rata2 — SUM langsung.
+  // Setiap rec pakai base sesuai entry mode (entry/haka) via getModeFloating.
+  // Rec yg base-nya tak tersedia (mis. entry mode + belum sentuh entry) di-skip.
+  function computeActiveFloatingSum(firm, entryMode){
+    var recs = firm && firm.recsActive || [];
+    var sum = 0, count = 0;
+    recs.forEach(function(r){
+      var fl = getModeFloating(r, entryMode);
+      if(Number.isFinite(fl)){
+        sum += fl;
+        count++;
+      }
+    });
+    return { sum: sum, count: count, total: recs.length };
+  }
+
   // Label & keterangan tiap dimensi mode. entry+haka = Metode Entry group.
   // tp1+tp2 = Target Exit group. Popup keterangan pakai key ini.
   var MODE_LABEL = {
@@ -5889,7 +5917,29 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if(!st.total){ netEl.textContent='—'; netEl.className='v'; }
       else { netEl.textContent=fmtPct(st.net); netEl.className='v '+(st.net>=0?'tr-up':'tr-dn'); }
     }
-    $id('trPfKpiNetSub').textContent = 'Mode: '+comboLabel();
+    $id('trPfKpiNetSub').textContent = 'Kumulatif realized · '+comboLabel();
+
+    // FLOATING BERJALAN — akumulasi floating dari rec aktif (state TRIGGERED)
+    var _fl = computeActiveFloatingSum(firm, _entryMode);
+    var flEl = $id('trPfKpiFloat');
+    if(flEl){
+      if(_fl.count === 0){
+        flEl.textContent = '—';
+        flEl.className = 'v';
+      } else {
+        flEl.textContent = fmtPct(_fl.sum, 2);
+        flEl.className = 'v '+(_fl.sum>=0?'tr-up':'tr-dn');
+      }
+    }
+    var flSub = $id('trPfKpiFloatSub');
+    if(flSub){
+      if(_fl.count === 0){
+        flSub.textContent = 'Belum ada rec aktif ('+_fl.total+' total)';
+      } else {
+        var _skipInfo = _fl.total > _fl.count ? ' · '+_fl.count+'/'+_fl.total : '';
+        flSub.textContent = 'Σ '+_fl.count+' aktif · '+getBaseLabelForMode(_entryMode)+_skipInfo;
+      }
+    }
 
     var bestEl = $id('trPfKpiBest');
     if(bestEl){
@@ -6752,13 +6802,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
   });
 
   // Realtime refresh — polling dashboard sudah update DATA.live tiap menit.
-  // Kita re-render rec list tiap 30s ketika firm profile visible supaya
-  // chip Floating/Jarak selalu sinkron dgn 'sheet live' terkini. Tidak
-  // re-render chart karena expensive & tidak sensitive ke live tick.
+  // Tiap 30s ketika firm profile visible: re-render KPI (buat Floating
+  // Berjalan yg akumulasi live) + rec list (chip floating/live price
+  // samping ticker). Chart tidak re-render karena expensive & tidak
+  // sensitive ke live tick.
   setInterval(function(){
     var panel = document.getElementById('trMdetPanel');
     if(panel && panel.style.display !== 'none' && _currentFirm){
-      try{ renderRecList(_currentFirm, _currentTab); }catch(_){}
+      try{
+        renderKpi(_currentFirm);        // update Floating Berjalan card
+        renderModeStats(_currentFirm);
+        renderRecList(_currentFirm, _currentTab);
+      }catch(_){}
     }
   }, 30000);
 })();
