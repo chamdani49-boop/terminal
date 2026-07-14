@@ -3103,8 +3103,14 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-anl-recs-table td.tr-anl-idx{font-family:'IBM Plex Mono',monospace;text-align:center;color:var(--text3);font-weight:600;width:36px;font-size:11px}
 .tr-anl-recs-table tbody tr:hover td.tr-anl-idx{color:var(--text)}
 /* Firm name clickable → buka firm profile di tab Analis (bukan modal rec) */
-.tr-anl-firm-link{color:var(--accent,#c4a3ff);cursor:pointer;font-weight:600;text-decoration:none;border-bottom:1px dashed transparent;transition:border-color .15s,color .15s;padding:1px 0}
+.tr-anl-firm-link{color:var(--accent,#c4a3ff);cursor:pointer;font-weight:600;text-decoration:none;border-bottom:1px dashed transparent;transition:border-color .15s,color .15s;padding:1px 0;white-space:normal;word-break:break-word;line-height:1.25}
 .tr-anl-firm-link:hover{color:#e0c7ff;border-bottom-color:currentColor}
+/* Nama firm di Tracker: tampilkan LENGKAP (mis. "Bahana Sekuritas"). Kalau
+   container sempit → font auto-shrink & boleh wrap 2 baris. Semua container
+   pakai title tooltip (via data attr) untuk hover-preview. */
+.tr-live-card-firm{word-break:break-word;white-space:normal}
+.tr-live-card-firm b{font-size:clamp(11px,1.05vw,13px);word-break:break-word;line-height:1.25}
+.tr-perf-firm-name{font-size:clamp(12px,1.15vw,15px);word-break:break-word;line-height:1.2}
 
 .tr-anl-empty{text-align:center;padding:32px 16px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
 
@@ -5576,7 +5582,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function fmtN(n){ return (n == null || !Number.isFinite(+n)) ? '—' : Number(n).toLocaleString('id-ID'); }
   function fmtPct(n, opts){ if (n == null || !Number.isFinite(+n)) return '—'; var v=+n, dec=(opts&&opts.dec!=null)?opts.dec:2; return (v>=0?'+':'')+v.toFixed(dec)+'%'; }
   function fmtShortDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }catch(_){ return String(iso); } }
-  function firmShort(name){ if(!name) return '—'; return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim(); }
+  // firmShort: nama Sekuritas ditulis lengkap (bukan Sek.); hanya strip PT/Tbk.
+  function firmShort(name){ if(!name) return '—'; return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim(); }
   function getData(){ try{ return (window.__TR_getData && window.__TR_getData()) || window.__TR_DATA__ || null; }catch(_){ return null; } }
   function firmLabel(r){ var f=r&&r.firm&&String(r.firm).trim(); return f?f:(r&&r.analyst?String(r.analyst).trim():'—'); }
 
@@ -5862,7 +5869,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function fmtShortDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}); }catch(_){ return String(iso); } }
   // Format panjang utk rec list: "13 Juli 2026". Chart axis tetap pakai fmtShortDate.
   function fmtLongDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}); }catch(_){ return String(iso); } }
-  function firmShort(name){ if(!name) return '—'; return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim(); }
+  // firmShort: JANGAN singkat "Sekuritas" → "Sek." (permintaan user).
+  // Cukup strip prefix "PT " dan suffix " Tbk"; nama Sekuritas tetap
+  // ditulis lengkap. Kalau container sempit → CSS yang atur (font shrink
+  // / word-wrap / ellipsis dgn title tooltip).
+  function firmShort(name){ if(!name) return '—'; return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim(); }
   function initials(s){ if(!s) return '🏢'; var parts=String(s).replace(/PT\s*/i,'').trim().split(/\s+/); var a=(parts[0]||'')[0]||''; var b=(parts[1]||'')[0]||''; return (a+b).toUpperCase()||'🏢'; }
   function getData(){ try{ return (window.__TR_getData && window.__TR_getData()) || window.__TR_DATA__ || null; }catch(_){ return null; } }
   function trColors(){
@@ -7920,7 +7931,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
 (function(){
   function $id(x){ return document.getElementById(x); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
-  function firmShort(name){ if(!name) return '—'; return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sek.').replace(/\s+Sekuritas\b/i,' Sek.').trim(); }
+  // firmShort: nama Sekuritas ditulis lengkap (bukan Sek.); hanya strip PT/Tbk.
+  function firmShort(name){ if(!name) return '—'; return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim(); }
   function initials(s){ if(!s) return '🏢'; var parts=String(s).replace(/PT\s*/i,'').trim().split(/\s+/); var a=(parts[0]||'')[0]||''; var b=(parts[1]||'')[0]||''; return (a+b).toUpperCase()||'🏢'; }
   function fmtPct(n,dec){ if(n==null||!Number.isFinite(+n)) return '—'; var v=+n; var d=(dec==null)?2:dec; return (v>=0?'+':'')+v.toFixed(d)+'%'; }
   function fmtWr(n){ if(n==null||!Number.isFinite(+n)) return '—'; return (+n).toFixed(1)+'%'; }
@@ -8161,7 +8173,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
 (function(){
   function $id(x){ return document.getElementById(x); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
-  function firmShort(name){ if(!name) return '—'; return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sek. Indonesia').replace(/\s+Sekuritas\b/i,' Sek.').trim(); }
+  // firmShort: nama Sekuritas ditulis lengkap; hanya strip PT/Tbk.
+  function firmShort(name){ if(!name) return '—'; return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim(); }
   function fmtPct(n,dec){ if(n==null||!Number.isFinite(+n)) return '—'; var v=+n; var d=(dec==null)?2:dec; return (v>=0?'+':'')+v.toFixed(d)+'%'; }
   function fmtWr(n){ if(n==null||!Number.isFinite(+n)) return '—'; return (+n).toFixed(1)+'%'; }
 
@@ -8325,7 +8338,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function pctClass(v){ return v > 0 ? 'up' : (v < 0 ? 'dn' : ''); }
   function firmShort(name){
     if (!name) return '—';
-    return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim();
+    // Sekuritas ditulis lengkap; hanya strip prefix PT / suffix Tbk.
+    return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
   }
 
   // ── Toggle pending vs content ──
@@ -8906,7 +8920,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   function firmShort(name){
     if (!name) return '—';
-    return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim();
+    // Sekuritas ditulis lengkap; hanya strip prefix PT / suffix Tbk.
+    return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
   }
   function rankBadge(i){
     if (i === 0) return '🥇 #1';
@@ -9248,7 +9263,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   function firmShort(name){
     if (!name) return '—';
-    return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim();
+    // Sekuritas ditulis lengkap; hanya strip prefix PT / suffix Tbk.
+    return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
   }
   function initials(name){
     if (!name) return '?';
@@ -9473,7 +9489,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   function firmShort(name){
     if (!name) return '—';
-    return String(name).replace(/PT\s*/i,'').replace(/\s+Sekuritas\s+Indonesia\b/i,' Sekuritas').replace(/\s+Sekuritas\b/i,' Sek.').trim();
+    // Sekuritas ditulis lengkap; hanya strip prefix PT / suffix Tbk.
+    return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
   }
   function initials(name){
     if (!name) return '?';

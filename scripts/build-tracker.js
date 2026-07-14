@@ -381,6 +381,60 @@ function parseHorizonDays(v) {
   return 30;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// CANONICAL FIRM NAME — normalisasi nama sekuritas
+// ─────────────────────────────────────────────────────────────────────────
+// Nama sekuritas di Sheet sering di-input tidak konsisten:
+//   - "RHB Sekuritas" vs "RHB Sekuritas Indonesia" (harus jadi 1 firm)
+//   - "PHINTRACO SEKURITAS" vs "Phintraco Sekuritas" (beda case → 1 firm)
+//   - "PT Reliance Sekuritas Indonesia Tbk" (PT + Tbk = noise → strip)
+//   - "CGS International" vs "CGS International Sekuritas Indonesia" (1 firm)
+// Tapi HATI-HATI ada brand-prefix yang MEMBEDAKAN firm:
+//   - "Valbury Sekuritas" ≠ "KB Valbury Sekuritas" (KB = distinct brand)
+//
+// STRATEGI:
+//   canonicalFirmKey(): UPPERCASE, strip "PT " prefix, " Tbk" suffix,
+//     " Sekuritas Indonesia" / " Sekuritas" suffix, " Indonesia" suffix.
+//     Prefix brand (KB, BRI, BNI, dll) TIDAK di-strip → tetap distinct.
+//   canonicalFirmDisplay(): strip "PT " prefix + " Tbk" suffix saja
+//     (case & rest preserved) — untuk display name yang bersih.
+//   pickBestDisplay(): dari kumpulan varian dengan canonical-key sama,
+//     pilih yg terbaik: non-ALL-CAPS dulu, lalu paling panjang, lalu
+//     alphabetical. → "RHB Sekuritas Indonesia" menang atas "RHB Sekuritas";
+//     "Phintraco Sekuritas" menang atas "PHINTRACO SEKURITAS".
+// ─────────────────────────────────────────────────────────────────────────
+function canonicalFirmKey(name) {
+  if (!name) return '';
+  let s = String(name).trim().toUpperCase();
+  s = s.replace(/^PT\s+/, '');
+  s = s.replace(/[.,]/g, ' ');
+  s = s.replace(/\s+TBK$/, '');
+  s = s.replace(/\s+SEKURITAS(\s+INDONESIA)?$/, '');
+  s = s.replace(/\s+INDONESIA$/, '');
+  return s.replace(/\s+/g, ' ').trim();
+}
+function canonicalFirmDisplay(name) {
+  if (!name) return '';
+  let s = String(name).trim();
+  s = s.replace(/^PT\s+/i, '');
+  s = s.replace(/\s+Tbk\.?$/i, '');
+  return s.replace(/\s+/g, ' ').trim();
+}
+function pickBestDisplay(variants) {
+  const cleaned = Array.from(new Set(
+    (variants || []).map(canonicalFirmDisplay).filter(Boolean)
+  ));
+  if (!cleaned.length) return '';
+  cleaned.sort((a, b) => {
+    const aAllUp = a === a.toUpperCase() && /[A-Z]/.test(a);
+    const bAllUp = b === b.toUpperCase() && /[A-Z]/.test(b);
+    if (aAllUp !== bAllUp) return aAllUp ? 1 : -1; // non-caps first
+    if (a.length !== b.length) return b.length - a.length; // longer first
+    return a.localeCompare(b);
+  });
+  return cleaned[0];
+}
+
 function normalizeRow(row) {
   if (!row || typeof row !== 'object') return null;
   const analyst = String(row.analis || '').trim();
@@ -1044,6 +1098,43 @@ async function main() {
   // Normalisasi rows
   const recsRaw = (sheet.items || []).map(normalizeRow).filter(Boolean);
   console.log(`  normalized ${recsRaw.length}/${(sheet.items||[]).length} rows`);
+
+  // ── Canonical firm merge: gabungkan varian nama sekuritas yg
+  //    seharusnya 1 firm (mis. "RHB Sekuritas" + "RHB Sekuritas Indonesia"
+  //    → 1 firm). Prefix brand (KB Valbury vs Valbury) tetap terpisah.
+  //    Setelah rewrite, idOf(rec.firm) otomatis produce firmId yg sama
+  //    untuk semua varian → aggregation menyatu dengan sendirinya.
+  const firmVariantsByKey = new Map();
+  for (const rec of recsRaw) {
+    const key = canonicalFirmKey(rec.firm);
+    if (!key) continue;
+    if (!firmVariantsByKey.has(key)) firmVariantsByKey.set(key, new Set());
+    firmVariantsByKey.get(key).add(rec.firm);
+  }
+  const firmDisplayByKey = new Map();
+  for (const [key, variants] of firmVariantsByKey) {
+    firmDisplayByKey.set(key, pickBestDisplay([...variants]));
+  }
+  let firmMergeLogged = false;
+  const mergeSummary = [];
+  for (const [key, variants] of firmVariantsByKey) {
+    if (variants.size > 1) {
+      const arr = [...variants];
+      const chosen = firmDisplayByKey.get(key);
+      mergeSummary.push(`    ${chosen}  ⇐  [${arr.join(' | ')}]`);
+      firmMergeLogged = true;
+    }
+  }
+  if (firmMergeLogged) {
+    console.log('  ✓ Firm canonical merge:');
+    mergeSummary.forEach(s => console.log(s));
+  }
+  // Rewrite rec.firm ke display kanonik
+  for (const rec of recsRaw) {
+    const key = canonicalFirmKey(rec.firm);
+    const disp = firmDisplayByKey.get(key);
+    if (disp) rec.firm = disp;
+  }
 
   // Diagnostik: kenapa baris ditolak + ticker tanpa harga (ohlc).
   const rejectDiag = diagnoseRejections(sheet.items || [], ohlc);
