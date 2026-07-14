@@ -14737,25 +14737,51 @@ function linearRegression(arr) {
 function ptSigmaTriggers(code) {
   const ph = DATA.price_history;
   if (!ph || !ph.length) return null;
-  const last = ph[ph.length - 1];
-  const st   = DATA.stats ? DATA.stats[code] : null;
-  const price = (last && last[code]) || (st ? st.current : 0);
-  const stPT = getStatsMerged(code) || {};
-  const avgAnnual = Number.isFinite(stPT.avg_annual) ? stPT.avg_annual : 0;
-  const stdAnnual = (Number.isFinite(stPT.std_annual) && stPT.std_annual > 0) ? stPT.std_annual : 0;
+
+  // Read as-of date state (localStorage) — supaya garis BELI/JUAL di chart
+  // ikut update saat user pilih tgl di blueprint (as-of mode).
+  const lsDateIdx = localStorage.getItem(`econ-pt-dateidx-${code}`);
+  const asOfIdx = (lsDateIdx != null && Number.isFinite(+lsDateIdx) && +lsDateIdx >= 0 && +lsDateIdx < ph.length)
+    ? +lsDateIdx : ph.length - 1;
+  const isDated = asOfIdx < ph.length - 1;
+
+  let price, avgAnnual, stdAnnual;
+  if (isDated && typeof recomputeStatsUpTo === 'function') {
+    const dated = recomputeStatsUpTo(code, asOfIdx);
+    if (!dated) return null;
+    price     = dated.current;
+    avgAnnual = dated.avg_annual;
+    stdAnnual = dated.std_annual;
+  } else {
+    const last = ph[ph.length - 1];
+    const st   = DATA.stats ? DATA.stats[code] : null;
+    price = (last && last[code]) || (st ? st.current : 0);
+    const stPT = getStatsMerged(code) || {};
+    avgAnnual = Number.isFinite(stPT.avg_annual) ? stPT.avg_annual : 0;
+    stdAnnual = (Number.isFinite(stPT.std_annual) && stPT.std_annual > 0) ? stPT.std_annual : 0;
+  }
   if (!price || !stdAnnual) return null;
+
   const lsB = localStorage.getItem(`econ-pt-bsig-${code}`);
   const lsS = localStorage.getItem(`econ-pt-ssig-${code}`);
   const buySig  = lsB != null ? parseFloat(lsB) : 2;
   const sellSig = lsS != null ? parseFloat(lsS) : 1;
   const buyPrice  = price * (1 + avgAnnual - (Number.isFinite(buySig)  ? buySig  : 2) * stdAnnual);
   const sellPrice = price * (1 + avgAnnual + (Number.isFinite(sellSig) ? sellSig : 1) * stdAnnual);
-  return { price, buyPrice, sellPrice };
+  return { price, buyPrice, sellPrice, asOfIdx: asOfIdx, isDated: isDated };
 }
 
 function renderChart(code) {
   let stockData = getStockData(code);
-  const ph = DATA.price_history;
+  const phFull = DATA.price_history || [];
+
+  // AS-OF date mode: kalau user pilih tgl di blueprint (localStorage
+  // 'econ-pt-dateidx-{code}'), truncate price_history sampai tgl itu supaya
+  // chart PRICE LINE juga ikut berubah — bukan cuma garis BELI/JUAL.
+  const lsDateIdx = localStorage.getItem(`econ-pt-dateidx-${code}`);
+  const asOfIdx = (lsDateIdx != null && Number.isFinite(+lsDateIdx) && +lsDateIdx >= 0 && +lsDateIdx < phFull.length)
+    ? +lsDateIdx : phFull.length - 1;
+  const ph = (asOfIdx < phFull.length - 1) ? phFull.slice(0, asOfIdx + 1) : phFull;
 
   // Get IHSG data aligned with period
   let months = currentPeriod > 0 ? currentPeriod : ph.length;
@@ -15293,7 +15319,11 @@ function updatePtDate(code, forceIdx) {
   } else {
     localStorage.setItem(`econ-pt-dateidx-${code}`, String(idx));
   }
+  // Full re-render: blueprint (harga + BELI/JUAL) + chart (price line
+  // truncated ke as-of + BELI/JUAL lines shifted). Sekarang chart IKUT
+  // berubah, sama seperti saat user ubah angka σ Batas Beli/Jual.
   renderPriceTarget(code);
+  if (typeof renderChart === 'function') renderChart(code);
 }
 
 // Update trigger signal — return-based (konsisten dengan rumus Excel).
