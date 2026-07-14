@@ -2728,6 +2728,19 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-rec-sort.asc .arr{transform:scaleY(-1);opacity:1;color:var(--accent)}
 .tr-pf-rec-sort.desc .arr{opacity:1;color:var(--accent)}
 
+/* Row 2: date chips — kolom kecil tiap tgl unique, klik filter list.
+   Chip pertama = "🌐 All Rekomendasi" (reset SEMUA filter, termasuk state tab). */
+.tr-pf-rec-datechips{display:flex;gap:5px;padding:2px 0 4px;overflow-x:auto;scrollbar-width:none;margin-bottom:9px;align-items:center}
+.tr-pf-rec-datechips::-webkit-scrollbar{display:none}
+.tr-pf-rec-datechip{padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;display:inline-flex;align-items:center;gap:5px;font-family:inherit;letter-spacing:.1px}
+.tr-pf-rec-datechip:hover{background:var(--bg2);color:var(--text);border-color:rgba(124,58,237,.4)}
+.tr-pf-rec-datechip.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(124,58,237,.22)}
+.tr-pf-rec-datechip .count{font-size:9.5px;opacity:.75;font-weight:600;font-family:'IBM Plex Mono',monospace}
+.tr-pf-rec-datechip.reset{border-style:dashed;border-color:rgba(124,58,237,.35)}
+.tr-pf-rec-datechip.reset:hover{border-style:solid}
+.tr-pf-rec-datechip.reset.active{border-style:solid}
+.tr-pf-rec-datechips-empty{color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px}
+
 /* ── Slim variant .tr-rec (dipakai di halaman detail sekuritas — Rekomendasi Sekuritas) ── */
 .tr-rec-list.slim{gap:6px}
 .tr-rec--slim{padding:8px 11px;border-radius:9px}
@@ -5110,6 +5123,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           </div>
           <button type="button" class="tr-pf-rec-sort" id="trPfRecSort" title="Ubah urutan tanggal" aria-label="Urutan tanggal rekomendasi">📅 <span id="trPfRecSortLbl">Terbaru</span> <span class="arr">⇅</span></button>
         </div>
+        <div class="tr-pf-rec-datechips" id="trPfRecDateChips" role="tablist" aria-label="Filter tanggal rekomendasi"></div>
         <div class="tr-rec-list slim" id="trPfRecList"></div>
 
         <div class="tr-disclaimer">
@@ -6022,6 +6036,55 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   // Sort direction untuk daftar rec: 'desc' (Terbaru dulu) atau 'asc' (Terlama).
   var _recSortDir = 'desc';
+  // Date filter: null = semua tgl, atau ISO date string 'YYYY-MM-DD' utk filter spesifik.
+  var _dateFilter = null;
+
+  // Format tgl utk chip: '13 Jul' (short, no year — hemat ruang chip).
+  function fmtChipDate(iso){
+    if(!iso) return '—';
+    var d = new Date(iso); if(isNaN(d.getTime())) return String(iso);
+    try{ return d.toLocaleDateString('id-ID', {day:'numeric', month:'short'}); }
+    catch(_){ return String(iso); }
+  }
+  // Renderer chip tanggal — dipanggil per firm open dan setelah _dateFilter berubah.
+  function renderDateChips(firm){
+    var el = $id('trPfRecDateChips'); if(!el) return;
+    // Kumpulkan semua rec dari semua bucket → hitung frekuensi per openDate.
+    var allRecs = (firm.recsActive||[])
+      .concat(firm.recsPending||[])
+      .concat(firm.recsMissed||[])
+      .concat(firm.recsHistory||[]);
+    var byDate = {};
+    allRecs.forEach(function(r){
+      var d = r && r.openDate;
+      if(!d) return;
+      byDate[d] = (byDate[d]||0) + 1;
+    });
+    var dates = Object.keys(byDate).sort(function(a,b){ return b.localeCompare(a); });  // desc: terbaru dulu
+    var total = allRecs.length;
+
+    var chips = [];
+    // Chip pertama: reset semua filter (state tab + date)
+    chips.push(
+      '<button type="button" class="tr-pf-rec-datechip reset'+(_dateFilter==null?' active':'')+'" '
+      + 'data-date-filter="" role="tab" aria-selected="'+(_dateFilter==null?'true':'false')+'" '
+      + 'title="Tampilkan semua rekomendasi (reset semua filter)">'
+      + '🌐 All Rekomendasi <span class="count">('+total+')</span></button>'
+    );
+    dates.forEach(function(d){
+      var isActive = _dateFilter === d;
+      chips.push(
+        '<button type="button" class="tr-pf-rec-datechip'+(isActive?' active':'')+'" '
+        + 'data-date-filter="'+esc(d)+'" role="tab" aria-selected="'+(isActive?'true':'false')+'" '
+        + 'title="Filter ke rekomendasi tgl '+esc(fmtLongDate(d))+'">'
+        + esc(fmtChipDate(d))+' <span class="count">('+byDate[d]+')</span></button>'
+      );
+    });
+    if(!dates.length){
+      chips.push('<span class="tr-pf-rec-datechips-empty">Belum ada tanggal rekomendasi</span>');
+    }
+    el.innerHTML = chips.join('');
+  }
 
   function _recHitTP1(r){
     var hits = r && r.tpHits || [];
@@ -6071,6 +6134,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       case 'tp2':     list = histTP2; break;
       case 'all':
       default:        list = actList.concat(missList).concat(pendList).concat(histList); break;
+    }
+    // Apply date filter (kalau user klik chip tgl spesifik). null = semua tgl.
+    if(_dateFilter){
+      list = list.filter(function(r){ return String(r.openDate||'') === _dateFilter; });
     }
     list = _sortByDate(list, _recSortDir);
 
@@ -6177,6 +6244,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(sortBtn){ sortBtn.classList.remove('asc'); sortBtn.classList.add('desc'); }
     var sortLbl = document.getElementById('trPfRecSortLbl');
     if(sortLbl) sortLbl.textContent = 'Terbaru';
+    // Reset date filter + render chips
+    _dateFilter = null;
+    renderDateChips(firm);
 
     // Reveal panel, hide hint
     var hint = document.getElementById('trMdetHint');
@@ -6271,6 +6341,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
     renderRecList(_currentFirm, _currentTab);
   }
 
+  // Apply date filter (klik chip). Kalau isReset=true, juga reset state tab
+  // ke 'all' (chip "All Rekomendasi" = master reset).
+  function applyDateFilter(dateOrNull, isReset){
+    if(!_currentFirm) return;
+    _dateFilter = dateOrNull;
+    if(isReset){
+      _currentTab = 'all';
+      syncRecTabButtons();
+    }
+    // Refresh chip active state + rec list
+    renderDateChips(_currentFirm);
+    renderRecList(_currentFirm, _currentTab);
+  }
+
   // ── Global overrides & delegates ───────────────────
   window.__TR_openFirmPage = openFirmPage;
   window.__TR_openFirm = openFirmPage;  // override drawer.__TR_openFirm
@@ -6304,6 +6388,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     // 4) Sort toggle tanggal rec (Terbaru ⇄ Terlama)
     if(t.closest('#trPfRecSort')){ e.preventDefault(); toggleRecSort(); return; }
+
+    // 5) Chip tanggal filter — data-date-filter attribute
+    var dchip = t.closest('#trPfRecDateChips .tr-pf-rec-datechip');
+    if(dchip){
+      e.preventDefault();
+      var df = dchip.getAttribute('data-date-filter') || '';
+      applyDateFilter(df || null, dchip.classList.contains('reset'));
+      return;
+    }
 
     // 4) Tombol close modal
     if(t.closest('#trPfModeModalClose')){ e.preventDefault(); closeModeModal(); return; }
