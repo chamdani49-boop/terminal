@@ -8597,44 +8597,40 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Render IHSG ticker ──
-  // Prioritas sumber data (LIVE dulu, snapshot terakhir):
-  //   1. window.DATA.live.IHSG (feed real-time dari sheet Live, refresh
-  //      per menit — dipakai dashboard). LEBIH REALTIME → user req.
-  //   2. window.DATA.stats.IHSG.current (fallback dari data.json).
-  //   3. data.ihsg (snapshot Yahoo Finance dari tracker.json — paling lama).
-  //
-  // CATATAN PENTING: change_pct di DATA.live[code] dan DATA.stats[code].change_pct_live
-  // disimpan sbg FRACTION (0.0025 = 0.25%), bukan percent. Harus DIKALI 100
-  // sebelum di-display. Bug sebelumnya: tracker treat sbg percent → tampil
-  // '+0.00%' padahal harusnya '+0.25%'. Lihat comment line 5784 di dashboard.
+  // Value harus PERSIS SAMA dgn IHSG di dashboard stockTicker (running bar
+  // atas). Logic disalin identik dari buildStockTicker() supaya 100% match:
+  //   - price = DATA.price_history[last][IHSG] (baris bulanan, di-overlay live
+  //     kalau IHSG masuk feed live via _overlayLiveInto)
+  //   - chg%  = stats.change_pct_live ?? DATA.live.IHSG.change_pct ?? stats.mom
+  //     (semua FRACTION — 0.0025 = 0.25%, harus ×100 utk display).
+  // Fallback ke tracker.json.ihsg hanya kalau DATA belum ready.
   function renderIhsg(data){
     var px = $('trLiveIhsgPx'); var chg = $('trLiveIhsgChg');
-    // Cari sumber terbaik untuk price + change%
     var price = null, chgPct = null;
     try {
       var D = window.DATA;
-      if (D) {
-        // 1) DATA.live.IHSG — feed live dashboard (paling realtime).
-        //    change_pct disimpan sbg fraction → ×100 utk display.
-        if (D.live && D.live.IHSG && Number.isFinite(D.live.IHSG.price) && D.live.IHSG.price > 0) {
-          price = D.live.IHSG.price;
-          if (Number.isFinite(D.live.IHSG.change_pct)) chgPct = D.live.IHSG.change_pct * 100;
+      if (D && Array.isArray(D.price_history) && D.price_history.length){
+        // Same source dgn dashboard stockTicker line 14994: lastMonth[IHSG].
+        // Ini value yg dashboard tampilkan di running ticker atas.
+        var lastMonth = D.price_history[D.price_history.length - 1] || {};
+        if (Number.isFinite(lastMonth.IHSG) && lastMonth.IHSG > 0) {
+          price = lastMonth.IHSG;
         }
-        // 2) DATA.stats.IHSG.current — post-overlay live (mirror dari
-        //    price_history.last row + change_pct_live juga fraction).
-        if (D.stats && D.stats.IHSG) {
-          if (price == null && Number.isFinite(D.stats.IHSG.current) && D.stats.IHSG.current > 0) {
-            price = D.stats.IHSG.current;
-          }
-          if (chgPct == null && Number.isFinite(D.stats.IHSG.change_pct_live)) {
-            chgPct = D.stats.IHSG.change_pct_live * 100;
-          }
+        // chg% priority PERSIS mirror dashboard buildStockTicker line 15005-15012:
+        //   stats.change_pct_live → DATA.live.change_pct → stats.mom
+        var st = (D.stats && D.stats.IHSG) || {};
+        if (Number.isFinite(st.change_pct_live)) {
+          chgPct = st.change_pct_live * 100;
+        } else if (D.live && D.live.IHSG && Number.isFinite(D.live.IHSG.change_pct)) {
+          chgPct = D.live.IHSG.change_pct * 100;
+        } else if (Number.isFinite(st.mom)) {
+          chgPct = st.mom * 100;
         }
       }
     } catch(_){}
-    // 3) Fallback ke snapshot tracker.json (Yahoo Finance daily).
-    //    tracker.json.ihsg.chgPct SUDAH dalam percent (backend build-tracker.js
-    //    hitung sbg %, bukan fraction) → TIDAK perlu ×100.
+    // Fallback terakhir: tracker.json snapshot (Yahoo daily, MUNGKIN BEDA
+    // dgn dashboard karena source berbeda). Hanya dipakai kalau DATA
+    // dashboard belum ter-load.
     if (price == null && data && data.ihsg && Number.isFinite(data.ihsg.last)) price = data.ihsg.last;
     if (chgPct == null && data && data.ihsg && Number.isFinite(data.ihsg.chgPct)) chgPct = data.ihsg.chgPct;
 
