@@ -3091,6 +3091,12 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-anl-recs-table td .st.missed{background:rgba(148,163,184,.14);color:#94a3b8;border:1px solid rgba(148,163,184,.35)}
 .tr-anl-recs-table td.pnl.up{color:var(--green);font-weight:700}
 .tr-anl-recs-table td.pnl.dn{color:var(--red);font-weight:700}
+/* Kolom nomor urut baris */
+.tr-anl-recs-table td.tr-anl-idx{font-family:'IBM Plex Mono',monospace;text-align:center;color:var(--text3);font-weight:600;width:36px;font-size:11px}
+.tr-anl-recs-table tbody tr:hover td.tr-anl-idx{color:var(--text)}
+/* Firm name clickable → buka firm profile di tab Analis (bukan modal rec) */
+.tr-anl-firm-link{color:var(--accent,#c4a3ff);cursor:pointer;font-weight:600;text-decoration:none;border-bottom:1px dashed transparent;transition:border-color .15s,color .15s;padding:1px 0}
+.tr-anl-firm-link:hover{color:#e0c7ff;border-bottom-color:currentColor}
 
 .tr-anl-empty{text-align:center;padding:32px 16px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
 
@@ -4730,11 +4736,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <table class="tr-anl-recs-table">
           <thead>
             <tr>
-              <th>Tanggal</th><th>Firm</th><th>Entry</th><th>TP1</th><th>TP2</th><th>SL</th><th>Status</th><th style="text-align:right">P&L</th>
+              <th style="width:36px;text-align:center">#</th><th>Tanggal</th><th>Firm</th><th>Entry</th><th>TP1</th><th>TP2</th><th>SL</th><th>Status</th><th style="text-align:right">P&L</th>
             </tr>
           </thead>
           <tbody id="trAnlRecsBody">
-            <tr><td colspan="8" class="tr-anl-empty">Pilih saham untuk melihat rekomendasi</td></tr>
+            <tr><td colspan="9" class="tr-anl-empty">Pilih saham untuk melihat rekomendasi</td></tr>
           </tbody>
         </table>
       </div>
@@ -10129,14 +10135,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Rec table ─────────────────────────────────────────────────────
+  // Kolom pertama = nomor urut (1,2,3,...) untuk navigasi visual. Firm
+  // dibungkus <span class="tr-anl-firm-link" data-firm-open="..."> supaya
+  // klik nama sekuritas BYPASS modal-rec dan langsung buka firm profile di
+  // tab Analis (via window.__TR_openFirm). Klik area lain baris tetap
+  // buka modal detail rekomendasi (overlay chart entry/TP/SL).
   function renderRecTable(recs){
     var tb = $('trAnlRecsBody'); if (!tb) return;
     if (!recs.length){
-      tb.innerHTML = '<tr><td colspan="8" class="tr-anl-empty">Belum ada rekomendasi untuk saham ini.</td></tr>';
+      tb.innerHTML = '<tr><td colspan="9" class="tr-anl-empty">Belum ada rekomendasi untuk saham ini.</td></tr>';
       return;
     }
     var sorted = recs.slice().sort(function(a,b){ return String(b.openDate||'').localeCompare(String(a.openDate||'')); });
-    tb.innerHTML = sorted.map(function(r){
+    tb.innerHTML = sorted.map(function(r, i){
       var st = statusOf(r);
       var stCls = st === 'TP' ? 'tp'
                 : st === 'SL' ? 'sl'
@@ -10147,9 +10158,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var p = pnlOf(r);
       var pCls = p==null ? '' : (p > 0 ? 'up' : p < 0 ? 'dn' : '');
       var pTxt = p==null ? '—' : fmtPct(p, 1);
+      // Firm link: fallback ke idOf(r.firm) kalau r.firmId belum ada
+      // (defensive — recs dari bucket lama mungkin tanpa firmId).
+      var firmName = r.firm || '';
+      var firmId   = r.firmId || (firmName ? String(firmName).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'') : '');
+      var firmHtml = firmId
+        ? '<span class="tr-anl-firm-link" data-firm-open="' + esc(firmId) + '" title="Buka profil ' + esc(firmName) + ' di tab Analis">' + esc(firmShort(firmName)) + '</span>'
+        : esc(firmShort(firmName));
       return '<tr data-recid="' + esc(r.id || '') + '">'
+        + '<td class="tr-anl-idx">' + (i + 1) + '</td>'
         + '<td class="n">' + esc(r.openDate || '—') + '</td>'
-        + '<td>' + esc(firmShort(r.firm)) + '</td>'
+        + '<td>' + firmHtml + '</td>'
         + '<td class="n">' + fmtN(r.entry) + '</td>'
         + '<td class="n">' + fmtN(r.tp1) + '</td>'
         + '<td class="n">' + fmtN(r.tp2) + '</td>'
@@ -10980,6 +10999,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (!e.target || !e.target.closest) return;
     // Skip klik di dalam modal itu sendiri (biar close button masih jalan)
     if (e.target.closest('.tr-recmodal-body')) return;
+
+    // Klik nama sekuritas (firm link) di tabel rec Analisis → BYPASS modal,
+    // langsung buka profil firm di tab Analis. Cek ini DULU sebelum
+    // data-recid supaya klik nama tidak trigger modal-rec.
+    var firmLink = e.target.closest('[data-firm-open]');
+    if (firmLink) {
+      var fid = firmLink.getAttribute('data-firm-open');
+      if (fid && typeof window.__TR_openFirm === 'function') {
+        e.stopPropagation();
+        e.preventDefault();
+        window.__TR_openFirm(fid);
+      }
+      return;
+    }
+
     var el = e.target.closest('[data-recid]');
     if (!el) return;
     var id = el.getAttribute('data-recid');
