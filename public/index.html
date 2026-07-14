@@ -2828,6 +2828,8 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-rec--slim .tr-rec-chip.sl .v{color:var(--red)}
 .tr-rec--slim .tr-rec-d{margin-top:5px;font-size:10px;gap:8px;flex-wrap:wrap}
 .tr-rec--slim .tr-rec-analyst{color:var(--text3);font-size:9.5px;margin-left:6px;font-weight:600}
+/* Nomor urut list di kiri ticker: 1, 2, 3, ... — cepat scan urutan */
+.tr-rec--slim .tr-rec-idx{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);font-weight:700;background:var(--bg2);border:1px solid var(--border);padding:1px 6px;border-radius:5px;min-width:22px;text-align:center;margin-right:6px;letter-spacing:-.2px}
 @media(max-width:700px){
   .tr-rec--slim{padding:7px 9px}
   .tr-rec--slim .tr-rec-chip{font-size:10px;padding:3px 8px;gap:5px}
@@ -6486,12 +6488,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
       el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:14px 4px;text-align:center">Belum ada rekomendasi di kategori ini.</div>';
       return;
     }
-    el.innerHTML = list.map(function(r){
+    el.innerHTML = list.map(function(r, _idx){
       var buy = isBuy(r);
       var isHistory = r._bucket === 'history';
       var isActive  = r._bucket === 'active';
       var isPending = r._bucket === 'pending';
       var isMissed  = r._bucket === 'missed';
+      var listNo    = _idx + 1;  // nomor urut 1..N
       var st = stateInfo(r, isHistory);
       var tk = esc(r.ticker||'');
       var analyst = r.analyst ? '<span class="tr-rec-analyst">· '+esc(r.analyst)+'</span>' : '';
@@ -6550,23 +6553,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
           topPctCls = _flt >= 0 ? 'up' : 'dn';
           topPctLabel = getBaseLabelForMode(_entryMode);
         }
-      } else if(isPending && _entryOk){
-        // Pending: BUKAN floating (posisi belum open), tapi JARAK dari harga
-        // sekarang ke entry — user bisa lihat seberapa dekat/jauh entry level.
-        // Styled yellow ('dist') + label kata 'jarak ke entry' → beda dgn
-        // active yg green/red 'beli di harga entry/open'.
-        var _live2 = getLive(r.ticker);
-        if(_live2.price != null){
-          var _rawD = ((_live2.price - +r.entry) / +r.entry) * 100;
-          topPct = buy ? _rawD : -_rawD;
-          topPctCls = 'dist';
-          topPctLabel = 'jarak ke entry';
-        } else if(Number.isFinite(+r.distanceToEntryPct)){
-          topPct = +r.distanceToEntryPct;
-          topPctCls = 'dist';
-          topPctLabel = 'jarak ke entry';
-        }
       }
+      // Pending: TIDAK ADA angka di top-right (per user request "jangan kasih
+      // angka floating"). Nomor urut list ditambahkan di kiri ticker sbg
+      // index visual (1, 2, 3, ...).
       var topPctHtml = '';
       if(topPct != null && Number.isFinite(topPct)){
         var _topTitle = isHistory ? 'P&L realized (mode aktif: '+comboLabel()+')'
@@ -6591,7 +6581,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       // buka pop-up seperti di Tab Live (chart candlestick + zona entry/TP/SL).
       return '<div class="tr-rec tr-rec--slim" data-recid="'+esc(r.id||'')+'" title="Klik utk detail rekomendasi '+tk+'" style="cursor:pointer">'
         + '<div class="tr-rec-top">'
-          + '<div style="min-width:0;display:flex;align-items:center;gap:2px;flex-wrap:wrap"><span class="tr-rec-tk">'+tk+'</span>'+tkLiveHtml+analyst+'</div>'
+          + '<div style="min-width:0;display:flex;align-items:center;gap:2px;flex-wrap:wrap"><span class="tr-rec-idx">'+listNo+'</span><span class="tr-rec-tk">'+tk+'</span>'+tkLiveHtml+analyst+'</div>'
           + '<div class="tr-rec-top-r">'+topPctHtml+'<span class="tr-rec-b '+badgeCls+'">'+(buy?'BUY':'SELL')+'</span></div>'
         + '</div>'
         + '<div class="tr-rec-inline">'+chips+'</div>'
