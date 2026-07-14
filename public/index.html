@@ -8583,20 +8583,60 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Render IHSG ticker ──
+  // Prioritas sumber data (LIVE dulu, snapshot terakhir):
+  //   1. window.DATA.live.IHSG (feed real-time dari sheet Live, refresh
+  //      per menit — dipakai dashboard). LEBIH REALTIME → user req.
+  //   2. window.DATA.stats.IHSG.current (fallback dari data.json).
+  //   3. data.ihsg (snapshot Yahoo Finance dari tracker.json — paling lama).
   function renderIhsg(data){
     var px = $('trLiveIhsgPx'); var chg = $('trLiveIhsgChg');
-    if (!data.ihsg) {
+    // Cari sumber terbaik untuk price + change%
+    var price = null, chgPct = null;
+    try {
+      var D = window.DATA;
+      if (D) {
+        // 1) DATA.live.IHSG — feed live dashboard (paling realtime)
+        if (D.live && D.live.IHSG && Number.isFinite(D.live.IHSG.price) && D.live.IHSG.price > 0) {
+          price = D.live.IHSG.price;
+          if (Number.isFinite(D.live.IHSG.change_pct)) chgPct = D.live.IHSG.change_pct;
+        }
+        // 2) DATA.stats.IHSG (change_pct_live sinkron dgn sheet Live)
+        if (D.stats && D.stats.IHSG) {
+          if (price == null && Number.isFinite(D.stats.IHSG.current) && D.stats.IHSG.current > 0) {
+            price = D.stats.IHSG.current;
+          }
+          if (chgPct == null && Number.isFinite(D.stats.IHSG.change_pct_live)) {
+            chgPct = D.stats.IHSG.change_pct_live;
+          }
+        }
+      }
+    } catch(_){}
+    // 3) Fallback ke snapshot tracker.json (Yahoo Finance daily)
+    if (price == null && data && data.ihsg && Number.isFinite(data.ihsg.last)) price = data.ihsg.last;
+    if (chgPct == null && data && data.ihsg && Number.isFinite(data.ihsg.chgPct)) chgPct = data.ihsg.chgPct;
+
+    if (price == null) {
       if (px) px.textContent = '—';
       if (chg) { chg.textContent = '—'; chg.style.color = 'var(--text3)'; }
       return;
     }
-    if (px) px.textContent = fmtN(Math.round(data.ihsg.last));
+    if (px) px.textContent = fmtN(Math.round(price));
     if (chg) {
-      var v = data.ihsg.chgPct;
-      chg.textContent = fmtPct(v, { dec: 2 });
-      chg.style.color = v >= 0 ? 'var(--green)' : 'var(--red)';
+      if (chgPct == null) { chg.textContent = '—'; chg.style.color = 'var(--text3)'; }
+      else {
+        chg.textContent = fmtPct(chgPct, { dec: 2 });
+        chg.style.color = chgPct >= 0 ? 'var(--green)' : 'var(--red)';
+      }
     }
   }
+  // Expose ke global agar dashboard applyLiveFeed bisa trigger refresh
+  // saat feed live baru masuk — LEBIH REALTIME dari snapshot tracker.json.
+  window.__TR_refreshIhsgLive = function(){
+    try {
+      var d = (window.__TR_getData && window.__TR_getData()) || window.__TR_DATA__ || {};
+      renderIhsg(d);
+    } catch(_){}
+  };
 
   // ── Render hero cards ──
   function renderHeroes(data){
@@ -12958,6 +12998,10 @@ function applyLiveFeed(live, fullRender) {
     };
     if (typeof requestIdleCallback === 'function') requestIdleCallback(idleFn, { timeout: 3000 });
     else setTimeout(idleFn, 500);
+    // Tracker Live tab ticker IHSG → sinkron dgn feed live (lebih realtime
+    // daripada snapshot Yahoo di tracker.json). Called via global helper
+    // yang di-expose di IIFE tracker Live.
+    try { if (typeof window.__TR_refreshIhsgLive === 'function') window.__TR_refreshIhsgLive(); } catch (_) {}
   }
   return n;
 }
