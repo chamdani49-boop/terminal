@@ -3174,12 +3174,26 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-live-terminal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px}
 .tr-live-terminal-h{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px;font-weight:700}
 .tr-live-terminal-h::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0}
-.tr-live-terminal-cells{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-@media(max-width:640px){.tr-live-terminal-cells{grid-template-columns:1fr}}
+/* Total signal summary bar di dalam Live Signal Terminal (menggantikan
+   card 'TOTAL SIGNAL' terpisah). Layout: value besar kiri, breakdown kanan. */
+.tr-live-total-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin-bottom:12px;background:linear-gradient(180deg,rgba(124,58,237,.10),var(--bg2));border:1px solid var(--border);border-radius:10px;flex-wrap:wrap}
+.tr-live-total-l{display:flex;align-items:baseline;gap:10px;min-width:0}
+.tr-live-total-val{font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;color:var(--text)}
+@media(max-width:640px){.tr-live-total-val{font-size:24px}}
+.tr-live-total-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.tr-live-total-r{text-align:right;min-width:0}
+.tr-live-total-breakdown{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text2);font-weight:600;line-height:1.4}
+.tr-live-total-sub{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);margin-top:3px}
+@media(max-width:640px){.tr-live-total-r{text-align:left;width:100%}}
+/* Grid metric cells: 4 kolom di desktop, 2 kolom di tablet, 1 kolom mobile */
+.tr-live-terminal-cells{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:900px){.tr-live-terminal-cells{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.tr-live-terminal-cells{grid-template-columns:1fr}}
 .tr-live-cell{text-align:center;padding:16px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg2);position:relative;overflow:hidden}
 .tr-live-cell.green{background:linear-gradient(180deg,rgba(16,185,129,.09),var(--bg2));border-color:rgba(16,185,129,.28)}
 .tr-live-cell.red{background:linear-gradient(180deg,rgba(239,68,68,.09),var(--bg2));border-color:rgba(239,68,68,.28)}
 .tr-live-cell.blue{background:linear-gradient(180deg,rgba(37,99,235,.09),var(--bg2));border-color:rgba(37,99,235,.28)}
+.tr-live-cell.purple{background:linear-gradient(180deg,rgba(124,58,237,.10),var(--bg2));border-color:rgba(124,58,237,.28)}
 .tr-live-cell-ico{font-size:14px;opacity:.85;margin-bottom:3px}
 .tr-live-cell-val{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1}
 @media(max-width:640px){.tr-live-cell-val{font-size:24px}}
@@ -4800,15 +4814,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <!-- Content real — visible saat data ready (pending===false). Populate via IIFE. -->
   <div id="trLiveContent" style="display:none">
 
-    <!-- Status bar -->
+    <!-- Status bar (info 'Sumber: Google Sheets' dihilangkan per user req) -->
     <div class="tr-live-status">
       <div class="tr-live-status-l">
         <span><span id="trLiveDot" class="tr-live-dot"></span><span id="trLiveState">AKTIF</span></span>
         <span><span class="k">Update:</span> <span class="v" id="trLiveUpdated">—</span></span>
-        <span><span class="k">Sumber:</span> <span class="v" id="trLiveSource">Google Sheets</span></span>
       </div>
       <button type="button" class="tr-live-refresh" id="trLiveRefresh">🔄 Refresh</button>
     </div>
+    <!-- Elemen tersembunyi untuk backward-compat renderStatus() yg masih
+         set textContent trLiveSource — kalau di-remove, JS akan error null. -->
+    <span id="trLiveSource" style="display:none"></span>
 
     <!-- IHSG live ticker -->
     <div class="tr-live-ihsg">
@@ -4825,46 +4841,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
     </div>
 
-    <!-- Hero: WinRate + System Signals -->
-    <div class="tr-live-hero-row">
-      <div class="tr-live-hero">
-        <div class="tr-live-hero-lbl">WIN RATE KONSENSUS</div>
-        <div class="tr-live-hero-top">
-          <div class="tr-live-hero-val" id="trLiveWrVal">—</div>
-          <div class="tr-live-hero-side">
-            <div>Net <span id="trLiveNet">—</span></div>
-            <div class="sub">Overall winrate</div>
-          </div>
-        </div>
-        <div class="tr-live-hero-bar"><div id="trLiveWrBar" style="background:var(--grad);width:0%"></div></div>
-        <div class="tr-live-hero-foot">
-          <span id="trLiveWrSub">— trade selesai</span>
-          <span>PF <span id="trLivePf">—</span></span>
-        </div>
-      </div>
-      <div class="tr-live-hero">
-        <div class="tr-live-hero-lbl">TOTAL SIGNAL</div>
-        <div class="tr-live-hero-top">
-          <div class="tr-live-hero-val" id="trLiveTotalVal">—</div>
-          <div class="tr-live-hero-side">
-            <div><span id="trLiveOpenN">0</span> aktif · <span id="trLiveClosedN">0</span> selesai</div>
-            <div class="sub">Skor tertinggi <span id="trLiveHiScore">—</span></div>
-          </div>
-        </div>
-        <div class="tr-live-hero-bar">
-          <div id="trLiveSideBuy" style="background:var(--accent);width:50%"></div>
-          <div id="trLiveSideClosed" style="background:var(--text3);width:50%"></div>
-        </div>
-        <div class="tr-live-hero-foot">
-          <span id="trLiveOpenSub">total tracked</span>
-          <span>Rekomendasi</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Live Signal Terminal -->
+    <!-- ═══ Live Signal Terminal (konsolidasi TOTAL SIGNAL + posisi live) ═══
+         User req: hilangkan card WIN RATE KONSENSUS; merge TOTAL SIGNAL ke sini.
+         Layout: header ringkasan total signal → 4 cell metric → strip bar.
+    -->
     <div class="tr-live-terminal">
       <div class="tr-live-terminal-h">⚡ Live Signal Terminal</div>
+
+      <!-- Total signal summary bar (menggantikan card 'TOTAL SIGNAL' terpisah) -->
+      <div class="tr-live-total-summary">
+        <div class="tr-live-total-l">
+          <div class="tr-live-total-val" id="trLiveTotalVal">—</div>
+          <div class="tr-live-total-lbl">TOTAL SIGNAL</div>
+        </div>
+        <div class="tr-live-total-r">
+          <div class="tr-live-total-breakdown" id="trLiveOpenN">— aktif</div>
+          <div class="tr-live-total-sub">
+            <span id="trLiveClosedN">0</span> selesai · Skor tertinggi <span id="trLiveHiScore">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4-cell metric grid: profit, loss, akurasi, skor tertinggi -->
       <div class="tr-live-terminal-cells">
         <div class="tr-live-cell green">
           <div class="tr-live-cell-ico">📈</div>
@@ -4881,10 +4879,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-live-cell-val" id="trLiveLtAcc">—</div>
           <div class="tr-live-cell-sub">AKURASI LIVE</div>
         </div>
+        <div class="tr-live-cell purple">
+          <div class="tr-live-cell-ico">💰</div>
+          <div class="tr-live-cell-val" id="trLiveLtAvgFloat">—</div>
+          <div class="tr-live-cell-sub">RATA-RATA FLOATING</div>
+        </div>
       </div>
+
       <div class="tr-live-strip"><div id="trLiveLtStripFill" style="width:0%"></div></div>
       <div class="tr-live-strip-txt" id="trLiveLtStripTxt">— posisi terbuka</div>
     </div>
+    <!-- Elemen tersembunyi (WIN RATE fields) untuk backward-compat JS renderer.
+         Kartu WIN RATE KONSENSUS di-hilangkan per user request, tapi IIFE JS
+         masih set textContent ke id2 ini — kita simpan hidden agar tidak error null. -->
+    <span id="trLiveWrVal" style="display:none"></span>
+    <span id="trLiveWrBar" style="display:none"></span>
+    <span id="trLiveNet" style="display:none"></span>
+    <span id="trLiveWrSub" style="display:none"></span>
+    <span id="trLivePf" style="display:none"></span>
+    <span id="trLiveSideBuy" style="display:none"></span>
+    <span id="trLiveSideClosed" style="display:none"></span>
+    <span id="trLiveOpenSub" style="display:none"></span>
 
     <!-- Real-time P&L Stream heading + grid -->
     <div class="tr-live-stream-hd">
@@ -8562,6 +8577,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
       state.textContent = ageMin < 90 ? 'AKTIF' : 'Data tertunda';
     }
     var up = $('trLiveUpdated'); if (up) up.textContent = timeAgo(data.updatedAt);
+    // trLiveSource sekarang element tersembunyi (info 'Sumber: Google Sheets'
+    // dihilangkan dari UI per user req). Setter tetap ada utk avoid null error.
     var src = $('trLiveSource'); if (src) src.textContent = data.source === 'gviz' ? 'Google Sheets' : (data.source || '—');
   }
 
@@ -8629,6 +8646,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Render Live Signal Terminal ──
+  // Section ini menggabungkan TOTAL SIGNAL summary + 4 metric cells.
+  // - Summary: total signal (aktif+menunggu+terlewat+selesai) + breakdown per state
+  // - Cells: posisi profit / loss / akurasi live / rata-rata floating P&L
   function renderTerminal(data){
     var openList = data.openList || [];
     var profit = 0, loss = 0;
@@ -8639,6 +8659,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
       totalFloat += f;
     }
     var acc = (profit + loss) ? Math.round(profit / (profit + loss) * 100) : 0;
+    var avgFloat = openList.length ? (totalFloat / openList.length) : 0;
+
     var p = $('trLiveLtProfit'); if (p) p.textContent = profit;
     var l = $('trLiveLtLoss');   if (l) l.textContent = loss;
     var a = $('trLiveLtAcc');
@@ -8646,6 +8668,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
       a.textContent = (profit + loss) ? (acc + '%') : '—';
       a.style.color = acc >= 60 ? 'var(--green)' : acc >= 40 ? 'var(--accent2)' : (acc > 0 ? 'var(--yellow)' : 'var(--text3)');
     }
+    // Cell #4: rata-rata floating P&L (baru — menggantikan info yg tadinya di
+    // card TOTAL SIGNAL). Warna hijau/merah menurut sign, dim kalau tak ada rec.
+    var afEl = $('trLiveLtAvgFloat');
+    if (afEl) {
+      afEl.textContent = openList.length ? fmtPct(avgFloat) : '—';
+      afEl.style.color = openList.length
+        ? (avgFloat >= 0 ? 'var(--green)' : 'var(--red)')
+        : 'var(--text3)';
+    }
+
     var fill = $('trLiveLtStripFill');
     if (fill) fill.style.width = ((profit + loss) ? (profit / (profit + loss) * 100) : 0) + '%';
     var txt = $('trLiveLtStripTxt');
@@ -8653,15 +8685,32 @@ body.is-mobile-device.force-desktop .pl-col-main{
       ? (openList.length + ' posisi terbuka · ' + profit + ' profit · ' + loss + ' loss')
       : (openList.length + ' posisi terbuka');
 
+    // ── Total signal summary (dulunya card 'TOTAL SIGNAL' terpisah) ──
+    var triggered = data.open || 0;
+    var pendingC  = data.pendingCount  || 0;
+    var missedC   = data.missedCount   || 0;
+    var closedC   = data.totalClosed   || 0;
+    var total = triggered + pendingC + missedC + closedC;
+    var tv = $('trLiveTotalVal'); if (tv) tv.textContent = total;
+    var oN = $('trLiveOpenN');
+    if (oN) {
+      // Breakdown per state: '98 aktif · 106 menunggu · 82 terlewat aktif'
+      var parts = [triggered + ' aktif'];
+      if (pendingC) parts.push(pendingC + ' menunggu');
+      if (missedC)  parts.push(missedC  + ' terlewat');
+      oN.textContent = parts.join(' · ');
+    }
+    var cN = $('trLiveClosedN'); if (cN) cN.textContent = closedC;
+    var hi = $('trLiveHiScore'); if (hi) hi.textContent = data.highScore || 0;
+
     // Stream heading — v2: total = triggered + unfilled
     var unfilled = data.unfilledList || [];
     var totalCards = openList.length + unfilled.length;
     var sc = $('trLiveStreamCount'); if (sc) sc.textContent = totalCards;
     var sf = $('trLiveStreamFloat');
     if (sf) {
-      var avg = openList.length ? (totalFloat / openList.length) : 0;
-      sf.textContent = fmtPct(avg);
-      sf.style.color = avg >= 0 ? 'var(--green)' : 'var(--red)';
+      sf.textContent = fmtPct(avgFloat);
+      sf.style.color = avgFloat >= 0 ? 'var(--green)' : 'var(--red)';
     }
   }
 
