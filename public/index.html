@@ -2897,8 +2897,16 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-p-certs{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
 .tr-p-cert{font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:600;padding:4px 9px;border-radius:7px;background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
 .tr-p-cert.primary{background:rgba(124,58,237,.16);color:var(--accent2);border-color:transparent}
-.tr-p-sectors{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;position:relative}
-.tr-p-sector{font-size:10.5px;padding:5px 10px;border-radius:20px;background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+/* Chip cluster sektor (Energy / Basic Material / dsb) — di-sembunyikan
+   di seluruh menu Tracker (permintaan user: tidak perlu tampil). Aturan
+   ini menutupi #trPfSectors (firm profile) & #trPSectors (drawer summary),
+   plus chip individual .tr-p-sector yang di-render sbg pill. */
+.tr-p-sectors{display:none !important}
+.tr-p-sector{display:none !important}
+/* Sektor pill di dropdown pencarian saham (tab Analisis) — juga
+   disembunyikan agar konsisten dgn permintaan. Screener (menu lain)
+   tak terpengaruh karena pakai .pl-search-item / .scr-sector. */
+#trAnlSearchDrop .search-item .sector{display:none !important}
 
 .tr-p-verify{margin-top:14px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.28);border-radius:12px;padding:12px 14px}
 .tr-p-verify-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--green)}
@@ -4673,7 +4681,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="tr-anl-hero-tick" id="trAnlTick">—</div>
         <div class="tr-anl-hero-name" id="trAnlName">—</div>
         <div class="tr-anl-hero-meta">
-          <span><span class="k">Sektor:</span> <b id="trAnlSector">—</b></span>
+          <!-- Baris "Sektor: XX" disembunyikan (permintaan user: nama sektor
+               tidak perlu muncul di semua halaman menu Tracker). Elemen
+               <b id="trAnlSector"> tetap ada untuk JS setter agar tidak
+               error null; hanya wrapper <span>-nya di-hide dgn display:none. -->
+          <span style="display:none"><span class="k">Sektor:</span> <b id="trAnlSector">—</b></span>
           <span><span class="k">Harga:</span> <b id="trAnlLast">—</b></span>
           <span><span class="k">Firm aktif:</span> <b id="trAnlFirmCnt">—</b></span>
         </div>
@@ -6811,7 +6823,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
         + '<span class="tr-rec-chip sl"><span class="k">Stoploss</span><span class="v">'+fmtN(r.sl)+_pctSuffix(slPctV)+'</span></span>';
 
       var dateStr = '📅 '+esc(fmtLongDate(r.openDate))+(r.exitDate?(' → '+esc(fmtLongDate(r.exitDate))):'');
-      var sectorStr = r.sector ? ' · '+esc(r.sector) : '';
+      // Sektor sengaja tidak ditampilkan (permintaan user: sembunyikan
+      // Energy/Basic Material/dll di semua halaman Tracker).
+      var sectorStr = '';
 
       // Info kadaluarsa untuk rec MENUNGGU ENTRY (pending/missed): tampilkan
       // tgl expiry + sisa hari, atau "Sudah kadaluarsa" kalau lewat.
