@@ -6330,15 +6330,37 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var tk = esc(r.ticker||'');
       var analyst = r.analyst ? '<span class="tr-rec-analyst">· '+esc(r.analyst)+'</span>' : '';
       var badgeCls = buy ? 'buy' : 'sell';
-      // Chip Floating P/L (active TRIGGERED, floating != null) atau
-      // Chip Distance-to-entry (pending, distanceToEntryPct != null).
+      // Chip Floating P/L (active TRIGGERED) atau Distance-to-entry (pending).
+      // KEDUA-DUANYA pakai DATA.live[ticker].price sbg 'harga sekarang' (sheet
+      // live) supaya realtime & konsisten dgn popup chart. Fallback ke
+      // rec.floatingPct / rec.distanceToEntryPct kalau DATA.live tak tersedia.
       var extraChip = '';
-      var floatingVal = +r.floatingPct;
-      if(isActive && Number.isFinite(floatingVal)){
-        var dnCls = floatingVal < 0 ? ' dn' : '';
-        extraChip = '<span class="tr-rec-chip flt'+dnCls+'" title="Floating P&amp;L saat ini (belum kena SL/TP)"><span class="k">Floating</span><span class="v">'+fmtPct(floatingVal,1)+'</span></span>';
-      } else if(isPending && Number.isFinite(+r.distanceToEntryPct)){
-        extraChip = '<span class="tr-rec-chip dis" title="Jarak harga saat ini ke zona entry"><span class="k">Jarak</span><span class="v">'+fmtPct(r.distanceToEntryPct,1)+'</span></span>';
+      var _liveObj = (typeof DATA !== 'undefined' && DATA && DATA.live && DATA.live[r.ticker]) ? DATA.live[r.ticker] : null;
+      var _livePrice = (_liveObj && Number.isFinite(+_liveObj.price) && +_liveObj.price > 0) ? +_liveObj.price : null;
+      var _entryOk = Number.isFinite(+r.entry) && +r.entry > 0;
+      if(isActive){
+        var floatingVal = null;
+        if(_livePrice != null && _entryOk && r.didTouchEntry){
+          var _rawFl = ((_livePrice - +r.entry) / +r.entry) * 100;
+          floatingVal = buy ? _rawFl : -_rawFl;
+        } else if(Number.isFinite(+r.floatingPct)){
+          floatingVal = +r.floatingPct;
+        }
+        if(Number.isFinite(floatingVal)){
+          var dnCls = floatingVal < 0 ? ' dn' : '';
+          extraChip = '<span class="tr-rec-chip flt'+dnCls+'" title="Floating P&amp;L realtime (sheet live)"><span class="k">Floating</span><span class="v">'+fmtPct(floatingVal,1)+'</span></span>';
+        }
+      } else if(isPending){
+        var distVal = null;
+        if(_livePrice != null && _entryOk){
+          var _rawD = ((_livePrice - +r.entry) / +r.entry) * 100;
+          distVal = buy ? _rawD : -_rawD;
+        } else if(Number.isFinite(+r.distanceToEntryPct)){
+          distVal = +r.distanceToEntryPct;
+        }
+        if(Number.isFinite(distVal)){
+          extraChip = '<span class="tr-rec-chip dis" title="Jarak harga sekarang (sheet live) ke zona entry"><span class="k">Jarak</span><span class="v">'+fmtPct(distVal,1)+'</span></span>';
+        }
       }
       var chips = ''
         + '<span class="tr-rec-chip"><span class="k">Entry</span><span class="v">'+fmtN(r.entry)+'</span></span>'
@@ -6631,6 +6653,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var panel = document.getElementById('trMdetPanel');
     if(panel && panel.style.display !== 'none') scheduleDayChartRedraw();
   });
+
+  // Realtime refresh — polling dashboard sudah update DATA.live tiap menit.
+  // Kita re-render rec list tiap 30s ketika firm profile visible supaya
+  // chip Floating/Jarak selalu sinkron dgn 'sheet live' terkini. Tidak
+  // re-render chart karena expensive & tidak sensitive ke live tick.
+  setInterval(function(){
+    var panel = document.getElementById('trMdetPanel');
+    if(panel && panel.style.display !== 'none' && _currentFirm){
+      try{ renderRecList(_currentFirm, _currentTab); }catch(_){}
+    }
+  }, 30000);
 })();
 </script>
 
@@ -10238,12 +10271,35 @@ body.is-mobile-device.force-desktop .pl-col-main{
       + (hasT2 ? makeLevel('tp', 'TP2', rec.tp2, true) : '')
       + makeLevel('sl',   'STOP-LOSS', rec.sl, true);
 
-    // Footer: harga sekarang, P&L, exit (kalau ada)
-    var pnl = Number.isFinite(+rec.pnlPct) ? +rec.pnlPct
-           : (Number.isFinite(+rec.floatingPct) ? +rec.floatingPct : null);
+    // Footer: harga sekarang, P&L, exit (kalau ada).
+    // Harga Sekarang PAKAI SHEET LIVE (DATA.live[ticker].price) — sumber sama
+    // dgn candle terakhir chart. Fallback: rec.lastPrice (tracker.json snapshot,
+    // bisa drift bbrp menit setelah refresh live). Dulu pakai rec.lastPrice
+    // langsung → beda dgn chart (bug yang user report).
+    var _live = (typeof DATA !== 'undefined' && DATA && DATA.live && DATA.live[rec.ticker]) ? DATA.live[rec.ticker] : null;
+    var effectiveLastPrice = (_live && Number.isFinite(+_live.price) && +_live.price > 0)
+      ? +_live.price
+      : (Number.isFinite(+rec.lastPrice) ? +rec.lastPrice : null);
+
+    // P&L: rec closed → pakai pnlPct final. Rec aktif (didTouchEntry) →
+    // recompute floating dari live price supaya sinkron dgn 'Harga Sekarang'
+    // yg baru. Fallback rec.floatingPct (tracker.json snapshot).
+    var pnl;
+    if (rec.exitDate && Number.isFinite(+rec.pnlPct)) {
+      pnl = +rec.pnlPct;
+    } else if (rec.didTouchEntry && effectiveLastPrice != null
+               && Number.isFinite(+rec.entry) && +rec.entry > 0) {
+      var _isBuyRec = String(rec.type||'BUY').toUpperCase() === 'BUY';
+      var _raw = ((effectiveLastPrice - +rec.entry) / +rec.entry) * 100;
+      pnl = _isBuyRec ? _raw : -_raw;
+    } else if (Number.isFinite(+rec.floatingPct)) {
+      pnl = +rec.floatingPct;
+    } else {
+      pnl = null;
+    }
     var pnlCls = pnl == null ? '' : pnl > 0 ? ' up' : pnl < 0 ? ' dn' : '';
     var footHtml = ''
-      + '<div class="tr-recmodal-foot-item"><span class="lbl">Harga Sekarang</span><span class="val">' + esc(fmtN(rec.lastPrice)) + '</span></div>'
+      + '<div class="tr-recmodal-foot-item"><span class="lbl">Harga Sekarang</span><span class="val">' + esc(fmtN(effectiveLastPrice)) + '</span></div>'
       + '<div class="tr-recmodal-foot-item"><span class="lbl">P&amp;L</span><span class="val' + pnlCls + '">' + esc(pnl == null ? '—' : fmtPct(pnl, 1)) + '</span></div>';
     if (rec.exitDate){
       var exitTxt = fmtDate(rec.exitDate);
