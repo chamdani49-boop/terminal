@@ -3175,17 +3175,24 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-live-terminal-h{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px;font-weight:700}
 .tr-live-terminal-h::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0}
 .tr-live-terminal-title{flex-shrink:0}
-/* IHSG pill inline di header Live Signal Terminal — kompak, di ujung kanan.
-   Warna gold utk logo JKSE (senada dgn IHSG branding), padding tipis biar
-   tidak menambah tinggi header. */
+/* IHSG widget di header Live Signal Terminal — MIRROR style dashboard
+   stat-cell IHSG di kolom statistik deskriptif. Ciri khas dashboard:
+   label 'IHSG' (bukan ticker JKSE) + pulse dot animation di sebelah %
+   change. Layout tetap kompak/inline biar tidak menambah tinggi header. */
 .tr-live-terminal-ihsg{margin-left:auto;display:inline-flex;align-items:center;gap:8px;padding:3px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:none;flex-shrink:0}
-.tr-live-terminal-ihsg-logo{background:linear-gradient(135deg,#f5c518,#ffa500);color:#1a1200;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:800;letter-spacing:.3px}
-.tr-live-terminal-ihsg-px{color:var(--text);font-size:12px;font-weight:800;letter-spacing:-.2px}
-.tr-live-terminal-ihsg-chg{font-weight:800}
+.tr-live-terminal-ihsg-lbl{color:var(--text2);font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.tr-live-terminal-ihsg-px{color:var(--text);font-size:12.5px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.tr-live-terminal-ihsg-chg{display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:11px;font-variant-numeric:tabular-nums}
+/* Pulse dot — sama dgn dashboard 'live' indicator (plPulse animation, gaya
+   dot 7px + ring green-bg glow). Warna default hijau; JS toggle ke red. */
+.tr-live-terminal-ihsg-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-bg);animation:plPulse 2s infinite;flex-shrink:0}
+.tr-live-terminal-ihsg-chg.dn .tr-live-terminal-ihsg-dot{background:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.18)}
 @media(max-width:480px){
   .tr-live-terminal-ihsg{padding:2px 7px;gap:5px;font-size:10px}
-  .tr-live-terminal-ihsg-logo{font-size:8px;padding:1px 4px}
+  .tr-live-terminal-ihsg-lbl{font-size:8.5px}
   .tr-live-terminal-ihsg-px{font-size:11px}
+  .tr-live-terminal-ihsg-chg{font-size:10px}
+  .tr-live-terminal-ihsg-dot{width:6px;height:6px;box-shadow:0 0 0 2.5px var(--green-bg)}
 }
 /* Total signal summary bar di dalam Live Signal Terminal (menggantikan
    card 'TOTAL SIGNAL' terpisah). Layout: value besar kiri, breakdown kanan. */
@@ -4856,13 +4863,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
     -->
     <div class="tr-live-terminal">
       <!-- Header terminal + IHSG ticker inline (lebur — permintaan user).
-           Layout: label kiri ⚡ Live Signal Terminal, IHSG pill di kanan. -->
+           Layout: label kiri ⚡ Live Signal Terminal, IHSG pill di kanan.
+           MIRROR dashboard: label 'IHSG' (bukan 'JKSE'), pulse dot animation
+           di sebelah % change untuk sinyal 'feed live' — persis seperti
+           kolom statistik deskriptif IHSG di dashboard. -->
       <div class="tr-live-terminal-h">
         <span class="tr-live-terminal-title">⚡ Live Signal Terminal</span>
         <span class="tr-live-terminal-ihsg" id="trLiveTerminalIhsg" title="Indeks Harga Saham Gabungan (feed live)">
-          <span class="tr-live-terminal-ihsg-logo">JKSE</span>
+          <span class="tr-live-terminal-ihsg-lbl">IHSG</span>
           <span class="tr-live-terminal-ihsg-px" id="trLiveIhsgPx">—</span>
-          <span class="tr-live-terminal-ihsg-chg" id="trLiveIhsgChg">—</span>
+          <span class="tr-live-terminal-ihsg-chg" id="trLiveIhsgChg">
+            <span class="tr-live-terminal-ihsg-dot" aria-hidden="true"></span>
+            <span class="tr-live-terminal-ihsg-pct">—</span>
+          </span>
         </span>
       </div>
 
@@ -8663,17 +8676,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (price == null && data && data.ihsg && Number.isFinite(data.ihsg.last)) price = data.ihsg.last;
     if (chgPct == null && data && data.ihsg && Number.isFinite(data.ihsg.chgPct)) chgPct = data.ihsg.chgPct;
 
+    // Sub-elemen chg (pulse dot + text %) — struktur baru mirror dashboard.
+    // Fallback ke chg.textContent kalau struktur old (dot/pct child) tidak ada.
+    var chgPctEl = chg ? chg.querySelector('.tr-live-terminal-ihsg-pct') : null;
     if (price == null) {
       if (px) px.textContent = '—';
-      if (chg) { chg.textContent = '—'; chg.style.color = 'var(--text3)'; }
+      if (chgPctEl) chgPctEl.textContent = '—';
+      else if (chg) chg.textContent = '—';
+      if (chg) chg.style.color = 'var(--text3)';
+      if (chg) chg.classList.remove('dn');
       return;
     }
     if (px) px.textContent = fmtN(Math.round(price));
     if (chg) {
-      if (chgPct == null) { chg.textContent = '—'; chg.style.color = 'var(--text3)'; }
-      else {
-        chg.textContent = fmtPct(chgPct, { dec: 2 });
+      if (chgPct == null) {
+        if (chgPctEl) chgPctEl.textContent = '—';
+        else chg.textContent = '—';
+        chg.style.color = 'var(--text3)';
+        chg.classList.remove('dn');
+      } else {
+        if (chgPctEl) chgPctEl.textContent = fmtPct(chgPct, { dec: 2 });
+        else chg.textContent = fmtPct(chgPct, { dec: 2 });
         chg.style.color = chgPct >= 0 ? 'var(--green)' : 'var(--red)';
+        // Toggle .dn kelas → pulse dot color otomatis merah lewat CSS
+        chg.classList.toggle('dn', chgPct < 0);
       }
     }
   }
