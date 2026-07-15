@@ -3626,7 +3626,7 @@ body.tr-profile-open .tr-subpane{display:none !important}
 /* ═══════════════════════════════════════════════════════════════════
    TAB PERFORMA · SIM STYLES — dilebur dari tab Simulasi lama.
    Config Rp modal+slot, saldo Rp block (di-inject ke kartu firm di
-   Papan Peringkat), tabel Rekap Bulanan Konsensus. Prefix `.tr-sim-*`
+   Papan Peringkat), tabel Rekap Bulanan Analis. Prefix `.tr-sim-*`
    dipertahankan (backward compat CSS + reuse minimal).
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -4664,7 +4664,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   <div class="tr-kpi-row">
     <div class="tr-kpi hi">
-      <div class="k">RETURN KONSENSUS</div>
+      <div class="k">RETURN ANALIS</div>
       <div class="v tr-up" id="trKpiCons">+9.4%</div>
       <div class="s tr-up" id="trKpiConsSub">Blended · 3 bulan</div>
     </div>
@@ -4689,12 +4689,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-card-h">
       <div>
         <div class="tr-card-title">Return Kumulatif</div>
-        <div class="tr-card-desc">Konsensus analis (blended, sesuai gaya eksekusi terpilih) vs IHSG</div>
+        <div class="tr-card-desc">Analis (blended semua firm, sesuai gaya eksekusi terpilih) vs IHSG</div>
       </div>
     </div>
     <div class="tr-chart-wrap"><canvas id="trChart"></canvas></div>
     <div class="tr-legend">
-      <span><span class="tr-lg-dot" style="background:var(--accent)"></span>Konsensus Analis</span>
+      <span><span class="tr-lg-dot" style="background:var(--accent)"></span>Analis</span>
       <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
       <span><span class="tr-lg-dot" style="background:rgba(124,58,237,.22);height:8px;border-radius:2px"></span>Zona Alpha</span>
     </div>
@@ -5101,7 +5101,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <!-- Market Intelligence -->
     <div class="tr-live-mi-card">
       <div class="tr-live-mi-h">
-        <span>🌐 Sentimen Konsensus</span>
+        <span>🌐 Sentimen Analis</span>
         <span class="tr-live-mi-tag" id="trLiveMiSample">recent 48h</span>
       </div>
       <div class="tr-live-mi-topline">
@@ -5144,7 +5144,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-empty-ico">📊</div>
     <div class="tr-empty-title">Performa — menunggu data</div>
     <div class="tr-empty-desc">
-      Papan peringkat sekuritas (per firm) dgn simulasi saldo Rp equal-weight, TP hit distribution (TP1 / TP2 / SL), grafik 30-hari performa konsensus, rekap bulanan (saldo end-of-month), dan safety net RR.
+      Papan peringkat sekuritas (per firm) dgn simulasi saldo Rp equal-weight, TP hit distribution (TP1 / TP2 / SL), grafik 30-hari performa analis, rekap bulanan (saldo end-of-month), dan safety net RR.
     </div>
     <div class="tr-empty-hint" id="trPerfStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
   </div>
@@ -5228,7 +5228,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <!-- ═══ 30-Day Performance Chart ═══ -->
     <div class="tr-perf-card">
       <div class="tr-perf-card-h">
-        📈 Grafik Performa Konsensus 30 Hari
+        📈 Grafik Performa Analis 30 Hari
         <span class="desc">bar harian (%) + akumulasi (garis)</span>
       </div>
       <div class="tr-perf-chart-audit" id="trPerfChartAudit">
@@ -5246,13 +5246,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
     </div>
 
-    <!-- ═══ Rekap Bulanan Konsensus (dilebur dari tab Simulasi lama) ═══
+    <!-- ═══ Rekap Bulanan Analis (dilebur dari tab Simulasi lama) ═══
          Breakdown per bulan: trade count, W/L, winrate, net%, best/worst,
          saldo Rp akhir bulan. Basis: semua trade selesai gabung, alokasi
          equal-weight per slot dari config Rp di atas. ═══ -->
     <div class="tr-perf-card">
       <div class="tr-perf-card-h">
-        📅 Rekap Bulanan Konsensus
+        📅 Rekap Bulanan Analis
         <span class="desc">performa per bulan · saldo Rp end-of-month</span>
       </div>
       <div class="tr-sim-monthly-wrap">
@@ -5504,7 +5504,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-card" style="margin-top:14px">
             <div class="tr-card-h">
               <div>
-                <div class="tr-card-title">📈 Grafik Performa Konsensus 30 Hari</div>
+                <div class="tr-card-title">📈 Grafik Performa Analis 30 Hari</div>
                 <div class="tr-card-desc">P/L harian per exitDate + garis kumulatif — ikut mode eksekusi di atas.</div>
               </div>
             </div>
@@ -5829,7 +5829,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 // ═══════════════════════════════════════════
 // TRACKER — FIRM PROFILE PAGE (halaman detail sekuritas, non-overlay)
 //   Aktif via: window.__TR_openFirm(idOrName)  (override drawer di atas)
-//   Section: hero, KPI, chart Grafik Performa Konsensus 30 Hari,
+//   Section: hero, KPI, chart Grafik Performa Analis 30 Hari,
 //            chart Return Kumulatif dgn 4-mode selector (pure/haka/tp1/tp2),
 //            daftar rekomendasi Aktif/Riwayat.
 // ═══════════════════════════════════════════
@@ -7331,7 +7331,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       type:'line',
       data:{ labels:labels,
         datasets:[
-          { label:'Konsensus', data:data, borderColor:c.accent, backgroundColor:c.accentBg, fill:'+1', tension:0.3, pointRadius:0, borderWidth:2.5 },
+          { label:'Analis', data:data, borderColor:c.accent, backgroundColor:c.accentBg, fill:'+1', tension:0.3, pointRadius:0, borderWidth:2.5 },
           { label:'IHSG', data:ihsg, borderColor:c.text3, backgroundColor:'transparent', fill:false, tension:0.3, pointRadius:0, borderWidth:2, borderDash:[4,3] },
         ]},
       options:{
@@ -9285,14 +9285,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
             + '<div class="tr-perf-firm-stat-val big" style="color:' + (hasTrades ? pctColor(net) : (greenN > 0 ? 'var(--green)' : 'var(--text3)')) + '">' + (hasTrades ? fmtPct(net) : (activeTrig.length ? (greenN + '/' + activeTrig.length) : '—')) + '</div>'
             + '<div class="tr-perf-firm-stat-sub">' + (hasTrades ? 'total gain/loss' : 'sedang profit') + '</div>'
           + '</div>'
-          + '<div class="tr-perf-firm-stat">'
-            + '<div class="tr-perf-firm-stat-lbl">RATA² TRADE</div>'
-            + '<div class="tr-perf-firm-stat-val" style="color:' + (hasTrades ? pctColor(avg) : 'var(--text3)') + '">' + (hasTrades ? fmtPct(avg, { dec: 1 }) : '—') + '</div>'
-            + '<div class="tr-perf-firm-stat-sub">per rekomendasi</div>'
-          + '</div>'
-          // Kartu 'SKOR TINGGI' dihilangkan per user request — skor validitas
-          // dihapus di semua halaman Tracker karena membingungkan (winrate
-          // tinggi tidak selalu berkorelasi dgn skor validitas tinggi).
+          // Kartu 'RATA² TRADE' & 'SKOR TINGGI' dihilangkan per user request.
+          // - Rata²/trade: redundant dgn Net Return (keduanya ukuran cuan);
+          //   user cukup lihat WR + Net di kartu firm.
+          // - Skor validitas: dihapus di semua halaman Tracker karena bikin
+          //   bingung (winrate tinggi tidak selalu korelasi dgn skor tinggi).
         + '</div>'
 
         + (hasTrades ? (
@@ -9601,7 +9598,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var ihsgCum = ihsgSeries.map(function(d){ return (ihsgBase > 0) ? +(((d.close - ihsgBase) / ihsgBase) * 100).toFixed(2) : 0; });
 
     // Align: pakai IHSG dates sebagai timeline (lebih lengkap 30 hari).
-    // Konsensus di-map by date; kalau tidak ada trade pada tanggal itu,
+    // Data analis di-map by date; kalau tidak ada trade pada tanggal itu,
     // pertahankan kumulatif terakhir (flat line).
     var labels = [], consAligned = [];
     var equityByDate = {};
@@ -9628,7 +9625,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       data: {
         labels: labels,
         datasets: [
-          { label: 'Konsensus', data: consAligned, borderColor: accentColor, backgroundColor: 'rgba(124,58,237,0.16)', fill: '+1', tension: 0.3, pointRadius: 0, borderWidth: 2.5 },
+          { label: 'Analis', data: consAligned, borderColor: accentColor, backgroundColor: 'rgba(124,58,237,0.16)', fill: '+1', tension: 0.3, pointRadius: 0, borderWidth: 2.5 },
           { label: 'IHSG', data: ihsgCum, borderColor: text3, backgroundColor: 'transparent', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [4, 3] }
         ]
       },
@@ -9736,7 +9733,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 //   • Config Rp modal + slot (persist localStorage tr_perf_capital/slots,
 //     migrate dari LS lama tr_sim_capital/slots kalau ada)
 //   • Inject saldo Rp per kartu firm di Papan Peringkat (post-render DOM)
-//   • Render tabel Rekap Bulanan Konsensus (equal-weight compounding)
+//   • Render tabel Rekap Bulanan Analis (equal-weight compounding)
 //   Log Rekomendasi filterable didrop — overlap dgn "Rekomendasi Sekuritas"
 //   di tab Analisis (yg filter lebih granular: 6 tab vs 3 tab).
 // ═══════════════════════════════════════════
@@ -9839,7 +9836,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── Inject block "SIMULASI SALDO SEKARANG" ke tiap kartu firm di Papan
   //    Peringkat. Dijalankan SETELAH renderer utama Performa render kartu.
-  //    Konsensus baseline (⭐) dan kartu firm tanpa trade selesai di-skip
+  //    Kartu firm tanpa trade selesai di-skip
   //    supaya tidak clutter visual. ──
   function injectSaldoBlocks(data, cap, slots){
     var grid = $('trPerfFirmGrid'); if (!grid) return;
@@ -9878,7 +9875,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     });
   }
 
-  // ── Render tabel Rekap Bulanan Konsensus di tab Performa ──
+  // ── Render tabel Rekap Bulanan Analis di tab Performa ──
   function renderMonthly(data, initialCap, slots){
     var body = $('trPerfMonthlyBody'); if (!body) return;
     var allClosed = data.historyList || [];
