@@ -2910,8 +2910,7 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-p-vbadge,
 .tr-lb-ver,
 .tr-live-card-verif,
-.tr-perf-firm-verified,
-.tr-sim-card-verified{display:none !important}
+.tr-perf-firm-verified{display:none !important}
 /* Sektor pill di dropdown pencarian saham (tab Analisis) — juga
    disembunyikan agar konsisten dgn permintaan. Screener (menu lain)
    tak terpengaruh karena pakai .pl-search-item / .scr-sector. */
@@ -3625,10 +3624,10 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-perf-empty-inline{text-align:center;padding:22px 16px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB SIMULASI — "kalau ikut sekuritas ini dgn modal Rp X, hasilnya?"
-   Comparison card per firm + baseline Konsensus. Log rekomendasi
-   filterable+paginated. Rekap bulanan.
-   Prefix `.tr-sim-*` untuk isolasi.
+   TAB PERFORMA · SIM STYLES — dilebur dari tab Simulasi lama.
+   Config Rp modal+slot, saldo Rp block (di-inject ke kartu firm di
+   Papan Peringkat), tabel Rekap Bulanan Konsensus. Prefix `.tr-sim-*`
+   dipertahankan (backward compat CSS + reuse minimal).
    ═══════════════════════════════════════════════════════════════════ */
 
 /* Input modal awal */
@@ -3650,34 +3649,9 @@ body.tr-profile-open .tr-subpane{display:none !important}
   .tr-sim-input{width:110px;font-size:13px}
 }
 
-/* HERO section: Comparison grid per firm */
-.tr-sim-hero-h{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin:16px 2px 4px;display:flex;align-items:center;gap:8px;font-weight:700}
-.tr-sim-hero-h::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0}
-.tr-sim-hero-title{font-size:17px;font-weight:800;letter-spacing:-.3px;margin:0 2px 4px}
-.tr-sim-hero-desc{font-size:12px;color:var(--text2);margin:0 2px 12px;line-height:1.5}
-
-.tr-sim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:14px}
-@media(max-width:640px){.tr-sim-grid{grid-template-columns:1fr;gap:10px}}
-
-.tr-sim-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:15px 16px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s}
-.tr-sim-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad)}
-.tr-sim-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.24);border-color:var(--accent)}
-.tr-sim-card.rank-1::before{background:linear-gradient(90deg,#f5c518,#ffa500)}
-.tr-sim-card.rank-2::before{background:linear-gradient(90deg,#c7cbd6,#94a1c0)}
-.tr-sim-card.rank-3::before{background:linear-gradient(90deg,#c08a5a,#8b5a2b)}
-.tr-sim-card.baseline::before{background:linear-gradient(90deg,var(--accent2),var(--accent))}
-.tr-sim-card.baseline{background:linear-gradient(160deg,rgba(37,99,235,.06),var(--card) 55%)}
-
-.tr-sim-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px}
-.tr-sim-card-rank{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:var(--text3);margin-bottom:2px;letter-spacing:-.2px}
-.tr-sim-card.rank-1 .tr-sim-card-rank{color:#f5c518}
-.tr-sim-card.rank-2 .tr-sim-card-rank{color:#c7cbd6}
-.tr-sim-card.rank-3 .tr-sim-card-rank{color:#c08a5a}
-.tr-sim-card.baseline .tr-sim-card-rank{color:var(--accent2)}
-.tr-sim-card-name{font-size:15px;font-weight:800;letter-spacing:-.3px;line-height:1.2;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.tr-sim-card-verified{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:700;color:var(--green);background:rgba(16,185,129,.14);padding:2px 6px;border-radius:5px;letter-spacing:.3px;border:1px solid rgba(16,185,129,.28)}
-.tr-sim-card-meta-top{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px;letter-spacing:.3px}
-
+/* Saldo Rp block — di-inject ke tiap kartu firm di Papan Peringkat
+   Performa (post-render DOM). Menampilkan simulasi saldo sekarang, %
+   return, dan Rp gain/loss dari config Rp modal + slot di atas. */
 .tr-sim-saldo-block{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 15px;margin-bottom:11px;position:relative}
 .tr-sim-saldo-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);font-weight:700}
 .tr-sim-saldo-val{font-family:'IBM Plex Mono',monospace;font-size:23px;font-weight:800;letter-spacing:-.6px;line-height:1;margin-top:4px}
@@ -3688,58 +3662,6 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-sim-saldo-sub .pct{font-weight:700}
 .tr-sim-saldo-sub .pct.up{color:var(--green)}
 .tr-sim-saldo-sub .pct.dn{color:var(--red)}
-
-.tr-sim-mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.tr-sim-mini-stat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:9px 11px}
-.tr-sim-mini-stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.6px;text-transform:uppercase;font-weight:600}
-.tr-sim-mini-stat-val{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;letter-spacing:-.3px;margin-top:2px}
-
-.tr-sim-card-foot{margin-top:11px;padding-top:10px;border-top:1px dashed var(--border);font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
-.tr-sim-card-foot .k{color:var(--text3)}
-.tr-sim-card-foot .v{color:var(--text2);font-weight:700}
-
-/* Log Rekomendasi (filter + pagination) */
-.tr-sim-log-h{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin:16px 2px 10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-weight:700}
-.tr-sim-log-h > span:first-child{display:flex;align-items:center;gap:8px}
-.tr-sim-log-h > span:first-child::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0}
-.tr-sim-filter{display:flex;gap:3px;background:var(--bg2);padding:3px;border-radius:18px;border:1px solid var(--border)}
-.tr-sim-filter-btn{padding:5px 12px;border:0;background:transparent;cursor:pointer;color:var(--text3);font-family:inherit;font-size:11px;font-weight:700;border-radius:14px;transition:all .15s;letter-spacing:.3px;text-transform:uppercase}
-.tr-sim-filter-btn:hover{color:var(--text2)}
-.tr-sim-filter-btn.active{background:var(--grad);color:#fff;box-shadow:0 3px 8px rgba(124,58,237,.24)}
-.tr-sim-log-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
-.tr-sim-log-table{width:100%;font-family:'IBM Plex Mono',monospace;font-size:11.5px;border-collapse:collapse}
-.tr-sim-log-table thead th{text-align:left;padding:10px 12px;color:var(--text3);font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;font-weight:700;background:var(--bg2);border-bottom:1px solid var(--border)}
-.tr-sim-log-table tbody td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:top}
-.tr-sim-log-table tbody tr:last-child td{border-bottom:none}
-.tr-sim-log-table tbody tr:hover{background:var(--bg2)}
-.tr-sim-log-tick{font-weight:800;font-size:12.5px;letter-spacing:-.2px}
-.tr-sim-log-sub{font-size:9.5px;color:var(--text3);margin-top:2px;letter-spacing:.2px}
-.tr-sim-log-firm{font-weight:700;font-size:12px}
-.tr-sim-log-firm-sub{font-size:9.5px;color:var(--text3);margin-top:2px}
-.tr-sim-log-prices{font-size:10.5px;line-height:1.6;color:var(--text2)}
-.tr-sim-log-prices .k{color:var(--text3);font-size:9px;letter-spacing:.4px;text-transform:uppercase;font-weight:600;margin-right:3px}
-.tr-sim-log-status{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.3px}
-.tr-sim-log-status.tp1{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.28)}
-.tr-sim-log-status.tp2{background:rgba(16,185,129,.22);color:var(--green);border:1px solid rgba(16,185,129,.38)}
-.tr-sim-log-status.sl{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.28)}
-.tr-sim-log-status.tsl{background:rgba(37,99,235,.14);color:var(--accent2);border:1px solid rgba(37,99,235,.28)}
-.tr-sim-log-status.exp{background:rgba(245,158,11,.14);color:var(--yellow);border:1px solid rgba(245,158,11,.28)}
-.tr-sim-log-status.act{background:rgba(255,255,255,0.04);color:var(--accent2);border:1px solid var(--border2)}
-.tr-sim-log-pnl{text-align:right;font-weight:800;font-size:12.5px}
-.tr-sim-log-pnl.up{color:var(--green)}
-.tr-sim-log-pnl.dn{color:var(--red)}
-.tr-sim-log-empty{padding:32px 16px;text-align:center;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
-@media(max-width:640px){
-  .tr-sim-log-table thead th:nth-child(3),.tr-sim-log-table tbody td:nth-child(3){display:none}
-  .tr-sim-log-table thead th,.tr-sim-log-table tbody td{padding:9px 8px}
-}
-
-/* Pager */
-.tr-sim-pager{display:flex;justify-content:center;align-items:center;gap:14px;padding:12px 10px;border-top:1px solid var(--border);background:var(--bg2)}
-.tr-sim-pager-btn{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px}
-.tr-sim-pager-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
-.tr-sim-pager-btn:disabled{opacity:.4;cursor:not-allowed}
-.tr-sim-pager-info{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text3)}
 
 /* Rekap Bulanan */
 .tr-sim-monthly-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
@@ -4721,8 +4643,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     role="tab" aria-selected="false" aria-controls="tr-view-perf">📊 Performa</button>
   <button type="button" class="tr-subtab-btn" data-subtab="analis"
     role="tab" aria-selected="false" aria-controls="tr-view-analis">👤 Analis <span class="tr-subtab-chip" id="trSubAnlsN">—</span></button>
-  <button type="button" class="tr-subtab-btn" data-subtab="acc"
-    role="tab" aria-selected="false" aria-controls="tr-view-acc">📊 Simulasi</button>
 </div>
 
 <!-- ── TRACKER MAIN VIEW (dashboard performa) — pane RINGKASAN ─────── -->
@@ -5228,7 +5148,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-empty-ico">📊</div>
     <div class="tr-empty-title">Performa — menunggu data</div>
     <div class="tr-empty-desc">
-      TP hit distribution (TP1 / TP2 / SL), grafik 30-hari performa konsensus, papan peringkat sekuritas (per firm), safety net RR, dan performa per bracket score validitas.
+      Papan peringkat sekuritas (per firm) dgn simulasi saldo Rp equal-weight, TP hit distribution (TP1 / TP2 / SL), grafik 30-hari performa konsensus, rekap bulanan (saldo end-of-month), dan safety net RR.
     </div>
     <div class="tr-empty-hint" id="trPerfStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
   </div>
@@ -5236,19 +5156,46 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <!-- Content real -->
   <div id="trPerfContent" style="display:none">
 
+    <!-- ═══ Config Rp Modal + Slot (dilebur dari tab Simulasi lama) ═══
+         Input modal awal Rp + jumlah slot posisi mempengaruhi kartu firm
+         (Saldo Sekarang Rp) dan tabel Rekap Bulanan. Persist via localStorage
+         (tr_perf_capital / tr_perf_slots). ═══ -->
+    <div class="tr-sim-config">
+      <div class="tr-sim-config-l">
+        <div class="tr-sim-config-lbl">SIMULASI IKUT REKOMENDASI</div>
+        <div class="tr-sim-config-title">💡 Kalau modal segini ikut sekuritas ini, saldonya jadi berapa?</div>
+        <div class="tr-sim-config-desc">
+          Alokasi <b>equal-weight</b>: modal dibagi rata ke N slot posisi. Tiap trade selesai → saldo × (1/N) × pnl%. Angka Rp di kartu peringkat & rekap bulanan mengikuti input ini.
+        </div>
+      </div>
+      <div class="tr-sim-config-r">
+        <div>
+          <div class="tr-sim-config-lbl">MODAL AWAL</div>
+          <div class="tr-sim-input-wrap">
+            <span class="tr-sim-input-prefix">Rp</span>
+            <input type="text" inputmode="numeric" id="trPerfCapital" class="tr-sim-input" value="10.000.000" autocomplete="off">
+          </div>
+        </div>
+        <div class="tr-sim-slots-wrap">
+          <span>÷ slot:</span>
+          <input type="number" id="trPerfSlots" class="tr-sim-slots-input" value="10" min="1" max="50">
+        </div>
+      </div>
+    </div>
+
     <!-- ═══ HERO: Papan Peringkat Sekuritas ═══ -->
     <div class="tr-perf-firm-hero">
       <div class="tr-perf-firm-hero-h">🏆 Papan Peringkat Sekuritas</div>
       <div class="tr-perf-firm-hero-title">Kalau ikuti rekomendasi sekuritas ini, hasilnya berapa?</div>
       <div class="tr-perf-firm-hero-desc">
-        Bandingkan performa antar sekuritas: winrate, net return, jumlah rekomendasi.
+        Bandingkan performa antar sekuritas: winrate, net return, jumlah rekomendasi, plus <b>saldo Rp</b> dari simulasi ikut semua trade (equal-weight compounding).
         Ranking berdasarkan Net Return dari trade yang sudah selesai. Klik kartu untuk lihat detail.
       </div>
       <div class="tr-perf-firm-grid" id="trPerfFirmGrid">
         <!-- Firm cards di-render via JS -->
       </div>
       <div class="tr-perf-firm-hint">
-        Sekuritas dengan minimal 1 rekomendasi ditampilkan. Klik kartu untuk detail (versi akan datang).
+        Sekuritas dengan minimal 1 rekomendasi ditampilkan. Klik kartu untuk detail firm.
       </div>
     </div>
 
@@ -5300,6 +5247,41 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <span><span class="lg" style="background:var(--green)"></span>hari + (%)</span>
         <span><span class="lg" style="background:var(--red)"></span>hari − (%)</span>
         <span><span class="lg" style="background:var(--accent2);height:2px"></span>akumulasi kumulatif</span>
+      </div>
+    </div>
+
+    <!-- ═══ Rekap Bulanan Konsensus (dilebur dari tab Simulasi lama) ═══
+         Breakdown per bulan: trade count, W/L, winrate, net%, best/worst,
+         saldo Rp akhir bulan. Basis: semua trade selesai gabung, alokasi
+         equal-weight per slot dari config Rp di atas. ═══ -->
+    <div class="tr-perf-card">
+      <div class="tr-perf-card-h">
+        📅 Rekap Bulanan Konsensus
+        <span class="desc">performa per bulan · saldo Rp end-of-month</span>
+      </div>
+      <div class="tr-sim-monthly-wrap">
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <table class="tr-sim-monthly-table">
+            <thead>
+              <tr>
+                <th>BULAN</th>
+                <th class="ctr">TRADE</th>
+                <th class="ctr">W / L</th>
+                <th class="ctr">WINRATE</th>
+                <th class="num">NET %</th>
+                <th class="num">TERBAIK</th>
+                <th class="num">TERBURUK</th>
+                <th class="num">SALDO AKHIR</th>
+              </tr>
+            </thead>
+            <tbody id="trPerfMonthlyBody">
+              <tr><td colspan="8"><div class="tr-perf-empty-inline">Belum ada data bulanan.</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tr-perf-note">
+        ⓘ Saldo akhir bulan dihitung compounding dari modal awal di atas — kalau kamu ganti modal atau slot, tabel ini otomatis update.
       </div>
     </div>
 
@@ -5579,125 +5561,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </section>
   </div><!-- /trAnalisContent -->
 </div><!-- /tr-view-analis -->
-
-<!-- ── PANE AKUN (skeleton empty state) ─────────────────────────────
-     Diisi di PR berikutnya (adopsi robotlive: simulator modal Rp
-     equal-weight, log rekomendasi filterable+paginated, ringkasan
-     bulanan). -->
-<div id="tr-view-acc" class="tr-subpane" role="tabpanel" aria-hidden="true">
-
-  <!-- Fallback empty state — visible saat data.pending===true -->
-  <div class="tr-empty" id="trSimPending">
-    <div class="tr-empty-ico">📊</div>
-    <div class="tr-empty-title">Simulasi — menunggu data</div>
-    <div class="tr-empty-desc">
-      Simulator "kalau ikut sekuritas X dgn modal Rp10jt, hasilnya berapa?" — alokasi equal-weight per slot posisi, log rekomendasi filterable, dan rekap performa per bulan.
-    </div>
-    <div class="tr-empty-hint" id="trAccStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
-  </div>
-
-  <!-- Content real -->
-  <div id="trSimContent" style="display:none">
-
-    <!-- Config: modal + slot -->
-    <div class="tr-sim-config">
-      <div class="tr-sim-config-l">
-        <div class="tr-sim-config-lbl">SIMULASI IKUT REKOMENDASI</div>
-        <div class="tr-sim-config-title">💡 Kalau modal segini ikut sekuritas ini, saldonya jadi berapa?</div>
-        <div class="tr-sim-config-desc">
-          Alokasi <b>equal-weight</b>: modal dibagi rata ke N slot posisi. Tiap trade selesai → saldo × (1/N) × pnl%. Pure simulasi historis, bukan trading nyata.
-        </div>
-      </div>
-      <div class="tr-sim-config-r">
-        <div>
-          <div class="tr-sim-config-lbl">MODAL AWAL</div>
-          <div class="tr-sim-input-wrap">
-            <span class="tr-sim-input-prefix">Rp</span>
-            <input type="text" inputmode="numeric" id="trSimCapital" class="tr-sim-input" value="10.000.000" autocomplete="off">
-          </div>
-        </div>
-        <div class="tr-sim-slots-wrap">
-          <span>÷ slot:</span>
-          <input type="number" id="trSimSlots" class="tr-sim-slots-input" value="10" min="1" max="50">
-        </div>
-      </div>
-    </div>
-
-    <!-- HERO: Comparison grid per firm + Konsensus baseline -->
-    <div class="tr-sim-hero-h">🏆 Perbandingan Hasil</div>
-    <h2 class="tr-sim-hero-title">Kalau ikut sekuritas ini, saldonya jadi berapa?</h2>
-    <div class="tr-sim-hero-desc">
-      Ranking berdasarkan saldo akhir setelah simulasi ikut semua trade selesai (equal-weight compounding). "Konsensus" = ikut semua sekuritas gabung.
-    </div>
-    <div class="tr-sim-grid" id="trSimGrid">
-      <!-- Kartu per firm + baseline Konsensus di-render via JS -->
-    </div>
-
-    <!-- Log Rekomendasi -->
-    <div class="tr-sim-log-h">
-      <span>📖 Log Rekomendasi</span>
-      <div class="tr-sim-filter" id="trSimFilter" role="tablist">
-        <button type="button" class="tr-sim-filter-btn active" data-filter="all">Semua</button>
-        <button type="button" class="tr-sim-filter-btn" data-filter="active">Aktif</button>
-        <button type="button" class="tr-sim-filter-btn" data-filter="closed">Selesai</button>
-      </div>
-    </div>
-    <div class="tr-sim-log-wrap">
-      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-        <table class="tr-sim-log-table">
-          <thead>
-            <tr>
-              <th>SAHAM</th>
-              <th>SEKURITAS</th>
-              <th>ENTRY / TP / SL</th>
-              <th style="text-align:center">STATUS</th>
-              <th style="text-align:right">P&amp;L</th>
-            </tr>
-          </thead>
-          <tbody id="trSimLogBody">
-            <tr><td colspan="5"><div class="tr-sim-log-empty">Belum ada rekomendasi.</div></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="tr-sim-pager" id="trSimPager">
-        <button type="button" class="tr-sim-pager-btn" id="trSimPrev">← Sebelumnya</button>
-        <span class="tr-sim-pager-info" id="trSimPageInfo">Hal 1 / 1</span>
-        <button type="button" class="tr-sim-pager-btn" id="trSimNext">Selanjutnya →</button>
-      </div>
-    </div>
-
-    <!-- Rekap Bulanan -->
-    <div class="tr-sim-log-h">
-      <span>📅 Rekap Bulanan (Konsensus)</span>
-    </div>
-    <div class="tr-sim-monthly-wrap">
-      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-        <table class="tr-sim-monthly-table">
-          <thead>
-            <tr>
-              <th>BULAN</th>
-              <th class="ctr">TRADE</th>
-              <th class="ctr">W / L</th>
-              <th class="ctr">WINRATE</th>
-              <th class="num">NET %</th>
-              <th class="num">TERBAIK</th>
-              <th class="num">TERBURUK</th>
-              <th class="num">SALDO AKHIR</th>
-            </tr>
-          </thead>
-          <tbody id="trSimMonthlyBody">
-            <tr><td colspan="8"><div class="tr-sim-log-empty">Belum ada data bulanan.</div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="tr-sim-note">
-      ⓘ Simulasi bersifat <b>historis</b> — pakai harga live dari public/ohlc.json + status yg dihitung otomatis (TP/SL/EXPIRED). Bukan ajakan jual/beli, dan kinerja masa lalu tidak menjamin hasil masa depan. Alokasi equal-weight × jumlah slot; kalau posisi aktif lebih dari slot, tetap dihitung tapi realistically overallocated.
-    </div>
-
-  </div><!-- /trSimContent -->
-</div>
 
 <!-- ── TRACKER PROFILE VIEW (detail per analis) ───────────────────────
      Muncul saat user klik kartu di papan peringkat. Ditutup dgn tombol
@@ -8007,8 +7870,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     analisis:  'tr-view-analisis',
     live:      'tr-view-live',
     perf:      'tr-view-perf',
-    analis:    'tr-view-analis',
-    acc:       'tr-view-acc'
+    analis:    'tr-view-analis'
   };
   var LS_KEY = 'tr_subtab_active';
   var DATA_URL = 'tracker.json';
@@ -8041,7 +7903,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── Update status hint di semua pane empty state ───────────────────
   function updateStatusHint(state, data, errMsg){
-    var panes = ['trAnlStatus', 'trLiveStatus', 'trPerfStatus', 'trAccStatus', 'trAnalisStatus'];
+    var panes = ['trAnlStatus', 'trLiveStatus', 'trPerfStatus', 'trAnalisStatus'];
     panes.forEach(function(id){
       var el = $(id); if (!el) return;
       el.classList.remove('ok', 'err');
@@ -9875,21 +9737,34 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
 <script>
 // ═══════════════════════════════════════════
-// TRACKER — TAB SIMULASI (rename dari Akun)
-// "Kalau ikut sekuritas X dgn modal Rp10jt, saldonya jadi berapa?"
-// Per-firm comparison + Konsensus baseline. Equal-weight compounding.
+// TRACKER — TAB PERFORMA · SIM EXTENSION (Rp saldo + Rekap Bulanan)
+//   Dilebur dari tab Simulasi lama (dihapus di PR #353):
+//   • Config Rp modal + slot (persist localStorage tr_perf_capital/slots,
+//     migrate dari LS lama tr_sim_capital/slots kalau ada)
+//   • Inject saldo Rp per kartu firm di Papan Peringkat (post-render DOM)
+//   • Render tabel Rekap Bulanan Konsensus (equal-weight compounding)
+//   Log Rekomendasi filterable didrop — overlap dgn "Rekomendasi Sekuritas"
+//   di tab Analisis (yg filter lebih granular: 6 tab vs 3 tab).
 // ═══════════════════════════════════════════
 (function(){
-  var LS_CAPITAL = 'tr_sim_capital';
-  var LS_SLOTS   = 'tr_sim_slots';
-  var LS_FILTER  = 'tr_sim_filter';
+  var LS_CAPITAL = 'tr_perf_capital';
+  var LS_SLOTS   = 'tr_perf_slots';
   var DEFAULT_CAP = 10000000; // Rp 10 juta
   var DEFAULT_SLOTS = 10;
-  var PAGE_SIZE = 10;
+
+  // Migrate LS dari kunci lama (backward compat pengguna yg sudah simpan).
+  try {
+    if (!localStorage.getItem(LS_CAPITAL)) {
+      var _oldCap = localStorage.getItem('tr_sim_capital');
+      if (_oldCap) localStorage.setItem(LS_CAPITAL, _oldCap);
+    }
+    if (!localStorage.getItem(LS_SLOTS)) {
+      var _oldSlots = localStorage.getItem('tr_sim_slots');
+      if (_oldSlots) localStorage.setItem(LS_SLOTS, _oldSlots);
+    }
+  } catch(_){}
 
   function $(id){ return document.getElementById(id); }
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
-  function fmtN(n){ return (n == null || !Number.isFinite(+n)) ? '—' : Number(n).toLocaleString('id-ID'); }
   function fmtIdr(n){
     if (n == null || !Number.isFinite(+n)) return '—';
     var v = +n;
@@ -9911,21 +9786,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var v = +n; var dec = (opts && opts.dec != null) ? opts.dec : 2;
     return (v >= 0 ? '+' : '') + v.toFixed(dec) + '%';
   }
-  function fmtShortDate(iso){
-    if (!iso) return '—';
-    var d = new Date(iso); if (isNaN(d.getTime())) return iso;
-    try { return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); }
-    catch(_) { return iso; }
-  }
-  function firmShort(name){
-    if (!name) return '—';
-    // Sekuritas ditulis lengkap; hanya strip prefix PT / suffix Tbk.
-    return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
-  }
-  function initials(name){
-    if (!name) return '?';
-    return String(name).replace(/[,®]/g,'').split(/\s+/).filter(Boolean).slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase() || '?';
-  }
   function parseIdrInput(str){
     var digits = String(str||'').replace(/[^\d]/g,'');
     var n = parseInt(digits, 10);
@@ -9936,15 +9796,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return Math.round(+n).toLocaleString('id-ID');
   }
 
-  // ── Toggle pending vs content ──
-  function setSimView(state){
-    var pending = $('trSimPending'); var content = $('trSimContent');
-    if (!pending || !content) return;
-    if (state === 'ready') { pending.style.display = 'none'; content.style.display = 'block'; }
-    else { pending.style.display = ''; content.style.display = 'none'; }
-  }
-
-  // ── Load/Save config ──
+  // ── Load config dari localStorage ──
   function loadCapital(){
     try { var v = parseIdrInput(localStorage.getItem(LS_CAPITAL)); if (v > 0) return v; } catch(_){}
     return DEFAULT_CAP;
@@ -9953,19 +9805,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
     try { var v = parseInt(localStorage.getItem(LS_SLOTS), 10); if (v >= 1 && v <= 100) return v; } catch(_){}
     return DEFAULT_SLOTS;
   }
-  function loadFilter(){
-    try { var v = localStorage.getItem(LS_FILTER); if (['all','active','closed'].indexOf(v) !== -1) return v; } catch(_){}
-    return 'all';
-  }
 
-  // ── Simulate equity untuk 1 set trade (closed + active) ──
-  // return { closedBalance, realizedGain, floating, totalNow, netPct, projection30d, monthly, equity }
-  function simulate(closed, active, initialCap, slots){
+  // ── Equal-weight compounding simulator ──
+  // Ported dari Simulasi lama, disederhanakan (drop floating/equity/proj30
+  // karena tidak dipakai lagi di context Performa).
+  // return { closedBalance, realizedGain, netPct, monthly }
+  function simulate(closed, initialCap, slots){
     var sorted = closed.slice().filter(function(t){ return t.exitDate && t.pnlPct != null; })
                        .sort(function(a, b){ return String(a.exitDate).localeCompare(String(b.exitDate)); });
     var bal = initialCap;
     var monthly = {};
-    var equity = [{ date: sorted.length ? sorted[0].openDate : null, v: initialCap }];
     for (var i = 0; i < sorted.length; i++) {
       var t = sorted[i];
       var slot = bal / slots;
@@ -9975,7 +9824,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var ym = String(t.exitDate || '').slice(0, 7);
       var m = monthly[ym] = monthly[ym] || {
         trades: 0, wins: 0, losses: 0, sumPnl: 0,
-        best: -Infinity, worst: Infinity, startBal: balBefore, endBal: bal, gainIdr: 0
+        best: -Infinity, worst: Infinity, startBal: balBefore, endBal: bal
       };
       m.trades++;
       var result = t.result || ((+t.pnlPct || 0) >= 0 ? 'WIN' : 'LOSS');
@@ -9985,264 +9834,65 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if ((+t.pnlPct || 0) > m.best)  m.best  = +t.pnlPct;
       if ((+t.pnlPct || 0) < m.worst) m.worst = +t.pnlPct;
       m.endBal = bal;
-      m.gainIdr = m.endBal - m.startBal;
-      equity.push({ date: t.exitDate, v: bal });
-    }
-    // Floating dari posisi aktif
-    var floating = 0;
-    for (var j = 0; j < active.length; j++) {
-      var slot2 = bal / slots;
-      floating += slot2 * ((+active[j].floatingPct || 0) / 100);
-    }
-    // Proyeksi 30 hari kalau ada >=3 trade
-    var proj30 = null;
-    if (sorted.length >= 3) {
-      var start = new Date(sorted[0].openDate || sorted[0].exitDate).getTime();
-      var end = new Date(sorted[sorted.length - 1].exitDate).getTime();
-      var days = Math.max(1, (end - start) / 86400000);
-      var totalRatio = bal / initialCap;
-      if (totalRatio > 0) {
-        var dailyRate = Math.pow(totalRatio, 1 / days);
-        proj30 = bal * Math.pow(dailyRate, 30);
-      }
     }
     return {
       closedBalance: bal,
       realizedGain: bal - initialCap,
-      floating: floating,
-      totalNow: bal + floating,
       netPct: initialCap > 0 ? ((bal - initialCap) / initialCap) * 100 : 0,
-      floatingPct: initialCap > 0 ? (floating / initialCap) * 100 : 0,
-      projection30d: proj30,
-      monthly: monthly,
-      equity: equity
+      monthly: monthly
     };
   }
 
-  // ── HERO: Comparison grid per firm + Konsensus baseline ──
-  function renderComparisonGrid(data, initialCap, slots){
-    var el = $('trSimGrid'); if (!el) return;
+  // ── Inject block "SIMULASI SALDO SEKARANG" ke tiap kartu firm di Papan
+  //    Peringkat. Dijalankan SETELAH renderer utama Performa render kartu.
+  //    Konsensus baseline (⭐) dan kartu firm tanpa trade selesai di-skip
+  //    supaya tidak clutter visual. ──
+  function injectSaldoBlocks(data, cap, slots){
+    var grid = $('trPerfFirmGrid'); if (!grid) return;
+    var cards = grid.querySelectorAll('.tr-perf-firm-card');
+    if (!cards.length) return;
     var byFirm = data.byFirm || {};
-    var firmIds = Object.keys(byFirm);
-
-    // Baseline Konsensus (all closed + all active)
-    var allClosed = data.historyList || [];
-    var allActive = data.openList || [];
-    var konsensus = simulate(allClosed, allActive, initialCap, slots);
-
-    // Simulate per firm
-    var firmSims = firmIds.map(function(fid){
-      var f = byFirm[fid];
-      var closed = f.recsHistory || [];
-      var active = f.recsActive || [];
-      var sim = simulate(closed, active, initialCap, slots);
-      return { fid: fid, firm: f, sim: sim };
-    }).filter(function(x){
-      // Tampilkan firm yg punya trade closed ATAU active.
-      return (x.firm.trades || 0) > 0 || (x.firm.recsActive || []).length > 0;
+    cards.forEach(function(card){
+      var fid = card.getAttribute('data-firm-id');
+      var firm = byFirm[fid]; if (!firm) return;
+      // Remove existing block (re-inject saat config berubah)
+      var existing = card.querySelector('[data-perf-sim]');
+      if (existing) existing.remove();
+      var hasTrades = (firm.trades || 0) > 0;
+      if (!hasTrades) return; // skip firm belum ada trade selesai
+      var closed = firm.recsHistory || [];
+      var sim = simulate(closed, cap, slots);
+      var netCls = sim.netPct >= 0 ? 'up' : 'dn';
+      var gainSign = sim.realizedGain >= 0 ? '+' : '−';
+      var block = document.createElement('div');
+      block.className = 'tr-sim-saldo-block';
+      block.setAttribute('data-perf-sim', '1');
+      block.style.margin = '0 0 11px';
+      block.innerHTML = '<div class="tr-sim-saldo-lbl">SIMULASI SALDO SEKARANG</div>'
+        + '<div class="tr-sim-saldo-val ' + netCls + '">' + fmtIdr(sim.closedBalance) + '</div>'
+        + '<div class="tr-sim-saldo-sub">'
+          + '<span class="pct ' + netCls + '">' + fmtPct(sim.netPct) + '</span>'
+          + ' &nbsp; ' + gainSign + fmtIdrExact(Math.abs(sim.realizedGain))
+        + '</div>';
+      // Insert sebelum .tr-perf-firm-stats (persis di bawah header nama & rank)
+      var stats = card.querySelector('.tr-perf-firm-stats');
+      if (stats && stats.parentNode === card) card.insertBefore(block, stats);
+      else card.appendChild(block);
     });
-
-    // Sort by closedBalance desc (kalau ada trade closed), lalu by activeCount
-    firmSims.sort(function(a, b){
-      var aHas = (a.firm.trades || 0) > 0 ? 1 : 0;
-      var bHas = (b.firm.trades || 0) > 0 ? 1 : 0;
-      if (aHas !== bHas) return bHas - aHas;
-      if (aHas && bHas) return b.sim.closedBalance - a.sim.closedBalance;
-      return (b.firm.recsActive || []).length - (a.firm.recsActive || []).length;
-    });
-
-    // Render baseline card + firm cards
-    function cardHtml(opts){
-      var isBaseline = opts.baseline;
-      var sim = opts.sim;
-      var name = opts.name;
-      var verified = opts.verified;
-      var rank = opts.rank; // index 0..N atau null untuk baseline
-      var meta = opts.meta;
-      var extraCls = isBaseline ? 'baseline' : (rank != null && rank < 3 ? 'rank-' + (rank + 1) : '');
-      var hasTrades = opts.hasTrades;
-
-      var netCls = hasTrades ? (sim.netPct >= 0 ? 'up' : 'dn') : 'neu';
-      var saldoStr = hasTrades ? fmtIdr(sim.closedBalance) : fmtIdr(initialCap);
-      var netSubHtml = hasTrades
-        ? ('<span class="pct ' + (sim.netPct>=0?'up':'dn') + '">' + fmtPct(sim.netPct) + '</span>'
-           + ' &nbsp; ' + (sim.realizedGain >= 0 ? '+' : '−') + fmtIdrExact(Math.abs(sim.realizedGain)))
-        : '<span style="color:var(--text3)">Belum ada trade selesai — masih ' + (opts.activeCount || 0) + ' posisi aktif</span>';
-
-      var floatCls = sim.floating >= 0 ? 'up' : 'dn';
-      var floatStr = (sim.floating >= 0 ? '+' : '−') + fmtIdrExact(Math.abs(sim.floating));
-      var floatPctStr = fmtPct(sim.floatingPct, { dec: 2 });
-      var projStr = (sim.projection30d != null) ? fmtIdr(sim.projection30d) : '— (butuh ≥3 trade)';
-
-      var rankBadge = isBaseline ? '⭐ BASELINE'
-        : (rank === 0 ? '🥇 #1' : rank === 1 ? '🥈 #2' : rank === 2 ? '🥉 #3' : '#' + (rank + 1));
-
-      return '<div class="tr-sim-card ' + extraCls + '">'
-        + '<div class="tr-sim-card-top">'
-          + '<div>'
-            + '<div class="tr-sim-card-rank">' + rankBadge + '</div>'
-            + '<div class="tr-sim-card-name">' + esc(name) + (verified ? '<span class="tr-sim-card-verified">✓ VERIF</span>' : '') + '</div>'
-            + '<div class="tr-sim-card-meta-top">' + esc(meta) + '</div>'
-          + '</div>'
-        + '</div>'
-        + '<div class="tr-sim-saldo-block">'
-          + '<div class="tr-sim-saldo-lbl">SALDO SEKARANG</div>'
-          + '<div class="tr-sim-saldo-val ' + netCls + '">' + saldoStr + '</div>'
-          + '<div class="tr-sim-saldo-sub">' + netSubHtml + '</div>'
-        + '</div>'
-        + '<div class="tr-sim-mini-stats">'
-          + '<div class="tr-sim-mini-stat">'
-            + '<div class="tr-sim-mini-stat-lbl">Floating (aktif)</div>'
-            + '<div class="tr-sim-mini-stat-val" style="color:var(--' + (sim.floating>=0?'green':'red') + ')">' + floatStr + '</div>'
-            + '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:var(--text3);margin-top:2px">' + floatPctStr + '</div>'
-          + '</div>'
-          + '<div class="tr-sim-mini-stat">'
-            + '<div class="tr-sim-mini-stat-lbl">Proyeksi 30 hari</div>'
-            + '<div class="tr-sim-mini-stat-val">' + projStr + '</div>'
-            + '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:var(--text3);margin-top:2px">berdasar laju historis</div>'
-          + '</div>'
-        + '</div>'
-        + '<div class="tr-sim-card-foot">'
-          + '<span><span class="k">📊 Selesai:</span> <span class="v">' + (opts.closedCount || 0) + '</span></span>'
-          + '<span><span class="k">● Aktif:</span> <span class="v">' + (opts.activeCount || 0) + '</span></span>'
-          + '<span><span class="k">🎯 Slot:</span> <span class="v">' + slots + '</span></span>'
-        + '</div>'
-      + '</div>';
-    }
-
-    var cards = [];
-
-    // Baseline Konsensus card first
-    cards.push(cardHtml({
-      baseline: true,
-      name: 'Konsensus Semua Sekuritas',
-      verified: false,
-      meta: 'ikuti semua rekomendasi dari semua sekuritas',
-      sim: konsensus,
-      hasTrades: (data.totalClosed || 0) > 0,
-      closedCount: data.totalClosed || 0,
-      activeCount: data.open || 0
-    }));
-
-    // Firm cards ranked
-    firmSims.forEach(function(x, i){
-      cards.push(cardHtml({
-        rank: i,
-        name: firmShort(x.firm.name),
-        verified: x.firm.verified,
-        meta: 'khusus ikut rekomendasi dari ' + firmShort(x.firm.name),
-        sim: x.sim,
-        hasTrades: (x.firm.trades || 0) > 0,
-        closedCount: x.firm.trades || 0,
-        activeCount: (x.firm.recsActive || []).length
-      }));
-    });
-
-    el.innerHTML = cards.join('') || '<div class="tr-sim-log-empty" style="grid-column:1/-1">Belum ada sekuritas dgn rekomendasi.</div>';
   }
 
-  // ── Log Rekomendasi ──
-  var currentFilter = 'all';
-  var currentPage = 1;
-
-  function statusPill(item){
-    // Untuk active items
-    if (item._isActive) {
-      var tpHits = item.tpHits || [];
-      if (tpHits.includes('TP1')) return '<span class="tr-sim-log-status tp1">🎯 TP1 (aktif)</span>';
-      return '<span class="tr-sim-log-status act">● Aktif</span>';
-    }
-    // Closed items
-    var cb = item.closedBy;
-    var tpHits2 = item.tpHits || [];
-    if (cb === 'TP2') return '<span class="tr-sim-log-status tp2">🏆 Kena TP2</span>';
-    if (cb === 'TP1') return '<span class="tr-sim-log-status tp1">🎯 Kena TP1</span>';
-    if (cb === 'SL_TRAIL') return '<span class="tr-sim-log-status tsl">🛡 SL Trailing</span>';
-    if (cb === 'SL') return '<span class="tr-sim-log-status sl">✕ Kena SL</span>';
-    if (cb === 'EXPIRED') return '<span class="tr-sim-log-status exp">⏰ Expired</span>';
-    return '<span class="tr-sim-log-status act">—</span>';
-  }
-
-  function renderLog(data){
-    var body = $('trSimLogBody'); if (!body) return;
-    var openList = (data.openList || []).map(function(o){ return Object.assign({ _isActive: true }, o); });
-    var histList = (data.historyList || []).map(function(h){ return Object.assign({ _isActive: false }, h); });
-
-    var items;
-    if (currentFilter === 'active') items = openList.slice();
-    else if (currentFilter === 'closed') items = histList.slice();
-    else items = openList.concat(histList);
-
-    // Sort terbaru dulu
-    items.sort(function(a, b){
-      var ta = new Date(a.exitDate || a.openDate || 0).getTime();
-      var tb = new Date(b.exitDate || b.openDate || 0).getTime();
-      return tb - ta;
-    });
-
-    var total = items.length;
-    var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    if (currentPage > totalPages) currentPage = totalPages;
-    if (currentPage < 1) currentPage = 1;
-    var start = (currentPage - 1) * PAGE_SIZE;
-    var slice = items.slice(start, start + PAGE_SIZE);
-
-    if (!slice.length) {
-      body.innerHTML = '<tr><td colspan="5"><div class="tr-sim-log-empty">Tidak ada rekomendasi di kategori ini.</div></td></tr>';
-    } else {
-      body.innerHTML = slice.map(function(r){
-        var hasFirm = r.firm && String(r.firm).trim();
-        var pnl = +r.pnlPct || +r.floatingPct || 0;
-        // Untuk active: pakai floatingPct
-        var pnlValue = r._isActive ? (+r.floatingPct || 0) : (+r.pnlPct || 0);
-        var pnlCls = pnlValue >= 0 ? 'up' : 'dn';
-        var attribution = hasFirm && r.analyst
-          ? '<div class="tr-sim-log-firm-sub">oleh ' + esc(r.analyst) + '</div>'
-          : '';
-        var firmDisplay = hasFirm ? firmShort(r.firm) : (r.analyst || '—');
-        var subForFirm = hasFirm ? '' : '<div class="tr-sim-log-firm-sub">tanpa afiliasi firm</div>';
-
-        return '<tr>'
-          + '<td>'
-            + '<div class="tr-sim-log-tick">' + esc(r.ticker) + '</div>'
-            + '<div class="tr-sim-log-sub">' + fmtShortDate(r.openDate) + (r._isActive ? '' : ' → ' + fmtShortDate(r.exitDate)) + '</div>'
-          + '</td>'
-          + '<td>'
-            + '<div class="tr-sim-log-firm">' + esc(firmDisplay) + (r.verified ? ' <span style="color:var(--green);font-size:9px">✓</span>' : '') + '</div>'
-            + attribution + subForFirm
-          + '</td>'
-          + '<td>'
-            + '<div class="tr-sim-log-prices">'
-              + '<span class="k">E:</span>' + fmtN(r.entry)
-              + ' <span class="k">TP:</span>' + fmtN(r.tp1)
-              + (r.tp2 ? '/' + fmtN(r.tp2) : '')
-              + ' <span class="k">SL:</span>' + fmtN(r.sl)
-            + '</div>'
-          + '</td>'
-          + '<td style="text-align:center">' + statusPill(r) + '</td>'
-          + '<td class="tr-sim-log-pnl ' + pnlCls + '">' + fmtPct(pnlValue, { dec: 1 }) + '</td>'
-        + '</tr>';
-      }).join('');
-    }
-
-    // Update pager
-    var info = $('trSimPageInfo'); if (info) info.textContent = 'Hal ' + currentPage + ' / ' + totalPages + ' · ' + total + ' rekom';
-    var prev = $('trSimPrev'); if (prev) prev.disabled = currentPage <= 1;
-    var next = $('trSimNext'); if (next) next.disabled = currentPage >= totalPages;
-  }
-
-  // ── Rekap Bulanan (dari konsensus simulasi) ──
+  // ── Render tabel Rekap Bulanan Konsensus di tab Performa ──
   function renderMonthly(data, initialCap, slots){
-    var body = $('trSimMonthlyBody'); if (!body) return;
+    var body = $('trPerfMonthlyBody'); if (!body) return;
     var allClosed = data.historyList || [];
     if (!allClosed.length) {
-      body.innerHTML = '<tr><td colspan="8"><div class="tr-sim-log-empty">Belum ada data bulanan (butuh trade selesai).</div></td></tr>';
+      body.innerHTML = '<tr><td colspan="8"><div class="tr-perf-empty-inline">Belum ada data bulanan (butuh trade selesai).</div></td></tr>';
       return;
     }
-    var sim = simulate(allClosed, [], initialCap, slots);
+    var sim = simulate(allClosed, initialCap, slots);
     var months = Object.keys(sim.monthly).sort().reverse();
     if (!months.length) {
-      body.innerHTML = '<tr><td colspan="8"><div class="tr-sim-log-empty">Belum ada data bulanan.</div></td></tr>';
+      body.innerHTML = '<tr><td colspan="8"><div class="tr-perf-empty-inline">Belum ada data bulanan.</div></td></tr>';
       return;
     }
     var monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
@@ -10270,32 +9920,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }).join('');
   }
 
-  // ── Master render ──
+  // ── Master apply — dijalankan saat data siap ATAU saat config berubah ──
+  //    Wrapped di setTimeout(0) supaya jalan SETELAH renderer utama Performa
+  //    (yg juga subscribe __TR_onData) selesai render kartu firm — jadi
+  //    injectSaldoBlocks menemukan DOM nodes yg sudah ada.
   var lastData = null;
-  function renderAll(data){
-    if (!data || data.pending) { setSimView('pending'); return; }
-    setSimView('ready');
+  function applyAll(data){
+    if (!data || data.pending) return;
     lastData = data;
     var cap = loadCapital();
     var slots = loadSlots();
-    renderComparisonGrid(data, cap, slots);
-    renderLog(data);
-    renderMonthly(data, cap, slots);
+    setTimeout(function(){
+      injectSaldoBlocks(data, cap, slots);
+      renderMonthly(data, cap, slots);
+    }, 0);
   }
+  function reApply(){ if (lastData) applyAll(lastData); }
 
-  function reRender(){
-    if (lastData) renderAll(lastData);
-  }
-
-  // ── Input handlers ──
-  function bindInputs(){
-    var capInput = $('trSimCapital');
+  // ── Bind input listeners config Rp modal + slot ──
+  function bindConfigInputs(){
+    var capInput = $('trPerfCapital');
     if (capInput) {
-      // Format initial value
       capInput.value = formatIdrInput(loadCapital());
       var capTimer = null;
       capInput.addEventListener('input', function(e){
-        // Reformat as user types
         var raw = parseIdrInput(e.target.value);
         var pos = e.target.selectionStart;
         var oldLen = e.target.value.length;
@@ -10305,15 +9953,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
         if (capTimer) clearTimeout(capTimer);
         capTimer = setTimeout(function(){
           if (raw >= 1) { try { localStorage.setItem(LS_CAPITAL, String(raw)); } catch(_){} }
-          reRender();
+          reApply();
         }, 300);
       });
       capInput.addEventListener('blur', function(e){
         var raw = parseIdrInput(e.target.value);
-        if (raw < 1) { e.target.value = formatIdrInput(DEFAULT_CAP); try { localStorage.setItem(LS_CAPITAL, String(DEFAULT_CAP)); } catch(_){} reRender(); }
+        if (raw < 1) {
+          e.target.value = formatIdrInput(DEFAULT_CAP);
+          try { localStorage.setItem(LS_CAPITAL, String(DEFAULT_CAP)); } catch(_){}
+          reApply();
+        }
       });
     }
-    var slotsInput = $('trSimSlots');
+    var slotsInput = $('trPerfSlots');
     if (slotsInput) {
       slotsInput.value = String(loadSlots());
       slotsInput.addEventListener('change', function(e){
@@ -10322,66 +9974,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
         if (v > 100) v = 100;
         e.target.value = String(v);
         try { localStorage.setItem(LS_SLOTS, String(v)); } catch(_){}
-        reRender();
+        reApply();
       });
     }
   }
 
-  // ── Filter + Pager ──
-  document.addEventListener('click', function(e){
-    var t = e.target;
-    if (!t || !t.closest) return;
-    // Filter
-    var fbtn = t.closest('#trSimFilter .tr-sim-filter-btn');
-    if (fbtn) {
-      var f = fbtn.getAttribute('data-filter');
-      if (f) {
-        currentFilter = f;
-        currentPage = 1;
-        try { localStorage.setItem(LS_FILTER, f); } catch(_){}
-        document.querySelectorAll('#trSimFilter .tr-sim-filter-btn').forEach(function(b){
-          b.classList.toggle('active', b.getAttribute('data-filter') === f);
-        });
-        if (lastData) renderLog(lastData);
-      }
-      return;
-    }
-    // Prev
-    if (t.closest('#trSimPrev')) {
-      if (currentPage > 1) { currentPage--; if (lastData) renderLog(lastData); }
-      return;
-    }
-    // Next
-    if (t.closest('#trSimNext')) {
-      currentPage++;
-      if (lastData) renderLog(lastData);
-      return;
-    }
-  });
-
-  // ── Init ──
-  function init(){
-    currentFilter = loadFilter();
-    // Set filter button active state
-    document.querySelectorAll('#trSimFilter .tr-sim-filter-btn').forEach(function(b){
-      b.classList.toggle('active', b.getAttribute('data-filter') === currentFilter);
-    });
-    bindInputs();
-  }
+  // ── Init input handlers ──
+  function init(){ bindConfigInputs(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
 
-  // ── Subscribe ──
+  // ── Subscribe ke data event ──
   if (window.__TR_onData) {
-    window.__TR_onData(renderAll);
+    window.__TR_onData(applyAll);
   } else {
     var tries = 0;
     var wait = setInterval(function(){
       tries++;
-      if (window.__TR_onData) { clearInterval(wait); window.__TR_onData(renderAll); }
+      if (window.__TR_onData) { clearInterval(wait); window.__TR_onData(applyAll); }
       else if (tries > 30) clearInterval(wait);
     }, 100);
   }
