@@ -3079,33 +3079,35 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .trAnl-sent-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--bg3);border:1px solid var(--border)}
 .trAnl-sent-bar-buy{background:linear-gradient(90deg,#059669,#4ade80);transition:width .5s ease}
 .trAnl-sent-bar-sell{background:linear-gradient(90deg,#fb7185,#e11d48);transition:width .5s ease}
-/* ── Section 2: Price Ladder ──
-   Layout: label DI ATAS (baris 1), track di tengah, val (angka) DI BAWAH.
-   Marker berdekatan (< 15% jarak) di-stagger secondary row via class
-   .row-b (JS assign) supaya angka tidak menumpuk. */
-.trAnl-ladder{position:relative;height:78px;padding-top:22px;padding-bottom:34px}
-.trAnl-ladder-track{position:absolute;left:8px;right:8px;top:28px;height:3px;background:linear-gradient(90deg,rgba(239,68,68,.45) 0%,rgba(148,163,184,.4) 45%,rgba(148,163,184,.4) 55%,rgba(16,185,129,.45) 100%);border-radius:2px}
+/* ── Section: Price Ladder — layout eksplisit dgn rows.
+   Container 96px, ada 2 baris label (atas) + track (tengah) + 2 baris val (bawah).
+   Marker yg berdekatan (< 18% jarak) di-tag class .stag → label di row bawah
+   & val di row bawah kedua supaya tidak menumpuk dgn non-stag marker. */
+.trAnl-ladder{position:relative;height:96px}
+.trAnl-ladder-track{position:absolute;left:8px;right:8px;top:44px;height:3px;background:linear-gradient(90deg,rgba(239,68,68,.45) 0%,rgba(148,163,184,.4) 45%,rgba(148,163,184,.4) 55%,rgba(16,185,129,.45) 100%);border-radius:2px}
 .trAnl-ladder-markers{position:absolute;left:8px;right:8px;top:0;bottom:0}
 .trAnl-ladder-marker{position:absolute;transform:translateX(-50%);text-align:center;white-space:nowrap;pointer-events:none}
-.trAnl-ladder-marker .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--text2);border:2px solid var(--card);box-shadow:0 0 0 1px var(--border);margin-top:24px}
+/* Dot di TRACK level */
+.trAnl-ladder-marker .dot{position:absolute;left:50%;top:46px;transform:translate(-50%,-50%);display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--text2);border:2px solid var(--card);box-shadow:0 0 0 1px var(--border);z-index:2}
 .trAnl-ladder-marker.sl   .dot{background:var(--red)}
-.trAnl-ladder-marker.entry .dot{background:var(--accent);width:11px;height:11px;margin-top:23px}
+.trAnl-ladder-marker.entry .dot{background:var(--accent);width:11px;height:11px}
 .trAnl-ladder-marker.tp1  .dot{background:var(--green)}
 .trAnl-ladder-marker.tp2  .dot{background:#4ade80;width:8px;height:8px}
-.trAnl-ladder-marker.live .dot{background:transparent;width:14px;height:14px;border:2.5px solid #fbbf24;box-shadow:0 0 0 2px rgba(251,191,36,.28);margin-top:21px;animation:plPulse 2s infinite}
-.trAnl-ladder-marker .lbl{position:absolute;left:50%;transform:translateX(-50%);top:0;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.4px;color:var(--text3);text-transform:uppercase;line-height:1}
+.trAnl-ladder-marker.live .dot{background:transparent;width:14px;height:14px;border:2.5px solid #fbbf24;box-shadow:0 0 0 2px rgba(251,191,36,.28);animation:plPulse 2s infinite;z-index:3}
+/* Labels di ATAS track. Non-stag: row 1 (top:6). Stag: row 2 (top:22). */
+.trAnl-ladder-marker .lbl{position:absolute;left:50%;transform:translateX(-50%);top:6px;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.4px;color:var(--text3);text-transform:uppercase;line-height:1;white-space:nowrap}
+.trAnl-ladder-marker.stag .lbl{top:22px}
 .trAnl-ladder-marker.sl   .lbl{color:var(--red)}
 .trAnl-ladder-marker.entry .lbl{color:var(--accent)}
 .trAnl-ladder-marker.tp1  .lbl{color:var(--green)}
 .trAnl-ladder-marker.tp2  .lbl{color:#4ade80}
 .trAnl-ladder-marker.live .lbl{color:#fbbf24;font-size:8.5px}
-.trAnl-ladder-marker .val{position:absolute;left:50%;transform:translateX(-50%);bottom:0;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;color:var(--text);white-space:nowrap;letter-spacing:-.2px;line-height:1}
+/* Val di BAWAH track. Non-stag: row 1 (top:60). Stag: row 2 (top:78). */
+.trAnl-ladder-marker .val{position:absolute;left:50%;transform:translateX(-50%);top:60px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;color:var(--text);white-space:nowrap;letter-spacing:-.2px;line-height:1}
+.trAnl-ladder-marker.stag .val{top:78px}
 .trAnl-ladder-marker .val .pct{color:var(--text3);font-size:8px;font-weight:600;margin-left:2px}
-/* Marker yg overlap dgn tetangga → geser val ke row bawah (untuk secondary)
-   dan lbl ke row atas. JS assign class .stag berdasar deteksi jarak posisi. */
-.trAnl-ladder-marker.stag .lbl{top:-4px}
-.trAnl-ladder-marker.stag .val{bottom:-14px}
-.trAnl-ladder-note{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text2);line-height:1.45;padding:5px 8px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);text-align:left}
+/* Note interpretasi posisi live vs zona */
+.trAnl-ladder-note{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text2);line-height:1.45;padding:5px 8px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);text-align:left;margin-top:4px}
 .trAnl-ladder-note b{color:var(--text);font-weight:700}
 /* ── Section 3: Posisi Sekarang (grid 4 kotak) ── */
 .trAnl-pos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -3121,22 +3123,32 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .trAnl-pos-box.tp .v{color:var(--green)}
 .trAnl-pos-box.sl{background:linear-gradient(180deg,rgba(239,68,68,.10),var(--bg3));border-color:rgba(239,68,68,.32)}
 .trAnl-pos-box.sl .v{color:var(--red)}
-/* ── Section 4: Opportunity Score (spedometer gauge) ── */
+/* ── Section: Opportunity Score (gauge) — layout side-by-side kompak ── */
 .trAnl-opp-info-btn{background:transparent;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:0 2px;opacity:.7;transition:opacity .15s,color .15s;font-family:inherit;line-height:1}
 .trAnl-opp-info-btn:hover{opacity:1;color:var(--accent)}
-.trAnl-opp-gauge-wrap{position:relative;width:100%;max-width:220px;margin:0 auto;padding:6px 0 4px}
-.trAnl-opp-gauge{width:100%;height:auto;display:block}
-.trAnl-opp-center{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);text-align:center;line-height:1;pointer-events:none}
-.trAnl-opp-val{font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:800;letter-spacing:-1.2px;color:var(--text);line-height:1}
-.trAnl-opp-max{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);font-weight:700;margin-top:1px;letter-spacing:.5px}
-.trAnl-opp-lvl{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;text-align:center;padding:5px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);margin-top:4px}
+/* Wrap: gauge kiri (~55%) + info kanan (~45%). Angka + level di kanan gauge,
+   BUKAN di dalam gauge → tidak menumpuk dgn needle. */
+.trAnl-opp-wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:10px;align-items:center;padding:2px 0}
+.trAnl-opp-gauge-col{width:100%;min-width:0}
+.trAnl-opp-gauge{width:100%;height:auto;display:block;max-width:180px;margin:0 auto}
+.trAnl-opp-info-col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.trAnl-opp-val-row{display:flex;align-items:baseline;gap:4px;justify-content:center}
+.trAnl-opp-val{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;letter-spacing:-1px;color:var(--text);line-height:1}
+.trAnl-opp-max{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.4px}
+.trAnl-opp-lvl{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;text-align:center;padding:4px 6px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
 .trAnl-opp-lvl.strong-buy{background:linear-gradient(90deg,rgba(5,150,105,.18),rgba(16,185,129,.18));color:var(--green);border-color:rgba(16,185,129,.4)}
 .trAnl-opp-lvl.ok-buy{background:linear-gradient(90deg,rgba(132,204,22,.16),rgba(234,179,8,.14));color:#a3a300;border-color:rgba(234,179,8,.4)}
 [data-theme="dark"] .trAnl-opp-lvl.ok-buy{color:#eab308}
 .trAnl-opp-lvl.caution{background:linear-gradient(90deg,rgba(249,115,22,.14),rgba(249,115,22,.14));color:#f97316;border-color:rgba(249,115,22,.4)}
 .trAnl-opp-lvl.wait{background:linear-gradient(90deg,rgba(225,29,72,.14),rgba(239,68,68,.14));color:var(--red);border-color:rgba(239,68,68,.4)}
 .trAnl-opp-lvl.na{color:var(--text3)}
-.trAnl-opp-dur{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);text-align:center;margin-top:4px;font-weight:600}
+.trAnl-opp-dur{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);text-align:center;font-weight:600;line-height:1.35}
+/* Sempit / mobile: stack gauge dan info vertikal */
+@media (max-width:340px){
+  .trAnl-opp-wrap{grid-template-columns:1fr;gap:6px}
+  .trAnl-opp-gauge{max-width:140px}
+  .trAnl-opp-val{font-size:22px}
+}
 /* Legacy track record styles (kept sbg fallback kalau elemen lama muncul) */
 .trAnl-track-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .trAnl-track-grid--single{grid-template-columns:1fr}
@@ -4865,30 +4877,71 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <div class="tr-anl-chart-row">
         <!-- Host untuk TradingView widget (script embed, di-inject via JS) -->
         <div class="tr-anl-tv-wrap" id="trAnlTvHost"></div>
-        <!-- ═══ Widget Status Rekomendasi — REDESIGN (Opsi A + Price Ladder)
-             4 section: Sentimen · Price Ladder · Posisi · Track Record.
-             Menggantikan versi lama (donut + gradient bar + 3 kotak). ═══ -->
+        <!-- ═══ Widget Status Rekomendasi — v3 layout ═══
+             Urutan (dari atas):
+               1. Opportunity Score (spedometer, dipindah ke atas)
+               2. Price Ladder (tanpa title 'Zona Harga Konsensus')
+               3. Posisi Sekarang
+             Sentimen Analis DIHAPUS (redundan dgn sentiment factor di
+             Opp Score composite). ═══ -->
         <div class="tr-anl-consensus" id="trAnlConsensus">
           <div class="tr-anl-consensus-hd">🎯 Status Rekomendasi · <b id="trAnlConsN">— rec</b></div>
 
-          <!-- 1. SENTIMEN ANALIS: bullish/bearish bar dari BUY vs SELL count -->
-          <div class="trAnl-sec">
-            <div class="trAnl-sec-lbl">📊 Sentimen Analis</div>
-            <div class="trAnl-sent">
-              <div class="trAnl-sent-hdr">
-                <span class="trAnl-sent-headline" id="trAnlSentHead">—</span>
-                <span class="trAnl-sent-break" id="trAnlSentBreak">— BUY / — SELL</span>
+          <!-- 1. OPPORTUNITY SCORE (spedometer) — sekarang di paling atas.
+               Gauge di-perkecil (viewBox 200×110), val + level di dalam grid
+               kanan supaya tidak menumpuk dgn needle. Klik ⓘ → popup breakdown. -->
+          <div class="trAnl-sec" id="trAnlOppSec">
+            <div class="trAnl-sec-lbl">
+              <span>⚡ Opportunity Score</span>
+              <button type="button" class="trAnl-opp-info-btn" id="trAnlOppInfoBtn" aria-label="Cara score dihitung" title="Klik untuk penjelasan komposisi score">ⓘ</button>
+            </div>
+            <div class="trAnl-opp-wrap">
+              <div class="trAnl-opp-gauge-col">
+                <svg class="trAnl-opp-gauge" viewBox="0 0 200 110" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="oppGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%"   stop-color="#e11d48"/>
+                      <stop offset="25%"  stop-color="#f97316"/>
+                      <stop offset="50%"  stop-color="#eab308"/>
+                      <stop offset="75%"  stop-color="#84cc16"/>
+                      <stop offset="100%" stop-color="#059669"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- Background + colored arc -->
+                  <path d="M 15 100 A 85 85 0 0 1 185 100" stroke="var(--bg3)" stroke-width="11" fill="none" stroke-linecap="round"/>
+                  <path d="M 15 100 A 85 85 0 0 1 185 100" stroke="url(#oppGaugeGrad)" stroke-width="11" fill="none" stroke-linecap="round" opacity="0.92"/>
+                  <!-- Tick marks (5 ticks: 0/25/50/75/100) -->
+                  <line x1="15"  y1="100" x2="15"  y2="90"  stroke="var(--text3)" stroke-width="1.2"/>
+                  <line x1="57"  y1="35"  x2="63"  y2="43"  stroke="var(--text3)" stroke-width="1"/>
+                  <line x1="100" y1="15"  x2="100" y2="25"  stroke="var(--text3)" stroke-width="1"/>
+                  <line x1="143" y1="35"  x2="137" y2="43"  stroke="var(--text3)" stroke-width="1"/>
+                  <line x1="185" y1="100" x2="185" y2="90"  stroke="var(--text3)" stroke-width="1.2"/>
+                  <!-- Needle (rotate via JS: (score/100*180) - 90 deg) -->
+                  <line id="trAnlOppNeedle" x1="100" y1="100" x2="100" y2="32" stroke="var(--text)" stroke-width="2.5" stroke-linecap="round" transform="rotate(-90 100 100)" style="transition:transform .6s cubic-bezier(.34,1.56,.64,1)"/>
+                  <circle cx="100" cy="100" r="5.5" fill="var(--text)"/>
+                  <circle cx="100" cy="100" r="2.5" fill="var(--card)"/>
+                </svg>
               </div>
-              <div class="trAnl-sent-bar">
-                <div class="trAnl-sent-bar-buy"  id="trAnlSentBarBuy"  style="width:50%"></div>
-                <div class="trAnl-sent-bar-sell" id="trAnlSentBarSell" style="width:50%"></div>
+              <div class="trAnl-opp-info-col">
+                <div class="trAnl-opp-val-row">
+                  <span class="trAnl-opp-val" id="trAnlOppVal">—</span>
+                  <span class="trAnl-opp-max">/ 100</span>
+                </div>
+                <div class="trAnl-opp-lvl" id="trAnlOppLvl">—</div>
+                <div class="trAnl-opp-dur" id="trAnlOppDur">—</div>
               </div>
             </div>
+            <!-- Hidden legacy elements (backward-compat) -->
+            <span id="trAnlTrackSub" style="display:none"></span>
+            <span id="trAnlTrackDur" style="display:none"></span>
+            <span id="trAnlTrackWr" style="display:none"></span>
+            <span id="trAnlTrackAvg" style="display:none"></span>
           </div>
 
-          <!-- 2. PRICE LADDER: SL — Entry — LIVE — TP1 — TP2 (visual axis) -->
+          <!-- 2. PRICE LADDER (no title — user req 'text konsensus hilangkan').
+               SL — Entry — LIVE — TP1 — TP2 dgn stagger aggressive supaya
+               marker berdekatan (mis. LIVE ≈ TP1) tidak menumpuk. -->
           <div class="trAnl-sec">
-            <div class="trAnl-sec-lbl">🧭 Zona Harga Konsensus</div>
             <div class="trAnl-ladder" id="trAnlLadder">
               <div class="trAnl-ladder-track"></div>
               <div class="trAnl-ladder-markers" id="trAnlLadderMarkers"></div>
@@ -4915,55 +4968,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
             </div>
           </div>
 
-          <!-- 4. OPPORTUNITY SCORE — spedometer composite dari 4 faktor:
-               40% sentimen · 30% proximity ke entry · 20% hit rate · 10% RR.
-               Klik ⓘ → popup breakdown detail per faktor.
-               Track Record lama (Win Rate + Avg Return) dihapus per user req.
-               Durasi tetap ditampilkan kecil di bawah gauge. -->
-          <div class="trAnl-sec" id="trAnlOppSec">
-            <div class="trAnl-sec-lbl">
-              <span>⚡ Opportunity Score</span>
-              <button type="button" class="trAnl-opp-info-btn" id="trAnlOppInfoBtn" aria-label="Cara score dihitung" title="Klik untuk penjelasan komposisi score">ⓘ</button>
-            </div>
-            <div class="trAnl-opp-gauge-wrap">
-              <svg class="trAnl-opp-gauge" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                <defs>
-                  <linearGradient id="oppGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%"   stop-color="#e11d48"/>
-                    <stop offset="25%"  stop-color="#f97316"/>
-                    <stop offset="50%"  stop-color="#eab308"/>
-                    <stop offset="75%"  stop-color="#84cc16"/>
-                    <stop offset="100%" stop-color="#059669"/>
-                  </linearGradient>
-                </defs>
-                <!-- Background arc (semi-lingkaran) -->
-                <path d="M 15 100 A 85 85 0 0 1 185 100" stroke="var(--bg3)" stroke-width="14" fill="none" stroke-linecap="round"/>
-                <!-- Colored arc (gradient merah→hijau) -->
-                <path d="M 15 100 A 85 85 0 0 1 185 100" stroke="url(#oppGaugeGrad)" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.9"/>
-                <!-- Tick marks -->
-                <line x1="15"  y1="100" x2="15"  y2="88"  stroke="var(--text3)" stroke-width="1.5"/>
-                <line x1="57"  y1="35"  x2="65"  y2="45"  stroke="var(--text3)" stroke-width="1"/>
-                <line x1="100" y1="15"  x2="100" y2="27"  stroke="var(--text3)" stroke-width="1"/>
-                <line x1="143" y1="35"  x2="135" y2="45"  stroke="var(--text3)" stroke-width="1"/>
-                <line x1="185" y1="100" x2="185" y2="88"  stroke="var(--text3)" stroke-width="1.5"/>
-                <!-- Needle (rotate via JS: (score/100*180) - 90 deg) -->
-                <line id="trAnlOppNeedle" x1="100" y1="100" x2="100" y2="30" stroke="var(--text)" stroke-width="3" stroke-linecap="round" transform="rotate(-90 100 100)" style="transition:transform .6s cubic-bezier(.34,1.56,.64,1)"/>
-                <circle cx="100" cy="100" r="7" fill="var(--text)"/>
-                <circle cx="100" cy="100" r="3" fill="var(--card)"/>
-              </svg>
-              <div class="trAnl-opp-center">
-                <div class="trAnl-opp-val" id="trAnlOppVal">—</div>
-                <div class="trAnl-opp-max">/ 100</div>
-              </div>
-            </div>
-            <div class="trAnl-opp-lvl" id="trAnlOppLvl">—</div>
-            <div class="trAnl-opp-dur" id="trAnlOppDur">—</div>
-            <!-- Hidden legacy elements (backward-compat) -->
-            <span id="trAnlTrackSub" style="display:none"></span>
-            <span id="trAnlTrackDur" style="display:none"></span>
-            <span id="trAnlTrackWr" style="display:none"></span>
-            <span id="trAnlTrackAvg" style="display:none"></span>
-          </div>
+          <!-- Hidden legacy elements: Sentimen Analis dihapus per user req.
+               Element id tetap ada supaya renderer JS lama tidak error null. -->
+          <span id="trAnlSentHead" style="display:none"></span>
+          <span id="trAnlSentBreak" style="display:none"></span>
+          <span id="trAnlSentBarBuy" style="display:none"></span>
+          <span id="trAnlSentBarSell" style="display:none"></span>
         </div>
       </div>
     </div>
@@ -10903,14 +10913,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
         addItem('live',  'Live',  lastPrice, true);
         addItem('tp1',   'TP1',   tp1Avg,   true);
         addItem('tp2',   'TP2',   tp2Avg,   true);
-        // Stagger detection: sort by pos, kalau 2 marker jarak < 14%, stagger
-        // yang kedua (kelas .stag) supaya val-nya turun ke row bawah.
+        // Stagger detection: sort by pos. Marker yg jarak < 18% dari
+        // tetangga → alternate .stag (opposite dari tetangga) supaya
+        // label & val turun ke row bawah, tidak menumpuk dgn tetangga.
         var sortedItems = items.slice().sort(function(a,b){ return a.pos - b.pos; });
-        var STAG_THRESHOLD = 14;
+        var STAG_THRESHOLD = 18;
         for (var si = 1; si < sortedItems.length; si++) {
-          if (sortedItems[si].pos - sortedItems[si-1].pos < STAG_THRESHOLD
-              && !sortedItems[si-1].stag) {
-            sortedItems[si].stag = true;
+          if (sortedItems[si].pos - sortedItems[si-1].pos < STAG_THRESHOLD) {
+            // Alternate: kalau prev stag, current tidak; sebaliknya
+            sortedItems[si].stag = !sortedItems[si-1].stag;
           }
         }
         // Render
