@@ -8639,35 +8639,47 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Render IHSG ticker ──
-  // Value harus PERSIS SAMA dgn IHSG di dashboard stockTicker (running bar
-  // atas). Logic disalin identik dari buildStockTicker() supaya 100% match:
-  //   - price = DATA.price_history[last][IHSG] (baris bulanan, di-overlay live
-  //     kalau IHSG masuk feed live via _overlayLiveInto)
-  //   - chg%  = stats.change_pct_live ?? DATA.live.IHSG.change_pct ?? stats.mom
-  //     (semua FRACTION — 0.0025 = 0.25%, harus ×100 utk display).
+  // Value harus PERSIS SAMA dgn IHSG di dashboard STATISTIK DESKRIPTIF
+  // (row IHSG makeRow). Logic disalin identik dari makeRow() dashboard:
+  //   - price = getStatsMerged('IHSG').current
+  //             (= recomputeStats.current, atau fallback DATA.stats.IHSG.current)
+  //   - chg%  = s.change_pct_live ?? DATA.live.IHSG.change_pct
+  //             (TIDAK fallback ke stats.mom — dashboard row juga tidak)
+  //   - Semua chg disimpan sbg FRACTION (0.0025 = 0.25%), harus ×100 utk display.
   // Fallback ke tracker.json.ihsg hanya kalau DATA belum ready.
   function renderIhsg(data){
     var px = $('trLiveIhsgPx'); var chg = $('trLiveIhsgChg');
     var price = null, chgPct = null;
     try {
       var D = window.DATA;
-      if (D && Array.isArray(D.price_history) && D.price_history.length){
-        // Same source dgn dashboard stockTicker line 14994: lastMonth[IHSG].
-        // Ini value yg dashboard tampilkan di running ticker atas.
-        var lastMonth = D.price_history[D.price_history.length - 1] || {};
-        if (Number.isFinite(lastMonth.IHSG) && lastMonth.IHSG > 0) {
-          price = lastMonth.IHSG;
-        }
-        // chg% priority PERSIS mirror dashboard buildStockTicker line 15005-15012:
-        //   stats.change_pct_live → DATA.live.change_pct → stats.mom
-        var st = (D.stats && D.stats.IHSG) || {};
-        if (Number.isFinite(st.change_pct_live)) {
-          chgPct = st.change_pct_live * 100;
-        } else if (D.live && D.live.IHSG && Number.isFinite(D.live.IHSG.change_pct)) {
-          chgPct = D.live.IHSG.change_pct * 100;
-        } else if (Number.isFinite(st.mom)) {
-          chgPct = st.mom * 100;
-        }
+      // Panggil getStatsMerged jika tersedia (dashboard function global).
+      // Ini menjamin nilai IDENTIK dgn row IHSG di statistik deskriptif —
+      // termasuk edge case ketika last row price_history[IHSG] belum ada
+      // (getStatsMerged fallback ke DATA.stats.IHSG.current dari data.json).
+      if (D && typeof window.getStatsMerged === 'function') {
+        try {
+          var s = window.getStatsMerged('IHSG');
+          if (s && Number.isFinite(s.current) && s.current > 0) {
+            price = s.current;
+          }
+          // chg% priority mirror dashboard makeRow (line ~15697):
+          //   s.change_pct_live ?? DATA.live.IHSG.change_pct
+          if (Number.isFinite(s && s.change_pct_live)) {
+            chgPct = s.change_pct_live * 100;
+          } else if (D.live && D.live.IHSG && Number.isFinite(D.live.IHSG.change_pct)) {
+            chgPct = D.live.IHSG.change_pct * 100;
+          }
+        } catch(_){}
+      }
+      // Fallback kedua (defensive): kalau getStatsMerged tidak tersedia,
+      // ambil langsung dari DATA.stats.IHSG (mirror back-fallback di
+      // getStatsMerged). Tidak mengambil dari price_history langsung
+      // karena rentan mismatch (baris kosong utk bulan berjalan).
+      if (price == null && D && D.stats && D.stats.IHSG && Number.isFinite(D.stats.IHSG.current)) {
+        price = D.stats.IHSG.current;
+      }
+      if (chgPct == null && D && D.stats && D.stats.IHSG && Number.isFinite(D.stats.IHSG.change_pct_live)) {
+        chgPct = D.stats.IHSG.change_pct_live * 100;
       }
     } catch(_){}
     // Fallback terakhir: tracker.json snapshot (Yahoo daily, MUNGKIN BEDA
