@@ -12629,6 +12629,10 @@ function _sanitizeData(data) {
         if (cleaned.length === 0) delete data.consensus_slim[code];
         else data.consensus_slim[code] = cleaned;
       }
+      // Setelah cleanup placeholder, normalize firm names: merge varian
+      // yang seharusnya 1 firm (mis. 'RHB Sekuritas' vs 'RHB Sekuritas
+      // Indonesia') → bikin tab 'Per Firm' tidak muncul kartu ganda.
+      try { if (typeof _normalizeConsensusFirms === 'function') _normalizeConsensusFirms(data.consensus_slim); } catch(_){}
     }
     // 3) stock_list: array of {code,...} → buang kode non-ticker.
     if (Array.isArray(data.stock_list)) {
@@ -13243,12 +13247,99 @@ function _phSig(ph) {
 }
 
 // Set DATA.consensus_slim / consensus_summary dari payload feed (tanpa render).
+// ── Canonical firm-name helper untuk consensus (mirror tracker logic) ──
+// Nama firm di consensus_slim / consensus_summary sering ditulis inkonsisten
+// oleh AI/parser: 'RHB Sekuritas' vs 'RHB Sekuritas Indonesia', 'PHINTRACO
+// SEKURITAS' vs 'Phintraco Sekuritas', dll. Ini bikin di tab 'Per Firm'
+// (buildFirmGrid) muncul kartu ganda karena Map key pakai raw r.firm.
+//
+// Aturan sama dgn tracker (build-tracker.js canonicalFirmKey):
+//   - UPPERCASE, strip 'PT ' prefix, ' Tbk' suffix, trailing ' Sekuritas
+//     Indonesia' / ' Sekuritas', ' Indonesia'.
+//   - Prefix brand TIDAK di-strip → 'Valbury' ≠ 'KB Valbury' tetap distinct.
+// Display pick: non-ALL-CAPS diutamakan, lalu paling panjang, alphabetical.
+function _consCanonFirmKey(name){
+  if(!name) return '';
+  let s = String(name).trim().toUpperCase();
+  s = s.replace(/^PT\s+/, '');
+  s = s.replace(/[.,]/g, ' ');
+  s = s.replace(/\s+TBK$/, '');
+  s = s.replace(/\s+SEKURITAS(\s+INDONESIA)?$/, '');
+  s = s.replace(/\s+INDONESIA$/, '');
+  return s.replace(/\s+/g, ' ').trim();
+}
+function _consCanonFirmDisplay(name){
+  if(!name) return '';
+  let s = String(name).trim();
+  s = s.replace(/^PT\s+/i, '');
+  s = s.replace(/\s+Tbk\.?$/i, '');
+  return s.replace(/\s+/g, ' ').trim();
+}
+function _consPickBestDisplay(variants){
+  const seen = {}, cleaned = [];
+  (variants || []).forEach(v => {
+    const c = _consCanonFirmDisplay(v);
+    if (c && !seen[c]) { seen[c] = 1; cleaned.push(c); }
+  });
+  if (!cleaned.length) return '';
+  cleaned.sort((a, b) => {
+    const aAllUp = a === a.toUpperCase() && /[A-Z]/.test(a);
+    const bAllUp = b === b.toUpperCase() && /[A-Z]/.test(b);
+    if (aAllUp !== bAllUp) return aAllUp ? 1 : -1;
+    if (a.length !== b.length) return b.length - a.length;
+    return a.localeCompare(b);
+  });
+  return cleaned[0];
+}
+// Normalize firm names IN-PLACE di consensus_slim (rewrite r.firm).
+// Idempotent — kalau backend sudah kanonik, no-op.
+function _normalizeConsensusFirms(slim){
+  if (!slim || typeof slim !== 'object') return 0;
+  // Pass 1: collect variants per canonical key
+  const variantsByKey = {};
+  for (const code in slim){
+    const recs = slim[code]; if (!Array.isArray(recs)) continue;
+    for (const r of recs){
+      if (!r || !r.firm) continue;
+      const k = _consCanonFirmKey(r.firm);
+      if (!k) continue;
+      if (!variantsByKey[k]) variantsByKey[k] = new Set();
+      variantsByKey[k].add(r.firm);
+    }
+  }
+  // Pass 2: pick canonical display per key
+  const displayByKey = {};
+  let mergeCount = 0;
+  for (const k in variantsByKey){
+    const variants = [...variantsByKey[k]];
+    displayByKey[k] = _consPickBestDisplay(variants);
+    if (variants.length > 1) mergeCount++;
+  }
+  // Pass 3: rewrite r.firm
+  for (const code in slim){
+    const recs = slim[code]; if (!Array.isArray(recs)) continue;
+    for (const r of recs){
+      if (!r || !r.firm) continue;
+      const k = _consCanonFirmKey(r.firm);
+      const disp = displayByKey[k];
+      if (disp) r.firm = disp;
+    }
+  }
+  if (mergeCount > 0) {
+    try { console.log('[consensus] client-side firm merge: ' + mergeCount + ' varian di-merge'); } catch(_){}
+  }
+  return mergeCount;
+}
+
 // Return jumlah ticker kalau benar-benar berubah, 0 kalau identik / invalid.
 function _applyConsensusInto(data, payload) {
   if (!data || !payload || payload.ok !== true) return 0;
   const slim = payload.consensus_slim;
   if (!slim || typeof slim !== 'object' || Array.isArray(slim) || !Object.keys(slim).length) return 0;
   if (_consSig(slim) === _consSig(data.consensus_slim)) return 0; // tidak berubah
+  // Normalize firm names SEBELUM assign — merge varian nama sekuritas yg
+  // seharusnya 1 firm (mis. 'RHB Sekuritas' + 'RHB Sekuritas Indonesia').
+  try { _normalizeConsensusFirms(slim); } catch(e){ try{ console.error('normalizeConsensusFirms:', e); }catch(_){} }
   data.consensus_slim = slim;
   if (payload.consensus_summary && typeof payload.consensus_summary === 'object') {
     data.consensus_summary = payload.consensus_summary;
