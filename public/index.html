@@ -5104,12 +5104,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-live-total-breakdown" id="trLiveOpenN">— aktif</div>
           <div class="tr-live-total-sub">
             <span id="trLiveClosedN">0</span> selesai
-            <!-- 'Skor tertinggi N' dihilangkan (permintaan user: konsep skor
-                 validitas dihapus di semua halaman Tracker karena bikin
-                 bingung — winrate tidak selalu korelasi dgn skor). Element
-                 tersembunyi di-preserve untuk backward-compat renderTerminal. -->
-            <span id="trLiveHiScoreBtn" style="display:none"></span>
-            <span id="trLiveHiScore" style="display:none">—</span>
           </div>
         </div>
       </div>
@@ -8838,7 +8832,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
       oN.textContent = parts.join(' · ');
     }
     var cN = $('trLiveClosedN'); if (cN) cN.textContent = closedC;
-    var hi = $('trLiveHiScore'); if (hi) hi.textContent = data.highScore || 0;
     var openBar = $('trLiveSideBuy'); var closedBar = $('trLiveSideClosed');
     if (openBar && closedBar) {
       var openPct = total ? (triggered + pendingC + missedC) / total * 100 : 50;
@@ -8903,7 +8896,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
       oN.textContent = parts.join(' · ');
     }
     var cN = $('trLiveClosedN'); if (cN) cN.textContent = closedC;
-    var hi = $('trLiveHiScore'); if (hi) hi.textContent = data.highScore || 0;
 
     // Stream heading — v2: total = triggered + unfilled
     var unfilled = data.unfilledList || [];
@@ -24293,135 +24285,6 @@ document.addEventListener('keydown', (e) => {
     <div class="dm-disclaimer-mini">Konten ini sebagai informasi edukasi dan bukan merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.</div>
   </div>
 </div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     MODAL: PENJELASAN SKOR VALIDITAS REKOMENDASI (di menu Tracker Live)
-     Trigger: klik badge 'Skor tertinggi N' di Live Signal Terminal summary.
-     Isi: bracket STRONG/MODERATE/WEAK + tabel faktor scoring (rule-based
-     0-100). Data sumber dari scripts/build-tracker.js scoreValidity().
-     ═══════════════════════════════════════════════════════════════════════ -->
-<div class="tr-scoremodal" id="trScoreModal" role="dialog" aria-modal="true" aria-hidden="true">
-  <div class="tr-scoremodal-backdrop" data-tr-scoremodal-close></div>
-  <div class="tr-scoremodal-body">
-    <button class="tr-scoremodal-close" data-tr-scoremodal-close type="button" aria-label="Tutup">✕</button>
-    <div class="tr-scoremodal-hd">
-      <div class="tr-scoremodal-icon">🎯</div>
-      <div>
-        <div class="tr-scoremodal-title">Skor Validitas Rekomendasi</div>
-        <div class="tr-scoremodal-sub">Rule-based 0–100 dari faktor kualitas rekomendasi</div>
-      </div>
-    </div>
-
-    <div class="tr-scoremodal-brackets">
-      <div class="tr-scoremodal-bracket strong">
-        <div class="tr-scoremodal-bracket-range">70 – 100</div>
-        <div class="tr-scoremodal-bracket-lbl">🏆 STRONG</div>
-        <div class="tr-scoremodal-bracket-desc">Kualitas tinggi — analis sertifikasi, RR bagus, track record kuat.</div>
-      </div>
-      <div class="tr-scoremodal-bracket moderate">
-        <div class="tr-scoremodal-bracket-range">45 – 69</div>
-        <div class="tr-scoremodal-bracket-lbl">⚡ MODERATE</div>
-        <div class="tr-scoremodal-bracket-desc">Kualitas menengah — beberapa faktor kualitas hadir, sisanya kurang.</div>
-      </div>
-      <div class="tr-scoremodal-bracket weak">
-        <div class="tr-scoremodal-bracket-range">0 – 44</div>
-        <div class="tr-scoremodal-bracket-lbl">⚠ WEAK</div>
-        <div class="tr-scoremodal-bracket-desc">Faktor kualitas minim — perlu ekstra hati-hati sebelum ikut.</div>
-      </div>
-    </div>
-
-    <div class="tr-scoremodal-section-t">Faktor penambah skor</div>
-    <div class="tr-scoremodal-factors">
-      <div class="tr-scoremodal-factor"><span class="pt">+20</span><span class="f">Baseline (setiap rekomendasi dapat)</span></div>
-      <div class="tr-scoremodal-factor"><span class="pt">+25</span><span class="f">Analis sertifikasi (CFA / CFTe / lainnya)</span></div>
-      <div class="tr-scoremodal-factor"><span class="pt">+5</span><span class="f">Horizon jelas (1 minggu / 1 bulan / dll)</span></div>
-      <div class="tr-scoremodal-factor"><span class="pt">+10</span><span class="f">TP2 tersedia (bukan cuma TP1)</span></div>
-      <div class="tr-scoremodal-factor"><span class="pt">+10</span><span class="f">Catatan analis lengkap (≥20 karakter)</span></div>
-      <div class="tr-scoremodal-factor"><span class="pt">+10</span><span class="f">RR (Risk-Reward) minimal 2:1</span></div>
-      <div class="tr-scoremodal-factor"><span class="pt">+20</span><span class="f">Win rate analis ≥ 60% (min 5 rec closed)</span></div>
-      <div class="tr-scoremodal-factor"><span class="pt">+10</span><span class="f">Win rate analis 45–60% (min 5 rec closed)</span></div>
-    </div>
-
-    <div class="tr-scoremodal-note">
-      💡 <b>Skor tertinggi</b> yang tampil = skor validitas terbesar dari semua
-      rekomendasi (aktif + selesai) di dataset saat ini. Angka tinggi = ada
-      rekomendasi dengan kualitas info yang lengkap; bukan jaminan profit.
-    </div>
-  </div>
-</div>
-
-<style>
-.tr-scoremodal{position:fixed;inset:0;z-index:12000;display:none;opacity:0;transition:opacity .18s ease}
-.tr-scoremodal.open{display:block;opacity:1}
-.tr-scoremodal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-.tr-scoremodal-body{position:relative;max-width:560px;margin:5vh auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px 20px;box-shadow:0 20px 60px rgba(0,0,0,.5);max-height:90vh;overflow-y:auto}
-.tr-scoremodal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.tr-scoremodal-close:hover{background:rgba(225,29,72,.14);color:var(--red);border-color:rgba(225,29,72,.4)}
-.tr-scoremodal-hd{display:flex;align-items:flex-start;gap:14px;padding-right:36px;margin-bottom:16px}
-.tr-scoremodal-icon{font-size:32px;flex-shrink:0;line-height:1}
-.tr-scoremodal-title{font-size:18px;font-weight:800;letter-spacing:-.3px;color:var(--text);line-height:1.2}
-.tr-scoremodal-sub{font-size:11.5px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:3px;letter-spacing:.3px}
-.tr-scoremodal-brackets{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:16px}
-.tr-scoremodal-bracket{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);display:grid;grid-template-columns:70px 1fr;gap:2px 12px;align-items:center}
-.tr-scoremodal-bracket.strong{background:linear-gradient(90deg,rgba(16,185,129,.12),var(--bg2));border-color:rgba(16,185,129,.35)}
-.tr-scoremodal-bracket.moderate{background:linear-gradient(90deg,rgba(245,158,11,.12),var(--bg2));border-color:rgba(245,158,11,.35)}
-.tr-scoremodal-bracket.weak{background:linear-gradient(90deg,rgba(239,68,68,.10),var(--bg2));border-color:rgba(239,68,68,.28)}
-.tr-scoremodal-bracket-range{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:var(--text);grid-row:span 2;text-align:center;letter-spacing:-.3px}
-.tr-scoremodal-bracket-lbl{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:800;letter-spacing:.5px}
-.tr-scoremodal-bracket.strong .tr-scoremodal-bracket-lbl{color:var(--green)}
-.tr-scoremodal-bracket.moderate .tr-scoremodal-bracket-lbl{color:#f59e0b}
-.tr-scoremodal-bracket.weak .tr-scoremodal-bracket-lbl{color:var(--red)}
-.tr-scoremodal-bracket-desc{font-size:11.5px;color:var(--text2);line-height:1.4}
-.tr-scoremodal-section-t{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);font-weight:700;margin:14px 0 8px}
-.tr-scoremodal-factors{display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:14px}
-.tr-scoremodal-factor{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center;padding:7px 10px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);font-size:12px}
-.tr-scoremodal-factor .pt{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:800;color:var(--accent);text-align:center;letter-spacing:-.3px}
-.tr-scoremodal-factor .f{color:var(--text2)}
-.tr-scoremodal-note{font-size:11.5px;color:var(--text2);line-height:1.5;padding:10px 12px;border-radius:8px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.22)}
-.tr-scoremodal-note b{color:var(--text)}
-/* Tombol trigger 'Skor tertinggi N' di Live Signal Terminal summary */
-.tr-hiscore-link{background:transparent;border:none;padding:0;margin:0;color:var(--text3);font:inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:color .15s}
-.tr-hiscore-link:hover{color:var(--accent,#c4a3ff)}
-.tr-hiscore-info{font-size:10px;opacity:.55;transition:opacity .15s}
-.tr-hiscore-link:hover .tr-hiscore-info{opacity:1}
-/* Badge validity di meta line firm profile (Analis tab). Inline di baris
-   yg sudah ada — tidak menambah kolom / memperluas layout. Klik → buka
-   modal penjelasan yg sama dgn di Live Signal Terminal. */
-.tr-pf-vbadge{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:800;letter-spacing:.4px;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text);transition:all .15s;vertical-align:baseline;line-height:1.35;font:inherit;font-family:'IBM Plex Mono',monospace}
-.tr-pf-vbadge.strong{background:rgba(16,185,129,.14);color:var(--green);border-color:rgba(16,185,129,.4)}
-.tr-pf-vbadge.moderate{background:rgba(245,158,11,.14);color:#f59e0b;border-color:rgba(245,158,11,.4)}
-.tr-pf-vbadge.weak{background:rgba(239,68,68,.12);color:var(--red);border-color:rgba(239,68,68,.36)}
-.tr-pf-vbadge:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.15)}
-@media(max-width:640px){
-  .tr-scoremodal-body{margin:2vh 12px;max-height:96vh;padding:18px 16px 16px}
-  .tr-scoremodal-title{font-size:16px}
-  .tr-scoremodal-bracket-range{font-size:12px}
-  .tr-scoremodal-bracket-desc{font-size:11px}
-}
-</style>
-
-<script>
-// ═══ Modal skor validitas — trigger dari klik 'Skor tertinggi N' di
-// Live Signal Terminal summary. Buka/tutup pakai class .open.
-(function(){
-  var modal = document.getElementById('trScoreModal');
-  if (!modal) return;
-  function open(){ modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); }
-  function close(){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
-  document.addEventListener('click', function(e){
-    if (!e.target || !e.target.closest) return;
-    // Trigger open: tombol 'Skor tertinggi N' di Live Signal Terminal,
-    // ATAU badge validity di firm profile hero (data-tr-scoremodal-open).
-    if (e.target.closest('#trLiveHiScoreBtn') || e.target.closest('[data-tr-scoremodal-open]')) {
-      e.preventDefault(); e.stopPropagation(); open(); return;
-    }
-    if (e.target.closest('[data-tr-scoremodal-close]')) { e.preventDefault(); close(); }
-  }, true);
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && modal.classList.contains('open')) close();
-  });
-})();
-</script>
 
 <script src="/panduan.js" defer></script>
 </body>
