@@ -11009,13 +11009,46 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (xEntry == null) xEntry = 0;
     if (xEntry < 0) xEntry = 0;
 
-    // xRight: exitDate kalau kena TP/SL, else projek 5 candle stlh candle akhir
+    // xRight (ujung kanan zona):
+    //   1. Kalau rec sudah closed via TP/SL → exitDate (zona berhenti di exit).
+    //   2. Else: CAP ke openDate + 10 HARI kalender (masa berlaku rekomendasi
+    //      menunggu entry). Zona tidak boleh melampaui tgl kadaluarsa —
+    //      supaya user visual jelas: "rekomendasi ini valid sampai kapan".
+    //   3. Fallback: projek 5 candle stlh candle akhir, atau ts.width().
     var st = statusOfRec(rec);
     var closedByHit = (st === 'TP' || st === 'SL');
     var xRight = null;
     if (closedByHit && rec.exitDate){
       var xExit = ts.timeToCoordinate(rec.exitDate);
       if (xExit != null && Number.isFinite(xExit) && xExit > xEntry) xRight = xExit;
+    }
+    // Cap ke openDate + 10 hari (masa berlaku rekomendasi menunggu entry).
+    // Diterapkan HANYA untuk rec yg belum closed via TP/SL — kalau sudah
+    // exit di TP/SL, xExit sudah pas. Untuk EXPIRED unfilled / PENDING /
+    // MISSED / TRIGGERED, zona berakhir di tgl expiry 10 hari itu.
+    if (xRight == null && rec.openDate){
+      try {
+        var expIso = (typeof window.__TR_getPendingExpiryIso === 'function')
+                     ? window.__TR_getPendingExpiryIso(rec) : null;
+        if (expIso){
+          var xExp = ts.timeToCoordinate(expIso);
+          if (xExp != null && Number.isFinite(xExp) && xExp > xEntry){
+            xRight = xExp;
+          } else {
+            // Fallback kalau expiry date > candle terakhir (belum ada bar
+            // untuk tanggal itu): pakai proyeksi berdasarkan jumlah hari
+            // dari openDate. 10 hari = 10 bar trading (approx) → aman
+            // pakai logicalToCoordinate dgn offset 10.
+            var od = ts.timeToCoordinate(rec.openDate);
+            if (od != null && Number.isFinite(od) && _entryIndex >= 0){
+              var xExpFallback = ts.logicalToCoordinate(_entryIndex + 10);
+              if (xExpFallback != null && Number.isFinite(xExpFallback) && xExpFallback > xEntry){
+                xRight = xExpFallback;
+              }
+            }
+          }
+        }
+      } catch(_){}
     }
     if (xRight == null && _lastCandleIndex >= 0){
       try {
@@ -11330,6 +11363,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if (Number.isFinite(+rec.exitPrice)) exitTxt += ' @ ' + fmtN(rec.exitPrice);
       if (rec.closedBy) exitTxt += ' (' + rec.closedBy + ')';
       footHtml += '<div class="tr-recmodal-foot-item"><span class="lbl">Exit</span><span class="val">' + esc(exitTxt) + '</span></div>';
+    }
+    // Info batas kadaluarsa 10 hari untuk rec yg BELUM closed via TP/SL
+    // (state PENDING/RUNNING_MISSED/TRIGGERED/EXPIRED-unfilled). Rec yg
+    // sudah TP/SL tidak perlu info ini karena sudah ada 'Exit' info.
+    var isClosedByHit = String(rec.closedBy||'').toUpperCase();
+    isClosedByHit = (isClosedByHit === 'TP' || isClosedByHit === 'TP1' || isClosedByHit === 'TP2' || isClosedByHit === 'SL' || isClosedByHit === 'SL_TRAIL');
+    if (!isClosedByHit) {
+      var expIso = (typeof window.__TR_getPendingExpiryIso === 'function')
+                   ? window.__TR_getPendingExpiryIso(rec) : null;
+      if (expIso) {
+        var _isPastExp = (typeof window.__TR_isPendingExpired === 'function')
+                         && window.__TR_isPendingExpired(rec);
+        var expLbl = _isPastExp ? 'Kadaluarsa' : 'Berlaku sampai';
+        var expCls = _isPastExp ? ' dn' : '';
+        var expTxt = fmtDate(expIso) + (_isPastExp ? ' (sudah lewat)' : ' (10 hari dari rilis)');
+        footHtml += '<div class="tr-recmodal-foot-item" title="Rekomendasi menunggu harga entry hanya berlaku 10 hari dari tanggal rilis. Lewat batas ini → auto kadaluarsa."><span class="lbl">' + expLbl + '</span><span class="val' + expCls + '">' + esc(expTxt) + '</span></div>';
+      }
     }
     $('trRecModalFoot').innerHTML = footHtml;
   }
