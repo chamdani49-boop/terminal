@@ -4760,8 +4760,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
     </div>
 
-    <!-- KPI strip: 5 tile mini (mirror consensus overview) -->
-    <div class="tr-anl-kpi-strip" id="trAnlKpiStrip"></div>
+    <!-- KPI strip (Total Rec / Win Rate / Avg P&L / Kena SL / Firm Terbanyak)
+         DISEMBUNYIKAN per user request. Element di-preserve sbg hidden container
+         supaya renderKpiStrip() tidak error null saat set innerHTML. -->
+    <div class="tr-anl-kpi-strip" id="trAnlKpiStrip" style="display:none"></div>
 
     <!-- Chart card: TradingView widget + widget status di kanan.
          Marker per rec di-move ke popup detail (klik row di tabel bawah). -->
