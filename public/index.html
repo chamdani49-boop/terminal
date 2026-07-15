@@ -3079,25 +3079,34 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .trAnl-sent-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--bg3);border:1px solid var(--border)}
 .trAnl-sent-bar-buy{background:linear-gradient(90deg,#059669,#4ade80);transition:width .5s ease}
 .trAnl-sent-bar-sell{background:linear-gradient(90deg,#fb7185,#e11d48);transition:width .5s ease}
-/* ── Section 2: Price Ladder ── */
-.trAnl-ladder{position:relative;height:56px;padding-top:24px;padding-bottom:22px}
-.trAnl-ladder-track{position:absolute;left:8px;right:8px;top:26px;height:3px;background:linear-gradient(90deg,rgba(239,68,68,.45) 0%,rgba(148,163,184,.4) 45%,rgba(148,163,184,.4) 55%,rgba(16,185,129,.45) 100%);border-radius:2px}
+/* ── Section 2: Price Ladder ──
+   Layout: label DI ATAS (baris 1), track di tengah, val (angka) DI BAWAH.
+   Marker berdekatan (< 15% jarak) di-stagger secondary row via class
+   .row-b (JS assign) supaya angka tidak menumpuk. */
+.trAnl-ladder{position:relative;height:78px;padding-top:22px;padding-bottom:34px}
+.trAnl-ladder-track{position:absolute;left:8px;right:8px;top:28px;height:3px;background:linear-gradient(90deg,rgba(239,68,68,.45) 0%,rgba(148,163,184,.4) 45%,rgba(148,163,184,.4) 55%,rgba(16,185,129,.45) 100%);border-radius:2px}
 .trAnl-ladder-markers{position:absolute;left:8px;right:8px;top:0;bottom:0}
 .trAnl-ladder-marker{position:absolute;transform:translateX(-50%);text-align:center;white-space:nowrap;pointer-events:none}
-.trAnl-ladder-marker .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--text2);border:2px solid var(--card);box-shadow:0 0 0 1px var(--border);margin-top:22px}
+.trAnl-ladder-marker .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--text2);border:2px solid var(--card);box-shadow:0 0 0 1px var(--border);margin-top:24px}
 .trAnl-ladder-marker.sl   .dot{background:var(--red)}
-.trAnl-ladder-marker.entry .dot{background:var(--accent);width:11px;height:11px;margin-top:21px}
+.trAnl-ladder-marker.entry .dot{background:var(--accent);width:11px;height:11px;margin-top:23px}
 .trAnl-ladder-marker.tp1  .dot{background:var(--green)}
 .trAnl-ladder-marker.tp2  .dot{background:#4ade80;width:8px;height:8px}
-.trAnl-ladder-marker.live .dot{background:transparent;width:14px;height:14px;border:2.5px solid #fbbf24;box-shadow:0 0 0 2px rgba(251,191,36,.28);margin-top:19px;animation:plPulse 2s infinite}
-.trAnl-ladder-marker .lbl{position:absolute;left:50%;transform:translateX(-50%);top:0;font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:800;letter-spacing:.5px;color:var(--text3);text-transform:uppercase}
+.trAnl-ladder-marker.live .dot{background:transparent;width:14px;height:14px;border:2.5px solid #fbbf24;box-shadow:0 0 0 2px rgba(251,191,36,.28);margin-top:21px;animation:plPulse 2s infinite}
+.trAnl-ladder-marker .lbl{position:absolute;left:50%;transform:translateX(-50%);top:0;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.4px;color:var(--text3);text-transform:uppercase;line-height:1}
 .trAnl-ladder-marker.sl   .lbl{color:var(--red)}
 .trAnl-ladder-marker.entry .lbl{color:var(--accent)}
 .trAnl-ladder-marker.tp1  .lbl{color:var(--green)}
 .trAnl-ladder-marker.tp2  .lbl{color:#4ade80}
-.trAnl-ladder-marker.live .lbl{color:#fbbf24;font-size:9px}
-.trAnl-ladder-marker .val{position:absolute;left:50%;transform:translateX(-50%);bottom:0;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:800;color:var(--text);white-space:nowrap;letter-spacing:-.2px}
-.trAnl-ladder-note{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text2);line-height:1.4;padding:6px 8px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);text-align:center}
+.trAnl-ladder-marker.live .lbl{color:#fbbf24;font-size:8.5px}
+.trAnl-ladder-marker .val{position:absolute;left:50%;transform:translateX(-50%);bottom:0;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;color:var(--text);white-space:nowrap;letter-spacing:-.2px;line-height:1}
+.trAnl-ladder-marker .val .pct{color:var(--text3);font-size:8px;font-weight:600;margin-left:2px}
+/* Marker yg overlap dgn tetangga → geser val ke row bawah (untuk secondary)
+   dan lbl ke row atas. JS assign class .stag berdasar deteksi jarak posisi. */
+.trAnl-ladder-marker.stag .lbl{top:-4px}
+.trAnl-ladder-marker.stag .val{bottom:-14px}
+.trAnl-ladder-note{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text2);line-height:1.45;padding:5px 8px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);text-align:left}
+.trAnl-ladder-note b{color:var(--text);font-weight:700}
 /* ── Section 3: Posisi Sekarang (grid 4 kotak) ── */
 .trAnl-pos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .trAnl-pos-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;cursor:default;transition:transform .12s}
@@ -3114,6 +3123,7 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .trAnl-pos-box.sl .v{color:var(--red)}
 /* ── Section 4: Track Record ── */
 .trAnl-track-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.trAnl-track-grid--single{grid-template-columns:1fr}
 .trAnl-track-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 6px;text-align:center}
 .trAnl-track-item .l{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--text3);letter-spacing:.4px;text-transform:uppercase;font-weight:700;margin-bottom:4px}
 .trAnl-track-item .v{font-family:'IBM Plex Mono',monospace;font-size:14.5px;font-weight:800;color:var(--text);letter-spacing:-.3px;line-height:1.1}
@@ -4889,23 +4899,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
             </div>
           </div>
 
-          <!-- 4. TRACK RECORD: WR + avg return + avg durasi (dari closed rec) -->
+          <!-- 4. TRACK RECORD: durasi rata2 saja (WR + Avg Return dihapus per
+               user request). Hidden element WR + Avg tetap ada supaya JS
+               renderer lama tidak error null saat set textContent. -->
           <div class="trAnl-sec" id="trAnlTrackSec">
             <div class="trAnl-sec-lbl">🏆 Track Record <span class="trAnl-sec-sub" id="trAnlTrackSub">—</span></div>
-            <div class="trAnl-track-grid">
+            <div class="trAnl-track-grid trAnl-track-grid--single">
               <div class="trAnl-track-item">
-                <div class="l">Win Rate</div>
-                <div class="v" id="trAnlTrackWr">—</div>
-              </div>
-              <div class="trAnl-track-item">
-                <div class="l">Avg Return</div>
-                <div class="v" id="trAnlTrackAvg">—</div>
-              </div>
-              <div class="trAnl-track-item">
-                <div class="l">Durasi</div>
+                <div class="l">Durasi Rata-Rata</div>
                 <div class="v" id="trAnlTrackDur">—</div>
               </div>
             </div>
+            <span id="trAnlTrackWr" style="display:none">—</span>
+            <span id="trAnlTrackAvg" style="display:none">—</span>
           </div>
         </div>
       </div>
@@ -10829,29 +10835,43 @@ body.is-mobile-device.force-desktop .pl-col-main{
           if (v == null || entryAvg == null || entryAvg === 0) return null;
           return ((v - entryAvg) / entryAvg) * 100;
         };
-        var mkMarker = function(cls, lbl, val, showPctFromEntry){
-          if (val == null) return '';
+        // Kumpulkan marker items untuk stagger detection
+        var items = [];
+        var addItem = function(cls, lbl, val, showPctFromEntry){
+          if (val == null) return;
           var pos = toPct(val);
           var pctChg = showPctFromEntry ? pctFromEntry(val) : null;
-          var subTxt = fmtN(Math.round(val));
+          var valTxt = fmtN(Math.round(val));
           if (pctChg != null) {
-            subTxt += ' <span style="color:var(--text3);font-size:8.5px;font-weight:600">(' + (pctChg>=0?'+':'') + pctChg.toFixed(1) + '%)</span>';
+            valTxt += ' <span class="pct">(' + (pctChg>=0?'+':'') + pctChg.toFixed(1) + '%)</span>';
           }
-          return '<div class="trAnl-ladder-marker ' + cls + '" style="left:' + pos + '%">'
-               + '<div class="lbl">' + lbl + '</div>'
-               + '<div class="dot"></div>'
-               + '<div class="val">' + subTxt + '</div>'
-               + '</div>';
+          items.push({ cls: cls, lbl: lbl, val: valTxt, pos: pos });
         };
-        var html = '';
-        html += mkMarker('sl',    'SL',    slAvg,    true);
-        html += mkMarker('entry', 'Entry', entryAvg, false);
-        html += mkMarker('live',  'Live',  lastPrice, true);
-        html += mkMarker('tp1',   'TP1',   tp1Avg,   true);
-        html += mkMarker('tp2',   'TP2',   tp2Avg,   true);
-        ladder.innerHTML = html;
+        addItem('sl',    'SL',    slAvg,    true);
+        addItem('entry', 'Entry', entryAvg, false);
+        addItem('live',  'Live',  lastPrice, true);
+        addItem('tp1',   'TP1',   tp1Avg,   true);
+        addItem('tp2',   'TP2',   tp2Avg,   true);
+        // Stagger detection: sort by pos, kalau 2 marker jarak < 14%, stagger
+        // yang kedua (kelas .stag) supaya val-nya turun ke row bawah.
+        var sortedItems = items.slice().sort(function(a,b){ return a.pos - b.pos; });
+        var STAG_THRESHOLD = 14;
+        for (var si = 1; si < sortedItems.length; si++) {
+          if (sortedItems[si].pos - sortedItems[si-1].pos < STAG_THRESHOLD
+              && !sortedItems[si-1].stag) {
+            sortedItems[si].stag = true;
+          }
+        }
+        // Render
+        ladder.innerHTML = items.map(function(it){
+          return '<div class="trAnl-ladder-marker ' + it.cls + (it.stag ? ' stag' : '') + '" style="left:' + it.pos + '%">'
+               + '<div class="lbl">' + it.lbl + '</div>'
+               + '<div class="dot"></div>'
+               + '<div class="val">' + it.val + '</div>'
+               + '</div>';
+        }).join('');
 
-        // Note: interpretasi posisi live vs zona rekomendasi
+        // Note: interpretasi posisi live vs zona rekomendasi (COMPACT).
         if (note) {
           var msg = '';
           if (lastPrice == null) msg = 'Harga live tidak tersedia.';
@@ -10860,18 +10880,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
             var dEntry = pctFromEntry(lastPrice);
             var dTp1 = tp1Avg != null ? ((tp1Avg - lastPrice) / lastPrice * 100) : null;
             var dSl  = slAvg  != null ? ((slAvg  - lastPrice) / lastPrice * 100) : null;
+            var mainMsg = '';
             if (Math.abs(dEntry) <= 1.5) {
-              msg = '📍 Harga live <b>di sekitar zona Entry</b> — momen ideal masuk.';
+              mainMsg = '📍 Di sekitar <b>zona Entry</b> — momen ideal.';
             } else if (dEntry < -1.5) {
-              msg = '⬇ Harga live <b>' + Math.abs(dEntry).toFixed(1) + '% di bawah Entry</b> — belum tersentuh.';
+              mainMsg = '⬇ <b>' + Math.abs(dEntry).toFixed(1) + '%</b> di bawah Entry.';
             } else if (dEntry > 1.5 && (tp1Avg == null || lastPrice < tp1Avg)) {
-              msg = '⬆ Harga live <b>+' + dEntry.toFixed(1) + '% di atas Entry</b> — momentum sudah jalan.';
+              mainMsg = '⬆ <b>+' + dEntry.toFixed(1) + '%</b> di atas Entry.';
             } else if (tp1Avg != null && lastPrice >= tp1Avg) {
-              msg = '🎯 Harga live <b>sudah lewat TP1</b> — target awal tercapai.';
+              mainMsg = '🎯 <b>Lewat TP1</b> — target tercapai.';
             }
+            var distMsg = '';
             if (dTp1 != null && dSl != null && lastPrice > slAvg && lastPrice < tp1Avg) {
-              msg += ' Distance ke TP1: <b>+' + dTp1.toFixed(1) + '%</b>, SL: <b>' + dSl.toFixed(1) + '%</b>.';
+              distMsg = ' · Ke TP1 <b>+' + dTp1.toFixed(1) + '%</b> · SL <b>' + dSl.toFixed(1) + '%</b>';
             }
+            msg = mainMsg + distMsg;
           }
           note.innerHTML = msg || '—';
         }
