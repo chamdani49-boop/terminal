@@ -3121,7 +3121,23 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .trAnl-pos-box.tp .v{color:var(--green)}
 .trAnl-pos-box.sl{background:linear-gradient(180deg,rgba(239,68,68,.10),var(--bg3));border-color:rgba(239,68,68,.32)}
 .trAnl-pos-box.sl .v{color:var(--red)}
-/* ── Section 4: Track Record ── */
+/* ── Section 4: Opportunity Score (spedometer gauge) ── */
+.trAnl-opp-info-btn{background:transparent;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:0 2px;opacity:.7;transition:opacity .15s,color .15s;font-family:inherit;line-height:1}
+.trAnl-opp-info-btn:hover{opacity:1;color:var(--accent)}
+.trAnl-opp-gauge-wrap{position:relative;width:100%;max-width:220px;margin:0 auto;padding:6px 0 4px}
+.trAnl-opp-gauge{width:100%;height:auto;display:block}
+.trAnl-opp-center{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);text-align:center;line-height:1;pointer-events:none}
+.trAnl-opp-val{font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:800;letter-spacing:-1.2px;color:var(--text);line-height:1}
+.trAnl-opp-max{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);font-weight:700;margin-top:1px;letter-spacing:.5px}
+.trAnl-opp-lvl{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;text-align:center;padding:5px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);margin-top:4px}
+.trAnl-opp-lvl.strong-buy{background:linear-gradient(90deg,rgba(5,150,105,.18),rgba(16,185,129,.18));color:var(--green);border-color:rgba(16,185,129,.4)}
+.trAnl-opp-lvl.ok-buy{background:linear-gradient(90deg,rgba(132,204,22,.16),rgba(234,179,8,.14));color:#a3a300;border-color:rgba(234,179,8,.4)}
+[data-theme="dark"] .trAnl-opp-lvl.ok-buy{color:#eab308}
+.trAnl-opp-lvl.caution{background:linear-gradient(90deg,rgba(249,115,22,.14),rgba(249,115,22,.14));color:#f97316;border-color:rgba(249,115,22,.4)}
+.trAnl-opp-lvl.wait{background:linear-gradient(90deg,rgba(225,29,72,.14),rgba(239,68,68,.14));color:var(--red);border-color:rgba(239,68,68,.4)}
+.trAnl-opp-lvl.na{color:var(--text3)}
+.trAnl-opp-dur{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);text-align:center;margin-top:4px;font-weight:600}
+/* Legacy track record styles (kept sbg fallback kalau elemen lama muncul) */
 .trAnl-track-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .trAnl-track-grid--single{grid-template-columns:1fr}
 .trAnl-track-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 6px;text-align:center}
@@ -4899,19 +4915,54 @@ body.is-mobile-device.force-desktop .pl-col-main{
             </div>
           </div>
 
-          <!-- 4. TRACK RECORD: durasi rata2 saja (WR + Avg Return dihapus per
-               user request). Hidden element WR + Avg tetap ada supaya JS
-               renderer lama tidak error null saat set textContent. -->
-          <div class="trAnl-sec" id="trAnlTrackSec">
-            <div class="trAnl-sec-lbl">🏆 Track Record <span class="trAnl-sec-sub" id="trAnlTrackSub">—</span></div>
-            <div class="trAnl-track-grid trAnl-track-grid--single">
-              <div class="trAnl-track-item">
-                <div class="l">Durasi Rata-Rata</div>
-                <div class="v" id="trAnlTrackDur">—</div>
+          <!-- 4. OPPORTUNITY SCORE — spedometer composite dari 4 faktor:
+               40% sentimen · 30% proximity ke entry · 20% hit rate · 10% RR.
+               Klik ⓘ → popup breakdown detail per faktor.
+               Track Record lama (Win Rate + Avg Return) dihapus per user req.
+               Durasi tetap ditampilkan kecil di bawah gauge. -->
+          <div class="trAnl-sec" id="trAnlOppSec">
+            <div class="trAnl-sec-lbl">
+              <span>⚡ Opportunity Score</span>
+              <button type="button" class="trAnl-opp-info-btn" id="trAnlOppInfoBtn" aria-label="Cara score dihitung" title="Klik untuk penjelasan komposisi score">ⓘ</button>
+            </div>
+            <div class="trAnl-opp-gauge-wrap">
+              <svg class="trAnl-opp-gauge" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                <defs>
+                  <linearGradient id="oppGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%"   stop-color="#e11d48"/>
+                    <stop offset="25%"  stop-color="#f97316"/>
+                    <stop offset="50%"  stop-color="#eab308"/>
+                    <stop offset="75%"  stop-color="#84cc16"/>
+                    <stop offset="100%" stop-color="#059669"/>
+                  </linearGradient>
+                </defs>
+                <!-- Background arc (semi-lingkaran) -->
+                <path d="M 15 100 A 85 85 0 0 1 185 100" stroke="var(--bg3)" stroke-width="14" fill="none" stroke-linecap="round"/>
+                <!-- Colored arc (gradient merah→hijau) -->
+                <path d="M 15 100 A 85 85 0 0 1 185 100" stroke="url(#oppGaugeGrad)" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.9"/>
+                <!-- Tick marks -->
+                <line x1="15"  y1="100" x2="15"  y2="88"  stroke="var(--text3)" stroke-width="1.5"/>
+                <line x1="57"  y1="35"  x2="65"  y2="45"  stroke="var(--text3)" stroke-width="1"/>
+                <line x1="100" y1="15"  x2="100" y2="27"  stroke="var(--text3)" stroke-width="1"/>
+                <line x1="143" y1="35"  x2="135" y2="45"  stroke="var(--text3)" stroke-width="1"/>
+                <line x1="185" y1="100" x2="185" y2="88"  stroke="var(--text3)" stroke-width="1.5"/>
+                <!-- Needle (rotate via JS: (score/100*180) - 90 deg) -->
+                <line id="trAnlOppNeedle" x1="100" y1="100" x2="100" y2="30" stroke="var(--text)" stroke-width="3" stroke-linecap="round" transform="rotate(-90 100 100)" style="transition:transform .6s cubic-bezier(.34,1.56,.64,1)"/>
+                <circle cx="100" cy="100" r="7" fill="var(--text)"/>
+                <circle cx="100" cy="100" r="3" fill="var(--card)"/>
+              </svg>
+              <div class="trAnl-opp-center">
+                <div class="trAnl-opp-val" id="trAnlOppVal">—</div>
+                <div class="trAnl-opp-max">/ 100</div>
               </div>
             </div>
-            <span id="trAnlTrackWr" style="display:none">—</span>
-            <span id="trAnlTrackAvg" style="display:none">—</span>
+            <div class="trAnl-opp-lvl" id="trAnlOppLvl">—</div>
+            <div class="trAnl-opp-dur" id="trAnlOppDur">—</div>
+            <!-- Hidden legacy elements (backward-compat) -->
+            <span id="trAnlTrackSub" style="display:none"></span>
+            <span id="trAnlTrackDur" style="display:none"></span>
+            <span id="trAnlTrackWr" style="display:none"></span>
+            <span id="trAnlTrackAvg" style="display:none"></span>
           </div>
         </div>
       </div>
@@ -10907,30 +10958,175 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var elT = $('trAnlPosTp'); if (elT) elT.textContent = stCounts.tp;
     var elS = $('trAnlPosSl'); if (elS) elS.textContent = stCounts.sl;
 
-    // ── 4. TRACK RECORD ──────────────────────────────────────────────
-    var closedN = stCounts.tp + stCounts.sl + stCounts.expired;
-    var wr = closedN > 0 ? (stCounts.tp / closedN * 100) : null;
-    var avgReturn = avg(pnls);
+    // ── 4. OPPORTUNITY SCORE (spedometer composite) ─────────────────
+    // 4 faktor terbobot:
+    //   40% sentimen  — bullishness dari BUY vs SELL count analis
+    //   30% proximity — seberapa dekat harga live ke entry rata2
+    //   20% hit rate  — % rec closed yg kena TP (bukan SL)
+    //   10% RR        — risk-reward ratio rata2 (dinormalisasi)
     var avgDur = avg(durations);
+    var opp = computeOpportunityScore({
+      buyN: buyN, sellN: sellN,
+      lastPrice: lastPrice, entryAvg: entryAvg, tp1Avg: tp1Avg, slAvg: slAvg,
+      tp: stCounts.tp, sl: stCounts.sl
+    });
 
-    var trackSubEl = $('trAnlTrackSub'); if (trackSubEl) trackSubEl.textContent = closedN > 0 ? '(' + closedN + ' selesai)' : '(belum ada data)';
-    var wrEl = $('trAnlTrackWr');
-    if (wrEl) {
-      wrEl.textContent = wr == null ? '—' : Math.round(wr) + '%';
-      wrEl.className = 'v ' + (wr == null ? 'neu' : wr >= 60 ? 'up' : wr < 40 ? 'dn' : 'neu');
+    var oppValEl = $('trAnlOppVal'); if (oppValEl) oppValEl.textContent = opp.hasData ? opp.score : '—';
+    // Rotate needle: 0 → -90 deg (kiri), 50 → 0 (atas), 100 → +90 deg (kanan)
+    var needle = $('trAnlOppNeedle');
+    if (needle) {
+      var rot = opp.hasData ? (opp.score / 100 * 180 - 90) : -90;
+      needle.setAttribute('transform', 'rotate(' + rot + ' 100 100)');
     }
-    var avgEl = $('trAnlTrackAvg');
-    if (avgEl) {
-      avgEl.textContent = avgReturn == null ? '—' : (avgReturn >= 0 ? '+' : '') + avgReturn.toFixed(1) + '%';
-      avgEl.className = 'v ' + (avgReturn == null ? 'neu' : avgReturn > 0 ? 'up' : avgReturn < 0 ? 'dn' : 'neu');
+    // Level bracket + color
+    var oppLvlEl = $('trAnlOppLvl');
+    if (oppLvlEl) {
+      var lvl, cls;
+      if (!opp.hasData) { lvl = 'Data belum cukup'; cls = 'na'; }
+      else if (opp.score >= 70) { lvl = '🟢 Sangat Menarik'; cls = 'strong-buy'; }
+      else if (opp.score >= 50) { lvl = '🟡 Boleh Masuk';   cls = 'ok-buy'; }
+      else if (opp.score >= 25) { lvl = '🟠 Hati-Hati';     cls = 'caution'; }
+      else                       { lvl = '🔴 Nunggu Dulu';   cls = 'wait'; }
+      oppLvlEl.textContent = lvl;
+      oppLvlEl.className = 'trAnl-opp-lvl ' + cls;
     }
-    var durEl = $('trAnlTrackDur');
-    if (durEl) durEl.textContent = avgDur == null ? '—' : Math.round(avgDur) + ' hari';
+    // Durasi rata2 (supporting info kecil di bawah)
+    var oppDurEl = $('trAnlOppDur');
+    if (oppDurEl) {
+      oppDurEl.textContent = avgDur != null ? ('Durasi rata² rec closed: ' + Math.round(avgDur) + ' hari') : 'Belum ada rec closed';
+    }
+    // Simpan factors utk breakdown popup
+    _lastOppScore = opp;
+
+    // Legacy element setters (backward-compat, elements now hidden)
+    var trackSubEl = $('trAnlTrackSub'); if (trackSubEl) trackSubEl.textContent = '';
+    var wrEl = $('trAnlTrackWr'); if (wrEl) wrEl.textContent = '';
+    var avgEl2 = $('trAnlTrackAvg'); if (avgEl2) avgEl2.textContent = '';
+    var durEl = $('trAnlTrackDur'); if (durEl) durEl.textContent = '';
 
     // Cleanup: kalau ada instance donut lama, destroy — sekarang widget tidak
     // pakai donut lagi. Jaga-jaga kalau render dipanggil ulang saat swap ticker.
     if (_consDonut) { try { _consDonut.destroy(); } catch(_){} _consDonut = null; }
   }
+
+  // Cache score result untuk breakdown popup
+  var _lastOppScore = null;
+
+  // ── Compute Opportunity Score (0-100 composite) ─────────────────────
+  // Formula:
+  //   40% × sentimenBullishness   ∈ [0, 100]
+  //   30% × proximityToEntry      ∈ [0, 100]
+  //   20% × hitRate               ∈ [0, 100]
+  //   10% × riskRewardScore       ∈ [0, 100]
+  function computeOpportunityScore(x){
+    var factors = { sentiment: null, proximity: null, hitrate: null, rr: null };
+    var hasAnyRealData = false;
+
+    // 1. Sentimen (40%): buy% dari total rec
+    var total = (x.buyN || 0) + (x.sellN || 0);
+    if (total > 0) {
+      factors.sentiment = (x.buyN / total) * 100;
+      hasAnyRealData = true;
+    }
+
+    // 2. Proximity ke entry (30%):
+    //    - lastPrice = entryAvg (< ±1%)      → 100
+    //    - jarak > 10% dari entry           → 0
+    //    - lewat TP1                         → 30 (kesempatan lewat)
+    //    - di bawah SL                       → 0
+    if (x.lastPrice != null && x.entryAvg != null) {
+      var distPct = Math.abs((x.lastPrice - x.entryAvg) / x.entryAvg * 100);
+      if (x.slAvg != null && x.lastPrice < x.slAvg) {
+        factors.proximity = 0;
+      } else if (x.tp1Avg != null && x.lastPrice > x.tp1Avg) {
+        factors.proximity = 30;
+      } else {
+        factors.proximity = Math.max(0, 100 - distPct * 10);
+      }
+      hasAnyRealData = true;
+    }
+
+    // 3. Hit rate (20%): kena TP / (TP + SL) rec closed
+    var closedResolved = (x.tp || 0) + (x.sl || 0);
+    if (closedResolved > 0) {
+      factors.hitrate = (x.tp / closedResolved) * 100;
+      hasAnyRealData = true;
+    }
+
+    // 4. Risk-Reward Ratio (10%): (TP1-Entry) / (Entry-SL) rata2, normalisasi
+    //    RR ≥ 2 → 100, RR = 1 → 50, RR = 0.5 → 25, RR ≤ 0 → 0
+    if (x.tp1Avg != null && x.entryAvg != null && x.slAvg != null && x.entryAvg > x.slAvg) {
+      var rr = (x.tp1Avg - x.entryAvg) / (x.entryAvg - x.slAvg);
+      if (rr >= 2)      factors.rr = 100;
+      else if (rr >= 1) factors.rr = 50 + (rr - 1) * 50;
+      else if (rr > 0)  factors.rr = rr * 50;
+      else              factors.rr = 0;
+      hasAnyRealData = true;
+    }
+
+    // Weighted score (skip null → neutral 50)
+    var s = 0.4 * (factors.sentiment != null ? factors.sentiment : 50)
+          + 0.3 * (factors.proximity != null ? factors.proximity : 50)
+          + 0.2 * (factors.hitrate   != null ? factors.hitrate   : 50)
+          + 0.1 * (factors.rr        != null ? factors.rr        : 50);
+
+    return {
+      hasData: hasAnyRealData,
+      score: Math.round(s),
+      factors: factors,
+    };
+  }
+
+  // ── Klik ⓘ → popup breakdown per faktor ──────────────────────────
+  document.addEventListener('click', function(e){
+    if (!e.target || !e.target.closest) return;
+    var btn = e.target.closest('#trAnlOppInfoBtn');
+    if (!btn) return;
+    e.preventDefault();
+    if (typeof window.showInfoModal !== 'function') return;
+    var opp = _lastOppScore;
+    var mkRow = function(label, weight, val, note){
+      var pct = val == null ? '—' : Math.round(val) + '%';
+      var contrib = (val == null ? 50 : val) * weight;
+      var color = val == null ? 'var(--text3)'
+                : val >= 70   ? 'var(--green)'
+                : val >= 45   ? 'var(--text2)'
+                                : 'var(--red)';
+      return ''
+        + '<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px 12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">'
+        + '  <div><b>' + label + '</b><br><span style="font-size:11px;color:var(--text3)">' + note + '</span></div>'
+        + '  <div style="font-family:\'IBM Plex Mono\',monospace;color:' + color + ';font-weight:800">' + pct + '</div>'
+        + '  <div style="font-family:\'IBM Plex Mono\',monospace;color:var(--text3);font-size:11px">×' + (weight * 100).toFixed(0) + '% = ' + contrib.toFixed(1) + '</div>'
+        + '</div>';
+    };
+    var factorsHtml = '';
+    if (opp) {
+      factorsHtml += mkRow('📊 Sentimen Analis', 0.4, opp.factors.sentiment, 'Persen BUY vs total rec');
+      factorsHtml += mkRow('🎯 Proximity ke Entry', 0.3, opp.factors.proximity, 'Seberapa dekat harga live ke entry rata²');
+      factorsHtml += mkRow('🏆 Hit Rate Historis', 0.2, opp.factors.hitrate, 'Rec closed yg kena TP (bukan SL)');
+      factorsHtml += mkRow('⚖ Risk-Reward', 0.1, opp.factors.rr, 'RR ratio rata² (TP1-Entry)/(Entry-SL)');
+    }
+    var scoreVal = opp ? opp.score : 0;
+    var html = ''
+      + '<div style="text-align:center;padding:8px 0 12px">'
+      + '  <div style="font-size:42px;font-weight:800;letter-spacing:-1.5px;color:var(--text)">' + scoreVal + '<span style="font-size:16px;color:var(--text3);margin-left:4px">/ 100</span></div>'
+      + '  <div style="font-size:11px;color:var(--text3);margin-top:2px">Total weighted score</div>'
+      + '</div>'
+      + '<div style="border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:2px 0">'
+      + factorsHtml
+      + '</div>'
+      + '<div style="margin-top:12px;padding:10px 12px;background:var(--bg2);border-radius:8px;font-size:12px;line-height:1.55;color:var(--text2)">'
+      + '  <b style="color:var(--text)">Level bracket:</b><br>'
+      + '  <span style="color:var(--green)">🟢 70-100</span>: Sangat Menarik — semua faktor selaras.<br>'
+      + '  <span style="color:#eab308">🟡 50-69</span>: Boleh Masuk — kondisi cukup baik.<br>'
+      + '  <span style="color:#f97316">🟠 25-49</span>: Hati-Hati — mixed signals, tunggu konfirmasi.<br>'
+      + '  <span style="color:var(--red)">🔴 0-24</span>: Nunggu Dulu — belum layak masuk sekarang.'
+      + '</div>'
+      + '<div style="margin-top:10px;font-size:11px;color:var(--text3);text-align:center;line-height:1.5">'
+      + '  Score ini adalah <b>indikator komposit</b>, bukan ajakan beli/jual.<br>Selalu lakukan riset & konfirmasi mandiri.'
+      + '</div>';
+    window.showInfoModal('⚡ Opportunity Score · Breakdown', html);
+  });
 
   // ── Chart: embed TradingView Advanced Chart widget (script-based, sama
   //    pola dgn plTvInHost di Pasar Live). Widget di-rebuild tiap ticker
