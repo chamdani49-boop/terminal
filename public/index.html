@@ -3651,14 +3651,16 @@ body.tr-profile-open .tr-subpane{display:none !important}
 
 /* Saldo Rp block — di-inject ke tiap kartu firm di Papan Peringkat
    Performa (post-render DOM). Menampilkan simulasi saldo sekarang, %
-   return, dan Rp gain/loss dari config Rp modal + slot di atas. */
-.tr-sim-saldo-block{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 15px;margin-bottom:11px;position:relative}
-.tr-sim-saldo-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);font-weight:700}
-.tr-sim-saldo-val{font-family:'IBM Plex Mono',monospace;font-size:23px;font-weight:800;letter-spacing:-.6px;line-height:1;margin-top:4px}
+   return, dan Rp gain/loss dari config Rp modal + slot di atas.
+   Font-size 20px = proporsional dgn .tr-perf-firm-stat-val.big (22px)
+   supaya tidak mendominasi kartu — angka tetap prominent tapi seimbang. */
+.tr-sim-saldo-block{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:10px;position:relative}
+.tr-sim-saldo-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.tr-sim-saldo-val{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:800;letter-spacing:-.5px;line-height:1;margin-top:3px}
 .tr-sim-saldo-val.up{color:var(--green)}
 .tr-sim-saldo-val.dn{color:var(--red)}
 .tr-sim-saldo-val.neu{color:var(--text)}
-.tr-sim-saldo-sub{font-family:'IBM Plex Mono',monospace;font-size:11px;margin-top:6px;color:var(--text2)}
+.tr-sim-saldo-sub{font-family:'IBM Plex Mono',monospace;font-size:10.5px;margin-top:5px;color:var(--text2)}
 .tr-sim-saldo-sub .pct{font-weight:700}
 .tr-sim-saldo-sub .pct.up{color:var(--green)}
 .tr-sim-saldo-sub .pct.dn{color:var(--red)}
@@ -9859,12 +9861,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var block = document.createElement('div');
       block.className = 'tr-sim-saldo-block';
       block.setAttribute('data-perf-sim', '1');
-      block.style.margin = '0 0 11px';
-      block.innerHTML = '<div class="tr-sim-saldo-lbl">SIMULASI SALDO SEKARANG</div>'
+      block.style.margin = '0 0 10px';
+      // Label pendek "SALDO SIMULASI" — konteks "simulasi ikut rekomendasi"
+      // sudah dijelaskan di config bar di atas kartu, tak perlu diulang.
+      // Separator titik-tengah antara % dan Rp biar visual scan lebih clean.
+      block.innerHTML = '<div class="tr-sim-saldo-lbl">SALDO SIMULASI</div>'
         + '<div class="tr-sim-saldo-val ' + netCls + '">' + fmtIdr(sim.closedBalance) + '</div>'
         + '<div class="tr-sim-saldo-sub">'
           + '<span class="pct ' + netCls + '">' + fmtPct(sim.netPct) + '</span>'
-          + ' &nbsp; ' + gainSign + fmtIdrExact(Math.abs(sim.realizedGain))
+          + ' &nbsp;·&nbsp; ' + gainSign + fmtIdrExact(Math.abs(sim.realizedGain))
         + '</div>';
       // Insert sebelum .tr-perf-firm-stats (persis di bawah header nama & rank)
       var stats = card.querySelector('.tr-perf-firm-stats');
