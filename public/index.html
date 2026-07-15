@@ -4124,6 +4124,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     </div><!-- /right-col -->
   </div><!-- /dash-grid -->
+  <div class="dm-disclaimer">
+    Konten ini sebagai informasi <b>edukasi</b> dan <b>bukan</b> merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.
+  </div>
 </div><!-- /page-dashboard -->
 
 
@@ -4549,6 +4552,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div>
       </div>
     </div>
+  </div>
+  <div class="dm-disclaimer">
+    Konten ini sebagai informasi <b>edukasi</b> dan <b>bukan</b> merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.
   </div>
 </div>
 
@@ -7231,6 +7237,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }, 30000);
 })();
 </script>
+
+<div class="dm-disclaimer">
+  Konten ini sebagai informasi <b>edukasi</b> dan <b>bukan</b> merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.
+</div>
 
 </div>
 
@@ -20081,8 +20091,25 @@ body.vl-maxing{overflow:hidden}
     </div>
 
   </div><!-- /vl-wrap -->
+  <div class="dm-disclaimer">
+    Konten ini sebagai informasi <b>edukasi</b> dan <b>bukan</b> merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.
+  </div>
 </div><!-- /page-valuasi -->
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     DISCLAIMER — konten edukasi, bukan rekomendasi investasi.
+     Class `.dm-disclaimer` dipakai di bawah page dashboard/consensus/valuasi/
+     tracker. Class `.dm-disclaimer-mini` = versi kecil untuk footer popup.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<style>
+.dm-disclaimer{max-width:1400px;margin:24px auto 8px;padding:14px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:11.5px;line-height:1.6;letter-spacing:.1px}
+.dm-disclaimer::before{content:'ⓘ ';color:var(--text3);font-weight:700;margin-right:3px}
+.dm-disclaimer b{color:var(--text)}
+@media(max-width:640px){.dm-disclaimer{margin:16px 12px 8px;padding:12px 14px;font-size:10.5px;line-height:1.55}}
+/* Versi mini di dalam popup/modal — jauh lebih kompak */
+.dm-disclaimer-mini{margin-top:10px;padding:7px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:9.5px;line-height:1.4;letter-spacing:.1px;text-align:justify}
+.dm-disclaimer-mini::before{content:'ⓘ ';opacity:.8;margin-right:2px}
+</style>
 <div class="footer">
   © 2026 ‧ <strong>Economstock</strong> ‧ All rights reserved.
 </div>
@@ -23294,6 +23321,7 @@ body.vl-maxing{overflow:hidden}
     <button type="button" class="info-modal-close" aria-label="Tutup" onclick="closeInfoModal()">×</button>
     <div class="info-modal-title" id="infoModalTitle">Info</div>
     <div class="info-modal-body" id="infoModalBody"></div>
+    <div class="dm-disclaimer-mini">Konten ini sebagai informasi edukasi dan bukan merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.</div>
   </div>
 </div>
 
@@ -23301,6 +23329,7 @@ body.vl-maxing{overflow:hidden}
 <div class="rec-modal-overlay" id="recDetailModal" onclick="if(event.target===this)closeRecDetail()">
   <div class="rec-modal" role="dialog" aria-modal="true">
     <div id="recDetailBody"></div>
+    <div class="dm-disclaimer-mini">Konten ini sebagai informasi edukasi dan bukan merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.</div>
   </div>
 </div>
 
@@ -23507,6 +23536,7 @@ document.addEventListener('keydown', (e) => {
     </div>
     <div class="tr-recmodal-levels" id="trRecModalLevels"></div>
     <div class="tr-recmodal-foot" id="trRecModalFoot"></div>
+    <div class="dm-disclaimer-mini">Konten ini sebagai informasi edukasi dan bukan merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.</div>
   </div>
 </div>
 
