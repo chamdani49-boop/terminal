@@ -8651,36 +8651,32 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var px = $('trLiveIhsgPx'); var chg = $('trLiveIhsgChg');
     var price = null, chgPct = null;
     try {
-      var D = window.DATA;
-      // Panggil getStatsMerged jika tersedia (dashboard function global).
-      // Ini menjamin nilai IDENTIK dgn row IHSG di statistik deskriptif —
-      // termasuk edge case ketika last row price_history[IHSG] belum ada
-      // (getStatsMerged fallback ke DATA.stats.IHSG.current dari data.json).
-      if (D && typeof window.getStatsMerged === 'function') {
+      // CRITICAL: `let DATA` di script dashboard TIDAK attach ke window
+      // (class script → let/const/class NOT global). Tapi function
+      // declaration di top-level classic <script> attach ke window.
+      // Jadi kita panggil window.getStatsMerged('IHSG') langsung — dia
+      // punya lexical closure ke DATA di scope asalnya, jadi return value
+      // IDENTIK dgn yang dashboard tampilkan (via makeRow → s.current).
+      if (typeof window.getStatsMerged === 'function') {
         try {
           var s = window.getStatsMerged('IHSG');
           if (s && Number.isFinite(s.current) && s.current > 0) {
             price = s.current;
           }
-          // chg% priority mirror dashboard makeRow (line ~15697):
+          // chg% mirror dashboard makeRow (line ~15697):
           //   s.change_pct_live ?? DATA.live.IHSG.change_pct
-          if (Number.isFinite(s && s.change_pct_live)) {
+          // s.change_pct_live sudah include spread dari back (DATA.stats.IHSG)
+          // via {...back, ...} di getStatsMerged, jadi cukup ambil dari s.
+          if (s && Number.isFinite(s.change_pct_live)) {
             chgPct = s.change_pct_live * 100;
-          } else if (D.live && D.live.IHSG && Number.isFinite(D.live.IHSG.change_pct)) {
-            chgPct = D.live.IHSG.change_pct * 100;
           }
         } catch(_){}
       }
-      // Fallback kedua (defensive): kalau getStatsMerged tidak tersedia,
-      // ambil langsung dari DATA.stats.IHSG (mirror back-fallback di
-      // getStatsMerged). Tidak mengambil dari price_history langsung
-      // karena rentan mismatch (baris kosong utk bulan berjalan).
-      if (price == null && D && D.stats && D.stats.IHSG && Number.isFinite(D.stats.IHSG.current)) {
-        price = D.stats.IHSG.current;
-      }
-      if (chgPct == null && D && D.stats && D.stats.IHSG && Number.isFinite(D.stats.IHSG.change_pct_live)) {
-        chgPct = D.stats.IHSG.change_pct_live * 100;
-      }
+      // Fallback: getStatsMerged tidak define window.DATA.live, jadi
+      // untuk chg% dari live overlay, panggil recomputeStats atau langsung
+      // via reflection. Simpel: kalau getStatsMerged berhasil ambil price,
+      // pass — chg% masih dari change_pct_live yang sudah di-set overlay
+      // ke DATA.stats. Tidak perlu akses DATA.live langsung.
     } catch(_){}
     // Fallback terakhir: tracker.json snapshot (Yahoo daily, MUNGKIN BEDA
     // dgn dashboard karena source berbeda). Hanya dipakai kalau DATA
