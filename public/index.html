@@ -3061,9 +3061,71 @@ body.tr-profile-open .tr-subpane{display:none !important}
 @media(max-width:1024px){.tr-anl-chart-row{grid-template-columns:1fr}}
 
 /* Widget konsensus (reuse .consensus-* dari dashboard) */
-.tr-anl-consensus{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:12px;min-width:0;overflow:visible}
-.tr-anl-consensus-hd{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tr-anl-consensus{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:14px;min-width:0;overflow:visible}
+.tr-anl-consensus-hd{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .tr-anl-consensus-hd b{color:var(--accent);font-weight:800}
+/* ═══ Redesign widget Status Rekomendasi (Opsi A + Price Ladder) ═══ */
+.trAnl-sec{display:flex;flex-direction:column;gap:8px}
+.trAnl-sec-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.9px;text-transform:uppercase;color:var(--text3);font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.trAnl-sec-sub{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);opacity:.8;font-weight:600;text-transform:none;letter-spacing:.2px}
+/* ── Section 1: Sentimen Analis ── */
+.trAnl-sent{display:flex;flex-direction:column;gap:6px}
+.trAnl-sent-hdr{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.trAnl-sent-headline{font-size:15px;font-weight:800;letter-spacing:-.3px;line-height:1.1}
+.trAnl-sent-headline.bullish{color:var(--green)}
+.trAnl-sent-headline.bearish{color:var(--red)}
+.trAnl-sent-headline.neutral{color:var(--text2)}
+.trAnl-sent-break{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);font-weight:700}
+.trAnl-sent-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--bg3);border:1px solid var(--border)}
+.trAnl-sent-bar-buy{background:linear-gradient(90deg,#059669,#4ade80);transition:width .5s ease}
+.trAnl-sent-bar-sell{background:linear-gradient(90deg,#fb7185,#e11d48);transition:width .5s ease}
+/* ── Section 2: Price Ladder ── */
+.trAnl-ladder{position:relative;height:56px;padding-top:24px;padding-bottom:22px}
+.trAnl-ladder-track{position:absolute;left:8px;right:8px;top:26px;height:3px;background:linear-gradient(90deg,rgba(239,68,68,.45) 0%,rgba(148,163,184,.4) 45%,rgba(148,163,184,.4) 55%,rgba(16,185,129,.45) 100%);border-radius:2px}
+.trAnl-ladder-markers{position:absolute;left:8px;right:8px;top:0;bottom:0}
+.trAnl-ladder-marker{position:absolute;transform:translateX(-50%);text-align:center;white-space:nowrap;pointer-events:none}
+.trAnl-ladder-marker .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--text2);border:2px solid var(--card);box-shadow:0 0 0 1px var(--border);margin-top:22px}
+.trAnl-ladder-marker.sl   .dot{background:var(--red)}
+.trAnl-ladder-marker.entry .dot{background:var(--accent);width:11px;height:11px;margin-top:21px}
+.trAnl-ladder-marker.tp1  .dot{background:var(--green)}
+.trAnl-ladder-marker.tp2  .dot{background:#4ade80;width:8px;height:8px}
+.trAnl-ladder-marker.live .dot{background:transparent;width:14px;height:14px;border:2.5px solid #fbbf24;box-shadow:0 0 0 2px rgba(251,191,36,.28);margin-top:19px;animation:plPulse 2s infinite}
+.trAnl-ladder-marker .lbl{position:absolute;left:50%;transform:translateX(-50%);top:0;font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:800;letter-spacing:.5px;color:var(--text3);text-transform:uppercase}
+.trAnl-ladder-marker.sl   .lbl{color:var(--red)}
+.trAnl-ladder-marker.entry .lbl{color:var(--accent)}
+.trAnl-ladder-marker.tp1  .lbl{color:var(--green)}
+.trAnl-ladder-marker.tp2  .lbl{color:#4ade80}
+.trAnl-ladder-marker.live .lbl{color:#fbbf24;font-size:9px}
+.trAnl-ladder-marker .val{position:absolute;left:50%;transform:translateX(-50%);bottom:0;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:800;color:var(--text);white-space:nowrap;letter-spacing:-.2px}
+.trAnl-ladder-note{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text2);line-height:1.4;padding:6px 8px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);text-align:center}
+/* ── Section 3: Posisi Sekarang (grid 4 kotak) ── */
+.trAnl-pos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.trAnl-pos-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;cursor:default;transition:transform .12s}
+.trAnl-pos-box:hover{transform:translateY(-1px)}
+.trAnl-pos-box .v{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:1;color:var(--text)}
+.trAnl-pos-box .l{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--text3);margin-top:4px;letter-spacing:.5px;text-transform:uppercase;font-weight:700}
+.trAnl-pos-box.active{background:linear-gradient(180deg,rgba(124,58,237,.12),var(--bg3));border-color:rgba(124,58,237,.32)}
+.trAnl-pos-box.active .v{color:var(--accent)}
+.trAnl-pos-box.pending{background:linear-gradient(180deg,rgba(245,158,11,.10),var(--bg3));border-color:rgba(245,158,11,.32)}
+.trAnl-pos-box.pending .v{color:#f59e0b}
+.trAnl-pos-box.tp{background:linear-gradient(180deg,rgba(16,185,129,.11),var(--bg3));border-color:rgba(16,185,129,.32)}
+.trAnl-pos-box.tp .v{color:var(--green)}
+.trAnl-pos-box.sl{background:linear-gradient(180deg,rgba(239,68,68,.10),var(--bg3));border-color:rgba(239,68,68,.32)}
+.trAnl-pos-box.sl .v{color:var(--red)}
+/* ── Section 4: Track Record ── */
+.trAnl-track-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.trAnl-track-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 6px;text-align:center}
+.trAnl-track-item .l{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--text3);letter-spacing:.4px;text-transform:uppercase;font-weight:700;margin-bottom:4px}
+.trAnl-track-item .v{font-family:'IBM Plex Mono',monospace;font-size:14.5px;font-weight:800;color:var(--text);letter-spacing:-.3px;line-height:1.1}
+.trAnl-track-item .v.up{color:var(--green)}
+.trAnl-track-item .v.dn{color:var(--red)}
+.trAnl-track-item .v.neu{color:var(--text3)}
+/* Narrow container / mobile: track record wrap 3 → 3 tetap (cukup ringan); pos grid 4 → 2 */
+@media (max-width:520px){
+  .trAnl-pos-grid{grid-template-columns:repeat(2,1fr)}
+  .trAnl-ladder-marker .val{font-size:9px}
+  .trAnl-ladder-marker .lbl{font-size:8px}
+}
 .tr-anl-cons-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;line-height:1}
 .tr-anl-cons-center .tick{display:block;font-size:14px;font-weight:800;color:var(--accent);letter-spacing:-.2px}
 .tr-anl-cons-center .note{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.4px;text-transform:uppercase;font-weight:700;margin-top:3px}
@@ -4777,21 +4839,74 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <div class="tr-anl-chart-row">
         <!-- Host untuk TradingView widget (script embed, di-inject via JS) -->
         <div class="tr-anl-tv-wrap" id="trAnlTvHost"></div>
-        <!-- Widget status rekomendasi (donut TP/SL/EXPIRED/AKTIF + P&L meter + 3 kotak) -->
+        <!-- ═══ Widget Status Rekomendasi — REDESIGN (Opsi A + Price Ladder)
+             4 section: Sentimen · Price Ladder · Posisi · Track Record.
+             Menggantikan versi lama (donut + gradient bar + 3 kotak). ═══ -->
         <div class="tr-anl-consensus" id="trAnlConsensus">
           <div class="tr-anl-consensus-hd">🎯 Status Rekomendasi · <b id="trAnlConsN">— rec</b></div>
-          <div class="consensus-grid">
-            <div class="consensus-chart-wrap">
-              <canvas id="trAnlConsDonut"></canvas>
-              <div class="tr-anl-cons-center">
-                <span class="tick" id="trAnlConsCenterTick">—</span>
-                <span class="note" id="trAnlConsCenterN">—</span>
+
+          <!-- 1. SENTIMEN ANALIS: bullish/bearish bar dari BUY vs SELL count -->
+          <div class="trAnl-sec">
+            <div class="trAnl-sec-lbl">📊 Sentimen Analis</div>
+            <div class="trAnl-sent">
+              <div class="trAnl-sent-hdr">
+                <span class="trAnl-sent-headline" id="trAnlSentHead">—</span>
+                <span class="trAnl-sent-break" id="trAnlSentBreak">— BUY / — SELL</span>
+              </div>
+              <div class="trAnl-sent-bar">
+                <div class="trAnl-sent-bar-buy"  id="trAnlSentBarBuy"  style="width:50%"></div>
+                <div class="trAnl-sent-bar-sell" id="trAnlSentBarSell" style="width:50%"></div>
               </div>
             </div>
-            <div class="consensus-stats" id="trAnlConsStats"></div>
           </div>
-          <div class="cs-axis" id="trAnlConsAxis"></div>
-          <div class="consensus-numbers" id="trAnlConsNums"></div>
+
+          <!-- 2. PRICE LADDER: SL — Entry — LIVE — TP1 — TP2 (visual axis) -->
+          <div class="trAnl-sec">
+            <div class="trAnl-sec-lbl">🧭 Zona Harga Konsensus</div>
+            <div class="trAnl-ladder" id="trAnlLadder">
+              <div class="trAnl-ladder-track"></div>
+              <div class="trAnl-ladder-markers" id="trAnlLadderMarkers"></div>
+            </div>
+            <div class="trAnl-ladder-note" id="trAnlLadderNote">—</div>
+          </div>
+
+          <!-- 3. POSISI SEKARANG: grid 4 kotak status -->
+          <div class="trAnl-sec">
+            <div class="trAnl-sec-lbl">🔴 Posisi Sekarang</div>
+            <div class="trAnl-pos-grid">
+              <div class="trAnl-pos-box active" title="Rekomendasi aktif — sudah masuk zona entry & masih running">
+                <div class="v" id="trAnlPosActive">0</div><div class="l">Aktif</div>
+              </div>
+              <div class="trAnl-pos-box pending" title="Menunggu harga menyentuh zona entry">
+                <div class="v" id="trAnlPosPending">0</div><div class="l">Menunggu</div>
+              </div>
+              <div class="trAnl-pos-box tp" title="Selesai kena target profit">
+                <div class="v" id="trAnlPosTp">0</div><div class="l">Kena TP</div>
+              </div>
+              <div class="trAnl-pos-box sl" title="Selesai kena stop-loss">
+                <div class="v" id="trAnlPosSl">0</div><div class="l">Kena SL</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. TRACK RECORD: WR + avg return + avg durasi (dari closed rec) -->
+          <div class="trAnl-sec" id="trAnlTrackSec">
+            <div class="trAnl-sec-lbl">🏆 Track Record <span class="trAnl-sec-sub" id="trAnlTrackSub">—</span></div>
+            <div class="trAnl-track-grid">
+              <div class="trAnl-track-item">
+                <div class="l">Win Rate</div>
+                <div class="v" id="trAnlTrackWr">—</div>
+              </div>
+              <div class="trAnl-track-item">
+                <div class="l">Avg Return</div>
+                <div class="v" id="trAnlTrackAvg">—</div>
+              </div>
+              <div class="trAnl-track-item">
+                <div class="l">Durasi</div>
+                <div class="v" id="trAnlTrackDur">—</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -10608,110 +10723,190 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }).join('');
   }
 
-  // ── Widget status rekomendasi (di kanan chart): donut TP/SL/EXPIRED/AKTIF
-  //    + gradient bar avg P&L (red→green) + 3 kotak (win rate, avg P&L, avg
-  //    durasi). Reuse .consensus-* / .cs-axis / .consensus-numbers CSS.
+  // ═══════════════════════════════════════════════════════════════════════
+  // Widget Status Rekomendasi — REDESIGN (Opsi A + Price Ladder dari B).
+  // 4 section:
+  //   1. Sentimen Analis — % BUY vs SELL dgn visual bar
+  //   2. Price Ladder    — SL / Entry avg / LIVE / TP1 avg / TP2 avg (visual)
+  //   3. Posisi Sekarang — 4 kotak: Aktif / Menunggu / TP / SL
+  //   4. Track Record    — Win Rate / Avg Return / Durasi (dari closed rec)
+  // ═══════════════════════════════════════════════════════════════════════
   function renderStatusWidget(ticker, recs, k){
-    // Hitung durasi rata-rata utk rec yang sudah close (openDate→exitDate)
-    var durations = [];
-    var pnls = [];
+    // ── Aggregate metrics ────────────────────────────────────────────
+    var buyN = 0, sellN = 0;
+    var entries = [], tp1s = [], tp2s = [], sls = [];
+    var lastPrice = null;
+    var durations = [], pnls = [];
+    var stCounts = { active: 0, pending: 0, missed: 0, tp: 0, sl: 0, expired: 0 };
+
     recs.forEach(function(r){
-      if (r.openDate && r.exitDate){
+      // Sentimen
+      var t = String(r.type || 'BUY').toUpperCase();
+      if (t === 'SELL') sellN++; else buyN++;
+      // Price levels
+      if (Number.isFinite(+r.entry) && +r.entry > 0) entries.push(+r.entry);
+      if (Number.isFinite(+r.tp1)   && +r.tp1   > 0) tp1s.push(+r.tp1);
+      if (Number.isFinite(+r.tp2)   && +r.tp2   > 0) tp2s.push(+r.tp2);
+      if (Number.isFinite(+r.sl)    && +r.sl    > 0) sls.push(+r.sl);
+      // Live price (ambil dari rec yg punya lastPrice — biasanya sama utk 1 ticker)
+      if (lastPrice == null && Number.isFinite(+r.lastPrice) && +r.lastPrice > 0) {
+        lastPrice = +r.lastPrice;
+      }
+      // Track record
+      if (r.openDate && r.exitDate) {
         var d1 = new Date(r.openDate + 'T00:00:00Z');
         var d2 = new Date(r.exitDate + 'T00:00:00Z');
         var t1 = d1.getTime(), t2 = d2.getTime();
-        if (!isNaN(t1) && !isNaN(t2) && t2 >= t1){
-          durations.push(Math.round((t2 - t1) / 86400000));
-        }
+        if (!isNaN(t1) && !isNaN(t2) && t2 >= t1) durations.push(Math.round((t2 - t1) / 86400000));
       }
       var p = pnlOf(r); if (p != null) pnls.push(p);
+      // Status buckets (per rec)
+      var s = statusOf(r);
+      if (s === 'TP') stCounts.tp++;
+      else if (s === 'SL') stCounts.sl++;
+      else if (s === 'EXPIRED') stCounts.expired++;
+      else if (s === 'PENDING') stCounts.pending++;
+      else if (s === 'MISSED')  stCounts.missed++;
+      else stCounts.active++;
     });
-    var avgDur = durations.length ? durations.reduce(function(a,b){ return a+b; },0) / durations.length : null;
-    var avgPnl = pnls.length ? pnls.reduce(function(a,b){ return a+b; },0) / pnls.length : null;
-    var closedN = k.tpN + k.slN + k.expN;
-    var winRate = closedN > 0 ? (k.tpN / closedN * 100) : null;
 
-    // Header + center donut
-    $('trAnlConsN').textContent = k.n + ' rec';
-    $('trAnlConsCenterTick').textContent = ticker;
-    $('trAnlConsCenterN').textContent = k.n + ' rec';
+    var avg = function(arr){ return arr.length ? arr.reduce(function(a,b){return a+b;},0) / arr.length : null; };
+    var min = function(arr){ return arr.length ? Math.min.apply(null, arr) : null; };
+    var max = function(arr){ return arr.length ? Math.max.apply(null, arr) : null; };
+    var entryAvg = avg(entries), tp1Avg = avg(tp1s), tp2Avg = avg(tp2s), slAvg = avg(sls);
 
-    // Donut render — TP / SL / EXPIRED / AKTIF (Chart.js)
-    if (_consDonut) { try { _consDonut.destroy(); } catch(_){} _consDonut = null; }
-    if (typeof Chart !== 'undefined'){
-      var isDark = _isDark();
-      var cTp  = isDark ? '#4ade80' : '#059669';
-      var cSl  = isDark ? '#fb7185' : '#e11d48';
-      var cExp = isDark ? '#8b7eb8' : '#94a3b8';
-      var cAct = isDark ? '#c4a3ff' : '#6d28d9';
-      _consDonut = new Chart($('trAnlConsDonut'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Target Hit (TP)', 'Stop-Loss (SL)', 'Expired', 'Masih Aktif'],
-          datasets: [{ data: [k.tpN, k.slN, k.expN, k.active], backgroundColor: [cTp, cSl, cExp, cAct], borderWidth: 0, cutout: '68%' }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: function(ctx){
-              var total = k.n || 1;
-              return ctx.label + ': ' + ctx.parsed + ' (' + (ctx.parsed / total * 100).toFixed(0) + '%)';
-            } } }
+    // Header
+    $('trAnlConsN').textContent = k.n + ' rekomendasi';
+
+    // ── 1. SENTIMEN ANALIS ────────────────────────────────────────────
+    var total = buyN + sellN;
+    var buyPct = total ? (buyN / total * 100) : 50;
+    var sellPct = 100 - buyPct;
+    var sentEl = $('trAnlSentHead');
+    var sentBreak = $('trAnlSentBreak');
+    if (sentEl) {
+      var lbl, cls;
+      if (total === 0) { lbl = 'BELUM ADA REKOM'; cls = 'neutral'; }
+      else if (buyPct >= 80)  { lbl = Math.round(buyPct) + '% BULLISH'; cls = 'bullish'; }
+      else if (buyPct >= 60)  { lbl = Math.round(buyPct) + '% BULLISH BIAS'; cls = 'bullish'; }
+      else if (buyPct <= 20)  { lbl = Math.round(sellPct) + '% BEARISH'; cls = 'bearish'; }
+      else if (buyPct <= 40)  { lbl = Math.round(sellPct) + '% BEARISH BIAS'; cls = 'bearish'; }
+      else                     { lbl = 'NEUTRAL / MIXED'; cls = 'neutral'; }
+      sentEl.textContent = lbl;
+      sentEl.className = 'trAnl-sent-headline ' + cls;
+    }
+    if (sentBreak) {
+      sentBreak.textContent = buyN + ' BUY · ' + sellN + ' SELL';
+    }
+    var bBuy = $('trAnlSentBarBuy'); if (bBuy) bBuy.style.width = buyPct + '%';
+    var bSell = $('trAnlSentBarSell'); if (bSell) bSell.style.width = sellPct + '%';
+
+    // ── 2. PRICE LADDER ────────────────────────────────────────────────
+    var ladder = $('trAnlLadderMarkers');
+    var note = $('trAnlLadderNote');
+    if (ladder) {
+      // Kumpulkan semua price points untuk hitung range
+      var points = [];
+      if (slAvg != null)    points.push(slAvg);
+      if (entryAvg != null) points.push(entryAvg);
+      if (tp1Avg != null)   points.push(tp1Avg);
+      if (tp2Avg != null)   points.push(tp2Avg);
+      if (lastPrice != null) points.push(lastPrice);
+      if (points.length < 2) {
+        ladder.innerHTML = '';
+        if (note) note.textContent = 'Belum cukup data harga.';
+      } else {
+        var lo = Math.min.apply(null, points);
+        var hi = Math.max.apply(null, points);
+        // padding 8% di kedua sisi supaya marker tidak lengket ke edge
+        var pad = (hi - lo) * 0.08 || 1;
+        var pLo = lo - pad, pHi = hi + pad;
+        var toPct = function(v){
+          if (v == null || pHi === pLo) return 50;
+          return Math.max(2, Math.min(98, ((v - pLo) / (pHi - pLo)) * 100));
+        };
+        var pctFromEntry = function(v){
+          if (v == null || entryAvg == null || entryAvg === 0) return null;
+          return ((v - entryAvg) / entryAvg) * 100;
+        };
+        var mkMarker = function(cls, lbl, val, showPctFromEntry){
+          if (val == null) return '';
+          var pos = toPct(val);
+          var pctChg = showPctFromEntry ? pctFromEntry(val) : null;
+          var subTxt = fmtN(Math.round(val));
+          if (pctChg != null) {
+            subTxt += ' <span style="color:var(--text3);font-size:8.5px;font-weight:600">(' + (pctChg>=0?'+':'') + pctChg.toFixed(1) + '%)</span>';
           }
+          return '<div class="trAnl-ladder-marker ' + cls + '" style="left:' + pos + '%">'
+               + '<div class="lbl">' + lbl + '</div>'
+               + '<div class="dot"></div>'
+               + '<div class="val">' + subTxt + '</div>'
+               + '</div>';
+        };
+        var html = '';
+        html += mkMarker('sl',    'SL',    slAvg,    true);
+        html += mkMarker('entry', 'Entry', entryAvg, false);
+        html += mkMarker('live',  'Live',  lastPrice, true);
+        html += mkMarker('tp1',   'TP1',   tp1Avg,   true);
+        html += mkMarker('tp2',   'TP2',   tp2Avg,   true);
+        ladder.innerHTML = html;
+
+        // Note: interpretasi posisi live vs zona rekomendasi
+        if (note) {
+          var msg = '';
+          if (lastPrice == null) msg = 'Harga live tidak tersedia.';
+          else if (entryAvg == null) msg = 'Belum ada zona entry.';
+          else {
+            var dEntry = pctFromEntry(lastPrice);
+            var dTp1 = tp1Avg != null ? ((tp1Avg - lastPrice) / lastPrice * 100) : null;
+            var dSl  = slAvg  != null ? ((slAvg  - lastPrice) / lastPrice * 100) : null;
+            if (Math.abs(dEntry) <= 1.5) {
+              msg = '📍 Harga live <b>di sekitar zona Entry</b> — momen ideal masuk.';
+            } else if (dEntry < -1.5) {
+              msg = '⬇ Harga live <b>' + Math.abs(dEntry).toFixed(1) + '% di bawah Entry</b> — belum tersentuh.';
+            } else if (dEntry > 1.5 && (tp1Avg == null || lastPrice < tp1Avg)) {
+              msg = '⬆ Harga live <b>+' + dEntry.toFixed(1) + '% di atas Entry</b> — momentum sudah jalan.';
+            } else if (tp1Avg != null && lastPrice >= tp1Avg) {
+              msg = '🎯 Harga live <b>sudah lewat TP1</b> — target awal tercapai.';
+            }
+            if (dTp1 != null && dSl != null && lastPrice > slAvg && lastPrice < tp1Avg) {
+              msg += ' Distance ke TP1: <b>+' + dTp1.toFixed(1) + '%</b>, SL: <b>' + dSl.toFixed(1) + '%</b>.';
+            }
+          }
+          note.innerHTML = msg || '—';
         }
-      });
-
-      // Stats list (kanan donut): 4 baris status dgn count
-      $('trAnlConsStats').innerHTML = ''
-        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cTp  + '"></span><span class="consensus-name">TP</span><span class="consensus-count">' + k.tpN    + '</span></div>'
-        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cSl  + '"></span><span class="consensus-name">SL</span><span class="consensus-count">' + k.slN    + '</span></div>'
-        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cExp + '"></span><span class="consensus-name">EXPIRED</span><span class="consensus-count">' + k.expN   + '</span></div>'
-        + '<div class="consensus-row"><span class="consensus-dot" style="background:' + cAct + '"></span><span class="consensus-name">AKTIF</span><span class="consensus-count">' + k.active + '</span></div>';
+      }
     }
 
-    // Gradient bar (cs-axis) — dot di posisi avg P&L pada skala −20% → +20%
-    // Kiri (0%) = LOSS berat, tengah (50%) = BEP (break-even), kanan (100%) = PROFIT tinggi
-    var axis = $('trAnlConsAxis'); if (!axis) return;
-    if (avgPnl == null){
-      axis.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;font-family:\'IBM Plex Mono\',monospace;padding:22px 8px">Data P&L belum tersedia</div>';
-    } else {
-      // Mapping: −20% → 0%, 0% → 50%, +20% → 100% (clamp di luar range)
-      var RANGE = 20;
-      var rawPct = 50 + (avgPnl / RANGE) * 50;
-      var clamp = function(v){ return Math.max(2, Math.min(98, v)); };
-      var dotPct = clamp(rawPct);
-      var pnlColor = avgPnl > 0 ? 'var(--green)' : avgPnl < 0 ? 'var(--red)' : 'var(--text2)';
-      var pnlTxt = (avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(1) + '%';
-      axis.innerHTML = ''
-        + '<div class="cs-axis-track"></div>'
-        + '<div class="cs-axis-cur" style="left:' + dotPct + '%;color:' + pnlColor + '">' + esc(pnlTxt) + '</div>'
-        + '<div class="cs-axis-tick" style="left:' + dotPct + '%"></div>'
-        + '<div class="cs-axis-dot" style="left:' + dotPct + '%;background:' + pnlColor + '"></div>'
-        + '<div class="cs-axis-avg-line" style="left:50%"></div>'
-        + '<div class="cs-axis-avg-label" style="left:50%">BEP<span class="cs-avg-val">0.0%</span></div>'
-        + '<div class="cs-axis-end lo">LOSS<span class="v">−' + RANGE + '%</span></div>'
-        + '<div class="cs-axis-end hi">PROFIT<span class="v">+' + RANGE + '%</span></div>';
+    // ── 3. POSISI SEKARANG (4 kotak) ─────────────────────────────────
+    var elA = $('trAnlPosActive'); if (elA) elA.textContent = stCounts.active + stCounts.missed;
+    var elP = $('trAnlPosPending'); if (elP) elP.textContent = stCounts.pending;
+    var elT = $('trAnlPosTp'); if (elT) elT.textContent = stCounts.tp;
+    var elS = $('trAnlPosSl'); if (elS) elS.textContent = stCounts.sl;
+
+    // ── 4. TRACK RECORD ──────────────────────────────────────────────
+    var closedN = stCounts.tp + stCounts.sl + stCounts.expired;
+    var wr = closedN > 0 ? (stCounts.tp / closedN * 100) : null;
+    var avgReturn = avg(pnls);
+    var avgDur = avg(durations);
+
+    var trackSubEl = $('trAnlTrackSub'); if (trackSubEl) trackSubEl.textContent = closedN > 0 ? '(' + closedN + ' selesai)' : '(belum ada data)';
+    var wrEl = $('trAnlTrackWr');
+    if (wrEl) {
+      wrEl.textContent = wr == null ? '—' : Math.round(wr) + '%';
+      wrEl.className = 'v ' + (wr == null ? 'neu' : wr >= 60 ? 'up' : wr < 40 ? 'dn' : 'neu');
     }
+    var avgEl = $('trAnlTrackAvg');
+    if (avgEl) {
+      avgEl.textContent = avgReturn == null ? '—' : (avgReturn >= 0 ? '+' : '') + avgReturn.toFixed(1) + '%';
+      avgEl.className = 'v ' + (avgReturn == null ? 'neu' : avgReturn > 0 ? 'up' : avgReturn < 0 ? 'dn' : 'neu');
+    }
+    var durEl = $('trAnlTrackDur');
+    if (durEl) durEl.textContent = avgDur == null ? '—' : Math.round(avgDur) + ' hari';
 
-    // 3 kotak: WIN RATE / AVG P&L / AVG DURASI
-    var pnlColorFor = function(v){
-      if (v == null) return 'var(--text3)';
-      return v > 0 ? 'var(--green)' : v < 0 ? 'var(--red)' : 'var(--text2)';
-    };
-    var wrColor = winRate == null ? 'var(--text3)' : winRate >= 60 ? 'var(--green)' : winRate < 40 ? 'var(--red)' : 'var(--text2)';
-    var wrTxt = winRate == null ? '—' : winRate.toFixed(0) + '%';
-    var pnlTxt = avgPnl == null ? '—' : (avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(1) + '%';
-    var durTxt = avgDur == null ? '—' : Math.round(avgDur) + 'h';
-
-    var wrSub = winRate == null ? '—' : k.tpN + '/' + closedN + ' hit TP';
-    var pnlSub = avgPnl == null ? '—' : pnls.length + ' rec dihitung';
-    var durSub = avgDur == null ? '—' : durations.length + ' rec ditutup';
-
-    $('trAnlConsNums').innerHTML = ''
-      + '<div class="cn-box"><div class="cn-label">WIN RATE</div><div class="cn-val" style="color:' + wrColor + '">' + wrTxt + '</div><div class="cn-gap" style="color:var(--text3);font-size:9.5px;font-weight:600">' + esc(wrSub) + '</div></div>'
-      + '<div class="cn-box"><div class="cn-label">AVG P&L</div><div class="cn-val" style="color:' + pnlColorFor(avgPnl) + '">' + pnlTxt + '</div><div class="cn-gap" style="color:var(--text3);font-size:9.5px;font-weight:600">' + esc(pnlSub) + '</div></div>'
-      + '<div class="cn-box"><div class="cn-label">AVG DURASI</div><div class="cn-val" style="color:var(--accent)">' + durTxt + '</div><div class="cn-gap" style="color:var(--text3);font-size:9.5px;font-weight:600">' + esc(durSub) + '</div></div>';
+    // Cleanup: kalau ada instance donut lama, destroy — sekarang widget tidak
+    // pakai donut lagi. Jaga-jaga kalau render dipanggil ulang saat swap ticker.
+    if (_consDonut) { try { _consDonut.destroy(); } catch(_){} _consDonut = null; }
   }
 
   // ── Chart: embed TradingView Advanced Chart widget (script-based, sama
