@@ -4869,7 +4869,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="tr-live-total-r">
           <div class="tr-live-total-breakdown" id="trLiveOpenN">— aktif</div>
           <div class="tr-live-total-sub">
-            <span id="trLiveClosedN">0</span> selesai · <button type="button" class="tr-hiscore-link" id="trLiveHiScoreBtn" title="Klik untuk penjelasan skor validitas rekomendasi">Skor tertinggi <span id="trLiveHiScore">—</span> <span class="tr-hiscore-info">ⓘ</span></button>
+            <span id="trLiveClosedN">0</span> selesai
+            <!-- 'Skor tertinggi N' dihilangkan (permintaan user: konsep skor
+                 validitas dihapus di semua halaman Tracker karena bikin
+                 bingung — winrate tidak selalu korelasi dgn skor). Element
+                 tersembunyi di-preserve untuk backward-compat renderTerminal. -->
+            <span id="trLiveHiScoreBtn" style="display:none"></span>
+            <span id="trLiveHiScore" style="display:none">—</span>
           </div>
         </div>
       </div>
@@ -5089,8 +5095,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
     </div>
 
-    <!-- ═══ Score Bracket Performance ═══ -->
-    <div class="tr-perf-card">
+    <!-- ═══ Score Bracket Performance — DISEMBUNYIKAN per user request.
+         Skor validitas dihapus di semua halaman Tracker. Element di-preserve
+         (bukan dihapus) supaya renderer JS tidak error null. ═══ -->
+    <div class="tr-perf-card" style="display:none">
       <div class="tr-perf-card-h">
         📊 Performa per Skor Validitas
         <span class="desc">rekomendasi berkualitas tinggi vs rendah</span>
@@ -5318,7 +5326,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="tr-rec-list slim" id="trPfRecList"></div>
 
         <div class="tr-disclaimer">
-          Semua P/L dihitung dari harga penutupan resmi. <b>Beli di Entry</b> hanya menghitung rekomendasi di mana harga benar-benar menyentuh zona entry (paling konsisten dengan desain analis). <b>Beli HAKA</b> mengasumsikan eksekusi di open pada hari rilis (tidak pernah kelewatan, tapi RR menyimpang). <b>Beli Saat TP1 / TP2</b> mengasumsikan pembeli baru masuk saat target tercapai — hanya untuk rekomendasi yang benar-benar menyentuh entry & TP terkait; jika tak tersentuh, fallback ke P/L Entry murni.
+          Semua P/L dihitung dari harga penutupan resmi. <b>📍 Beli di Entry</b> (<b>default</b>) hanya menghitung rekomendasi di mana harga benar-benar menyentuh zona entry — paling konsisten dgn desain analis. <b>⚡ Beli HAKA</b> adalah simulasi <b>opsional/edukasi</b> yang mengasumsikan eksekusi di open pada hari rilis — akurasi <b>bukan 100%</b> karena harga open sering gap dari harga rekomendasi (klik ⓘ di tombol HAKA untuk detail). <b>Beli Saat TP1 / TP2</b> mengasumsikan pembeli baru masuk saat target tercapai — hanya untuk rekomendasi yang benar-benar menyentuh entry & TP terkait; jika tak tersentuh, fallback ke P/L Entry murni.
         </div>
 
         <!-- Popup keterangan mode eksekusi (dibuka via ikon ⓘ di tiap seg-btn) -->
@@ -6105,7 +6113,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
   };
   var MODE_NOTE = {
     entry: '<b>Beli di Entry:</b> posisi baru dianggap terbuka bila harga benar-benar menyentuh zona entry rekomendasi. Kalau harga tak pernah sentuh entry (analisa "kelewatan"), rekomendasi itu di-skip dari simulasi. Konsisten dengan desain analis, RR original.',
-    haka:  '<b>Beli HAKA (Hantam Kanan):</b> masuk pada open tgl rilis rekomendasi. Skip kalau harga open sudah lewat TP1 (kelewatan). Namun kalau setelah kelewatan itu harga sempat balik ke zona entry sebelum SL/expired, dianggap masuk di entry sebagai <i>second chance</i>. RR menyimpang dari desain analis tapi tidak pernah kelewatan momentum awal.',
+    haka:  '<b>⚠ Beli di Open (HAKA) — MODE OPSIONAL & EDUKASI SAJA</b><br><br>'
+          +'Mode ini <b>hanya simulasi</b> untuk edukasi: "andaikan aku hantam kanan '
+          +'beli di harga open saat rekomendasi rilis, kira-kira hasilnya bagaimana?".<br><br>'
+          +'<b>Kenapa bukan default?</b> Akurasi HAKA <b>TIDAK 100%</b> karena harga '
+          +'open sering <b>gap</b> (loncat) dari harga rekomendasi analis:<br>'
+          +'• Gap-up besar → HAKA fill di harga jauh lebih tinggi dari entry rekom → RR jelek<br>'
+          +'• Gap-down besar → HAKA fill di harga jauh lebih rendah → kadang sudah dekat SL<br>'
+          +'• Pergerakan intraday tidak terduga → hasil beda dari rencana awal<br><br>'
+          +'<b>Default yang direkomendasikan: 📍 Beli di Entry</b> — sabar tunggu harga '
+          +'benar-benar menyentuh zona entry yang ditetapkan analis. Ini yang paling '
+          +'konsisten dgn RR (Risk-Reward) desain awal.<br><br>'
+          +'HAKA cocok kalau kamu <i>sengaja</i> ingin mengejar momentum awal & tidak keberatan RR menyimpang.',
     tp1:   '<b>Target Exit TP1:</b> simulasi strategi exit di TP1. Rec yg menyentuh TP1 → exit di TP1 (<b>WIN</b>). Rec kena SL sebelum TP1 → exit di SL (<b>LOSS</b>). Rec expired tanpa hit → exit di harga aktual. Winrate = proporsi TP1 hit terhadap semua rec yg entry-nya valid (bukan 100%). Butuh Metode Entry aktif.',
     tp2:   '<b>Target Exit TP2:</b> simulasi strategi exit di TP2. TP2 hit → exit di TP2 (<b>WIN besar</b>). TP1 hit tapi TP2 tidak (harga balik) → exit di TP1 sebagai <i>trailed stop</i> (<b>WIN kecil</b>). Kena SL sebelum TP1 → exit di SL (<b>LOSS</b>). Skip rec yang tak punya TP2 target.'
   };
@@ -6116,20 +6135,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     $id('trPfName').textContent = firmShort(firm.name);
     var vb = $id('trPfVBadge'); if(vb) vb.style.display = firm.verified ? '' : 'none';
     var analystCount = (firm.analysts||[]).length;
-    // Bangun meta line dgn badge validity (STRONG/MODERATE/WEAK) inline —
-    // menggantikan text plain 'High-score N'. Badge clickable → buka modal
-    // penjelasan skor validitas yg sama dgn di Live Signal Terminal.
+    // Meta line firm profile: badge validity (STRONG/MODERATE/WEAK) DIHAPUS
+    // per user request — konsep skor validitas dihilangkan di semua halaman
+    // Tracker karena bikin bingung (winrate tidak selalu korelasi dgn skor).
     var parts = [];
     parts.push(esc((firm.trades||0)+' trade selesai'));
     if(analystCount) parts.push(esc(analystCount+' analis'));
-    if(firm.highScore){
-      var s = +firm.highScore || 0;
-      var bracket = s >= 70 ? 'strong' : s >= 45 ? 'moderate' : 'weak';
-      var lbl = s >= 70 ? '🏆 STRONG' : s >= 45 ? '⚡ MODERATE' : '⚠ WEAK';
-      parts.push('<button type="button" class="tr-pf-vbadge '+bracket+'" data-tr-scoremodal-open '
-        + 'title="Klik utk penjelasan skor validitas rekomendasi">'
-        + lbl+' · Skor '+s+'</button>');
-    }
     $id('trPfMeta').innerHTML = parts.join(' · ');
 
     var secEl = $id('trPfSectors'); if(secEl){
@@ -7250,7 +7261,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var notesByMode = {
     pure: 'Entry murni: posisi baru dianggap terbuka bila harga benar-benar menyentuh zona entry yang direkomendasikan. RR paling konsisten dgn desain analis, tapi bisa "kelewatan" saat harga tidak pernah pullback.',
     avg:  'Average 1:1: separuh posisi masuk di harga open, separuh menunggu entry rekomendasi. Return blended — lebih rendah dari entry murni saat entry tersentuh, tapi tidak pernah kelewatan sepenuhnya.',
-    haka: 'Beli di open (HAKA): seluruh posisi masuk begitu market buka, tanpa menunggu entry. Tidak pernah kelewatan momentum, tapi RR menyimpang paling jauh dari desain rekomendasi analis.'
+    haka: '⚠ Beli di open (HAKA) — <b>mode opsional/edukasi</b>. Akurasi <b>bukan 100%</b> karena harga open sering gap dari harga rekomendasi analis. Default yang direkomendasikan: <b>tunggu harga menyentuh Entry</b>. HAKA cocok kalau kamu sengaja ingin mengejar momentum awal & tak keberatan RR menyimpang.'
   };
 
   function trColors(){
@@ -9321,11 +9332,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
             + '<div class="tr-perf-firm-stat-val" style="color:' + (hasTrades ? pctColor(avg) : 'var(--text3)') + '">' + (hasTrades ? fmtPct(avg, { dec: 1 }) : '—') + '</div>'
             + '<div class="tr-perf-firm-stat-sub">per rekomendasi</div>'
           + '</div>'
-          + '<div class="tr-perf-firm-stat">'
-            + '<div class="tr-perf-firm-stat-lbl">SKOR TINGGI</div>'
-            + '<div class="tr-perf-firm-stat-val">' + (f.highScore || 0) + '</div>'
-            + '<div class="tr-perf-firm-stat-sub">validitas rekomendasi</div>'
-          + '</div>'
+          // Kartu 'SKOR TINGGI' dihilangkan per user request — skor validitas
+          // dihapus di semua halaman Tracker karena membingungkan (winrate
+          // tinggi tidak selalu berkorelasi dgn skor validitas tinggi).
         + '</div>'
 
         + (hasTrades ? (
