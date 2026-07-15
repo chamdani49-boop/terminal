@@ -8723,10 +8723,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
       renderIhsg(d);
     } catch(_){}
   };
-  // Polling ringan tiap 15s — pastikan tracker IHSG selalu sinkron dgn
-  // DATA.live meski applyLiveFeed hook lupa memanggil, atau DATA.json baru
-  // pertama kali load setelah tracker.json sudah rendered.
-  setInterval(function(){ try { window.__TR_refreshIhsgLive(); } catch(_){} }, 15000);
+  // Polling ringan tiap 5s — pastikan tracker IHSG selalu sinkron dgn
+  // getStatsMerged('IHSG') dashboard, meski applyLiveFeed hook lupa
+  // memanggil atau DATA.json baru pertama kali load setelah tracker.json
+  // sudah rendered. Cukup ringan (2 kali get + 1 kali update DOM per 5s).
+  setInterval(function(){ try { window.__TR_refreshIhsgLive(); } catch(_){} }, 5000);
 
   // ── Render hero cards ──
   function renderHeroes(data){
@@ -9059,21 +9060,47 @@ body.is-mobile-device.force-desktop .pl-col-main{
     sel.value = cur;
   }
 
-  // Bangun dropdown "list sekuritas" dari subset tanggal terpilih (Semua + per firm, dgn count).
+  // Bangun dropdown "list sekuritas". Sumber: SEMUA rec aktif (trCombined
+  // langsung, TANPA date-scope), supaya user bisa pilih firm apapun yang
+  // punya rec aktif — tidak tergantung date filter default 'Terbaru' yg
+  // biasanya cuma menyisakan 1-2 firm rilis tgl itu.
+  //
+  // Perbaikan: sebelumnya pakai dateScoped() → default 'Terbaru' bikin
+  // dropdown cuma 1-2 sekuritas. Sekarang tampil SEMUA firm dgn rec aktif
+  // (bisa puluhan sekuritas sesuai data sheet). Date filter tetap
+  // memengaruhi COUNT per firm dan grid card, bukan opsi dropdown.
   function buildFirmChips(){
     var el = $('trLiveFirmSelect'); if (!el) return;
-    var scoped = dateScoped();
+    // Base list: semua rec aktif (openList + unfilledList) → SEMUA sekuritas
+    // yang punya rec belum closed di sheet.
     var counts = {}, order = [];
-    scoped.forEach(function(o){
+    trCombined.forEach(function(o){
       var k = firmOf(o);
       if (!(k in counts)) { counts[k] = 0; order.push(k); }
       counts[k]++;
     });
+    // Kalau ada date filter aktif, hitung SUB-count per firm utk display:
+    // "Firm X (5)" → 5 = rec di tgl terpilih. Kalau firm sedang tidak punya
+    // rec di tgl itu → tetap tampil dropdown tapi count = 0.
+    var scoped = dateScoped();
+    var scopedCounts = {};
+    if (scoped.length !== trCombined.length) {
+      // date filter aktif
+      scoped.forEach(function(o){
+        var k = firmOf(o);
+        scopedCounts[k] = (scopedCounts[k] || 0) + 1;
+      });
+    }
     order.sort(function(a, b){ return counts[b] - counts[a] || a.localeCompare(b); });
-    var html = '<option value="__all__">Semua Sekuritas (' + scoped.length + ')</option>';
+    var html = '<option value="__all__">Semua Sekuritas (' + (scoped.length || trCombined.length) + ')</option>';
     html += order.map(function(k){
       var lbl = (k === '—') ? 'Tanpa sekuritas' : firmShort(k);
-      return '<option value="' + esc(k) + '">' + esc(lbl) + ' (' + counts[k] + ')</option>';
+      // Count = kalau ada date filter, pakai count filtered; kalau tidak, total aktif.
+      var cnt = (scoped.length !== trCombined.length) ? (scopedCounts[k] || 0) : counts[k];
+      var cntStr = (scoped.length !== trCombined.length && cnt === 0)
+                 ? '0 di tgl ini · ' + counts[k] + ' total'
+                 : String(cnt);
+      return '<option value="' + esc(k) + '">' + esc(lbl) + ' (' + cntStr + ')</option>';
     }).join('');
     el.innerHTML = html;
     // Pertahankan pilihan aktif kalau masih valid, kalau tidak fallback ke Semua.
@@ -13005,6 +13032,10 @@ async function loadData() {
   if (_cached && _cached.price_history && _cached.stats) {
     try {
       DATA = _sanitizeData(_cached);
+      // Sinkronkan tracker Live IHSG ticker begitu DATA global tersedia
+      // (dari cache) — supaya nilai IHSG di header tab Live IDENTIK dgn
+      // dashboard row Statistik Deskriptif (source: getStatsMerged('IHSG')).
+      try { if (typeof window.__TR_refreshIhsgLive === 'function') window.__TR_refreshIhsgLive(); } catch(_){}
       _lastGeneratedAt = (_cached._meta || {}).generated_at || null;
       const _rc = window.escCacheRead('rec');
       if (_rc && _rc.recs) REC_STATUS = _rc.recs;
@@ -13045,6 +13076,8 @@ async function loadData() {
       if (!json || !json.price_history || !json.stats) throw new Error('payload tidak valid');
       window.escCacheWrite('data', json);   // simpan untuk render instan berikutnya
       DATA = _sanitizeData(json);
+      // Sinkronkan tracker Live IHSG dgn dashboard (fresh fetch data.json).
+      try { if (typeof window.__TR_refreshIhsgLive === 'function') window.__TR_refreshIhsgLive(); } catch(_){}
       _lastGeneratedAt = (json._meta || {}).generated_at || null;
       try {
         const meta = json._meta || {};
@@ -13136,6 +13169,8 @@ async function _pollLiveData() {
   // mengembalikan konsensus/history ke versi data.json yang mungkin lebih lama.
   if (_lastConsensusFeed) { try { _applyConsensusInto(DATA, _lastConsensusFeed); } catch (_) {} }
   if (_lastHistoryFeed)   { try { _applyHistoryInto(DATA, _lastHistoryFeed);   } catch (_) {} }
+  // Refresh tracker Live IHSG (source: getStatsMerged) — DATA baru diapply.
+  try { if (typeof window.__TR_refreshIhsgLive === 'function') window.__TR_refreshIhsgLive(); } catch (_) {}
 
   // Re-render komponen ringan langsung (tidak blokir UI thread)
   requestAnimationFrame(() => { _rerenderLive(prevStock); });
