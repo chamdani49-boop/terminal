@@ -5228,7 +5228,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-empty-ico">📊</div>
     <div class="tr-empty-title">Performa — menunggu data</div>
     <div class="tr-empty-desc">
-      TP hit distribution (TP1 / TP2 / SL), grafik 30-hari performa konsensus, papan peringkat sekuritas (per firm), safety net RR, dan tabel ranking detail dgn kolom Alpha vs IHSG.
+      TP hit distribution (TP1 / TP2 / SL), grafik 30-hari performa konsensus, papan peringkat sekuritas (per firm), safety net RR, dan performa per bracket score validitas.
     </div>
     <div class="tr-empty-hint" id="trPerfStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
   </div>
@@ -5326,49 +5326,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
       <div class="tr-perf-note">
         ⓘ <b>Safety Ratio</b>: persen trade yang menyentuh target. <b>Ekspektansi</b>: profit rata-rata dalam satuan R (1R = jarak entry ke SL). Positif = level ini menguntungkan.
-      </div>
-    </div>
-
-    <!-- ═══ Ranking Detail per Sekuritas — dilebur dari tab Asumsi (PR #353).
-         Tabel padat semua sekuritas dgn skema exit 50/50 staged + kolom
-         Alpha vs IHSG untuk power user. Klik row → detail firm di tab Analis. ═══ -->
-    <div class="tr-perf-card">
-      <div class="tr-perf-card-h">
-        🎲 Ranking Detail per Sekuritas
-        <span class="desc">skema exit 50/50 · Alpha vs IHSG</span>
-      </div>
-
-      <div class="tr-anlz-head" style="margin-bottom:10px">
-        <div class="tr-sub" id="trPerfRankSub">— sekuritas · — trade selesai</div>
-        <div class="search-wrap tr-anlz-search">
-          <span class="ico">⌕</span>
-          <input type="text" id="trPerfRankSearch" placeholder="Cari sekuritas..." autocomplete="off" spellcheck="false" aria-label="Cari sekuritas">
-        </div>
-      </div>
-
-      <div class="tr-anlz-table-wrap">
-        <table class="tr-anlz-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Sekuritas</th>
-              <th class="num">Trade</th>
-              <th class="num">Winrate</th>
-              <th class="num">Net (50/50)</th>
-              <th class="num">Rata²/Trade</th>
-              <th class="num">Best</th>
-              <th class="num">Worst</th>
-              <th class="num">Alpha vs IHSG</th>
-            </tr>
-          </thead>
-          <tbody id="trPerfRankBody">
-            <tr><td colspan="9" class="tr-anlz-empty">—</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="tr-perf-note">
-        ⓘ <b>Skema exit sistem:</b> saat harga menyentuh <b>TP1</b> → ambil <b>50% profit</b> di TP1, stoploss digeser ke <b>entry</b> (trailed stop). Sisa 50% posisi hold — kalau <b>TP2</b> tersentuh exit di TP2, kalau harga balik ke entry exit di sini (SL_TRAIL, break-even). Kalau TP1 belum sentuh dan SL kena → full loss di SL. Skema ini <b>simulasi otomatis sistem</b> (kompromi antara aggressive & konservatif) — beda dgn mode-aware di tab <b>Analis</b>. <b>Alpha vs IHSG</b>: net return firm dikurangi return IHSG di periode yang sama; positif = mengalahkan pasar. Klik row untuk buka detail firm.
       </div>
     </div>
 
@@ -9712,127 +9669,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if (window.__TR_onData) { clearInterval(wait); window.__TR_onData(renderPerf); }
       else if (tries > 30) { clearInterval(wait); }
     }, 100);
-  }
-})();
-</script>
-
-
-<script>
-// ═══════════════════════════════════════════
-// TRACKER — TAB PERFORMA · RANKING DETAIL TABLE
-//   Section terakhir di tab Performa (dilebur dari tab Asumsi yg
-//   dihapus di PR #353): tabel padat semua sekuritas dgn skema exit
-//   50/50 staged, plus kolom Alpha vs IHSG (unik dari Asumsi lama).
-//   • Sort default: netPure desc
-//   • Search filter by nama/id firm
-//   • Klik row → detail firm di tab Analis (reuse __TR_openFirm)
-//   Visibility pending/content dikelola renderer utama Performa —
-//   IIFE ini fokus hanya render tabel + sub-count.
-// ═══════════════════════════════════════════
-(function(){
-  function $id(x){ return document.getElementById(x); }
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
-  function firmShort(name){ if(!name) return '—'; return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim(); }
-  function fmtPct(n,dec){ if(n==null||!Number.isFinite(+n)) return '—'; var v=+n; var d=(dec==null)?2:dec; return (v>=0?'+':'')+v.toFixed(d)+'%'; }
-  function fmtWr(n){ if(n==null||!Number.isFinite(+n)) return '—'; return (+n).toFixed(1)+'%'; }
-
-  function firmList(query){
-    var d = window.__TR_getData && window.__TR_getData();
-    if(!d || d.pending) return [];
-    var byF = d.byFirm || {};
-    var arr = Object.keys(byF).map(function(k){ return byF[k]; });
-    var q = (query||'').trim().toLowerCase();
-    if(q){
-      arr = arr.filter(function(f){
-        return (f.name||'').toLowerCase().indexOf(q)>=0
-            || (f.id||'').toLowerCase().indexOf(q)>=0;
-      });
-    }
-    // Sort: netPure desc (best default-strategy firms di atas)
-    arr.sort(function(a,b){
-      var an = Number.isFinite(+a.netPure)?+a.netPure:(Number.isFinite(+a.net)?+a.net:-Infinity);
-      var bn = Number.isFinite(+b.netPure)?+b.netPure:(Number.isFinite(+b.net)?+b.net:-Infinity);
-      return bn - an;
-    });
-    return arr;
-  }
-
-  function renderTable(list){
-    var body = $id('trPerfRankBody'); if(!body) return;
-    if(!list.length){
-      body.innerHTML = '<tr><td colspan="9" class="tr-anlz-empty">Tidak ada sekuritas yang cocok dgn pencarian.</td></tr>';
-      return;
-    }
-    body.innerHTML = list.map(function(f,i){
-      var net = Number.isFinite(+f.netPure)?+f.netPure:(Number.isFinite(+f.net)?+f.net:null);
-      var avg = Number.isFinite(+f.avgPure)?+f.avgPure:(Number.isFinite(+f.avg)?+f.avg:null);
-      var netCls = (net!=null && net>=0) ? 'up' : (net!=null?'dn':'');
-      var avgCls = (avg!=null && avg>=0) ? 'up' : (avg!=null?'dn':'');
-      var wrCls  = (Number.isFinite(+f.winrate) && +f.winrate>=50) ? 'up' : 'dn';
-      var best   = Number.isFinite(+f.best)?+f.best:null;
-      var worst  = Number.isFinite(+f.worst)?+f.worst:null;
-      var alpha  = Number.isFinite(+f.alpha)?+f.alpha:null;
-      var verified = f.verified ? '<span class="tr-anlz-vb" title="Terverifikasi">✓</span>' : '';
-      var fid = f.id || f.name || '';
-      return '<tr data-firm-id="'+esc(fid)+'" data-firm-name="'+esc(f.name||'')+'">'
-        + '<td class="tr-anlz-idx">'+(i+1)+'</td>'
-        + '<td class="tr-anlz-name">'+esc(firmShort(f.name))+verified+'</td>'
-        + '<td class="num">'+(f.trades||0)+'</td>'
-        + '<td class="num '+wrCls+'">'+fmtWr(f.winrate)+'</td>'
-        + '<td class="num '+netCls+'">'+fmtPct(net)+'</td>'
-        + '<td class="num '+avgCls+'">'+fmtPct(avg)+'</td>'
-        + '<td class="num '+(best!=null&&best>=0?'up':'')+'">'+(best==null?'—':fmtPct(best))+'</td>'
-        + '<td class="num '+(worst!=null&&worst<0?'dn':'')+'">'+(worst==null?'—':fmtPct(worst))+'</td>'
-        + '<td class="num '+(alpha!=null && alpha>=0?'up':(alpha!=null?'dn':''))+'">'+(alpha==null?'—':fmtPct(alpha))+'</td>'
-      + '</tr>';
-    }).join('');
-  }
-
-  function render(){
-    var d = window.__TR_getData && window.__TR_getData();
-    if(!d || d.pending){
-      var body = $id('trPerfRankBody');
-      if(body) body.innerHTML = '<tr><td colspan="9" class="tr-anlz-empty">—</td></tr>';
-      var sub0 = $id('trPerfRankSub');
-      if(sub0) sub0.textContent = '— sekuritas · — trade selesai';
-      return;
-    }
-    var q = ($id('trPerfRankSearch') && $id('trPerfRankSearch').value) || '';
-    var list = firmList(q);
-    var totalTrades = list.reduce(function(s,f){ return s + (f.trades||0); }, 0);
-    var sub = $id('trPerfRankSub');
-    if(sub) sub.textContent = list.length + ' sekuritas · ' + totalTrades + ' trade selesai';
-    renderTable(list);
-  }
-
-  // Search debounced
-  var _t = null;
-  document.addEventListener('input', function(e){
-    if(e.target && e.target.id === 'trPerfRankSearch'){
-      if(_t) clearTimeout(_t);
-      _t = setTimeout(render, 120);
-    }
-  });
-
-  // Klik row → buka detail firm di tab Analis (reuse __TR_openFirm)
-  document.addEventListener('click', function(e){
-    var tr = e.target && e.target.closest && e.target.closest('#trPerfRankBody tr[data-firm-id]');
-    if(!tr) return;
-    var fid = tr.getAttribute('data-firm-id') || tr.getAttribute('data-firm-name');
-    if(fid && window.__TR_openFirm){ window.__TR_openFirm(fid); }
-  });
-
-  // Subscribe ke data event
-  function hook(){
-    if(window.__TR_onData){ window.__TR_onData(function(){ render(); }); return true; }
-    return false;
-  }
-  if(!hook()){
-    var _tries=0;
-    var _iv=setInterval(function(){
-      _tries++;
-      if(hook() || _tries>50) clearInterval(_iv);
-    }, 200);
   }
 })();
 </script>
