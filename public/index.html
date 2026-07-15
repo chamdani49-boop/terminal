@@ -3793,6 +3793,11 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-recmodal-foot-item .val{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text);font-weight:800}
 .tr-recmodal-foot-item .val.up{color:var(--green)}
 .tr-recmodal-foot-item .val.dn{color:var(--red)}
+/* Catatan analis — block multiline di bawah foot; hidden kalau catatan
+   di Sheet kosong. Text di-wrap agar catatan panjang tak overflow modal. */
+.tr-recmodal-note{margin-top:12px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
+.tr-recmodal-note-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:5px}
+.tr-recmodal-note-body{font-size:12.5px;color:var(--text2);line-height:1.55;white-space:pre-wrap;word-break:break-word}
 
 @media (max-width:640px){
   .tr-recmodal-body{padding:14px 14px 12px;max-height:calc(100vh - 20px)}
@@ -11460,6 +11465,11 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     var footHtml = ''
       + '<div class="tr-recmodal-foot-item"><span class="lbl">Harga Sekarang</span><span class="val">' + esc(fmtN(effectiveLastPrice)) + '</span></div>'
       + '<div class="tr-recmodal-foot-item"><span class="lbl">P&amp;L</span><span class="val' + pnlCls + '">' + esc(pnl == null ? '—' : fmtPct(pnl, 1)) + '</span></div>';
+    // Horizon — durasi holding yang direkomendasikan analis (dari kolom Sheet).
+    // Tampilkan hanya kalau ada isi (skip kalau kosong).
+    if (rec.horizon && String(rec.horizon).trim()) {
+      footHtml += '<div class="tr-recmodal-foot-item"><span class="lbl">Horizon</span><span class="val">' + esc(String(rec.horizon).trim()) + '</span></div>';
+    }
     if (rec.exitDate){
       var exitTxt = fmtDate(rec.exitDate);
       if (Number.isFinite(+rec.exitPrice)) exitTxt += ' @ ' + fmtN(rec.exitPrice);
@@ -11484,6 +11494,21 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       }
     }
     $('trRecModalFoot').innerHTML = footHtml;
+
+    // Catatan analis — teks bebas dari kolom Sheet, bisa multiline. Sembunyikan
+    // block kalau kosong (biar modal ringkas untuk rec tanpa catatan).
+    var noteEl = $('trRecModalNote');
+    if (noteEl) {
+      var noteTxt = String(rec.note || '').trim();
+      if (noteTxt) {
+        noteEl.innerHTML = '<div class="tr-recmodal-note-lbl">📝 Catatan Analis</div>'
+                         + '<div class="tr-recmodal-note-body">' + esc(noteTxt) + '</div>';
+        noteEl.hidden = false;
+      } else {
+        noteEl.innerHTML = '';
+        noteEl.hidden = true;
+      }
+    }
   }
 
   function showModal(rec){
@@ -23733,6 +23758,7 @@ document.addEventListener('keydown', (e) => {
     </div>
     <div class="tr-recmodal-levels" id="trRecModalLevels"></div>
     <div class="tr-recmodal-foot" id="trRecModalFoot"></div>
+    <div class="tr-recmodal-note" id="trRecModalNote" hidden></div>
     <div class="dm-disclaimer-mini">Konten ini sebagai informasi edukasi dan bukan merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.</div>
   </div>
 </div>
