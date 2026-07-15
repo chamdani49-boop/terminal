@@ -515,25 +515,26 @@ function normalizeRow(row) {
 
 const MISSED_THRESHOLD_PCT = 5; // %
 
-// Hitung tanggal expiry PENDING = openDate + 1 bulan kalender (tanggal yg sama).
-// Contoh: openDate = 2026-07-05 → pendingExpiresAt = 2026-08-05.
-// Kalau openDate = 2026-01-31 → 2026-02-28 (JS Date auto-clamp ke akhir bulan).
+// Hitung tanggal expiry PENDING = openDate + 10 HARI kalender.
+// Contoh: openDate = 2026-07-05 → pendingExpiresAt = 2026-07-15.
+//         openDate = 2026-07-25 → pendingExpiresAt = 2026-08-04 (rollover).
 // Digunakan untuk cap horizon rekomendasi yang MENUNGGU harga entry
 // (PENDING / RUNNING_MISSED). Kalau lewat → auto EXPIRED walau horizon
 // aslinya lebih panjang. TRIGGERED (posisi sudah jalan) TIDAK terpengaruh.
+//
+// Threshold 10 hari (per user request; sebelumnya 1 bulan kalender / ~30 hari).
+// Rasional: rekomendasi yang tidak masuk zona entry dalam 10 hari umumnya
+// sudah kadaluarsa secara relevansi analisa teknikal (harga sudah drift
+// jauh dari kondisi saat rekomendasi dirilis).
+const PENDING_EXPIRY_DAYS = 10;
+
 function computePendingExpiry(openDateIso) {
   if (!openDateIso) return null;
   const d = new Date(openDateIso + 'T00:00:00Z');
   if (isNaN(d.getTime())) return null;
-  const y = d.getUTCFullYear();
-  const m = d.getUTCMonth();
-  const day = d.getUTCDate();
-  // Target: bulan berikutnya, tanggal yang sama. JS Date auto-clamp:
-  // new Date(Date.UTC(2026, 1, 31)) = 2026-03-03. Kita hindari itu dgn
-  // manual clamp ke akhir bulan berikutnya.
-  const lastDayOfNextMonth = new Date(Date.UTC(y, m + 2, 0)).getUTCDate();
-  const targetDay = Math.min(day, lastDayOfNextMonth);
-  const exp = new Date(Date.UTC(y, m + 1, targetDay));
+  // openDate + 10 hari (86400 detik/hari). setUTCDate() auto-rollover ke
+  // bulan berikutnya kalau overflow (mis. 25 Jul + 10 hari → 4 Agu).
+  const exp = new Date(d.getTime() + PENDING_EXPIRY_DAYS * 86400 * 1000);
   return {
     iso: exp.toISOString().slice(0, 10),
     ts: exp.getTime() / 1000,

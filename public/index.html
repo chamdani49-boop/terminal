@@ -3306,7 +3306,7 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-state-badge.tp{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.35)}
 .tr-state-badge.sl{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.35)}
 .tr-state-badge.expired{background:rgba(148,163,184,.10);color:#94a3b8;border:1px solid rgba(148,163,184,.28)}
-/* KADALUARSA — rec pending yang lewat 1 bulan dari openDate: MERAH & bold,
+/* KADALUARSA — rec pending yang lewat 10 hari dari openDate: MERAH & bold,
    supaya user langsung "aware" bahwa rekomendasi ini sudah tidak relevan. */
 .tr-state-badge.pending-expired{background:rgba(239,68,68,.16);color:var(--red);border:1px solid rgba(239,68,68,.42);text-shadow:0 0 8px rgba(239,68,68,.25)}
 /* Info tgl expiry di footer kartu — kecil, tenang; jadi merah kalau <=3 hari lagi. */
@@ -5659,7 +5659,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       return {cls:'st-exp',lbl:'Selesai'};
     }
     var s=r.state||'TRIGGERED';
-    // Fallback client-side untuk rec pending yg sudah lewat 1 bulan
+    // Fallback client-side untuk rec pending yg sudah lewat 10 hari
     // (backend cache lama mungkin masih PENDING) — treat sbg kadaluarsa.
     if((s==='PENDING' || s==='RUNNING_MISSED')
         && typeof window.__TR_isPendingExpired === 'function'
@@ -5855,24 +5855,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── Pending expiry helpers ────────────────────────────────────────
   // Rekomendasi "menunggu harga entry" (state PENDING/RUNNING_MISSED) punya
-  // masa berlaku maksimum 1 bulan kalender dari openDate (tanggal yg sama
-  // bulan berikutnya). Contoh: rilis 5 Jul → kadaluarsa 5 Agu.
+  // masa berlaku maksimum 10 HARI kalender dari openDate.
+  // Contoh: rilis 5 Jul → kadaluarsa 15 Jul. Rilis 25 Jul → 4 Agu (rollover).
   // Rec yg sudah triggered (state TRIGGERED) TIDAK terpengaruh — mereka
   // pakai horizon aslinya. Backend juga sudah auto-EXPIRED-kan rec yg
   // sudah lewat tgl expiry, tapi helper ini dipakai frontend untuk:
   //   - Tampilkan tgl expiry di kartu rec pending
   //   - Fallback deteksi expired kalau backend belum re-run (cache lama)
+  // Sinkron dgn PENDING_EXPIRY_DAYS di scripts/build-tracker.js.
+  var PENDING_EXPIRY_DAYS = 10;
   function getPendingExpiryDate(openDateIso){
     if(!openDateIso) return null;
     var d = new Date(openDateIso + 'T00:00:00');
     if(isNaN(d.getTime())) return null;
-    var y = d.getFullYear();
-    var m = d.getMonth();
-    var day = d.getDate();
-    // Clamp ke akhir bulan berikutnya kalau tgl overflow (mis. 31 Jan → 28/29 Feb).
-    var lastDayOfNextMonth = new Date(y, m + 2, 0).getDate();
-    var targetDay = Math.min(day, lastDayOfNextMonth);
-    return new Date(y, m + 1, targetDay);
+    // openDate + 10 hari (86400 detik). Konstruktor Date auto-rollover
+    // bulan kalau overflow (mis. 25 Jul + 10 hari → 4 Agu).
+    return new Date(d.getTime() + PENDING_EXPIRY_DAYS * 86400 * 1000);
   }
   // Cek apakah sebuah rec pending sudah kadaluarsa (nowDate > expiryDate).
   // Toleransi: dianggap kadaluarsa mulai HARI SETELAH tanggal expiry
@@ -6461,7 +6459,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Rec list ────────────────────────────────────────
-  // NOTE: rec MENUNGGU ENTRY yg sudah lewat batas 1 bulan dari openDate
+  // NOTE: rec MENUNGGU ENTRY yg sudah lewat batas 10 hari dari openDate
   // ditandai dgn label KADALUARSA (merah). Backend juga transisi ke
   // state EXPIRED via closedBy='EXPIRED_UNFILLED' — kita bedakan itu dari
   // EXPIRED yg dari TRIGGERED (habis horizon setelah posisi jalan).
@@ -6480,7 +6478,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     var s=r.state||'TRIGGERED';
     // Fallback client-side: kalau backend cache lama masih PENDING padahal
-    // sudah lewat batas 1 bulan, treat sbg kadaluarsa di UI.
+    // sudah lewat batas 10 hari, treat sbg kadaluarsa di UI.
     if((s==='PENDING' || s==='RUNNING_MISSED')
         && typeof window.__TR_isPendingExpired === 'function'
         && window.__TR_isPendingExpired(r)){
@@ -6938,7 +6936,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           } else {
             _expTxt = '⏰ Kadaluarsa ' + _expShort;
           }
-          expiryLine = '<div class="' + _expCls + '" title="Rekomendasi menunggu harga entry berlaku maksimum 1 bulan dari tanggal rilis" style="margin-top:4px">'
+          expiryLine = '<div class="' + _expCls + '" title="Rekomendasi menunggu harga entry berlaku maksimum 10 hari dari tanggal rilis" style="margin-top:4px">'
                      + _expTxt + '</div>';
         }
       }
@@ -8800,7 +8798,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // ── State badge helper (untuk state machine v2) ──
   // state: TRIGGERED | PENDING | RUNNING_MISSED | TP_HIT | SL_HIT | EXPIRED
   // `rec` (opsional) dipakai untuk deteksi pending-expired (fallback client-side
-  // kalau backend cache lama). Kalau PENDING/RUNNING_MISSED sudah lewat 1 bulan
+  // kalau backend cache lama). Kalau PENDING/RUNNING_MISSED sudah lewat 10 hari
   // dari openDate → tampilkan "KADALUARSA" merah, bukan "Menunggu Entry".
   function stateBadge(state, closedBy, tpHits, rec){
     tpHits = tpHits || [];
@@ -8833,7 +8831,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var stateStr = o.state || (o.status === 'OPEN' ? 'TRIGGERED' : 'TRIGGERED');
     var isUnfilled = stateStr === 'PENDING' || stateStr === 'RUNNING_MISSED';
     // Deteksi client-side apakah rec pending sudah kadaluarsa (backend cache
-    // lama mungkin masih PENDING padahal sudah >1 bulan). Kalau kadaluarsa,
+    // lama mungkin masih PENDING padahal sudah >10 hari). Kalau kadaluarsa,
     // treat kartu ini sbg "unfilled" untuk styling merah + label KADALUARSA.
     var pendingExpired = isUnfilled && typeof window.__TR_isPendingExpired === 'function' && window.__TR_isPendingExpired(o);
     var badge = stateBadge(stateStr, o.closedBy, o.tpHits, o);
@@ -8920,7 +8918,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         } else {
           _expTxt = '⏰ Kadaluarsa ' + _expShort;
         }
-        expiryHtml = '<div class="' + _expCls + '" style="margin-top:6px" title="Rekomendasi menunggu entry berlaku max 1 bulan dari tanggal sinyal">'
+        expiryHtml = '<div class="' + _expCls + '" style="margin-top:6px" title="Rekomendasi menunggu entry berlaku max 10 hari dari tanggal sinyal">'
                    + _expTxt + '</div>';
       }
     }
