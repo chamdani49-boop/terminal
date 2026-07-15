@@ -2995,18 +2995,29 @@ body.tr-profile-open .tr-subpane{display:none !important}
    list) di-join dgn ohlc.json via fetchOhlcForModal(). Prefix `.tr-anl-*`.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* HERO: pilih ticker + info ringkas (dashboard-style banner) */
+/* HERO: pilih ticker + info ringkas (dashboard-style banner).
+   FIX: overflow:visible (bukan hidden) supaya dropdown search saham
+   tidak terpotong ke bawah hero. ::before decoration di-inline sbg
+   background layer via nested pseudo — atau simply remove karena
+   linear-gradient bg sudah kasih tone yg cukup.
+   FIX: align-items:flex-start supaya 'PETA REKOMENDASI' tag tetap
+   di paling atas, tidak vertical-center dgn right side yg lebih pendek. */
 .tr-anl-hero{
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:flex-start;justify-content:space-between;
   gap:14px;flex-wrap:wrap;
   background:linear-gradient(160deg,rgba(124,58,237,.08),var(--card) 60%);
   border:1px solid var(--border);border-radius:16px;
-  padding:14px 18px;margin-bottom:14px;position:relative;overflow:hidden
+  padding:16px 18px;margin-bottom:14px;position:relative;
+  overflow:visible
 }
+/* Radial glow decoration — di-clip lewat inline mask supaya tidak
+   spill keluar rounded corner, tapi tetap tidak mengorbankan dropdown
+   overflow karena posisi absolutenya di dalam pseudo child terpisah. */
 .tr-anl-hero::before{
-  content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;
-  border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.16),transparent 70%);
-  pointer-events:none
+  content:'';position:absolute;top:0;right:0;width:200px;height:200px;
+  border-radius:0 16px 0 0;
+  background:radial-gradient(circle at 100% 0%,rgba(124,58,237,.18),transparent 60%);
+  pointer-events:none;z-index:0
 }
 .tr-anl-hero-l{min-width:0;flex:1;position:relative;z-index:1}
 .tr-anl-hero-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:2px}
