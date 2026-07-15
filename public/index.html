@@ -10835,6 +10835,120 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
 
 <script>
+// ═══════════════════════════════════════════════════════════════════════
+// SHARED CANDLE TOOLTIP — dipakai 3 chart custom candlestick di aplikasi:
+//   1. Popup detail rekomendasi Tracker (#trRecModalChart)
+//   2. Popup detail rekomendasi Consensus (Bareksa-style rec-modal)
+//   3. Chart Pasar Live windows (plWinChartA/B, dll)
+// User req: hover/tap candle → tampilkan tooltip dgn OHLC + % change.
+//
+// Cara pakai:
+//   window._attachCandleTooltip(chart, candleSeries, container, candlesData);
+// - chart:          instance LightweightCharts
+// - candleSeries:   series dari addCandlestickSeries
+// - container:      DOM element (chart wrapper — akan di-append tooltip DOM
+//                   di-dalamnya; auto set position:relative kalau perlu)
+// - candlesData:    array of {time, open, high, low, close} — dipakai untuk
+//                   hitung % change vs candle sebelumnya (D/D). Optional.
+// ═══════════════════════════════════════════════════════════════════════
+window._attachCandleTooltip = function(chart, series, container, candles){
+  if (!chart || !series || !container) return;
+  if (typeof chart.subscribeCrosshairMove !== 'function') return;
+  var _candles = Array.isArray(candles) ? candles : [];
+  // Ensure container positioned so absolute tooltip anchors correctly
+  try {
+    var _cs = getComputedStyle(container);
+    if (_cs.position === 'static') container.style.position = 'relative';
+  } catch(_){}
+  // Reuse tooltip if attach dipanggil ulang
+  var tip = container.querySelector('.candle-tooltip');
+  if (!tip){
+    tip = document.createElement('div');
+    tip.className = 'candle-tooltip';
+    tip.style.cssText = 'position:absolute;pointer-events:none;padding:6px 10px;border-radius:6px;'
+      + 'background:rgba(20,20,30,.92);color:#fff;font:11px/1.4 \'IBM Plex Mono\',ui-monospace,monospace;'
+      + 'z-index:20;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.45);'
+      + 'border:1px solid rgba(255,255,255,.12);display:none;';
+    container.appendChild(tip);
+  }
+  var fmtNum = function(v){
+    if (!Number.isFinite(v)) return '—';
+    return Number(v).toLocaleString('id-ID');
+  };
+  var fmtPct = function(v){
+    if (!Number.isFinite(v)) return '—';
+    return (v>=0?'+':'') + v.toFixed(2) + '%';
+  };
+  var fmtDate = function(t){
+    if (t == null) return '';
+    // t bisa 'YYYY-MM-DD' string atau UTC timestamp number
+    if (typeof t === 'string' && /^\d{4}-\d{2}-\d{2}/.test(t)) return t;
+    if (typeof t === 'number'){
+      var d = new Date(t * 1000);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    }
+    return String(t);
+  };
+  chart.subscribeCrosshairMove(function(param){
+    if (!param || !param.time || !param.point || !param.point.x || !param.point.y){
+      tip.style.display = 'none'; return;
+    }
+    var candle = param.seriesData ? param.seriesData.get(series) : null;
+    if (!candle || !Number.isFinite(candle.open) || !Number.isFinite(candle.close)){
+      tip.style.display = 'none'; return;
+    }
+    // Intraday %: (close - open) / open × 100
+    var intra = candle.open ? ((candle.close - candle.open) / candle.open) * 100 : null;
+    // D/D %: cari candle sebelumnya di _candles (match by time)
+    var dod = null;
+    if (_candles.length){
+      var idx = -1;
+      for (var i = 0; i < _candles.length; i++){
+        if (String(_candles[i].time) === String(param.time)){ idx = i; break; }
+      }
+      if (idx > 0){
+        var prev = _candles[idx-1];
+        if (prev && Number.isFinite(prev.close) && prev.close > 0){
+          dod = ((candle.close - prev.close) / prev.close) * 100;
+        }
+      }
+    }
+    var clrIntra = intra == null ? '#94a3b8' : intra >= 0 ? '#4ade80' : '#f87171';
+    var clrDod   = dod   == null ? '#94a3b8' : dod   >= 0 ? '#4ade80' : '#f87171';
+    var html = ''
+      + '<div style="font-weight:800;letter-spacing:.3px;margin-bottom:4px;opacity:.9">' + fmtDate(param.time) + '</div>'
+      + '<div><span style="opacity:.65">O:</span> ' + fmtNum(candle.open) + '</div>'
+      + '<div><span style="opacity:.65">H:</span> ' + fmtNum(candle.high) + '</div>'
+      + '<div><span style="opacity:.65">L:</span> ' + fmtNum(candle.low)  + '</div>'
+      + '<div><span style="opacity:.65">C:</span> ' + fmtNum(candle.close) + '</div>'
+      + '<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,.15)">'
+      +   '<span style="color:' + clrIntra + ';font-weight:800">Δ ' + fmtPct(intra) + '</span>'
+      +   '<span style="opacity:.55;margin-left:6px;font-size:9.5px">intraday</span>'
+      + '</div>';
+    if (dod != null){
+      html += '<div><span style="color:' + clrDod + ';font-weight:700">D/D ' + fmtPct(dod) + '</span>'
+           +  '<span style="opacity:.55;margin-left:6px;font-size:9.5px">vs candle sebelumnya</span></div>';
+    }
+    tip.innerHTML = html;
+    tip.style.display = 'block';
+    // Position: samping kanan cursor; flip kalau nabrak edge
+    var contW = container.clientWidth;
+    var contH = container.clientHeight;
+    var tw = tip.offsetWidth;
+    var th = tip.offsetHeight;
+    var left = param.point.x + 14;
+    var top  = param.point.y + 14;
+    if (left + tw > contW - 4) left = param.point.x - tw - 14;
+    if (top  + th > contH - 4) top  = param.point.y - th - 14;
+    if (left < 4) left = 4;
+    if (top  < 4) top  = 4;
+    tip.style.left = left + 'px';
+    tip.style.top  = top  + 'px';
+  });
+};
+</script>
+
+<script>
 // ═══════════════════════════════════════════
 // TRACKER — POP-UP DETAIL REKOMENDASI
 // Dibuka saat klik row di tabel Analisis atau klik card di tab Live.
@@ -11217,6 +11331,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     });
     lwData.sort(function(a,b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
     _series.setData(lwData);
+    // Hover/tap candle → tampilkan tooltip OHLC + % change (intraday & D/D).
+    try { if (typeof window._attachCandleTooltip === 'function') window._attachCandleTooltip(_chart, _series, chartEl, lwData); } catch(_){}
 
     // Save posisi candle terakhir + candle di/setelah tanggal rilis rec.
     // Dipakai layoutZones utk proyeksi 5 candle & setVisibleLogicalRange.
@@ -11997,6 +12113,8 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
     }))
     .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
   candleSeries.setData(lwData);
+  // Hover/tap candle → tampilkan tooltip OHLC + % change (intraday & D/D).
+  try { if (typeof window._attachCandleTooltip === 'function') window._attachCandleTooltip(chart, candleSeries, container, lwData); } catch(_){}
 
   // ── Garis harga rilis ──────────────────────────────────────────────────
   // PENTING: price line dibuat via SERIES (candleSeries.createPriceLine),
@@ -14382,6 +14500,8 @@ function plBuildLwChart(slot, wrap, host, candles, theme) {
     .map(c => ({ time: c.date, open: c.open, high: c.high, low: c.low, close: c.close }))
     .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
   candleSeries.setData(lw);
+  // Hover/tap candle → tampilkan tooltip OHLC + % change (intraday & D/D).
+  try { if (typeof window._attachCandleTooltip === 'function') window._attachCandleTooltip(chart, candleSeries, host, lw); } catch(_){}
 
   // MA lines
   const o = _plOpts[slot];
@@ -21095,6 +21215,8 @@ body.vl-maxing{overflow:hidden}
       .map(c=>({time:c.date,open:c.open,high:c.high,low:c.low,close:c.close}))
       .sort((a,b)=> a.time<b.time?-1:a.time>b.time?1:0);
     series.setData(data);
+    // Hover/tap candle → tampilkan tooltip OHLC + % change (intraday & D/D).
+    try { if (typeof window._attachCandleTooltip === 'function') window._attachCandleTooltip(chart, series, wrap, data); } catch(_){}
     const liveP=effLast(s).price;
     if(ok(liveP)&&liveP>0){ try{ series.createPriceLine({price:liveP,color:(cssv('--accent')||'#6d28d9'),lineWidth:1,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true,title:'Live'}); }catch(e){} }
     const hiAll = Math.max.apply(null, candles.map(c=>c.high).filter(ok));   // harga tertinggi yg pernah dicapai
