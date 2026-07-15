@@ -4721,8 +4721,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     role="tab" aria-selected="false" aria-controls="tr-view-perf">📊 Performa</button>
   <button type="button" class="tr-subtab-btn" data-subtab="analis"
     role="tab" aria-selected="false" aria-controls="tr-view-analis">👤 Analis <span class="tr-subtab-chip" id="trSubAnlsN">—</span></button>
-  <button type="button" class="tr-subtab-btn" data-subtab="asumsi"
-    role="tab" aria-selected="false" aria-controls="tr-view-asumsi">🎲 Asumsi <span class="tr-subtab-chip" id="trSubAsmN">—</span></button>
   <button type="button" class="tr-subtab-btn" data-subtab="acc"
     role="tab" aria-selected="false" aria-controls="tr-view-acc">📊 Simulasi</button>
 </div>
@@ -5581,58 +5579,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </section>
   </div><!-- /trAnalisContent -->
 </div><!-- /tr-view-analis -->
-
-<!-- ── PANE ASUMSI (default 50/50 staged strategy — track record aktual) ────
-     Menampilkan tabel semua sekuritas dgn skema exit default sistem:
-     50% profit ambil di TP1, sisa 50% hold ke TP2 atau SL_TRAIL.
-     Beda dgn tab Analis yg pakai mode-aware (all-in TP1/TP2/HAKA).
-     Data: firm.netPure, firm.avgPure, firm.winrate dari tracker.json. -->
-<div id="tr-view-asumsi" class="tr-subpane" role="tabpanel" aria-hidden="true">
-  <div class="tr-empty" id="trAsumsiPending">
-    <div class="tr-empty-ico">🎲</div>
-    <div class="tr-empty-title">Asumsi Strategi 50/50 — menunggu data</div>
-    <div class="tr-empty-desc">Track record aktual semua sekuritas dgn skema default sistem: ambil 50% profit di TP1, hold sisa 50% ke TP2 atau SL_TRAIL.</div>
-    <div class="tr-empty-hint" id="trAsumsiStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
-  </div>
-
-  <div id="trAsumsiContent" style="display:none">
-    <div class="tr-anlz-head">
-      <div>
-        <h1>Asumsi Strategi 50/50 <span class="tr-preview-badge">TRACKER · REAL</span></h1>
-        <div class="tr-sub" id="trAsumsiSub">— sekuritas · — trade selesai</div>
-      </div>
-      <div class="search-wrap tr-anlz-search">
-        <span class="ico">⌕</span>
-        <input type="text" id="trAsumsiSearch" placeholder="Cari sekuritas..." autocomplete="off" spellcheck="false" aria-label="Cari sekuritas">
-      </div>
-    </div>
-
-    <div class="tr-anlz-table-wrap">
-      <table class="tr-anlz-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Sekuritas</th>
-            <th class="num">Trade</th>
-            <th class="num">Winrate</th>
-            <th class="num">Net (50/50)</th>
-            <th class="num">Rata²/Trade</th>
-            <th class="num">Best</th>
-            <th class="num">Worst</th>
-            <th class="num">Alpha vs IHSG</th>
-          </tr>
-        </thead>
-        <tbody id="trAsumsiBody">
-          <tr><td colspan="9" class="tr-anlz-empty">—</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="tr-disclaimer" style="margin-top:12px">
-      <b>Skema exit sistem:</b> Saat harga menyentuh <b>TP1</b> → ambil <b>50% profit</b> di TP1, stoploss digeser ke <b>entry</b> (trailed stop). Sisa 50% posisi hold — kalau <b>TP2</b> tersentuh exit di TP2 (dapet cuan max), kalau harga balik ke entry exit di sini (SL_TRAIL, break-even utk sisa). Kalau TP1 belum sentuh dan SL kena → full loss di SL. Skema ini <b>simulasi otomatis sistem</b> — hasilnya kompromi antara aggressive (all-in TP2) dan konservatif (all-in TP1). Untuk lihat performa dgn mode eksekusi lain, buka tab <b>Analis</b>.
-    </div>
-  </div>
-</div><!-- /tr-view-asumsi -->
 
 <!-- ── PANE AKUN (skeleton empty state) ─────────────────────────────
      Diisi di PR berikutnya (adopsi robotlive: simulator modal Rp
@@ -8062,7 +8008,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     live:      'tr-view-live',
     perf:      'tr-view-perf',
     analis:    'tr-view-analis',
-    asumsi:    'tr-view-asumsi',
     acc:       'tr-view-acc'
   };
   var LS_KEY = 'tr_subtab_active';
@@ -8096,7 +8041,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── Update status hint di semua pane empty state ───────────────────
   function updateStatusHint(state, data, errMsg){
-    var panes = ['trAnlStatus', 'trLiveStatus', 'trPerfStatus', 'trAccStatus', 'trAnalisStatus', 'trAsumsiStatus'];
+    var panes = ['trAnlStatus', 'trLiveStatus', 'trPerfStatus', 'trAccStatus', 'trAnalisStatus'];
     panes.forEach(function(id){
       var el = $(id); if (!el) return;
       el.classList.remove('ok', 'err');
@@ -8550,8 +8495,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var vb = f.verified ? '<span class="vb">✓</span>' : '';
       var actCls = (f.id === activeId) ? ' active' : '';
       // Sidebar cuma tampilin nama + trade + winrate.
-      // Net return default (50/50 staged) TIDAK di sini lagi — pindah ke tab
-      // Asumsi (biar tak bikin confusion vs Net Return mode-aware di panel).
+      // Net return default (50/50 staged) sengaja TIDAK di sini biar tak
+      // bikin confusion vs Net Return mode-aware di panel kanan.
       return '<div class="tr-mdet-item'+actCls+'" data-firm-id="'+esc(f.id||'')+'" title="'+esc(f.name||'')+'">'
         + '<div class="av">'+esc(initials(f.name))+'</div>'
         + '<div class="m">'
@@ -8635,135 +8580,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Subscribe ke data event
   function hook(){
     if(window.__TR_onData){ window.__TR_onData(function(){ renderAll(); }); return true; }
-    return false;
-  }
-  if(!hook()){
-    var _tries=0;
-    var _iv=setInterval(function(){
-      _tries++;
-      if(hook() || _tries>50) clearInterval(_iv);
-    }, 200);
-  }
-})();
-</script>
-
-
-<script>
-// ═══════════════════════════════════════════
-// TRACKER — TAB ASUMSI (default 50/50 staged strategy — track record aktual)
-//   Menampilkan tabel semua firm dgn stats hasil skema default sistem:
-//   • 50% profit di TP1, sisa 50% ke TP2/SL_TRAIL
-//   • Field: firm.netPure, firm.avgPure, firm.winrate, firm.best/worst, firm.alpha
-//   • Search by nama firm
-//   • Klik row → buka detail firm di tab Analis
-// ═══════════════════════════════════════════
-(function(){
-  function $id(x){ return document.getElementById(x); }
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
-  // firmShort: nama Sekuritas ditulis lengkap; hanya strip PT/Tbk.
-  function firmShort(name){ if(!name) return '—'; return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim(); }
-  function fmtPct(n,dec){ if(n==null||!Number.isFinite(+n)) return '—'; var v=+n; var d=(dec==null)?2:dec; return (v>=0?'+':'')+v.toFixed(d)+'%'; }
-  function fmtWr(n){ if(n==null||!Number.isFinite(+n)) return '—'; return (+n).toFixed(1)+'%'; }
-
-  function firmList(query){
-    var d = window.__TR_getData && window.__TR_getData();
-    if(!d || d.pending) return [];
-    var byF = d.byFirm || {};
-    var arr = Object.keys(byF).map(function(k){ return byF[k]; });
-    var q = (query||'').trim().toLowerCase();
-    if(q){
-      arr = arr.filter(function(f){
-        return (f.name||'').toLowerCase().indexOf(q)>=0
-            || (f.id||'').toLowerCase().indexOf(q)>=0;
-      });
-    }
-    // Sort: netPure desc (best default-strategy firms di atas)
-    arr.sort(function(a,b){
-      var an = Number.isFinite(+a.netPure)?+a.netPure:(Number.isFinite(+a.net)?+a.net:-Infinity);
-      var bn = Number.isFinite(+b.netPure)?+b.netPure:(Number.isFinite(+b.net)?+b.net:-Infinity);
-      return bn - an;
-    });
-    return arr;
-  }
-
-  function renderTable(list){
-    var body = $id('trAsumsiBody'); if(!body) return;
-    if(!list.length){
-      body.innerHTML = '<tr><td colspan="9" class="tr-anlz-empty">Tidak ada sekuritas yang cocok dgn pencarian.</td></tr>';
-      return;
-    }
-    body.innerHTML = list.map(function(f,i){
-      var net = Number.isFinite(+f.netPure)?+f.netPure:(Number.isFinite(+f.net)?+f.net:null);
-      var avg = Number.isFinite(+f.avgPure)?+f.avgPure:(Number.isFinite(+f.avg)?+f.avg:null);
-      var netCls = (net!=null && net>=0) ? 'up' : (net!=null?'dn':'');
-      var avgCls = (avg!=null && avg>=0) ? 'up' : (avg!=null?'dn':'');
-      var wrCls  = (Number.isFinite(+f.winrate) && +f.winrate>=50) ? 'up' : 'dn';
-      var best   = Number.isFinite(+f.best)?+f.best:null;
-      var worst  = Number.isFinite(+f.worst)?+f.worst:null;
-      var alpha  = Number.isFinite(+f.alpha)?+f.alpha:null;
-      var verified = f.verified ? '<span class="tr-anlz-vb" title="Terverifikasi">✓</span>' : '';
-      var fid = f.id || f.name || '';
-      return '<tr data-firm-id="'+esc(fid)+'" data-firm-name="'+esc(f.name||'')+'">'
-        + '<td class="tr-anlz-idx">'+(i+1)+'</td>'
-        + '<td class="tr-anlz-name">'+esc(firmShort(f.name))+verified+'</td>'
-        + '<td class="num">'+(f.trades||0)+'</td>'
-        + '<td class="num '+wrCls+'">'+fmtWr(f.winrate)+'</td>'
-        + '<td class="num '+netCls+'">'+fmtPct(net)+'</td>'
-        + '<td class="num '+avgCls+'">'+fmtPct(avg)+'</td>'
-        + '<td class="num '+(best!=null&&best>=0?'up':'')+'">'+(best==null?'—':fmtPct(best))+'</td>'
-        + '<td class="num '+(worst!=null&&worst<0?'dn':'')+'">'+(worst==null?'—':fmtPct(worst))+'</td>'
-        + '<td class="num '+(alpha!=null && alpha>=0?'up':(alpha!=null?'dn':''))+'">'+(alpha==null?'—':fmtPct(alpha))+'</td>'
-      + '</tr>';
-    }).join('');
-  }
-
-  function updateChip(data){
-    var el = $id('trSubAsmN'); if(!el) return;
-    if(!data || data.pending){ el.textContent = '—'; return; }
-    var byF = data.byFirm || {};
-    el.textContent = String(Object.keys(byF).length);
-  }
-
-  function render(){
-    var d = window.__TR_getData && window.__TR_getData();
-    updateChip(d);
-    var pending = $id('trAsumsiPending'), content = $id('trAsumsiContent');
-    if(!d || d.pending){
-      if(pending) pending.style.display = '';
-      if(content) content.style.display = 'none';
-      return;
-    }
-    if(pending) pending.style.display = 'none';
-    if(content) content.style.display = '';
-    var q = ($id('trAsumsiSearch') && $id('trAsumsiSearch').value) || '';
-    var list = firmList(q);
-    // Update sub-count text
-    var totalTrades = list.reduce(function(s,f){ return s + (f.trades||0); }, 0);
-    var sub = $id('trAsumsiSub');
-    if(sub) sub.textContent = list.length + ' sekuritas · ' + totalTrades + ' trade selesai';
-    renderTable(list);
-  }
-
-  // Search debounced
-  var _t = null;
-  document.addEventListener('input', function(e){
-    if(e.target && e.target.id === 'trAsumsiSearch'){
-      if(_t) clearTimeout(_t);
-      _t = setTimeout(render, 120);
-    }
-  });
-
-  // Klik row → buka detail firm di tab Analis (reuse __TR_openFirm)
-  document.addEventListener('click', function(e){
-    var tr = e.target && e.target.closest && e.target.closest('#trAsumsiBody tr[data-firm-id]');
-    if(!tr) return;
-    var fid = tr.getAttribute('data-firm-id') || tr.getAttribute('data-firm-name');
-    if(fid && window.__TR_openFirm){ window.__TR_openFirm(fid); }
-  });
-
-  // Subscribe ke data event
-  function hook(){
-    if(window.__TR_onData){ window.__TR_onData(function(){ render(); }); return true; }
     return false;
   }
   if(!hook()){
