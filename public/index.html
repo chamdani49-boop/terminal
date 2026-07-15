@@ -3048,13 +3048,18 @@ body.tr-profile-open .tr-subpane{display:none !important}
    .pl-chart-host di Pasar Live). Widget bikin iframe internal, kita force
    full width/height via override selector di dalam .tr-anl-tv-wrap. */
 .tr-anl-chartcard .tr-card-h{align-items:flex-start}
-.tr-anl-tv-wrap{width:100%;height:520px;position:relative;background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+/* Chart TradingView: tinggi 100% dari grid cell (align-items:stretch di
+   .tr-anl-chart-row) → otomatis paskan dgn tinggi widget di kanan.
+   min-height sbg fallback kalau widget belum ada data. User req: 'chart
+   di paskan dgn akhir dari keempat card' — no whitespace di bawah. */
+.tr-anl-tv-wrap{width:100%;height:100%;min-height:360px;position:relative;background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
 .tr-anl-tv-wrap .tradingview-widget-container,
 .tr-anl-tv-wrap .tradingview-widget-container__widget,
 .tr-anl-tv-wrap iframe{height:100%!important;width:100%!important;display:block}
 .tr-anl-tv-wrap .tradingview-widget-copyright{display:none!important}
 .tr-anl-tv-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px;pointer-events:none;z-index:1}
-@media(max-width:640px){.tr-anl-tv-wrap{height:380px}}
+@media(max-width:1024px){.tr-anl-tv-wrap{height:380px;min-height:auto}}
+@media(max-width:640px){.tr-anl-tv-wrap{height:320px}}
 
 /* Chart row: chart kiri + widget konsensus kanan (2-col responsif) */
 .tr-anl-chart-row{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:stretch;margin-top:6px}
@@ -3079,33 +3084,50 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .trAnl-sent-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--bg3);border:1px solid var(--border)}
 .trAnl-sent-bar-buy{background:linear-gradient(90deg,#059669,#4ade80);transition:width .5s ease}
 .trAnl-sent-bar-sell{background:linear-gradient(90deg,#fb7185,#e11d48);transition:width .5s ease}
-/* ── Section: Price Ladder — layout eksplisit dgn rows.
-   Container 96px, ada 2 baris label (atas) + track (tengah) + 2 baris val (bawah).
-   Marker yg berdekatan (< 18% jarak) di-tag class .stag → label di row bawah
-   & val di row bawah kedua supaya tidak menumpuk dgn non-stag marker. */
+/* ── Section: Price Ladder — layout eksplisit.
+   Non-LIVE markers: label + val terpisah, label di ATAS track, val di BAWAH.
+   LIVE marker special: label + val kompak DI ATAS track (satu blok kuning),
+     tidak menumpuk dgn label/val marker lain karena berada di area terpisah.
+   Non-LIVE yg dekat LIVE → auto stag ke row 2 (turun) supaya tidak nabrak
+     LIVE badge. Non-LIVE yg dekat sesama non-LIVE juga stag (val ke row 2). */
 .trAnl-ladder{position:relative;height:96px}
 .trAnl-ladder-track{position:absolute;left:8px;right:8px;top:44px;height:3px;background:linear-gradient(90deg,rgba(239,68,68,.45) 0%,rgba(148,163,184,.4) 45%,rgba(148,163,184,.4) 55%,rgba(16,185,129,.45) 100%);border-radius:2px}
 .trAnl-ladder-markers{position:absolute;left:8px;right:8px;top:0;bottom:0}
 .trAnl-ladder-marker{position:absolute;transform:translateX(-50%);text-align:center;white-space:nowrap;pointer-events:none}
-/* Dot di TRACK level */
+/* Dot di TRACK level (sama untuk semua marker) */
 .trAnl-ladder-marker .dot{position:absolute;left:50%;top:46px;transform:translate(-50%,-50%);display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--text2);border:2px solid var(--card);box-shadow:0 0 0 1px var(--border);z-index:2}
 .trAnl-ladder-marker.sl   .dot{background:var(--red)}
 .trAnl-ladder-marker.entry .dot{background:var(--accent);width:11px;height:11px}
 .trAnl-ladder-marker.tp1  .dot{background:var(--green)}
 .trAnl-ladder-marker.tp2  .dot{background:#4ade80;width:8px;height:8px}
 .trAnl-ladder-marker.live .dot{background:transparent;width:14px;height:14px;border:2.5px solid #fbbf24;box-shadow:0 0 0 2px rgba(251,191,36,.28);animation:plPulse 2s infinite;z-index:3}
-/* Labels di ATAS track. Non-stag: row 1 (top:6). Stag: row 2 (top:22). */
-.trAnl-ladder-marker .lbl{position:absolute;left:50%;transform:translateX(-50%);top:6px;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.4px;color:var(--text3);text-transform:uppercase;line-height:1;white-space:nowrap}
-.trAnl-ladder-marker.stag .lbl{top:22px}
+/* ── Non-LIVE markers ── */
+/* Label di ATAS track (row 1 default top:6, row 2 stag top:22) */
+.trAnl-ladder-marker:not(.live) .lbl{position:absolute;left:50%;transform:translateX(-50%);top:6px;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.4px;color:var(--text3);text-transform:uppercase;line-height:1;white-space:nowrap}
+.trAnl-ladder-marker:not(.live).stag .lbl{top:22px}
 .trAnl-ladder-marker.sl   .lbl{color:var(--red)}
 .trAnl-ladder-marker.entry .lbl{color:var(--accent)}
 .trAnl-ladder-marker.tp1  .lbl{color:var(--green)}
 .trAnl-ladder-marker.tp2  .lbl{color:#4ade80}
-.trAnl-ladder-marker.live .lbl{color:#fbbf24;font-size:8.5px}
-/* Val di BAWAH track. Non-stag: row 1 (top:60). Stag: row 2 (top:78). */
-.trAnl-ladder-marker .val{position:absolute;left:50%;transform:translateX(-50%);top:60px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;color:var(--text);white-space:nowrap;letter-spacing:-.2px;line-height:1}
-.trAnl-ladder-marker.stag .val{top:78px}
-.trAnl-ladder-marker .val .pct{color:var(--text3);font-size:8px;font-weight:600;margin-left:2px}
+/* Val di BAWAH track (row 1 default top:60, row 2 stag top:78) */
+.trAnl-ladder-marker:not(.live) .val{position:absolute;left:50%;transform:translateX(-50%);top:60px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;color:var(--text);white-space:nowrap;letter-spacing:-.2px;line-height:1}
+.trAnl-ladder-marker:not(.live).stag .val{top:78px}
+.trAnl-ladder-marker:not(.live) .val .pct{color:var(--text3);font-size:8px;font-weight:600;margin-left:2px}
+/* ── LIVE marker special: badge kompak DI ATAS track (label + angka merged) ── */
+.trAnl-ladder-marker.live .lbl{
+  position:absolute;left:50%;transform:translateX(-50%);top:2px;
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 7px;
+  background:rgba(251,191,36,.14);border:1px solid rgba(251,191,36,.42);
+  border-radius:5px;
+  font-family:'IBM Plex Mono',monospace;font-size:8.5px;
+  color:#fbbf24;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
+  line-height:1.15;white-space:nowrap
+}
+.trAnl-ladder-marker.live .lbl .price{font-size:10.5px;letter-spacing:-.3px;color:var(--text);text-transform:none}
+.trAnl-ladder-marker.live .lbl .pct{font-size:8.5px;font-weight:600;color:var(--text3);text-transform:none}
+/* LIVE val disembunyikan — angkanya sudah embedded di .lbl */
+.trAnl-ladder-marker.live .val{display:none}
 /* Note interpretasi posisi live vs zona */
 .trAnl-ladder-note{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text2);line-height:1.45;padding:5px 8px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);text-align:left;margin-top:4px}
 .trAnl-ladder-note b{color:var(--text);font-weight:700}
@@ -10896,32 +10918,64 @@ body.is-mobile-device.force-desktop .pl-col-main{
           if (v == null || entryAvg == null || entryAvg === 0) return null;
           return ((v - entryAvg) / entryAvg) * 100;
         };
-        // Kumpulkan marker items untuk stagger detection
+        // Kumpulkan marker items untuk stagger detection.
+        // LIVE marker special: label + price + pct DIGABUNG jadi 1 badge kompak
+        // di ATAS track (via HTML embedded di .lbl). .val di-hide via CSS.
+        // Non-LIVE marker: label ATAS, val BAWAH (dual row seperti biasa).
         var items = [];
         var addItem = function(cls, lbl, val, showPctFromEntry){
           if (val == null) return;
           var pos = toPct(val);
           var pctChg = showPctFromEntry ? pctFromEntry(val) : null;
-          var valTxt = fmtN(Math.round(val));
-          if (pctChg != null) {
-            valTxt += ' <span class="pct">(' + (pctChg>=0?'+':'') + pctChg.toFixed(1) + '%)</span>';
+          var lblHtml, valHtml;
+          if (cls === 'live') {
+            // Label LIVE = "LIVE <price> (+X%)" compact badge
+            var pctPart = pctChg != null
+              ? ' <span class="pct">(' + (pctChg>=0?'+':'') + pctChg.toFixed(1) + '%)</span>'
+              : '';
+            lblHtml = lbl + ' <span class="price">' + fmtN(Math.round(val)) + '</span>' + pctPart;
+            valHtml = ''; // hidden via CSS
+          } else {
+            lblHtml = lbl;
+            valHtml = fmtN(Math.round(val));
+            if (pctChg != null) {
+              valHtml += ' <span class="pct">(' + (pctChg>=0?'+':'') + pctChg.toFixed(1) + '%)</span>';
+            }
           }
-          items.push({ cls: cls, lbl: lbl, val: valTxt, pos: pos });
+          items.push({ cls: cls, lbl: lblHtml, val: valHtml, pos: pos });
         };
         addItem('sl',    'SL',    slAvg,    true);
         addItem('entry', 'Entry', entryAvg, false);
         addItem('live',  'Live',  lastPrice, true);
         addItem('tp1',   'TP1',   tp1Avg,   true);
         addItem('tp2',   'TP2',   tp2Avg,   true);
-        // Stagger detection: sort by pos. Marker yg jarak < 18% dari
-        // tetangga → alternate .stag (opposite dari tetangga) supaya
-        // label & val turun ke row bawah, tidak menumpuk dgn tetangga.
+        // Stagger detection:
+        //   1. LIVE tidak pernah stag (badge selalu di row 1 atas).
+        //   2. Non-LIVE yg dekat LIVE (< 22% jarak) → paksa stag agar
+        //      label & val turun row 2, tidak nabrak LIVE badge.
+        //   3. Non-LIVE yg dekat sesama non-LIVE → alternate stag.
         var sortedItems = items.slice().sort(function(a,b){ return a.pos - b.pos; });
         var STAG_THRESHOLD = 18;
-        for (var si = 1; si < sortedItems.length; si++) {
-          if (sortedItems[si].pos - sortedItems[si-1].pos < STAG_THRESHOLD) {
-            // Alternate: kalau prev stag, current tidak; sebaliknya
-            sortedItems[si].stag = !sortedItems[si-1].stag;
+        var LIVE_STAG_THRESHOLD = 22;
+        // Cari posisi LIVE
+        var livePos = null;
+        for (var _li = 0; _li < items.length; _li++) {
+          if (items[_li].cls === 'live') { livePos = items[_li].pos; break; }
+        }
+        for (var si = 0; si < sortedItems.length; si++) {
+          var cur = sortedItems[si];
+          if (cur.cls === 'live') continue; // LIVE stays non-stag
+          // Non-live: paksa stag kalau dekat LIVE
+          if (livePos != null && Math.abs(cur.pos - livePos) < LIVE_STAG_THRESHOLD) {
+            cur.stag = true;
+            continue;
+          }
+          // Non-live: alternate stag kalau dekat non-live tetangga
+          if (si > 0) {
+            var prev = sortedItems[si-1];
+            if (prev.cls !== 'live' && Math.abs(cur.pos - prev.pos) < STAG_THRESHOLD) {
+              cur.stag = !prev.stag;
+            }
           }
         }
         // Render
