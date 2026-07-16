@@ -3903,18 +3903,201 @@ body.tr-profile-open .tr-subpane{display:none !important}
    fake, KPI +9.4% fake) di menu Overview. Class `tracker-loading` di-add
    di <html> via inline script di <head>, di-remove saat __TR_onData fires
    (sub-tab shell IIFE). Safety net: auto-remove 6s no matter what.
+   Selectors di-scope ke #tr-view-main dan target semua section yg butuh
+   data real (KPI values, chart, highlights, rankings).
    ═══════════════════════════════════════════════════════════════════ */
 #tr-view-main .tr-kpi .v,
 #tr-view-main .tr-kpi .s,
 #tr-view-main #trChart,
-#tr-view-main #trLb,
 #tr-view-main .tr-chart-wrap,
-#tr-view-main .tr-legend{transition:opacity .3s ease .05s}
+#tr-view-main .tr-legend,
+#tr-view-main .tr-ov-highlights,
+#tr-view-main .tr-ov-ranking{transition:opacity .3s ease .05s}
 html.tracker-loading #tr-view-main .tr-kpi .v,
 html.tracker-loading #tr-view-main #trChart,
-html.tracker-loading #tr-view-main #trLb,
 html.tracker-loading #tr-view-main .tr-chart-wrap,
-html.tracker-loading #tr-view-main .tr-legend{opacity:0}
+html.tracker-loading #tr-view-main .tr-legend,
+html.tracker-loading #tr-view-main .tr-ov-highlights,
+html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
+
+/* ═══════════════════════════════════════════════════════════════════
+   OVERVIEW PAGE — Highlights (4 kartu 2×2) + Ranking (2 kolom).
+   Redesign fresh: menggantikan section dummy lama (Simulator Gaya
+   Eksekusi, Papan Peringkat #trLb duplicate, Direktori Analis
+   duplicate, Skenario Eksekusi #trScn dummy). Tujuan: user buka
+   Overview langsung dapat 'high-level snapshot' + CTA cepat ke tab
+   detail — tanpa duplikasi data yg sudah ada di tab lain.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Highlights container: 2×2 grid di desktop, 1 kolom stack di HP */
+.tr-ov-highlights{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:640px){.tr-ov-highlights{grid-template-columns:1fr;gap:10px;margin-bottom:12px}}
+
+.tr-ov-hl-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;display:flex;flex-direction:column;gap:10px;
+  cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;
+  position:relative;overflow:hidden
+}
+/* Aksen bar tipis di atas card — subtle gradient identik dgn tema. */
+.tr-ov-hl-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--grad);opacity:.55
+}
+.tr-ov-hl-card:hover{
+  transform:translateY(-2px);border-color:var(--accent);
+  box-shadow:0 8px 24px rgba(124,58,237,.14)
+}
+.tr-ov-hl-card:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,.18)}
+
+.tr-ov-hl-h{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;font-weight:700;color:var(--text2);letter-spacing:.6px;
+  text-transform:uppercase;display:flex;align-items:center;gap:5px
+}
+.tr-ov-hl-body{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  gap:8px;min-height:60px
+}
+.tr-ov-hl-primary{
+  font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:1.2;
+  word-break:break-word;color:var(--text)
+}
+.tr-ov-hl-secondary{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);
+  letter-spacing:.2px;line-height:1.4
+}
+.tr-ov-hl-secondary b{color:var(--text)}
+.tr-ov-hl-foot{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--accent);
+  font-weight:700;letter-spacing:.3px;padding-top:8px;
+  border-top:1px dashed var(--border);opacity:.75;transition:opacity .15s
+}
+.tr-ov-hl-card:hover .tr-ov-hl-foot{opacity:1}
+
+/* Distribusi Hasil — stacked horizontal bar */
+.tr-ov-dist-bar{
+  display:flex;height:24px;border-radius:7px;overflow:hidden;
+  background:var(--bg2);border:1px solid var(--border)
+}
+.tr-ov-dist-seg{transition:width .5s ease}
+.tr-ov-dist-seg.tp1{background:rgba(16,185,129,.55)}
+.tr-ov-dist-seg.tp2{background:var(--green)}
+.tr-ov-dist-seg.sl{background:var(--red)}
+.tr-ov-dist-seg.exp{background:var(--yellow)}
+.tr-ov-dist-lgd{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);
+  letter-spacing:.2px;line-height:1.4
+}
+
+/* Aktivitas 24 Jam — 3 stat mini */
+.tr-ov-act-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tr-ov-act-item{
+  text-align:center;padding:8px 4px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:9px
+}
+.tr-ov-act-v{
+  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;
+  letter-spacing:-.5px;color:var(--text);line-height:1
+}
+.tr-ov-act-v.up{color:var(--green)}
+.tr-ov-act-v.dn{color:var(--red)}
+.tr-ov-act-k{
+  font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);
+  letter-spacing:.4px;text-transform:uppercase;font-weight:700;margin-top:3px
+}
+
+/* Sentimen Analis — bar horizontal + label */
+.tr-ov-sent-bar{
+  position:relative;height:16px;border-radius:8px;
+  background:linear-gradient(90deg,rgba(16,185,129,.22),rgba(245,158,11,.14) 50%,rgba(239,68,68,.22));
+  border:1px solid var(--border);overflow:hidden
+}
+.tr-ov-sent-fill{
+  position:absolute;top:0;bottom:0;left:0;
+  background:linear-gradient(90deg,var(--green),rgba(16,185,129,.2));
+  transition:width .5s ease
+}
+.tr-ov-sent-lgd{
+  display:flex;justify-content:space-between;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  letter-spacing:.3px
+}
+.tr-ov-sent-lgd .up{color:var(--green)}
+.tr-ov-sent-lgd .dn{color:var(--red)}
+.tr-ov-sent-lgd .neu{color:var(--text2)}
+
+/* Rankings — 2 kolom di desktop, stack di HP */
+.tr-ov-ranking{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:640px){.tr-ov-ranking{grid-template-columns:1fr;gap:10px;margin-bottom:12px}}
+
+.tr-ov-rank-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px
+}
+.tr-ov-rank-h{
+  font-size:13.5px;font-weight:800;color:var(--text);letter-spacing:-.2px;
+  margin-bottom:12px;display:flex;align-items:center;gap:6px
+}
+.tr-ov-rank-list{display:flex;flex-direction:column;gap:7px}
+.tr-ov-rank-empty{
+  padding:20px 8px;text-align:center;color:var(--text3);
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px
+}
+
+.tr-ov-rank-item{
+  display:flex;align-items:center;gap:11px;padding:9px 11px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  cursor:pointer;transition:border-color .15s,transform .12s,background .15s
+}
+.tr-ov-rank-item:hover{
+  border-color:var(--accent);transform:translateX(2px);
+  background:linear-gradient(90deg,rgba(124,58,237,.06),var(--bg2))
+}
+.tr-ov-rank-idx{
+  width:24px;height:24px;flex-shrink:0;border-radius:7px;
+  background:var(--bg3);color:var(--text3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:800;
+  letter-spacing:-.3px
+}
+/* Medal styling untuk Top 3 (gold/silver/bronze). Bottom card TIDAK
+   pakai medal — cukup nomor biasa untuk konteks 'terburuk'. */
+.tr-ov-rank-card.top .tr-ov-rank-item:nth-child(1) .tr-ov-rank-idx{background:linear-gradient(135deg,#f5c518,#ffa500);color:#1a1200}
+.tr-ov-rank-card.top .tr-ov-rank-item:nth-child(2) .tr-ov-rank-idx{background:linear-gradient(135deg,#c7cbd6,#94a1c0);color:#1a1200}
+.tr-ov-rank-card.top .tr-ov-rank-item:nth-child(3) .tr-ov-rank-idx{background:linear-gradient(135deg,#c08a5a,#8b5a2b);color:#fff}
+.tr-ov-rank-info{min-width:0;flex:1}
+.tr-ov-rank-name{
+  font-size:12.5px;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.tr-ov-rank-sub{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);
+  margin-top:1px;letter-spacing:.2px
+}
+.tr-ov-rank-stat{
+  font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:800;
+  letter-spacing:-.3px;flex-shrink:0
+}
+.tr-ov-rank-stat.up{color:var(--green)}
+.tr-ov-rank-stat.dn{color:var(--red)}
+
+/* Mobile compaction */
+@media(max-width:640px){
+  .tr-ov-hl-card{padding:12px 13px}
+  .tr-ov-hl-h{font-size:10px}
+  .tr-ov-hl-primary{font-size:16px}
+  .tr-ov-hl-secondary{font-size:10.5px}
+  .tr-ov-hl-foot{font-size:10px;padding-top:6px}
+  .tr-ov-act-v{font-size:19px}
+  .tr-ov-dist-bar{height:20px}
+  .tr-ov-rank-card{padding:12px 13px}
+  .tr-ov-rank-h{font-size:12.5px;margin-bottom:10px}
+  .tr-ov-rank-item{padding:8px 10px;gap:9px}
+  .tr-ov-rank-idx{width:22px;height:22px;font-size:10.5px}
+  .tr-ov-rank-name{font-size:12px}
+  .tr-ov-rank-stat{font-size:12.5px}
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    MOBILE POLISH (≤640px) — khusus tab LIVE & PERFORMA di menu Tracker.
@@ -4994,125 +5177,153 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
 <!-- ── TRACKER MAIN VIEW (dashboard performa) — pane RINGKASAN ─────── -->
 <div id="tr-view-main" class="tr-subpane active" role="tabpanel" aria-labelledby="tab-ringkasan">
+
+  <!-- ── HEADER ───────────────────────────────────────────────────
+       Judul sederhana + subtitle dinamis (jumlah rec aktif, sekuritas,
+       update time). Preview badge & period selector lama dihapus karena
+       data sudah live dan period selector tidak wired ke logika apapun. -->
   <div class="tr-head">
     <div class="tr-title-wrap">
-      <h1>Tracker <span class="tr-preview-badge">PREVIEW</span></h1>
-      <div class="tr-sub">PERFORMA REKOMENDASI · VS BENCHMARK IHSG</div>
+      <h1>Overview</h1>
+      <div class="tr-sub" id="trOvSub">Ringkasan performa rekomendasi analis · menunggu data…</div>
     </div>
-    <select class="tr-period" id="trPeriod">
-      <option value="1m">1 Bulan</option>
-      <option value="3m" selected>3 Bulan</option>
-      <option value="6m">6 Bulan</option>
-      <option value="ytd">YTD</option>
-    </select>
   </div>
 
+  <!-- ── KPI STRIP (4 metrik utama) ───────────────────────────────
+       Urutan baru: Win Rate (hi/hero) → Net Return → Alpha → IHSG.
+       User buka Overview langsung dapat gambaran '% berhasil' sebagai
+       lead metric, drilldown ke Net & Alpha untuk konteks. -->
   <div class="tr-kpi-row">
-    <!-- Nilai KPI default = "—" (bukan fake "+9.4%" dst) supaya tidak
-         ada flash 'halaman lama' saat awal buka menu Tracker. Real data
-         akan overwrite via IIFE 'SYNC RINGKASAN' → updateKpi(data) saat
-         tracker.json ready. Placeholder juga di-hide lewat CSS
-         html.tracker-loading — dobel safeguard visual. -->
     <div class="tr-kpi hi">
-      <div class="k">RETURN ANALIS</div>
-      <div class="v" id="trKpiCons">—</div>
-      <div class="s tr-neu" id="trKpiConsSub">Menunggu data…</div>
-    </div>
-    <div class="tr-kpi">
-      <div class="k">RETURN IHSG</div>
-      <div class="v" id="trKpiIhsg">—</div>
-      <div class="s tr-neu">Benchmark pasar</div>
-    </div>
-    <div class="tr-kpi">
-      <div class="k">ALPHA (OUTPERFORMANCE)</div>
-      <div class="v" id="trKpiAlpha">—</div>
-      <div class="s tr-neu">vs IHSG · periode sama</div>
-    </div>
-    <div class="tr-kpi">
       <div class="k">WIN RATE</div>
       <div class="v" id="trKpiWr">—</div>
       <div class="s tr-neu" id="trKpiWrSub">Menunggu data…</div>
     </div>
+    <div class="tr-kpi">
+      <div class="k">NET RETURN</div>
+      <div class="v" id="trKpiCons">—</div>
+      <div class="s tr-neu" id="trKpiConsSub">Blended · realized</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">ALPHA (VS IHSG)</div>
+      <div class="v" id="trKpiAlpha">—</div>
+      <div class="s tr-neu">Outperformance 30 hari</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="k">RETURN IHSG</div>
+      <div class="v" id="trKpiIhsg">—</div>
+      <div class="s tr-neu">Indeks pasar 30 hari</div>
+    </div>
   </div>
 
+  <!-- ── CHART 30-HARI (Return Kumulatif) ─────────────────────────
+       Sole chart di Overview — kurva analis vs IHSG. Simulator Gaya
+       Eksekusi (dummy segmented control pure/avg/haka) dihapus karena
+       real data updateChart() ignore mode dan selalu render dailyEquity. -->
   <div class="tr-card">
     <div class="tr-card-h">
       <div>
-        <div class="tr-card-title">Return Kumulatif</div>
-        <div class="tr-card-desc">Analis (blended semua firm, sesuai gaya eksekusi terpilih) vs IHSG</div>
+        <div class="tr-card-title">📈 Performa 30 Hari</div>
+        <div class="tr-card-desc">Return kumulatif semua analis vs IHSG (benchmark pasar)</div>
       </div>
     </div>
     <div class="tr-chart-wrap"><canvas id="trChart"></canvas></div>
     <div class="tr-legend">
       <span><span class="tr-lg-dot" style="background:var(--accent)"></span>Analis</span>
-      <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
+      <span><span class="tr-lg-dot" style="background:var(--red)"></span>IHSG</span>
       <span><span class="tr-lg-dot" style="background:rgba(124,58,237,.22);height:8px;border-radius:2px"></span>Zona Alpha</span>
     </div>
   </div>
 
-  <div class="tr-card">
-    <div class="tr-card-h">
-      <div>
-        <div class="tr-card-title">Simulator Gaya Eksekusi</div>
-        <div class="tr-card-desc">Bandingkan hasil bila eksekusi berbeda dari desain rekomendasi.</div>
+  <!-- ── HIGHLIGHTS (2×2 grid, HP 1×4) ────────────────────────────
+       Empat kartu kompak yang memberi user actionable insight + CTA
+       cepat ke tab lain. Bukan duplikasi konten tab lain — memberi
+       konteks tinggi biar user cepat memutuskan 'ke mana harus fokus'. -->
+  <div class="tr-ov-highlights">
+    <div class="tr-ov-hl-card" data-goto="analis" role="button" tabindex="0" aria-label="Buka detail sekuritas terbaik">
+      <div class="tr-ov-hl-h">🏆 Sekuritas Terbaik</div>
+      <div class="tr-ov-hl-body">
+        <div class="tr-ov-hl-primary" id="trOvBestFirm">—</div>
+        <div class="tr-ov-hl-secondary" id="trOvBestFirmStat">Menunggu data…</div>
       </div>
+      <div class="tr-ov-hl-foot">Lihat detail sekuritas →</div>
     </div>
-    <div class="tr-seg" id="trSeg">
-      <button type="button" class="tr-seg-btn active" data-mode="pure">Entry Murni</button>
-      <button type="button" class="tr-seg-btn" data-mode="avg">Average 1:1</button>
-      <button type="button" class="tr-seg-btn" data-mode="haka">Beli di Open</button>
+
+    <div class="tr-ov-hl-card" data-goto="perf" role="button" tabindex="0" aria-label="Buka tab Performa">
+      <div class="tr-ov-hl-h">📊 Distribusi Hasil</div>
+      <div class="tr-ov-hl-body">
+        <div class="tr-ov-dist-bar" id="trOvDistBar" title="TP1 · TP2 · SL · Expired">
+          <div class="tr-ov-dist-seg tp1" style="width:0%"></div>
+          <div class="tr-ov-dist-seg tp2" style="width:0%"></div>
+          <div class="tr-ov-dist-seg sl"  style="width:0%"></div>
+          <div class="tr-ov-dist-seg exp" style="width:0%"></div>
+        </div>
+        <div class="tr-ov-dist-lgd" id="trOvDistLgd">Menunggu data…</div>
+      </div>
+      <div class="tr-ov-hl-foot">Lihat Performa →</div>
     </div>
-    <div class="tr-sim-note" id="trSimNote"></div>
+
+    <div class="tr-ov-hl-card" data-goto="live" role="button" tabindex="0" aria-label="Buka tab Live">
+      <div class="tr-ov-hl-h">⚡ Aktivitas 24 Jam</div>
+      <div class="tr-ov-hl-body">
+        <div class="tr-ov-act-grid">
+          <div class="tr-ov-act-item">
+            <div class="tr-ov-act-v" id="trOvActNew">—</div>
+            <div class="tr-ov-act-k">baru rilis</div>
+          </div>
+          <div class="tr-ov-act-item">
+            <div class="tr-ov-act-v" id="trOvActWin">—</div>
+            <div class="tr-ov-act-k">hit TP</div>
+          </div>
+          <div class="tr-ov-act-item">
+            <div class="tr-ov-act-v" id="trOvActLoss">—</div>
+            <div class="tr-ov-act-k">hit SL</div>
+          </div>
+        </div>
+      </div>
+      <div class="tr-ov-hl-foot">Lihat rekomendasi aktif →</div>
+    </div>
+
+    <div class="tr-ov-hl-card" data-goto="live" role="button" tabindex="0" aria-label="Buka sentimen di tab Live">
+      <div class="tr-ov-hl-h">🌐 Sentimen Analis</div>
+      <div class="tr-ov-hl-body">
+        <div class="tr-ov-sent-bar">
+          <div class="tr-ov-sent-fill" id="trOvSentFill" style="width:50%"></div>
+        </div>
+        <div class="tr-ov-sent-lgd">
+          <span class="up" id="trOvSentBull">—</span>
+          <span class="neu" id="trOvSentLbl">NEUTRAL</span>
+          <span class="dn" id="trOvSentBear">—</span>
+        </div>
+      </div>
+      <div class="tr-ov-hl-foot" id="trOvSentSample">— trade dianalisis</div>
+    </div>
   </div>
 
-  <!-- ── Direktori Analis (real data dari byAnalyst tracker.json) ────
-       Variant Ringkasan: ID suffix "R" agar tidak bentrok kalau kelak
-       ada tabel lain. Renderer di IIFE bawah menargetkan ID2 ini. -->
-  <div class="tr-sec-title">Direktori Analis <span class="tag">TRACKER · REAL DATA</span></div>
-  <div id="trAnalisPendingR" class="tr-empty" style="padding:20px 12px;text-align:center">
-    <div class="tr-empty-desc">Menunggu data tracker.json…</div>
-  </div>
-  <div id="trAnalisContentR" style="display:none">
-    <div class="tr-anlz-head">
-      <div>
-        <div class="tr-sub" id="trAnalisSubR">— analis · — sekuritas</div>
-      </div>
-      <div class="search-wrap tr-anlz-search">
-        <span class="ico">⌕</span>
-        <input type="text" id="trAnalisSearchR" placeholder="Cari nama analis atau sekuritas..." autocomplete="off" spellcheck="false" aria-label="Cari analis">
+  <!-- ── RANKING (Top 3 vs Bottom 3) ──────────────────────────────
+       Menggantikan #trLb (Papan Peringkat lama) yg duplicate dgn Tab
+       Performa. Versi Overview: kompak 3-item saja per kolom, fokus
+       pada extreme (terbaik & terburuk) — bikin user aware performa
+       overall tanpa buka Tab Performa. Klik row → openFirm ke Analis. -->
+  <div class="tr-ov-ranking">
+    <div class="tr-ov-rank-card top">
+      <div class="tr-ov-rank-h">🚀 3 Sekuritas Teratas</div>
+      <div class="tr-ov-rank-list" id="trOvRankTop">
+        <div class="tr-ov-rank-empty">Menunggu data…</div>
       </div>
     </div>
-    <div class="tr-anlz-table-wrap">
-      <table class="tr-anlz-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Analis</th>
-            <th>Sekuritas</th>
-            <th class="num">Trade</th>
-            <th class="num">Winrate</th>
-            <th class="num">Net</th>
-            <th class="num">Rata²/Trade</th>
-          </tr>
-        </thead>
-        <tbody id="trAnalisBodyR">
-          <tr><td colspan="7" class="tr-anlz-empty">—</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="tr-disclaimer" style="margin-top:10px">
-      Nama analis kosong → dipakai isi <b>kolom Q</b> sheet (tag <span class="tr-anlz-fallback-tag">fallback Q</span>). Nama sekuritas kosong → dipakai nama analis. Klik baris untuk buka detail sekuritas di tab Analis.
+    <div class="tr-ov-rank-card bottom">
+      <div class="tr-ov-rank-h">📉 3 Sekuritas Terbawah</div>
+      <div class="tr-ov-rank-list" id="trOvRankBot">
+        <div class="tr-ov-rank-empty">Menunggu data…</div>
+      </div>
     </div>
   </div>
 
-  <div class="tr-sec-title">Papan Peringkat Analis <span class="tag">ALPHA VS IHSG · 3 BULAN</span></div>
-  <div id="trLb"></div>
-
-  <div class="tr-sec-title">Skenario Eksekusi per Saham <span class="tag">CONTOH TERKINI</span></div>
-  <div id="trScn"></div>
-
-  <div class="tr-disclaimer">
-    Simulasi bersifat ilustratif berdasarkan agregasi rekomendasi trading yang diinput ke sistem. Kinerja masa lalu tidak menjamin hasil di masa depan — bukan ajakan jual/beli. Halaman ini masih <b>PREVIEW</b> (data dummy); akan diaktifkan penuh setelah pipeline data siap.
+  <!-- Disclaimer edukasi standard -->
+  <div class="dm-disclaimer">
+    <span class="dm-disclaimer-ico">ⓘ</span>
+    <span>Konten ini sebagai informasi edukasi dan bukan merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.</span>
   </div>
 </div><!-- /tr-view-main -->
 
@@ -10139,7 +10350,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var kC = $('trKpiCons');
     if (kC) { kC.textContent = fmtPct(netReturn); kC.className = 'v ' + (netReturn>=0?'tr-up':'tr-dn'); }
     var kCSub = $('trKpiConsSub');
-    if (kCSub) kCSub.textContent = 'Blended · ' + total + ' rekom selesai';
+    if (kCSub) kCSub.textContent = total + ' rekom selesai · realized';
 
     var kI = $('trKpiIhsg');
     if (kI) { kI.textContent = fmtPct(ihsgReturn); kI.className = 'v ' + (ihsgReturn>=0?'tr-up':'tr-dn'); }
@@ -10194,7 +10405,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         labels: labels,
         datasets: [
           { label: 'Analis', data: consAligned, borderColor: accentColor, backgroundColor: 'rgba(124,58,237,0.16)', fill: '+1', tension: 0.3, pointRadius: 0, borderWidth: 2.5 },
-          { label: 'IHSG', data: ihsgCum, borderColor: text3, backgroundColor: 'transparent', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [4, 3] }
+          { label: 'IHSG', data: ihsgCum, borderColor: (css.getPropertyValue('--red').trim() || '#e11d48'), backgroundColor: 'transparent', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [4, 3] }
         ]
       },
       options: {
@@ -10263,20 +10474,239 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }).join('');
   }
 
+  // ── Overview page — NEW section renderers ─────────────────────
+  //
+  // Semua renderer di bawah ini di-dedicate untuk Overview page redesign.
+  // Data sumber: tracker.json (byFirm, historyList, openList, marketBias,
+  // tpCounts, closedByCounts, dst.). Tidak ada dummy fallback — kalau data
+  // kosong, tampilkan '—' atau empty state.
+
+  function firmShort(name){
+    if(!name) return '—';
+    return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
+  }
+
+  function updateOvSubtitle(data){
+    var sub = $('trOvSub'); if(!sub) return;
+    var totalActive = (data.open||0) + (data.pendingCount||0) + (data.missedCount||0);
+    var firmCount = Object.keys(data.byFirm||{}).length;
+    var when = '—';
+    try {
+      if(data.updatedAt){
+        when = new Date(data.updatedAt).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      }
+    } catch(_){}
+    sub.textContent = totalActive + ' rekomendasi aktif · ' + firmCount + ' sekuritas · update ' + when;
+  }
+
+  function updateOvBestFirm(data){
+    var el = $('trOvBestFirm'); var stat = $('trOvBestFirmStat');
+    if(!el) return;
+    var byFirm = data.byFirm||{};
+    // Filter firm dgn minimal 3 trade selesai (biar sample cukup, tidak
+    // bias oleh 1 lucky win).
+    var firms = Object.values(byFirm).filter(function(f){ return (f.trades||0) >= 3; });
+    firms.sort(function(a,b){ return (+b.net||0) - (+a.net||0); });
+    var best = firms[0];
+    if(!best){
+      el.textContent = 'Menunggu…';
+      if(stat) stat.textContent = 'Butuh minimal 3 trade selesai per firm';
+      return;
+    }
+    el.textContent = firmShort(best.name);
+    if(stat){
+      var wr = (+best.winrate||0).toFixed(0);
+      var net = +best.net||0;
+      var netStr = (net>=0?'+':'')+net.toFixed(1)+'%';
+      var netColor = net>=0?'var(--green)':'var(--red)';
+      stat.innerHTML = 'Net <b style="color:'+netColor+'">'+netStr+'</b> · WR '+wr+'% · '+(best.trades||0)+' trade';
+    }
+    // Store firm-id ke card supaya klik card membuka detail firm (bukan
+    // sekedar switch tab). Fallback ke __TR_switchTab kalau openFirm gagal.
+    var card = el.closest('.tr-ov-hl-card');
+    if(card) card.setAttribute('data-firm-id', best.id || '');
+  }
+
+  function updateOvDistribution(data){
+    var tp1 = (data.tpCounts&&+data.tpCounts.TP1)||0;
+    var tp2 = (data.tpCounts&&+data.tpCounts.TP2)||0;
+    var sl  = +data.slCount||0;
+    var exp = (data.closedByCounts&&+data.closedByCounts.EXPIRED)||0;
+    var total = tp1+tp2+sl+exp;
+    var lgd = $('trOvDistLgd');
+    var bar = $('trOvDistBar');
+    if(!total){
+      if(lgd) lgd.textContent='Belum ada trade selesai';
+      if(bar){
+        var segs0 = bar.querySelectorAll('.tr-ov-dist-seg');
+        for(var s=0;s<segs0.length;s++) segs0[s].style.width='0%';
+      }
+      return;
+    }
+    if(bar){
+      var segs = bar.querySelectorAll('.tr-ov-dist-seg');
+      if(segs.length>=4){
+        segs[0].style.width = (tp1/total*100)+'%';
+        segs[1].style.width = (tp2/total*100)+'%';
+        segs[2].style.width = (sl /total*100)+'%';
+        segs[3].style.width = (exp/total*100)+'%';
+      }
+    }
+    if(lgd){
+      lgd.innerHTML = '<span style="color:var(--green)">'+tp1+' TP1</span> · '
+        + '<span style="color:var(--green)">'+tp2+' TP2</span> · '
+        + '<span style="color:var(--red)">'+sl+' SL</span> · '
+        + '<span style="color:var(--yellow)">'+exp+' EXP</span> <span style="opacity:.6">('+total+' total)</span>';
+    }
+  }
+
+  function updateOvActivity(data){
+    // Aktivitas 24 jam: 3 metrik dari openList/pendingList/missedList &
+    // historyList berdasarkan tgl. Range = 24 jam terakhir (bukan calendar
+    // day) supaya konsisten walau user buka jam berapa pun.
+    var actNew  = $('trOvActNew');
+    var actWin  = $('trOvActWin');
+    var actLoss = $('trOvActLoss');
+    var cutoff = Date.now() - 24*60*60*1000;
+    var isRecent = function(dstr){
+      if(!dstr) return false;
+      var d = new Date(dstr);
+      return !isNaN(d.getTime()) && d.getTime() >= cutoff;
+    };
+    var allOpen = (data.openList||[])
+      .concat(data.pendingList||[])
+      .concat(data.missedList||[]);
+    var newCount = allOpen.filter(function(r){ return isRecent(r.openDate); }).length;
+    var history = data.historyList||[];
+    var winCount = history.filter(function(r){
+      if(!isRecent(r.closedDate)) return false;
+      var by = String(r.closedBy||'').toUpperCase();
+      return by==='TP1' || by==='TP2' || by==='SL_TRAIL';
+    }).length;
+    var lossCount = history.filter(function(r){
+      return isRecent(r.closedDate) && String(r.closedBy||'').toUpperCase()==='SL';
+    }).length;
+    if(actNew)  actNew.textContent = newCount;
+    if(actWin){
+      actWin.textContent = winCount;
+      actWin.classList.remove('up','dn');
+      if(winCount>0) actWin.classList.add('up');
+    }
+    if(actLoss){
+      actLoss.textContent = lossCount;
+      actLoss.classList.remove('up','dn');
+      if(lossCount>0) actLoss.classList.add('dn');
+    }
+  }
+
+  function updateOvSentiment(data){
+    var mi = data.marketBias||{bullish:50,bearish:50,count:0,sample:'—'};
+    var fill = $('trOvSentFill');
+    var bull = $('trOvSentBull');
+    var bear = $('trOvSentBear');
+    var lbl  = $('trOvSentLbl');
+    var samp = $('trOvSentSample');
+    if(fill) fill.style.width = (mi.bullish||50) + '%';
+    if(bull) bull.textContent = (mi.bullish||0) + '%';
+    if(bear) bear.textContent = (mi.bearish||0) + '%';
+    if(lbl){
+      var b = +mi.bullish || 50;
+      var l = 'NEUTRAL';
+      if(b >= 65) l = 'STRONG BULL';
+      else if(b >= 55) l = 'BULLISH';
+      else if(b <= 35) l = 'STRONG BEAR';
+      else if(b <= 45) l = 'BEARISH';
+      lbl.textContent = l;
+    }
+    if(samp) samp.textContent = (mi.count||0) + ' trade dianalisis';
+  }
+
+  function updateOvRankings(data){
+    var top = $('trOvRankTop');
+    var bot = $('trOvRankBot');
+    var firms = Object.values(data.byFirm||{}).filter(function(f){ return (f.trades||0) > 0; });
+    if(!firms.length){
+      if(top) top.innerHTML='<div class="tr-ov-rank-empty">Belum ada data</div>';
+      if(bot) bot.innerHTML='<div class="tr-ov-rank-empty">Belum ada data</div>';
+      return;
+    }
+    firms.sort(function(a,b){ return (+b.net||0)-(+a.net||0); });
+    var tops = firms.slice(0,3);
+    var bots = firms.slice(-3).reverse();
+
+    var renderRankItem = function(f, i){
+      var net = +f.net||0;
+      var netStr = (net>=0?'+':'')+net.toFixed(1)+'%';
+      var netCls = net>=0?'up':'dn';
+      var wr = (+f.winrate||0).toFixed(0);
+      return '<div class="tr-ov-rank-item" data-firm-id="' + esc(f.id||'') + '" title="Buka detail ' + esc(f.name||'') + '">'
+        + '<div class="tr-ov-rank-idx">'+(i+1)+'</div>'
+        + '<div class="tr-ov-rank-info">'
+          + '<div class="tr-ov-rank-name">'+esc(firmShort(f.name||'—'))+'</div>'
+          + '<div class="tr-ov-rank-sub">'+(f.trades||0)+' trade · WR '+wr+'%</div>'
+        + '</div>'
+        + '<div class="tr-ov-rank-stat '+netCls+'">'+netStr+'</div>'
+      + '</div>';
+    };
+    if(top) top.innerHTML = tops.map(renderRankItem).join('') || '<div class="tr-ov-rank-empty">Belum ada data</div>';
+    if(bot) bot.innerHTML = bots.map(renderRankItem).join('') || '<div class="tr-ov-rank-empty">Belum ada data</div>';
+  }
+
   // ── Master render ──
   function renderRingkasan(data){
     if (!data || data.pending) return; // pertahankan dummy kalau pending
-    try { updateKpi(data);  } catch(e) { console.warn('[tracker.ringkasan] KPI:', e && e.message); }
-    try { updateChart(data);} catch(e) { console.warn('[tracker.ringkasan] Chart:', e && e.message); }
-    try { updateLb(data);   } catch(e) { console.warn('[tracker.ringkasan] LB:', e && e.message); }
+    try { updateKpi(data);            } catch(e) { console.warn('[tracker.overview] KPI:', e && e.message); }
+    try { updateChart(data);          } catch(e) { console.warn('[tracker.overview] Chart:', e && e.message); }
+    try { updateOvSubtitle(data);     } catch(e) { console.warn('[tracker.overview] Subtitle:', e && e.message); }
+    try { updateOvBestFirm(data);     } catch(e) { console.warn('[tracker.overview] BestFirm:', e && e.message); }
+    try { updateOvDistribution(data); } catch(e) { console.warn('[tracker.overview] Dist:', e && e.message); }
+    try { updateOvActivity(data);     } catch(e) { console.warn('[tracker.overview] Activity:', e && e.message); }
+    try { updateOvSentiment(data);    } catch(e) { console.warn('[tracker.overview] Sentiment:', e && e.message); }
+    try { updateOvRankings(data);     } catch(e) { console.warn('[tracker.overview] Rankings:', e && e.message); }
+    // updateLb() dihapus — element #trLb sudah tidak ada di HTML redesign.
   }
 
-  // ── Klik kartu firm di papan peringkat → switch ke Tab Performa ──
+  // ── Klik kartu firm di papan peringkat lama → switch ke Tab Performa
+  //     (backward-compat: kalau element #trLb re-inject di future, tetap
+  //     jalan. Sekarang element sudah dihapus, listener tidak match.)
   document.addEventListener('click', function(e){
     var item = e.target && e.target.closest && e.target.closest('#trLb .tr-lb-item[data-firm-id]');
     if (!item) return;
     var fid = item.getAttribute('data-firm-id');
     if (fid && window.__TR_openFirm) window.__TR_openFirm(fid);
+  });
+
+  // ── Klik highlight cards Overview → navigate ke tab detail ────────
+  // Handle:
+  //   [data-goto]      → switch ke tab (analis/perf/live)
+  //   [data-firm-id]   → openFirm langsung (Sekuritas Terbaik card yg
+  //                       JS-side di-tempel firm.id setelah data ready)
+  document.addEventListener('click', function(e){
+    var hlCard = e.target && e.target.closest && e.target.closest('#tr-view-main .tr-ov-hl-card');
+    if (hlCard) {
+      var firmId = hlCard.getAttribute('data-firm-id');
+      var goto   = hlCard.getAttribute('data-goto');
+      // Prioritas: firm-id (Sekuritas Terbaik card langsung buka firm)
+      if (firmId && window.__TR_openFirm) { window.__TR_openFirm(firmId); return; }
+      // Fallback: tab switch
+      if (goto && window.__TR_switchTab) { window.__TR_switchTab(goto); return; }
+    }
+    // Klik row ranking (top/bottom) → openFirm ke Tab Analis
+    var rankItem = e.target && e.target.closest && e.target.closest('#tr-view-main .tr-ov-rank-item[data-firm-id]');
+    if (rankItem) {
+      var rfid = rankItem.getAttribute('data-firm-id');
+      if (rfid && window.__TR_openFirm) window.__TR_openFirm(rfid);
+    }
+  });
+  // Enter/Space di card highlight (aksesibilitas keyboard)
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var focused = document.activeElement;
+    if (!focused || !focused.classList) return;
+    if (focused.classList.contains('tr-ov-hl-card')) {
+      e.preventDefault();
+      focused.click();
+    }
   });
 
   // ── Subscribe ke data ──
