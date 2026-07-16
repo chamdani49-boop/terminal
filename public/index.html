@@ -4046,7 +4046,7 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
    center value + label besar di tengah, dgn breakdown legend di bawah.
    Needle SVG rotate berdasarkan bullish% (formula: (bull-50)*1.8 deg). */
 .tr-ov-sent-body{
-  gap:6px !important;
+  gap:8px !important;
   justify-content:flex-start !important;
   padding-top:2px
 }
@@ -4063,26 +4063,31 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
   transition:transform .7s cubic-bezier(.6,.05,.28,.9);
   filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))
 }
-/* Center overlay: value % + label mood — di dalam arc, absolute overlay */
+/* Center overlay — DIPINDAH ke BAWAH pivot (y=100..120 di viewBox)
+   supaya tidak pernah tumpang tindih dgn garis needle yg selalu memanjang
+   dari pivot ke atas. Value + label ditampilkan inline (satu baris) untuk
+   hemat ruang & memberi kesan "digital readout" di bawah gauge. */
 .tr-ov-baro-center{
-  position:absolute;left:50%;top:60%;transform:translateX(-50%);
-  display:flex;flex-direction:column;align-items:center;gap:1px;
-  pointer-events:none;text-align:center
+  position:absolute;left:50%;bottom:2px;transform:translateX(-50%);
+  display:inline-flex;align-items:baseline;gap:5px;
+  pointer-events:none;text-align:center;white-space:nowrap
 }
 .tr-ov-baro-val{
-  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;
-  letter-spacing:-.5px;line-height:1;color:var(--text)
+  font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:800;
+  letter-spacing:-.3px;line-height:1;color:var(--text)
 }
 .tr-ov-baro-lbl{
-  font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:800;
-  letter-spacing:.6px;color:var(--text2);text-transform:uppercase;line-height:1.2
+  font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;
+  letter-spacing:.5px;color:var(--text2);text-transform:uppercase;line-height:1
 }
 
-/* Legend footer bar: split kiri (bear) vs kanan (bull) */
+/* Legend footer bar: split kiri (bear) vs kanan (bull).
+   margin-top:-2px lama menarik legend ke area arc → berpotensi tumpang
+   tindih dgn readout. Ganti ke jarak positif kecil supaya rapih. */
 .tr-ov-baro-legend{
   display:flex;justify-content:space-between;align-items:center;
   font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;
-  color:var(--text3);letter-spacing:.2px;margin-top:-2px
+  color:var(--text3);letter-spacing:.2px;margin-top:4px
 }
 .tr-ov-baro-legend .up{color:var(--green);display:inline-flex;align-items:center;gap:4px}
 .tr-ov-baro-legend .dn{color:var(--red);display:inline-flex;align-items:center;gap:4px}
@@ -4107,8 +4112,8 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
 
 @media(max-width:640px){
   .tr-ov-baro-svg{max-width:170px}
-  .tr-ov-baro-val{font-size:19px}
-  .tr-ov-baro-lbl{font-size:8px}
+  .tr-ov-baro-val{font-size:14px}
+  .tr-ov-baro-lbl{font-size:7.5px}
   .tr-ov-baro-legend{font-size:9.5px}
   .tr-ov-hl-badge{font-size:8px;padding:1.5px 6px}
 }
@@ -4158,7 +4163,7 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
 }
 .tr-ov-rank-h{
   font-size:13.5px;font-weight:800;color:var(--text);letter-spacing:-.2px;
-  margin-bottom:12px;display:flex;align-items:center;gap:6px
+  margin-bottom:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap
 }
 .tr-ov-rank-list{display:flex;flex-direction:column;gap:7px}
 .tr-ov-rank-empty{
@@ -5310,32 +5315,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
   </div>
 
-  <!-- ── KPI STRIP (4 metrik utama) ───────────────────────────────
-       Urutan baru: Win Rate (hi/hero) → Net Return → Alpha → IHSG.
-       User buka Overview langsung dapat gambaran '% berhasil' sebagai
-       lead metric, drilldown ke Net & Alpha untuk konteks. -->
-  <div class="tr-kpi-row">
-    <div class="tr-kpi hi">
-      <div class="k">WIN RATE</div>
-      <div class="v" id="trKpiWr">—</div>
-      <div class="s tr-neu" id="trKpiWrSub">Menunggu data…</div>
-    </div>
-    <div class="tr-kpi">
-      <div class="k">NET RETURN</div>
-      <div class="v" id="trKpiCons">—</div>
-      <div class="s tr-neu" id="trKpiConsSub">Blended · realized</div>
-    </div>
-    <div class="tr-kpi">
-      <div class="k">ALPHA (VS IHSG)</div>
-      <div class="v" id="trKpiAlpha">—</div>
-      <div class="s tr-neu">Outperformance 30 hari</div>
-    </div>
-    <div class="tr-kpi">
-      <div class="k">RETURN IHSG</div>
-      <div class="v" id="trKpiIhsg">—</div>
-      <div class="s tr-neu">Indeks pasar 30 hari</div>
-    </div>
-  </div>
+  <!-- KPI strip (WIN RATE / NET RETURN / ALPHA / RETURN IHSG) dihapus
+       per permintaan user. Metrik-metrik itu sudah tercakup di kartu
+       highlights (Distribusi Hasil, Sentimen) dan tabel ranking di bawah,
+       jadi tidak perlu duplikat. Renderer updateKpi() tetap ada tapi
+       akan skip karena element id-nya sudah tak ada (null-safe lookup). -->
+
 
   <!-- ── CHART 30-HARI (Return Kumulatif) ─────────────────────────
        Sole chart di Overview — kurva analis vs IHSG. Simulator Gaya
