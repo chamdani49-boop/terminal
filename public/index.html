@@ -2646,15 +2646,22 @@ body.tr-profile-open #tr-view-profile{display:block}
 
 /* 2 chart card di detail firm (Grafik Performa 30 Hari + Return Kumulatif)
    sejajar berdampingan mulai layar ≥1100px (PC). Di bawah itu stack vertikal.
-   FIX: sebelumnya `align-items:stretch` (default grid) + `flex:1` di
-   chart-wrap bikin canvas melar ikut card tertinggi — kalau card kanan
-   punya note/legend panjang, chart kiri bisa 400-500px tinggi (tampak
-   memanjang ke bawah, candle jadi giant). Sekarang: align-items:start
-   supaya tiap card berukuran natural, dan chart-wrap punya tinggi
-   TETAP 280px — visual konsisten & compact. */
+   HISTORY of fixes:
+   • v1 (buggy): align-items:stretch (default) + chart-wrap { flex:1 } →
+     canvas melar ikut card tertinggi → candle raksasa 400-500px.
+   • v2 (kompak tapi misaligned): align-items:start + chart-wrap fixed
+     280px → tiap card ukuran natural. Tapi card kanan (dgn legend RHB /
+     Beli di Entry / IHSG) lebih tinggi drpd card kiri → tampak tidak
+     sejajar dgn section 'Rekomendasi Sekuritas' di bawah.
+   • v3 (final): align-items:stretch DEFAULT + chart-wrap FIXED 280px.
+     Kedua card ditarik ke tinggi yang sama (align bottom edge). Chart
+     tidak ikut melar (fixed). Kalau card kiri lebih pendek isinya, ada
+     sedikit empty space di bawah chart-nya — dapat ditoleransi karena
+     benefit-nya lebih besar (kedua card + section di bawah sejajar
+     kolom-nya). */
 .tr-pf-charts-row{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
 @media(min-width:1100px){
-  .tr-pf-charts-row{grid-template-columns:1fr 1fr;align-items:start}
+  .tr-pf-charts-row{grid-template-columns:1fr 1fr}
   .tr-pf-charts-row > .tr-card{margin-top:0 !important}
   .tr-pf-charts-row .tr-pf-daychart-wrap,
   .tr-pf-charts-row .tr-chart-wrap{height:280px !important}
