@@ -113,8 +113,12 @@ tbody tr:hover{background:var(--bg2)}
 .pg-num.active:hover{color:#fff}
 .pg-ell{color:var(--text3);padding:0 2px}
 .pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 12px;border-radius:var(--radius-pill);white-space:nowrap}
+.pill.plan1{background:rgba(202,138,4,.14);color:var(--yellow)}
 .pill.plan6{background:var(--bg3);color:var(--accent)}
 .pill.plan12{background:rgba(37,99,235,.12);color:var(--accent2)}
+/* Badge scope-tracker: user paket Tracker-only. Muncul di kolom Paket
+   di samping badge durasi (mis. "1 Bulan" + "🎯 Tracker"). */
+.pill.scope-tracker{background:rgba(217,119,6,.16);color:var(--yellow);margin-left:6px;font-size:10.5px}
 .pill.aktif{background:var(--green-bg);color:var(--green)}
 .pill.expired{background:var(--red-bg);color:var(--red)}
 .pill.suspended{background:var(--yellow-bg);color:var(--yellow)}
@@ -283,6 +287,7 @@ tbody tr:hover{background:var(--bg2)}
         <div class="bf"><label for="bfPromo">Label promo (badge paket unggulan)</label><input id="bfPromo" type="text" maxlength="60" placeholder="PALING HEMAT"></div>
         <div class="bf"><label for="bfFeatured">Paket unggulan (yang diberi badge)</label>
           <select id="bfFeatured">
+            <option value="1bulan">1 Bulan (Tracker)</option>
             <option value="3bulan">3 Bulan</option>
             <option value="6bulan">6 Bulan</option>
             <option value="tahunan">Tahunan</option>
@@ -463,11 +468,18 @@ tbody tr:hover{background:var(--bg2)}
       <option value="1">1 Hari</option>
       <option value="3">3 Hari</option>
       <option value="7">7 Hari</option>
-      <option value="30">1 Bulan</option>
+      <option value="30" data-plan="1bulan" data-scope="tracker">1 Bulan (Tracker Rp 149rb)</option>
+      <option value="30">1 Bulan (durasi saja)</option>
       <option value="90" data-plan="3bulan">3 Bulan</option>
       <option value="182" data-plan="6bulan">6 Bulan</option>
       <option value="365" data-plan="tahunan">1 Tahun</option>
     </select>
+    <label class="modal-label" style="margin-top:12px">Scope akses</label>
+    <div style="display:flex;gap:16px;font-size:13px;margin-bottom:6px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="extScope" value="full" checked> <b style="color:var(--accent)">Full</b> — semua fitur</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="extScope" value="tracker"> <b style="color:var(--yellow)">Tracker only</b> — hanya menu Tracker</label>
+    </div>
+    <div class="modal-sub" id="extScopeHint" style="font-size:11.5px;color:var(--text3);margin-bottom:4px">Scope akan otomatis mengikuti durasi yg dipilih (mis. 1 Bulan Tracker → Tracker only). Bisa di-override manual.</div>
     <label class="modal-label" style="margin-top:12px">Mode</label>
     <div style="display:flex;gap:16px;font-size:13px;margin-bottom:6px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="extMode" value="extend" checked> Perpanjang (tambah ke sisa)</label>
@@ -578,9 +590,13 @@ var USERS=[
 ];
 var LIVE=false; // true jika data dari API
 var PAGE=1, PAGE_SIZE=100;   // paginasi tabel user (slide 100/halaman)
-var PRICE={'6bulan':997000,'tahunan':1750000};
-var PLAN_LABEL={'3bulan':'3 Bulan','6bulan':'6 Bulan','tahunan':'Tahunan','custom':'Custom','-':'—'};
-var PLAN_DAYS={'6bulan':182,'tahunan':365};
+// PRICE: hanya dipakai widget "Estimasi Pendapatan" — hanya paket full-scope
+// yang dihitung sebagai revenue "utama" di widget lama. Paket '1bulan'
+// (tracker) ikut dihitung terpisah bila diperlukan (revenue-nya kecil per
+// user, jadi cukup dipantau via jumlah user tracker).
+var PRICE={'1bulan':149000,'3bulan':699000,'6bulan':997000,'tahunan':1750000};
+var PLAN_LABEL={'1bulan':'1 Bulan','3bulan':'3 Bulan','6bulan':'6 Bulan','tahunan':'Tahunan','custom':'Custom','-':'—'};
+var PLAN_DAYS={'1bulan':30,'3bulan':90,'6bulan':182,'tahunan':365};
 
 function fmtDate(v){
   if(v==null||v==='-')return '—';
@@ -624,7 +640,7 @@ async function loadUsers(){
     if(r.ok){
       var d=await r.json();
       if(d&&d.users){
-        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',berakhir:u.berakhir,last_seen:u.last_seen||null,status:u.status,is_admin:u.is_admin,source:u.source||null,paid:!!u.paid};});
+        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',scope:u.scope||null,berakhir:u.berakhir,last_seen:u.last_seen||null,status:u.status,is_admin:u.is_admin,source:u.source||null,paid:!!u.paid};});
         LIVE=true;
         document.getElementById('demoNote').style.display='none';
       }
@@ -704,7 +720,12 @@ function render(){
   var tb=document.getElementById('tbody');
   tb.innerHTML='';
   pageRows.forEach(function(u,i){
-    var planCls=u.paket==='tahunan'?'plan12':'plan6';
+    var planCls=u.paket==='tahunan'?'plan12':(u.paket==='1bulan'?'plan1':'plan6');
+    // Badge scope: hanya tampil kalau scope='tracker' (visual signal user
+    // paket Tracker-only). Scope='full' tidak perlu badge (default).
+    var scopeBadge=(u.scope==='tracker')
+      ? ' <span class="pill scope-tracker" title="Akses hanya tab Tracker">🎯 Tracker</span>'
+      : '';
     var stLabel={aktif:'🟢 Aktif',expired:'🔴 Kedaluwarsa',suspended:'⛔ Suspended',no_sub:'⚪ Belum langganan'}[u.status]||u.status;
     var stCls=u.status==='no_sub'?'expired':u.status;
     var actionsCell = u.is_admin
@@ -720,7 +741,7 @@ function render(){
       '<td class="mono" style="color:var(--text3);text-align:right">'+(start+i+1)+'</td>'+
       '<td class="u-email">'+u.email+'</td>'+
       '<td class="u-name">'+(u.nama||'—')+'</td>'+
-      '<td><span class="pill '+planCls+'">'+(PLAN_LABEL[u.paket]||u.paket)+'</span></td>'+
+      '<td><span class="pill '+planCls+'">'+(PLAN_LABEL[u.paket]||u.paket)+'</span>'+scopeBadge+'</td>'+
       '<td class="mono">'+fmtDate(u.berakhir)+'</td>'+
       '<td><span class="pill '+stCls+'">'+stLabel+'</span></td>'+
       '<td class="u-seen">'+fmtLastSeen(u.last_seen)+'</td>'+
@@ -819,11 +840,32 @@ function openExtendModal(email){
   document.getElementById('extSelect').value='30';
   var dflt=document.querySelector('input[name="extMode"][value="extend"]');
   if(dflt) dflt.checked=true;
+  // Pre-select scope radio berdasarkan scope user existing (kalau ada).
+  // Kalau user belum langganan / no scope info → default 'full'.
+  var currentScope='full';
+  try{
+    var u=(USERS||[]).find(function(x){return x.email===email;});
+    if(u && u.scope==='tracker') currentScope='tracker';
+  }catch(_){}
+  var scopeRadio=document.querySelector('input[name="extScope"][value="'+currentScope+'"]');
+  if(scopeRadio) scopeRadio.checked=true;
   extModal.classList.add('open');
 }
 function closeExtendModal(){ extModal.classList.remove('open'); _extEmail=null; }
 document.getElementById('extCancel').addEventListener('click',closeExtendModal);
 extModal.addEventListener('click',function(e){ if(e.target===extModal) closeExtendModal(); });
+
+// Auto-sync scope radio saat pilih durasi yg punya data-scope
+// (mis. "1 Bulan Tracker" → tracker). Admin masih bisa override manual.
+document.getElementById('extSelect').addEventListener('change',function(e){
+  var opt=e.target.options[e.target.selectedIndex];
+  var autoScope=opt.getAttribute('data-scope');
+  if(autoScope==='tracker' || autoScope==='full'){
+    var r=document.querySelector('input[name="extScope"][value="'+autoScope+'"]');
+    if(r) r.checked=true;
+  }
+});
+
 document.getElementById('extConfirm').addEventListener('click',async function(){
   if(!_extEmail)return;
   var sel=document.getElementById('extSelect');
@@ -832,11 +874,13 @@ document.getElementById('extConfirm').addEventListener('click',async function(){
   var plan=opt.getAttribute('data-plan')||'';
   var modeEl=document.querySelector('input[name="extMode"]:checked');
   var mode=(modeEl&&modeEl.value==='set')?'set':'extend';
+  var scopeEl=document.querySelector('input[name="extScope"]:checked');
+  var scope=(scopeEl&&scopeEl.value==='tracker')?'tracker':'full';
   var email=_extEmail;
   // Konfirmasi ekstra utk mode SET (bisa mengurangi masa aktif).
   if(mode==='set' && !confirm('SET masa aktif '+email+' menjadi '+days+' hari dari sekarang?\nIni MENGGANTI tanggal kedaluwarsa (bisa mengurangi), bukan menambah.')) return;
   try{
-    var body={email:email,days:days,mode:mode};
+    var body={email:email,days:days,mode:mode,scope:scope};
     if(plan) body.plan=plan;
     await postAdmin('/api/admin/users/extend',body);
     closeExtendModal();
@@ -893,9 +937,11 @@ loadUsers();
 loadUsage();
 
 // ── Pengaturan Billing (editor harga / teks / promo / link Mayar) ──
-var BILL_PLANS=['3bulan','6bulan','tahunan'];
-var BILL_PLAN_LABEL={'3bulan':'Paket 3 Bulan','6bulan':'Paket 6 Bulan','tahunan':'Paket Tahunan'};
-var BILL_MONTHS={'3bulan':3,'6bulan':6,'tahunan':12};
+// Urutan penting: '1bulan' di depan supaya kartu editor "Paket Tracker
+// 1 Bulan" tampil paling kiri di grid (entry-level).
+var BILL_PLANS=['1bulan','3bulan','6bulan','tahunan'];
+var BILL_PLAN_LABEL={'1bulan':'Paket Tracker 1 Bulan','3bulan':'Paket 3 Bulan','6bulan':'Paket 6 Bulan','tahunan':'Paket Tahunan'};
+var BILL_MONTHS={'1bulan':1,'3bulan':3,'6bulan':6,'tahunan':12};
 
 function billPct(real,coret){real=Number(real)||0;coret=Number(coret)||0;if(coret<=0||real>=coret)return 0;return Math.round((1-real/coret)*100);}
 function billPerMo(plan,real){var m=BILL_MONTHS[plan]||1;return Math.round((Number(real)||0)/m);}
