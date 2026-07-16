@@ -4149,38 +4149,42 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 .tr-ov-latest-wrap{margin-bottom:16px}
 .tr-ov-latest-list{
   display:flex;flex-direction:column;
-  max-height:420px;overflow-y:auto
+  max-height:640px;overflow-y:auto
 }
 /* Header kolom di atas list — pakai grid yg identik dgn row supaya
    labelnya duduk tepat di atas datanya. */
-/* 7 kolom di desktop: Tanggal · Kode · Sekuritas · Harga · Target · Status · P&L
-   Harga = harga saham saat ini (lastPrice utk aktif/pending, exitPrice utk
-   closed, entry sebagai fallback) + change% hari ini (dari DATA.live).
-   Ditempatkan sebelum Target supaya user bisa langsung compare harga
-   sekarang vs target analis. Kolom Harga sedikit dilebarkan (94px) supaya
-   angka + change% inline muat. */
+/* 8 kolom di desktop: # · Tanggal · Kode · Sekuritas · Harga · Target · Status · P&L
+   Kolom "#" (32px) = no urut supaya user mudah track posisi saat scroll
+   list panjang (~400+ rekomendasi). Harga (94px) muat angka + change%.
+   Target (66px) & PnL (60px) right-aligned. */
 .tr-ov-latest-head{
   display:grid;
-  grid-template-columns:82px 60px minmax(0,1fr) 94px 66px 62px 60px;
+  grid-template-columns:32px 82px 60px minmax(0,1fr) 94px 66px 62px 60px;
   align-items:center;gap:10px;
   padding:8px 6px;margin-bottom:2px;
   border-bottom:1px solid var(--border);
   background:var(--bg2);border-radius:6px 6px 0 0;
   font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;
-  color:var(--text3);letter-spacing:.5px;text-transform:uppercase
+  color:var(--text3);letter-spacing:.5px;text-transform:uppercase;
+  position:sticky;top:0;z-index:2
 }
 .tr-ov-latest-head > *{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-ov-latest-head .h-no{text-align:center}
 .tr-ov-latest-head .h-price,
 .tr-ov-latest-head .h-target,
 .tr-ov-latest-head .h-pnl{text-align:right}
 .tr-ov-latest-head .h-status{text-align:center}
 .tr-ov-latest-row{
   display:grid;
-  grid-template-columns:82px 60px minmax(0,1fr) 94px 66px 62px 60px;
+  grid-template-columns:32px 82px 60px minmax(0,1fr) 94px 66px 62px 60px;
   align-items:center;gap:10px;
   padding:9px 6px;border-bottom:1px solid var(--border);
   cursor:pointer;transition:background .12s;
   font-size:12px;border-radius:6px
+}
+.tr-ov-latest-no{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;
+  color:var(--text3);text-align:center;font-variant-numeric:tabular-nums
 }
 .tr-ov-latest-row:last-child{border-bottom:none}
 .tr-ov-latest-row:hover{background:var(--bg2)}
@@ -4323,26 +4327,27 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   /* Header kolom di-hide di HP — baris feed sudah dilabeli implicit
      lewat layout 2 baris (tanggal + status di baris bawah, tick + firm di atas). */
   .tr-ov-latest-head{display:none}
-  /* Feed di HP: 2 baris (kompak) — tick+firm+pnl di baris 1,
+  /* Feed di HP: 2 baris (kompak) — no+tick+firm+pnl di baris 1,
      date+harga→target+status di baris 2. Target di-hide di HP karena
      harga sekarang lebih relevan sbg quick-glance signal. */
   .tr-ov-latest-row{
-    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-columns:22px auto minmax(0,1fr) auto;
     grid-template-rows:auto auto;
     column-gap:8px;row-gap:2px;padding:9px 6px;font-size:11px
   }
-  .tr-ov-latest-tick   {grid-row:1;grid-column:1}
-  .tr-ov-latest-firm   {grid-row:1;grid-column:2;font-size:11px}
-  .tr-ov-latest-pnl    {grid-row:1;grid-column:3;font-size:11px}
-  .tr-ov-latest-date   {grid-row:2;grid-column:1;font-size:10px}
+  .tr-ov-latest-no     {grid-row:1;grid-column:1;font-size:9.5px}
+  .tr-ov-latest-tick   {grid-row:1;grid-column:2}
+  .tr-ov-latest-firm   {grid-row:1;grid-column:3;font-size:11px}
+  .tr-ov-latest-pnl    {grid-row:1;grid-column:4;font-size:11px}
+  .tr-ov-latest-date   {grid-row:2;grid-column:1/span 2;font-size:10px}
   /* Harga di HP: pakai flex-row inline (harga + change% berdampingan)
      supaya hemat vertical space. */
   .tr-ov-latest-price  {
-    grid-row:2;grid-column:2;font-size:10px;
+    grid-row:2;grid-column:3;font-size:10px;
     flex-direction:row;align-items:baseline;justify-content:flex-start;gap:6px
   }
   .tr-ov-latest-chg{font-size:9.5px}
-  .tr-ov-latest-status {grid-row:2;grid-column:3;font-size:8.5px;padding:1px 5px}
+  .tr-ov-latest-status {grid-row:2;grid-column:4;font-size:8.5px;padding:1px 5px}
   .tr-ov-latest-target {display:none}
 }
 
@@ -11659,16 +11664,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   var _fmtNRow = function(v){ return (v==null||!Number.isFinite(+v)) ? '—' : Number(v).toLocaleString('id-ID'); };
 
-  // View: Rekomendasi Terbaru — 20 baris terbaru gabungan open+history+pending
+  // View: Rekomendasi Terbaru — SEMUA baris (open+history+pending) sorted
+  // openDate desc. Sebelumnya cap 20; user minta munculkan semua. Baris
+  // di-scroll dalam container .tr-ov-latest-list (max-height di CSS).
   function renderLatestRecent(el, data){
     var pool = [];
     (data.openList||[]).forEach(function(r){ pool.push({_b:'open',    r:r}); });
     (data.historyList||[]).forEach(function(r){ pool.push({_b:'history', r:r}); });
     (data.pendingList||[]).forEach(function(r){ pool.push({_b:'pending', r:r}); });
     pool.sort(function(a,b){ return String(b.r.openDate||'').localeCompare(String(a.r.openDate||'')); });
-    var take = pool.slice(0, 20);
+    var take = pool;  // tampilkan semua — no slice
     var cnt = $('trOvLatestCount');
-    if(cnt) cnt.textContent = pool.length + ' rec · tampil 20 terbaru';
+    if(cnt) cnt.textContent = pool.length + ' rekomendasi · sorted terbaru → lama';
     if(!take.length){
       el.innerHTML = '<div class="tr-ov-latest-empty">Belum ada rekomendasi tercatat.</div>';
       return;
@@ -11693,7 +11700,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if(lv && Number.isFinite(+lv.change_pct)) return +lv.change_pct * 100;
       return null;
     };
-    var rows = take.map(function(x){
+    var rows = take.map(function(x, i){
       var r = x.r;
       var st = statusOfRow(x._b, r);
       var p = pnlOfRow(r);
@@ -11708,6 +11715,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var chgCls = chg==null ? '' : (chg>0?'up':(chg<0?'dn':''));
       var chgStr = chg==null ? '' : '<span class="tr-ov-latest-chg '+chgCls+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>';
       return '<div class="tr-ov-latest-row" data-ticker="'+esc(r.ticker||'')+'" data-firm-id="'+esc(r.firmId||'')+'" title="Klik untuk detail">'
+        + '<span class="tr-ov-latest-no">'+(i+1)+'</span>'
         + '<span class="tr-ov-latest-date">'+esc(r.openDate||'—')+'</span>'
         + '<span class="tr-ov-latest-tick" data-action="stock">'+esc(r.ticker||'—')+'</span>'
         + '<span class="tr-ov-latest-firm" data-action="firm" title="'+esc(r.firm||'')+'">'+esc(firmShortLbl(r.firm))+'</span>'
@@ -11718,8 +11726,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
       + '</div>';
     }).join('');
     // Header kolom + list feed dalam satu container. Header pakai grid
-    // yg identik dgn row → label tepat di atas datanya.
+    // yg identik dgn row → label tepat di atas datanya. Kolom "#" (no
+    // urut) ditambah di awal supaya user mudah track posisi baris saat
+    // scroll list panjang.
     var header = '<div class="tr-ov-latest-head" role="row">'
+      + '<span class="h-no">#</span>'
       + '<span>Tanggal</span>'
       + '<span>Kode</span>'
       + '<span>Sekuritas</span>'
