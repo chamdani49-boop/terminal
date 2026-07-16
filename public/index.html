@@ -3806,6 +3806,230 @@ body.tr-profile-open .tr-subpane{display:none !important}
   .tr-recmodal-chart-wrap{height:min(320px, 44vh)}
   .tr-recmodal-level .val{font-size:15px}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE POLISH (≤640px) — khusus tab LIVE & PERFORMA di menu Tracker.
+   Tujuan: bikin tampilan HP lebih minimalis & padat tanpa mengubah versi
+   desktop. Semua selector di-prefix `#tr-view-live` atau `#tr-view-perf`
+   supaya tidak bocor ke tab Ringkasan / Analisis / Analis, dan supaya
+   specificity-nya cukup untuk override rules @media(max-width:640px) yg
+   sudah ada di base (base pakai selector class polos).
+   ─── Ringkasan perubahan ───
+   • Tab Live: cell metric grid 4→2×2 di HP (lebih ringkas), font angka
+     turun 1-2 tier, padding kartu rekomendasi + toolbar dirapatkan.
+   • Tab Performa: config Rp bar full-stack, kartu firm padat, tabel
+     Rekap Bulanan & Safety Net dikonversi jadi card list (bukan scroll
+     horizontal) — pakai data-label per <td> untuk label ::before.
+   ═══════════════════════════════════════════════════════════════════ */
+@media(max-width:640px){
+
+  /* ─────── TAB LIVE ─────── */
+
+  /* Live Signal Terminal container: padding lebih rapat */
+  #tr-view-live .tr-live-terminal{padding:12px 12px}
+  #tr-view-live .tr-live-terminal-h{font-size:9.5px;margin-bottom:10px;letter-spacing:1px}
+  #tr-view-live .tr-live-terminal-h::before{height:10px}
+
+  /* Total signal summary bar */
+  #tr-view-live .tr-live-total-summary{padding:10px 12px;gap:8px;margin-bottom:10px}
+  #tr-view-live .tr-live-total-val{font-size:22px}
+  #tr-view-live .tr-live-total-lbl{font-size:9px;letter-spacing:.9px}
+  #tr-view-live .tr-live-total-breakdown{font-size:11px;line-height:1.35}
+  #tr-view-live .tr-live-total-sub{font-size:10px;margin-top:2px}
+
+  /* 4-cell metric grid: paksa 2×2 di HP (default @480 = 1 kol = terlalu
+     boros vertikal; 2×2 lebih scannable). */
+  #tr-view-live .tr-live-terminal-cells{grid-template-columns:repeat(2,1fr);gap:7px}
+  #tr-view-live .tr-live-cell{padding:11px 8px;border-radius:10px}
+  #tr-view-live .tr-live-cell-ico{font-size:12px;margin-bottom:2px}
+  #tr-view-live .tr-live-cell-val{font-size:19px}
+  #tr-view-live .tr-live-cell-sub{font-size:8.5px;letter-spacing:.5px;margin-top:4px}
+  #tr-view-live .tr-live-strip{margin:10px 0 2px}
+
+  /* Toolbar: pilih tanggal + cari + sekuritas */
+  #tr-view-live .tr-live-toolbar{gap:8px;margin-bottom:12px}
+  #tr-view-live .tr-live-search input{font-size:12.5px;padding:9px 32px 9px 32px}
+  #tr-view-live .tr-live-date{font-size:12px;padding:9px 24px 9px 30px}
+  #tr-view-live .tr-live-firmselect{font-size:12px;padding:9px 30px 9px 11px}
+  #tr-view-live .tr-live-firmbar{gap:8px}
+  #tr-view-live .tr-live-firmbar-lbl{font-size:9.5px;letter-spacing:.4px}
+
+  /* Section heading Rekomendasi Aktif */
+  #tr-view-live .tr-live-stream-hd{font-size:9.5px;letter-spacing:.6px;margin:12px 2px 8px}
+  #tr-view-live .tr-live-stream-hd .float-agg{font-size:10.5px}
+
+  /* Kartu rekomendasi */
+  #tr-view-live .tr-live-grid{gap:10px}
+  #tr-view-live .tr-live-card{padding:12px 13px;border-radius:12px}
+  #tr-view-live .tr-live-card::before{width:3px}
+  #tr-view-live .tr-live-card-top{margin-bottom:8px;gap:6px}
+  #tr-view-live .tr-live-card-tick{font-size:15px;gap:5px;flex-wrap:wrap;align-items:center}
+  #tr-view-live .tr-live-card-badge{font-size:8px;padding:2px 5px}
+  #tr-view-live .tr-live-card-sub{font-size:9.5px;margin-top:1px}
+  #tr-view-live .tr-live-card-firm{font-size:11.5px;gap:5px;margin-top:2px}
+  #tr-view-live .tr-live-card-firm b{font-size:11.5px}
+  #tr-view-live .tr-live-card-float{font-size:15px}
+  #tr-view-live .tr-live-card-float-lbl{font-size:9px}
+  #tr-view-live .tr-live-card-waiting{font-size:11px;padding:5px 10px}
+  #tr-view-live .tr-live-card-meta{gap:5px 10px;margin-top:2px}
+  #tr-view-live .tr-live-card-meta .k{font-size:9px}
+  #tr-view-live .tr-live-card-meta .v{font-size:12px}
+  #tr-view-live .tr-live-card-tp-row{gap:4px;margin-top:8px}
+  #tr-view-live .tr-live-tp{padding:6px 4px;gap:1px}
+  #tr-view-live .tr-live-tp-lbl{font-size:8.5px}
+  #tr-view-live .tr-live-tp-price{font-size:10.5px}
+  #tr-view-live .tr-live-tp-pct{font-size:9.5px}
+  #tr-view-live .tr-live-card-date{font-size:9.5px;margin-top:8px;padding-top:6px;gap:4px}
+
+  /* State badge & rec-exp: kompak */
+  #tr-view-live .tr-state-badge{font-size:8px;padding:2px 5px;letter-spacing:.3px}
+  #tr-view-live .tr-rec-exp{font-size:9px}
+
+  /* Market Intelligence & Watchlist */
+  #tr-view-live .tr-live-mi-card{padding:12px 13px;border-radius:12px;margin-top:12px}
+  #tr-view-live .tr-live-mi-h{font-size:9.5px;margin-bottom:8px}
+  #tr-view-live .tr-live-mi-topline{font-size:9.5px;margin-bottom:4px}
+  #tr-view-live .tr-live-mi-bar{height:20px}
+  #tr-view-live .tr-live-mi-foot{font-size:11px;margin-top:6px}
+  #tr-view-live .tr-live-wl-card{padding:12px 13px;border-radius:12px;margin-top:10px}
+  #tr-view-live .tr-live-wl-h{font-size:9.5px;margin-bottom:10px}
+  #tr-view-live .tr-live-wl-chip{font-size:10.5px;padding:3px 8px}
+
+
+  /* ─────── TAB PERFORMA ─────── */
+
+  /* Config Rp modal + slot: full-column stack */
+  #tr-view-perf .tr-sim-config{padding:12px 14px;flex-direction:column;align-items:stretch;gap:12px}
+  #tr-view-perf .tr-sim-config-l{width:100%}
+  #tr-view-perf .tr-sim-config-lbl{font-size:9px;margin-bottom:3px}
+  #tr-view-perf .tr-sim-config-title{font-size:13.5px;margin-bottom:2px;line-height:1.3}
+  #tr-view-perf .tr-sim-config-desc{font-size:11px;line-height:1.4}
+  #tr-view-perf .tr-sim-config-r{width:100%;justify-content:space-between;flex-wrap:nowrap;gap:8px;align-items:flex-end}
+  #tr-view-perf .tr-sim-config-r > div:first-child{flex:1;min-width:0}
+  #tr-view-perf .tr-sim-input-wrap{width:100%}
+  #tr-view-perf .tr-sim-input{width:100%;font-size:14px;padding:9px 10px 9px 4px}
+  #tr-view-perf .tr-sim-slots-wrap{flex-shrink:0}
+  #tr-view-perf .tr-sim-slots-input{font-size:13px;padding:8px 6px;width:58px}
+
+  /* HERO Papan Peringkat */
+  #tr-view-perf .tr-perf-firm-hero{padding:14px 15px;border-radius:14px;margin-bottom:12px}
+  #tr-view-perf .tr-perf-firm-hero-title{font-size:15px;margin-bottom:3px}
+  #tr-view-perf .tr-perf-firm-hero-desc{font-size:11.5px;line-height:1.5;margin-bottom:12px}
+  #tr-view-perf .tr-perf-firm-hero-h{font-size:9.5px;margin-bottom:3px}
+  #tr-view-perf .tr-perf-firm-grid{gap:9px}
+  #tr-view-perf .tr-perf-firm-hint{font-size:10px;margin-top:8px}
+
+  /* Kartu firm — padat & compact */
+  #tr-view-perf .tr-perf-firm-card{padding:12px 13px;border-radius:12px}
+  #tr-view-perf .tr-perf-firm-top{margin-bottom:11px;gap:8px}
+  #tr-view-perf .tr-perf-firm-rank{font-size:12.5px;margin-bottom:2px}
+  #tr-view-perf .tr-perf-firm-name{font-size:14px;line-height:1.25}
+  #tr-view-perf .tr-perf-firm-meta-top{font-size:9.5px;margin-top:3px}
+  #tr-view-perf .tr-perf-firm-stats{gap:6px 8px;margin-bottom:10px}
+  #tr-view-perf .tr-perf-firm-stat{padding:8px 10px;border-radius:9px}
+  #tr-view-perf .tr-perf-firm-stat-lbl{font-size:8.5px;letter-spacing:.6px}
+  #tr-view-perf .tr-perf-firm-stat-val{font-size:17px;margin-top:2px}
+  #tr-view-perf .tr-perf-firm-stat-val.big{font-size:19px}
+  #tr-view-perf .tr-perf-firm-stat-sub{font-size:9px;margin-top:1px}
+  #tr-view-perf .tr-perf-firm-progress{margin-top:8px}
+  #tr-view-perf .tr-perf-firm-progress-top{font-size:8.5px}
+  #tr-view-perf .tr-perf-firm-progress-bar{height:5px}
+  #tr-view-perf .tr-perf-firm-foot{margin-top:9px;padding-top:8px;font-size:9.5px;gap:5px}
+
+  /* Saldo Rp block (di-inject ke tiap kartu firm oleh JS) */
+  #tr-view-perf .tr-sim-saldo-block{padding:9px 11px;border-radius:9px;margin-bottom:9px}
+  #tr-view-perf .tr-sim-saldo-lbl{font-size:8.5px;letter-spacing:.6px}
+  #tr-view-perf .tr-sim-saldo-val{font-size:17px;margin-top:2px}
+  #tr-view-perf .tr-sim-saldo-sub{font-size:9.5px;margin-top:4px}
+
+  /* Section card umum (TP Hit, Chart 30D, Rekap Bulanan, Safety Net) */
+  #tr-view-perf .tr-perf-card{padding:12px 14px;border-radius:12px;margin-bottom:10px}
+  #tr-view-perf .tr-perf-card-h{font-size:9.5px;margin-bottom:11px}
+  #tr-view-perf .tr-perf-card-h::before{height:10px}
+
+  /* TP Hit distribution: 2 kol tetap, angka lebih kecil */
+  #tr-view-perf .tr-perf-tp-grid{gap:7px}
+  #tr-view-perf .tr-perf-tp{padding:11px 8px;border-radius:10px}
+  #tr-view-perf .tr-perf-tp-lbl{font-size:8.5px;letter-spacing:.6px}
+  #tr-view-perf .tr-perf-tp-val{font-size:21px;margin-top:3px}
+  #tr-view-perf .tr-perf-tp-sub{font-size:8.5px;margin-top:3px}
+
+  /* 30D Chart: tinggi lebih pendek biar tidak makan layar */
+  #tr-view-perf .tr-perf-chart-wrap{height:180px;padding:8px 6px}
+  #tr-view-perf .tr-perf-chart-legend{font-size:9.5px;gap:10px;margin-top:8px}
+  #tr-view-perf .tr-perf-chart-audit{font-size:10px;padding:6px 10px}
+
+  /* ── TABEL → CARD LIST di HP ─────────────────────────────────
+     Rekap Bulanan (.tr-sim-monthly-table) & Safety Net (.tr-perf-table)
+     di-transformasi jadi vertical card list. Baris pertama tampil sbg
+     header card (Bulan / Level target), sisanya key-value dgn ::before
+     label dari atribut data-label yang ditambahkan renderer JS. */
+  #tr-view-perf .tr-sim-monthly-wrap,
+  #tr-view-perf .tr-perf-table-wrap{
+    overflow-x:visible;border:0;background:transparent
+  }
+  /* Wrapper inline-style di dalam tr-sim-monthly-wrap punya
+     overflow-x:auto — override supaya card list bisa tampil natural. */
+  #tr-view-perf .tr-sim-monthly-wrap > div{overflow-x:visible !important}
+
+  #tr-view-perf .tr-sim-monthly-table,
+  #tr-view-perf .tr-perf-table{display:block;font-size:12px;width:100%}
+  #tr-view-perf .tr-sim-monthly-table thead,
+  #tr-view-perf .tr-perf-table thead{display:none}
+  #tr-view-perf .tr-sim-monthly-table tbody,
+  #tr-view-perf .tr-perf-table tbody{display:block}
+  #tr-view-perf .tr-sim-monthly-table tbody tr,
+  #tr-view-perf .tr-perf-table tbody tr{
+    display:block;background:var(--card);border:1px solid var(--border);
+    border-radius:10px;padding:10px 12px;margin-bottom:8px
+  }
+  #tr-view-perf .tr-sim-monthly-table tbody tr:hover,
+  #tr-view-perf .tr-perf-table tbody tr:hover{background:var(--card)}
+  #tr-view-perf .tr-sim-monthly-table tbody td,
+  #tr-view-perf .tr-perf-table tbody td{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:5px 0;border:0 !important;font-size:12px;text-align:right
+  }
+  #tr-view-perf .tr-sim-monthly-table tbody td::before,
+  #tr-view-perf .tr-perf-table tbody td::before{
+    content:attr(data-label);color:var(--text3);font-size:9.5px;
+    letter-spacing:.6px;text-transform:uppercase;font-weight:700;
+    flex-shrink:0;margin-right:12px
+  }
+  /* Cell PERTAMA (BULAN / LEVEL TARGET) tampil sbg header card, tanpa
+     ::before label, dgn garis putus di bawah sbg separator. */
+  #tr-view-perf .tr-sim-monthly-table tbody td:first-child,
+  #tr-view-perf .tr-perf-table tbody td:first-child{
+    display:block;padding-bottom:7px;margin-bottom:6px;
+    border-bottom:1px dashed var(--border) !important;
+    font-size:13px;font-weight:800;color:var(--text);text-align:left
+  }
+  #tr-view-perf .tr-sim-monthly-table tbody td:first-child::before,
+  #tr-view-perf .tr-perf-table tbody td:first-child::before{content:''}
+  /* Row empty state (colspan) → 1 blok utuh, tanpa label */
+  #tr-view-perf .tr-sim-monthly-table tbody td[colspan],
+  #tr-view-perf .tr-perf-table tbody td[colspan]{
+    display:block;text-align:center;border:0 !important;padding:0
+  }
+  #tr-view-perf .tr-sim-monthly-table tbody td[colspan]::before,
+  #tr-view-perf .tr-perf-table tbody td[colspan]::before{content:''}
+
+  /* Note kaki tabel */
+  #tr-view-perf .tr-perf-note,
+  #tr-view-perf .tr-sim-note{font-size:10px;padding:9px 11px;margin-top:8px}
+}
+
+/* Ultra-narrow HP (<380px) — turunkan font 1 tier lagi supaya angka
+   besar tidak overflow di iPhone SE / Android layar 360px. */
+@media(max-width:380px){
+  #tr-view-live .tr-live-total-val{font-size:20px}
+  #tr-view-live .tr-live-cell-val{font-size:17px}
+  #tr-view-live .tr-live-card-tick{font-size:14px}
+  #tr-view-perf .tr-perf-firm-stat-val{font-size:15px}
+  #tr-view-perf .tr-perf-firm-stat-val.big{font-size:17px}
+  #tr-view-perf .tr-sim-saldo-val{font-size:16px}
+  #tr-view-perf .tr-perf-tp-val{font-size:19px}
+}
 </style>
 
 <!-- ═══════════════════════════════════════════
@@ -9452,11 +9676,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var exp = +r.expectancy || 0;
       var expCls = exp >= 0 ? 'up' : 'dn';
       var expStr = (exp >= 0 ? '+' : '') + exp.toFixed(3) + 'R';
+      // data-label per td: dipakai CSS mobile untuk transformasi tabel →
+      // card di HP (::before ambil dari atribut ini). Tabel di desktop
+      // tetap normal (data-label tidak dirender).
       return '<tr>'
         + '<td><b>' + trophy + ' ' + esc(r.level) + '</b> <span style="color:var(--text3);font-size:10px">RR 1:' + r.rr + '</span></td>'
-        + '<td class="ctr ' + srCls + '">' + sr.toFixed(1) + '%</td>'
-        + '<td class="ctr"><span class="up">' + r.hit + 'W</span> / <span class="dn">' + r.miss + 'L</span></td>'
-        + '<td class="num ' + expCls + '">' + expStr + '</td>'
+        + '<td class="ctr ' + srCls + '" data-label="Safety ratio">' + sr.toFixed(1) + '%</td>'
+        + '<td class="ctr" data-label="Hit / Miss"><span class="up">' + r.hit + 'W</span> / <span class="dn">' + r.miss + 'L</span></td>'
+        + '<td class="num ' + expCls + '" data-label="Ekspektansi (R)">' + expStr + '</td>'
         + '</tr>';
     }).join('');
   }
@@ -9906,15 +10133,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var label = (monthNames[mn - 1] || parts[1]) + ' ' + parts[0];
       var best = (m.best === -Infinity) ? 0 : m.best;
       var worst = (m.worst === Infinity) ? 0 : m.worst;
+      // data-label per td: dipakai CSS mobile utk transformasi tabel → card
+      // di HP (::before pakai atribut ini). Desktop tidak terpengaruh.
       return '<tr>'
         + '<td><b>' + label + '</b></td>'
-        + '<td class="ctr">' + m.trades + '</td>'
-        + '<td class="ctr"><span class="up">' + m.wins + '</span> / <span class="dn">' + m.losses + '</span></td>'
-        + '<td class="ctr ' + wrCls + '">' + wr.toFixed(0) + '%</td>'
-        + '<td class="num ' + netCls + '">' + fmtPct(m.sumPnl) + '</td>'
-        + '<td class="num up">' + fmtPct(best, { dec: 1 }) + '</td>'
-        + '<td class="num dn">' + fmtPct(worst, { dec: 1 }) + '</td>'
-        + '<td class="num ' + balCls + '">' + fmtIdr(m.endBal) + '</td>'
+        + '<td class="ctr" data-label="Trade">' + m.trades + '</td>'
+        + '<td class="ctr" data-label="W / L"><span class="up">' + m.wins + '</span> / <span class="dn">' + m.losses + '</span></td>'
+        + '<td class="ctr ' + wrCls + '" data-label="Winrate">' + wr.toFixed(0) + '%</td>'
+        + '<td class="num ' + netCls + '" data-label="Net %">' + fmtPct(m.sumPnl) + '</td>'
+        + '<td class="num up" data-label="Terbaik">' + fmtPct(best, { dec: 1 }) + '</td>'
+        + '<td class="num dn" data-label="Terburuk">' + fmtPct(worst, { dec: 1 }) + '</td>'
+        + '<td class="num ' + balCls + '" data-label="Saldo akhir">' + fmtIdr(m.endBal) + '</td>'
       + '</tr>';
     }).join('');
   }
