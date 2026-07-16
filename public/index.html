@@ -3912,12 +3912,16 @@ body.tr-profile-open .tr-subpane{display:none !important}
 #tr-view-main .tr-chart-wrap,
 #tr-view-main .tr-legend,
 #tr-view-main .tr-ov-highlights,
+#tr-view-main .tr-ov-grid-2,
+#tr-view-main .tr-ov-latest-wrap,
 #tr-view-main .tr-ov-ranking{transition:opacity .3s ease .05s}
 html.tracker-loading #tr-view-main .tr-kpi .v,
 html.tracker-loading #tr-view-main #trChart,
 html.tracker-loading #tr-view-main .tr-chart-wrap,
 html.tracker-loading #tr-view-main .tr-legend,
 html.tracker-loading #tr-view-main .tr-ov-highlights,
+html.tracker-loading #tr-view-main .tr-ov-grid-2,
+html.tracker-loading #tr-view-main .tr-ov-latest-wrap,
 html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -4116,6 +4120,113 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
   .tr-ov-baro-lbl{font-size:7.5px}
   .tr-ov-baro-legend{font-size:9.5px}
   .tr-ov-hl-badge{font-size:8px;padding:1.5px 6px}
+}
+
+/* ═══ Adopsi Consensus Overview: Aktivitas trend + Top ticker bar + Latest feed ═══
+   Prefix .tr-ov-* supaya tidak konflik dgn .ov-* halaman Consensus.
+   Struktur mengikuti pola .card + .ov-card-hd + .ov-hbar-wrap dari Consensus,
+   dgn styling disesuaikan agar konsisten dgn .tr-ov-hl-card & .tr-ov-rank-card. */
+.tr-ov-grid-2{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;
+  align-items:stretch
+}
+@media(max-width:900px){.tr-ov-grid-2{grid-template-columns:1fr;gap:10px;margin-bottom:12px}}
+
+.tr-ov-panel{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;display:flex;flex-direction:column;gap:10px;
+  position:relative;overflow:hidden
+}
+/* Aksen bar tipis di atas panel — konsisten dgn .tr-ov-hl-card. */
+.tr-ov-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--grad);opacity:.55
+}
+.tr-ov-panel-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:8px;flex-wrap:wrap
+}
+.tr-ov-panel-title{
+  font-size:13.5px;font-weight:800;color:var(--text);letter-spacing:-.2px;
+  display:flex;align-items:center;gap:6px
+}
+.tr-ov-panel-sub{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);
+  letter-spacing:.5px;text-transform:uppercase;font-weight:700
+}
+.tr-ov-chart-h180{position:relative;width:100%;height:180px}
+
+/* Rekomendasi Terbaru feed — grid row mirror .ov-latest-row Consensus */
+.tr-ov-latest-wrap{margin-bottom:16px}
+.tr-ov-latest-list{
+  display:flex;flex-direction:column;
+  max-height:420px;overflow-y:auto
+}
+.tr-ov-latest-row{
+  display:grid;
+  grid-template-columns:82px 62px minmax(0,1fr) 68px 74px 64px;
+  align-items:center;gap:10px;
+  padding:9px 6px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .12s;
+  font-size:12px;border-radius:6px
+}
+.tr-ov-latest-row:last-child{border-bottom:none}
+.tr-ov-latest-row:hover{background:var(--bg2)}
+.tr-ov-latest-date{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);font-weight:600
+}
+.tr-ov-latest-tick{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;
+  color:var(--accent);cursor:pointer
+}
+.tr-ov-latest-tick:hover{text-decoration:underline}
+.tr-ov-latest-firm{
+  font-size:12px;color:var(--text);font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer
+}
+.tr-ov-latest-firm:hover{color:var(--accent);text-decoration:underline}
+.tr-ov-latest-status{
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;
+  letter-spacing:.5px;padding:2px 7px;border-radius:5px;text-align:center;
+  text-transform:uppercase;white-space:nowrap
+}
+.tr-ov-latest-status.tp{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.28)}
+.tr-ov-latest-status.sl{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.28)}
+.tr-ov-latest-status.exp{background:rgba(202,138,4,.14);color:var(--yellow);border:1px solid rgba(202,138,4,.28)}
+.tr-ov-latest-status.active{background:rgba(37,99,235,.14);color:var(--accent2);border:1px solid rgba(37,99,235,.28)}
+.tr-ov-latest-status.pending{background:rgba(217,119,6,.14);color:var(--yellow);border:1px solid rgba(217,119,6,.28)}
+.tr-ov-latest-target{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
+  text-align:right;color:var(--text)
+}
+.tr-ov-latest-pnl{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:800;
+  text-align:right
+}
+.tr-ov-latest-pnl.up{color:var(--green)}
+.tr-ov-latest-pnl.dn{color:var(--red)}
+.tr-ov-latest-empty{
+  padding:24px 8px;text-align:center;color:var(--text3);
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px
+}
+
+@media(max-width:640px){
+  .tr-ov-panel{padding:12px 13px}
+  .tr-ov-panel-title{font-size:12.5px}
+  .tr-ov-panel-sub{font-size:9px}
+  .tr-ov-chart-h180{height:150px}
+  /* Feed di HP: 2 baris (kompak) — tick+firm+pnl di baris 1, date+target+status di baris 2 */
+  .tr-ov-latest-row{
+    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-rows:auto auto;
+    column-gap:8px;row-gap:2px;padding:9px 6px;font-size:11px
+  }
+  .tr-ov-latest-tick   {grid-row:1;grid-column:1}
+  .tr-ov-latest-firm   {grid-row:1;grid-column:2;font-size:11px}
+  .tr-ov-latest-pnl    {grid-row:1;grid-column:3;font-size:11px}
+  .tr-ov-latest-date   {grid-row:2;grid-column:1;font-size:10px}
+  .tr-ov-latest-target {grid-row:2;grid-column:2;text-align:left;font-size:10px;color:var(--text2)}
+  .tr-ov-latest-status {grid-row:2;grid-column:3;font-size:8.5px;padding:1px 5px}
 }
 
 /* Ranking wrapper + filter bar */
@@ -5433,6 +5544,43 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div>
       </div>
       <div class="tr-ov-hl-foot" id="trOvSentSample">— trade dianalisis</div>
+    </div>
+  </div>
+
+  <!-- ── ROW: Aktivitas 12 Bulan · Saham Paling Aktif ─────────────
+       Adopsi pattern Consensus Overview: dua kartu chart berdampingan
+       dgn tinggi seragam. Kartu kiri = tren rec/bulan (line 12 bln,
+       mirror ovTrendLine); kartu kanan = top 10 saham dgn rec terbanyak
+       (h-bar, mirror ovMostRecBar). Klik bar → openStock drawer. -->
+  <div class="tr-ov-grid-2">
+    <div class="tr-ov-panel">
+      <div class="tr-ov-panel-hd">
+        <span class="tr-ov-panel-title">📈 Aktivitas Rekomendasi</span>
+        <span class="tr-ov-panel-sub">12 bulan terakhir</span>
+      </div>
+      <div class="tr-ov-chart-h180"><canvas id="trOvActTrend"></canvas></div>
+    </div>
+    <div class="tr-ov-panel">
+      <div class="tr-ov-panel-hd">
+        <span class="tr-ov-panel-title">🎯 Saham Paling Aktif</span>
+        <span class="tr-ov-panel-sub">top 10 · total rec</span>
+      </div>
+      <div class="tr-ov-chart-h180"><canvas id="trOvTopTickers"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── ROW: Rekomendasi Terbaru (feed) ──────────────────────────
+       Adopsi pattern Consensus Overview "Konsensus Terbaru" — grid row
+       tanggal | ticker | firm | status | target | pnl. 20 terbaru dari
+       gabungan openList + historyList + pendingList. Klik row → drawer
+       __TR_openStock; klik firm → __TR_openFirm. -->
+  <div class="tr-ov-panel tr-ov-latest-wrap">
+    <div class="tr-ov-panel-hd">
+      <span class="tr-ov-panel-title">📋 Rekomendasi Terbaru</span>
+      <span class="tr-ov-panel-sub" id="trOvLatestCount">— rekomendasi</span>
+    </div>
+    <div id="trOvLatest">
+      <div class="tr-ov-latest-empty">Menunggu data…</div>
     </div>
   </div>
 
@@ -11008,6 +11156,213 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(d && !d.pending) updateOvRankings(d);
   });
 
+  // ── Adopsi Consensus Overview: Aktivitas 12 Bulan (line chart) ───────
+  // Aggregate semua rec (open+history+pending+missed) by openDate.slice(0,7)
+  // → jumlah rec/bulan. Bar 12 bulan terakhir relatif tanggal terbaru di data.
+  var _trOvActTrend = null;
+  function updateOvTrend(data){
+    var canvas = $('trOvActTrend'); if (!canvas || typeof Chart === 'undefined') return;
+    var buckets = {};
+    var addDate = function(dstr){
+      if(!dstr) return;
+      var ym = String(dstr).slice(0,7); if(ym.length !== 7) return;
+      buckets[ym] = (buckets[ym]||0) + 1;
+    };
+    (data.openList||[]).forEach(function(r){ addDate(r.openDate); });
+    (data.historyList||[]).forEach(function(r){ addDate(r.openDate); });
+    (data.pendingList||[]).forEach(function(r){ addDate(r.openDate); });
+    (data.missedList||[]).forEach(function(r){ addDate(r.openDate); });
+
+    var refDate = data.updatedAt ? new Date(data.updatedAt) : new Date();
+    if(isNaN(refDate.getTime())) refDate = new Date();
+    var monthShort = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+    var labels = [], series = [];
+    for(var i=11; i>=0; i--){
+      var d = new Date(refDate.getFullYear(), refDate.getMonth()-i, 1);
+      var ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      labels.push(monthShort[d.getMonth()] + ' ' + String(d.getFullYear()).slice(-2));
+      series.push(buckets[ym] || 0);
+    }
+
+    if(_trOvActTrend){ try{ _trOvActTrend.destroy(); }catch(_){} _trOvActTrend = null; }
+    var css = getComputedStyle(document.documentElement);
+    var accent = css.getPropertyValue('--accent').trim() || '#6d28d9';
+    var border = css.getPropertyValue('--border').trim() || '#d4ccf0';
+    var text2 = css.getPropertyValue('--text2').trim() || '#6e6490';
+    var text3 = css.getPropertyValue('--text3').trim() || '#a49cc0';
+    var card = css.getPropertyValue('--card').trim() || '#ffffff';
+
+    _trOvActTrend = new Chart(canvas, {
+      type:'line',
+      data:{
+        labels: labels,
+        datasets:[{
+          label:'Rec', data: series,
+          borderColor: accent, borderWidth: 2.5,
+          pointRadius: 3.5, pointHoverRadius: 5,
+          pointBackgroundColor: accent, pointBorderColor:'#fff', pointBorderWidth: 1.5,
+          tension:.35, fill:true,
+          backgroundColor: function(ctx){
+            var g = ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
+            g.addColorStop(0,'rgba(109,40,217,.22)');
+            g.addColorStop(1,'rgba(109,40,217,0)');
+            return g;
+          }
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            backgroundColor: card, titleColor: text2, bodyColor: text2,
+            borderColor: border, borderWidth:1, padding:9, cornerRadius:8,
+            callbacks:{label:function(item){ return ' ' + item.raw + ' rekomendasi'; }}
+          }
+        },
+        scales:{
+          x:{grid:{display:false}, ticks:{color: text3, font:{size:10}, maxRotation:0}},
+          y:{grid:{color: border}, ticks:{color: text3, font:{size:10}, precision:0}, min:0}
+        }
+      }
+    });
+  }
+
+  // ── Adopsi Consensus Overview: Saham Paling Aktif (h-bar chart) ─────
+  // Aggregate ticker frequency dari semua rec sources → top 10. Klik bar
+  // → __TR_openStock (drawer siapa yg rekomendasi ticker itu).
+  var _trOvTopTickers = null;
+  function updateOvTopTickers(data){
+    var canvas = $('trOvTopTickers'); if(!canvas || typeof Chart === 'undefined') return;
+    var counts = {};
+    var add = function(r){ if(r && r.ticker) counts[r.ticker] = (counts[r.ticker]||0) + 1; };
+    (data.openList||[]).forEach(add);
+    (data.historyList||[]).forEach(add);
+    (data.pendingList||[]).forEach(add);
+    (data.missedList||[]).forEach(add);
+
+    var arr = Object.keys(counts).map(function(t){ return {ticker:t, n:counts[t]}; })
+                  .sort(function(a,b){ return b.n - a.n; })
+                  .slice(0, 10);
+
+    if(_trOvTopTickers){ try{ _trOvTopTickers.destroy(); }catch(_){} _trOvTopTickers = null; }
+    if(!arr.length){
+      // Beri hint visual bila tidak ada data (tanpa render Chart.js empty state)
+      var ctxE = canvas.getContext('2d');
+      if(ctxE){
+        ctxE.clearRect(0,0,canvas.width,canvas.height);
+        var css2 = getComputedStyle(document.documentElement);
+        var t3 = css2.getPropertyValue('--text3').trim() || '#a49cc0';
+        ctxE.fillStyle = t3;
+        ctxE.font = '12px "IBM Plex Mono", monospace';
+        ctxE.textAlign = 'center';
+        ctxE.fillText('Belum ada rekomendasi', canvas.width/2, canvas.height/2);
+      }
+      return;
+    }
+
+    var css = getComputedStyle(document.documentElement);
+    var border = css.getPropertyValue('--border').trim() || '#d4ccf0';
+    var text2 = css.getPropertyValue('--text2').trim() || '#6e6490';
+    var text3 = css.getPropertyValue('--text3').trim() || '#a49cc0';
+    var card = css.getPropertyValue('--card').trim() || '#ffffff';
+
+    _trOvTopTickers = new Chart(canvas, {
+      type:'bar',
+      data:{
+        labels: arr.map(function(x){ return x.ticker; }),
+        datasets:[{
+          label:'Rec', data: arr.map(function(x){ return x.n; }),
+          backgroundColor: arr.map(function(_, i){
+            var alpha = 0.35 + (0.55 * (arr.length - i) / arr.length);
+            return 'rgba(109,40,217,' + alpha.toFixed(2) + ')';
+          }),
+          borderRadius: 5, borderSkipped: false, barPercentage: 0.82, categoryPercentage: 0.82
+        }]
+      },
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            backgroundColor: card, titleColor: text2, bodyColor: text2,
+            borderColor: border, borderWidth:1, padding:9, cornerRadius:8,
+            callbacks:{label:function(item){ return ' ' + item.raw + ' rekomendasi'; }}
+          }
+        },
+        scales:{
+          x:{grid:{color: border}, ticks:{color: text3, font:{size:10}, precision:0}, min:0},
+          y:{grid:{display:false}, ticks:{color: text2, font:{size:11, weight:'700'}}}
+        },
+        onClick: function(_, els){
+          if(els[0] && window.__TR_openStock){
+            var it = arr[els[0].index]; if(it && it.ticker) window.__TR_openStock(it.ticker);
+          }
+        }
+      }
+    });
+  }
+
+  // ── Adopsi Consensus Overview: Rekomendasi Terbaru feed ─────────────
+  // Gabungan openList + historyList + pendingList (sorted openDate desc).
+  // 20 baris terbaru. Klik ticker → __TR_openStock; klik firm → __TR_openFirm.
+  function updateOvLatest(data){
+    var el = $('trOvLatest'); if(!el) return;
+    var cnt = $('trOvLatestCount');
+    var pool = [];
+    (data.openList||[]).forEach(function(r){ pool.push({_b:'open',    r:r}); });
+    (data.historyList||[]).forEach(function(r){ pool.push({_b:'history', r:r}); });
+    (data.pendingList||[]).forEach(function(r){ pool.push({_b:'pending', r:r}); });
+    pool.sort(function(a,b){ return String(b.r.openDate||'').localeCompare(String(a.r.openDate||'')); });
+    var take = pool.slice(0, 20);
+    if(cnt) cnt.textContent = pool.length + ' rec · tampil 20 terbaru';
+    if(!take.length){
+      el.innerHTML = '<div class="tr-ov-latest-empty">Belum ada rekomendasi tercatat.</div>';
+      return;
+    }
+    var firmShortLocal = function(name){
+      if(!name) return '—';
+      return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
+    };
+    var statusOf = function(bucket, r){
+      if(bucket === 'pending') return 'PENDING';
+      var by = String(r.closedBy||'').toUpperCase();
+      if(by === 'TP' || by === 'TP1' || by === 'TP2') return 'TP';
+      if(by === 'SL' || by === 'SL_TRAIL') return 'SL';
+      if(by === 'EXPIRED') return 'EXP';
+      return 'ACTIVE';
+    };
+    var scls = function(s){
+      if(s==='TP') return 'tp';
+      if(s==='SL') return 'sl';
+      if(s==='EXP') return 'exp';
+      if(s==='PENDING') return 'pending';
+      return 'active';
+    };
+    var pnlOf = function(r){
+      if(Number.isFinite(+r.pnlPct)) return +r.pnlPct;
+      if(Number.isFinite(+r.floatingPct)) return +r.floatingPct;
+      return null;
+    };
+    var fmtN = function(v){ return (v==null||!Number.isFinite(+v)) ? '—' : Number(v).toLocaleString('id-ID'); };
+    var rows = take.map(function(x){
+      var r = x.r;
+      var st = statusOf(x._b, r);
+      var p = pnlOf(r);
+      var pcls = p==null ? '' : (p>0?'up':(p<0?'dn':''));
+      var pstr = p==null ? '—' : ((p>=0?'+':'') + p.toFixed(1) + '%');
+      return '<div class="tr-ov-latest-row" data-ticker="'+esc(r.ticker||'')+'" data-firm-id="'+esc(r.firmId||'')+'" title="Klik untuk detail">'
+        + '<span class="tr-ov-latest-date">'+esc(r.openDate||'—')+'</span>'
+        + '<span class="tr-ov-latest-tick" data-action="stock">'+esc(r.ticker||'—')+'</span>'
+        + '<span class="tr-ov-latest-firm" data-action="firm" title="'+esc(r.firm||'')+'">'+esc(firmShortLocal(r.firm))+'</span>'
+        + '<span class="tr-ov-latest-status '+scls(st)+'">'+st+'</span>'
+        + '<span class="tr-ov-latest-target">'+fmtN(r.tp1)+'</span>'
+        + '<span class="tr-ov-latest-pnl '+pcls+'">'+pstr+'</span>'
+      + '</div>';
+    }).join('');
+    el.innerHTML = '<div class="tr-ov-latest-list">' + rows + '</div>';
+  }
+
   // ── Master render ──
   function renderRingkasan(data){
     if (!data || data.pending) return; // pertahankan dummy kalau pending
@@ -11018,6 +11373,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     try { updateOvDistribution(data); } catch(e) { console.warn('[tracker.overview] Dist:', e && e.message); }
     try { updateOvActivity(data);     } catch(e) { console.warn('[tracker.overview] Activity:', e && e.message); }
     try { updateOvSentiment(data);    } catch(e) { console.warn('[tracker.overview] Sentiment:', e && e.message); }
+    try { updateOvTrend(data);        } catch(e) { console.warn('[tracker.overview] Trend:', e && e.message); }
+    try { updateOvTopTickers(data);   } catch(e) { console.warn('[tracker.overview] TopTickers:', e && e.message); }
+    try { updateOvLatest(data);       } catch(e) { console.warn('[tracker.overview] Latest:', e && e.message); }
     try { updateOvRankings(data);     } catch(e) { console.warn('[tracker.overview] Rankings:', e && e.message); }
     // updateLb() dihapus — element #trLb sudah tidak ada di HTML redesign.
   }
@@ -11052,6 +11410,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (rankItem) {
       var rfid = rankItem.getAttribute('data-firm-id');
       if (rfid && window.__TR_openFirm) window.__TR_openFirm(rfid);
+    }
+    // Klik row Rekomendasi Terbaru → routing berbeda per action:
+    //   data-action="firm"  → openFirm (dari span firm)
+    //   data-action="stock" → openStock drawer (dari span ticker)
+    //   klik area kosong    → default openStock drawer
+    var feedRow = e.target && e.target.closest && e.target.closest('#tr-view-main .tr-ov-latest-row');
+    if (feedRow) {
+      var action = e.target.getAttribute && e.target.getAttribute('data-action');
+      var ticker = feedRow.getAttribute('data-ticker');
+      var firmId = feedRow.getAttribute('data-firm-id');
+      if (action === 'firm' && firmId && window.__TR_openFirm) { window.__TR_openFirm(firmId); return; }
+      if (ticker && window.__TR_openStock) { window.__TR_openStock(ticker); }
     }
   });
   // Enter/Space di card highlight (aksesibilitas keyboard)
