@@ -3045,16 +3045,26 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-subtab-btn.active{background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(124,58,237,.24)}
 .tr-subtab-btn .tr-subtab-chip{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(255,255,255,.16);color:#fff;letter-spacing:.3px}
 .tr-subtab-btn:not(.active) .tr-subtab-chip{background:var(--bg3);color:var(--text3)}
-/* Icon di sub-tab & seluruh judul/section menu Tracker disembunyikan
-   di desktop (≥641px) per user request — di HP tetap tampil karena
-   membantu scan menu saat teks dipendekkan/label sempit.
+/* Icon di sub-tab, top-nav "Tracker", & seluruh judul/section menu
+   Tracker disembunyikan di desktop (≥641px) per user request — di HP
+   tetap tampil karena membantu scan menu saat teks dipendekkan.
+   • .tr-nav-ico    → icon di top-nav header "Tracker" (di luar #page-tracker)
    • .tr-subtab-ico → icon di sub-tab bar (5 tab utama)
    • .tr-ico        → icon inline di card title, panel title, section
                       label, filter button, dsb (semua elemen menu). */
 @media (min-width: 641px){
+  .tr-menu .tr-nav-ico,
   #page-tracker .tr-subtab-ico,
   #page-tracker .tr-ico{display:none}
 }
+
+/* Tab Analis: pastikan empty-state "menunggu data" TIDAK PERNAH terlihat,
+   walaupun IIFE renderAll() lawas masih coba set style.display=''. CSS
+   !important menang atas inline style. Master-detail selalu visible dgn
+   layout grid natural (.tr-mdet); sidebar akan tampilkan placeholder
+   natural saat data belum siap. */
+#trAnalisPending.tr-analis-hidden{display:none !important}
+#trAnalisContent.tr-analis-shown{display:grid !important}
 @media(max-width:640px){
   .tr-subtabs{margin:0 -2px 12px;border-radius:10px}
   .tr-subtab-btn{padding:8px 10px;font-size:12px}
@@ -4845,8 +4855,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
     <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
-    <!-- TRACKER (preview admin-only; hidden utk user biasa via body.tr-admin). -->
-    <div class="nav-tab tr-menu" id="tabTracker" onclick="showPage('tracker')">📈 Tracker</div>
+    <!-- TRACKER (preview admin-only; hidden utk user biasa via body.tr-admin).
+         Icon 📈 di-bungkus .tr-nav-ico agar bisa disembunyikan di PC via
+         media query — nav-tabs desktop-only, tapi kita jaga selektor
+         konsisten dgn strategi tr-subtab-ico / tr-ico di dalam page. -->
+    <div class="nav-tab tr-menu" id="tabTracker" onclick="showPage('tracker')"><span class="tr-nav-ico" aria-hidden="true">📈</span> Tracker</div>
     <!-- Menu Global disembunyikan sementara (banyak baris masih snapshot statis).
          Untuk memunculkan kembali: hapus komentar di bawah ini. -->
     <!-- <div class="nav-tab" onclick="showPage('global');glEnsure()">Global</div> -->
@@ -6222,11 +6235,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
        menampilkan master-detail. Kalau data belum siap, sidebar akan
        menampilkan placeholder "Belum ada data" (natural empty state, tanpa
        kesan loading). Element id trAnalisPending/trAnalisStatus di-preserve
-       sbg hidden span supaya updateStatusHint() null-safe. -->
-  <span id="trAnalisPending" style="display:none" aria-hidden="true"><span id="trAnalisStatus"><span class="status-dot"></span><span class="status-txt"></span></span></span>
+       sbg hidden span supaya updateStatusHint() null-safe. Class
+       tr-analis-hidden dipakai untuk override JS yg mungkin masih
+       set display='' — CSS !important menang atas inline style. -->
+  <span id="trAnalisPending" class="tr-analis-hidden" aria-hidden="true"><span id="trAnalisStatus"><span class="status-dot"></span><span class="status-txt"></span></span></span>
 
-  <!-- Master-detail -->
-  <div id="trAnalisContent" class="tr-mdet">
+  <!-- Master-detail — .tr-analis-shown pastikan tetap visible walau JS
+       lama set display:none saat data belum ready. -->
+  <div id="trAnalisContent" class="tr-mdet tr-analis-shown">
 
     <!-- KIRI: list sekuritas (searchable) -->
     <aside class="tr-mdet-side">
