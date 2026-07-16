@@ -2604,11 +2604,13 @@ select.form-control option{background:var(--card);color:var(--text)}
    MENU TRACKER — UI performa rekomendasi trading (Entry/TP/SL) vs IHSG.
    Prefix `.tr-` khusus supaya tak konflik dgn class lain. Warna & spacing
    mengikuti tema terminal (--accent ungu, --card, --border, --green/red).
-   Belum live: menu default HIDDEN; aktif hanya bila body.tr-admin (admin).
+   Sekarang LIVE untuk semua user — gating admin-only sudah dilepas.
+   Class `.tr-menu` tetap dipertahankan di markup karena masih dipakai
+   media query di bawah (line ~3142) untuk sembunyikan icon 📈 di desktop.
 ═══════════════════════════════════════════════════════════════════════ */
-.tr-menu{display:none !important}
-body.tr-admin .tr-menu{display:inline-flex !important}
-body.tr-admin .bottom-nav-item.tr-menu{display:flex !important}
+/* .tr-menu display gating dihapus — menu Tracker sekarang tampil untuk
+   semua user tanpa perlu body.tr-admin. Class `tr-admin` yg diset JS
+   berdasarkan window.__ES_IS_ADMIN dibiarkan (harmless, no-op sekarang). */
 
 #page-tracker{padding:20px 24px 40px;max-width:1200px;margin:0 auto}
 @media(max-width:640px){ #page-tracker{padding:14px 12px 90px} }
@@ -4949,10 +4951,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
          card Statistik Deskriptif di Dashboard (tombol .btn-sim-open →
          openSimModal). Semua fungsi Simulasi tetap ada; hanya UI trigger yg
          berpindah. -->
-    <!-- TRACKER (preview admin-only; hidden utk user biasa via body.tr-admin).
+    <!-- TRACKER — kini LIVE untuk semua user (gating admin-only dihapus).
          Icon 📈 di-bungkus .tr-nav-ico agar bisa disembunyikan di PC via
          media query — nav-tabs desktop-only, tapi kita jaga selektor
-         konsisten dgn strategi tr-subtab-ico / tr-ico di dalam page. -->
+         konsisten dgn strategi tr-subtab-ico / tr-ico di dalam page.
+         Class `.tr-menu` tetap dipertahankan karena masih dipakai media
+         query untuk hide icon di desktop. -->
     <div class="nav-tab tr-menu" id="tabTracker" onclick="showPage('tracker')"><span class="tr-nav-ico" aria-hidden="true">📈</span> Tracker</div>
     <!-- Menu Global disembunyikan sementara (banyak baris masih snapshot statis).
          Untuk memunculkan kembali: hapus komentar di bawah ini. -->
@@ -5247,9 +5251,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <button type="button" class="sim-modal-close" aria-label="Tutup Simulasi" onclick="closeSimModal()">×</button>
     </div>
     <div class="sim-modal-body" id="page-menabung">
-    <div class="info-banner">
-      💡 Simulasi menabung <b>Saham IDX</b> &amp; <b>Emas Antam</b> — DCA (berkala) &amp; Lump Sum. Perhitungan realistik: saham pakai lot 100 &amp; dividen historis, emas pakai gram (harga bulanan Antam).
-    </div>
+    <!-- Info-banner ("💡 Simulasi menabung Saham IDX & Emas Antam…") dihapus
+         atas permintaan — judul di header modal (💰 Simulasi Menabung) sudah
+         cukup memperkenalkan konteks. -->
     <div class="saving-grid">
       <!-- Form -->
       <div class="saving-col-form" style="display:flex;flex-direction:column;gap:10px">
@@ -5577,9 +5581,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
 <!-- ═══════════════════════════════════════════
      PAGE: TRACKER — performa rekomendasi trading (Entry/TP/SL) vs IHSG.
-     STATUS: PREVIEW (admin-only). Menu tersembunyi utk user biasa via
-     kombinasi CSS `.tr-menu` + body.tr-admin. Data masih DUMMY — akan
-     diganti dgn tracker.json setelah pipeline Sheet→JSON siap.
+     STATUS: LIVE untuk semua user (gating admin-only dihapus). Class
+     `.tr-menu` di markup tetap dipakai media query desktop untuk
+     sembunyikan icon 📈 (nav-tab desktop tidak butuh icon).
 ═══════════════════════════════════════════ -->
 <div class="page" id="page-tracker">
 
