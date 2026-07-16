@@ -3913,16 +3913,14 @@ body.tr-profile-open .tr-subpane{display:none !important}
 #tr-view-main .tr-legend,
 #tr-view-main .tr-ov-highlights,
 #tr-view-main .tr-ov-grid-2,
-#tr-view-main .tr-ov-latest-wrap,
-#tr-view-main .tr-ov-ranking{transition:opacity .3s ease .05s}
+#tr-view-main .tr-ov-latest-wrap{transition:opacity .3s ease .05s}
 html.tracker-loading #tr-view-main .tr-kpi .v,
 html.tracker-loading #tr-view-main #trChart,
 html.tracker-loading #tr-view-main .tr-chart-wrap,
 html.tracker-loading #tr-view-main .tr-legend,
 html.tracker-loading #tr-view-main .tr-ov-highlights,
 html.tracker-loading #tr-view-main .tr-ov-grid-2,
-html.tracker-loading #tr-view-main .tr-ov-latest-wrap,
-html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
+html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 
 /* ═══════════════════════════════════════════════════════════════════
    OVERVIEW PAGE — Highlights (4 kartu 2×2) + Ranking (2 kolom).
@@ -4125,7 +4123,7 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
 /* ═══ Adopsi Consensus Overview: Aktivitas trend + Top ticker bar + Latest feed ═══
    Prefix .tr-ov-* supaya tidak konflik dgn .ov-* halaman Consensus.
    Struktur mengikuti pola .card + .ov-card-hd + .ov-hbar-wrap dari Consensus,
-   dgn styling disesuaikan agar konsisten dgn .tr-ov-hl-card & .tr-ov-rank-card. */
+   dgn styling disesuaikan agar konsisten dgn .tr-ov-hl-card. */
 .tr-ov-grid-2{
   display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;
   align-items:stretch
@@ -4210,6 +4208,84 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
   font-family:'IBM Plex Mono',monospace;font-size:11.5px
 }
 
+/* Toggle Terbaru | Per Firm — mirror .ovl-btn dari Consensus Overview,
+   dengan prefix .tr-ov-* untuk isolasi visual. */
+.tr-ov-latest-nav{display:inline-flex;gap:4px;flex-wrap:wrap}
+.tr-ov-latest-btn{
+  padding:5px 14px;font-size:11px;font-weight:700;
+  border:1px solid var(--border);border-radius:var(--radius-pill);
+  cursor:pointer;color:var(--text2);background:var(--card);
+  transition:all .15s;font-family:'IBM Plex Mono',monospace;letter-spacing:.3px
+}
+.tr-ov-latest-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tr-ov-latest-btn.active{
+  background:var(--grad);color:#fff;border-color:transparent;
+  box-shadow:0 3px 10px rgba(109,40,217,.2)
+}
+
+/* Filter bar Basis × Target di dalam panel Rekomendasi Terbaru — versi
+   compact dari .tr-ov-rank-filters. Reuse .tr-ov-rank-btn/.tr-ov-rank-fg. */
+.tr-ov-firm-filters{
+  display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+  padding:8px 10px;background:var(--bg2);
+  border:1px solid var(--border);border-radius:8px
+}
+
+/* List firm ranking (view Per Firm) — mirror .ovl-firm-list Consensus.
+   Header + baris scrollable, sort desc by metric aktif. */
+.tr-ov-firm-list{
+  display:flex;flex-direction:column;gap:6px;
+  max-height:520px;overflow-y:auto;padding-right:2px
+}
+.tr-ov-firm-row{
+  display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;
+  gap:10px;align-items:center;padding:9px 11px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  cursor:pointer;transition:border-color .15s,transform .12s,background .15s
+}
+.tr-ov-firm-row:hover{
+  border-color:var(--accent);transform:translateX(2px);
+  background:linear-gradient(90deg,rgba(124,58,237,.06),var(--bg2))
+}
+.tr-ov-firm-idx{
+  width:24px;height:24px;flex-shrink:0;border-radius:7px;
+  background:var(--bg3);color:var(--text3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:800;
+  letter-spacing:-.3px
+}
+/* Medali Top 3 — samakan estetika lama */
+.tr-ov-firm-row:nth-child(1) .tr-ov-firm-idx{background:linear-gradient(135deg,#f5c518,#ffa500);color:#1a1200}
+.tr-ov-firm-row:nth-child(2) .tr-ov-firm-idx{background:linear-gradient(135deg,#c7cbd6,#94a1c0);color:#1a1200}
+.tr-ov-firm-row:nth-child(3) .tr-ov-firm-idx{background:linear-gradient(135deg,#c08a5a,#8b5a2b);color:#fff}
+.tr-ov-firm-info{min-width:0}
+.tr-ov-firm-name{
+  font-size:12.5px;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.tr-ov-firm-sub{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);
+  margin-top:1px;letter-spacing:.2px
+}
+.tr-ov-firm-secondary{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);
+  font-weight:700;text-align:right;min-width:66px
+}
+.tr-ov-firm-primary{
+  font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:800;
+  letter-spacing:-.3px;text-align:right;min-width:56px
+}
+.tr-ov-firm-primary.up{color:var(--green)}
+.tr-ov-firm-primary.dn{color:var(--red)}
+@media(max-width:640px){
+  .tr-ov-firm-filters{padding:8px;gap:8px}
+  .tr-ov-firm-row{grid-template-columns:26px minmax(0,1fr) auto;gap:8px;padding:8px 10px}
+  .tr-ov-firm-secondary{display:none}
+  .tr-ov-firm-idx{width:22px;height:22px;font-size:10.5px}
+  .tr-ov-firm-name{font-size:12px}
+  .tr-ov-firm-primary{font-size:12.5px}
+}
+
 @media(max-width:640px){
   .tr-ov-panel{padding:12px 13px}
   .tr-ov-panel-title{font-size:12.5px}
@@ -4229,19 +4305,15 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
   .tr-ov-latest-status {grid-row:2;grid-column:3;font-size:8.5px;padding:1px 5px}
 }
 
-/* Ranking wrapper + filter bar */
-.tr-ov-rank-wrap{margin-bottom:16px}
-.tr-ov-rank-filters{
-  display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:10px;
-  padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px
-}
+/* Filter kelompok Basis × Target — reuse dari removed ranking wrap,
+   sekarang embedded di dalam panel Rekomendasi Terbaru (view Per Firm). */
 .tr-ov-rank-fg{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .tr-ov-rank-fg-lbl{
   font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);
   letter-spacing:.5px;text-transform:uppercase;font-weight:700;margin-right:4px
 }
 .tr-ov-rank-btn{
-  padding:6px 12px;border:1px solid var(--border);background:var(--bg2);
+  padding:6px 12px;border:1px solid var(--border);background:var(--card);
   color:var(--text2);border-radius:7px;cursor:pointer;
   font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:.2px;
   transition:all .15s
@@ -4251,75 +4323,13 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
   background:var(--grad);color:#fff;border-color:transparent;
   box-shadow:0 3px 8px rgba(124,58,237,.2)
 }
-.tr-ov-rank-h-tag{
-  margin-left:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;
-  font-weight:600;color:var(--text3);letter-spacing:.3px;text-transform:none;
-  padding:2px 8px;background:var(--bg2);border-radius:6px;border:1px solid var(--border)
-}
 @media(max-width:640px){
-  .tr-ov-rank-filters{gap:10px;padding:9px 10px}
   .tr-ov-rank-fg{gap:5px}
   .tr-ov-rank-fg-lbl{font-size:9.5px}
   .tr-ov-rank-btn{padding:5px 10px;font-size:10.5px}
-  .tr-ov-rank-h-tag{font-size:9px;padding:1.5px 6px;margin-left:6px}
 }
 
-/* Rankings grid — 2 kolom di desktop, stack di HP */
-.tr-ov-ranking{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:640px){.tr-ov-ranking{grid-template-columns:1fr;gap:10px}}
-
-.tr-ov-rank-card{
-  background:var(--card);border:1px solid var(--border);border-radius:12px;
-  padding:14px 16px
-}
-.tr-ov-rank-h{
-  font-size:13.5px;font-weight:800;color:var(--text);letter-spacing:-.2px;
-  margin-bottom:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap
-}
-.tr-ov-rank-list{display:flex;flex-direction:column;gap:7px}
-.tr-ov-rank-empty{
-  padding:20px 8px;text-align:center;color:var(--text3);
-  font-family:'IBM Plex Mono',monospace;font-size:11.5px
-}
-
-.tr-ov-rank-item{
-  display:flex;align-items:center;gap:11px;padding:9px 11px;
-  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
-  cursor:pointer;transition:border-color .15s,transform .12s,background .15s
-}
-.tr-ov-rank-item:hover{
-  border-color:var(--accent);transform:translateX(2px);
-  background:linear-gradient(90deg,rgba(124,58,237,.06),var(--bg2))
-}
-.tr-ov-rank-idx{
-  width:24px;height:24px;flex-shrink:0;border-radius:7px;
-  background:var(--bg3);color:var(--text3);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:800;
-  letter-spacing:-.3px
-}
-/* Medal styling untuk Top 3 (gold/silver/bronze). Bottom card TIDAK
-   pakai medal — cukup nomor biasa untuk konteks 'terburuk'. */
-.tr-ov-rank-card.top .tr-ov-rank-item:nth-child(1) .tr-ov-rank-idx{background:linear-gradient(135deg,#f5c518,#ffa500);color:#1a1200}
-.tr-ov-rank-card.top .tr-ov-rank-item:nth-child(2) .tr-ov-rank-idx{background:linear-gradient(135deg,#c7cbd6,#94a1c0);color:#1a1200}
-.tr-ov-rank-card.top .tr-ov-rank-item:nth-child(3) .tr-ov-rank-idx{background:linear-gradient(135deg,#c08a5a,#8b5a2b);color:#fff}
-.tr-ov-rank-info{min-width:0;flex:1}
-.tr-ov-rank-name{
-  font-size:12.5px;font-weight:700;color:var(--text);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
-}
-.tr-ov-rank-sub{
-  font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);
-  margin-top:1px;letter-spacing:.2px
-}
-.tr-ov-rank-stat{
-  font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:800;
-  letter-spacing:-.3px;flex-shrink:0
-}
-.tr-ov-rank-stat.up{color:var(--green)}
-.tr-ov-rank-stat.dn{color:var(--red)}
-
-/* Mobile compaction */
+/* Mobile compaction untuk kartu highlight & distribusi */
 @media(max-width:640px){
   .tr-ov-hl-card{padding:12px 13px}
   .tr-ov-hl-h{font-size:10px}
@@ -4328,12 +4338,6 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
   .tr-ov-hl-foot{font-size:10px;padding-top:6px}
   .tr-ov-act-v{font-size:19px}
   .tr-ov-dist-bar{height:20px}
-  .tr-ov-rank-card{padding:12px 13px}
-  .tr-ov-rank-h{font-size:12.5px;margin-bottom:10px}
-  .tr-ov-rank-item{padding:8px 10px;gap:9px}
-  .tr-ov-rank-idx{width:22px;height:22px;font-size:10.5px}
-  .tr-ov-rank-name{font-size:12px}
-  .tr-ov-rank-stat{font-size:12.5px}
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -5569,30 +5573,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
   </div>
 
-  <!-- ── ROW: Rekomendasi Terbaru (feed) ──────────────────────────
-       Adopsi pattern Consensus Overview "Konsensus Terbaru" — grid row
-       tanggal | ticker | firm | status | target | pnl. 20 terbaru dari
-       gabungan openList + historyList + pendingList. Klik row → drawer
-       __TR_openStock; klik firm → __TR_openFirm. -->
+  <!-- ── ROW: Rekomendasi Terbaru (feed + Per Firm toggle) ─────────
+       Adopsi pattern Consensus Overview "Konsensus Terbaru" — dua view
+       dalam satu panel via toggle:
+         · Terbaru  → 20 rec terbaru (tanggal|ticker|firm|status|target|pnl)
+         · Per Firm → semua firm (min sample 5) diurut Basis × Target.
+       Ranking cards standalone (3 Teratas / 3 Terbawah) DIHAPUS karena
+       sudah tercakup di view Per Firm ini — user bisa lihat SEMUA firm,
+       bukan hanya 3 teratas/terbawah. -->
   <div class="tr-ov-panel tr-ov-latest-wrap">
     <div class="tr-ov-panel-hd">
       <span class="tr-ov-panel-title">📋 Rekomendasi Terbaru</span>
-      <span class="tr-ov-panel-sub" id="trOvLatestCount">— rekomendasi</span>
+      <div class="tr-ov-latest-nav" role="group" aria-label="Pilih tampilan">
+        <button type="button" class="tr-ov-latest-btn active" data-view="recent" aria-selected="true">Terbaru</button>
+        <button type="button" class="tr-ov-latest-btn" data-view="firms" aria-selected="false">Per Firm</button>
+      </div>
     </div>
-    <div id="trOvLatest">
-      <div class="tr-ov-latest-empty">Menunggu data…</div>
-    </div>
-  </div>
-
-  <!-- ── RANKING dengan FILTER (Basis × Target) ───────────────────
-       Konsep Overview = filter hub. User pick Basis {Winrate|Net} ×
-       Target {TP1|TP2} → ranking re-sort real-time. HAKA sengaja
-       DIHILANGKAN dari opsi (HAKA optional per handoff-2026-07-15;
-       Entry mode implicit di Overview). Min sample 5 trade supaya
-       tidak ada outlier sample-size 1-2 masuk ranking.
-       Klik row → openFirm ke Tab Analis untuk drilldown detail. -->
-  <div class="tr-ov-rank-wrap">
-    <div class="tr-ov-rank-filters">
+    <!-- Filter Basis × Target — hanya muncul saat view=firms -->
+    <div class="tr-ov-firm-filters" id="trOvFirmFilters" style="display:none">
       <div class="tr-ov-rank-fg" role="tablist" aria-label="Basis peringkat">
         <span class="tr-ov-rank-fg-lbl">Basis</span>
         <button type="button" class="tr-ov-rank-btn active" data-metric="winrate" role="tab" aria-selected="true">🎯 Winrate</button>
@@ -5604,19 +5602,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <button type="button" class="tr-ov-rank-btn" data-target="tp2" role="tab" aria-selected="false">TP2</button>
       </div>
     </div>
-    <div class="tr-ov-ranking">
-      <div class="tr-ov-rank-card top">
-        <div class="tr-ov-rank-h">🚀 3 Teratas <span class="tr-ov-rank-h-tag" id="trOvRankTopTag">Winrate · TP1</span></div>
-        <div class="tr-ov-rank-list" id="trOvRankTop">
-          <div class="tr-ov-rank-empty">Menunggu data…</div>
-        </div>
-      </div>
-      <div class="tr-ov-rank-card bottom">
-        <div class="tr-ov-rank-h">📉 3 Terbawah <span class="tr-ov-rank-h-tag" id="trOvRankBotTag">Winrate · TP1</span></div>
-        <div class="tr-ov-rank-list" id="trOvRankBot">
-          <div class="tr-ov-rank-empty">Menunggu data…</div>
-        </div>
-      </div>
+    <div class="tr-ov-panel-sub" id="trOvLatestCount" style="align-self:flex-start">— rekomendasi</div>
+    <div id="trOvLatest">
+      <div class="tr-ov-latest-empty">Menunggu data…</div>
     </div>
   </div>
 
@@ -11062,70 +11050,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   var MIN_TRADES_FOR_RANK = 5;
 
-  function updateOvRankings(data){
-    var top = $('trOvRankTop');
-    var bot = $('trOvRankBot');
-    var topTag = $('trOvRankTopTag');
-    var botTag = $('trOvRankBotTag');
-    if(!top || !bot) return;
-
-    // Update filter label tag di header ranking
-    var metricLbl = _ovMetric === 'winrate' ? 'Winrate' : 'Net Return';
-    var targetLbl = _ovTarget === 'tp1' ? 'TP1' : 'TP2';
-    var tagText = metricLbl + ' · ' + targetLbl;
-    if(topTag) topTag.textContent = tagText;
-    if(botTag) botTag.textContent = tagText;
-
-    // Compute mode-aware stats + filter by minimum sample
-    var firmsRaw = Object.values(data.byFirm || {});
-    var firmsStats = firmsRaw
-      .map(function(f){ return { firm: f, stats: computeFirmStats(f, _ovTarget) }; })
-      .filter(function(x){ return x.stats.trades >= MIN_TRADES_FOR_RANK; });
-
-    if(!firmsStats.length){
-      var msg = '<div class="tr-ov-rank-empty">Belum ada sekuritas dengan minimal '
-        + MIN_TRADES_FOR_RANK + ' trade selesai (target ' + targetLbl + ').</div>';
-      top.innerHTML = msg;
-      bot.innerHTML = msg;
-      return;
-    }
-
-    // Sort by chosen metric (desc). Bottom = reverse of sorted.
-    firmsStats.sort(function(a, b){
-      var av = _ovMetric === 'winrate' ? a.stats.winrate : a.stats.net;
-      var bv = _ovMetric === 'winrate' ? b.stats.winrate : b.stats.net;
-      return bv - av;
-    });
-    var tops = firmsStats.slice(0, 3);
-    var bots = firmsStats.slice(-3).reverse(); // Terbawah dulu (worst worst)
-
-    var renderItem = function(x, i){
-      var f = x.firm, s = x.stats;
-      var primaryVal, primaryCls;
-      var secondaryLbl;
-      if(_ovMetric === 'winrate'){
-        primaryVal = s.winrate.toFixed(0) + '%';
-        primaryCls = s.winrate >= 55 ? 'up' : (s.winrate >= 45 ? '' : 'dn');
-        // Show Net sebagai sub info
-        secondaryLbl = 'Net ' + (s.net>=0?'+':'') + s.net.toFixed(1) + '%';
-      } else {
-        primaryVal = (s.net>=0?'+':'') + s.net.toFixed(1) + '%';
-        primaryCls = s.net >= 0 ? 'up' : 'dn';
-        // Show Winrate sebagai sub info
-        secondaryLbl = 'WR ' + s.winrate.toFixed(0) + '%';
-      }
-      return '<div class="tr-ov-rank-item" data-firm-id="' + esc(f.id||'') + '" title="Buka detail ' + esc(f.name||'') + '">'
-        + '<div class="tr-ov-rank-idx">'+(i+1)+'</div>'
-        + '<div class="tr-ov-rank-info">'
-          + '<div class="tr-ov-rank-name">'+esc(firmShort(f.name||'—'))+'</div>'
-          + '<div class="tr-ov-rank-sub">'+s.trades+' trade · '+secondaryLbl+'</div>'
-        + '</div>'
-        + '<div class="tr-ov-rank-stat '+primaryCls+'">'+primaryVal+'</div>'
-      + '</div>';
-    };
-    top.innerHTML = tops.map(renderItem).join('') || '<div class="tr-ov-rank-empty">Belum ada data</div>';
-    bot.innerHTML = bots.map(renderItem).join('') || '<div class="tr-ov-rank-empty">Belum ada data</div>';
-  }
+  // updateOvRankings() DIHAPUS — logika ranking sudah dipindah ke
+  // renderLatestFirms() di panel Rekomendasi Terbaru (view Per Firm).
 
   // ── Filter bar click handler (delegated) ──────────────────────
   // Klik salah satu tombol Basis / Target → update state, re-render
@@ -11151,9 +11077,29 @@ body.is-mobile-device.force-desktop .pl-col-main{
       btn.classList.add('active');
       btn.setAttribute('aria-selected', 'true');
     }
-    // Re-render dgn data cache
-    var d = window.__TR_getData && window.__TR_getData();
-    if(d && !d.pending) updateOvRankings(d);
+    // Re-render Rekomendasi Terbaru (view Per Firm) dgn state baru — reuse cache
+    updateOvLatest();
+  });
+
+  // ── Toggle Terbaru | Per Firm di panel Rekomendasi Terbaru ─────
+  // Klik salah satu tombol → update view state → re-render pakai cached data.
+  // Filter Basis × Target (element #trOvFirmFilters) auto show/hide via updateOvLatest.
+  document.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest && e.target.closest('#tr-view-main .tr-ov-latest-btn');
+    if(!btn) return;
+    var v = btn.getAttribute('data-view'); if(!v || v === _trOvLatestView) return;
+    _trOvLatestView = v;
+    var group = btn.parentElement;
+    if(group){
+      var siblings = group.querySelectorAll('.tr-ov-latest-btn');
+      for(var i=0; i<siblings.length; i++){
+        siblings[i].classList.remove('active');
+        siblings[i].setAttribute('aria-selected', 'false');
+      }
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+    }
+    updateOvLatest();
   });
 
   // ── Adopsi Consensus Overview: Aktivitas 12 Bulan (line chart) ───────
@@ -11303,64 +11249,128 @@ body.is-mobile-device.force-desktop .pl-col-main{
     });
   }
 
-  // ── Adopsi Consensus Overview: Rekomendasi Terbaru feed ─────────────
-  // Gabungan openList + historyList + pendingList (sorted openDate desc).
-  // 20 baris terbaru. Klik ticker → __TR_openStock; klik firm → __TR_openFirm.
-  function updateOvLatest(data){
-    var el = $('trOvLatest'); if(!el) return;
-    var cnt = $('trOvLatestCount');
+  // ── Adopsi Consensus Overview: Rekomendasi Terbaru — 2 view (Terbaru | Per Firm)
+  // View toggle di panel header. Filter Basis × Target hanya muncul saat 'firms'.
+  // Ranking cards standalone (3 Teratas / 3 Terbawah) DIHAPUS — sudah tercakup
+  // di view Per Firm ini (semua firm, bukan cuma top/bottom 3).
+  var _trOvLatestView = 'recent';      // 'recent' | 'firms'
+  var _trOvLatestData = null;          // cache utk re-render antar interaksi
+
+  function firmShortLbl(name){
+    if(!name) return '—';
+    return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
+  }
+  function statusOfRow(bucket, r){
+    if(bucket === 'pending') return 'MENUNGGU';
+    var by = String(r.closedBy||'').toUpperCase();
+    if(by === 'TP' || by === 'TP1' || by === 'TP2') return 'TP';
+    if(by === 'SL' || by === 'SL_TRAIL') return 'SL';
+    if(by === 'EXPIRED') return 'EXP';
+    return 'AKTIF';
+  }
+  function statusClsRow(s){
+    if(s === 'TP') return 'tp';
+    if(s === 'SL') return 'sl';
+    if(s === 'EXP') return 'exp';
+    if(s === 'MENUNGGU') return 'pending';
+    return 'active';
+  }
+  function pnlOfRow(r){
+    if(Number.isFinite(+r.pnlPct)) return +r.pnlPct;
+    if(Number.isFinite(+r.floatingPct)) return +r.floatingPct;
+    return null;
+  }
+  var _fmtNRow = function(v){ return (v==null||!Number.isFinite(+v)) ? '—' : Number(v).toLocaleString('id-ID'); };
+
+  // View: Rekomendasi Terbaru — 20 baris terbaru gabungan open+history+pending
+  function renderLatestRecent(el, data){
     var pool = [];
     (data.openList||[]).forEach(function(r){ pool.push({_b:'open',    r:r}); });
     (data.historyList||[]).forEach(function(r){ pool.push({_b:'history', r:r}); });
     (data.pendingList||[]).forEach(function(r){ pool.push({_b:'pending', r:r}); });
     pool.sort(function(a,b){ return String(b.r.openDate||'').localeCompare(String(a.r.openDate||'')); });
     var take = pool.slice(0, 20);
+    var cnt = $('trOvLatestCount');
     if(cnt) cnt.textContent = pool.length + ' rec · tampil 20 terbaru';
     if(!take.length){
       el.innerHTML = '<div class="tr-ov-latest-empty">Belum ada rekomendasi tercatat.</div>';
       return;
     }
-    var firmShortLocal = function(name){
-      if(!name) return '—';
-      return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
-    };
-    var statusOf = function(bucket, r){
-      if(bucket === 'pending') return 'PENDING';
-      var by = String(r.closedBy||'').toUpperCase();
-      if(by === 'TP' || by === 'TP1' || by === 'TP2') return 'TP';
-      if(by === 'SL' || by === 'SL_TRAIL') return 'SL';
-      if(by === 'EXPIRED') return 'EXP';
-      return 'ACTIVE';
-    };
-    var scls = function(s){
-      if(s==='TP') return 'tp';
-      if(s==='SL') return 'sl';
-      if(s==='EXP') return 'exp';
-      if(s==='PENDING') return 'pending';
-      return 'active';
-    };
-    var pnlOf = function(r){
-      if(Number.isFinite(+r.pnlPct)) return +r.pnlPct;
-      if(Number.isFinite(+r.floatingPct)) return +r.floatingPct;
-      return null;
-    };
-    var fmtN = function(v){ return (v==null||!Number.isFinite(+v)) ? '—' : Number(v).toLocaleString('id-ID'); };
     var rows = take.map(function(x){
       var r = x.r;
-      var st = statusOf(x._b, r);
-      var p = pnlOf(r);
+      var st = statusOfRow(x._b, r);
+      var p = pnlOfRow(r);
       var pcls = p==null ? '' : (p>0?'up':(p<0?'dn':''));
       var pstr = p==null ? '—' : ((p>=0?'+':'') + p.toFixed(1) + '%');
       return '<div class="tr-ov-latest-row" data-ticker="'+esc(r.ticker||'')+'" data-firm-id="'+esc(r.firmId||'')+'" title="Klik untuk detail">'
         + '<span class="tr-ov-latest-date">'+esc(r.openDate||'—')+'</span>'
         + '<span class="tr-ov-latest-tick" data-action="stock">'+esc(r.ticker||'—')+'</span>'
-        + '<span class="tr-ov-latest-firm" data-action="firm" title="'+esc(r.firm||'')+'">'+esc(firmShortLocal(r.firm))+'</span>'
-        + '<span class="tr-ov-latest-status '+scls(st)+'">'+st+'</span>'
-        + '<span class="tr-ov-latest-target">'+fmtN(r.tp1)+'</span>'
+        + '<span class="tr-ov-latest-firm" data-action="firm" title="'+esc(r.firm||'')+'">'+esc(firmShortLbl(r.firm))+'</span>'
+        + '<span class="tr-ov-latest-status '+statusClsRow(st)+'">'+st+'</span>'
+        + '<span class="tr-ov-latest-target">'+_fmtNRow(r.tp1)+'</span>'
         + '<span class="tr-ov-latest-pnl '+pcls+'">'+pstr+'</span>'
       + '</div>';
     }).join('');
     el.innerHTML = '<div class="tr-ov-latest-list">' + rows + '</div>';
+  }
+
+  // View: Per Firm — ranking semua firm (min sample 5) sort desc by metric
+  function renderLatestFirms(el, data){
+    var firmsRaw = Object.values(data.byFirm || {});
+    var firmsStats = firmsRaw
+      .map(function(f){ return { firm: f, stats: computeFirmStats(f, _ovTarget) }; })
+      .filter(function(x){ return x.stats.trades >= MIN_TRADES_FOR_RANK; });
+
+    var cnt = $('trOvLatestCount');
+    if(cnt){
+      var mLbl = _ovMetric === 'winrate' ? 'Winrate' : 'Net Return';
+      var tLbl = _ovTarget === 'tp1' ? 'TP1' : 'TP2';
+      cnt.textContent = firmsStats.length + ' firm · ' + mLbl + ' × ' + tLbl
+        + ' · min ' + MIN_TRADES_FOR_RANK + ' trade selesai';
+    }
+    if(!firmsStats.length){
+      el.innerHTML = '<div class="tr-ov-latest-empty">Belum ada firm dengan minimal '
+        + MIN_TRADES_FOR_RANK + ' trade selesai untuk target ' + (_ovTarget==='tp1'?'TP1':'TP2') + '.</div>';
+      return;
+    }
+    firmsStats.sort(function(a,b){
+      var av = _ovMetric === 'winrate' ? a.stats.winrate : a.stats.net;
+      var bv = _ovMetric === 'winrate' ? b.stats.winrate : b.stats.net;
+      return bv - av;
+    });
+
+    var rows = firmsStats.map(function(x, i){
+      var f = x.firm, s = x.stats;
+      var primaryVal, primaryCls, secondary;
+      if(_ovMetric === 'winrate'){
+        primaryVal = s.winrate.toFixed(0) + '%';
+        primaryCls = s.winrate >= 55 ? 'up' : (s.winrate >= 45 ? '' : 'dn');
+        secondary = 'Net ' + (s.net>=0?'+':'') + s.net.toFixed(1) + '%';
+      } else {
+        primaryVal = (s.net>=0?'+':'') + s.net.toFixed(1) + '%';
+        primaryCls = s.net >= 0 ? 'up' : 'dn';
+        secondary = 'WR ' + s.winrate.toFixed(0) + '%';
+      }
+      return '<div class="tr-ov-firm-row" data-firm-id="'+esc(f.id||'')+'" title="Buka detail '+esc(f.name||'')+'">'
+        + '<div class="tr-ov-firm-idx">'+(i+1)+'</div>'
+        + '<div class="tr-ov-firm-info">'
+          + '<div class="tr-ov-firm-name">'+esc(firmShortLbl(f.name||'—'))+'</div>'
+          + '<div class="tr-ov-firm-sub">'+s.trades+' trade selesai</div>'
+        + '</div>'
+        + '<div class="tr-ov-firm-secondary">'+secondary+'</div>'
+        + '<div class="tr-ov-firm-primary '+primaryCls+'">'+primaryVal+'</div>'
+      + '</div>';
+    }).join('');
+    el.innerHTML = '<div class="tr-ov-firm-list">' + rows + '</div>';
+  }
+
+  function updateOvLatest(data){
+    if(data) _trOvLatestData = data;
+    var el = $('trOvLatest'); if(!el) return;
+    var filters = $('trOvFirmFilters');
+    if(filters) filters.style.display = _trOvLatestView === 'firms' ? 'flex' : 'none';
+    if(_trOvLatestView === 'firms') renderLatestFirms(el, _trOvLatestData || {});
+    else                             renderLatestRecent(el, _trOvLatestData || {});
   }
 
   // ── Master render ──
@@ -11376,8 +11386,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     try { updateOvTrend(data);        } catch(e) { console.warn('[tracker.overview] Trend:', e && e.message); }
     try { updateOvTopTickers(data);   } catch(e) { console.warn('[tracker.overview] TopTickers:', e && e.message); }
     try { updateOvLatest(data);       } catch(e) { console.warn('[tracker.overview] Latest:', e && e.message); }
-    try { updateOvRankings(data);     } catch(e) { console.warn('[tracker.overview] Rankings:', e && e.message); }
-    // updateLb() dihapus — element #trLb sudah tidak ada di HTML redesign.
+    // updateOvRankings() DIHAPUS — sudah tergabung di view Per Firm dari
+    // updateOvLatest. Filter Basis × Target dipindah ke panel Rekomendasi Terbaru.
   }
 
   // ── Klik kartu firm di papan peringkat lama → switch ke Tab Performa
@@ -11405,11 +11415,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
       // Fallback: tab switch
       if (goto && window.__TR_switchTab) { window.__TR_switchTab(goto); return; }
     }
-    // Klik row ranking (top/bottom) → openFirm ke Tab Analis
-    var rankItem = e.target && e.target.closest && e.target.closest('#tr-view-main .tr-ov-rank-item[data-firm-id]');
-    if (rankItem) {
-      var rfid = rankItem.getAttribute('data-firm-id');
-      if (rfid && window.__TR_openFirm) window.__TR_openFirm(rfid);
+    // Klik row firm ranking (view Per Firm) → openFirm
+    var firmRow = e.target && e.target.closest && e.target.closest('#tr-view-main .tr-ov-firm-row[data-firm-id]');
+    if (firmRow) {
+      var ffid = firmRow.getAttribute('data-firm-id');
+      if (ffid && window.__TR_openFirm) window.__TR_openFirm(ffid);
+      return;
     }
     // Klik row Rekomendasi Terbaru → routing berbeda per action:
     //   data-action="firm"  → openFirm (dari span firm)
@@ -11948,6 +11959,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
                 : st === 'PENDING' ? 'pending'
                 : st === 'MISSED'  ? 'missed'
                 : 'active';
+      // Label yg ditampilkan di badge (mapping ke bahasa Indonesia).
+      var stLbl = st === 'PENDING' ? 'MENUNGGU'
+                : st === 'ACTIVE'  ? 'AKTIF'
+                : st === 'MISSED'  ? 'TERLEWAT'
+                : st === 'EXPIRED' ? 'EXP'
+                : st;
       var p = pnlOf(r);
       var pCls = p==null ? '' : (p > 0 ? 'up' : p < 0 ? 'dn' : '');
       var pTxt = p==null ? '—' : fmtPct(p, 1);
@@ -11966,7 +11983,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         + '<td class="n">' + fmtN(r.tp1) + '</td>'
         + '<td class="n">' + fmtN(r.tp2) + '</td>'
         + '<td class="n">' + fmtN(r.sl) + '</td>'
-        + '<td><span class="st ' + stCls + '">' + st + '</span></td>'
+        + '<td><span class="st ' + stCls + '">' + stLbl + '</span></td>'
         + '<td class="pnl ' + pCls + '" style="text-align:right">' + pTxt + '</td>'
         + '</tr>';
     }).join('');
@@ -13109,7 +13126,14 @@ window._attachCandleTooltip = function(chart, series, container, candles){
 
     var st = statusOfRec(rec);
     var stEl = $('trRecModalStatus');
-    stEl.textContent = st;
+    // Mapping label ke bahasa Indonesia (state internal tetap PENDING/dst
+    // untuk kompatibilitas logic; hanya label yg ditampilkan berubah).
+    var stTxt = st === 'PENDING' ? 'MENUNGGU'
+              : st === 'ACTIVE'  ? 'AKTIF'
+              : st === 'MISSED'  ? 'TERLEWAT'
+              : st === 'EXPIRED' ? 'EXP'
+              : st;
+    stEl.textContent = stTxt;
     stEl.className = 'tr-recmodal-status ' + statusCls(st);
 
     $('trRecModalDate').textContent = 'Rilis: ' + fmtDate(rec.openDate);
@@ -25465,7 +25489,7 @@ document.addEventListener('keydown', (e) => {
       </div>
       <div class="tr-recmodal-hd-r">
         <span class="tr-recmodal-badge buy" id="trRecModalType">BUY</span>
-        <span class="tr-recmodal-status active" id="trRecModalStatus">ACTIVE</span>
+        <span class="tr-recmodal-status active" id="trRecModalStatus">AKTIF</span>
         <span class="tr-recmodal-date" id="trRecModalDate">—</span>
       </div>
     </div>
