@@ -3045,12 +3045,15 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-subtab-btn.active{background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(124,58,237,.24)}
 .tr-subtab-btn .tr-subtab-chip{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(255,255,255,.16);color:#fff;letter-spacing:.3px}
 .tr-subtab-btn:not(.active) .tr-subtab-chip{background:var(--bg3);color:var(--text3)}
-/* Icon di sub-tab menu Tracker disembunyikan di desktop (≥641px) per
-   user request — di HP tetap tampil karena membantu scan tab saat teks
-   dipendekkan. Emoji dibungkus <span class="tr-subtab-ico"> supaya CSS
-   toggle bisa target hanya icon-nya tanpa merusak text/count chip. */
+/* Icon di sub-tab & seluruh judul/section menu Tracker disembunyikan
+   di desktop (≥641px) per user request — di HP tetap tampil karena
+   membantu scan menu saat teks dipendekkan/label sempit.
+   • .tr-subtab-ico → icon di sub-tab bar (5 tab utama)
+   • .tr-ico        → icon inline di card title, panel title, section
+                      label, filter button, dsb (semua elemen menu). */
 @media (min-width: 641px){
-  .tr-subtab-btn .tr-subtab-ico{display:none}
+  #page-tracker .tr-subtab-ico,
+  #page-tracker .tr-ico{display:none}
 }
 @media(max-width:640px){
   .tr-subtabs{margin:0 -2px 12px;border-radius:10px}
@@ -5472,7 +5475,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <div class="tr-card">
     <div class="tr-card-h">
       <div>
-        <div class="tr-card-title">📈 Performa 30 Hari</div>
+        <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
         <div class="tr-card-desc">Return kumulatif semua analis vs IHSG (benchmark pasar)</div>
       </div>
     </div>
@@ -5492,7 +5495,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
        yang terbaik untuk kriteria yang aku mau'. -->
   <div class="tr-ov-highlights">
     <div class="tr-ov-hl-card" data-goto="perf" role="button" tabindex="0" aria-label="Buka tab Performa">
-      <div class="tr-ov-hl-h">📊 Distribusi Hasil</div>
+      <div class="tr-ov-hl-h"><span class="tr-ico" aria-hidden="true">📊</span> Distribusi Hasil</div>
       <div class="tr-ov-hl-body">
         <!-- Donut/pie chart dihapus per user request — cukup stacked bar
              + text legend (TP1/TP2/SL/Expired counts + total). -->
@@ -5510,7 +5513,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
 
     <div class="tr-ov-hl-card" data-goto="live" role="button" tabindex="0" aria-label="Buka tab Live">
-      <div class="tr-ov-hl-h">⚡ Aktivitas 24 Jam</div>
+      <div class="tr-ov-hl-h"><span class="tr-ico" aria-hidden="true">⚡</span> Aktivitas 24 Jam</div>
       <div class="tr-ov-hl-body">
         <div class="tr-ov-act-grid">
           <div class="tr-ov-act-item">
@@ -5536,7 +5539,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
            40-60%) → green (bull 60-100%). Needle rotate berdasarkan bullish%.
            Badge di header ala .ov-card-badge dari Consensus (BULL/BEAR/NEUTRAL). -->
       <div class="tr-ov-hl-h">
-        🌐 Sentimen Analis
+        <span class="tr-ico" aria-hidden="true">🌐</span> Sentimen Analis
         <span class="tr-ov-hl-badge" id="trOvSentBadge">—</span>
       </div>
       <div class="tr-ov-hl-body tr-ov-sent-body">
@@ -5581,14 +5584,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <div class="tr-ov-grid-2">
     <div class="tr-ov-panel">
       <div class="tr-ov-panel-hd">
-        <span class="tr-ov-panel-title">📈 Aktivitas Rekomendasi</span>
+        <span class="tr-ov-panel-title"><span class="tr-ico" aria-hidden="true">📈</span> Aktivitas Rekomendasi</span>
         <span class="tr-ov-panel-sub">12 bulan terakhir</span>
       </div>
       <div class="tr-ov-chart-h180"><canvas id="trOvActTrend"></canvas></div>
     </div>
     <div class="tr-ov-panel">
       <div class="tr-ov-panel-hd">
-        <span class="tr-ov-panel-title">🎯 Saham Paling Aktif</span>
+        <span class="tr-ov-panel-title"><span class="tr-ico" aria-hidden="true">🎯</span> Saham Paling Aktif</span>
         <span class="tr-ov-panel-sub">top 10 · total rec</span>
       </div>
       <div class="tr-ov-chart-h180"><canvas id="trOvTopTickers"></canvas></div>
@@ -5605,7 +5608,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
        bukan hanya 3 teratas/terbawah. -->
   <div class="tr-ov-panel tr-ov-latest-wrap">
     <div class="tr-ov-panel-hd">
-      <span class="tr-ov-panel-title">📋 Rekomendasi Terbaru</span>
+      <span class="tr-ov-panel-title"><span class="tr-ico" aria-hidden="true">📋</span> Rekomendasi Terbaru</span>
       <div class="tr-ov-latest-nav" role="group" aria-label="Pilih tampilan">
         <button type="button" class="tr-ov-latest-btn active" data-view="recent" aria-selected="true">Terbaru</button>
         <button type="button" class="tr-ov-latest-btn" data-view="firms" aria-selected="false">Per Firm</button>
@@ -5615,8 +5618,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-ov-firm-filters" id="trOvFirmFilters" style="display:none">
       <div class="tr-ov-rank-fg" role="tablist" aria-label="Basis peringkat">
         <span class="tr-ov-rank-fg-lbl">Basis</span>
-        <button type="button" class="tr-ov-rank-btn active" data-metric="winrate" role="tab" aria-selected="true">🎯 Winrate</button>
-        <button type="button" class="tr-ov-rank-btn" data-metric="net" role="tab" aria-selected="false">💰 Net Return</button>
+        <button type="button" class="tr-ov-rank-btn active" data-metric="winrate" role="tab" aria-selected="true"><span class="tr-ico" aria-hidden="true">🎯</span> Winrate</button>
+        <button type="button" class="tr-ov-rank-btn" data-metric="net" role="tab" aria-selected="false"><span class="tr-ico" aria-hidden="true">💰</span> Net Return</button>
       </div>
       <div class="tr-ov-rank-fg" role="tablist" aria-label="Target exit">
         <span class="tr-ov-rank-fg-lbl">Target</span>
@@ -5692,7 +5695,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-card tr-anl-chartcard">
       <div class="tr-card-h">
         <div>
-          <div class="tr-card-title">📊 Chart Candlestick (TradingView)</div>
+          <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📊</span> Chart Candlestick (TradingView)</div>
           <div class="tr-card-desc">Chart interaktif TradingView. Klik salah satu baris rekomendasi di bawah untuk lihat peta entry/TP/SL di pop-up.</div>
         </div>
       </div>
@@ -5707,14 +5710,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
              Sentimen Analis DIHAPUS (redundan dgn sentiment factor di
              Opp Score composite). ═══ -->
         <div class="tr-anl-consensus" id="trAnlConsensus">
-          <div class="tr-anl-consensus-hd">🎯 Status Rekomendasi · <b id="trAnlConsN">— rec</b></div>
+          <div class="tr-anl-consensus-hd"><span class="tr-ico" aria-hidden="true">🎯</span> Status Rekomendasi · <b id="trAnlConsN">— rec</b></div>
 
           <!-- 1. OPPORTUNITY SCORE (spedometer) — sekarang di paling atas.
                Gauge di-perkecil (viewBox 200×110), val + level di dalam grid
                kanan supaya tidak menumpuk dgn needle. Klik ⓘ → popup breakdown. -->
           <div class="trAnl-sec" id="trAnlOppSec">
             <div class="trAnl-sec-lbl">
-              <span>⚡ Opportunity Score</span>
+              <span><span class="tr-ico" aria-hidden="true">⚡</span> Opportunity Score</span>
               <button type="button" class="trAnl-opp-info-btn" id="trAnlOppInfoBtn" aria-label="Cara score dihitung" title="Klik untuk penjelasan komposisi score">ⓘ</button>
             </div>
             <div class="trAnl-opp-wrap">
@@ -5773,7 +5776,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
           <!-- 3. POSISI SEKARANG: grid 4 kotak status -->
           <div class="trAnl-sec">
-            <div class="trAnl-sec-lbl">🔴 Posisi Sekarang</div>
+            <div class="trAnl-sec-lbl"><span class="tr-ico" aria-hidden="true">🔴</span> Posisi Sekarang</div>
             <div class="trAnl-pos-grid">
               <div class="trAnl-pos-box active" title="Rekomendasi aktif — sudah masuk zona entry & masih running">
                 <div class="v" id="trAnlPosActive">0</div><div class="l">Aktif</div>
@@ -5806,7 +5809,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-card" style="margin-top:14px">
       <div class="tr-card-h">
         <div>
-          <div class="tr-card-title">📋 Daftar Rekomendasi</div>
+          <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📋</span> Daftar Rekomendasi</div>
           <div class="tr-card-desc">Klik baris untuk overlay entry/TP/SL rec di chart</div>
         </div>
       </div>
@@ -5874,7 +5877,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
            di sebelah % change untuk sinyal 'feed live' — persis seperti
            kolom statistik deskriptif IHSG di dashboard. -->
       <div class="tr-live-terminal-h">
-        <span class="tr-live-terminal-title">⚡ Live Signal Terminal</span>
+        <span class="tr-live-terminal-title"><span class="tr-ico" aria-hidden="true">⚡</span> Live Signal Terminal</span>
         <span class="tr-live-terminal-ihsg" id="trLiveTerminalIhsg" title="Indeks Harga Saham Gabungan (feed live)">
           <span class="tr-live-terminal-ihsg-lbl">IHSG</span>
           <span class="tr-live-terminal-ihsg-px" id="trLiveIhsgPx">—</span>
@@ -5942,7 +5945,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     <!-- Real-time P&L Stream heading + grid -->
     <div class="tr-live-stream-hd">
-      <span>📡 Rekomendasi Aktif · <span class="count" id="trLiveStreamCount">0</span></span>
+      <span><span class="tr-ico" aria-hidden="true">📡</span> Rekomendasi Aktif · <span class="count" id="trLiveStreamCount">0</span></span>
       <span class="float-agg">Total floating <span id="trLiveStreamFloat">—</span></span>
     </div>
     <!-- Toolbar: pilih tanggal + cari saham + list sekuritas (filter). Di-wire via JS. -->
@@ -5959,7 +5962,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div>
       </div>
       <div class="tr-live-firmbar">
-        <span class="tr-live-firmbar-lbl">🏢 Sekuritas</span>
+        <span class="tr-live-firmbar-lbl"><span class="tr-ico" aria-hidden="true">🏢</span> Sekuritas</span>
         <select id="trLiveFirmSelect" class="tr-live-firmselect" aria-label="Pilih sekuritas"></select>
       </div>
     </div>
@@ -5970,7 +5973,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <!-- Market Intelligence -->
     <div class="tr-live-mi-card">
       <div class="tr-live-mi-h">
-        <span>🌐 Sentimen Analis</span>
+        <span><span class="tr-ico" aria-hidden="true">🌐</span> Sentimen Analis</span>
         <span class="tr-live-mi-tag" id="trLiveMiSample">recent 48h</span>
       </div>
       <div class="tr-live-mi-topline">
@@ -5991,7 +5994,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <!-- Watchlist -->
     <div class="tr-live-wl-card">
       <div class="tr-live-wl-h">
-        <span>👀 Watchlist Dipantau</span>
+        <span><span class="tr-ico" aria-hidden="true">👀</span> Watchlist Dipantau</span>
         <span class="count"><span id="trLiveWlCount">0</span> saham</span>
       </div>
       <div class="tr-live-wl-chips" id="trLiveWlChips">
@@ -6050,7 +6053,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     <!-- ═══ HERO: Papan Peringkat Sekuritas ═══ -->
     <div class="tr-perf-firm-hero">
-      <div class="tr-perf-firm-hero-h">🏆 Papan Peringkat Sekuritas</div>
+      <div class="tr-perf-firm-hero-h"><span class="tr-ico" aria-hidden="true">🏆</span> Papan Peringkat Sekuritas</div>
       <div class="tr-perf-firm-hero-title">Kalau ikuti rekomendasi sekuritas ini, hasilnya berapa?</div>
       <div class="tr-perf-firm-hero-desc">
         Bandingkan performa antar sekuritas: winrate, net return, jumlah rekomendasi, plus <b>saldo Rp</b> dari simulasi ikut semua trade (equal-weight compounding).
@@ -6067,7 +6070,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <!-- ═══ TP Hit Distribution ═══ -->
     <div class="tr-perf-card">
       <div class="tr-perf-card-h">
-        🎯 Distribusi Hasil Rekomendasi
+        <span class="tr-ico" aria-hidden="true">🎯</span> Distribusi Hasil Rekomendasi
         <span class="desc">breakdown status rekomendasi selesai</span>
       </div>
       <div class="tr-perf-tp-grid">
@@ -6097,7 +6100,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <!-- ═══ 30-Day Performance Chart ═══ -->
     <div class="tr-perf-card">
       <div class="tr-perf-card-h">
-        📈 Grafik Performa Analis 30 Hari
+        <span class="tr-ico" aria-hidden="true">📈</span> Grafik Performa Analis 30 Hari
         <span class="desc">bar harian (%) + akumulasi (garis)</span>
       </div>
       <div class="tr-perf-chart-audit" id="trPerfChartAudit">
@@ -6121,7 +6124,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
          equal-weight per slot dari config Rp di atas. ═══ -->
     <div class="tr-perf-card">
       <div class="tr-perf-card-h">
-        📅 Rekap Bulanan Analis
+        <span class="tr-ico" aria-hidden="true">📅</span> Rekap Bulanan Analis
         <span class="desc">performa per bulan · saldo Rp end-of-month</span>
       </div>
       <div class="tr-sim-monthly-wrap">
@@ -6153,7 +6156,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <!-- ═══ Safety Net RR ═══ -->
     <div class="tr-perf-card">
       <div class="tr-perf-card-h">
-        🛡️ Jaring Pengaman (Safety Net RR)
+        <span class="tr-ico" aria-hidden="true">🛡️</span> Jaring Pengaman (Safety Net RR)
         <span class="desc">seberapa sering target tersentuh + ekspektansi R</span>
       </div>
       <div class="tr-perf-table-wrap">
@@ -6181,7 +6184,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
          (bukan dihapus) supaya renderer JS tidak error null. ═══ -->
     <div class="tr-perf-card" style="display:none">
       <div class="tr-perf-card-h">
-        📊 Performa per Skor Validitas
+        <span class="tr-ico" aria-hidden="true">📊</span> Performa per Skor Validitas
         <span class="desc">rekomendasi berkualitas tinggi vs rendah</span>
       </div>
       <div class="tr-perf-table-wrap">
@@ -6308,7 +6311,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-pf-seg-head">
             <div class="tr-pf-seg-label">🎛 Mode Eksekusi <span class="tr-pf-seg-active-lbl" id="trPfSegActiveLbl">Beli di Entry → TP1</span></div>
             <div class="tr-pf-cal-anchor">
-              <button type="button" class="tr-pf-datebtn" id="trPfDateBtn" aria-haspopup="dialog" aria-controls="trPfCalPopup" aria-expanded="false" title="Filter tanggal rekomendasi">📅 <span id="trPfDateBtnLbl">Semua Tanggal</span> <span class="arr">▾</span></button>
+              <button type="button" class="tr-pf-datebtn" id="trPfDateBtn" aria-haspopup="dialog" aria-controls="trPfCalPopup" aria-expanded="false" title="Filter tanggal rekomendasi"><span class="tr-ico" aria-hidden="true">📅</span> <span id="trPfDateBtnLbl">Semua Tanggal</span> <span class="arr">▾</span></button>
               <div class="tr-pf-cal-popup" id="trPfCalPopup" role="dialog" aria-modal="false" hidden>
                 <div class="cal-head">
                   <div class="cal-title" id="trPfCalTitle">—</div>
@@ -6323,7 +6326,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
                   <div class="cal-legend"><span><span class="dot"></span>ada rekomendasi</span></div>
                   <div class="cal-range-info" id="trPfCalRangeInfo">Klik tgl awal, lalu tgl akhir untuk pilih rentang</div>
                   <div class="cal-actions">
-                    <button type="button" class="cal-reset" id="trPfCalReset" title="Tampilkan semua rekomendasi (reset filter tgl)">🌐 All</button>
+                    <button type="button" class="cal-reset" id="trPfCalReset" title="Tampilkan semua rekomendasi (reset filter tgl)"><span class="tr-ico" aria-hidden="true">🌐</span> All</button>
                     <button type="button" class="cal-ok" id="trPfCalOk" title="Terapkan rentang tgl yg dipilih" disabled>OK</button>
                   </div>
                 </div>
@@ -6339,7 +6342,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
                   <span class="tr-pf-seg-info" data-mode-info="entry" role="button" tabindex="0" aria-label="Keterangan Beli di Entry" title="Keterangan Metode Entry ini">ⓘ</span>
                 </button>
                 <button type="button" class="tr-pf-seg-btn" data-entry-mode="haka" role="tab" aria-selected="false">
-                  <span>⚡ Beli HAKA (Open)</span>
+                  <span><span class="tr-ico" aria-hidden="true">⚡</span> Beli HAKA (Open)</span>
                   <span class="tr-pf-seg-info" data-mode-info="haka" role="button" tabindex="0" aria-label="Keterangan Beli HAKA" title="Keterangan Metode Entry ini">ⓘ</span>
                 </button>
               </div>
@@ -6351,11 +6354,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
               <div class="tr-pf-seg-group-lbl">Target Exit</div>
               <div class="tr-pf-seg" id="trPfSegExit" role="tablist" aria-label="Target Exit">
                 <button type="button" class="tr-pf-seg-btn active" data-exit-mode="tp1" role="tab" aria-selected="true">
-                  <span>🎯 TP1</span>
+                  <span><span class="tr-ico" aria-hidden="true">🎯</span> TP1</span>
                   <span class="tr-pf-seg-info" data-mode-info="tp1" role="button" tabindex="0" aria-label="Keterangan Target TP1" title="Keterangan Target Exit ini">ⓘ</span>
                 </button>
                 <button type="button" class="tr-pf-seg-btn" data-exit-mode="tp2" role="tab" aria-selected="false">
-                  <span>🏆 TP2</span>
+                  <span><span class="tr-ico" aria-hidden="true">🏆</span> TP2</span>
                   <span class="tr-pf-seg-info" data-mode-info="tp2" role="button" tabindex="0" aria-label="Keterangan Target TP2" title="Keterangan Target Exit ini">ⓘ</span>
                 </button>
               </div>
@@ -6370,7 +6373,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-card" style="margin-top:14px">
             <div class="tr-card-h">
               <div>
-                <div class="tr-card-title">📈 Grafik Performa Analis 30 Hari</div>
+                <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Grafik Performa Analis 30 Hari</div>
                 <div class="tr-card-desc">P/L harian per exitDate + garis kumulatif — ikut mode eksekusi di atas.</div>
               </div>
             </div>
@@ -6404,7 +6407,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="tr-rec-list slim" id="trPfRecList"></div>
 
         <div class="tr-disclaimer">
-          Semua P/L dihitung dari harga penutupan resmi. <b>📍 Beli di Entry</b> (<b>default</b>) hanya menghitung rekomendasi di mana harga benar-benar menyentuh zona entry — paling konsisten dgn desain analis. <b>⚡ Beli HAKA</b> adalah simulasi <b>opsional/edukasi</b> yang mengasumsikan eksekusi di open pada hari rilis — akurasi <b>bukan 100%</b> karena harga open sering gap dari harga rekomendasi (klik ⓘ di tombol HAKA untuk detail). <b>Beli Saat TP1 / TP2</b> mengasumsikan pembeli baru masuk saat target tercapai — hanya untuk rekomendasi yang benar-benar menyentuh entry & TP terkait; jika tak tersentuh, fallback ke P/L Entry murni.
+          Semua P/L dihitung dari harga penutupan resmi. <b>📍 Beli di Entry</b> (<b>default</b>) hanya menghitung rekomendasi di mana harga benar-benar menyentuh zona entry — paling konsisten dgn desain analis. <b><span class="tr-ico" aria-hidden="true">⚡</span> Beli HAKA</b> adalah simulasi <b>opsional/edukasi</b> yang mengasumsikan eksekusi di open pada hari rilis — akurasi <b>bukan 100%</b> karena harga open sering gap dari harga rekomendasi (klik ⓘ di tombol HAKA untuk detail). <b>Beli Saat TP1 / TP2</b> mengasumsikan pembeli baru masuk saat target tercapai — hanya untuk rekomendasi yang benar-benar menyentuh entry & TP terkait; jika tak tersentuh, fallback ke P/L Entry murni.
         </div>
 
         <!-- Popup keterangan mode eksekusi (dibuka via ikon ⓘ di tiap seg-btn) -->
@@ -6472,7 +6475,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   </div>
 
   <div class="tr-p-verify" id="trPVerify">
-    <div class="tr-p-verify-h">🛡️ Status Verifikasi Sertifikasi</div>
+    <div class="tr-p-verify-h"><span class="tr-ico" aria-hidden="true">🛡️</span> Status Verifikasi Sertifikasi</div>
     <div class="tr-p-verify-g">
       <div><div class="k">JENIS SERTIFIKASI</div><div class="v" id="trPVCert">—</div></div>
       <div><div class="k">AFILIASI</div><div class="v" id="trPVFirm">—</div></div>
