@@ -2645,18 +2645,19 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-daychart-empty{text-align:center;padding:70px 12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
 
 /* 2 chart card di detail firm (Grafik Performa 30 Hari + Return Kumulatif)
-   sejajar berdampingan mulai layar ≥1100px (PC). Di bawah itu stack vertikal
-   biar tetap enak dibaca ketika sidebar + detail bagi ruang sempit.
-   Kedua card DISAMARATAKAN tinggi via align-items:stretch (default) +
-   chart-wrap height sama + card display:flex column agar area chart
-   flex-fill (kalau card kanan lebih tinggi karena legend, area chart
-   tetap sejajar). */
+   sejajar berdampingan mulai layar ≥1100px (PC). Di bawah itu stack vertikal.
+   FIX: sebelumnya `align-items:stretch` (default grid) + `flex:1` di
+   chart-wrap bikin canvas melar ikut card tertinggi — kalau card kanan
+   punya note/legend panjang, chart kiri bisa 400-500px tinggi (tampak
+   memanjang ke bawah, candle jadi giant). Sekarang: align-items:start
+   supaya tiap card berukuran natural, dan chart-wrap punya tinggi
+   TETAP 280px — visual konsisten & compact. */
 .tr-pf-charts-row{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
 @media(min-width:1100px){
-  .tr-pf-charts-row{grid-template-columns:1fr 1fr}
-  .tr-pf-charts-row > .tr-card{margin-top:0 !important;display:flex;flex-direction:column}
+  .tr-pf-charts-row{grid-template-columns:1fr 1fr;align-items:start}
+  .tr-pf-charts-row > .tr-card{margin-top:0 !important}
   .tr-pf-charts-row .tr-pf-daychart-wrap,
-  .tr-pf-charts-row .tr-chart-wrap{height:auto !important;flex:1;min-height:260px}
+  .tr-pf-charts-row .tr-chart-wrap{height:280px !important}
 }
 
 /* Wrap mode selector — dipindah dari dalam card Return Kumulatif ke ATAS 2
@@ -2906,11 +2907,15 @@ body.tr-profile-open #tr-view-profile{display:block}
 /* Badge "✓ VERIF" / "✓ TERVERIFIKASI" di semua tempat menu Tracker
    di-sembunyikan (permintaan user). Data verified saat ini tidak akurat
    karena hasil merge firm gabungan (mis. RHB dpt verified dari 1 rec
-   dgn cert non-kosong, padahal firm-nya belum tentu verified). */
+   dgn cert non-kosong, padahal firm-nya belum tentu verified).
+   `.tr-anlz-vb` = badge ✓ di tabel Direktori Analis (Ringkasan) &
+   list sekuritas tab Analis — sebelumnya belum masuk hide list,
+   sehingga masih muncul di Sucor/Ajaib/RHB. */
 .tr-p-vbadge,
 .tr-lb-ver,
 .tr-live-card-verif,
-.tr-perf-firm-verified{display:none !important}
+.tr-perf-firm-verified,
+.tr-anlz-vb{display:none !important}
 /* Sektor pill di dropdown pencarian saham (tab Analisis) — juga
    disembunyikan agar konsisten dgn permintaan. Screener (menu lain)
    tak terpengaruh karena pakai .pl-search-item / .scr-sector. */
@@ -3690,10 +3695,10 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-recmodal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .tr-recmodal-body{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  /* Ramping-in popup: 920 → 780px supaya kolom chart tidak jadi
-     terlalu landscape (aspect ~5:1). Dgn 780px + chart height clamp
-     baru, aspect chart jadi ~2:1 → candle terbaca. */
-  width:min(780px, calc(100vw - 24px));
+  /* Ramping-in popup: 920 → 780 → 680px agar candle chart tampak lebih
+     dominan (aspect chart ~1.9:1 dgn min-height 340). Level cards masih
+     fit 4 kolom (min 115px × 4 + gap = ~465px, muat di ~644px content). */
+  width:min(680px, calc(100vw - 24px));
   max-height:calc(100vh - 40px);
   background:var(--card);border:1px solid var(--border);
   border-radius:16px;padding:16px 18px 14px;
@@ -8179,11 +8184,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(!name) return '';
     var s = String(name).trim().toUpperCase();
     s = s.replace(/^PT\s+/, '');
-    s = s.replace(/[.,]/g, ' ');
+    s = s.replace(/[.,&]/g, ' ');           // strip . , &
     s = s.replace(/\s+TBK$/, '');
-    s = s.replace(/\s+SEKURITAS(\s+INDONESIA)?$/, '');
+    s = s.replace(/\s+(SEKURITAS|SECURITIES)(\s+INDONESIA)?$/, '');
     s = s.replace(/\s+INDONESIA$/, '');
-    return s.replace(/\s+/g, ' ').trim();
+    s = s.replace(/\s+(SEKURITAS|SECURITIES)$/, '');  // strip trailing lagi kalau tersisa
+    s = s.replace(/\s+AND$/, '');            // "KOREA INVESTMENT AND" → "KOREA INVESTMENT"
+    s = s.replace(/\s+/g, ' ').trim();
+    // Alias map untuk kasus di mana normalisasi otomatis tidak cukup
+    // (akronim yang jauh dari nama lengkap). Tambahkan di sini kalau
+    // ada firm lain yang ke-split di Sheet dgn nama akronim.
+    var ALIASES = {
+      'KISI': 'KOREA INVESTMENT'  // "KISI Sekuritas" = "Korea Investment And Sekuritas Indonesia"
+    };
+    if (ALIASES[s]) s = ALIASES[s];
+    return s;
   }
   function _canonicalFirmDisplay(name){
     if(!name) return '';
