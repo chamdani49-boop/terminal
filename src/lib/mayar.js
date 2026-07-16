@@ -48,15 +48,7 @@ async function lookupInvoicePlan(env, ids) {
 function planDays(env, plan) {
   if (plan === 'tahunan') return parseInt(env.PLAN_DAYS_TAHUNAN || '365', 10);
   if (plan === '3bulan') return parseInt(env.PLAN_DAYS_3BULAN || '90', 10);
-  if (plan === '1bulan') return parseInt(env.PLAN_DAYS_1BULAN || '30', 10);
   return parseInt(env.PLAN_DAYS_6BULAN || '182', 10);
-}
-
-// Map plan -> scope default (level akses saat aktivasi otomatis via Mayar).
-// Paket '1bulan' = paket Tracker-only (Rp 149rb). Paket lain = full access.
-// Admin bisa override scope per-user via /api/admin/users/extend {scope}.
-function planScope(plan) {
-  return plan === '1bulan' ? 'tracker' : 'full';
 }
 
 // Base URL API headless Mayar. Bisa di-override lewat env (mis. untuk sandbox).
@@ -113,7 +105,7 @@ async function createMayarInvoice(env, { plan, amount, planName, email, name, re
 // ── CHECKOUT: buat tagihan Mayar (atau fallback link statis) lalu arahkan user ──
 export async function checkout(request, env, url) {
   const plan = url.searchParams.get('plan');
-  if (!['1bulan', '3bulan', '6bulan', 'tahunan'].includes(plan)) return json({ error: 'Paket tidak valid' }, 400);
+  if (!['3bulan', '6bulan', 'tahunan'].includes(plan)) return json({ error: 'Paket tidak valid' }, 400);
 
   // Mode debug: tambahkan ?debug=1 di URL untuk melihat error invoice yang sebenarnya
   // (kalau tidak, invoice gagal akan diam-diam jatuh ke link statis).
@@ -182,8 +174,7 @@ export async function checkout(request, env, url) {
   if (!link) {
     link = plan === 'tahunan' ? env.MAYAR_LINK_TAHUNAN
       : plan === '3bulan' ? env.MAYAR_LINK_3BULAN
-        : plan === '1bulan' ? env.MAYAR_LINK_1BULAN
-          : env.MAYAR_LINK_6BULAN;
+        : env.MAYAR_LINK_6BULAN;
   }
   if (!link) {
     return json({ error: 'Pembayaran belum dikonfigurasi untuk paket ini.' }, 503);
@@ -249,18 +240,13 @@ async function detectTerminalPlan(env, { productId, amount, invoiceIds }) {
     if (env.MAYAR_PRODUCT_TAHUNAN && productId == env.MAYAR_PRODUCT_TAHUNAN) return 'tahunan';
     if (env.MAYAR_PRODUCT_6BULAN && productId == env.MAYAR_PRODUCT_6BULAN) return '6bulan';
     if (env.MAYAR_PRODUCT_3BULAN && productId == env.MAYAR_PRODUCT_3BULAN) return '3bulan';
-    if (env.MAYAR_PRODUCT_1BULAN && productId == env.MAYAR_PRODUCT_1BULAN) return '1bulan';
   }
   // 2) Jaring pengaman: cocokkan NOMINAL dgn harga paket terminal [0.9x..1.5x].
   const amt = parseInt(amount, 10) || 0;
   if (amt > 0) {
     try {
       const cfg = await getBillingConfig(env);
-      // Urutan penting: cek plan yg lebih besar dulu (tahunan > 6b > 3b > 1b).
-      // Kalau 1bulan (Rp 149rb) di depan, rentang 0.9x..1.5x = 134rb-224rb bisa
-      // salah tangkap pembayaran 3bulan (Rp 699rb) — tapi karena bounding sudah
-      // ketat, keempat harga terpisah cukup jauh (149/699/997/1750). Aman.
-      for (const k of ['tahunan', '6bulan', '3bulan', '1bulan']) {
+      for (const k of ['tahunan', '6bulan', '3bulan']) {
         const price = (cfg.plans[k] && cfg.plans[k].priceReal) || 0;
         if (price > 0 && amt >= Math.round(price * 0.9) && amt <= Math.round(price * 1.5)) return k;
       }
@@ -352,7 +338,7 @@ export async function webhook(request, env, ctx) {
   if (txnId && (await txnAlreadyProcessed(env, txnId))) return json({ ok: true, duplicate: true });
 
   const user = await ensureUser(env, email);
-  await activateSubscription(env, user.id, plan, planDays(env, plan), 'mayar', txnId, planScope(plan));
+  await activateSubscription(env, user.id, plan, planDays(env, plan), 'mayar', txnId);
 
   return json({ ok: true, activated: { email, plan } });
 }

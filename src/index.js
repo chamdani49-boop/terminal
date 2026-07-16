@@ -20,22 +20,8 @@ import { getBillingConfig, publicBilling } from './lib/billing.js';
 import { rateLimit, reportAbuse, trackDevice } from './lib/abuse.js';
 import { TOS_VERSION, hasAcceptedCurrent, saveConsent } from './lib/legal.js';
 
-// Path yang butuh langganan aktif saat gating menyala.
-// /tracker.json → butuh scope IN ('tracker','full')
-// Path lain     → butuh scope='full'
-const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/valuation/', '/ohlc.json', '/macro.json', '/insights.json', '/headlines.json', '/dashboard', '/tracker.json'];
-
-// Path yang bisa diakses user scope='tracker'. Whitelist minimal supaya
-// halaman Tracker tetap fungsional:
-//   /dashboard    → HTML SPA (index.html) — user butuh utk masuk aplikasi
-//                   sama sekali; setelah masuk, JS di client akan
-//                   force-showPage('tracker') dan hide tab lain.
-//   /data.json    → dipakai Tracker utk mapping kode → nama saham & series
-//                   IHSG di chart perbandingan (bukan cuma dashboard).
-//   /tracker.json → data utama Tracker (obvious).
-// Sisanya di PROTECTED_PREFIXES (valuation, ohlc, macro, insights,
-// headlines) → BLOCKED untuk tracker-only. Kalau butuh, upgrade ke full.
-const TRACKER_SCOPE_ALLOWED = ['/dashboard', '/data.json', '/tracker.json'];
+// Path yang butuh langganan aktif saat gating menyala
+const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/valuation/', '/ohlc.json', '/macro.json', '/insights.json', '/headlines.json', '/dashboard'];
 
 function assetFor(env, url, pathname, request) {
   const u = new URL(url.toString());
@@ -111,33 +97,14 @@ async function guardProtected(request, env, ctx, path) {
 
   // 1) Langganan aktif?
   let allowed = isAdmin;
-  let sub = null;
   if (session && !isAdmin) {
-    try {
-      sub = await getActiveSubscription(env, session.uid);
-      allowed = !!sub;
-    } catch { allowed = false; }
+    try { allowed = !!(await getActiveSubscription(env, session.uid)); }
+    catch { allowed = false; }
   }
   if (!allowed) {
     const accept = request.headers.get('Accept') || '';
     if (accept.includes('text/html')) return redirect('/billing', 302);
     return json({ error: 'Langganan tidak aktif' }, 402);
-  }
-
-  // 1b) Scope check — user scope='tracker' HANYA boleh path tertentu.
-  //     Admin skip (super access). Path yg tidak diperbolehkan → 402 + hint
-  //     'upgrade_required' supaya client bisa tampilkan CTA upgrade.
-  if (sub && sub.scope === 'tracker') {
-    const allowedForTracker = TRACKER_SCOPE_ALLOWED.some((p) => path === p || path.startsWith(p));
-    if (!allowedForTracker) {
-      const accept = request.headers.get('Accept') || '';
-      if (accept.includes('text/html')) return redirect('/billing?upgrade=1', 302);
-      return json({
-        error: 'Paket kamu (Tracker) tidak termasuk fitur ini. Upgrade ke paket full.',
-        upgrade_required: true,
-        current_scope: 'tracker',
-      }, 402);
-    }
   }
 
   // 2) Rate limit — hanya user non-admin & hanya endpoint DATA (.json) yang
@@ -212,9 +179,7 @@ async function handleApi(request, env, url, ctx) {
     if (!isAdminUser) {
       try {
         const s = await getActiveSubscription(env, session.uid);
-        // scope: 'full' (default) | 'tracker'. Dipakai client-side utk
-        // gate menu (hide tab non-tracker kalau scope='tracker').
-        if (s) sub = { plan: s.plan, status: s.status, expires_at: s.expires_at, active: s.expires_at > now(), scope: s.scope || 'full' };
+        if (s) sub = { plan: s.plan, status: s.status, expires_at: s.expires_at, active: s.expires_at > now() };
       } catch { /* D1 belum siap */ }
     }
     let tosAccepted = true;
