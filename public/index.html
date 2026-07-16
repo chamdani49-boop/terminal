@@ -2667,11 +2667,34 @@ body.tr-profile-open #tr-view-profile{display:block}
      benefit-nya lebih besar (kedua card + section di bawah sejajar
      kolom-nya). */
 .tr-pf-charts-row{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
+/* Compact styling utk 2 chart card di Analis — user request "perkecil agar
+   minimalis". Padding rapat, font heading turun 1 tier, chart height 220px
+   (was 280). Apply di SEMUA size supaya konsisten. */
+.tr-pf-charts-row > .tr-card{padding:13px 15px}
+.tr-pf-charts-row .tr-card-title{font-size:13px;line-height:1.2}
+.tr-pf-charts-row .tr-card-desc{font-size:10.5px;line-height:1.35;margin-top:2px}
+.tr-pf-charts-row .tr-card-h{margin-bottom:8px;gap:6px}
+.tr-pf-charts-row .tr-legend{font-size:10.5px;margin-top:8px;gap:10px}
 @media(min-width:1100px){
   .tr-pf-charts-row{grid-template-columns:1fr 1fr}
   .tr-pf-charts-row > .tr-card{margin-top:0 !important}
   .tr-pf-charts-row .tr-pf-daychart-wrap,
-  .tr-pf-charts-row .tr-chart-wrap{height:280px !important}
+  .tr-pf-charts-row .tr-chart-wrap{height:220px !important}
+}
+/* Mobile ≤640: paksa 2-kolom sejajar (bukan stack) sesuai user preference.
+   Chart height dikompres 150px + desc di-hide + font legend kecil supaya
+   dua card muat di layar HP tanpa overflow. */
+@media(max-width:640px){
+  .tr-pf-charts-row{grid-template-columns:1fr 1fr;gap:8px}
+  .tr-pf-charts-row > .tr-card{padding:10px 10px;margin-top:0 !important}
+  .tr-pf-charts-row .tr-card-title{font-size:11.5px;line-height:1.2}
+  .tr-pf-charts-row .tr-card-desc{display:none}
+  .tr-pf-charts-row .tr-card-h{margin-bottom:6px}
+  .tr-pf-charts-row .tr-pf-daychart-wrap,
+  .tr-pf-charts-row .tr-chart-wrap{height:150px !important;padding:5px 3px !important}
+  .tr-pf-charts-row .tr-legend{font-size:9px;gap:6px;margin-top:5px}
+  .tr-pf-charts-row .tr-lg-dot{width:8px;margin-right:3px}
+  #trPfCumFirmLbl{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
 }
 
 /* Wrap mode selector — dipindah dari dalam card Return Kumulatif ke ATAS 2
@@ -2810,6 +2833,17 @@ body.tr-profile-open #tr-view-profile{display:block}
 @media(max-width:900px){.tr-mdet{grid-template-columns:1fr;gap:12px}}
 .tr-mdet-side{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;position:sticky;top:12px;max-height:calc(100vh - 40px);min-height:400px}
 @media(max-width:900px){.tr-mdet-side{position:static;max-height:none}}
+/* Mobile ≤640: sisakan kolom pencarian saja (sesuai user preference).
+   Header "Sekuritas" + count di-hide; list `#trMdetList` juga hidden by
+   default. List muncul saat user fokus di search input atau input berisi.
+   Toggle class `.show-list` di-set JS di sub-tab shell IIFE. */
+@media(max-width:640px){
+  .tr-mdet-side{padding:10px 11px;gap:0;min-height:auto}
+  .tr-mdet-side .tr-mdet-head{display:none}
+  .tr-mdet-side .tr-mdet-list{display:none}
+  .tr-mdet-side.show-list{gap:10px}
+  .tr-mdet-side.show-list .tr-mdet-list{display:flex;max-height:60vh}
+}
 .tr-mdet-head{display:flex;justify-content:space-between;align-items:center}
 .tr-mdet-title{font-weight:800;font-size:13px;letter-spacing:-.2px}
 .tr-mdet-count{font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:var(--text3);background:var(--bg2);border:1px solid var(--border);padding:2px 7px;border-radius:6px;font-weight:700}
@@ -5830,7 +5864,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <div class="tr-chart-wrap" style="margin-top:10px"><canvas id="trPfCumChart"></canvas></div>
             <div class="tr-legend">
               <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Sekuritas</span></span>
-              <span><span class="tr-lg-dot" style="background:var(--text3)"></span>IHSG</span>
+              <span><span class="tr-lg-dot" style="background:var(--red)"></span>IHSG</span>
             </div>
           </div>
         </div><!-- /tr-pf-charts-row -->
@@ -6661,7 +6695,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       type:'line',
       data:{ labels:labels, datasets:[
         { label: firmShort(firm.name)+' · '+comboLabel(), data: firmVals, borderColor:c.accent, backgroundColor:c.accentBg, fill:'+1', tension:0.28, pointRadius:0, borderWidth:2.5 },
-        { label:'IHSG', data: ihsgVals, borderColor:c.text3, backgroundColor:'transparent', fill:false, tension:0.28, pointRadius:0, borderWidth:2, borderDash:[4,3] }
+        { label:'IHSG', data: ihsgVals, borderColor:c.red, backgroundColor:'transparent', fill:false, tension:0.28, pointRadius:0, borderWidth:2, borderDash:[4,3] }
       ]},
       options:{
         responsive:true, maintainAspectRatio:false, animation:false,
@@ -8644,6 +8678,44 @@ body.is-mobile-device.force-desktop .pl-col-main{
   });
   document.addEventListener('change', function(e){
     if (e.target && e.target.id === 'trLiveFirmSelect') _updateFirmbarVisibility();
+  });
+
+  // ─── MOBILE SIDEBAR SEKURITAS (tab Analis) — search-focus toggle ─
+  // Sama pola dgn firmbar Live: di HP `.tr-mdet-list` hidden by default,
+  // muncul saat user focus di search input `#trMdetSearch` atau input
+  // berisi. Saat user klik salah satu firm di list → auto-collapse.
+  function _updateMdetListVisibility(){
+    var side = document.querySelector('.tr-mdet-side');
+    var input = document.getElementById('trMdetSearch');
+    if (!side || !input) return;
+    var hasSearch = input.value.trim().length > 0;
+    var focused   = document.activeElement === input;
+    side.classList.toggle('show-list', !!(hasSearch || focused));
+  }
+  document.addEventListener('focusin', function(e){
+    if (e.target && e.target.id === 'trMdetSearch') _updateMdetListVisibility();
+  });
+  document.addEventListener('focusout', function(e){
+    if (e.target && e.target.id === 'trMdetSearch') {
+      // Delay supaya klik item firm di list (yang lagi visible) sempat
+      // trigger openFirm sebelum list collapse.
+      setTimeout(_updateMdetListVisibility, 250);
+    }
+  });
+  document.addEventListener('input', function(e){
+    if (e.target && e.target.id === 'trMdetSearch') _updateMdetListVisibility();
+  });
+  // Klik item firm → collapse list + clear search input untuk fresh state
+  // di next search. openFirm handler existing sudah handle switch panel.
+  document.addEventListener('click', function(e){
+    var item = e.target && e.target.closest && e.target.closest('#trMdetList .tr-mdet-item');
+    if (!item) return;
+    setTimeout(function(){
+      var side = document.querySelector('.tr-mdet-side');
+      var input = document.getElementById('trMdetSearch');
+      if (side) side.classList.remove('show-list');
+      if (input) input.value = '';
+    }, 120);
   });
 })();
 </script>
