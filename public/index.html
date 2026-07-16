@@ -3979,34 +3979,10 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 }
 .tr-ov-hl-card:hover .tr-ov-hl-foot{opacity:1}
 
-/* Distribusi Hasil — outcome donut + stacked bar.
-   Donut mengadopsi pola Overview Consensus, tetapi seluruh selector diberi
-   prefix tr-ov agar tidak mengubah visual halaman Consensus. */
+/* Distribusi Hasil — stacked bar + text legend saja.
+   Donut/pie chart DIHAPUS per user request; visualisasi cukup lewat bar
+   proporsional (TP1/TP2/SL/Expired) + baris teks count/total. */
 .tr-ov-dist-content{display:flex;flex-direction:column;gap:10px;width:100%}
-.tr-ov-outcome-body{display:flex;align-items:center;gap:12px;min-width:0}
-.tr-ov-outcome-donut-wrap{position:relative;width:88px;height:88px;flex:0 0 88px}
-.tr-ov-outcome-donut-wrap canvas{display:block;width:100% !important;height:100% !important}
-.tr-ov-outcome-center{
-  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;pointer-events:none;text-align:center;gap:2px
-}
-.tr-ov-outcome-center .v{
-  font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:800;
-  color:var(--text);line-height:1;font-variant-numeric:tabular-nums
-}
-.tr-ov-outcome-center .k{
-  font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;
-  color:var(--text3);letter-spacing:.5px;text-transform:uppercase;line-height:1.2
-}
-.tr-ov-outcome-legend{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
-.tr-ov-outcome-row{
-  display:grid;grid-template-columns:7px minmax(0,1fr) auto auto;gap:6px;align-items:center;
-  font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;color:var(--text2)
-}
-.tr-ov-outcome-dot{width:7px;height:7px;border-radius:50%}
-.tr-ov-outcome-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tr-ov-outcome-count{color:var(--text);font-variant-numeric:tabular-nums}
-.tr-ov-outcome-pct{color:var(--text3);font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
 .tr-ov-dist-bar{
   display:flex;height:24px;border-radius:7px;overflow:hidden;
   background:var(--bg2);border:1px solid var(--border)
@@ -4019,11 +3995,6 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 .tr-ov-dist-lgd{
   font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);
   letter-spacing:.2px;line-height:1.4
-}
-@media(max-width:640px){
-  .tr-ov-outcome-donut-wrap{width:80px;height:80px;flex-basis:80px}
-  .tr-ov-outcome-center .v{font-size:18px}
-  .tr-ov-outcome-row{font-size:9px}
 }
 
 /* Aktivitas 24 Jam — 3 stat mini */
@@ -4160,6 +4131,21 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   display:flex;flex-direction:column;
   max-height:420px;overflow-y:auto
 }
+/* Header kolom di atas list — pakai grid yg identik dgn row supaya
+   labelnya duduk tepat di atas datanya. */
+.tr-ov-latest-head{
+  display:grid;
+  grid-template-columns:82px 62px minmax(0,1fr) 68px 74px 64px;
+  align-items:center;gap:10px;
+  padding:8px 6px;margin-bottom:2px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg2);border-radius:6px 6px 0 0;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:800;
+  color:var(--text3);letter-spacing:.5px;text-transform:uppercase
+}
+.tr-ov-latest-head > *{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-ov-latest-head .h-target,.tr-ov-latest-head .h-pnl{text-align:right}
+.tr-ov-latest-head .h-status{text-align:center}
 .tr-ov-latest-row{
   display:grid;
   grid-template-columns:82px 62px minmax(0,1fr) 68px 74px 64px;
@@ -4291,6 +4277,9 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   .tr-ov-panel-title{font-size:12.5px}
   .tr-ov-panel-sub{font-size:9px}
   .tr-ov-chart-h180{height:150px}
+  /* Header kolom di-hide di HP — baris feed sudah dilabeli implicit
+     lewat layout 2 baris (tanggal + status di baris bawah, tick + firm di atas). */
+  .tr-ov-latest-head{display:none}
   /* Feed di HP: 2 baris (kompak) — tick+firm+pnl di baris 1, date+target+status di baris 2 */
   .tr-ov-latest-row{
     grid-template-columns:auto minmax(0,1fr) auto;
@@ -5466,15 +5455,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-ov-hl-card" data-goto="perf" role="button" tabindex="0" aria-label="Buka tab Performa">
       <div class="tr-ov-hl-h">📊 Distribusi Hasil</div>
       <div class="tr-ov-hl-body">
+        <!-- Donut/pie chart dihapus per user request — cukup stacked bar
+             + text legend (TP1/TP2/SL/Expired counts + total). -->
         <div class="tr-ov-dist-content">
-          <!-- Outcome donut mengadopsi pola Consensus Overview; sumbernya murni tracker.json. -->
-          <div class="tr-ov-outcome-body">
-            <div class="tr-ov-outcome-donut-wrap">
-              <canvas id="trOvOutcomeDonut" aria-label="Distribusi hasil rekomendasi"></canvas>
-              <div class="tr-ov-outcome-center" id="trOvOutcomeCenter"></div>
-            </div>
-            <div class="tr-ov-outcome-legend" id="trOvOutcomeLegend">Menunggu data…</div>
-          </div>
           <div class="tr-ov-dist-bar" id="trOvDistBar" title="TP1 · TP2 · SL · Expired">
             <div class="tr-ov-dist-seg tp1" style="width:0%"></div>
             <div class="tr-ov-dist-seg tp2" style="width:0%"></div>
@@ -10788,49 +10771,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // updateOvBestFirm() DIHAPUS — card "Sekuritas Terbaik" di-remove
   // dari HTML karena redundant dgn Ranking + Filter di section bawah.
 
-  // Outcome donut instance untuk Tracker Overview. Dipisahkan dari chart
-  // Consensus supaya destroy/re-render di sini tidak pernah menyentuh halaman lain.
-  var _trOvOutcomeDonut = null;
-
+  // Distribusi Hasil — stacked bar + text legend saja. Donut/pie chart
+  // dihapus per user request; visual cukup lewat proporsi bar + count text.
   function updateOvDistribution(data){
     var tp1 = (data.tpCounts&&+data.tpCounts.TP1)||0;
     var tp2 = (data.tpCounts&&+data.tpCounts.TP2)||0;
     var sl  = +data.slCount||0;
     var exp = (data.closedByCounts&&+data.closedByCounts.EXPIRED)||0;
     var total = tp1+tp2+sl+exp;
-    var outcomes = [
-      { label:'TP1',     value:tp1, color:'#10b981' },
-      { label:'TP2',     value:tp2, color:'#059669' },
-      { label:'SL',      value:sl,  color:'#e11d48' },
-      { label:'Expired', value:exp, color:'#d97706' }
-    ];
+    var segments = [tp1, tp2, sl, exp];
+    var pct = function(v){ return total ? (v/total*100) : 0; };
     var lgd = $('trOvDistLgd');
     var bar = $('trOvDistBar');
-    var center = $('trOvOutcomeCenter');
-    var donutLegend = $('trOvOutcomeLegend');
-    var donutCanvas = $('trOvOutcomeDonut');
-    var pct = function(value){ return total ? (value / total * 100) : 0; };
 
     if(bar){
       var segs = bar.querySelectorAll('.tr-ov-dist-seg');
-      for(var s=0; s<segs.length && s<outcomes.length; s++){
-        segs[s].style.width = pct(outcomes[s].value) + '%';
+      for(var s=0; s<segs.length && s<segments.length; s++){
+        segs[s].style.width = pct(segments[s]) + '%';
       }
-    }
-    if(center){
-      center.innerHTML = '<span class="v">' + total + '</span><span class="k">hasil selesai</span>';
-    }
-    if(donutLegend){
-      donutLegend.innerHTML = total
-        ? outcomes.map(function(item){
-            return '<div class="tr-ov-outcome-row">'
-              + '<span class="tr-ov-outcome-dot" style="background:' + item.color + '"></span>'
-              + '<span class="tr-ov-outcome-name">' + item.label + '</span>'
-              + '<span class="tr-ov-outcome-count">' + item.value + '</span>'
-              + '<span class="tr-ov-outcome-pct">' + pct(item.value).toFixed(0) + '%</span>'
-              + '</div>';
-          }).join('')
-        : '<div class="tr-ov-outcome-row" style="display:block;color:var(--text3)">Belum ada trade selesai</div>';
     }
     if(lgd){
       lgd.innerHTML = total
@@ -10840,44 +10798,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
           + '<span style="color:var(--yellow)">'+exp+' EXP</span> <span style="opacity:.6">('+total+' total)</span>'
         : 'Belum ada trade selesai';
     }
-
-    if(!donutCanvas || typeof Chart === 'undefined') return;
-    if(_trOvOutcomeDonut){
-      try { _trOvOutcomeDonut.destroy(); } catch(_) {}
-      _trOvOutcomeDonut = null;
-    }
-    var css = getComputedStyle(document.documentElement);
-    var card = css.getPropertyValue('--card').trim() || '#ffffff';
-    var border = css.getPropertyValue('--border').trim() || '#d4ccf0';
-    var text = css.getPropertyValue('--text').trim() || '#1a0f3c';
-    var text2 = css.getPropertyValue('--text2').trim() || '#6e6490';
-    _trOvOutcomeDonut = new Chart(donutCanvas, {
-      type:'doughnut',
-      data:{
-        labels: total ? outcomes.map(function(item){ return item.label; }) : ['Belum ada hasil'],
-        datasets:[{
-          data: total ? outcomes.map(function(item){ return item.value; }) : [1],
-          backgroundColor: total ? outcomes.map(function(item){ return item.color; }) : [border],
-          borderColor: card,
-          borderWidth: 2,
-          hoverOffset: total ? 4 : 0
-        }]
-      },
-      options:{
-        responsive:true,maintainAspectRatio:false,cutout:'68%',
-        plugins:{
-          legend:{display:false},
-          tooltip:{
-            enabled:total>0,backgroundColor:card,titleColor:text,bodyColor:text2,
-            borderColor:border,borderWidth:1,padding:9,cornerRadius:8,
-            callbacks:{label:function(item){
-              var value = item.raw || 0;
-              return ' ' + item.label + ': ' + value + ' (' + pct(value).toFixed(1) + '%)';
-            }}
-          }
-        }
-      }
-    });
   }
 
   function updateOvActivity(data){
@@ -11102,32 +11022,91 @@ body.is-mobile-device.force-desktop .pl-col-main{
     updateOvLatest();
   });
 
-  // ── Adopsi Consensus Overview: Aktivitas 12 Bulan (line chart) ───────
-  // Aggregate semua rec (open+history+pending+missed) by openDate.slice(0,7)
-  // → jumlah rec/bulan. Bar 12 bulan terakhir relatif tanggal terbaru di data.
+  // ── Adopsi Consensus Overview: Aktivitas Rekomendasi (line chart) ────
+  // Chart mengikuti tanggal ASLI dari kolom L (openDate) di sheet Tracker —
+  // BUKAN rolling window 12 bulan dari updatedAt. Cara pikirnya: kumpulkan
+  // semua openDate, cari min & max, lalu bikin timeline dari sana:
+  //   · span > 60 hari  → bin per bulan (label "Bln 'YY")
+  //   · span ≤ 60 hari  → bin per hari  (label "DD/MM")
+  // Ini menghindari 11 bulan kosong yg dipadding cuma karena updatedAt.
   var _trOvActTrend = null;
   function updateOvTrend(data){
     var canvas = $('trOvActTrend'); if (!canvas || typeof Chart === 'undefined') return;
-    var buckets = {};
+
+    // 1) Kumpulkan semua tanggal dari kolom L (via openDate) — 4 bucket sumber.
+    var allDates = [];
     var addDate = function(dstr){
       if(!dstr) return;
-      var ym = String(dstr).slice(0,7); if(ym.length !== 7) return;
-      buckets[ym] = (buckets[ym]||0) + 1;
+      var s = String(dstr).slice(0,10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return;
+      allDates.push(s);
     };
     (data.openList||[]).forEach(function(r){ addDate(r.openDate); });
     (data.historyList||[]).forEach(function(r){ addDate(r.openDate); });
     (data.pendingList||[]).forEach(function(r){ addDate(r.openDate); });
     (data.missedList||[]).forEach(function(r){ addDate(r.openDate); });
 
-    var refDate = data.updatedAt ? new Date(data.updatedAt) : new Date();
-    if(isNaN(refDate.getTime())) refDate = new Date();
+    // 2) Kalau kosong → render empty state.
+    if(!allDates.length){
+      if(_trOvActTrend){ try{ _trOvActTrend.destroy(); }catch(_){} _trOvActTrend = null; }
+      var ctxE = canvas.getContext('2d');
+      if(ctxE){
+        ctxE.clearRect(0,0,canvas.width,canvas.height);
+        var css2 = getComputedStyle(document.documentElement);
+        ctxE.fillStyle = css2.getPropertyValue('--text3').trim() || '#a49cc0';
+        ctxE.font = '12px "IBM Plex Mono", monospace';
+        ctxE.textAlign = 'center';
+        ctxE.fillText('Belum ada rekomendasi', canvas.width/2, canvas.height/2);
+      }
+      return;
+    }
+
+    // 3) Tentukan mode binning berdasar span tanggal min→max.
+    allDates.sort();
+    var minStr = allDates[0], maxStr = allDates[allDates.length-1];
+    var minD = new Date(minStr + 'T00:00:00Z');
+    var maxD = new Date(maxStr + 'T00:00:00Z');
+    var spanDays = Math.round((maxD.getTime() - minD.getTime()) / 86400000);
     var monthShort = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
     var labels = [], series = [];
-    for(var i=11; i>=0; i--){
-      var d = new Date(refDate.getFullYear(), refDate.getMonth()-i, 1);
-      var ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-      labels.push(monthShort[d.getMonth()] + ' ' + String(d.getFullYear()).slice(-2));
-      series.push(buckets[ym] || 0);
+
+    if(spanDays > 60){
+      // ─── Mode BULANAN: dari bulan min→max, agregasi per YYYY-MM ───
+      var buckets = {};
+      allDates.forEach(function(s){ var k = s.slice(0,7); buckets[k] = (buckets[k]||0)+1; });
+      var y = minD.getUTCFullYear(), m = minD.getUTCMonth();
+      var endY = maxD.getUTCFullYear(), endM = maxD.getUTCMonth();
+      while(y < endY || (y === endY && m <= endM)){
+        var ym = y + '-' + String(m+1).padStart(2,'0');
+        labels.push(monthShort[m] + " '" + String(y).slice(-2));
+        series.push(buckets[ym] || 0);
+        m++; if(m > 11){ m = 0; y++; }
+      }
+    } else {
+      // ─── Mode HARIAN: dari tanggal min→max, agregasi per YYYY-MM-DD ───
+      var dBuckets = {};
+      allDates.forEach(function(s){ dBuckets[s] = (dBuckets[s]||0)+1; });
+      var cur = new Date(minD.getTime());
+      while(cur.getTime() <= maxD.getTime()){
+        var iso = cur.getUTCFullYear() + '-' + String(cur.getUTCMonth()+1).padStart(2,'0') + '-' + String(cur.getUTCDate()).padStart(2,'0');
+        labels.push(String(cur.getUTCDate()).padStart(2,'0') + '/' + String(cur.getUTCMonth()+1).padStart(2,'0'));
+        series.push(dBuckets[iso] || 0);
+        cur.setUTCDate(cur.getUTCDate() + 1);
+      }
+    }
+
+    // Update sub-label panel: kasih tahu user range aktual dari kolom L
+    var subEl = document.querySelector('#tr-view-main .tr-ov-panel .tr-ov-panel-sub');
+    // Cari yang benar berdasar posisi — sub pertama di grid-2 adalah trend.
+    var trendPanel = canvas.closest('.tr-ov-panel');
+    var trendSub = trendPanel ? trendPanel.querySelector('.tr-ov-panel-sub') : null;
+    if(trendSub){
+      var isDaily = (spanDays <= 60);
+      var fmtRange = function(iso){
+        var p = iso.split('-'); return p[2] + ' ' + monthShort[+p[1]-1] + " '" + p[0].slice(-2);
+      };
+      trendSub.textContent = (isDaily ? 'harian' : 'bulanan') + ' · '
+        + fmtRange(minStr) + ' → ' + fmtRange(maxStr);
     }
 
     if(_trOvActTrend){ try{ _trOvActTrend.destroy(); }catch(_){} _trOvActTrend = null; }
@@ -11138,6 +11117,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var text3 = css.getPropertyValue('--text3').trim() || '#a49cc0';
     var card = css.getPropertyValue('--card').trim() || '#ffffff';
 
+    // Auto-limit ticks di sumbu X berdasarkan panjang label — biar tidak
+    // over-crowded saat mode harian (60 hari) atau bulanan long-span.
+    var maxTicks = labels.length > 30 ? 8 : (labels.length > 12 ? 10 : 12);
+
     _trOvActTrend = new Chart(canvas, {
       type:'line',
       data:{
@@ -11145,7 +11128,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         datasets:[{
           label:'Rec', data: series,
           borderColor: accent, borderWidth: 2.5,
-          pointRadius: 3.5, pointHoverRadius: 5,
+          pointRadius: labels.length > 30 ? 0 : 3.5, pointHoverRadius: 5,
           pointBackgroundColor: accent, pointBorderColor:'#fff', pointBorderWidth: 1.5,
           tension:.35, fill:true,
           backgroundColor: function(ctx){
@@ -11167,7 +11150,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           }
         },
         scales:{
-          x:{grid:{display:false}, ticks:{color: text3, font:{size:10}, maxRotation:0}},
+          x:{grid:{display:false}, ticks:{color: text3, font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit: maxTicks}},
           y:{grid:{color: border}, ticks:{color: text3, font:{size:10}, precision:0}, min:0}
         }
       }
@@ -11311,7 +11294,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
         + '<span class="tr-ov-latest-pnl '+pcls+'">'+pstr+'</span>'
       + '</div>';
     }).join('');
-    el.innerHTML = '<div class="tr-ov-latest-list">' + rows + '</div>';
+    // Header kolom + list feed dalam satu container. Header pakai grid
+    // yg identik dgn row → label tepat di atas datanya.
+    var header = '<div class="tr-ov-latest-head" role="row">'
+      + '<span>Tanggal</span>'
+      + '<span>Kode</span>'
+      + '<span>Sekuritas</span>'
+      + '<span class="h-status">Status</span>'
+      + '<span class="h-target">Target</span>'
+      + '<span class="h-pnl">P&amp;L</span>'
+      + '</div>';
+    el.innerHTML = header + '<div class="tr-ov-latest-list">' + rows + '</div>';
   }
 
   // View: Per Firm — ranking semua firm (min sample 5) sort desc by metric
