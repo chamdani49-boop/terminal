@@ -376,8 +376,11 @@ function renderFormPage(env, submitToken) {
   const title = escapeHtml(env.APP_TITLE || 'Input Rekomendasi Tracker');
 
   // Prompt untuk Gemini/ChatGPT. Hasilnya ditempel apa adanya ke kotak data.
+  // Aturan 6 khusus mencegah AI menulis "Entry:", "TP:", "SL:", dst. di dalam
+  // kolom Catatan — kalau muncul di sana, parser (LABELS_RE) akan salah pecah
+  // record. Ganti pakai istilah Indonesia ("Area Masuk", "Target", dst).
   const aiPromptText = [
-    'Kamu adalah asisten ekstraksi data. Baca screenshot rekomendasi saham (IDX) yang aku lampirkan, lalu tulis ULANG datanya PERSIS memakai format label di bawah — satu field per baris, tanpa kalimat pembuka/penutup, tanpa markdown. Jika sebuah data tidak ada di gambar, biarkan KOSONG setelah titik dua. Jika ada beberapa saham, ulangi blok ini untuk tiap saham dan pisahkan dengan satu baris kosong.',
+    'Kamu adalah asisten ekstraksi data. Baca screenshot rekomendasi saham (IDX) yang aku lampirkan, lalu tulis ULANG datanya PERSIS memakai format label di bawah — satu field per baris, tanpa kalimat pembuka/penutup, tanpa markdown tebal/miring pada label. Jika sebuah data tidak ada di gambar, biarkan KOSONG setelah titik dua. Jika ada beberapa saham, ulangi blok ini untuk tiap saham dan pisahkan dengan satu baris kosong.',
     '',
     'Analis:',
     'Firm:',
@@ -392,7 +395,13 @@ function renderFormPage(env, submitToken) {
     'Horizon:',
     'Catatan:',
     '',
-    'Aturan angka: tulis angka polos tanpa pemisah ribuan (contoh 9500, bukan 9.500). Pakai titik untuk desimal (contoh 1.08). Tipe: tulis BUY atau SELL saja.'
+    'ATURAN EKSTRAKSI & ANGKA (WAJIB DIIKUTI):',
+    ' 1. Format Angka: Tulis angka polos tanpa pemisah ribuan (contoh 9500, bukan 9.500). Pakai titik untuk desimal. Hapus semua simbol seperti <, >, atau >= pada isian data Entry, TP1, TP2, dan SL.',
+    ' 2. Tipe: Hanya tulis BUY atau SELL.',
+    ' 3. Entry: Jika gambar memberikan rentang harga (range) untuk area beli, ekstrak angka yang PALING RENDAH (terbawah) saja. Jika tidak ada keterangan "Entry" atau "Area Beli", gunakan Harga Terakhir (Closing Price/Last Price/Current Price) yang tertera sebagai Entry.',
+    ' 4. TP1 & TP2: Jika ada dua target harga (atau dua angka resistance yang dijadikan target), pisahkan masing-masing ke TP1 dan TP2.',
+    ' 5. Catatan (Notes): Masukkan teks keterangan tambahan atau analisa dari gambar. Anda juga WAJIB menulis ulang strategi aslinya di sini (contoh: "Strategi asli - Area Masuk: 100-110, Target: 120-130").',
+    ' 6. KATA TERLARANG DI CATATAN (ANTI-ERROR PARSER): Di dalam baris "Catatan", Anda dilarang keras menuliskan kata bahasa Inggris/istilah asli seperti "Entry", "Target Price", "TP", "Stop Loss", "SL", atau "Cutloss". Ganti istilah tersebut menjadi "Area Masuk", "Target", "Batas Rugi", atau "Harga Terakhir" agar tidak bertabrakan dengan label data utama.'
   ].join('\n');
 
   // String.raw WAJIB: agar backslash pada skrip inline (\n, regex, dst) tidak
