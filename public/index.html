@@ -7034,16 +7034,39 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // untuk BOTH:
     //   - single day (_calPending.start set, _calPending.end null)  → OK
     //   - range     (_calPending.start & _calPending.end set)       → OK
-    // User melaporkan OK 'gak bisa' saat range dipilih; visual/klik-ability
-    // dijelaskan lebih baik via class .active-ok (styling gradient + animasi
-    // subtle di CSS) supaya user langsung sadar OK ready to click.
     var canApply = !!(_calPending && _calPending.start);
+    // Explicit set BOTH property + attribute utk memastikan browser
+    // sinkron. `ok.disabled = false` seharusnya cukup, tapi kalau ada
+    // race dgn CSS transitions/attribute mutation observer, ini paksa.
     ok.disabled = !canApply;
+    if(canApply){
+      ok.removeAttribute('disabled');
+      ok.style.pointerEvents = 'auto';
+    } else {
+      ok.setAttribute('disabled', '');
+      ok.style.pointerEvents = 'none';
+    }
     ok.classList.toggle('active-ok', canApply);
-    // Defensive: kalau _calPending punya .end (range mode), pastikan
-    // pointer-events aktif — sometimes CSS transitions/animations
-    // menyebabkan momentary non-clickable state.
-    ok.style.pointerEvents = canApply ? 'auto' : 'none';
+
+    // ─── DIRECT CLICK LISTENER (bypass delegator) ───
+    // User melaporkan bug: pilih rentang tgl → OK tampak enabled (green
+    // gradient active-ok) TAPI klik tidak respon. Delegator di document
+    // level (step 7 `t.closest('#trPfCalOk')`) SEHARUSNYA fire, tapi
+    // ada kemungkinan race dgn renderCalendar re-render / propagation
+    // quirk / DOM re-attachment yg bikin delegator skip. Fix: bind
+    // listener LANGSUNG ke button (idempotent via _okDirectBound flag).
+    // Direct listener fires SEBELUM delegator karena event bubble mulai
+    // dari target. Double-fire aman: applyCalRange guard `!_calPending`
+    // → return early di run kedua.
+    if(!ok._okDirectBound){
+      ok._okDirectBound = true;
+      ok.addEventListener('click', function(ev){
+        if(ok.disabled) return;
+        ev.preventDefault();
+        try { applyCalRange(); }
+        catch(err){ try { console && console.warn && console.warn('[applyCalRange]', err); } catch(_){} }
+      });
+    }
   }
   function updateCalRangeInfo(){
     var info = $id('trPfCalRangeInfo'); if(!info) return;
@@ -7081,15 +7104,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   function applyCalRange(){
+    // Defensive: wrap dalam try/catch supaya kalau ada error di rerenderAll
+    // (mis. chart canvas issue), popup TETAP close & filter TETAP applied.
+    // Sebelumnya kalau rerenderAll throw, popup bisa jadi stuck open dan
+    // user berpikir "OK tidak bekerja".
     if(!_calPending || !_calPending.start) return;
     var s = _calPending.start;
     var e = _calPending.end || _calPending.start; // single day fallback
-    _dateFilter = { start: s, end: e };
-    _calPending = null;
-    updateDateBtnLabel();
-    closeCalPopup();
-    // Rerender semua — rec list, KPI, kedua chart, mode stats
-    rerenderAll();
+    try {
+      _dateFilter = { start: s, end: e };
+      _calPending = null;
+      updateDateBtnLabel();
+      closeCalPopup();
+    } catch(err){
+      try { console && console.warn && console.warn('[applyCalRange] state:', err); } catch(_){}
+    }
+    // Rerender di block terpisah — kalau error, popup sudah tertutup.
+    try { rerenderAll(); }
+    catch(err){ try { console && console.warn && console.warn('[applyCalRange] rerender:', err); } catch(_){} }
   }
 
   function resetCalFilter(){
