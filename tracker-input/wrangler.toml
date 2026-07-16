@@ -44,6 +44,16 @@ account_id = "1b2515ab92c6d6c1c776a9ab160f1dec"
 # Judul yang tampil di halaman (kosmetik).
 APP_TITLE = "Input Rekomendasi Tracker"
 
+# ── Override prompt AI (opsional) ─────────────────────────────────────
+# Prompt yang di-copy user di halaman input punya DEFAULT hard-coded di
+# `src/index.js` (konstanta `DEFAULT_AI_PROMPT`). Bila ingin mengubah prompt
+# TANPA deploy ulang, tambahkan variable `AI_PROMPT` (type Text, multi-line
+# boleh) di Cloudflare dashboard:
+#     Workers & Pages → tracker-input → Settings → Variables → Add variable
+# Jangan taruh di file ini karena teks-nya panjang & sering diedit — dashboard
+# lebih praktis. Kalau variable dihapus/kosong → otomatis balik ke default.
+# AI_PROMPT = "…set via dashboard, bukan di sini…"
+
 # ── Rahasia (JANGAN ditaruh di file ini) — set lewat CLI ──
 #   npx wrangler secret put APP_PASSWORD
 #   npx wrangler secret put GAS_URL

@@ -83,6 +83,29 @@ Dibuat otomatis oleh GAS (`setup()` / submit pertama). Kolom:
 
 ---
 
+## Edit prompt AI tanpa redeploy
+
+Prompt yang di-copy user di Langkah 1 punya **default hard-coded** di
+`src/index.js` (konstanta `DEFAULT_AI_PROMPT`). Kalau ingin mengubah prompt
+**runtime tanpa perlu commit / deploy**, cukup set env var `AI_PROMPT` di
+dashboard Cloudflare:
+
+1. Cloudflare dashboard → **Workers & Pages** → `tracker-input` → **Settings** → **Variables**.
+2. **Add variable** → Name: `AI_PROMPT` → Type: **Text** (multi-line boleh) →
+   tempel prompt baru → **Save and deploy**.
+3. Efektif dalam 1–2 detik. Refresh halaman input → prompt sudah baru.
+
+Kalau variable dihapus atau isinya kosong/whitespace → halaman otomatis balik
+ke `DEFAULT_AI_PROMPT` (safety net; halaman tidak akan pernah kosong).
+
+> **Peringatan**: kalau kamu ubah/tambah **label** (mis. rename "Saham" jadi
+> "Ticker", atau tambah label baru), kamu juga harus update `LABELS_RE` di
+> parser server (`parseRecords`) dan parser klien (`clientParse`) — kalau tidak,
+> field baru tidak akan ke-parse. Kalau cuma ubah kalimat instruksi / aturan
+> angka / urutan label yang sudah ada, cukup edit di dashboard.
+
+---
+
 ## Cara pasang GAS (sekali saja)
 
 1. Buat **Google Sheet baru** khusus tracker (mis. "Tracker DB").
