@@ -11261,7 +11261,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── Adopsi Consensus Overview: Saham Paling Aktif (h-bar chart) ─────
   // Aggregate ticker frequency dari semua rec sources → top 10. Klik bar
-  // → __TR_openStock (drawer siapa yg rekomendasi ticker itu). Kalender
+  // → __TR_openAnalisis (buka tab Analisis dgn ticker itu). Kalender
   // filter di header panel bisa membatasi rentang tanggal.
   var _trOvTopTickers = null;
   // State kalender filter tanggal — dipakai bersama updateOvTopTickers &
@@ -11356,9 +11356,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
           y:{grid:{display:false}, ticks:{color: text2, font:{size:11, weight:'700'}}}
         },
         onClick: function(_, els){
-          if(els[0] && window.__TR_openStock){
-            var it = arr[els[0].index]; if(it && it.ticker) window.__TR_openStock(it.ticker);
-          }
+          if(!els[0]) return;
+          var it = arr[els[0].index]; if(!it || !it.ticker) return;
+          // Prefer __TR_openAnalisis (langsung ke tab Analisis) — lebih
+          // informatif dari drawer popup. Fallback ke openStock kalau
+          // exports belum ready.
+          if(window.__TR_openAnalisis) window.__TR_openAnalisis(it.ticker);
+          else if(window.__TR_openStock) window.__TR_openStock(it.ticker);
         }
       }
     });
@@ -11877,15 +11881,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     // Klik row Rekomendasi Terbaru → routing berbeda per action:
     //   data-action="firm"  → openFirm (dari span firm)
-    //   data-action="stock" → openStock drawer (dari span ticker)
-    //   klik area kosong    → default openStock drawer
+    //   data-action="stock" → langsung buka tab Analisis dgn ticker itu
+    //   klik area kosong    → default → tab Analisis
+    // Sebelumnya klik ticker buka drawer popup (__TR_openStock); user minta
+    // langsung ke halaman Analisis untuk pengalaman drilldown yg lebih dalam.
     var feedRow = e.target && e.target.closest && e.target.closest('#tr-view-main .tr-ov-latest-row');
     if (feedRow) {
       var action = e.target.getAttribute && e.target.getAttribute('data-action');
       var ticker = feedRow.getAttribute('data-ticker');
       var firmId = feedRow.getAttribute('data-firm-id');
       if (action === 'firm' && firmId && window.__TR_openFirm) { window.__TR_openFirm(firmId); return; }
-      if (ticker && window.__TR_openStock) { window.__TR_openStock(ticker); }
+      if (ticker && window.__TR_openAnalisis) { window.__TR_openAnalisis(ticker); return; }
+      if (ticker && window.__TR_openStock) { window.__TR_openStock(ticker); } // fallback lama
     }
   });
   // Enter/Space di card highlight (aksesibilitas keyboard)
@@ -12878,6 +12885,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
     renderTvChart(ticker);
     try { localStorage.setItem('tr_anl_ticker', ticker); } catch(_){}
   }
+
+  // Expose: buka halaman Analisis dgn ticker tertentu. Dipakai dari Overview
+  // (klik ticker di Rekomendasi Terbaru / Saham Paling Aktif) supaya user
+  // langsung dibawa ke chart + peta rekomendasi saham itu — bukan drawer popup.
+  window.__TR_openAnalisis = function(ticker){
+    var t = String(ticker || '').toUpperCase();
+    if (!t) return;
+    // Switch tab dulu supaya elemen Analisis visible (Chart.js perlu dimensi).
+    if (typeof window.__TR_switchTab === 'function') window.__TR_switchTab('analisis');
+    // Data mungkin belum ready → kalau aggregate belum di-build, tunggu sebentar.
+    var tryPick = function(retriesLeft){
+      if (_recsByTicker[t]) { switchTicker(t); return; }
+      if (retriesLeft > 0) setTimeout(function(){ tryPick(retriesLeft - 1); }, 120);
+    };
+    // Delay awal biar tab-switch selesai animasi & scroll settle.
+    setTimeout(function(){ tryPick(20); }, 50);
+  };
 
   // ── Entry point: dipanggil saat tracker.json siap ────────────────
   function renderAnalisis(data){
