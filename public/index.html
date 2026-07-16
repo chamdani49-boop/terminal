@@ -18200,15 +18200,15 @@ function ptSigmaTriggers(code) {
 
 function renderChart(code) {
   let stockData = getStockData(code);
-  const phFull = DATA.price_history || [];
+  const ph = DATA.price_history || [];
 
-  // AS-OF date mode: kalau user pilih tgl di blueprint (localStorage
-  // 'econ-pt-dateidx-{code}'), truncate price_history sampai tgl itu supaya
-  // chart PRICE LINE juga ikut berubah — bukan cuma garis BELI/JUAL.
-  const lsDateIdx = localStorage.getItem(`econ-pt-dateidx-${code}`);
-  const asOfIdx = (lsDateIdx != null && Number.isFinite(+lsDateIdx) && +lsDateIdx >= 0 && +lsDateIdx < phFull.length)
-    ? +lsDateIdx : phFull.length - 1;
-  const ph = (asOfIdx < phFull.length - 1) ? phFull.slice(0, asOfIdx + 1) : phFull;
+  // CATATAN: chart price line SELALU pakai full history sampai bulan
+  // terbaru — TIDAK dipengaruhi "Tgl Rujukan" di Price Target Blueprint.
+  // Yang ikut berubah saat user ganti Tgl Rujukan hanyalah garis batas
+  // BELI/JUAL (horizontal) yang di-recompute lewat ptSigmaTriggers()
+  // dari stats as-of tgl rujukan. Chart price line tetap = view historis
+  // penuh supaya user bisa membandingkan posisi garis BELI/JUAL terhadap
+  // grafik saham secara utuh.
 
   // Get IHSG data aligned with period
   let months = currentPeriod > 0 ? currentPeriod : ph.length;
@@ -18725,8 +18725,11 @@ function renderPriceTarget(code) {
 }
 
 // Handler dropdown "Tgl Rujukan" di Price Target Blueprint.
-// Simpan idx di localStorage lalu full re-render (harga + BELI/JUAL zone +
-// chart lines semua ikut recompute berdasar as-of date).
+// Simpan idx di localStorage lalu re-render blueprint & chart:
+//   - Blueprint: harga rujukan + BELI/JUAL zone recompute dari stats as-of.
+//   - Chart:     price line TIDAK berubah (tetap full history sampai bulan
+//                terbaru). Yang berubah hanya garis horizontal BELI/JUAL
+//                yang di-recompute lewat ptSigmaTriggers().
 // Panggilan: updatePtDate(code) dari <select> onchange, atau
 // updatePtDate(code, idx) utk force set idx (mis. reset ke latest).
 function updatePtDate(code, forceIdx) {
@@ -18746,9 +18749,9 @@ function updatePtDate(code, forceIdx) {
   } else {
     localStorage.setItem(`econ-pt-dateidx-${code}`, String(idx));
   }
-  // Full re-render: blueprint (harga + BELI/JUAL) + chart (price line
-  // truncated ke as-of + BELI/JUAL lines shifted). Sekarang chart IKUT
-  // berubah, sama seperti saat user ubah angka σ Batas Beli/Jual.
+  // Re-render blueprint (harga + BELI/JUAL zone) & chart (hanya garis
+  // BELI/JUAL yg bergeser, price line tetap). Sama seperti saat user
+  // ubah angka σ Batas Beli/Jual.
   renderPriceTarget(code);
   if (typeof renderChart === 'function') renderChart(code);
 }
