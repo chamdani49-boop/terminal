@@ -372,28 +372,52 @@ ${STYLE}
 </body></html>`;
 }
 
+// Prompt default yang di-copy user di halaman input untuk ditempel ke Gemini/
+// ChatGPT. BISA DI-OVERRIDE saat runtime via env var `AI_PROMPT` (Cloudflare
+// dashboard → Workers & Pages → tracker-input → Settings → Variables → Text
+// [multi-line]). Kalau env var kosong / tidak di-set → pakai default ini
+// (safety net supaya halaman selalu jalan).
+//
+// Aturan #6 (KATA TERLARANG DI CATATAN) penting untuk parser: mencegah AI
+// menulis "Entry:", "TP:", "SL:" dll di dalam Catatan — kalau muncul di sana,
+// LABELS_RE akan salah pecah record. Kalau kamu ubah prompt via dashboard,
+// PERTAHANKAN aturan yg mencegah AI memakai kata label sbg text bebas.
+const DEFAULT_AI_PROMPT = [
+  'Kamu adalah asisten ekstraksi data. Baca screenshot rekomendasi saham (IDX) yang aku lampirkan, lalu tulis ULANG datanya PERSIS memakai format label di bawah — satu field per baris, tanpa kalimat pembuka/penutup, tanpa markdown tebal/miring pada label. Jika sebuah data tidak ada di gambar, biarkan KOSONG setelah titik dua. Jika ada beberapa saham, ulangi blok ini untuk tiap saham dan pisahkan dengan satu baris kosong.',
+  '',
+  'Analis:',
+  'Firm:',
+  'Sertifikasi:',
+  'Tanggal:',
+  'Tipe:',
+  'Saham:',
+  'Entry:',
+  'TP1:',
+  'TP2:',
+  'SL:',
+  'Horizon:',
+  'Catatan:',
+  '',
+  'ATURAN EKSTRAKSI & ANGKA (WAJIB DIIKUTI):',
+  ' 1. Format Angka: Tulis angka polos tanpa pemisah ribuan (contoh 9500, bukan 9.500). Pakai titik untuk desimal. Hapus semua simbol seperti <, >, atau >= pada isian data Entry, TP1, TP2, dan SL.',
+  ' 2. Tipe: Hanya tulis BUY atau SELL.',
+  ' 3. Entry: Jika gambar memberikan rentang harga (range) untuk area beli, ekstrak angka yang PALING RENDAH (terbawah) saja. Jika tidak ada keterangan "Entry" atau "Area Beli", gunakan Harga Terakhir (Closing Price/Last Price/Current Price) yang tertera sebagai Entry.',
+  ' 4. TP1 & TP2: Jika ada dua target harga (atau dua angka resistance yang dijadikan target), pisahkan masing-masing ke TP1 dan TP2.',
+  ' 5. Catatan (Notes): Masukkan teks keterangan tambahan atau analisa dari gambar. Anda juga WAJIB menulis ulang strategi aslinya di sini (contoh: "Strategi asli - Area Masuk: 100-110, Target: 120-130").',
+  ' 6. KATA TERLARANG DI CATATAN (ANTI-ERROR PARSER): Di dalam baris "Catatan", Anda dilarang keras menuliskan kata bahasa Inggris/istilah asli seperti "Entry", "Target Price", "TP", "Stop Loss", "SL", atau "Cutloss". Ganti istilah tersebut menjadi "Area Masuk", "Target", "Batas Rugi", atau "Harga Terakhir" agar tidak bertabrakan dengan label data utama.'
+].join('\n');
+
+// Pilih prompt aktif: env.AI_PROMPT bila di-set & non-kosong, kalau tidak
+// fallback ke DEFAULT_AI_PROMPT. Trim untuk menolak nilai yang isinya cuma
+// whitespace (mis. kebetulan spasi kosong dari copy-paste dashboard).
+function resolveAiPrompt(env) {
+  const override = env && env.AI_PROMPT != null ? String(env.AI_PROMPT) : '';
+  return override.trim() ? override : DEFAULT_AI_PROMPT;
+}
+
 function renderFormPage(env, submitToken) {
   const title = escapeHtml(env.APP_TITLE || 'Input Rekomendasi Tracker');
-
-  // Prompt untuk Gemini/ChatGPT. Hasilnya ditempel apa adanya ke kotak data.
-  const aiPromptText = [
-    'Kamu adalah asisten ekstraksi data. Baca screenshot rekomendasi saham (IDX) yang aku lampirkan, lalu tulis ULANG datanya PERSIS memakai format label di bawah — satu field per baris, tanpa kalimat pembuka/penutup, tanpa markdown. Jika sebuah data tidak ada di gambar, biarkan KOSONG setelah titik dua. Jika ada beberapa saham, ulangi blok ini untuk tiap saham dan pisahkan dengan satu baris kosong.',
-    '',
-    'Analis:',
-    'Firm:',
-    'Sertifikasi:',
-    'Tanggal:',
-    'Tipe:',
-    'Saham:',
-    'Entry:',
-    'TP1:',
-    'TP2:',
-    'SL:',
-    'Horizon:',
-    'Catatan:',
-    '',
-    'Aturan angka: tulis angka polos tanpa pemisah ribuan (contoh 9500, bukan 9.500). Pakai titik untuk desimal (contoh 1.08). Tipe: tulis BUY atau SELL saja.'
-  ].join('\n');
+  const aiPromptText = resolveAiPrompt(env);
 
   // String.raw WAJIB: agar backslash pada skrip inline (\n, regex, dst) tidak
   // dimakan template literal — kalau dimakan, JS ke browser rusak & tombol mati.
