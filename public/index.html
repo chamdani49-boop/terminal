@@ -4212,12 +4212,21 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 .tr-ov-panel{
   background:var(--card);border:1px solid var(--border);border-radius:12px;
   padding:14px 16px;display:flex;flex-direction:column;gap:10px;
-  position:relative;overflow:hidden
+  position:relative
+  /* overflow:visible (default) — dulu overflow:hidden supaya aksen bar
+     ::before ikut ter-clip radius sudut atas, tapi itu bikin popup
+     kalender .tr-pf-cal-popup di panel "Saham Paling Aktif" ke-clip
+     saat baris tanggal terakhir keluar batas panel. Sekarang ::before
+     dikasih border-radius:12px 12px 0 0 sendiri untuk rounded top,
+     jadi tidak butuh overflow:hidden lagi di parent. */
 }
-/* Aksen bar tipis di atas panel — konsisten dgn .tr-ov-hl-card. */
+/* Aksen bar tipis di atas panel — konsisten dgn .tr-ov-hl-card.
+   border-radius:12px 12px 0 0 supaya sudut atas ikut membulat tanpa
+   perlu overflow:hidden di parent. */
 .tr-ov-panel::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:var(--grad);opacity:.55
+  background:var(--grad);opacity:.55;
+  border-radius:12px 12px 0 0
 }
 .tr-ov-panel-hd{
   display:flex;align-items:center;justify-content:space-between;
