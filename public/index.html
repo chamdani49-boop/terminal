@@ -11857,7 +11857,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var chg = (px.src === 'live') ? chgOf(r.ticker) : null;
       var chgCls = chg==null ? '' : (chg>0?'up':(chg<0?'dn':''));
       var chgStr = chg==null ? '' : '<span class="tr-ov-latest-chg '+chgCls+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>';
-      return '<div class="tr-ov-latest-row" data-ticker="'+esc(r.ticker||'')+'" data-firm-id="'+esc(r.firmId||'')+'" title="Klik untuk detail">'
+      return '<div class="tr-ov-latest-row" data-ticker="'+esc(r.ticker||'')+'" data-firm-id="'+esc(r.firmId||'')+'" data-firm="'+esc(r.firm||'')+'" data-open-date="'+esc(r.openDate||'')+'" title="Klik area baris untuk chart rekomendasi · klik kode saham utk Analisis · klik sekuritas utk detail firm">'
         + '<span class="tr-ov-latest-no">'+(i+1)+'</span>'
         + '<span class="tr-ov-latest-date">'+esc(r.openDate||'—')+'</span>'
         + '<span class="tr-ov-latest-tick" data-action="stock">'+esc(r.ticker||'—')+'</span>'
@@ -11995,22 +11995,75 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if (ffid && window.__TR_openFirm) window.__TR_openFirm(ffid);
       return;
     }
-    // Klik row Rekomendasi Terbaru → routing berbeda per action:
-    //   data-action="firm"  → openFirm (dari span firm)
-    //   data-action="stock" → langsung buka tab Analisis dgn ticker itu
-    //   klik area kosong    → default → tab Analisis
-    // Sebelumnya klik ticker buka drawer popup (__TR_openStock); user minta
-    // langsung ke halaman Analisis untuk pengalaman drilldown yg lebih dalam.
+    // Klik row Rekomendasi Terbaru → routing berbeda per target klik:
+    //   data-action="firm"  → openFirm (dari span sekuritas)
+    //   data-action="stock" → openAnalisis dgn ticker itu (drilldown halaman)
+    //   klik area lainnya   → showRecDetail (kartu Bareksa-style dgn CHART),
+    //                         reusing modal recDetailModal yg sama dgn tabel
+    //                         Rekomendasi Analis di Dashboard.
+    //
+    // Sumber data showRecDetail = DATA.consensus_slim[ticker]. Best-match
+    // dicari via firm+date. Bila tidak ada entry consensus_slim utk ticker
+    // tsb, fallback ke __TR_openAnalisis supaya tetap ada respons.
     var feedRow = e.target && e.target.closest && e.target.closest('#tr-view-main .tr-ov-latest-row');
     if (feedRow) {
       var action = e.target.getAttribute && e.target.getAttribute('data-action');
       var ticker = feedRow.getAttribute('data-ticker');
       var firmId = feedRow.getAttribute('data-firm-id');
       if (action === 'firm' && firmId && window.__TR_openFirm) { window.__TR_openFirm(firmId); return; }
-      if (ticker && window.__TR_openAnalisis) { window.__TR_openAnalisis(ticker); return; }
-      if (ticker && window.__TR_openStock) { window.__TR_openStock(ticker); } // fallback lama
+      if (action === 'stock' && ticker && window.__TR_openAnalisis) { window.__TR_openAnalisis(ticker); return; }
+
+      // Klik area kosong (bukan sekuritas / kode saham) → popup chart detail.
+      if (ticker) {
+        var firmName = feedRow.getAttribute('data-firm') || '';
+        var openDate = (feedRow.getAttribute('data-open-date') || '').slice(0,10);
+        if (_ovTryOpenRecDetail(ticker, firmName, openDate)) return;
+        // Fallback: kalau consensus_slim tidak punya data ticker ini
+        if (window.__TR_openAnalisis) { window.__TR_openAnalisis(ticker); return; }
+        if (window.__TR_openStock)    window.__TR_openStock(ticker);
+      }
     }
   });
+
+  // Helper: cari entry paling cocok di DATA.consensus_slim[ticker] utk
+  // baris tracker (firm + openDate), lalu invoke showRecDetail global.
+  // Return true kalau modal berhasil dibuka; false bila tidak (caller
+  // pakai fallback). Matching:
+  //   1) firm substring (min 8 char) + exact date  → paling akurat
+  //   2) firm substring only                        → ambil rec pertama
+  //      firm itu (recs biasanya sorted latest-first via field "no")
+  //   3) idx 0                                      → rec terbaru untuk
+  //      ticker itu (fallback terakhir, tetap relevan sbg chart display)
+  function _ovTryOpenRecDetail(ticker, firm, openDate){
+    if (!ticker || typeof window.showRecDetail !== 'function') return false;
+    var code = String(ticker).toUpperCase();
+    var recs = (window.DATA && window.DATA.consensus_slim && window.DATA.consensus_slim[code]) || [];
+    if (!recs.length) return false;
+
+    var firmNorm = String(firm||'').toLowerCase()
+      .replace(/^pt\.?\s+/,'').replace(/\s+tbk\.?$/,'').trim();
+    var firmKey  = firmNorm.slice(0, 8);
+    var dateKey  = String(openDate||'').slice(0,10);
+
+    var idx = -1;
+    if (firmKey && dateKey) {
+      idx = recs.findIndex(function(r){
+        var rf = String(r.firm||'').toLowerCase();
+        var rd = String(r.date||'').slice(0,10);
+        return rd === dateKey && rf.length >= 4 && (rf.indexOf(firmKey) >= 0 || firmKey.indexOf(rf.slice(0,8)) >= 0);
+      });
+    }
+    if (idx < 0 && firmKey) {
+      idx = recs.findIndex(function(r){
+        var rf = String(r.firm||'').toLowerCase();
+        return rf.length >= 4 && (rf.indexOf(firmKey) >= 0 || firmKey.indexOf(rf.slice(0,8)) >= 0);
+      });
+    }
+    if (idx < 0) idx = 0;
+
+    try { window.showRecDetail(code, idx); return true; }
+    catch(_) { return false; }
+  }
   // Enter/Space di card highlight (aksesibilitas keyboard)
   document.addEventListener('keydown', function(e){
     if (e.key !== 'Enter' && e.key !== ' ') return;
