@@ -4009,25 +4009,77 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
   letter-spacing:.4px;text-transform:uppercase;font-weight:700;margin-top:3px
 }
 
-/* Sentimen Analis — bar horizontal + label */
-.tr-ov-sent-bar{
-  position:relative;height:16px;border-radius:8px;
-  background:linear-gradient(90deg,rgba(16,185,129,.22),rgba(245,158,11,.14) 50%,rgba(239,68,68,.22));
-  border:1px solid var(--border);overflow:hidden
+/* Sentimen Analis — BAROMETER (gauge semi-circle).
+   Adopsi pattern visual dari Consensus overview (.ov-donut-center) —
+   center value + label besar di tengah, dgn breakdown legend di bawah.
+   Needle SVG rotate berdasarkan bullish% (formula: (bull-50)*1.8 deg). */
+.tr-ov-sent-body{
+  gap:6px !important;
+  justify-content:flex-start !important;
+  padding-top:2px
 }
-.tr-ov-sent-fill{
-  position:absolute;top:0;bottom:0;left:0;
-  background:linear-gradient(90deg,var(--green),rgba(16,185,129,.2));
-  transition:width .5s ease
+.tr-ov-baro-wrap{
+  position:relative;width:100%;
+  display:flex;align-items:center;justify-content:center
 }
-.tr-ov-sent-lgd{
-  display:flex;justify-content:space-between;
-  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
-  letter-spacing:.3px
+.tr-ov-baro-svg{
+  width:100%;max-width:190px;height:auto;display:block
 }
-.tr-ov-sent-lgd .up{color:var(--green)}
-.tr-ov-sent-lgd .dn{color:var(--red)}
-.tr-ov-sent-lgd .neu{color:var(--text2)}
+.tr-ov-baro-needle{
+  transform-origin:100px 100px;
+  transform:rotate(0deg);
+  transition:transform .7s cubic-bezier(.6,.05,.28,.9);
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))
+}
+/* Center overlay: value % + label mood — di dalam arc, absolute overlay */
+.tr-ov-baro-center{
+  position:absolute;left:50%;top:60%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  pointer-events:none;text-align:center
+}
+.tr-ov-baro-val{
+  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;
+  letter-spacing:-.5px;line-height:1;color:var(--text)
+}
+.tr-ov-baro-lbl{
+  font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:800;
+  letter-spacing:.6px;color:var(--text2);text-transform:uppercase;line-height:1.2
+}
+
+/* Legend footer bar: split kiri (bear) vs kanan (bull) */
+.tr-ov-baro-legend{
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;
+  color:var(--text3);letter-spacing:.2px;margin-top:-2px
+}
+.tr-ov-baro-legend .up{color:var(--green);display:inline-flex;align-items:center;gap:4px}
+.tr-ov-baro-legend .dn{color:var(--red);display:inline-flex;align-items:center;gap:4px}
+.tr-ov-baro-legend .dot{
+  display:inline-block;width:6px;height:6px;border-radius:50%
+}
+.tr-ov-baro-legend .dn .dot{background:var(--red)}
+.tr-ov-baro-legend .up .dot{background:var(--green)}
+
+/* Badge di header card (adopsi .ov-card-badge dari Consensus overview) —
+   warna berubah sesuai sentiment level. */
+.tr-ov-hl-badge{
+  margin-left:auto;font-family:'IBM Plex Mono',monospace;
+  font-size:8.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
+  padding:2px 7px;border-radius:5px;
+  background:var(--bg2);color:var(--text2);border:1px solid var(--border);
+  white-space:nowrap;flex-shrink:0;transition:all .2s
+}
+.tr-ov-hl-badge.bull{background:rgba(16,185,129,.14);color:var(--green);border-color:rgba(16,185,129,.35)}
+.tr-ov-hl-badge.bear{background:rgba(239,68,68,.14);color:var(--red);border-color:rgba(239,68,68,.35)}
+.tr-ov-hl-badge.neu{background:rgba(245,158,11,.14);color:var(--yellow);border-color:rgba(245,158,11,.35)}
+
+@media(max-width:640px){
+  .tr-ov-baro-svg{max-width:170px}
+  .tr-ov-baro-val{font-size:19px}
+  .tr-ov-baro-lbl{font-size:8px}
+  .tr-ov-baro-legend{font-size:9.5px}
+  .tr-ov-hl-badge{font-size:8px;padding:1.5px 6px}
+}
 
 /* Ranking wrapper + filter bar */
 .tr-ov-rank-wrap{margin-bottom:16px}
@@ -5315,15 +5367,42 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
 
     <div class="tr-ov-hl-card" data-goto="live" role="button" tabindex="0" aria-label="Buka sentimen di tab Live">
-      <div class="tr-ov-hl-h">🌐 Sentimen Analis</div>
-      <div class="tr-ov-hl-body">
-        <div class="tr-ov-sent-bar">
-          <div class="tr-ov-sent-fill" id="trOvSentFill" style="width:50%"></div>
+      <!-- Barometer sentimen — visual gauge SVG (adopsi pattern donut/center-value
+           dari Consensus overview). 3 zone: red (bear 0-40%) → yellow (neutral
+           40-60%) → green (bull 60-100%). Needle rotate berdasarkan bullish%.
+           Badge di header ala .ov-card-badge dari Consensus (BULL/BEAR/NEUTRAL). -->
+      <div class="tr-ov-hl-h">
+        🌐 Sentimen Analis
+        <span class="tr-ov-hl-badge" id="trOvSentBadge">—</span>
+      </div>
+      <div class="tr-ov-hl-body tr-ov-sent-body">
+        <div class="tr-ov-baro-wrap">
+          <svg class="tr-ov-baro-svg" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Background track (semi-circle) — abu-abu tipis di bawah zone berwarna. -->
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--bg3)" stroke-width="16" stroke-linecap="round"/>
+            <!-- Red zone (bearish 0-40%): from 180° to 108° angle -->
+            <path d="M 20 100 A 80 80 0 0 1 75.3 23.9" fill="none" stroke="var(--red)" stroke-width="14" stroke-linecap="round" opacity="0.9"/>
+            <!-- Yellow zone (neutral 40-60%): from 108° to 72° -->
+            <path d="M 75.3 23.9 A 80 80 0 0 1 124.7 23.9" fill="none" stroke="var(--yellow)" stroke-width="14" opacity="0.9"/>
+            <!-- Green zone (bullish 60-100%): from 72° to 0° -->
+            <path d="M 124.7 23.9 A 80 80 0 0 1 180 100" fill="none" stroke="var(--green)" stroke-width="14" stroke-linecap="round" opacity="0.9"/>
+            <!-- Needle — CSS transform-origin di 100,100. Rotasi via JS/CSS. -->
+            <g id="trOvBaroNeedle" class="tr-ov-baro-needle">
+              <line x1="100" y1="100" x2="100" y2="32" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="100" cy="100" r="7" fill="var(--text)"/>
+              <circle cx="100" cy="100" r="3.5" fill="var(--card)"/>
+            </g>
+          </svg>
+          <!-- Center overlay (di dalam arc) — value % + label mood, ala .ov-donut-center Consensus. -->
+          <div class="tr-ov-baro-center">
+            <div class="tr-ov-baro-val" id="trOvBaroVal">—</div>
+            <div class="tr-ov-baro-lbl" id="trOvBaroLbl">NEUTRAL</div>
+          </div>
         </div>
-        <div class="tr-ov-sent-lgd">
-          <span class="up" id="trOvSentBull">—</span>
-          <span class="neu" id="trOvSentLbl">NEUTRAL</span>
-          <span class="dn" id="trOvSentBear">—</span>
+        <!-- Legend footer: breakdown bull vs bear di kiri-kanan -->
+        <div class="tr-ov-baro-legend">
+          <span class="dn"><span class="dot"></span><span id="trOvSentBear">—</span> bearish</span>
+          <span class="up"><span id="trOvSentBull">—</span> bullish<span class="dot"></span></span>
         </div>
       </div>
       <div class="tr-ov-hl-foot" id="trOvSentSample">— trade dianalisis</div>
@@ -5366,11 +5445,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
   </div>
 
-  <!-- Disclaimer edukasi standard -->
-  <div class="dm-disclaimer">
-    <span class="dm-disclaimer-ico">ⓘ</span>
-    <span>Konten ini sebagai informasi edukasi dan bukan merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.</span>
-  </div>
+  <!-- Disclaimer edukasi dihapus di sini — sudah ada disclaimer page-level
+       di bawah semua sub-pane (line ~7936). Sebelumnya ada 2 disclaimer
+       muncul di Overview: 1 di dalam #tr-view-main + 1 page-level. -->
 </div><!-- /tr-view-main -->
 
 <!-- ── PANE ANALISIS ─────────────────────────────────────────────────
@@ -10622,23 +10699,45 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   function updateOvSentiment(data){
     var mi = data.marketBias||{bullish:50,bearish:50,count:0,sample:'—'};
-    var fill = $('trOvSentFill');
-    var bull = $('trOvSentBull');
-    var bear = $('trOvSentBear');
-    var lbl  = $('trOvSentLbl');
-    var samp = $('trOvSentSample');
-    if(fill) fill.style.width = (mi.bullish||50) + '%';
-    if(bull) bull.textContent = (mi.bullish||0) + '%';
-    if(bear) bear.textContent = (mi.bearish||0) + '%';
-    if(lbl){
-      var b = +mi.bullish || 50;
-      var l = 'NEUTRAL';
-      if(b >= 65) l = 'STRONG BULL';
-      else if(b >= 55) l = 'BULLISH';
-      else if(b <= 35) l = 'STRONG BEAR';
-      else if(b <= 45) l = 'BEARISH';
-      lbl.textContent = l;
+    var b = +mi.bullish || 50;
+    var bearPct = +mi.bearish || (100 - b);
+
+    // Update needle rotation: -90° (0% bull) → +90° (100% bull) — half circle sweep
+    var needle = $('trOvBaroNeedle');
+    if(needle){
+      var rotation = (b - 50) * 1.8; // -90..+90 range
+      needle.style.transform = 'rotate(' + rotation.toFixed(1) + 'deg)';
     }
+
+    // Determine label + badge class dari level bull%
+    var label = 'NEUTRAL';
+    var badgeCls = 'neu';
+    if(b >= 65){ label = 'STRONG BULL'; badgeCls = 'bull'; }
+    else if(b >= 55){ label = 'BULLISH'; badgeCls = 'bull'; }
+    else if(b <= 35){ label = 'STRONG BEAR'; badgeCls = 'bear'; }
+    else if(b <= 45){ label = 'BEARISH'; badgeCls = 'bear'; }
+
+    // Center overlay: value + label
+    var val = $('trOvBaroVal');
+    var lbl = $('trOvBaroLbl');
+    if(val) val.textContent = b + '%';
+    if(lbl) lbl.textContent = label;
+
+    // Header badge (adopsi visual style dari .ov-card-badge Consensus)
+    var badge = $('trOvSentBadge');
+    if(badge){
+      badge.textContent = label;
+      badge.className = 'tr-ov-hl-badge ' + badgeCls;
+    }
+
+    // Legend bawah
+    var bullEl = $('trOvSentBull');
+    var bearEl = $('trOvSentBear');
+    if(bullEl) bullEl.textContent = b + '%';
+    if(bearEl) bearEl.textContent = bearPct + '%';
+
+    // Footer sample count
+    var samp = $('trOvSentSample');
     if(samp) samp.textContent = (mi.count||0) + ' trade dianalisis';
   }
 
