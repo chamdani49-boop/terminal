@@ -2,15 +2,25 @@
  * panduan.js — Tur interaktif "Panduan Terminal" (tanpa library)
  *
  * • Dashboard (index.html): tur LENGKAP — tiap kartu/kolom + semua popup
- *   (detail rekomendasi, detail firm, info ⓘ, multiple/MoS, dll). Tiap halaman
- *   diawali kolom pencarian. Urutan: Dashboard → Consensus → Valuasi →
- *   Simulasi → Pasar Live → lanjut ke Billing.
+ *   (detail rekomendasi, detail firm, info ⓘ, multiple/MoS, modal simulasi).
+ *   Urutan tur: Dashboard (termasuk modal Simulasi Menabung yg dipicu dari
+ *   card Statistik Deskriptif) → Consensus → Valuasi → Tracker (5 sub-tab)
+ *   → Pasar Live → penutup ke Billing.
  * • Billing (billing.html): 2 langkah penutup + atur tombol "Panduan Terminal"
  *   (AKTIF → buka tur; NON-AKTIF → tombol mati, hanya gerak sedikit/nudge).
  *
- * Auto-start SEKALI utk user baru (localStorage). Di HP, setelah sapaan muncul
- * pilihan tampilan HP / PC. Mesin tur: spotlight + kartu + Lanjut/Kembali/Tutup,
- * auto-scroll, tunggu-aksi, buka/tutup popup (pre/cleanup), pindah antar menu.
+ * TRIGGER (initDash):
+ *   1. Skip kalau localStorage DONE_KEY di-set (per browser) atau server-side
+ *      guide_seen=true (per akun).
+ *   2. TUNGGU user login (__ES_PROFILE.authenticated=true).
+ *   3. TUNGGU consent gate disetujui (__ES_PROFILE.tos_accepted=true).
+ *      Panduan HANYA muncul SETELAH user setuju Ketentuan & Kebijakan
+ *      Privasi supaya kedua popup tidak bertumpuk.
+ *   4. showWelcome() → user klik Mulai → start(buildSteps).
+ *   Di HP, sebelum tur mulai muncul pilihan tampilan HP / PC.
+ *
+ * Mesin tur: spotlight + kartu + Lanjut/Kembali/Tutup, auto-scroll,
+ * tunggu-aksi, buka/tutup popup (pre/cleanup), pindah antar menu.
  * ════════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -256,17 +266,31 @@
     var s = [];
     function P(o) { s.push(o); }
 
-    // DASHBOARD (diawali kolom pencarian)
+    // ═══════════ DASHBOARD (diawali kolom pencarian) ═══════════
     P({ page: 'dashboard', target: S('#searchInput', '#searchInputMobile'), title: 'Pilih Saham', body: 'Mulai dari kolom pencarian ini \u2014 ketik kode saham (mis. BBRI). Seluruh data di Terminal akan mengikuti saham yang kamu pilih.' });
     P({ page: 'dashboard', target: S('#stockTicker'), title: 'Harga Berjalan', body: 'Pita harga saham yang bergerak; klik salah satu untuk langsung membukanya.' });
     P({ page: 'dashboard', target: T('Statistik Deskriptif'), title: 'Statistik Deskriptif', body: 'Ringkasan angka kunci: rata-rata return, volatilitas, dan sebaran harga.' });
-    P({ page: 'dashboard', target: S('.card-chart'), title: 'Grafik Harga', body: 'Grafik harga (bulanan/harian) lengkap dengan garis tren linier.' });
+
+    // ─── Simulasi Menabung (modal, dipicu dari card Statistik Deskriptif) ───
+    // Sebelumnya menu terpisah — sekarang jadi modal yang dibuka via tombol
+    // "\uD83D\uDCB0 Simulasi Investasi" di header kartu Statistik Deskriptif.
+    P({ page: 'dashboard', target: S('.btn-sim-open'), title: 'Simulasi Menabung', body: 'Tombol ini membuka jendela Simulasi Menabung: DCA / Lump Sum untuk Saham IDX & Emas Antam. Klik Lanjut untuk melihatnya terbuka.' });
+    P(merge({ page: 'dashboard', title: 'Pengaturan Portofolio', body: 'Pilih jenis investasi (Saham/Emas), sistem menabung (DCA/Lump), nominal, dan tanggal mulai. Kolom pencarian saham ada di panel ini.' },
+      { pre: function () { call('openSimModal'); }, target: T('Pengaturan Portofolio') }));
+    P({ page: 'dashboard', target: S('#savingStockSearch'), title: 'Cari Saham untuk Simulasi', body: 'Di dalam modal ini, ketik kode saham (mis. BBCA) untuk memilih saham yang mau disimulasikan.' });
+    P({ page: 'dashboard', target: T('Ringkasan'), title: 'Ringkasan Simulasi', body: 'Total modal, unit terkumpul, dividen (kalau ada), dan nilai investasi hasil simulasi.' });
+    P({ page: 'dashboard', target: T('Hasil Simulasi'), title: 'Hasil Simulasi', body: 'Grafik pertumbuhan investasi. Untuk saham: pilih dgn / tanpa dividen, dan tunai vs reinvest.' });
+    P(merge({ page: 'dashboard', title: 'Detail Per Periode', body: 'Rincian tiap pembelian: tanggal, harga, unit, modal, dan nilai. Selesai — kita tutup modalnya.' },
+      { target: T('Detail Per Periode'), cleanup: function () { call('closeSimModal'); } }));
+
+    // ─── Kembali ke konten Dashboard utama ───
+    P({ page: 'dashboard', target: S('.card-chart'), title: 'Grafik Harga', body: 'Grafik harga (bulanan/harian) lengkap dengan garis tren linier + zona BELI/JUAL dari Price Target Blueprint.' });
     P(merge({ page: 'dashboard', title: 'Cara Baca Tren Linier', body: 'Tombol \u24D8 ini menjelaskan zona akumulasi (di bawah tren) & distribusi (di atas tren).' }, pInfo('[onclick*="Cara Baca Tren"]')));
-    P({ page: 'dashboard', target: S('.period-tabs'), title: 'Rentang Waktu', body: 'Ganti rentang grafik: 1B / 3B / 1T / ALL.' });
-    P({ page: 'dashboard', target: T('Rekomendasi Analis'), title: 'Rekomendasi Analis', body: 'Daftar rekomendasi sekuritas untuk saham ini: tanggal, target, return, risiko.' });
-    P(merge({ page: 'dashboard', title: 'Detail Rekomendasi (popup)', body: 'Klik salah satu baris \u2192 muncul popup detail rekomendasi seperti ini. Lengkap dengan target & analisisnya.' },
+    P({ page: 'dashboard', target: S('.period-tabs'), title: 'Rentang Waktu', body: 'Ganti rentang grafik: 1T / 3T / 5T / ALL.' });
+    P({ page: 'dashboard', target: T('Rekomendasi Analis'), title: 'Rekomendasi Analis', body: 'Daftar rekomendasi sekuritas untuk saham ini: tanggal, target, return, risiko. Klik baris untuk detail chart.' });
+    P(merge({ page: 'dashboard', title: 'Detail Rekomendasi (popup)', body: 'Klik salah satu baris \u2192 muncul popup detail rekomendasi seperti ini. Lengkap dengan target, analisis, dan grafik.' },
       { pre: function () { clickFirst('#page-dashboard [onclick^="showRecDetail"]'); }, target: S('#recDetailModal .rec-modal', '#recDetailModal>div', '#recDetailModal'), cleanup: function () { call('closeRecDetail'); } }));
-    P({ page: 'dashboard', target: T('Price Target Blueprint'), title: 'Price Target Blueprint', body: 'Blueprint target harga ala Economstock \u2014 area beli & jual secara profesional.' });
+    P({ page: 'dashboard', target: T('Price Target Blueprint'), title: 'Price Target Blueprint', body: 'Blueprint target harga ala Economstock \u2014 area beli & jual profesional. Ada dropdown Tgl Rujukan untuk lihat batas beli/jual di titik waktu berbeda.' });
     P({ page: 'dashboard', target: T('Consensus Analyst'), title: 'Konsensus Analis', body: 'Ringkasan konsensus (Beli/Tahan/Jual) para analis untuk saham ini.' });
     P({ page: 'dashboard', target: T('Watchlist'), title: 'Watchlist IDX Terpilih', body: 'Saham-saham pilihan; bisa diurutkan dari potensi tertinggi atau yang terbaru.' });
 
@@ -305,15 +329,27 @@
     P({ page: 'valuasi', tab: 'Perbandingan', target: T('Perbandingan Metode'), title: 'Perbandingan Metode Valuasi', body: 'Nilai wajar dari banyak metode (PER/PBV/PSR dll) + status Murah/Wajar/Mahal.' });
     P(merge({ page: 'valuasi', title: 'Penjelasan Metode (popup)', body: 'Tombol \u24D8 di tiap metode menjelaskan cara & asumsinya.' }, pMethod('wacc')));
 
-    // SIMULASI (diawali kolom pencarian)
-    P({ page: 'menabung', target: S('#savingStockSearch'), title: 'Simulasi \u2014 Pilih Saham', body: 'Mulai dari kolom pencarian ini untuk memilih saham yang disimulasikan.' });
-    P({ page: 'menabung', target: T('Pengaturan Portofolio'), title: 'Pengaturan Portofolio', body: 'Atur metode nabung (DCA/sekaligus), tanggal mulai, dan batas beli/jual.' });
-    P(merge({ page: 'menabung', title: 'Panduan Batas Beli & Jual (popup)', body: 'Tombol \u24D8 menjelaskan cara menentukan batas beli & jual dari YoY Analysis.' }, pInfo('[onclick*="Panduan Batas Beli"]')));
-    P({ page: 'menabung', target: T('Ringkasan'), title: 'Ringkasan Portofolio', body: 'Ringkasan modal, unit, dan nilai investasi simulasimu.' });
-    P({ page: 'menabung', target: T('Hasil Simulasi'), title: 'Hasil Simulasi', body: 'Hasil akhir \u2014 dengan/tanpa dividen, tunai atau diputar lagi (reinvest).' });
-    P({ page: 'menabung', target: T('Detail Per Periode'), title: 'Detail Per Periode', body: 'Rincian tiap pembelian: tanggal, harga, unit, modal, dan nilai.' });
+    // Section SIMULASI standalone DIHAPUS — sekarang jadi modal yang dibuka
+    // dari Dashboard (lihat step \uD83D\uDCB0 Simulasi di section Dashboard di atas).
 
-    // PASAR LIVE (diawali kolom pencarian)
+    // ═══════════ TRACKER (menu baru — untuk semua user) ═══════════
+    // 5 sub-tab: Overview \u2192 Live \u2192 Analisis \u2192 Analis \u2192 Performa.
+    // Sub-tab pindah pakai clickFirst('.tr-subtab-btn[data-subtab=...]').
+    P({ page: 'tracker', target: S('#tr-subtabs'), title: 'Menu Tracker', body: 'Tracker memantau performa rekomendasi trading para analis (Entry/TP/SL) versus IHSG. Ada 5 sub-tab: Overview, Live, Analisis, Analis, Performa.' });
+    P({ page: 'tracker', target: T('Performa 30 Hari'), title: 'Return Kumulatif 30 Hari', body: 'Grafik return kumulatif semua analis (garis ungu) vs IHSG (garis merah) selama 30 hari terakhir. Selisihnya = Alpha.' });
+    P({ page: 'tracker', target: T('Distribusi Hasil'), title: 'Distribusi Hasil', body: 'Bar visual: berapa banyak rekomendasi yang hit TP1 / TP2, kena SL, atau expired.' });
+    P({ page: 'tracker', target: T('Aktivitas 24 Jam'), title: 'Aktivitas 24 Jam', body: 'Berapa rekomendasi baru masuk dalam 24 jam terakhir, dari berapa sekuritas.' });
+    P({ page: 'tracker', target: T('Saham Paling Aktif'), title: 'Saham Paling Aktif', body: 'Top saham dengan rekomendasi terbanyak. Klik dropdown "Semua Tanggal" untuk filter berdasarkan periode tanggal.' });
+    P({ page: 'tracker', target: T('Rekomendasi Terbaru'), title: 'Feed Rekomendasi Terbaru', body: 'Daftar rekomendasi terbaru. Setiap baris punya 3 zona klik: (1) kode saham \u2192 buka tab Analisis, (2) nama sekuritas \u2192 detail firm, (3) area lain \u2192 popup chart detail rekomendasi.' });
+    P({ page: 'tracker', pre: function () { clickFirst('.tr-subtab-btn[data-subtab="live"]'); }, target: S('.tr-subtab-btn[data-subtab="live"]'), title: 'Sub-tab Live', body: 'Semua rekomendasi yang sedang aktif (belum kena TP / SL / expired). Cocok untuk melihat "posisi berjalan".' });
+    P({ page: 'tracker', pre: function () { clickFirst('.tr-subtab-btn[data-subtab="analisis"]'); }, target: S('.tr-subtab-btn[data-subtab="analisis"]'), title: 'Sub-tab Analisis', body: 'Analisis mendalam per saham \u2014 lihat semua sekuritas yang pernah rekomendasi saham itu, lengkap dgn track record.' });
+    P({ page: 'tracker', pre: function () { clickFirst('.tr-subtab-btn[data-subtab="analis"]'); }, target: S('.tr-subtab-btn[data-subtab="analis"]'), title: 'Sub-tab Analis', body: 'Ranking analis / sekuritas berdasarkan winrate & net return. Filter Basis \u00d7 Target untuk skenario kustom.' });
+    P({ page: 'tracker', pre: function () { clickFirst('.tr-subtab-btn[data-subtab="perf"]'); }, target: S('.tr-subtab-btn[data-subtab="perf"]'), title: 'Sub-tab Performa', body: 'Papan peringkat sekuritas + rekap bulanan performa. Bisa atur modal Rp & jumlah slot untuk simulasi portfolio ala trader.' });
+    // Kembalikan ke Overview supaya user selalu mulai di tab default kalau
+    // navigasi ulang setelah tur.
+    P({ page: 'tracker', pre: function () { clickFirst('.tr-subtab-btn[data-subtab="ringkasan"]'); }, target: S('#tr-subtabs'), title: 'Kembali ke Overview', body: 'Kita kembalikan ke tab Overview. Tracker sudah lengkap dijelajah.' });
+
+    // ═══════════ PASAR LIVE (diawali kolom pencarian) ═══════════
     P({ page: 'pasar', target: S('#plNewsQ', '.pl-news-search'), title: 'Pasar Live \u2014 Cari Berita', body: 'Cari berita atau kode saham di kolom pencarian ini.' });
     P({ page: 'pasar', target: T('Market Chart'), title: 'Market Chart', body: 'Grafik indeks & pasar secara live.' });
     P({ page: 'pasar', target: T('Heatmap Sektor'), title: 'Heatmap Sektor', body: 'Peta panas performa tiap sektor hari ini.' });
