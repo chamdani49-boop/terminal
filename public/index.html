@@ -2612,6 +2612,27 @@ select.form-control option{background:var(--card);color:var(--text)}
    semua user tanpa perlu body.tr-admin. Class `tr-admin` yg diset JS
    berdasarkan window.__ES_IS_ADMIN dibiarkan (harmless, no-op sekarang). */
 
+/* ── SCOPE=TRACKER: user paket tracker-only (Rp 149rb) ──
+   Di-set oleh JS _ensureAccess() saat sub.scope === 'tracker'. Efeknya:
+   HIDE semua nav-tab & bottom-nav item KECUALI Tracker + Simulasi
+   (Simulasi sekarang modal dari Dashboard, tapi buttonnya via modal
+   trigger di Statistik Deskriptif Dashboard — user tracker tidak lihat
+   Dashboard, jadi modal Simulasi TIDAK reachable dan itu OK).
+   Tab lain (Pasar Live, Dashboard, Valuasi, Consensus) di-hide via CSS.
+   Kalau user coba akses data lain via URL langsung, worker balas 402
+   (server-side scope gate di src/index.js). */
+body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu){display:none !important}
+body.scope-tracker .bottom-nav-item:not(.tr-menu){display:none !important}
+/* Tab Tracker jadi satu-satunya opsi — beri sedikit ruang biar tidak
+   nempel logo. */
+body.scope-tracker .nav-tabs{gap:12px}
+/* Hilangkan search bar mobile (Cari saham) — user tracker tidak butuh
+   cari saham individual di Dashboard karena Dashboard tidak accessible. */
+body.scope-tracker .search-wrap-mobile,
+body.scope-tracker .search-wrap:not(.search-wrap-mobile){display:none !important}
+/* Stock ticker (running sideways) tetap tampil — informasi harga live
+   umum, tidak bocor data premium (harga saja). */
+
 #page-tracker{padding:20px 24px 40px;max-width:1200px;margin:0 auto}
 @media(max-width:640px){ #page-tracker{padding:14px 12px 90px} }
 
@@ -15296,10 +15317,31 @@ async function _ensureAccess() {
     const j = await r.json();
     if (!j || !j.authenticated) { location.replace('/login'); return false; }
     window.__ES_IS_ADMIN = !!j.is_admin;
-    // Menu Tracker masih preview → hanya admin yg lihat tab-nya.
+    // Class body.tr-admin dipertahankan (harmless no-op, gating admin-only
+    // Tracker sudah dilepas). Bisa dipakai lagi kalau future ada fitur
+    // preview-admin-only.
     if (window.__ES_IS_ADMIN) try { document.body.classList.add('tr-admin'); } catch(_){}
     const active = j.subscription && j.subscription.active;
     if (!active && !j.is_admin) { location.replace('/billing'); return false; }
+    // ── SCOPE GATE (client-side UX) ────────────────────────────────────
+    // Server-side sudah menolak akses ke /valuation.json, /ohlc.json, dll
+    // untuk user scope='tracker'. Di client kita:
+    //   1. Tambah body.scope-tracker → CSS hide semua .nav-tab kecuali
+    //      Tracker + hide bottom-nav non-tracker
+    //   2. Auto force showPage('tracker') supaya user tidak nyangkut di
+    //      Dashboard yang broken (data-nya di-block 402)
+    // Admin selalu full-access (skip semua ini).
+    const scope = (j.subscription && j.subscription.scope) || 'full';
+    if (!j.is_admin && scope === 'tracker') {
+      try { document.body.classList.add('scope-tracker'); } catch(_){}
+      // Delayed force-navigation supaya kalau ada initApp() yg call
+      // showPage('dashboard') dari default, kita menang di next tick.
+      // Kita juga panggil langsung sebelum initApp render (hemat 1 frame).
+      try { if (typeof showPage === 'function') showPage('tracker'); } catch(_){}
+      setTimeout(function(){
+        try { if (typeof showPage === 'function') showPage('tracker'); } catch(_){}
+      }, 0);
+    }
     window.__ES_PROFILE = j;
     try { _renderAccount(j); } catch (_) {}
     try { _loadReferralStat(); } catch (_) {}
