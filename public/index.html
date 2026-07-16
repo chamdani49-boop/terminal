@@ -2908,14 +2908,22 @@ body.tr-profile-open #tr-view-profile{display:block}
    di-sembunyikan (permintaan user). Data verified saat ini tidak akurat
    karena hasil merge firm gabungan (mis. RHB dpt verified dari 1 rec
    dgn cert non-kosong, padahal firm-nya belum tentu verified).
-   `.tr-anlz-vb` = badge ✓ di tabel Direktori Analis (Ringkasan) &
-   list sekuritas tab Analis — sebelumnya belum masuk hide list,
-   sehingga masih muncul di Sucor/Ajaib/RHB. */
+   Total 6 class utk badge ini (masing2 lokasi rendering):
+     .tr-p-vbadge         → Firm profile hero
+     .tr-lb-ver           → Papan peringkat lama
+     .tr-live-card-verif  → Kartu Live
+     .tr-perf-firm-verified → Kartu firm Papan Peringkat Performa
+     .tr-anlz-vb          → Tabel Direktori Analis (Ringkasan)
+     .tr-mdet-item .vb    → Sidebar list tab Analis (master-detail)
+   Class terakhir pakai selector generik ".vb" di HTML — di-scope
+   dgn parent .tr-mdet-item supaya tidak nabrak class ".vb" lain
+   (kalau kelak dibuat). */
 .tr-p-vbadge,
 .tr-lb-ver,
 .tr-live-card-verif,
 .tr-perf-firm-verified,
-.tr-anlz-vb{display:none !important}
+.tr-anlz-vb,
+.tr-mdet-item .vb{display:none !important}
 /* Sektor pill di dropdown pencarian saham (tab Analisis) — juga
    disembunyikan agar konsisten dgn permintaan. Screener (menu lain)
    tak terpengaruh karena pakai .pl-search-item / .scr-sector. */
