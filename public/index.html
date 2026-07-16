@@ -2681,20 +2681,27 @@ body.tr-profile-open #tr-view-profile{display:block}
   .tr-pf-charts-row .tr-pf-daychart-wrap,
   .tr-pf-charts-row .tr-chart-wrap{height:220px !important}
 }
-/* Mobile ≤640: paksa 2-kolom sejajar (bukan stack) sesuai user preference.
-   Chart height dikompres 150px + desc di-hide + font legend kecil supaya
-   dua card muat di layar HP tanpa overflow. */
+/* Mobile ≤640: STACK vertical (atas-bawah), bukan 2-kolom sejajar.
+   User revert: "di versi hp tolong atur agar tidak sejajar, tapi atas
+   dan bawah seperti sebelumnya". Reasoning valid: 2-kolom di HP bikin
+   chart candle/line terlalu sempit horizontally — Y-axis labels + tick
+   timestamps + candles/line semua ter-compress. Full-width per card
+   memberikan ruang chart yg proper untuk terbaca. Padding + font tetap
+   compact untuk kesan minimalis. */
 @media(max-width:640px){
-  .tr-pf-charts-row{grid-template-columns:1fr 1fr;gap:8px}
-  .tr-pf-charts-row > .tr-card{padding:10px 10px;margin-top:0 !important}
-  .tr-pf-charts-row .tr-card-title{font-size:11.5px;line-height:1.2}
-  .tr-pf-charts-row .tr-card-desc{display:none}
-  .tr-pf-charts-row .tr-card-h{margin-bottom:6px}
+  .tr-pf-charts-row{grid-template-columns:1fr;gap:10px}
+  .tr-pf-charts-row > .tr-card{padding:11px 13px;margin-top:0 !important}
+  .tr-pf-charts-row .tr-card-title{font-size:12.5px;line-height:1.2}
+  .tr-pf-charts-row .tr-card-desc{font-size:10px;line-height:1.35;display:block}
+  .tr-pf-charts-row .tr-card-h{margin-bottom:7px}
   .tr-pf-charts-row .tr-pf-daychart-wrap,
-  .tr-pf-charts-row .tr-chart-wrap{height:150px !important;padding:5px 3px !important}
-  .tr-pf-charts-row .tr-legend{font-size:9px;gap:6px;margin-top:5px}
-  .tr-pf-charts-row .tr-lg-dot{width:8px;margin-right:3px}
-  #trPfCumFirmLbl{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+  .tr-pf-charts-row .tr-chart-wrap{height:190px !important;padding:8px 6px !important}
+  .tr-pf-charts-row .tr-legend{font-size:9.5px;gap:8px;margin-top:6px}
+  .tr-pf-charts-row .tr-lg-dot{width:9px}
+  /* Truncate nama firm supaya tidak wrap kalau panjang (mis. "Korea
+     Investment And Sekuritas Indonesia"). Stack mode punya lebih banyak
+     ruang → max-width 200px lebih generous drpd 2-col mode (120px). */
+  #trPfCumFirmLbl{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
 }
 
 /* Wrap mode selector — dipindah dari dalam card Return Kumulatif ke ATAS 2
