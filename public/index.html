@@ -4133,9 +4133,13 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 }
 /* Header kolom di atas list — pakai grid yg identik dgn row supaya
    labelnya duduk tepat di atas datanya. */
+/* 7 kolom di desktop: Tanggal · Kode · Sekuritas · Harga · Target · Status · P&L
+   Harga = harga saham saat ini (lastPrice utk aktif/pending, exitPrice utk
+   closed, entry sebagai fallback). Ditempatkan sebelum Target supaya user
+   bisa langsung compare harga sekarang vs target analis. */
 .tr-ov-latest-head{
   display:grid;
-  grid-template-columns:82px 62px minmax(0,1fr) 68px 74px 64px;
+  grid-template-columns:82px 60px minmax(0,1fr) 68px 66px 62px 60px;
   align-items:center;gap:10px;
   padding:8px 6px;margin-bottom:2px;
   border-bottom:1px solid var(--border);
@@ -4144,11 +4148,13 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   color:var(--text3);letter-spacing:.5px;text-transform:uppercase
 }
 .tr-ov-latest-head > *{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tr-ov-latest-head .h-target,.tr-ov-latest-head .h-pnl{text-align:right}
+.tr-ov-latest-head .h-price,
+.tr-ov-latest-head .h-target,
+.tr-ov-latest-head .h-pnl{text-align:right}
 .tr-ov-latest-head .h-status{text-align:center}
 .tr-ov-latest-row{
   display:grid;
-  grid-template-columns:82px 62px minmax(0,1fr) 68px 74px 64px;
+  grid-template-columns:82px 60px minmax(0,1fr) 68px 66px 62px 60px;
   align-items:center;gap:10px;
   padding:9px 6px;border-bottom:1px solid var(--border);
   cursor:pointer;transition:background .12s;
@@ -4179,9 +4185,13 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 .tr-ov-latest-status.exp{background:rgba(202,138,4,.14);color:var(--yellow);border:1px solid rgba(202,138,4,.28)}
 .tr-ov-latest-status.active{background:rgba(37,99,235,.14);color:var(--accent2);border:1px solid rgba(37,99,235,.28)}
 .tr-ov-latest-status.pending{background:rgba(217,119,6,.14);color:var(--yellow);border:1px solid rgba(217,119,6,.28)}
+.tr-ov-latest-price{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
+  text-align:right;color:var(--text);font-variant-numeric:tabular-nums
+}
 .tr-ov-latest-target{
   font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
-  text-align:right;color:var(--text)
+  text-align:right;color:var(--text2);font-variant-numeric:tabular-nums
 }
 .tr-ov-latest-pnl{
   font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:800;
@@ -4280,7 +4290,9 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   /* Header kolom di-hide di HP — baris feed sudah dilabeli implicit
      lewat layout 2 baris (tanggal + status di baris bawah, tick + firm di atas). */
   .tr-ov-latest-head{display:none}
-  /* Feed di HP: 2 baris (kompak) — tick+firm+pnl di baris 1, date+target+status di baris 2 */
+  /* Feed di HP: 2 baris (kompak) — tick+firm+pnl di baris 1,
+     date+harga→target+status di baris 2. Target di-hide di HP karena
+     harga sekarang lebih relevan sbg quick-glance signal. */
   .tr-ov-latest-row{
     grid-template-columns:auto minmax(0,1fr) auto;
     grid-template-rows:auto auto;
@@ -4290,8 +4302,9 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   .tr-ov-latest-firm   {grid-row:1;grid-column:2;font-size:11px}
   .tr-ov-latest-pnl    {grid-row:1;grid-column:3;font-size:11px}
   .tr-ov-latest-date   {grid-row:2;grid-column:1;font-size:10px}
-  .tr-ov-latest-target {grid-row:2;grid-column:2;text-align:left;font-size:10px;color:var(--text2)}
+  .tr-ov-latest-price  {grid-row:2;grid-column:2;text-align:left;font-size:10px}
   .tr-ov-latest-status {grid-row:2;grid-column:3;font-size:8.5px;padding:1px 5px}
+  .tr-ov-latest-target {display:none}
 }
 
 /* Filter kelompok Basis × Target — reuse dari removed ranking wrap,
@@ -11279,18 +11292,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
       el.innerHTML = '<div class="tr-ov-latest-empty">Belum ada rekomendasi tercatat.</div>';
       return;
     }
+    // Harga saham per row: lastPrice (aktif/pending) → exitPrice (closed) →
+    // entry (fallback). Title attr menjelaskan sumber angkanya.
+    var priceOf = function(r){
+      if(Number.isFinite(+r.lastPrice) && +r.lastPrice > 0) return { v: +r.lastPrice, src: 'live' };
+      if(Number.isFinite(+r.exitPrice) && +r.exitPrice > 0) return { v: +r.exitPrice, src: 'exit' };
+      if(Number.isFinite(+r.entry)     && +r.entry     > 0) return { v: +r.entry,     src: 'entry' };
+      return { v: null, src: null };
+    };
+    var srcLabel = { live:'harga live', exit:'harga saat closed', entry:'harga entry (fallback)' };
     var rows = take.map(function(x){
       var r = x.r;
       var st = statusOfRow(x._b, r);
       var p = pnlOfRow(r);
       var pcls = p==null ? '' : (p>0?'up':(p<0?'dn':''));
       var pstr = p==null ? '—' : ((p>=0?'+':'') + p.toFixed(1) + '%');
+      var px = priceOf(r);
+      var priceTitle = px.src ? srcLabel[px.src] : 'harga tidak tersedia';
       return '<div class="tr-ov-latest-row" data-ticker="'+esc(r.ticker||'')+'" data-firm-id="'+esc(r.firmId||'')+'" title="Klik untuk detail">'
         + '<span class="tr-ov-latest-date">'+esc(r.openDate||'—')+'</span>'
         + '<span class="tr-ov-latest-tick" data-action="stock">'+esc(r.ticker||'—')+'</span>'
         + '<span class="tr-ov-latest-firm" data-action="firm" title="'+esc(r.firm||'')+'">'+esc(firmShortLbl(r.firm))+'</span>'
+        + '<span class="tr-ov-latest-price" title="'+esc(priceTitle)+'">'+_fmtNRow(px.v)+'</span>'
+        + '<span class="tr-ov-latest-target" title="Target TP1 analis">'+_fmtNRow(r.tp1)+'</span>'
         + '<span class="tr-ov-latest-status '+statusClsRow(st)+'">'+st+'</span>'
-        + '<span class="tr-ov-latest-target">'+_fmtNRow(r.tp1)+'</span>'
         + '<span class="tr-ov-latest-pnl '+pcls+'">'+pstr+'</span>'
       + '</div>';
     }).join('');
@@ -11300,8 +11325,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
       + '<span>Tanggal</span>'
       + '<span>Kode</span>'
       + '<span>Sekuritas</span>'
-      + '<span class="h-status">Status</span>'
+      + '<span class="h-price">Harga</span>'
       + '<span class="h-target">Target</span>'
+      + '<span class="h-status">Status</span>'
       + '<span class="h-pnl">P&amp;L</span>'
       + '</div>';
     el.innerHTML = header + '<div class="tr-ov-latest-list">' + rows + '</div>';
