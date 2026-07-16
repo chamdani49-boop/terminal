@@ -450,6 +450,92 @@ body.is-mobile-device .view-toggle{display:inline-flex}
 }
 .info-modal-close:hover{background:var(--red);color:#fff}
 
+/* ═══════════════════════════════════════════
+   SIMULASI MODAL — dipicu dari card Statistik Deskriptif (Dashboard).
+   Menggantikan menu Simulasi standalone. Full-viewport di HP (border-radius
+   0), centered dialog di desktop (max-width 1200px agar layout 2-kolom
+   .saving-grid tetap muat).
+═══════════════════════════════════════════ */
+.sim-modal-overlay{
+  display:none;
+  position:fixed;inset:0;z-index:9998;
+  background:rgba(0,0,0,.6);
+  align-items:center;justify-content:center;
+  padding:16px;
+  -webkit-tap-highlight-color:transparent;
+}
+.sim-modal-overlay.open{display:flex}
+.sim-modal{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+  max-width:1200px;width:100%;
+  min-width:0;
+  max-height:calc(100vh - 32px);
+  display:flex;flex-direction:column;
+  position:relative;
+  animation:info-modal-in .2s ease-out;
+}
+.sim-modal-header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 20px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.sim-modal-title{
+  font-size:13px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--accent);
+}
+.sim-modal-close{
+  width:32px;height:32px;border-radius:50%;
+  border:none;background:var(--bg2);color:var(--text2);
+  font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;line-height:1;flex-shrink:0;
+}
+.sim-modal-close:hover{background:var(--red);color:#fff}
+.sim-modal-body{
+  padding:16px 20px 20px;
+  overflow-y:auto;overflow-x:hidden;
+  flex:1;min-height:0;
+}
+@media(max-width:640px){
+  .sim-modal-overlay{padding:0}
+  .sim-modal{
+    max-width:100%;height:100%;max-height:100%;width:100%;
+    border-radius:0;border:none;
+  }
+  .sim-modal-header{padding:12px 14px}
+  .sim-modal-title{font-size:12px}
+  .sim-modal-body{padding:12px 12px 24px}
+}
+
+/* Header card Statistik Deskriptif dgn tombol trigger Simulasi di kanan.
+   Layout row responsif — tombol wrap ke baris baru saat sempit. */
+.stats-title-row{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;margin-bottom:10px;
+}
+.stats-title-row .card-title{margin-bottom:0}
+
+/* Tombol trigger Simulasi (pengganti menu). Pill gradien senada dgn .btn
+   agar terlihat sebagai call-to-action, bukan sekadar link. */
+.btn-sim-open{
+  padding:7px 14px;
+  background:var(--grad);color:#fff;
+  border:none;border-radius:var(--radius-pill);
+  font-family:inherit;font-size:12px;font-weight:700;
+  letter-spacing:.3px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  box-shadow:0 4px 14px rgba(109,40,217,.25);
+  transition:transform .15s,box-shadow .15s;
+}
+.btn-sim-open:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(109,40,217,.35)}
+.btn-sim-open:active{transform:translateY(0)}
+@media(max-width:640px){
+  .btn-sim-open{font-size:11px;padding:6px 12px}
+}
+
 /* ── HERO MIDDLE COLUMN (z-core + korelasi) ──
    Universal default: stack vertical, right-align (kompatibel dgn current
    mobile yg menampilkan zcore + korelasi di bawah price block). */
@@ -4859,7 +4945,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
     <div class="nav-tab" onclick="showPage('valuasi');vlEnsureCharts()">Valuasi</div>
     <div class="nav-tab" onclick="showPage('consensus')">Consensus</div>
-    <div class="nav-tab" onclick="showPage('menabung')">Simulasi</div>
+    <!-- Menu "Simulasi" DIHAPUS dari nav — sekarang jadi modal yang dipicu dari
+         card Statistik Deskriptif di Dashboard (tombol .btn-sim-open →
+         openSimModal). Semua fungsi Simulasi tetap ada; hanya UI trigger yg
+         berpindah. -->
     <!-- TRACKER (preview admin-only; hidden utk user biasa via body.tr-admin).
          Icon 📈 di-bungkus .tr-nav-ico agar bisa disembunyikan di PC via
          media query — nav-tabs desktop-only, tapi kita jaga selektor
@@ -4922,7 +5011,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <div class="card card-stats" id="statsCard">
         <div id="stockHero"><div class="loading"><div class="spinner"></div> Memuat data...</div></div>
         <div class="hero-stats-divider"></div>
-        <div class="card-title" id="statsCardTitle" style="margin-bottom:10px">Statistik Deskriptif</div>
+        <div class="stats-title-row">
+          <div class="card-title" id="statsCardTitle">Statistik Deskriptif</div>
+          <!-- Trigger Simulasi (menggantikan menu Simulasi). Membuka modal
+               #simModalOverlay yang isinya identik dgn eks page-menabung. -->
+          <button type="button" class="btn-sim-open" onclick="openSimModal()" aria-label="Buka Simulasi Investasi">💰 Simulasi Investasi</button>
+        </div>
         <div id="statsContent"><div class="loading"><div class="spinner"></div></div></div>
         <div id="yoyContent"></div>
       </div>
@@ -5135,8 +5229,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
 <!-- ═══════════════════════════════════════════
      PAGE 2: SISTEM MENABUNG
 ═══════════════════════════════════════════ -->
-<div class="page" id="page-menabung">
-  <div style="max-width:1200px;margin:0 auto">
+<!-- ═══════════════════════════════════════════
+     SIMULASI MODAL (menggantikan page-menabung standalone)
+     Dipicu oleh tombol .btn-sim-open di card Statistik Deskriptif (Dashboard).
+     Container terluar berubah dari <div class="page"> jadi
+     <div class="sim-modal-overlay">, tapi id "page-menabung" dipertahankan
+     di body modal supaya SEMUA CSS scoped (#page-menabung .foo — banyak
+     rules mobile & desktop) dan SEMUA fungsi JS Simulasi (setSavingMode,
+     setSavingAsset, buildSavingStockList, wireSavingSearch, calculateSaving,
+     buildSavingSeries, renderSavingTable, drawSavingChart, dll) tetap
+     bekerja TANPA modifikasi.
+═══════════════════════════════════════════ -->
+<div class="sim-modal-overlay" id="simModalOverlay" onclick="if(event.target===this)closeSimModal()">
+  <div class="sim-modal" role="dialog" aria-modal="true" aria-labelledby="simModalTitle">
+    <div class="sim-modal-header">
+      <div class="sim-modal-title" id="simModalTitle">💰 Simulasi Menabung</div>
+      <button type="button" class="sim-modal-close" aria-label="Tutup Simulasi" onclick="closeSimModal()">×</button>
+    </div>
+    <div class="sim-modal-body" id="page-menabung">
     <div class="info-banner">
       💡 Simulasi menabung <b>Saham IDX</b> &amp; <b>Emas Antam</b> — DCA (berkala) &amp; Lump Sum. Perhitungan realistik: saham pakai lot 100 &amp; dividen historis, emas pakai gram (harga bulanan Antam).
     </div>
@@ -5257,8 +5367,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div>
       </div>
     </div>
-  </div>
-</div><!-- /page-menabung -->
+    <div class="dm-disclaimer-mini">Konten ini sebagai informasi edukasi dan bukan merupakan ajakan atau rekomendasi untuk membeli maupun menjual saham tertentu. Selalu lakukan riset secara mandiri dan pastikan kamu memahami resikonya sebelum mengambil keputusan investasi.</div>
+    </div><!-- /.sim-modal-body#page-menabung -->
+  </div><!-- /.sim-modal -->
+</div><!-- /.sim-modal-overlay#simModalOverlay -->
 
 
 <!-- ═══════════════════════════════════════════
@@ -15864,6 +15976,16 @@ function init() {
 // Tidak bergantung pada global `event` (yang error di strict mode).
 // ═══════════════════════════════════════════
 function showPage(name) {
+  // Backward-compat: menu "Simulasi" (dulu tab standalone) sekarang jadi
+  // modal yang dipicu dari card Statistik Deskriptif. Semua panggilan lama
+  // showPage('menabung') otomatis re-route ke openSimModal() supaya deep-link,
+  // shortcut, atau code path lain tidak break. Container #page-menabung
+  // sudah tidak ber-class ".page" jadi kalaupun jatuh ke logic di bawah,
+  // tidak ada efek visual (tidak ada tab/page yang bisa aktif).
+  if (name === 'menabung') {
+    if (typeof openSimModal === 'function') openSimModal();
+    return;
+  }
   // Switch page
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById('page-' + name);
@@ -25882,9 +26004,8 @@ body.vl-maxing{overflow:hidden}
   <button class="bottom-nav-item" id="bn-consensus" onclick="showPageMobile('consensus',this)">
     <span class="bn-icon">🔍</span>Consensus
   </button>
-  <button class="bottom-nav-item" id="bn-menabung" onclick="showPageMobile('menabung',this)">
-    <span class="bn-icon">💰</span>Simulasi
-  </button>
+  <!-- Item Simulasi dihapus dari bottom-nav — trigger sekarang via tombol
+       .btn-sim-open di card Statistik Deskriptif (Dashboard). -->
   <button class="bottom-nav-item tr-menu" id="bn-tracker" onclick="showPageMobile('tracker',this)">
     <span class="bn-icon">📈</span>Tracker
   </button>
@@ -25939,9 +26060,31 @@ function closeInfoModalOnBackdrop(e) {
   // Hanya tutup kalau klik backdrop (overlay), bukan konten modal
   if (e.target === e.currentTarget) closeInfoModal();
 }
+
+// ═══════════════════════════════════════════
+// SIMULASI MODAL — pengganti menu Simulasi standalone.
+// Trigger: tombol .btn-sim-open di card Statistik Deskriptif (Dashboard).
+// Semua fungsi & state Simulasi (setSavingMode, setSavingAsset,
+// calculateSaving, dll) TIDAK berubah — hanya UI trigger yang pindah
+// dari tab nav ke tombol modal.
+// ═══════════════════════════════════════════
+function openSimModal() {
+  const overlay = document.getElementById('simModalOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  // Prevent body scroll while modal is open (idiom sama dgn info/rec modal)
+  document.body.style.overflow = 'hidden';
+}
+function closeSimModal() {
+  const overlay = document.getElementById('simModalOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 // ESC untuk tutup modal
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { closeInfoModal(); closeRecDetail(); }
+  if (e.key === 'Escape') { closeInfoModal(); closeRecDetail(); closeSimModal(); }
 });
 </script>
 
