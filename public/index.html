@@ -3045,6 +3045,13 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-subtab-btn.active{background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(124,58,237,.24)}
 .tr-subtab-btn .tr-subtab-chip{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(255,255,255,.16);color:#fff;letter-spacing:.3px}
 .tr-subtab-btn:not(.active) .tr-subtab-chip{background:var(--bg3);color:var(--text3)}
+/* Icon di sub-tab menu Tracker disembunyikan di desktop (≥641px) per
+   user request — di HP tetap tampil karena membantu scan tab saat teks
+   dipendekkan. Emoji dibungkus <span class="tr-subtab-ico"> supaya CSS
+   toggle bisa target hanya icon-nya tanpa merusak text/count chip. */
+@media (min-width: 641px){
+  .tr-subtab-btn .tr-subtab-ico{display:none}
+}
 @media(max-width:640px){
   .tr-subtabs{margin:0 -2px 12px;border-radius:10px}
   .tr-subtab-btn{padding:8px 10px;font-size:12px}
@@ -4135,11 +4142,13 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
    labelnya duduk tepat di atas datanya. */
 /* 7 kolom di desktop: Tanggal · Kode · Sekuritas · Harga · Target · Status · P&L
    Harga = harga saham saat ini (lastPrice utk aktif/pending, exitPrice utk
-   closed, entry sebagai fallback). Ditempatkan sebelum Target supaya user
-   bisa langsung compare harga sekarang vs target analis. */
+   closed, entry sebagai fallback) + change% hari ini (dari DATA.live).
+   Ditempatkan sebelum Target supaya user bisa langsung compare harga
+   sekarang vs target analis. Kolom Harga sedikit dilebarkan (94px) supaya
+   angka + change% inline muat. */
 .tr-ov-latest-head{
   display:grid;
-  grid-template-columns:82px 60px minmax(0,1fr) 68px 66px 62px 60px;
+  grid-template-columns:82px 60px minmax(0,1fr) 94px 66px 62px 60px;
   align-items:center;gap:10px;
   padding:8px 6px;margin-bottom:2px;
   border-bottom:1px solid var(--border);
@@ -4154,7 +4163,7 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 .tr-ov-latest-head .h-status{text-align:center}
 .tr-ov-latest-row{
   display:grid;
-  grid-template-columns:82px 60px minmax(0,1fr) 68px 66px 62px 60px;
+  grid-template-columns:82px 60px minmax(0,1fr) 94px 66px 62px 60px;
   align-items:center;gap:10px;
   padding:9px 6px;border-bottom:1px solid var(--border);
   cursor:pointer;transition:background .12s;
@@ -4185,10 +4194,21 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 .tr-ov-latest-status.exp{background:rgba(202,138,4,.14);color:var(--yellow);border:1px solid rgba(202,138,4,.28)}
 .tr-ov-latest-status.active{background:rgba(37,99,235,.14);color:var(--accent2);border:1px solid rgba(37,99,235,.28)}
 .tr-ov-latest-status.pending{background:rgba(217,119,6,.14);color:var(--yellow);border:1px solid rgba(217,119,6,.28)}
+/* Cell Harga: harga + change% hari ini inline (right-aligned). Change%
+   sub-teks lebih kecil di bawah harga supaya scan cepat: harga besar,
+   perubahan kecil di bawah. */
 .tr-ov-latest-price{
   font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
-  text-align:right;color:var(--text);font-variant-numeric:tabular-nums
+  text-align:right;color:var(--text);font-variant-numeric:tabular-nums;
+  display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;gap:1px
 }
+.tr-ov-latest-price-v{line-height:1;font-size:12px}
+.tr-ov-latest-chg{
+  font-size:10px;font-weight:700;letter-spacing:.2px;font-variant-numeric:tabular-nums;
+  color:var(--text3)
+}
+.tr-ov-latest-chg.up{color:var(--green)}
+.tr-ov-latest-chg.dn{color:var(--red)}
 .tr-ov-latest-target{
   font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
   text-align:right;color:var(--text2);font-variant-numeric:tabular-nums
@@ -4302,7 +4322,13 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   .tr-ov-latest-firm   {grid-row:1;grid-column:2;font-size:11px}
   .tr-ov-latest-pnl    {grid-row:1;grid-column:3;font-size:11px}
   .tr-ov-latest-date   {grid-row:2;grid-column:1;font-size:10px}
-  .tr-ov-latest-price  {grid-row:2;grid-column:2;text-align:left;font-size:10px}
+  /* Harga di HP: pakai flex-row inline (harga + change% berdampingan)
+     supaya hemat vertical space. */
+  .tr-ov-latest-price  {
+    grid-row:2;grid-column:2;font-size:10px;
+    flex-direction:row;align-items:baseline;justify-content:flex-start;gap:6px
+  }
+  .tr-ov-latest-chg{font-size:9.5px}
   .tr-ov-latest-status {grid-row:2;grid-column:3;font-size:8.5px;padding:1px 5px}
   .tr-ov-latest-target {display:none}
 }
@@ -5407,15 +5433,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
      jadi "Overview" (user preference — kata Ringkasan sudah terlalu umum). -->
 <div class="tr-subtabs" id="tr-subtabs" role="tablist" aria-label="Tracker sections">
   <button type="button" class="tr-subtab-btn active" data-subtab="ringkasan"
-    role="tab" aria-selected="true" aria-controls="tr-view-main">📋 Overview</button>
+    role="tab" aria-selected="true" aria-controls="tr-view-main"><span class="tr-subtab-ico" aria-hidden="true">📋</span> Overview</button>
   <button type="button" class="tr-subtab-btn" data-subtab="live"
-    role="tab" aria-selected="false" aria-controls="tr-view-live">🚀 Live <span class="tr-subtab-chip" id="trSubLiveN">—</span></button>
+    role="tab" aria-selected="false" aria-controls="tr-view-live"><span class="tr-subtab-ico" aria-hidden="true">🚀</span> Live <span class="tr-subtab-chip" id="trSubLiveN">—</span></button>
   <button type="button" class="tr-subtab-btn" data-subtab="analisis"
-    role="tab" aria-selected="false" aria-controls="tr-view-analisis">📈 Analisis <span class="tr-subtab-chip" id="trSubAnlN">—</span></button>
+    role="tab" aria-selected="false" aria-controls="tr-view-analisis"><span class="tr-subtab-ico" aria-hidden="true">📈</span> Analisis <span class="tr-subtab-chip" id="trSubAnlN">—</span></button>
   <button type="button" class="tr-subtab-btn" data-subtab="analis"
-    role="tab" aria-selected="false" aria-controls="tr-view-analis">👤 Analis <span class="tr-subtab-chip" id="trSubAnlsN">—</span></button>
+    role="tab" aria-selected="false" aria-controls="tr-view-analis"><span class="tr-subtab-ico" aria-hidden="true">👤</span> Analis <span class="tr-subtab-chip" id="trSubAnlsN">—</span></button>
   <button type="button" class="tr-subtab-btn" data-subtab="perf"
-    role="tab" aria-selected="false" aria-controls="tr-view-perf">📊 Performa</button>
+    role="tab" aria-selected="false" aria-controls="tr-view-perf"><span class="tr-subtab-ico" aria-hidden="true">📊</span> Performa</button>
 </div>
 
 <!-- ── TRACKER MAIN VIEW (dashboard performa) — pane RINGKASAN ─────── -->
@@ -6189,18 +6215,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
      ke sini agar klik card di Performa langsung buka di tab ini. -->
 <div id="tr-view-analis" class="tr-subpane" role="tabpanel" aria-hidden="true">
 
-  <!-- Fallback empty state — visible saat data belum siap -->
-  <div class="tr-empty" id="trAnalisPending">
-    <div class="tr-empty-ico">🏢</div>
-    <div class="tr-empty-title">Detail Sekuritas — menunggu data</div>
-    <div class="tr-empty-desc">
-      Direktori sekuritas + halaman detail per-sekuritas (track record, chart 30 hari, simulator eksekusi, daftar rekomendasi).
-    </div>
-    <div class="tr-empty-hint" id="trAnalisStatus"><span class="status-dot"></span><span class="status-txt">Menunggu tracker.json…</span></div>
-  </div>
+  <!-- Fallback empty state DIHAPUS per user request — halaman langsung
+       menampilkan master-detail. Kalau data belum siap, sidebar akan
+       menampilkan placeholder "Belum ada data" (natural empty state, tanpa
+       kesan loading). Element id trAnalisPending/trAnalisStatus di-preserve
+       sbg hidden span supaya updateStatusHint() null-safe. -->
+  <span id="trAnalisPending" style="display:none" aria-hidden="true"><span id="trAnalisStatus"><span class="status-dot"></span><span class="status-txt"></span></span></span>
 
   <!-- Master-detail -->
-  <div id="trAnalisContent" class="tr-mdet" style="display:none">
+  <div id="trAnalisContent" class="tr-mdet">
 
     <!-- KIRI: list sekuritas (searchable) -->
     <aside class="tr-mdet-side">
@@ -11293,7 +11316,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
       return;
     }
     // Harga saham per row: lastPrice (aktif/pending) → exitPrice (closed) →
-    // entry (fallback). Title attr menjelaskan sumber angkanya.
+    // entry (fallback). Title attr menjelaskan sumber angkanya. Perubahan %
+    // hari ini datang dari DATA.live[ticker].change_pct (fraction, ×100 utk %).
     var priceOf = function(r){
       if(Number.isFinite(+r.lastPrice) && +r.lastPrice > 0) return { v: +r.lastPrice, src: 'live' };
       if(Number.isFinite(+r.exitPrice) && +r.exitPrice > 0) return { v: +r.exitPrice, src: 'exit' };
@@ -11301,6 +11325,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
       return { v: null, src: null };
     };
     var srcLabel = { live:'harga live', exit:'harga saat closed', entry:'harga entry (fallback)' };
+    // Ambil DATA.live yang di-set oleh consensus IIFE. Guard `typeof DATA`
+    // untuk hindari ReferenceError kalau script order berubah (let DATA
+    // tidak attach ke window).
+    var liveMap = {};
+    try { if (typeof DATA !== 'undefined' && DATA && DATA.live) liveMap = DATA.live; } catch(_){}
+    var chgOf = function(ticker){
+      var lv = liveMap[ticker];
+      if(lv && Number.isFinite(+lv.change_pct)) return +lv.change_pct * 100;
+      return null;
+    };
     var rows = take.map(function(x){
       var r = x.r;
       var st = statusOfRow(x._b, r);
@@ -11309,11 +11343,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var pstr = p==null ? '—' : ((p>=0?'+':'') + p.toFixed(1) + '%');
       var px = priceOf(r);
       var priceTitle = px.src ? srcLabel[px.src] : 'harga tidak tersedia';
+      // Change % hari ini — HANYA tampilkan untuk rec yg pakai harga live
+      // (aktif/pending). Rec closed → harga = exitPrice historis, jadi
+      // change % hari ini tidak relevan.
+      var chg = (px.src === 'live') ? chgOf(r.ticker) : null;
+      var chgCls = chg==null ? '' : (chg>0?'up':(chg<0?'dn':''));
+      var chgStr = chg==null ? '' : '<span class="tr-ov-latest-chg '+chgCls+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>';
       return '<div class="tr-ov-latest-row" data-ticker="'+esc(r.ticker||'')+'" data-firm-id="'+esc(r.firmId||'')+'" title="Klik untuk detail">'
         + '<span class="tr-ov-latest-date">'+esc(r.openDate||'—')+'</span>'
         + '<span class="tr-ov-latest-tick" data-action="stock">'+esc(r.ticker||'—')+'</span>'
         + '<span class="tr-ov-latest-firm" data-action="firm" title="'+esc(r.firm||'')+'">'+esc(firmShortLbl(r.firm))+'</span>'
-        + '<span class="tr-ov-latest-price" title="'+esc(priceTitle)+'">'+_fmtNRow(px.v)+'</span>'
+        + '<span class="tr-ov-latest-price" title="'+esc(priceTitle)+'"><span class="tr-ov-latest-price-v">'+_fmtNRow(px.v)+'</span>'+chgStr+'</span>'
         + '<span class="tr-ov-latest-target" title="Target TP1 analis">'+_fmtNRow(r.tp1)+'</span>'
         + '<span class="tr-ov-latest-status '+statusClsRow(st)+'">'+st+'</span>'
         + '<span class="tr-ov-latest-pnl '+pcls+'">'+pstr+'</span>'
