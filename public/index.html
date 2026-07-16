@@ -40,6 +40,13 @@
       }
     } catch (e) {}
   })();
+  // Tracker hydration guard — sembunyikan konten menu Tracker sampai
+  // tracker.json ready supaya tidak flash 'halaman lama' (fake analyst
+  // names, chart fake, KPI +9.4% fake) di tab Overview. Class dilepas
+  // via __TR_onData di sub-tab shell IIFE + safety net timeout 6s.
+  // Aman dipasang seawal ini: berlaku hanya utk selectors yg di-scope
+  // ke `html.tracker-loading #tr-view-main ...` (lihat CSS block).
+  try { document.documentElement.classList.add('tracker-loading'); } catch (e) {}
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -2724,6 +2731,20 @@ body.tr-profile-open #tr-view-profile{display:block}
 .cal-ok{background:var(--grad);border:0;color:#fff;cursor:pointer;padding:8px 14px;border-radius:8px;font-family:inherit;font-size:11.5px;font-weight:800;transition:all .15s;letter-spacing:.3px;flex:0 0 auto;box-shadow:0 3px 10px rgba(124,58,237,.24)}
 .cal-ok:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(124,58,237,.32)}
 .cal-ok:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+/* Visual boost saat OK enabled (single day / range picked) — subtle glow
+   green→purple gradient supaya user langsung sadar tombol siap di-klik.
+   Sebelumnya user report 'gak bisa OK saat pilih range' — sebenarnya
+   secara logic BISA (disabled=false), tapi visual state tidak beda cukup
+   dari disabled state (default gradient sama-sama purple). */
+.cal-ok.active-ok:not(:disabled){
+  background:linear-gradient(135deg,var(--green),var(--accent));
+  box-shadow:0 4px 14px rgba(16,185,129,.35);
+  animation:calOkPulse 2s ease-in-out infinite
+}
+@keyframes calOkPulse{
+  0%,100%{box-shadow:0 4px 14px rgba(16,185,129,.35)}
+  50%{box-shadow:0 5px 18px rgba(16,185,129,.55)}
+}
 .cal-actions{display:flex;gap:6px}
 .cal-range-info{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:4px 6px;background:var(--bg2);border-radius:6px;border:1px dashed var(--border);letter-spacing:.2px}
 .cal-range-info b{color:var(--accent);font-weight:800}
@@ -3836,6 +3857,25 @@ body.tr-profile-open .tr-subpane{display:none !important}
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   TRACKER HYDRATION GUARD — sembunyikan konten dummy sampai tracker.json
+   ready supaya tidak ada flash "halaman lama" (fake analyst names, chart
+   fake, KPI +9.4% fake) di menu Overview. Class `tracker-loading` di-add
+   di <html> via inline script di <head>, di-remove saat __TR_onData fires
+   (sub-tab shell IIFE). Safety net: auto-remove 6s no matter what.
+   ═══════════════════════════════════════════════════════════════════ */
+#tr-view-main .tr-kpi .v,
+#tr-view-main .tr-kpi .s,
+#tr-view-main #trChart,
+#tr-view-main #trLb,
+#tr-view-main .tr-chart-wrap,
+#tr-view-main .tr-legend{transition:opacity .3s ease .05s}
+html.tracker-loading #tr-view-main .tr-kpi .v,
+html.tracker-loading #tr-view-main #trChart,
+html.tracker-loading #tr-view-main #trLb,
+html.tracker-loading #tr-view-main .tr-chart-wrap,
+html.tracker-loading #tr-view-main .tr-legend{opacity:0}
+
+/* ═══════════════════════════════════════════════════════════════════
    MOBILE POLISH (≤640px) — khusus tab LIVE & PERFORMA di menu Tracker.
    Tujuan: bikin tampilan HP lebih minimalis & padat tanpa mengubah versi
    desktop. Semua selector di-prefix `#tr-view-live` atau `#tr-view-perf`
@@ -3881,6 +3921,12 @@ body.tr-profile-open .tr-subpane{display:none !important}
   #tr-view-live .tr-live-firmselect{font-size:12px;padding:9px 30px 9px 11px}
   #tr-view-live .tr-live-firmbar{gap:8px}
   #tr-view-live .tr-live-firmbar-lbl{font-size:9.5px;letter-spacing:.4px}
+  /* Firmbar (list sekuritas) hidden by default di HP — muncul kalau user
+     fokus di kolom pencarian atau punya filter aktif. Toggle via class
+     `.show-firmbar` (JS di IIFE Tab Live). Menghemat vertical space +
+     mengurangi kognitif load; user reveal saat butuh filter firm. */
+  #tr-view-live .tr-live-firmbar{display:none}
+  #tr-view-live .tr-live-toolbar.show-firmbar .tr-live-firmbar{display:flex}
 
   /* Section heading Rekomendasi Aktif */
   #tr-view-live .tr-live-stream-hd{font-size:9.5px;letter-spacing:.6px;margin:12px 2px 8px}
@@ -4888,20 +4934,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
 ═══════════════════════════════════════════ -->
 <div class="page" id="page-tracker">
 
-<!-- ── SUB-TAB NAV (Ringkasan / Analisis / Live / Performa / Simulasi) ─
-     Default aktif: Ringkasan. Analisis = chart candlestick + peta rec
-     per ticker (gabungan visual dashboard + consensus overview). -->
+<!-- ── SUB-TAB NAV — urutan: Overview → Live → Analisis → Analis → Performa.
+     Default aktif tetap "ringkasan" (data-subtab attr TIDAK diubah supaya
+     backward-compat localStorage LS_KEY tr_subtab_active). Label diubah
+     jadi "Overview" (user preference — kata Ringkasan sudah terlalu umum). -->
 <div class="tr-subtabs" id="tr-subtabs" role="tablist" aria-label="Tracker sections">
   <button type="button" class="tr-subtab-btn active" data-subtab="ringkasan"
-    role="tab" aria-selected="true" aria-controls="tr-view-main">📋 Ringkasan</button>
-  <button type="button" class="tr-subtab-btn" data-subtab="analisis"
-    role="tab" aria-selected="false" aria-controls="tr-view-analisis">📈 Analisis <span class="tr-subtab-chip" id="trSubAnlN">—</span></button>
+    role="tab" aria-selected="true" aria-controls="tr-view-main">📋 Overview</button>
   <button type="button" class="tr-subtab-btn" data-subtab="live"
     role="tab" aria-selected="false" aria-controls="tr-view-live">🚀 Live <span class="tr-subtab-chip" id="trSubLiveN">—</span></button>
-  <button type="button" class="tr-subtab-btn" data-subtab="perf"
-    role="tab" aria-selected="false" aria-controls="tr-view-perf">📊 Performa</button>
+  <button type="button" class="tr-subtab-btn" data-subtab="analisis"
+    role="tab" aria-selected="false" aria-controls="tr-view-analisis">📈 Analisis <span class="tr-subtab-chip" id="trSubAnlN">—</span></button>
   <button type="button" class="tr-subtab-btn" data-subtab="analis"
     role="tab" aria-selected="false" aria-controls="tr-view-analis">👤 Analis <span class="tr-subtab-chip" id="trSubAnlsN">—</span></button>
+  <button type="button" class="tr-subtab-btn" data-subtab="perf"
+    role="tab" aria-selected="false" aria-controls="tr-view-perf">📊 Performa</button>
 </div>
 
 <!-- ── TRACKER MAIN VIEW (dashboard performa) — pane RINGKASAN ─────── -->
@@ -4920,25 +4967,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
   </div>
 
   <div class="tr-kpi-row">
+    <!-- Nilai KPI default = "—" (bukan fake "+9.4%" dst) supaya tidak
+         ada flash 'halaman lama' saat awal buka menu Tracker. Real data
+         akan overwrite via IIFE 'SYNC RINGKASAN' → updateKpi(data) saat
+         tracker.json ready. Placeholder juga di-hide lewat CSS
+         html.tracker-loading — dobel safeguard visual. -->
     <div class="tr-kpi hi">
       <div class="k">RETURN ANALIS</div>
-      <div class="v tr-up" id="trKpiCons">+9.4%</div>
-      <div class="s tr-up" id="trKpiConsSub">Blended · 3 bulan</div>
+      <div class="v" id="trKpiCons">—</div>
+      <div class="s tr-neu" id="trKpiConsSub">Menunggu data…</div>
     </div>
     <div class="tr-kpi">
       <div class="k">RETURN IHSG</div>
-      <div class="v" id="trKpiIhsg">+3.1%</div>
+      <div class="v" id="trKpiIhsg">—</div>
       <div class="s tr-neu">Benchmark pasar</div>
     </div>
     <div class="tr-kpi">
       <div class="k">ALPHA (OUTPERFORMANCE)</div>
-      <div class="v tr-up" id="trKpiAlpha">+6.3%</div>
+      <div class="v" id="trKpiAlpha">—</div>
       <div class="s tr-neu">vs IHSG · periode sama</div>
     </div>
     <div class="tr-kpi">
       <div class="k">WIN RATE</div>
-      <div class="v" id="trKpiWr">64%</div>
-      <div class="s tr-neu" id="trKpiWrSub">32 dari 50 rekomendasi</div>
+      <div class="v" id="trKpiWr">—</div>
+      <div class="s tr-neu" id="trKpiWrSub">Menunggu data…</div>
     </div>
   </div>
 
@@ -6944,7 +6996,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   function updateCalOkState(){
     var ok = $id('trPfCalOk'); if(!ok) return;
-    ok.disabled = !(_calPending && _calPending.start);
+    // OK enabled kalau minimal ada tgl awal terpilih. Kondisi ini benar
+    // untuk BOTH:
+    //   - single day (_calPending.start set, _calPending.end null)  → OK
+    //   - range     (_calPending.start & _calPending.end set)       → OK
+    // User melaporkan OK 'gak bisa' saat range dipilih; visual/klik-ability
+    // dijelaskan lebih baik via class .active-ok (styling gradient + animasi
+    // subtle di CSS) supaya user langsung sadar OK ready to click.
+    var canApply = !!(_calPending && _calPending.start);
+    ok.disabled = !canApply;
+    ok.classList.toggle('active-ok', canApply);
+    // Defensive: kalau _calPending punya .end (range mode), pastikan
+    // pointer-events aktif — sometimes CSS transitions/animations
+    // menyebabkan momentary non-clickable state.
+    ok.style.pointerEvents = canApply ? 'auto' : 'none';
   }
   function updateCalRangeInfo(){
     var info = $id('trPfCalRangeInfo'); if(!info) return;
@@ -7855,7 +7920,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // Init sekali saat page pertama dibuka (chart butuh canvas terlihat).
   var _trInit = false;
-  function trEnsure(){ if(_trInit) return; _trInit=true; renderLb(); renderScn(); renderTrChart('pure'); }
+  function trEnsure(){
+    if(_trInit) return;
+    _trInit=true;
+    // Dummy renderLb() + renderTrChart('pure') SENGAJA DIHILANGKAN untuk
+    // mencegah flash 'halaman lama' — sebelumnya nama analis fake (Budi
+    // Santoso, Sari Handoko, dst) + chart series fake sempat kelihatan
+    // sebelum real data override via IIFE 'SYNC RINGKASAN'. Papan
+    // peringkat + chart akan terisi saat __TR_onData callback fires.
+    // renderScn() tetap dipanggil karena section scenarios tidak punya
+    // override real data (orphan preview) — biarkan tetap tampil.
+    renderScn();
+  }
 
   // Panggil trEnsure saat page-tracker aktif. Kita hook ke showPage lama
   // dgn wrapper defensif — kalau showPage belum ada, coba lagi nanti.
@@ -8466,6 +8542,109 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
   }
   hookTracker();
+
+  // ─── HYDRATION UNLOCK ────────────────────────────────────────────
+  // Lepas class `tracker-loading` (fade-in konten Overview) setelah data
+  // real tersedia. Delay 60ms supaya IIFE 'SYNC RINGKASAN' + Live/Perf/
+  // Analis renderers sempat isi DOM dulu sebelum content muncul. Safety
+  // net: auto-remove 6 detik supaya user tidak stuck di blank state
+  // meskipun fetch gagal.
+  window.__TR_onData(function(){
+    setTimeout(function(){
+      try { document.documentElement.classList.remove('tracker-loading'); } catch(_){}
+    }, 60);
+  });
+  setTimeout(function(){
+    try { document.documentElement.classList.remove('tracker-loading'); } catch(_){}
+  }, 6000);
+
+  // ─── AUTO-SELECT RHB DI TAB ANALIS ───────────────────────────────
+  // Saat user pertama kali buka tab Analis (per session), auto-open firm
+  // RHB (paling favorit user). Kalau user sudah manual pilih firm lain,
+  // pilihan itu dipertahankan (guard via `_autoSelectedRHB` flag). Kalau
+  // reload halaman → flag reset → default balik ke RHB.
+  //
+  // Tantangan: tab activation bisa datang dari 2 sumber:
+  //   1) `activateTracker()` restore saved LS → switchTab
+  //   2) Klik tombol user di sub-tab bar → switchTab
+  // Jadi kita observe class change di #tr-view-analis (universal).
+  var _autoSelectedRHB = false;
+  function _findRHBFirm(){
+    var d = window.__TR_getData && window.__TR_getData();
+    if (!d || d.pending) return null;
+    var byF = d.byFirm || {};
+    var keys = Object.keys(byF);
+    for (var i = 0; i < keys.length; i++) {
+      var f = byF[keys[i]];
+      if (!f) continue;
+      var n = String(f.name || '').toLowerCase();
+      var id = String(f.id || keys[i] || '').toLowerCase();
+      // Match "rhb" sbg prefix kata pertama — hindari false-positive.
+      if (/^rhb(\s|$|-)/.test(n) || /^rhb(-|$)/.test(id)) return f;
+    }
+    return null;
+  }
+  function _maybeAutoSelectRHB(){
+    if (_autoSelectedRHB) return;
+    var pane = document.getElementById('tr-view-analis');
+    if (!pane || !pane.classList.contains('active')) return;
+    // Jangan override kalau user sudah manual pilih firm.
+    if (document.querySelector('#trMdetList .tr-mdet-item.active')) return;
+    var rhb = _findRHBFirm();
+    if (!rhb) return;
+    if (typeof window.__TR_openFirm !== 'function') return;
+    _autoSelectedRHB = true;
+    window.__TR_openFirm(rhb.id || rhb.name);
+  }
+  // Trigger 1: MutationObserver di #tr-view-analis untuk deteksi tab
+  // activation (class 'active' toggled ke true).
+  try {
+    var _anlPane = document.getElementById('tr-view-analis');
+    if (_anlPane && typeof MutationObserver !== 'undefined') {
+      new MutationObserver(function(){
+        if (_anlPane.classList.contains('active')) {
+          setTimeout(_maybeAutoSelectRHB, 120);
+        }
+      }).observe(_anlPane, { attributes: true, attributeFilter: ['class'] });
+    }
+  } catch(_){}
+  // Trigger 2: setelah data ready — kalau tab Analis kebetulan sudah
+  // aktif (restore dari LS misalnya), coba auto-select juga.
+  window.__TR_onData(function(){
+    setTimeout(_maybeAutoSelectRHB, 200);
+  });
+
+  // ─── MOBILE FIRMBAR VISIBILITY TOGGLE ────────────────────────────
+  // Di HP, list sekuritas (`.tr-live-firmbar`) hidden by default. Muncul
+  // saat: (a) user fokus di kolom pencarian, (b) input pencarian ada
+  // isinya, atau (c) firmSelect punya filter aktif (bukan __all__).
+  // Menghemat vertical space; user reveal saat butuh.
+  function _updateFirmbarVisibility(){
+    var toolbar = document.querySelector('#tr-view-live .tr-live-toolbar');
+    var searchInput = document.getElementById('trLiveSearch');
+    var firmSelect = document.getElementById('trLiveFirmSelect');
+    if (!toolbar || !searchInput) return;
+    var hasSearch    = searchInput.value.trim().length > 0;
+    var searchFocus  = document.activeElement === searchInput;
+    var firmFiltered = firmSelect && firmSelect.value && firmSelect.value !== '__all__';
+    toolbar.classList.toggle('show-firmbar', !!(hasSearch || searchFocus || firmFiltered));
+  }
+  document.addEventListener('focusin', function(e){
+    if (e.target && e.target.id === 'trLiveSearch') _updateFirmbarVisibility();
+  });
+  document.addEventListener('focusout', function(e){
+    if (e.target && e.target.id === 'trLiveSearch') {
+      // Delay biar kalau user pindah tap ke firmSelect (yg baru muncul),
+      // dropdown-nya tidak collapse duluan.
+      setTimeout(_updateFirmbarVisibility, 250);
+    }
+  });
+  document.addEventListener('input', function(e){
+    if (e.target && e.target.id === 'trLiveSearch') _updateFirmbarVisibility();
+  });
+  document.addEventListener('change', function(e){
+    if (e.target && e.target.id === 'trLiveFirmSelect') _updateFirmbarVisibility();
+  });
 })();
 </script>
 
