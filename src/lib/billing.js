@@ -9,8 +9,11 @@
 // ─────────────────────────────────────────────────────────────────────────
 import { now } from './util.js';
 
-export const PLAN_ORDER = ['3bulan', '6bulan', 'tahunan'];
-export const PLAN_MONTHS = { '3bulan': 3, '6bulan': 6, 'tahunan': 12 };
+// PLAN_ORDER menentukan urutan tampil kartu di /billing DAN urutan editor
+// di panel admin. '1bulan' di depan supaya paket tracker-only muncul paling
+// kiri (paling murah / entry level).
+export const PLAN_ORDER = ['1bulan', '3bulan', '6bulan', 'tahunan'];
+export const PLAN_MONTHS = { '1bulan': 1, '3bulan': 3, '6bulan': 6, 'tahunan': 12 };
 
 // Default = nilai yang saat ini hard-coded di billing.html (supaya tampilan
 // tidak berubah sebelum admin mengedit, & jadi fallback bila D1 belum siap).
@@ -18,6 +21,24 @@ export const DEFAULT_BILLING = {
   promoLabel: 'PALING HEMAT',
   featured: 'tahunan',
   plans: {
+    // Paket khusus TRACKER — akses hanya tab Tracker (scope='tracker' di DB).
+    // Positioned sebagai entry-level: harga per-bulan paling mahal (Rp 149rb/bln)
+    // tapi total commitment paling ringan (1 bulan). User day-trader / user yang
+    // cuma tertarik data rekomendasi trading tanpa butuh valuasi & konsensus.
+    '1bulan': {
+      name: 'Paket Tracker',
+      dur: '1 Bulan',
+      priceReal: 149000,
+      priceCoret: 199000,
+      sub: 'Akses fitur Tracker rekomendasi trading',
+      features: [
+        'Akses penuh menu Tracker (rekomendasi Entry/TP/SL)',
+        'Papan peringkat sekuritas + performa vs IHSG',
+        'Update rekomendasi harian',
+      ],
+      btnText: 'Langganan Tracker 1 Bulan',
+      mayarLink: '',
+    },
     '3bulan': {
       name: 'Paket Kuartal',
       dur: '3 Bulan',
