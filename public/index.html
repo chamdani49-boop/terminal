@@ -6304,6 +6304,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function fmtShortDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}); }catch(_){ return String(iso); } }
   // Format panjang utk rec list: "13 Juli 2026". Chart axis tetap pakai fmtShortDate.
   function fmtLongDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}); }catch(_){ return String(iso); } }
+  // fmtChipDate — versi COMPACT untuk chip/label sempit (button date picker
+  // saat filter range: "6 Jul 2026 → 15 Jul 2026"). Sebelumnya fungsi ini
+  // dipakai di updateDateBtnLabel line 7022 TAPI TIDAK PERNAH DEFINED —
+  // bug halus yg baru kelihatan saat user pilih rentang tgl (single day
+  // pakai fmtLongDate yg exist). Efek: updateDateBtnLabel throw
+  // ReferenceError → closeCalPopup di block try/catch berikutnya tidak
+  // pernah kepanggil → popup calendar STUCK terbuka setelah klik OK.
+  function fmtChipDate(iso){ if(!iso) return '—'; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); try{ return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }catch(_){ return String(iso); } }
   // firmShort: JANGAN singkat "Sekuritas" → "Sek." (permintaan user).
   // Cukup strip prefix "PT " dan suffix " Tbk"; nama Sekuritas tetap
   // ditulis lengkap. Kalau container sempit → CSS yang atur (font shrink
