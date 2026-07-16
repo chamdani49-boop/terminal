@@ -288,12 +288,55 @@ async function main() {
     console.warn('  ⚠️  Symbol chart tidak lengkap — pertahankan chart lama.');
   }
 
+  // ── Gold monthly history (IDR/gram) ─────────────────────────────────────
+  // Konversi: Gold USD/oz (GC=F) × USD/IDR (IDR=X) ÷ 31.1035 = Rp/gram.
+  // Format hasil compatible dgn DATA.price_history di data.json — bikin
+  // Simulasi menu Menabung bisa langsung pakai struktur yang sama:
+  //   [{ date:'YYYY-MM-01', label:'Bln YY', price:number }, ...]
+  // Bulan terakhir = harga terkini (Yahoo intra-month close). Frontend
+  // fallback ke null bila data belum siap.
+  let gold = prev?.gold || null;
+  const goldMap = fetched['GC=F'];
+  const usdIdrMap = fetched[USDIDR_SYMBOL];
+  if (goldMap && usdIdrMap && goldMap.size > 3 && usdIdrMap.size > 3) {
+    const OZ_TO_GRAM = 31.1035;   // 1 oz troy = 31.1035 gram
+    const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+    const months = [...goldMap.keys()].filter(m => usdIdrMap.has(m)).sort();
+    const hist = [];
+    for (const m of months) {
+      const usdOz = goldMap.get(m);
+      const fx = usdIdrMap.get(m);
+      if (!(usdOz > 0) || !(fx > 0)) continue;
+      const idrGram = (usdOz * fx) / OZ_TO_GRAM;
+      const [y, mo] = m.split('-').map(Number);
+      hist.push({
+        date: `${y}-${String(mo).padStart(2,'0')}-01`,
+        label: `${monthNames[mo-1]} ${String(y).slice(-2)}`,
+        price: Math.round(idrGram),
+      });
+    }
+    if (hist.length >= 12) {
+      const lastRow = hist[hist.length - 1];
+      gold = {
+        as_of: lastRow.date,
+        last_price: lastRow.price,
+        unit: 'IDR/gram',
+        source: 'yahoo (GC=F × IDR=X / 31.1035)',
+        priceHistory: hist,
+      };
+      console.log(`  ✓ Gold hist: ${hist.length} bln · terakhir Rp ${lastRow.price.toLocaleString('id')}/gram`);
+    }
+  } else {
+    console.warn('  ⚠️  Gold history skipped — GC=F atau IDR=X tidak lengkap.');
+  }
+
   const payload = {
     generated_at: new Date().toISOString(),
     source: 'yahoo',
     base_date: BASE_DATE,
     as_of: prev?.as_of || null, // label snapshot manual (mis. "Mei-26")
     chart: chart || { base_date: BASE_DATE, labels: [], series: { IHSG: [], SPX: [], MXAPJ: [] }, pending: true },
+    gold: gold || null,           // null = data emas belum siap; frontend disable tombol
     table,
   };
 

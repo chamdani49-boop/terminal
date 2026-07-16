@@ -5138,7 +5138,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 <div class="page" id="page-menabung">
   <div style="max-width:1200px;margin:0 auto">
     <div class="info-banner">
-      💡 Simulasi sistem menabung saham — DCA (Dollar Cost Averaging) &amp; Lump Sum untuk saham pilihan Economstock.
+      💡 Simulasi menabung <b>Saham IDX</b> &amp; <b>Emas Antam</b> — DCA (berkala) &amp; Lump Sum. Perhitungan realistik: saham pakai lot 100 &amp; dividen historis, emas pakai gram (harga bulanan Antam).
     </div>
     <div class="saving-grid">
       <!-- Form -->
@@ -5146,7 +5146,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="card">
           <div class="card-title">Pengaturan Portofolio</div>
 
+          <!-- Toggle jenis investasi: Saham IDX vs Emas Antam.
+               Kalau Emas dipilih: input Pilih Saham & kontrol Dividen di-hide,
+               data harga baca dari getGoldHistory() (macro.gold.priceHistory
+               atau fallback statis). Perhitungan pakai satuan gram (fraksional
+               2 desimal) bukan lot 100. -->
           <div class="form-group">
+            <label class="form-label">Jenis Investasi</label>
+            <div class="radio-group">
+              <div class="radio-btn active" onclick="setSavingAsset('stock',this)" id="assetStock">📈 Saham IDX</div>
+              <div class="radio-btn" onclick="setSavingAsset('gold',this)" id="assetGold">🥇 Emas Antam</div>
+            </div>
+          </div>
+
+          <div class="form-group" id="savingStockGroup">
             <label class="form-label">Pilih Saham</label>
             <input type="hidden" id="savingStock">
             <div class="saving-stock-wrap" style="position:relative">
@@ -5154,6 +5167,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
               <div class="search-drop" id="savingStockDrop"></div>
             </div>
             <div id="savingStockPicked" class="saving-picked" style="display:none"></div>
+          </div>
+
+          <!-- Panel info khusus Emas — muncul saat asset='gold' -->
+          <div class="form-group" id="savingGoldGroup" style="display:none">
+            <label class="form-label">Aset Emas</label>
+            <div class="saving-picked" style="display:flex">
+              <span class="code" style="color:#d97706">🥇 XAU</span>
+              <span class="nm">Emas Antam (IDR/gram)</span>
+              <span class="tag" id="savingGoldAsOf">—</span>
+            </div>
           </div>
 
           <div class="form-group">
@@ -5166,7 +5189,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
           <div id="dcaFields">
             <div class="form-group">
-              <label class="form-label">Nabung Per Bulan (Rp)</label>
+              <label class="form-label" id="dcaAmountLbl">Nabung Per Bulan (Rp)</label>
               <input type="text" inputmode="numeric" class="form-control money-input" id="dcaAmount" value="1.000.000">
             </div>
             <div class="form-group">
@@ -5177,7 +5200,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
           <div id="lumpFields" style="display:none">
             <div class="form-group">
-              <label class="form-label">Investasi Awal (Rp)</label>
+              <label class="form-label" id="lumpAmountLbl">Investasi Awal (Rp)</label>
               <input type="text" inputmode="numeric" class="form-control money-input" id="lumpAmount" value="20.000.000">
             </div>
             <div class="form-group">
@@ -5225,7 +5248,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <table class="port-table" id="savingTable">
               <thead><tr>
                 <th style="text-align:left">Periode</th>
-                <th>Harga</th><th>Unit</th><th>Total Unit</th>
+                <th>Harga</th><th id="savingTblUnitHd">Unit</th><th id="savingTblTotalHd">Total Unit</th>
                 <th>Modal</th><th>Nilai</th><th>G/L</th><th>%G/L</th>
               </tr></thead>
               <tbody id="savingTableBody"></tbody>
@@ -14776,6 +14799,53 @@ let savingDivOn = true;          // true = tampilkan dividen di chart
 let savingDivMode = 'cash';      // 'cash' (tunai) | 'reinvest' (DRIP)
 let _savingSim = null;           // hasil simulasi terakhir (rows + seri nilai per skenario)
 
+// ── State asset menabung: 'stock' (default) | 'gold' (emas Antam) ──
+// Tombol toggle di form Menabung switch antara dua asset class. Data harga
+// & terminologi (lot/lembar → gram, dividen → skip) berubah sesuai asset.
+let _savingAsset = 'stock';
+let _macroCache = null;          // hasil fetch macro.json (lazy)
+
+// ── Fallback harga emas bulanan (IDR/gram) 2016-10..2026-07 ──
+// Auto-generated dari anchor Antam publik + interpolasi linear. Dipakai
+// kalau macro.gold.priceHistory belum tersedia di macro.json (workflow
+// refresh-macro belum jalan setelah update ini). Sekali workflow jalan,
+// getGoldHistory() otomatis prefer data real dari macro.
+const _GOLD_FALLBACK = [{d:"2016-10-01",l:"Okt 16",p:596000},{d:"2016-11-01",l:"Nov 16",p:595333},{d:"2016-12-01",l:"Des 16",p:594666},{d:"2017-01-01",l:"Jan 17",p:594000},{d:"2017-02-01",l:"Feb 17",p:597200},{d:"2017-03-01",l:"Mar 17",p:600400},{d:"2017-04-01",l:"Apr 17",p:603600},{d:"2017-05-01",l:"Mei 17",p:606800},{d:"2017-06-01",l:"Jun 17",p:610000},{d:"2017-07-01",l:"Jul 17",p:610500},{d:"2017-08-01",l:"Agt 17",p:611000},{d:"2017-09-01",l:"Sep 17",p:611500},{d:"2017-10-01",l:"Okt 17",p:612000},{d:"2017-11-01",l:"Nov 17",p:612500},{d:"2017-12-01",l:"Des 17",p:613000},{d:"2018-01-01",l:"Jan 18",p:616666},{d:"2018-02-01",l:"Feb 18",p:620333},{d:"2018-03-01",l:"Mar 18",p:624000},{d:"2018-04-01",l:"Apr 18",p:627666},{d:"2018-05-01",l:"Mei 18",p:631333},{d:"2018-06-01",l:"Jun 18",p:635000},{d:"2018-07-01",l:"Jul 18",p:640000},{d:"2018-08-01",l:"Agt 18",p:645000},{d:"2018-09-01",l:"Sep 18",p:650000},{d:"2018-10-01",l:"Okt 18",p:655000},{d:"2018-11-01",l:"Nov 18",p:660000},{d:"2018-12-01",l:"Des 18",p:665000},{d:"2019-01-01",l:"Jan 19",p:670000},{d:"2019-02-01",l:"Feb 19",p:675000},{d:"2019-03-01",l:"Mar 19",p:680000},{d:"2019-04-01",l:"Apr 19",p:685000},{d:"2019-05-01",l:"Mei 19",p:690000},{d:"2019-06-01",l:"Jun 19",p:695000},{d:"2019-07-01",l:"Jul 19",p:705833},{d:"2019-08-01",l:"Agt 19",p:716666},{d:"2019-09-01",l:"Sep 19",p:727500},{d:"2019-10-01",l:"Okt 19",p:738333},{d:"2019-11-01",l:"Nov 19",p:749166},{d:"2019-12-01",l:"Des 19",p:760000},{d:"2020-01-01",l:"Jan 20",p:773333},{d:"2020-02-01",l:"Feb 20",p:786666},{d:"2020-03-01",l:"Mar 20",p:800000},{d:"2020-04-01",l:"Apr 20",p:844000},{d:"2020-05-01",l:"Mei 20",p:888000},{d:"2020-06-01",l:"Jun 20",p:932000},{d:"2020-07-01",l:"Jul 20",p:976000},{d:"2020-08-01",l:"Agt 20",p:1020000},{d:"2020-09-01",l:"Sep 20",p:1006250},{d:"2020-10-01",l:"Okt 20",p:992500},{d:"2020-11-01",l:"Nov 20",p:978750},{d:"2020-12-01",l:"Des 20",p:965000},{d:"2021-01-01",l:"Jan 21",p:961666},{d:"2021-02-01",l:"Feb 21",p:958333},{d:"2021-03-01",l:"Mar 21",p:955000},{d:"2021-04-01",l:"Apr 21",p:951666},{d:"2021-05-01",l:"Mei 21",p:948333},{d:"2021-06-01",l:"Jun 21",p:945000},{d:"2021-07-01",l:"Jul 21",p:944166},{d:"2021-08-01",l:"Agt 21",p:943333},{d:"2021-09-01",l:"Sep 21",p:942500},{d:"2021-10-01",l:"Okt 21",p:941666},{d:"2021-11-01",l:"Nov 21",p:940833},{d:"2021-12-01",l:"Des 21",p:940000},{d:"2022-01-01",l:"Jan 22",p:950000},{d:"2022-02-01",l:"Feb 22",p:960000},{d:"2022-03-01",l:"Mar 22",p:970000},{d:"2022-04-01",l:"Apr 22",p:978333},{d:"2022-05-01",l:"Mei 22",p:986666},{d:"2022-06-01",l:"Jun 22",p:995000},{d:"2022-07-01",l:"Jul 22",p:999166},{d:"2022-08-01",l:"Agt 22",p:1003333},{d:"2022-09-01",l:"Sep 22",p:1007500},{d:"2022-10-01",l:"Okt 22",p:1011666},{d:"2022-11-01",l:"Nov 22",p:1015833},{d:"2022-12-01",l:"Des 22",p:1020000},{d:"2023-01-01",l:"Jan 23",p:1027500},{d:"2023-02-01",l:"Feb 23",p:1035000},{d:"2023-03-01",l:"Mar 23",p:1042500},{d:"2023-04-01",l:"Apr 23",p:1050000},{d:"2023-05-01",l:"Mei 23",p:1057500},{d:"2023-06-01",l:"Jun 23",p:1065000},{d:"2023-07-01",l:"Jul 23",p:1075000},{d:"2023-08-01",l:"Agt 23",p:1085000},{d:"2023-09-01",l:"Sep 23",p:1095000},{d:"2023-10-01",l:"Okt 23",p:1105000},{d:"2023-11-01",l:"Nov 23",p:1115000},{d:"2023-12-01",l:"Des 23",p:1125000},{d:"2024-01-01",l:"Jan 24",p:1148333},{d:"2024-02-01",l:"Feb 24",p:1171666},{d:"2024-03-01",l:"Mar 24",p:1195000},{d:"2024-04-01",l:"Apr 24",p:1245000},{d:"2024-05-01",l:"Mei 24",p:1295000},{d:"2024-06-01",l:"Jun 24",p:1345000},{d:"2024-07-01",l:"Jul 24",p:1375000},{d:"2024-08-01",l:"Agt 24",p:1405000},{d:"2024-09-01",l:"Sep 24",p:1435000},{d:"2024-10-01",l:"Okt 24",p:1466666},{d:"2024-11-01",l:"Nov 24",p:1498333},{d:"2024-12-01",l:"Des 24",p:1530000},{d:"2025-01-01",l:"Jan 25",p:1595000},{d:"2025-02-01",l:"Feb 25",p:1660000},{d:"2025-03-01",l:"Mar 25",p:1725000},{d:"2025-04-01",l:"Apr 25",p:1776000},{d:"2025-05-01",l:"Mei 25",p:1827000},{d:"2025-06-01",l:"Jun 25",p:1878000},{d:"2025-07-01",l:"Jul 25",p:1913666},{d:"2025-08-01",l:"Agt 25",p:1949333},{d:"2025-09-01",l:"Sep 25",p:1985000},{d:"2025-10-01",l:"Okt 25",p:2006666},{d:"2025-11-01",l:"Nov 25",p:2028333},{d:"2025-12-01",l:"Des 25",p:2050000},{d:"2026-01-01",l:"Jan 26",p:2080000},{d:"2026-02-01",l:"Feb 26",p:2110000},{d:"2026-03-01",l:"Mar 26",p:2140000},{d:"2026-04-01",l:"Apr 26",p:2156250},{d:"2026-05-01",l:"Mei 26",p:2172500},{d:"2026-06-01",l:"Jun 26",p:2188750},{d:"2026-07-01",l:"Jul 26",p:2205000}];
+
+// Return gold monthly price history — prefer macro.gold.priceHistory (Yahoo
+// via workflow refresh-macro), fallback ke _GOLD_FALLBACK (statis, di-embed).
+// Struktur output identik dgn DATA.price_history: [{date, label, XAU:number}]
+// tapi harga per-gram dipasang di field XAU (bukan per-ticker).
+function getGoldHistory(){
+  var src = null;
+  if (_macroCache && _macroCache.gold && Array.isArray(_macroCache.gold.priceHistory) && _macroCache.gold.priceHistory.length > 12) {
+    src = _macroCache.gold.priceHistory;
+  } else {
+    src = _GOLD_FALLBACK.map(r => ({ date: r.d, label: r.l, price: r.p }));
+  }
+  return src.map(r => ({ date: r.date, label: r.label, XAU: r.price }));
+}
+
+// Fetch macro.json lazy — dipanggil pertama kali user aktifkan Emas mode.
+// Idempotent; cache di _macroCache. Kalau gagal, fallback ke _GOLD_FALLBACK.
+async function loadMacroForGold(){
+  if (_macroCache) return _macroCache;
+  const v = Math.floor(Date.now()/60000);
+  const urls = [
+    'https://cdn.jsdelivr.net/gh/chamdani49-boop/terminal@main/public/macro.json?v='+v,
+    'macro.json?v='+v,
+  ];
+  for (const url of urls){
+    try {
+      const res = await fetch(url, { cache:'no-store' });
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (json) { _macroCache = json; return json; }
+    } catch(_){}
+  }
+  return null;
+}
+
 // Strategi loading data.json:
 //   1) Same-origin (Cloudflare Pages bundle) DULU. Jalan untuk repo PUBLIC
 //      maupun PRIVATE, dan tidak terkena cache basi jsDelivr. Agar selalu
@@ -20153,10 +20223,44 @@ function buildFirmGrid() {
 // ═══════════════════════════════════════════
 function setSavingMode(mode, btn) {
   savingMode = mode;
-  document.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  // Scope hanya toggle antara "DCA / Berkala" & "Lump Sum" (mode) —
+  // BUKAN reset semua .radio-btn (yg mencakup toggle Saham|Emas juga).
+  var modeButtons = [document.getElementById('modeDCA'), document.getElementById('modeLump')].filter(Boolean);
+  modeButtons.forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
   document.getElementById('dcaFields').style.display = mode === 'dca' ? 'block' : 'none';
   document.getElementById('lumpFields').style.display = mode === 'lump' ? 'block' : 'none';
+}
+
+// Toggle asset class: 'stock' (default) atau 'gold' (Emas Antam).
+// Emas mode: sembunyikan input Pilih Saham & panel Dividen; ubah label
+// nominal ke terminologi gram; rebuild date options dari getGoldHistory().
+function setSavingAsset(asset, btn) {
+  _savingAsset = asset;
+  var assetButtons = [document.getElementById('assetStock'), document.getElementById('assetGold')].filter(Boolean);
+  assetButtons.forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  var stockGroup = document.getElementById('savingStockGroup');
+  var goldGroup  = document.getElementById('savingGoldGroup');
+  if (stockGroup) stockGroup.style.display = asset === 'stock' ? '' : 'none';
+  if (goldGroup)  goldGroup.style.display  = asset === 'gold'  ? '' : 'none';
+  // Kalau Emas dipilih, lazy-load macro.json (buat data yg lebih fresh)
+  if (asset === 'gold') {
+    loadMacroForGold().then(() => {
+      // Update tag "asOf" di chip Emas + rebuild date options dgn data terbaru
+      var g = _macroCache && _macroCache.gold;
+      var lbl = document.getElementById('savingGoldAsOf');
+      if (lbl) lbl.textContent = g && g.as_of ? ('per ' + g.as_of.slice(0,7)) : 'fallback statis';
+      buildDateOptions();
+    });
+    // Kick immediate rebuild dgn fallback dulu supaya date picker tidak kosong
+    var lbl0 = document.getElementById('savingGoldAsOf');
+    if (lbl0) lbl0.textContent = 'per 2026-07';
+  }
+  // Dividen controls di-hide saat Emas (emas tidak bagi dividen)
+  var divCtrl = document.getElementById('savingChartCtrl');
+  if (divCtrl && asset === 'gold') divCtrl.style.display = 'none';
+  buildDateOptions();
 }
 
 // ── Pilih Saham (Simulasi): ketik kode/nama → cari dari SEMUA saham yang punya
@@ -20275,9 +20379,12 @@ function savingPickStock(code) {
 }
 
 function buildDateOptions() {
-  const ph = DATA.price_history;
+  // Ambil price history sesuai asset aktif — saham dari DATA.price_history,
+  // emas dari getGoldHistory() (macro.gold atau fallback statis).
+  const ph = (_savingAsset === 'gold') ? getGoldHistory() : (DATA && DATA.price_history) || [];
   const startSel = document.getElementById('dcaStart');
   const lumpSel = document.getElementById('lumpDate');
+  if (!startSel || !lumpSel || !ph.length) return;
   const opts = ph.map(e => `<option value="${e.date}">${e.label || e.date}</option>`).join('');
   startSel.innerHTML = opts;
   lumpSel.innerHTML = opts;
@@ -20318,16 +20425,23 @@ function attachMoneyInputFormatters() {
 }
 
 async function calculateSaving() {
-  const code = document.getElementById('savingStock').value;
-  if (!code) { alert('Pilih saham terlebih dahulu!'); return; }
+  // Emas mode: pakai kode virtual 'XAU', harga history dari getGoldHistory(),
+  // 1 unit = 1 gram (fraksional 2 desimal), tidak ada dividen, tidak ada lot.
+  const isGold = _savingAsset === 'gold';
+  const code = isGold ? 'XAU' : document.getElementById('savingStock').value;
+  if (!isGold && !code) { alert('Pilih saham terlebih dahulu!'); return; }
 
-  const ph = DATA.price_history;
-  const info = DATA.stock_info[code] || {};
+  const ph = isGold ? getGoldHistory() : DATA.price_history;
+  const info = isGold ? { name:'Emas Antam', sector:'Komoditas' } : (DATA.stock_info[code] || {});
 
   // Peta dividen historis (dps per tahun) — otomatis dari valuation.json.
-  const divMap = await loadValuationDiv();
-  const divInfo = (divMap && divMap[code]) || null;   // null = data dividen belum ada utk emiten ini
-  const dpsByYear = divInfo ? divInfo.byYear : {};
+  // Untuk Emas, tidak ada dividen → force dpsByYear kosong.
+  let divMap = null, divInfo = null, dpsByYear = {};
+  if (!isGold) {
+    divMap = await loadValuationDiv();
+    divInfo = (divMap && divMap[code]) || null;
+    dpsByYear = divInfo ? divInfo.byYear : {};
+  }
 
   // Akumulasi dividen: untuk tiap tahun, dividen = unit yang dipegang di akhir
   // tahun itu × DPS tahun tsb. yearEndUnits[year] = total unit pada bulan
@@ -20364,10 +20478,20 @@ async function calculateSaving() {
 
     slice.forEach(e => {
       const price = e[code];
-      const unitBeli = Math.floor(monthly / price / 100) * 100; // lot = 100 lembar
+      // Saham: unit dalam lot (100 lembar), pembulatan ke bawah supaya nominal
+      // beli ≤ monthly budget.
+      // Emas: unit dalam gram (fraksional 2 desimal, 0.01 gram = 10 mg).
+      let unitBeli;
+      if (isGold) {
+        unitBeli = Math.floor((monthly / price) * 100) / 100;   // 2 desimal
+      } else {
+        unitBeli = Math.floor(monthly / price / 100) * 100;     // lot 100
+      }
       const modalBulan = unitBeli * price;
       totalModal += modalBulan;
       totalUnit += unitBeli;
+      // Round total supaya tidak akumulasi floating-point noise (e.g. 0.4500001)
+      if (isGold) totalUnit = Math.round(totalUnit * 100) / 100;
       const nilaiSekarang = totalUnit * price;
       const gl = nilaiSekarang - totalModal;
       const pctGl = totalModal > 0 ? gl / totalModal : 0;
@@ -20376,7 +20500,7 @@ async function calculateSaving() {
 
     const last = rows[rows.length-1];
     const dividen = computeDividen(rows);
-    showSavingResult(code, rows, last, 'DCA', dividen);
+    showSavingResult(code, rows, last, 'DCA', dividen, isGold);
 
   } else {
     const lumpAmt = parseInt(String(document.getElementById('lumpAmount').value).replace(/[^\d]/g, ''), 10) || 20000000;
@@ -20386,7 +20510,12 @@ async function calculateSaving() {
     if (!sliceAll.length) { alert('Tidak ada data untuk tanggal ini'); return; }
 
     const buyPrice = sliceAll[0][code];
-    const totalUnit = Math.floor(lumpAmt / buyPrice / 100) * 100;
+    let totalUnit;
+    if (isGold) {
+      totalUnit = Math.floor((lumpAmt / buyPrice) * 100) / 100;   // gram 2 desimal
+    } else {
+      totalUnit = Math.floor(lumpAmt / buyPrice / 100) * 100;      // lot 100
+    }
     const actualModal = totalUnit * buyPrice;
 
     const rows = sliceAll.map(e => {
@@ -20398,7 +20527,7 @@ async function calculateSaving() {
 
     const last = rows[rows.length-1];
     const dividen = computeDividen(rows);
-    showSavingResult(code, rows, last, 'Lump Sum', dividen);
+    showSavingResult(code, rows, last, 'Lump Sum', dividen, isGold);
   }
 }
 
@@ -20498,7 +20627,8 @@ function _savingRowAt(i) {
   return { i, label: r.label, dateStr: r.dateStr, price: r.price, unitBeli: r.unitBeli, totalUnit: units, extraUnits, modal, nilai, gl, pctGl, divCash, mode: sel.mode };
 }
 
-// Render tabel "Detail Per Periode" sesuai skenario terpilih.
+// Render tabel "Detail Per Periode" sesuai skenario terpilih. Emas mode:
+// unit dalam gram (2 desimal), saham dalam lembar (integer).
 function renderSavingTable() {
   const sim = _savingSim; if (!sim) return;
   const tbody = document.getElementById('savingTableBody'); if (!tbody) return;
@@ -20506,13 +20636,22 @@ function renderSavingTable() {
   const step = Math.max(1, Math.floor(rows.length / 40));
   const idxs = [];
   for (let i = 0; i < rows.length; i++) { if (i % step === 0 || i === rows.length - 1) idxs.push(i); }
+  const isGold = !!sim.isGold;
+  const fmtUnit = (n) => isGold
+    ? (n > 0 ? (Math.round(n * 100) / 100).toLocaleString('id', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-')
+    : (n > 0 ? n.toLocaleString('id') : '-');
+  // Update header kolom sesuai asset
+  var thU = document.getElementById('savingTblUnitHd');
+  var thT = document.getElementById('savingTblTotalHd');
+  if (thU) thU.textContent = isGold ? 'Beli (gram)' : 'Unit';
+  if (thT) thT.textContent = isGold ? 'Total Gram' : 'Total Unit';
   tbody.innerHTML = idxs.map(i => {
     const d = _savingRowAt(i); const cls = d.gl >= 0 ? 'up' : 'dn';
     return `<tr>
       <td>${d.label}</td>
       <td>${rp(d.price)}</td>
-      <td>${d.unitBeli > 0 ? d.unitBeli.toLocaleString('id') : '-'}</td>
-      <td>${d.totalUnit.toLocaleString('id')}</td>
+      <td>${fmtUnit(d.unitBeli)}</td>
+      <td>${fmtUnit(d.totalUnit)}</td>
       <td>${rp(d.modal)}</td>
       <td>${rp(d.nilai)}</td>
       <td class="${cls}">${d.gl>=0?'+':''}${rp(d.gl)}</td>
@@ -20572,9 +20711,18 @@ function renderSavingSummary() {
       ${sim.leftoverFinal > 0 ? `<div class="qr-row"><span class="qr-label">💵 Sisa Kas Dividen</span><span class="qr-val">${rp(sim.leftoverFinal)}</span></div>` : ''}
       <div class="qr-note">Dividen dibelikan saham lagi → jumlah lembar bertambah & ikut tumbuh.</div>`;
   } else {
-    midRows = `
+    // sel.mode === 'none' → tidak pakai dividen. Konten:
+    //  - Emas: hanya show nilai portofolio; skip note dividen (emas ≠ saham).
+    //  - Saham: tampilkan nilai + hint dividen (available/tidak).
+    if (sim.isGold) {
+      midRows = `
+      <div class="qr-row"><span class="qr-label">🥇 Nilai Emas Sekarang</span><span class="qr-val">${rp(last.nilai)}</span></div>
+      <div class="qr-note">Emas Antam tidak memberikan dividen — return murni dari kenaikan harga per gram.</div>`;
+    } else {
+      midRows = `
       <div class="qr-row"><span class="qr-label">📈 Nilai Saham Sekarang</span><span class="qr-val">${rp(last.nilai)}</span></div>
       ${avail ? `<div class="qr-note">💡 Dividen dimatikan — klik "Dengan Dividen" untuk lihat efeknya.</div>` : `<div class="qr-note">Data dividen emiten ini belum tersedia.</div>`}`;
+    }
   }
 
   const detailItems = sel.mode === 'reinvest' ? sim.eventsReinvest : (sim.dividen.perYear || []);
@@ -20601,8 +20749,8 @@ function renderSavingSummary() {
       <div class="qr-row"><span class="qr-label">💵 Modal Disetor (uang sendiri)</span><span class="qr-val">${rp(modalDisetor)}</span></div>
       ${midRows}
       <div class="qr-row" style="border-top:1px dashed var(--border);margin-top:2px;padding-top:8px"><span class="qr-label" style="font-weight:800">Nilai Akhir Portofolio</span><span class="qr-val ${cls}" style="font-weight:800">${rp(finalVal)}</span></div>
-      <div class="qr-row"><span class="qr-label">Total Unit${sel.mode === 'reinvest' ? ' (incl. reinvest)' : ''}</span><span class="qr-val">${totalUnitShow.toLocaleString('id')} lembar</span></div>
-      <div class="qr-row"><span class="qr-label">Harga Per Lembar</span><span class="qr-val">${rp(last.price)}</span></div>
+      <div class="qr-row"><span class="qr-label">${sim.isGold ? 'Total Gram' : ('Total Unit' + (sel.mode === 'reinvest' ? ' (incl. reinvest)' : ''))}</span><span class="qr-val">${sim.isGold ? (Math.round(totalUnitShow*100)/100).toLocaleString('id',{minimumFractionDigits:2,maximumFractionDigits:2})+' gram' : totalUnitShow.toLocaleString('id')+' lembar'}</span></div>
+      <div class="qr-row"><span class="qr-label">${sim.isGold ? 'Harga Per Gram' : 'Harga Per Lembar'}</span><span class="qr-val">${rp(last.price)}</span></div>
       <div class="qr-row"><span class="qr-label">Periode</span><span class="qr-val">${sim.rows.length} bulan</span></div>
     </div>
     ${detailHtml}
@@ -20655,14 +20803,21 @@ function drawSavingChart() {
                 if (i.dataset.label === 'Dividen') { const m = markerInfo[i.dataIndex]; return m ? `💰 Dividen ${m.year}: ${rp(m.amount)}` : ''; }
                 if (i.dataset.label !== 'Nilai Portofolio') return '';
                 const d = _savingRowAt(i.dataIndex); if (!d) return '';
-                const lot = Math.round(d.totalUnit / 100);
-                const lines = [
-                  'Harga: ' + rp(d.price) + ' /lembar',
-                  'Total: ' + lot.toLocaleString('id') + ' lot (' + d.totalUnit.toLocaleString('id') + ' lembar)',
-                  'Modal: ' + rp(d.modal),
-                ];
-                if (d.mode === 'reinvest' && d.extraUnits > 0) lines.push('↻ Reinvest: +' + d.extraUnits.toLocaleString('id') + ' lembar');
-                if (d.mode === 'cash' && d.divCash > 0) lines.push('💰 Dividen (kumulatif): ' + rp(d.divCash));
+                // Tooltip lines — asset-aware (saham vs emas).
+                const isG = !!(sim && sim.isGold);
+                const lines = [];
+                if (isG) {
+                  const gStr = (Math.round(d.totalUnit*100)/100).toLocaleString('id',{minimumFractionDigits:2,maximumFractionDigits:2});
+                  lines.push('Harga: ' + rp(d.price) + ' /gram');
+                  lines.push('Total: ' + gStr + ' gram');
+                } else {
+                  const lot = Math.round(d.totalUnit / 100);
+                  lines.push('Harga: ' + rp(d.price) + ' /lembar');
+                  lines.push('Total: ' + lot.toLocaleString('id') + ' lot (' + d.totalUnit.toLocaleString('id') + ' lembar)');
+                }
+                lines.push('Modal: ' + rp(d.modal));
+                if (!isG && d.mode === 'reinvest' && d.extraUnits > 0) lines.push('↻ Reinvest: +' + d.extraUnits.toLocaleString('id') + ' lembar');
+                if (!isG && d.mode === 'cash' && d.divCash > 0) lines.push('💰 Dividen (kumulatif): ' + rp(d.divCash));
                 lines.push('Total G/L: ' + (d.gl >= 0 ? '+' : '') + rp(d.gl) + ' (' + (d.gl >= 0 ? '+' : '') + (d.pctGl * 100).toFixed(2) + '%)');
                 lines.push('Nilai sekarang: ' + rp(d.nilai));
                 return lines;
@@ -20679,7 +20834,7 @@ function drawSavingChart() {
   });
 }
 
-function showSavingResult(code, rows, last, mode, dividen) {
+function showSavingResult(code, rows, last, mode, dividen, isGold) {
   // Tampilkan semua card dulu sebelum render chart
   // (Chart.js butuh canvas visible untuk hitung dimensi)
   document.getElementById('savingQuickResult').style.display = 'block';
@@ -20698,13 +20853,17 @@ function showSavingResult(code, rows, last, mode, dividen) {
   const glCls = last.gl >= 0 ? 'up' : 'dn';
   const glSign = last.gl >= 0 ? '+' : '';
 
-  document.getElementById('savingResultTitle').textContent = `Hasil Simulasi ${mode} · ${code}`;
+  // Judul header: saham → "Hasil Simulasi DCA · BBCA"; emas → "Hasil Simulasi DCA · Emas Antam".
+  var titleAsset = isGold ? 'Emas Antam' : code;
+  document.getElementById('savingResultTitle').textContent = `Hasil Simulasi ${mode} · ${titleAsset}`;
 
   // Hitung semua skenario dividen sekali (tanpa / tunai / reinvest), lalu
   // tampilkan kontrol toggle bila emiten punya data dividen.
+  // Untuk emas, dividen.available auto-false → toggle di-hide.
   _savingSim = buildSavingSeries(rows, dividen, last, mode, code);
+  _savingSim.isGold = !!isGold;   // flag terminologi (gram vs lembar/lot)
   const _scc = document.getElementById('savingChartCtrl');
-  if (_scc) _scc.style.display = _savingSim.dividen.available ? 'flex' : 'none';
+  if (_scc) _scc.style.display = (!isGold && _savingSim.dividen.available) ? 'flex' : 'none';
   syncSavingCtrlButtons();
 
   // ── Hitung total termasuk dividen ──
