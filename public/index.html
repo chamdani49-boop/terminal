@@ -3977,7 +3977,34 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
 }
 .tr-ov-hl-card:hover .tr-ov-hl-foot{opacity:1}
 
-/* Distribusi Hasil — stacked horizontal bar */
+/* Distribusi Hasil — outcome donut + stacked bar.
+   Donut mengadopsi pola Overview Consensus, tetapi seluruh selector diberi
+   prefix tr-ov agar tidak mengubah visual halaman Consensus. */
+.tr-ov-dist-content{display:flex;flex-direction:column;gap:10px;width:100%}
+.tr-ov-outcome-body{display:flex;align-items:center;gap:12px;min-width:0}
+.tr-ov-outcome-donut-wrap{position:relative;width:88px;height:88px;flex:0 0 88px}
+.tr-ov-outcome-donut-wrap canvas{display:block;width:100% !important;height:100% !important}
+.tr-ov-outcome-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;pointer-events:none;text-align:center;gap:2px
+}
+.tr-ov-outcome-center .v{
+  font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:800;
+  color:var(--text);line-height:1;font-variant-numeric:tabular-nums
+}
+.tr-ov-outcome-center .k{
+  font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:800;
+  color:var(--text3);letter-spacing:.5px;text-transform:uppercase;line-height:1.2
+}
+.tr-ov-outcome-legend{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.tr-ov-outcome-row{
+  display:grid;grid-template-columns:7px minmax(0,1fr) auto auto;gap:6px;align-items:center;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;color:var(--text2)
+}
+.tr-ov-outcome-dot{width:7px;height:7px;border-radius:50%}
+.tr-ov-outcome-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-ov-outcome-count{color:var(--text);font-variant-numeric:tabular-nums}
+.tr-ov-outcome-pct{color:var(--text3);font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
 .tr-ov-dist-bar{
   display:flex;height:24px;border-radius:7px;overflow:hidden;
   background:var(--bg2);border:1px solid var(--border)
@@ -3990,6 +4017,11 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
 .tr-ov-dist-lgd{
   font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text3);
   letter-spacing:.2px;line-height:1.4
+}
+@media(max-width:640px){
+  .tr-ov-outcome-donut-wrap{width:80px;height:80px;flex-basis:80px}
+  .tr-ov-outcome-center .v{font-size:18px}
+  .tr-ov-outcome-row{font-size:9px}
 }
 
 /* Aktivitas 24 Jam — 3 stat mini */
@@ -5334,13 +5366,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-ov-hl-card" data-goto="perf" role="button" tabindex="0" aria-label="Buka tab Performa">
       <div class="tr-ov-hl-h">📊 Distribusi Hasil</div>
       <div class="tr-ov-hl-body">
-        <div class="tr-ov-dist-bar" id="trOvDistBar" title="TP1 · TP2 · SL · Expired">
-          <div class="tr-ov-dist-seg tp1" style="width:0%"></div>
-          <div class="tr-ov-dist-seg tp2" style="width:0%"></div>
-          <div class="tr-ov-dist-seg sl"  style="width:0%"></div>
-          <div class="tr-ov-dist-seg exp" style="width:0%"></div>
+        <div class="tr-ov-dist-content">
+          <!-- Outcome donut mengadopsi pola Consensus Overview; sumbernya murni tracker.json. -->
+          <div class="tr-ov-outcome-body">
+            <div class="tr-ov-outcome-donut-wrap">
+              <canvas id="trOvOutcomeDonut" aria-label="Distribusi hasil rekomendasi"></canvas>
+              <div class="tr-ov-outcome-center" id="trOvOutcomeCenter"></div>
+            </div>
+            <div class="tr-ov-outcome-legend" id="trOvOutcomeLegend">Menunggu data…</div>
+          </div>
+          <div class="tr-ov-dist-bar" id="trOvDistBar" title="TP1 · TP2 · SL · Expired">
+            <div class="tr-ov-dist-seg tp1" style="width:0%"></div>
+            <div class="tr-ov-dist-seg tp2" style="width:0%"></div>
+            <div class="tr-ov-dist-seg sl"  style="width:0%"></div>
+            <div class="tr-ov-dist-seg exp" style="width:0%"></div>
+          </div>
+          <div class="tr-ov-dist-lgd" id="trOvDistLgd">Menunggu data…</div>
         </div>
-        <div class="tr-ov-dist-lgd" id="trOvDistLgd">Menunggu data…</div>
       </div>
       <div class="tr-ov-hl-foot">Lihat Performa →</div>
     </div>
@@ -10625,37 +10667,96 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // updateOvBestFirm() DIHAPUS — card "Sekuritas Terbaik" di-remove
   // dari HTML karena redundant dgn Ranking + Filter di section bawah.
 
+  // Outcome donut instance untuk Tracker Overview. Dipisahkan dari chart
+  // Consensus supaya destroy/re-render di sini tidak pernah menyentuh halaman lain.
+  var _trOvOutcomeDonut = null;
+
   function updateOvDistribution(data){
     var tp1 = (data.tpCounts&&+data.tpCounts.TP1)||0;
     var tp2 = (data.tpCounts&&+data.tpCounts.TP2)||0;
     var sl  = +data.slCount||0;
     var exp = (data.closedByCounts&&+data.closedByCounts.EXPIRED)||0;
     var total = tp1+tp2+sl+exp;
+    var outcomes = [
+      { label:'TP1',     value:tp1, color:'#10b981' },
+      { label:'TP2',     value:tp2, color:'#059669' },
+      { label:'SL',      value:sl,  color:'#e11d48' },
+      { label:'Expired', value:exp, color:'#d97706' }
+    ];
     var lgd = $('trOvDistLgd');
     var bar = $('trOvDistBar');
-    if(!total){
-      if(lgd) lgd.textContent='Belum ada trade selesai';
-      if(bar){
-        var segs0 = bar.querySelectorAll('.tr-ov-dist-seg');
-        for(var s=0;s<segs0.length;s++) segs0[s].style.width='0%';
-      }
-      return;
-    }
+    var center = $('trOvOutcomeCenter');
+    var donutLegend = $('trOvOutcomeLegend');
+    var donutCanvas = $('trOvOutcomeDonut');
+    var pct = function(value){ return total ? (value / total * 100) : 0; };
+
     if(bar){
       var segs = bar.querySelectorAll('.tr-ov-dist-seg');
-      if(segs.length>=4){
-        segs[0].style.width = (tp1/total*100)+'%';
-        segs[1].style.width = (tp2/total*100)+'%';
-        segs[2].style.width = (sl /total*100)+'%';
-        segs[3].style.width = (exp/total*100)+'%';
+      for(var s=0; s<segs.length && s<outcomes.length; s++){
+        segs[s].style.width = pct(outcomes[s].value) + '%';
       }
     }
-    if(lgd){
-      lgd.innerHTML = '<span style="color:var(--green)">'+tp1+' TP1</span> · '
-        + '<span style="color:var(--green)">'+tp2+' TP2</span> · '
-        + '<span style="color:var(--red)">'+sl+' SL</span> · '
-        + '<span style="color:var(--yellow)">'+exp+' EXP</span> <span style="opacity:.6">('+total+' total)</span>';
+    if(center){
+      center.innerHTML = '<span class="v">' + total + '</span><span class="k">hasil selesai</span>';
     }
+    if(donutLegend){
+      donutLegend.innerHTML = total
+        ? outcomes.map(function(item){
+            return '<div class="tr-ov-outcome-row">'
+              + '<span class="tr-ov-outcome-dot" style="background:' + item.color + '"></span>'
+              + '<span class="tr-ov-outcome-name">' + item.label + '</span>'
+              + '<span class="tr-ov-outcome-count">' + item.value + '</span>'
+              + '<span class="tr-ov-outcome-pct">' + pct(item.value).toFixed(0) + '%</span>'
+              + '</div>';
+          }).join('')
+        : '<div class="tr-ov-outcome-row" style="display:block;color:var(--text3)">Belum ada trade selesai</div>';
+    }
+    if(lgd){
+      lgd.innerHTML = total
+        ? '<span style="color:var(--green)">'+tp1+' TP1</span> · '
+          + '<span style="color:var(--green)">'+tp2+' TP2</span> · '
+          + '<span style="color:var(--red)">'+sl+' SL</span> · '
+          + '<span style="color:var(--yellow)">'+exp+' EXP</span> <span style="opacity:.6">('+total+' total)</span>'
+        : 'Belum ada trade selesai';
+    }
+
+    if(!donutCanvas || typeof Chart === 'undefined') return;
+    if(_trOvOutcomeDonut){
+      try { _trOvOutcomeDonut.destroy(); } catch(_) {}
+      _trOvOutcomeDonut = null;
+    }
+    var css = getComputedStyle(document.documentElement);
+    var card = css.getPropertyValue('--card').trim() || '#ffffff';
+    var border = css.getPropertyValue('--border').trim() || '#d4ccf0';
+    var text = css.getPropertyValue('--text').trim() || '#1a0f3c';
+    var text2 = css.getPropertyValue('--text2').trim() || '#6e6490';
+    _trOvOutcomeDonut = new Chart(donutCanvas, {
+      type:'doughnut',
+      data:{
+        labels: total ? outcomes.map(function(item){ return item.label; }) : ['Belum ada hasil'],
+        datasets:[{
+          data: total ? outcomes.map(function(item){ return item.value; }) : [1],
+          backgroundColor: total ? outcomes.map(function(item){ return item.color; }) : [border],
+          borderColor: card,
+          borderWidth: 2,
+          hoverOffset: total ? 4 : 0
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,cutout:'68%',
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            enabled:total>0,backgroundColor:card,titleColor:text,bodyColor:text2,
+            borderColor:border,borderWidth:1,padding:9,cornerRadius:8,
+            callbacks:{label:function(item){
+              var value = item.raw || 0;
+              return ' ' + item.label + ': ' + value + ' (' + pct(value).toFixed(1) + '%)';
+            }}
+          }
+        }
+      }
+    });
   }
 
   function updateOvActivity(data){
