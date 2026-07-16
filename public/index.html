@@ -3929,9 +3929,11 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
    detail — tanpa duplikasi data yg sudah ada di tab lain.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Highlights container: 2×2 grid di desktop, 1 kolom stack di HP */
-.tr-ov-highlights{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
-@media(max-width:640px){.tr-ov-highlights{grid-template-columns:1fr;gap:10px;margin-bottom:12px}}
+/* Highlights container: 3-kolom desktop, stack di HP.
+   Sebelumnya 4 kartu 2×2, sekarang 3 kartu (Sekuritas Terbaik dihapus)
+   karena ranking di bawah sudah punya filter yg lebih fleksibel. */
+.tr-ov-highlights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:900px){.tr-ov-highlights{grid-template-columns:1fr;gap:10px;margin-bottom:12px}}
 
 .tr-ov-hl-card{
   background:var(--card);border:1px solid var(--border);border-radius:12px;
@@ -4027,9 +4029,44 @@ html.tracker-loading #tr-view-main .tr-ov-ranking{opacity:0}
 .tr-ov-sent-lgd .dn{color:var(--red)}
 .tr-ov-sent-lgd .neu{color:var(--text2)}
 
-/* Rankings — 2 kolom di desktop, stack di HP */
-.tr-ov-ranking{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-@media(max-width:640px){.tr-ov-ranking{grid-template-columns:1fr;gap:10px;margin-bottom:12px}}
+/* Ranking wrapper + filter bar */
+.tr-ov-rank-wrap{margin-bottom:16px}
+.tr-ov-rank-filters{
+  display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:10px;
+  padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px
+}
+.tr-ov-rank-fg{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tr-ov-rank-fg-lbl{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);
+  letter-spacing:.5px;text-transform:uppercase;font-weight:700;margin-right:4px
+}
+.tr-ov-rank-btn{
+  padding:6px 12px;border:1px solid var(--border);background:var(--bg2);
+  color:var(--text2);border-radius:7px;cursor:pointer;
+  font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:.2px;
+  transition:all .15s
+}
+.tr-ov-rank-btn:hover{color:var(--text);border-color:var(--accent)}
+.tr-ov-rank-btn.active{
+  background:var(--grad);color:#fff;border-color:transparent;
+  box-shadow:0 3px 8px rgba(124,58,237,.2)
+}
+.tr-ov-rank-h-tag{
+  margin-left:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;
+  font-weight:600;color:var(--text3);letter-spacing:.3px;text-transform:none;
+  padding:2px 8px;background:var(--bg2);border-radius:6px;border:1px solid var(--border)
+}
+@media(max-width:640px){
+  .tr-ov-rank-filters{gap:10px;padding:9px 10px}
+  .tr-ov-rank-fg{gap:5px}
+  .tr-ov-rank-fg-lbl{font-size:9.5px}
+  .tr-ov-rank-btn{padding:5px 10px;font-size:10.5px}
+  .tr-ov-rank-h-tag{font-size:9px;padding:1.5px 6px;margin-left:6px}
+}
+
+/* Rankings grid — 2 kolom di desktop, stack di HP */
+.tr-ov-ranking{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.tr-ov-ranking{grid-template-columns:1fr;gap:10px}}
 
 .tr-ov-rank-card{
   background:var(--card);border:1px solid var(--border);border-radius:12px;
@@ -5235,20 +5272,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
   </div>
 
-  <!-- ── HIGHLIGHTS (2×2 grid, HP 1×4) ────────────────────────────
-       Empat kartu kompak yang memberi user actionable insight + CTA
-       cepat ke tab lain. Bukan duplikasi konten tab lain — memberi
-       konteks tinggi biar user cepat memutuskan 'ke mana harus fokus'. -->
+  <!-- ── HIGHLIGHTS (3 kartu, HP stack) ──────────────────────────
+       Tiga kartu kompak yang memberi user actionable insight + CTA
+       cepat ke tab lain. "Sekuritas Terbaik" card DIHAPUS karena
+       redundant — ranking di bawah sudah punya filter Basis × Target
+       yang lebih fleksibel & powerful untuk menjawab 'sekuritas mana
+       yang terbaik untuk kriteria yang aku mau'. -->
   <div class="tr-ov-highlights">
-    <div class="tr-ov-hl-card" data-goto="analis" role="button" tabindex="0" aria-label="Buka detail sekuritas terbaik">
-      <div class="tr-ov-hl-h">🏆 Sekuritas Terbaik</div>
-      <div class="tr-ov-hl-body">
-        <div class="tr-ov-hl-primary" id="trOvBestFirm">—</div>
-        <div class="tr-ov-hl-secondary" id="trOvBestFirmStat">Menunggu data…</div>
-      </div>
-      <div class="tr-ov-hl-foot">Lihat detail sekuritas →</div>
-    </div>
-
     <div class="tr-ov-hl-card" data-goto="perf" role="button" tabindex="0" aria-label="Buka tab Performa">
       <div class="tr-ov-hl-h">📊 Distribusi Hasil</div>
       <div class="tr-ov-hl-body">
@@ -5300,22 +5330,38 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
   </div>
 
-  <!-- ── RANKING (Top 3 vs Bottom 3) ──────────────────────────────
-       Menggantikan #trLb (Papan Peringkat lama) yg duplicate dgn Tab
-       Performa. Versi Overview: kompak 3-item saja per kolom, fokus
-       pada extreme (terbaik & terburuk) — bikin user aware performa
-       overall tanpa buka Tab Performa. Klik row → openFirm ke Analis. -->
-  <div class="tr-ov-ranking">
-    <div class="tr-ov-rank-card top">
-      <div class="tr-ov-rank-h">🚀 3 Sekuritas Teratas</div>
-      <div class="tr-ov-rank-list" id="trOvRankTop">
-        <div class="tr-ov-rank-empty">Menunggu data…</div>
+  <!-- ── RANKING dengan FILTER (Basis × Target) ───────────────────
+       Konsep Overview = filter hub. User pick Basis {Winrate|Net} ×
+       Target {TP1|TP2} → ranking re-sort real-time. HAKA sengaja
+       DIHILANGKAN dari opsi (HAKA optional per handoff-2026-07-15;
+       Entry mode implicit di Overview). Min sample 5 trade supaya
+       tidak ada outlier sample-size 1-2 masuk ranking.
+       Klik row → openFirm ke Tab Analis untuk drilldown detail. -->
+  <div class="tr-ov-rank-wrap">
+    <div class="tr-ov-rank-filters">
+      <div class="tr-ov-rank-fg" role="tablist" aria-label="Basis peringkat">
+        <span class="tr-ov-rank-fg-lbl">Basis</span>
+        <button type="button" class="tr-ov-rank-btn active" data-metric="winrate" role="tab" aria-selected="true">🎯 Winrate</button>
+        <button type="button" class="tr-ov-rank-btn" data-metric="net" role="tab" aria-selected="false">💰 Net Return</button>
+      </div>
+      <div class="tr-ov-rank-fg" role="tablist" aria-label="Target exit">
+        <span class="tr-ov-rank-fg-lbl">Target</span>
+        <button type="button" class="tr-ov-rank-btn active" data-target="tp1" role="tab" aria-selected="true">TP1</button>
+        <button type="button" class="tr-ov-rank-btn" data-target="tp2" role="tab" aria-selected="false">TP2</button>
       </div>
     </div>
-    <div class="tr-ov-rank-card bottom">
-      <div class="tr-ov-rank-h">📉 3 Sekuritas Terbawah</div>
-      <div class="tr-ov-rank-list" id="trOvRankBot">
-        <div class="tr-ov-rank-empty">Menunggu data…</div>
+    <div class="tr-ov-ranking">
+      <div class="tr-ov-rank-card top">
+        <div class="tr-ov-rank-h">🚀 3 Teratas <span class="tr-ov-rank-h-tag" id="trOvRankTopTag">Winrate · TP1</span></div>
+        <div class="tr-ov-rank-list" id="trOvRankTop">
+          <div class="tr-ov-rank-empty">Menunggu data…</div>
+        </div>
+      </div>
+      <div class="tr-ov-rank-card bottom">
+        <div class="tr-ov-rank-h">📉 3 Terbawah <span class="tr-ov-rank-h-tag" id="trOvRankBotTag">Winrate · TP1</span></div>
+        <div class="tr-ov-rank-list" id="trOvRankBot">
+          <div class="tr-ov-rank-empty">Menunggu data…</div>
+        </div>
       </div>
     </div>
   </div>
@@ -10499,33 +10545,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     sub.textContent = totalActive + ' rekomendasi aktif · ' + firmCount + ' sekuritas · update ' + when;
   }
 
-  function updateOvBestFirm(data){
-    var el = $('trOvBestFirm'); var stat = $('trOvBestFirmStat');
-    if(!el) return;
-    var byFirm = data.byFirm||{};
-    // Filter firm dgn minimal 3 trade selesai (biar sample cukup, tidak
-    // bias oleh 1 lucky win).
-    var firms = Object.values(byFirm).filter(function(f){ return (f.trades||0) >= 3; });
-    firms.sort(function(a,b){ return (+b.net||0) - (+a.net||0); });
-    var best = firms[0];
-    if(!best){
-      el.textContent = 'Menunggu…';
-      if(stat) stat.textContent = 'Butuh minimal 3 trade selesai per firm';
-      return;
-    }
-    el.textContent = firmShort(best.name);
-    if(stat){
-      var wr = (+best.winrate||0).toFixed(0);
-      var net = +best.net||0;
-      var netStr = (net>=0?'+':'')+net.toFixed(1)+'%';
-      var netColor = net>=0?'var(--green)':'var(--red)';
-      stat.innerHTML = 'Net <b style="color:'+netColor+'">'+netStr+'</b> · WR '+wr+'% · '+(best.trades||0)+' trade';
-    }
-    // Store firm-id ke card supaya klik card membuka detail firm (bukan
-    // sekedar switch tab). Fallback ke __TR_switchTab kalau openFirm gagal.
-    var card = el.closest('.tr-ov-hl-card');
-    if(card) card.setAttribute('data-firm-id', best.id || '');
-  }
+  // updateOvBestFirm() DIHAPUS — card "Sekuritas Terbaik" di-remove
+  // dari HTML karena redundant dgn Ranking + Filter di section bawah.
 
   function updateOvDistribution(data){
     var tp1 = (data.tpCounts&&+data.tpCounts.TP1)||0;
@@ -10621,36 +10642,186 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(samp) samp.textContent = (mi.count||0) + ' trade dianalisis';
   }
 
+  // ── Ranking dengan filter Basis × Target ─────────────────────
+  //
+  // Filter state (closure vars di IIFE ini):
+  //   _ovMetric : 'winrate' | 'net'    — basis sorting
+  //   _ovTarget : 'tp1'     | 'tp2'    — asumsi exit target
+  //
+  // Untuk tiap firm, `computeFirmStats(firm, target)` mengagregasi
+  // `firm.recsHistory` dgn re-simulasi exit path sesuai target:
+  //   TP1 → sell at TP1 kalau tersentuh, else natural (SL/expired path)
+  //   TP2 → skip rec tanpa TP2 target; sell at TP2 kalau tersentuh, atau
+  //          trailed di TP1 kalau TP1 hit tapi TP2 belum
+  // Min sample threshold 5 trade supaya outlier 1-2 trade tidak muncul.
+  var _ovMetric = 'winrate';
+  var _ovTarget = 'tp1';
+
+  function _pctAt(rec, price){
+    var entry = +rec.entry || 0;
+    if(!entry || !Number.isFinite(+price)) return 0;
+    var isBuy = String(rec.type||'BUY').toUpperCase() === 'BUY';
+    return ((+price - entry) / entry) * 100 * (isBuy ? 1 : -1);
+  }
+
+  function computeFirmStats(firm, target){
+    var history = firm.recsHistory || [];
+    var totalTrades = 0, wins = 0, netSum = 0;
+
+    for(var i=0; i<history.length; i++){
+      var r = history[i];
+      if(!(+r.entry)) continue;
+      var tpHits = r.tpHits || [];
+      var closedBy = String(r.closedBy||'').toUpperCase();
+
+      if(target === 'tp1'){
+        var tp1 = +r.tp1 || 0;
+        if(!tp1) continue;
+        totalTrades++;
+        // WIN kalau TP1 tersentuh (langsung atau lewat TP2)
+        var tp1Hit = tpHits.indexOf('TP1') >= 0
+          || tpHits.indexOf('TP2') >= 0
+          || closedBy === 'TP1' || closedBy === 'TP2'
+          || closedBy === 'SL_TRAIL';
+        if(tp1Hit){
+          wins++;
+          netSum += _pctAt(r, tp1);
+        } else if(closedBy === 'SL'){
+          netSum += _pctAt(r, +r.sl || 0);
+        } else {
+          // EXPIRED / unfilled — pakai natural pnlPct dari backend
+          netSum += (+r.pnlPct || 0);
+        }
+      } else if(target === 'tp2'){
+        var tp2 = +r.tp2 || 0;
+        var tp1Ref = +r.tp1 || 0;
+        // Skip rec tanpa TP2 target (atau TP2==TP1 = effectively no TP2)
+        if(!tp2 || tp2 === tp1Ref) continue;
+        totalTrades++;
+        var tp2Hit = tpHits.indexOf('TP2') >= 0 || closedBy === 'TP2';
+        var tp1HitNoTp2 = !tp2Hit && (
+          tpHits.indexOf('TP1') >= 0
+          || closedBy === 'TP1'
+          || closedBy === 'SL_TRAIL'
+        );
+        if(tp2Hit){
+          wins++;
+          netSum += _pctAt(r, tp2);
+        } else if(tp1HitNoTp2){
+          // TP1 hit tapi TP2 belum → trailed exit at TP1 (small WIN)
+          wins++;
+          netSum += _pctAt(r, tp1Ref);
+        } else if(closedBy === 'SL'){
+          netSum += _pctAt(r, +r.sl || 0);
+        } else {
+          netSum += (+r.pnlPct || 0);
+        }
+      }
+    }
+
+    return {
+      trades: totalTrades,
+      wins: wins,
+      winrate: totalTrades ? (wins / totalTrades) * 100 : 0,
+      net: +netSum.toFixed(2)
+    };
+  }
+
+  var MIN_TRADES_FOR_RANK = 5;
+
   function updateOvRankings(data){
     var top = $('trOvRankTop');
     var bot = $('trOvRankBot');
-    var firms = Object.values(data.byFirm||{}).filter(function(f){ return (f.trades||0) > 0; });
-    if(!firms.length){
-      if(top) top.innerHTML='<div class="tr-ov-rank-empty">Belum ada data</div>';
-      if(bot) bot.innerHTML='<div class="tr-ov-rank-empty">Belum ada data</div>';
+    var topTag = $('trOvRankTopTag');
+    var botTag = $('trOvRankBotTag');
+    if(!top || !bot) return;
+
+    // Update filter label tag di header ranking
+    var metricLbl = _ovMetric === 'winrate' ? 'Winrate' : 'Net Return';
+    var targetLbl = _ovTarget === 'tp1' ? 'TP1' : 'TP2';
+    var tagText = metricLbl + ' · ' + targetLbl;
+    if(topTag) topTag.textContent = tagText;
+    if(botTag) botTag.textContent = tagText;
+
+    // Compute mode-aware stats + filter by minimum sample
+    var firmsRaw = Object.values(data.byFirm || {});
+    var firmsStats = firmsRaw
+      .map(function(f){ return { firm: f, stats: computeFirmStats(f, _ovTarget) }; })
+      .filter(function(x){ return x.stats.trades >= MIN_TRADES_FOR_RANK; });
+
+    if(!firmsStats.length){
+      var msg = '<div class="tr-ov-rank-empty">Belum ada sekuritas dengan minimal '
+        + MIN_TRADES_FOR_RANK + ' trade selesai (target ' + targetLbl + ').</div>';
+      top.innerHTML = msg;
+      bot.innerHTML = msg;
       return;
     }
-    firms.sort(function(a,b){ return (+b.net||0)-(+a.net||0); });
-    var tops = firms.slice(0,3);
-    var bots = firms.slice(-3).reverse();
 
-    var renderRankItem = function(f, i){
-      var net = +f.net||0;
-      var netStr = (net>=0?'+':'')+net.toFixed(1)+'%';
-      var netCls = net>=0?'up':'dn';
-      var wr = (+f.winrate||0).toFixed(0);
+    // Sort by chosen metric (desc). Bottom = reverse of sorted.
+    firmsStats.sort(function(a, b){
+      var av = _ovMetric === 'winrate' ? a.stats.winrate : a.stats.net;
+      var bv = _ovMetric === 'winrate' ? b.stats.winrate : b.stats.net;
+      return bv - av;
+    });
+    var tops = firmsStats.slice(0, 3);
+    var bots = firmsStats.slice(-3).reverse(); // Terbawah dulu (worst worst)
+
+    var renderItem = function(x, i){
+      var f = x.firm, s = x.stats;
+      var primaryVal, primaryCls;
+      var secondaryLbl;
+      if(_ovMetric === 'winrate'){
+        primaryVal = s.winrate.toFixed(0) + '%';
+        primaryCls = s.winrate >= 55 ? 'up' : (s.winrate >= 45 ? '' : 'dn');
+        // Show Net sebagai sub info
+        secondaryLbl = 'Net ' + (s.net>=0?'+':'') + s.net.toFixed(1) + '%';
+      } else {
+        primaryVal = (s.net>=0?'+':'') + s.net.toFixed(1) + '%';
+        primaryCls = s.net >= 0 ? 'up' : 'dn';
+        // Show Winrate sebagai sub info
+        secondaryLbl = 'WR ' + s.winrate.toFixed(0) + '%';
+      }
       return '<div class="tr-ov-rank-item" data-firm-id="' + esc(f.id||'') + '" title="Buka detail ' + esc(f.name||'') + '">'
         + '<div class="tr-ov-rank-idx">'+(i+1)+'</div>'
         + '<div class="tr-ov-rank-info">'
           + '<div class="tr-ov-rank-name">'+esc(firmShort(f.name||'—'))+'</div>'
-          + '<div class="tr-ov-rank-sub">'+(f.trades||0)+' trade · WR '+wr+'%</div>'
+          + '<div class="tr-ov-rank-sub">'+s.trades+' trade · '+secondaryLbl+'</div>'
         + '</div>'
-        + '<div class="tr-ov-rank-stat '+netCls+'">'+netStr+'</div>'
+        + '<div class="tr-ov-rank-stat '+primaryCls+'">'+primaryVal+'</div>'
       + '</div>';
     };
-    if(top) top.innerHTML = tops.map(renderRankItem).join('') || '<div class="tr-ov-rank-empty">Belum ada data</div>';
-    if(bot) bot.innerHTML = bots.map(renderRankItem).join('') || '<div class="tr-ov-rank-empty">Belum ada data</div>';
+    top.innerHTML = tops.map(renderItem).join('') || '<div class="tr-ov-rank-empty">Belum ada data</div>';
+    bot.innerHTML = bots.map(renderItem).join('') || '<div class="tr-ov-rank-empty">Belum ada data</div>';
   }
+
+  // ── Filter bar click handler (delegated) ──────────────────────
+  // Klik salah satu tombol Basis / Target → update state, re-render
+  // ranking dgn state baru. Tidak trigger re-fetch data — semua reuse
+  // window.__TR_DATA__ terakhir.
+  document.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest && e.target.closest('#tr-view-main .tr-ov-rank-btn');
+    if(!btn) return;
+    var metric = btn.getAttribute('data-metric');
+    var target = btn.getAttribute('data-target');
+    var changed = false;
+    if(metric && metric !== _ovMetric){ _ovMetric = metric; changed = true; }
+    if(target && target !== _ovTarget){ _ovTarget = target; changed = true; }
+    if(!changed) return;
+    // Update active state di group yang ber-toggle
+    var group = btn.parentElement;
+    if(group){
+      var siblings = group.querySelectorAll('.tr-ov-rank-btn');
+      for(var i=0; i<siblings.length; i++){
+        siblings[i].classList.remove('active');
+        siblings[i].setAttribute('aria-selected', 'false');
+      }
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+    }
+    // Re-render dgn data cache
+    var d = window.__TR_getData && window.__TR_getData();
+    if(d && !d.pending) updateOvRankings(d);
+  });
 
   // ── Master render ──
   function renderRingkasan(data){
@@ -10658,7 +10829,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     try { updateKpi(data);            } catch(e) { console.warn('[tracker.overview] KPI:', e && e.message); }
     try { updateChart(data);          } catch(e) { console.warn('[tracker.overview] Chart:', e && e.message); }
     try { updateOvSubtitle(data);     } catch(e) { console.warn('[tracker.overview] Subtitle:', e && e.message); }
-    try { updateOvBestFirm(data);     } catch(e) { console.warn('[tracker.overview] BestFirm:', e && e.message); }
+    // updateOvBestFirm() dihapus — card "Sekuritas Terbaik" tidak lagi ada
     try { updateOvDistribution(data); } catch(e) { console.warn('[tracker.overview] Dist:', e && e.message); }
     try { updateOvActivity(data);     } catch(e) { console.warn('[tracker.overview] Activity:', e && e.message); }
     try { updateOvSentiment(data);    } catch(e) { console.warn('[tracker.overview] Sentiment:', e && e.message); }
