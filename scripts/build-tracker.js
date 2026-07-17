@@ -456,12 +456,8 @@ function normalizeRejectReason(row) {
   if (entry == null)    return 'entry-kosong';
   if (tp1 == null)      return 'tp1-kosong';
   if (sl == null)       return 'sl-kosong';
-  // Izinkan sl == entry (breakeven stop / no-loss stop): kalau kena SL,
-  // exit di harga entry → pnl 0%. Wajar untuk rekomendasi tight-risk.
-  // Yang ditolak: SL benar-benar di arah salah (sl > entry utk BUY,
-  // atau sl < entry utk SELL) — itu logika terbalik, bukan data valid.
-  if (tipe === 'BUY'  && (tp1 <= entry || sl > entry)) return 'arah-BUY-invalid';
-  if (tipe === 'SELL' && (tp1 >= entry || sl < entry)) return 'arah-SELL-invalid';
+  if (tipe === 'BUY'  && (tp1 <= entry || sl >= entry)) return 'arah-BUY-invalid';
+  if (tipe === 'SELL' && (tp1 >= entry || sl <= entry)) return 'arah-SELL-invalid';
   return null; // lolos
 }
 
@@ -603,11 +599,9 @@ function normalizeRow(row) {
   // baris seperti itu TETAP valid. Analis = pelengkap/fallback attribution,
   // bukan syarat wajib. (Dulu wajib analis → 21 baris valid ikut terbuang.)
   if ((!firm && !analyst) || !ticker || !openDate || entry == null || tp1 == null || sl == null) return null;
-  // Tolak BUY dgn TP <= entry atau SL > entry (data invalid arah).
-  // sl == entry DIIZINKAN → breakeven stop (0% loss kalau kena).
-  // Rekom dgn stop ketat di entry price banyak dipakai firm besar (BNI dll).
-  if (tipe === 'BUY' && (tp1 <= entry || sl > entry)) return null;
-  if (tipe === 'SELL' && (tp1 >= entry || sl < entry)) return null;
+  // Tolak BUY dgn TP <= entry atau SL >= entry (data invalid).
+  if (tipe === 'BUY' && (tp1 <= entry || sl >= entry)) return null;
+  if (tipe === 'SELL' && (tp1 >= entry || sl <= entry)) return null;
 
   // Firm-first: kalau kolom firm kosong, pakai nama analis sbg label sumber
   // (fallback). Menjamin leaderboard sekuritas selalu punya label non-kosong.
