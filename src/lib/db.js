@@ -422,6 +422,56 @@ export async function markGuideSeen(env, userId) {
   } catch { return { ok: false }; }
 }
 
+// ── PWA install prompt tracking (migrasi 0010) ─────────────────────────
+// Frekuensi popup "Pasang Terminal" dipegang server (per email/akun)
+// supaya konsisten lintas-perangkat & tidak bisa di-reset dgn clear cache.
+const PWA_PROMPT_INTERVAL_S = 7 * 24 * 3600; // 7 hari
+
+// Hitung apakah user perlu ditawari popup PWA sekarang.
+//   - Sudah pernah dideteksi pakai standalone (pwa_installed_at > 0) → false
+//   - Belum pernah muncul popup (pwa_last_prompt_at = 0) → true
+//   - Sudah lewat 7 hari sejak popup terakhir → true
+// FAIL-SAFE: bila kolom belum ada di DB (migration blm jalan) → false
+// (fitur diam-diam OFF, tapi login/dashboard tetap normal).
+export async function getPwaStatus(env, userId) {
+  if (!userId) return { should_prompt: false, is_installed: false };
+  try {
+    const u = await getUserById(env, userId);
+    if (!u) return { should_prompt: false, is_installed: false };
+    const installed = Number(u.pwa_installed_at || 0) > 0;
+    if (installed) return { should_prompt: false, is_installed: true };
+    const last = Number(u.pwa_last_prompt_at || 0);
+    const t = now();
+    const should = last === 0 || (t - last) >= PWA_PROMPT_INTERVAL_S;
+    return { should_prompt: !!should, is_installed: false };
+  } catch {
+    return { should_prompt: false, is_installed: false };
+  }
+}
+
+// Tandai popup PWA sudah ditampilkan sekarang → 7 hari ke depan
+// tidak akan muncul lagi untuk akun ini. FAIL-SAFE bila kolom belum ada.
+export async function markPwaPromptShown(env, userId) {
+  if (!userId) return { ok: false };
+  try {
+    await db(env).prepare('UPDATE users SET pwa_last_prompt_at = ?, updated_at = ? WHERE id = ?')
+      .bind(now(), now(), userId).run();
+    return { ok: true };
+  } catch { return { ok: false }; }
+}
+
+// Tandai user sudah memasang PWA (client mendeteksi display-mode standalone
+// atau install prompt di-accept). Setelah ini popup TIDAK PERNAH muncul
+// lagi untuk akun ini, lintas-perangkat. FAIL-SAFE bila kolom belum ada.
+export async function markPwaInstalled(env, userId) {
+  if (!userId) return { ok: false };
+  try {
+    await db(env).prepare('UPDATE users SET pwa_installed_at = ?, updated_at = ? WHERE id = ?')
+      .bind(now(), now(), userId).run();
+    return { ok: true };
+  } catch { return { ok: false }; }
+}
+
 export async function adminDeleteUser(env, email) {
   const u = await getUserByEmail(env, email);
   if (!u) throw new Error('User tidak ditemukan');

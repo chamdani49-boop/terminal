@@ -7,6 +7,18 @@
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="apple-icon.png">
 <meta name="theme-color" content="#6d28d9">
+<!-- ── PWA: manifest + Apple standalone meta ────────────────────────
+     Web App Manifest berisi nama, ikon, warna tema, start_url, dst.
+     Wajib supaya Chrome/Edge memicu `beforeinstallprompt` sehingga
+     tombol "Pasang Sekarang" (pwa-install.js) bisa langsung memasang
+     Terminal ke layar utama. Untuk iOS Safari, meta apple-* di bawah
+     yang membuat Terminal tampil layar penuh saat dibuka dari ikon
+     yg di-Add to Home Screen. -->
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Economstock">
 <!-- Preconnect ke domain TradingView agar TLS+DNS handshake terjadi lebih awal.
      Membuat load widget (di Pasar Live & tab Analisis Tracker) terasa lebih cepat
      saat pertama kali user buka halaman terkait. -->
@@ -27463,5 +27475,6 @@ document.addEventListener('keydown', (e) => {
 </script>
 
 <script src="/panduan.js" defer></script>
+<script src="/pwa-install.js" defer></script>
 </body>
 </html>

@@ -15,7 +15,7 @@ import { getSession, clearSessionCookieHeader } from './lib/session.js';
 import { googleStart, googleCallback, emailRequest, emailVerify } from './lib/auth.js';
 import { checkout, webhook } from './lib/mayar.js';
 import { handleAdminApi } from './lib/admin.js';
-import { getActiveSubscription, getReferralInfo, getUserById, markGuideSeen, getFeatureFlags } from './lib/db.js';
+import { getActiveSubscription, getReferralInfo, getUserById, markGuideSeen, getFeatureFlags, getPwaStatus, markPwaPromptShown, markPwaInstalled } from './lib/db.js';
 import { getBillingConfig, publicBilling } from './lib/billing.js';
 import { rateLimit, reportAbuse, trackDevice } from './lib/abuse.js';
 import { TOS_VERSION, hasAcceptedCurrent, saveConsent } from './lib/legal.js';
@@ -222,6 +222,10 @@ async function handleApi(request, env, url, ctx) {
     try { tosAccepted = await hasAcceptedCurrent(env, session.uid); } catch { tosAccepted = true; }
     let guideSeen = false;
     try { const u = await getUserById(env, session.uid); guideSeen = !!(u && u.guide_seen); } catch { guideSeen = false; }
+    // Status popup PWA per akun. FAIL-SAFE: bila migration 0010 blm
+    // dijalankan, keduanya false → popup diam-diam OFF.
+    let pwa = { should_prompt: false, is_installed: false };
+    try { pwa = await getPwaStatus(env, session.uid); } catch { /* ignore */ }
     return json({
       authenticated: true,
       email: session.email,
@@ -232,6 +236,7 @@ async function handleApi(request, env, url, ctx) {
       tos_version: TOS_VERSION,
       tos_accepted: tosAccepted,
       guide_seen: guideSeen,    // panduan tur sudah dilihat (per email/akun)
+      pwa,                       // { should_prompt, is_installed } — per email/akun
     });
   }
 
@@ -240,6 +245,27 @@ async function handleApi(request, env, url, ctx) {
     const session = await getSession(request, env);
     if (!session) return json({ ok: false }, 401);
     try { await markGuideSeen(env, session.uid); } catch { /* fail-safe */ }
+    return json({ ok: true });
+  }
+
+  // ── PWA popup: tandai sudah ditampilkan (reset window 7-hari) ──
+  // Client memanggil ini SAAT popup benar-benar muncul di layar user.
+  // Setelah 7 hari popup boleh muncul lagi (asal belum installed).
+  if (path === '/api/pwa-shown' && method === 'POST') {
+    const session = await getSession(request, env);
+    if (!session) return json({ ok: false }, 401);
+    try { await markPwaPromptShown(env, session.uid); } catch { /* fail-safe */ }
+    return json({ ok: true });
+  }
+
+  // ── PWA popup: tandai user sudah pasang PWA ──
+  // Client memanggil ini SAAT mendeteksi display-mode:standalone atau
+  // event 'appinstalled' dari browser. Setelah ini popup TIDAK pernah
+  // muncul lagi untuk akun ini, lintas-perangkat.
+  if (path === '/api/pwa-installed' && method === 'POST') {
+    const session = await getSession(request, env);
+    if (!session) return json({ ok: false }, 401);
+    try { await markPwaInstalled(env, session.uid); } catch { /* fail-safe */ }
     return json({ ok: true });
   }
 

@@ -415,6 +415,13 @@
         // (di index.html) meng-update __ES_PROFILE.tos_accepted=true setelah setuju,
         // supaya popup panduan tidak muncul bersamaan / menumpuk consent gate.
         if (p.tos_accepted === false) return;
+        // TUNGGU popup PWA (pwa-install.js) selesai untuk user baru. Popup
+        // "Pasang Terminal" muncul SETELAH consent tapi SEBELUM panduan tur.
+        // pwa-install.js men-set W.__ES_PWA_PENDING=true bila akan menampilkan
+        // popup, lalu false ketika popup ditutup/dipasang/diskip. Bila fitur
+        // PWA non-aktif (mis. server bilang should_prompt=false), flag ini
+        // tetap undefined → kondisi ini otomatis false → panduan lanjut normal.
+        if (W.__ES_PWA_PENDING === true) return;
         clearInterval(t);
         showWelcome();
       } else if (!authed && ++tries > 25) { clearInterval(t); }
