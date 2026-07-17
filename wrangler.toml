@@ -19,7 +19,7 @@
 #     buat D1 dulu, isi id-nya, baru uncomment.
 # ════════════════════════════════════════════════════════════════════════
 
-name = "terminal"
+name = "valuation-uploader"
 main = "src/index.js"
 compatibility_date = "2025-05-01"
 
