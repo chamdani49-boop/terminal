@@ -28,10 +28,17 @@ const PROTECTED_PREFIXES = ['/data.json', '/valuation.json', '/valuation/', '/oh
 // halaman Tracker fungsional:
 //   /dashboard    → HTML SPA (index.html) yg render page Tracker
 //   /data.json    → ticker name + IHSG series utk chart Tracker
-//   /tracker.json → data utama Tracker
-// Path lain di PROTECTED_PREFIXES (valuation/ohlc/macro/insights/headlines)
+//   /tracker.json → data utama Tracker (rec list, firm, dll)
+//   /ohlc.json    → OHLC harian per ticker. WAJIB untuk popup detail rec
+//                   di Tracker (chart candlestick + zona TP/SL) dan chart
+//                   di sub-tab Analisis. Tanpa ini, fetchOhlcForModal()
+//                   dapat 402 → chart cuma render 1 candle sintesis
+//                   "hari ini" dari DATA.live (broken UX). Ini data harga
+//                   historis (bukan valuasi/consensus) → aman utk paket
+//                   Tracker.
+// Path lain di PROTECTED_PREFIXES (valuation/macro/insights/headlines)
 // tidak accessible utk tracker-only → upgrade ke full.
-const TRACKER_SCOPE_ALLOWED = ['/dashboard', '/data.json', '/tracker.json'];
+const TRACKER_SCOPE_ALLOWED = ['/dashboard', '/data.json', '/tracker.json', '/ohlc.json'];
 
 function assetFor(env, url, pathname, request) {
   const u = new URL(url.toString());
