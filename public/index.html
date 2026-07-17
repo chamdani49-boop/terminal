@@ -3880,11 +3880,15 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-recmodal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .tr-recmodal-body{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  /* Ramping-in popup: 920 → 780 → 680px agar candle chart tampak lebih
-     dominan (aspect chart ~1.9:1 dgn min-height 340). Level cards masih
-     fit 4 kolom (min 115px × 4 + gap = ~465px, muat di ~644px content). */
-  width:min(680px, calc(100vw - 24px));
-  max-height:calc(100vh - 40px);
+  /* Modal size:
+     - width max 920px (naik dari 680) supaya chart candlestick punya lebih
+       banyak ruang horizontal → aspect ratio lebih bagus.
+     - height FIXED calc(100vh - 40px) (bukan max-height lagi) supaya chart
+       flex-grow bisa ambil semua sisa space. Kalau konten > modal, tetap
+       ada scroll via overflow-y:auto di dalam. */
+  width:min(920px, calc(100vw - 24px));
+  height:calc(100vh - 40px);
+  max-height:900px;
   background:var(--card);border:1px solid var(--border);
   border-radius:16px;padding:16px 18px 14px;
   box-shadow:var(--shadow-card-lg);
@@ -3924,7 +3928,13 @@ body.tr-profile-open .tr-subpane{display:none !important}
    Sebelumnya: clamp(300px, 46vh, 420px) — di layar landscape aspect
    ratio jadi ~5:1 & candle terlihat kejepit. */
 .tr-recmodal-chart-wrap{
-  position:relative;width:100%;height:clamp(560px, 70vh, 720px);
+  position:relative;width:100%;
+  /* flex:1 → ambil SEMUA remaining vertical space dalam .tr-recmodal-body
+     (yang sudah punya fixed height). Chart akan mengisi kotak modal
+     dari bawah toggle bar sampai atas level cards. min-height sbg
+     safety floor kalau modal terlalu pendek (mis. HP landscape). */
+  flex:1 1 auto;
+  min-height:340px;
   background:var(--bg2);border-radius:12px;overflow:hidden;
   border:1px solid var(--border);
 }
@@ -4042,7 +4052,7 @@ body.tr-profile-open .tr-subpane{display:none !important}
   .tr-recmodal-body{padding:14px 14px 12px;max-height:calc(100vh - 20px);gap:9px}
   .tr-recmodal-hd{padding-right:38px}
   .tr-recmodal-tick{font-size:21px}
-  .tr-recmodal-chart-wrap{height:min(480px, 62vh)}
+  .tr-recmodal-chart-wrap{min-height:320px}
   .tr-recmodal-chart-mode-btn{padding:5px 10px;font-size:10.5px}
   .tr-recmodal-level-hit{font-size:8px;padding:2px 5px}
   .tr-recmodal-level{padding:8px 10px}
