@@ -9320,6 +9320,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   window.__TR_normalizeFirms = normalizeFirmsInData;
 
+  // ── Re-invoke seluruh renderer tracker ────────────────────────────
+  // Dipakai:
+  //   (a) load pertama (dari loadTrackerData).
+  //   (b) LIVE OVERLAY (lihat IIFE __TR_LIVE_OVERLAY) — tiap kali candle
+  //       intraday hari ini bikin rec pindah bucket (pendingList ↔ openList
+  //       ↔ historyList), UI harus redraw ulang karena badge state di-render
+  //       berdasarkan r._bucket, bukan r.state.
+  // Idempotent: callback IIFE renderer (Ringkasan/Live/Analis/Perf/Analisis)
+  // sudah didesain read-ulang dari __TR_DATA__ tiap invocation.
+  function _reinvokeRenderers(json){
+    if (!json) json = window.__TR_DATA__;
+    if (!json) return;
+    try { updateStatusHint(window.__TR_DATA_STATE__ || 'ok', json); } catch(_){}
+    try { updateLiveChip(json); } catch(_){}
+    (window.__TR_DATA_CALLBACKS__ || []).forEach(function(cb){
+      try { cb(json); } catch(_){}
+    });
+  }
+  window.__TR_rerender = _reinvokeRenderers;
+
   // ── Fetch tracker.json (sekali per session) ────────────────────────
   function loadTrackerData(force){
     if (window.__TR_DATA_STATE__ === 'loading') return;
@@ -9338,12 +9358,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         try { normalizeFirmsInData(json); } catch(e){ try{ console.error('normalizeFirms failed:', e); }catch(_){} }
         window.__TR_DATA__ = json;
         window.__TR_DATA_STATE__ = json && json.pending ? 'pending' : 'ok';
-        updateStatusHint(window.__TR_DATA_STATE__, json);
-        updateLiveChip(json);
-        // Panggil semua callback yg sudah register.
-        (window.__TR_DATA_CALLBACKS__ || []).forEach(function(cb){
-          try { cb(json); } catch(_){}
-        });
+        _reinvokeRenderers(json);
       })
       .catch(function(e){
         window.__TR_DATA_STATE__ = 'error';
@@ -15974,6 +15989,10 @@ async function _pollLiveFeed(force = false) {
     const firstTime = !_liveFeedOk;              // overlay live pertama sejak halaman dibuka
     const n = applyLiveFeed(json.live, firstTime); // first → full render (semua kalkulasi turunan ikut)
     try { if (window.vlApplyLive) window.vlApplyLive(json.live); } catch (e) {}  // overlay live ke halaman Valuasi
+    // Overlay live ke state Tracker: rec yg rilis hari ini bisa berpindah
+    // PENDING → TRIGGERED / SL_HIT / TP_HIT berdasarkan virtual candle
+    // intraday. Lihat IIFE "TRACKER LIVE OVERLAY" di bawah.
+    try { if (typeof window.__TR_liveOverlay === 'function') window.__TR_liveOverlay(); } catch (e) {}
     const tag = json.stale ? ' (STALE — sumber sheet error, pakai data terakhir)' : '';
     if (!_liveFeedOk) {
       _liveFeedOk = true;
@@ -16019,6 +16038,347 @@ function _startLiveFeedPolling() {
   }
   console.info(`[live-feed] polling aktif — interval ${LIVE_FEED_POLL_MS / 1000}s (jam bursa WIB, pause saat tab background)`);
 }
+
+// ═══════════════════════════════════════════
+// TRACKER LIVE OVERLAY — recompute state pakai candle intraday hari ini
+// ═══════════════════════════════════════════
+// MASALAH: tracker.json di-build dari ohlc.json (candle daily EOD). Rec yang
+// rilis HARI INI selalu MENUNGGU (PENDING) sampai bursa tutup & ohlc.json
+// di-refresh (~17:00 WIB), walaupun harga sudah bergerak dan menyentuh
+// entry/TP/SL secara intraday.
+//
+// SOLUSI: pakai SATU virtual candle "hari ini" yang di-synthesize dari
+// DATA.live (feed real-time yg sama dgn chart popup rec — lihat
+// _ohlcMergeToday di IIFE "OHLC CHART HELPERS"). Jalankan state machine
+// mini (port dari scripts/build-tracker.js:derivePosition) di sisi klien
+// untuk rec yg masih PENDING/TRIGGERED, lalu pindahkan antar bucket
+// (pendingList → openList → historyList) supaya renderer badge yg baca
+// r._bucket ikut update.
+//
+// HOOK: dipanggil TIAP _pollLiveFeed sukses (via window.__TR_liveOverlay).
+// Kalau DATA.live belum ready / bursa tutup / rec sudah final → no-op.
+//
+// KETERBATASAN: virtual candle di-synthesize dari lv.price (last) + change_pct
+// → high/low aproksimasi ({open, close} extremes). Kalau harga intraday
+// sempat "spike menyentuh TP1 lalu balik", polling 60s bisa miss window itu.
+// Cukup untuk 95% kasus deteksi status (touch entry / SL / TP mid-day).
+// EOD rebuild tracker.json tetap jadi source-of-truth final.
+(function(){
+  'use strict';
+
+  var MISSED_THRESHOLD_PCT = 5;
+
+  // ── Bangun virtual candle "hari ini" untuk 1 rec dari DATA.live ──
+  // Return {ts, open, high, low, close, date} atau null.
+  // Guarded oleh: sesi bursa buka + live fresh today + rec.openDate <= today.
+  // Logika sama persis dgn _ohlcMergeToday (biar konsisten dgn chart popup).
+  function _synthTodayCandleForRec(rec){
+    if (!rec || !rec.ticker) return null;
+    var DATA = window.DATA;
+    var lv = DATA && DATA.live && DATA.live[rec.ticker];
+    if (!lv || !Number.isFinite(lv.price) || lv.price <= 0) return null;
+
+    // "Sekarang" dalam WIB (UTC+7). Bursa IDX Sen–Jum 09:00–16:30.
+    var nowWib = new Date(Date.now() + 7 * 3600 * 1000);
+    var todayStr = nowWib.toISOString().slice(0, 10);
+    var dowWib = nowWib.getUTCDay();
+    var hourWib = nowWib.getUTCHours();
+    var sessionStarted = dowWib >= 1 && dowWib <= 5 && hourWib >= 9;
+    if (!sessionStarted) return null;
+
+    // Data live fresh hari ini? _meta.generated_at di-update tiap live poll.
+    var genAt = DATA && DATA._meta && DATA._meta.generated_at;
+    var genWibDay = genAt
+      ? new Date(new Date(genAt).getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10)
+      : null;
+    if (genWibDay !== todayStr) return null;
+
+    // Rec di-rilis di masa depan? jangan overlay.
+    if (rec.openDate && rec.openDate > todayStr) return null;
+
+    var price = +lv.price;
+    var liveChgPct = Number.isFinite(lv.change_pct) ? lv.change_pct : 0;
+    var openEst = liveChgPct !== 0
+      ? Math.round(price / (1 + liveChgPct))
+      : price;
+    var ts = Math.floor(new Date(todayStr + 'T00:00:00Z').getTime() / 1000);
+    return {
+      ts: ts,
+      date: todayStr,
+      open: openEst,
+      high: Math.max(openEst, price),
+      low:  Math.min(openEst, price),
+      close: Math.round(price)
+    };
+  }
+
+  // ── State machine mini: proses 1 virtual candle terhadap rec ──
+  // Port dari scripts/build-tracker.js:derivePosition, SUBSET untuk:
+  //   PENDING     → TRIGGERED / SL_HIT / TP_HIT / RUNNING_MISSED
+  //   TRIGGERED   → SL_HIT / TP_HIT / TRIGGERED (partial TP1)
+  // Skip: TP_HIT, SL_HIT, EXPIRED, RUNNING_MISSED (sudah final untuk siklus ini).
+  // Return {update, bucketTarget} atau null (no change).
+  function _recomputeRecState(rec, candle){
+    if (!rec || !candle) return null;
+    var state = rec.state || 'PENDING';
+    if (state !== 'PENDING' && state !== 'TRIGGERED') return null;
+
+    var isBuy = rec.type === 'BUY';
+    var dirSign = isBuy ? 1 : -1;
+    var entry = +rec.entry;
+    var tp1 = +rec.tp1;
+    var tp2 = rec.tp2 != null && +rec.tp2 !== tp1 ? +rec.tp2 : null;
+    var sl = +rec.sl;
+    if (!Number.isFinite(entry) || !Number.isFinite(tp1) || !Number.isFinite(sl)) return null;
+
+    var open = candle.open, high = candle.high, low = candle.low, close = candle.close;
+    var pctAt = function(px){ return ((px - entry) / entry * 100) * dirSign; };
+
+    var update = {
+      lastPrice: close,
+      lastPriceTime: new Date(candle.ts * 1000).toISOString(),
+      distanceToEntryPct: +(((close - entry) / entry) * 100).toFixed(2),
+      _liveOverlay: true,
+      _liveOverlayAt: new Date().toISOString()
+    };
+    var bucketTarget = null;
+
+    // Track tpHits & phase — clone karena bakal di-mutate.
+    var tpHits = Array.isArray(rec.tpHits) ? rec.tpHits.slice() : [];
+    var hasTp1 = tpHits.indexOf('TP1') >= 0;
+    var effectiveSl = (hasTp1 && tp2 != null) ? entry : sl; // trailing SL after TP1 partial (staged)
+    var triggered = (state === 'TRIGGERED');
+
+    // ── PENDING: cek touch entry ──
+    if (state === 'PENDING'){
+      var touched = isBuy ? (low <= entry) : (high >= entry);
+      if (!touched){
+        // Belum kena. Cek RUNNING_MISSED (harga drift >5% dari entry).
+        var dist = update.distanceToEntryPct;
+        var awayFromEntry = isBuy ? dist > MISSED_THRESHOLD_PCT : dist < -MISSED_THRESHOLD_PCT;
+        if (awayFromEntry){
+          update.state = 'RUNNING_MISSED';
+          update.status = 'MISSED';
+          bucketTarget = 'missedList';
+          return { update: update, bucketTarget: bucketTarget };
+        }
+        // Tetap PENDING — hanya update lastPrice/distance.
+        return { update: update, bucketTarget: null };
+      }
+      // TRIGGERED baru: fill di entry (atau gap-past → di OPEN)
+      triggered = true;
+      update.didTouchEntry = true;
+      update.entryTouchDate = candle.date;
+      if (isBuy && open <= entry)          update.entryTouchPrice = +open;
+      else if (!isBuy && open >= entry)    update.entryTouchPrice = +open;
+      else                                  update.entryTouchPrice = +entry;
+      update.state = 'TRIGGERED';
+      update.status = 'OPEN';
+      update.openPriceAtPublish = rec.openPriceAtPublish || +open;
+      bucketTarget = 'openList';
+      // Lanjut cek TP/SL di bar yg sama (falls through di bawah).
+    }
+
+    // ── TRIGGERED (existing atau baru): cek SL/TP di candle ini ──
+    if (triggered){
+      var slHit = isBuy ? (low <= effectiveSl) : (high >= effectiveSl);
+      var tp1Hit = !hasTp1 && (isBuy ? (high >= tp1) : (low <= tp1));
+      var tp2Hit = tp2 != null && (isBuy ? (high >= tp2) : (low <= tp2));
+
+      if (!hasTp1){
+        // Phase 1 — belum kena TP1
+        if (slHit && !tp1Hit){
+          update.state = 'SL_HIT';
+          update.status = 'SL_HIT';
+          update.closedBy = 'SL';
+          update.exitDate = candle.date;
+          update.exitPrice = sl;
+          update.pnlPure = pctAt(sl);
+          update.pnlPct = update.pnlPure;
+          update.result = 'LOSS';
+          bucketTarget = 'historyList';
+        } else if (tp1Hit && tp2 == null){
+          // Single TP: closed
+          update.state = 'TP_HIT';
+          update.status = 'TP_HIT';
+          update.tpHits = ['TP1'];
+          update.closedBy = 'TP1';
+          update.exitDate = candle.date;
+          update.exitPrice = tp1;
+          update.pnlPure = pctAt(tp1);
+          update.pnlPct = update.pnlPure;
+          update.result = 'WIN';
+          bucketTarget = 'historyList';
+        } else if (tp1Hit && tp2 != null){
+          if (tp2Hit){
+            // TP1 & TP2 di candle yg sama: closed di TP2
+            var realized2 = pctAt(tp1) * 0.5 + pctAt(tp2) * 0.5;
+            update.state = 'TP_HIT';
+            update.status = 'TP_HIT';
+            update.tpHits = ['TP1', 'TP2'];
+            update.closedBy = 'TP2';
+            update.exitDate = candle.date;
+            update.exitPrice = tp2;
+            update.pnlPure = realized2;
+            update.pnlPct = realized2;
+            update.result = 'WIN';
+            bucketTarget = 'historyList';
+          } else {
+            // Partial TP1, phase→phase2 (still open, stays in openList)
+            update.tpHits = ['TP1'];
+            if (bucketTarget == null) bucketTarget = 'openList'; // stay
+            // Floating: pakai realized 50% + open 50% di harga close
+            var partial = pctAt(tp1) * 0.5 + ((close - entry) / entry * 100 * dirSign) * 0.5;
+            update.floatingPct = +partial.toFixed(2);
+          }
+        } else {
+          // Belum kena apa-apa: TRIGGERED (baru) atau tetap TRIGGERED
+          // Floating = (close - entryTouch) / entryTouch * 100 * dirSign
+          var entryPx = update.entryTouchPrice || rec.entryTouchPrice || entry;
+          update.floatingPct = +(((close - entryPx) / entryPx * 100) * dirSign).toFixed(2);
+          if (bucketTarget == null && state === 'PENDING') bucketTarget = 'openList';
+        }
+      } else {
+        // Phase 2 — sudah kena TP1 partial, trailing SL di entry
+        if (tp2Hit){
+          var realizedFull = pctAt(tp1) * 0.5 + pctAt(tp2) * 0.5;
+          update.state = 'TP_HIT';
+          update.status = 'TP_HIT';
+          update.tpHits = tpHits.concat(['TP2']);
+          update.closedBy = 'TP2';
+          update.exitDate = candle.date;
+          update.exitPrice = tp2;
+          update.pnlPure = realizedFull;
+          update.pnlPct = realizedFull;
+          update.result = 'WIN';
+          bucketTarget = 'historyList';
+        } else if (slHit){
+          // Trailing SL kena → close di entry (0% dari sisa), realized = TP1 partial
+          var realizedTrail = pctAt(tp1) * 0.5;
+          update.state = 'TP_HIT';
+          update.status = 'TP_HIT';
+          update.closedBy = 'SL_TRAIL';
+          update.exitDate = candle.date;
+          update.exitPrice = entry;
+          update.pnlPure = realizedTrail;
+          update.pnlPct = realizedTrail;
+          update.result = realizedTrail > 0.1 ? 'WIN' : 'NEUTRAL';
+          bucketTarget = 'historyList';
+        } else {
+          // Stay phase2 triggered
+          var entryPx2 = update.entryTouchPrice || rec.entryTouchPrice || entry;
+          var partial2 = pctAt(tp1) * 0.5 + ((close - entryPx2) / entryPx2 * 100 * dirSign) * 0.5;
+          update.floatingPct = +partial2.toFixed(2);
+        }
+      }
+    }
+
+    return { update: update, bucketTarget: bucketTarget };
+  }
+
+  // ── Overlay live ke seluruh rec di __TR_DATA__ ──
+  // Iterate pendingList + openList → recompute → mutate rec in-place →
+  // pindahkan antar bucket kalau state berubah. Return jumlah rec yg pindah.
+  function overlayLiveTrackerState(){
+    var data = window.__TR_DATA__;
+    if (!data) return { changed: 0, updated: 0 };
+
+    var pending = Array.isArray(data.pendingList) ? data.pendingList : (data.pendingList = []);
+    var open    = Array.isArray(data.openList)    ? data.openList    : (data.openList    = []);
+    var missed  = Array.isArray(data.missedList)  ? data.missedList  : (data.missedList  = []);
+    var history = Array.isArray(data.historyList) ? data.historyList : (data.historyList = []);
+    var unfilled = Array.isArray(data.unfilledList) ? data.unfilledList : (data.unfilledList = []);
+
+    var buckets = { pendingList: pending, openList: open, missedList: missed, historyList: history };
+    var moves = []; // {rec, from, to}
+    var updated = 0;
+
+    // Scan pendingList + openList (missed/history dianggap final untuk siklus ini)
+    ['pendingList', 'openList'].forEach(function(bucketName){
+      var list = buckets[bucketName];
+      // Clone karena mutation via splice bakal shift index — iterate snapshot.
+      list.slice().forEach(function(rec){
+        var candle = _synthTodayCandleForRec(rec);
+        if (!candle) return;
+        var res = _recomputeRecState(rec, candle);
+        if (!res) return;
+        // Apply update
+        Object.keys(res.update).forEach(function(k){ rec[k] = res.update[k]; });
+        updated++;
+        // Move bucket kalau target beda dari asal
+        if (res.bucketTarget && res.bucketTarget !== bucketName){
+          moves.push({ rec: rec, from: bucketName, to: res.bucketTarget });
+        }
+      });
+    });
+
+    // Eksekusi move
+    moves.forEach(function(m){
+      var fromList = buckets[m.from], toList = buckets[m.to];
+      if (!fromList || !toList) return;
+      var idx = fromList.indexOf(m.rec);
+      if (idx >= 0) fromList.splice(idx, 1);
+      toList.push(m.rec);
+      // unfilledList adalah superset pending+missed. Kalau rec pindah ke
+      // openList/historyList, hapus juga dari unfilledList.
+      if (m.to === 'openList' || m.to === 'historyList'){
+        var uidx = unfilled.indexOf(m.rec);
+        if (uidx >= 0) unfilled.splice(uidx, 1);
+      }
+    });
+
+    // Update counter agregat (chip Live, KPI cards, dst)
+    data.pendingCount = pending.length;
+    data.open         = open.length;
+    data.missedCount  = missed.length;
+    data.totalClosed  = history.length;
+
+    return { changed: moves.length, updated: updated, moves: moves };
+  }
+
+  // ── Entry point: dipanggil tiap _pollLiveFeed sukses ──
+  // Debounce sederhana + guard: hanya jalan kalau __TR_DATA__ ready.
+  var _lastOverlayAt = 0;
+  var _MIN_OVERLAY_INTERVAL_MS = 3000; // debounce 3 dtk (live poll 60s, aman)
+  function triggerOverlay(){
+    if (!window.__TR_DATA__) return;
+    var now = Date.now();
+    if (now - _lastOverlayAt < _MIN_OVERLAY_INTERVAL_MS) return;
+    _lastOverlayAt = now;
+    try {
+      var result = overlayLiveTrackerState();
+      if (result.changed > 0 || result.updated > 0){
+        // Ada rec yg pindah bucket ATAU field di-update → redraw UI.
+        if (typeof window.__TR_rerender === 'function'){
+          window.__TR_rerender(window.__TR_DATA__);
+        }
+        if (result.changed > 0){
+          try {
+            console.info('[tracker-live] overlay:',
+              result.changed, 'rec pindah bucket,',
+              result.updated, 'rec updated · pending=' + window.__TR_DATA__.pendingCount +
+              ' open=' + window.__TR_DATA__.open +
+              ' history=' + window.__TR_DATA__.totalClosed);
+          } catch(_){}
+        }
+      }
+    } catch (e){
+      try { console.warn('[tracker-live] overlay error:', e && e.message); } catch(_){}
+    }
+  }
+
+  // Expose ke _pollLiveFeed hook + register callback saat tracker.json first load.
+  window.__TR_liveOverlay = triggerOverlay;
+
+  // Kalau __TR_DATA__ sudah loaded sebelum IIFE ini eksekusi, run overlay
+  // sekali (best effort — mungkin DATA.live belum ada, tidak masalah).
+  if (typeof window.__TR_onData === 'function'){
+    window.__TR_onData(function(){
+      // Delay kecil biar renderer awal sempat pasang DOM dulu, baru overlay.
+      setTimeout(triggerOverlay, 150);
+    });
+  }
+})();
 
 // ═══════════════════════════════════════════
 // FEED KONSENSUS & HISTORY — overlay dari Worker (pola SAMA seperti live feed)
