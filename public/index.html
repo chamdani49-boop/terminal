@@ -13149,10 +13149,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
     script.type = 'text/javascript';
     script.async = true;
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    // interval '60' (1 jam) dipilih daripada 'D' (harian): feed IDX di
+    // TradingView untuk widget embed publik mem-publish candle Daily
+    // setelah bursa tutup, sehingga candle "hari ini" tidak muncul saat
+    // pasar masih buka. Interval 1H update lebih cepat (walau tetap
+    // delay 15–20 menit), sehingga chart terasa hidup saat jam bursa.
     script.text = JSON.stringify({
       autosize: true,
       symbol: 'IDX:' + ticker,
-      interval: 'D',
+      interval: '60',
       timezone: 'Asia/Jakarta',
       theme: _isDark() ? 'dark' : 'light',
       style: '1',
@@ -14095,11 +14100,15 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     var isDark = (document.documentElement.getAttribute('data-theme') === 'dark');
     var theme = isDark ? 'dark' : 'light';
     var symbol = encodeURIComponent('IDX:' + ticker);
-    // Widget embed URL — interval D (harian), locale id, hide top toolbar
+    // Widget embed URL — interval 60 (1 jam), locale id, hide top toolbar
     // brand, expose price scale + drawing tools. Origin & lokal Jakarta.
+    // Pakai interval 1H (bukan D) karena feed IDX di TradingView publik
+    // update candle Daily setelah bursa tutup → candle hari ini tidak
+    // terlihat saat pasar masih buka. Candle 1H muncul lebih cepat walau
+    // tetap delay ~15–20 menit.
     var src = 'https://s.tradingview.com/widgetembed/'
       + '?symbol=' + symbol
-      + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0'
+      + '&interval=60&hidesidetoolbar=0&symboledit=0&saveimage=0'
       + '&toolbarbg=' + (isDark ? '1a1330' : 'f1f3f6')
       + '&studies=%5B%5D&theme=' + theme + '&style=1'
       + '&timezone=Asia%2FJakarta&locale=id'
@@ -17126,8 +17135,11 @@ function plTvInHost(slot, host, sym, theme, note) {
   const script = document.createElement('script');
   script.type = 'text/javascript'; script.async = true;
   script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  // interval '60' (1 jam) — samakan dgn embed lain (renderTvChart Tracker
+  // & mountTradingView popup rec). Feed IDX di TradingView publik update
+  // candle Daily setelah bursa tutup; 1H lebih responsif saat jam bursa.
   script.text = JSON.stringify({
-    autosize: true, symbol: plTvSymbol(sym), interval: 'D', timezone: 'Asia/Jakarta',
+    autosize: true, symbol: plTvSymbol(sym), interval: '60', timezone: 'Asia/Jakarta',
     theme: theme, style: '1', locale: 'id', withdateranges: true,
     hide_side_toolbar: true, allow_symbol_change: true,
     studies: [],
