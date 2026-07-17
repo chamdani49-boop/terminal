@@ -23,24 +23,24 @@ export const DEFAULT_BILLING = {
   featured: 'tahunan',
   plans: {
     // Paket khusus TRACKER — akses hanya tab Tracker (scope='tracker' di DB).
-    // Positioned sebagai entry-level: harga per-bulan paling mahal (Rp 149rb/bln)
-    // tapi total commitment paling ringan (1 bulan). User day-trader / user yang
-    // cuma tertarik data rekomendasi trading tanpa butuh valuasi & konsensus.
-    // CATATAN: enforcement scope masih PENDING — buyer sementara dapat akses
-    // penuh selama 30 hari. Aktifkan gate scope di phase berikutnya.
+    // STATUS: TAMPILAN SAJA (preview) — tombol beli TIDAK aktif. Card tampil
+    // di /billing sbg pengumuman, tapi click tidak trigger checkout. Buyer
+    // menunggu aktivasi resmi (scope enforcement + admin panel siap).
+    // Aktifkan nanti dgn menghapus flag comingSoon di sini.
     '1bulan': {
       name: 'Paket Tracker',
       dur: '1 Bulan',
       priceReal: 149000,
       priceCoret: 199000,
-      sub: 'Akses fitur Tracker rekomendasi trading',
+      sub: 'Akses fitur Tracker rekomendasi trading (segera hadir)',
       features: [
         'Akses penuh menu Tracker (rekomendasi Entry/TP/SL)',
         'Papan peringkat sekuritas + performa vs IHSG',
         'Update rekomendasi harian',
       ],
-      btnText: 'Langganan Tracker 1 Bulan',
+      btnText: 'Segera Hadir',
       mayarLink: '',
+      comingSoon: true,   // Flag: card tampil, tombol disabled + intercept click.
     },
     '3bulan': {
       name: 'Paket Kuartal',
@@ -165,6 +165,7 @@ export function publicBilling(cfg) {
       priceReal: s.priceReal, priceCoret: s.priceCoret,
       features: s.features,
       hasLink: !!(s.mayarLink && s.mayarLink.length),
+      comingSoon: !!s.comingSoon,   // Flag preview-only: tombol disabled di UI
     };
   }
   return pub;

@@ -98,6 +98,25 @@ a{color:inherit;text-decoration:none}
 .feat li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--text);line-height:1.45}
 .feat li .ck{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-top:1px}
 .btn-pay{display:block;text-align:center;width:100%;background:var(--grad);color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:15px;border:none;border-radius:var(--radius);cursor:pointer;box-shadow:var(--shadow-card)}
+/* Paket coming-soon: tombol pakai style muted (bukan gradient), border
+   dashed, cursor default. Card sendiri dapat overlay 'preview' halus + badge
+   SEGERA HADIR di kanan atas. Klik masih trigger event tapi handler
+   bindPayButtons() akan intercept & tampilkan alert (tidak ke checkout). */
+.btn-pay.soon{
+  background:var(--bg2);color:var(--text3);
+  border:1.5px dashed var(--border);box-shadow:none;
+  cursor:default;font-weight:600;
+}
+.btn-pay.soon:hover{transform:none;filter:none}
+.plan.plan-soon{position:relative;opacity:.92}
+.plan-soon-badge{
+  position:absolute;top:12px;right:12px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:800;
+  letter-spacing:.6px;text-transform:uppercase;
+  background:linear-gradient(135deg,var(--yellow),#eab308);
+  color:#fff;padding:5px 10px;border-radius:6px;
+  box-shadow:0 4px 12px rgba(217,119,6,.28);
+}
 .btn-pay:hover{filter:brightness(1.07)}
 .btn-pay.outline{background:transparent;color:var(--accent);border:1.5px solid var(--accent);box-shadow:none}
 .btn-pay.outline:hover{background:var(--bg2)}
@@ -385,9 +404,15 @@ function planCardHtml(plan,pl,featured,promo){
   var wasTop=hasCoret
     ? '<div class="plan-was"><span class="was-lbl">Normal</span><s class="was-big mono">Rp '+rpId(pl.priceCoret)+'</s>'+(pct>0?'<span class="plan-off">Hemat '+pct+'%</span>':'')+'</div>'
     : '';
-  var btnCls=featured?'btn-pay':'btn-pay outline';
+  // Paket coming-soon: card tetap tampil sbg preview, tapi tombol pakai
+  // class .soon (styling disabled) + badge SEGERA HADIR di kanan atas card.
+  var isSoon = !!pl.comingSoon;
+  var btnCls = isSoon ? 'btn-pay soon' : (featured ? 'btn-pay' : 'btn-pay outline');
+  var soonBadge = isSoon ? '<div class="plan-soon-badge">SEGERA HADIR</div>' : '';
+  var soonAttr = isSoon ? ' aria-disabled="true"' : '';
   return ''+
-    '<div class="plan'+(featured?' featured':'')+'"'+(featured?' data-promo="'+escHtml(promo||'PALING HEMAT')+'"':'')+'>'+
+    '<div class="plan'+(featured?' featured':'')+(isSoon?' plan-soon':'')+'"'+(featured?' data-promo="'+escHtml(promo||'PALING HEMAT')+'"':'')+'>'+
+      soonBadge+
       '<div class="plan-name">'+escHtml(pl.name)+'</div>'+
       '<div class="plan-dur">'+escHtml(pl.dur)+'</div>'+
       wasTop+
@@ -395,7 +420,7 @@ function planCardHtml(plan,pl,featured,promo){
       '<div class="plan-sub">'+escHtml(pl.sub)+'</div>'+
       '<div class="plan-permo mono">≈ Rp '+rpId(permo)+' / bulan</div>'+
       '<ul class="feat">'+feats+'</ul>'+
-      '<button class="'+btnCls+'" data-plan="'+plan+'">'+escHtml(pl.btnText)+'</button>'+
+      '<button class="'+btnCls+'" data-plan="'+plan+'"'+soonAttr+'>'+escHtml(pl.btnText)+'</button>'+
     '</div>';
 }
 
@@ -404,6 +429,12 @@ function bindPayButtons(){
     if(b._bound) return; b._bound=true;
     b.addEventListener('click',async function(){
       var plan=b.getAttribute('data-plan');
+      // Paket coming-soon: tombol tidak trigger checkout. Toast singkat sbg
+      // feedback kalau user klik. Aktifkan nanti dgn hapus flag comingSoon.
+      if (b.classList.contains('soon')){
+        alert('Paket ini segera hadir. Nantikan pengumuman aktivasinya.');
+        return;
+      }
       var original=b.textContent;
       b.disabled=true;b.textContent='Memproses…';
       try{
