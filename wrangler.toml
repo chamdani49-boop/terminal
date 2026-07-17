@@ -45,6 +45,7 @@ TRIAL_MINUTES = "30"
 # 1 user baru mendaftar. Stacking & kelipatan tanpa batas. "0" = matikan referral.
 REFERRAL_DAYS = "3"
 # Durasi paket (hari)
+PLAN_DAYS_1BULAN = "30"
 PLAN_DAYS_3BULAN = "90"
 PLAN_DAYS_6BULAN = "182"
 PLAN_DAYS_TAHUNAN = "365"

@@ -48,6 +48,7 @@ async function lookupInvoicePlan(env, ids) {
 function planDays(env, plan) {
   if (plan === 'tahunan') return parseInt(env.PLAN_DAYS_TAHUNAN || '365', 10);
   if (plan === '3bulan') return parseInt(env.PLAN_DAYS_3BULAN || '90', 10);
+  if (plan === '1bulan') return parseInt(env.PLAN_DAYS_1BULAN || '30', 10);
   return parseInt(env.PLAN_DAYS_6BULAN || '182', 10);
 }
 
@@ -105,7 +106,7 @@ async function createMayarInvoice(env, { plan, amount, planName, email, name, re
 // ── CHECKOUT: buat tagihan Mayar (atau fallback link statis) lalu arahkan user ──
 export async function checkout(request, env, url) {
   const plan = url.searchParams.get('plan');
-  if (!['3bulan', '6bulan', 'tahunan'].includes(plan)) return json({ error: 'Paket tidak valid' }, 400);
+  if (!['1bulan', '3bulan', '6bulan', 'tahunan'].includes(plan)) return json({ error: 'Paket tidak valid' }, 400);
 
   // Mode debug: tambahkan ?debug=1 di URL untuk melihat error invoice yang sebenarnya
   // (kalau tidak, invoice gagal akan diam-diam jatuh ke link statis).
@@ -174,7 +175,8 @@ export async function checkout(request, env, url) {
   if (!link) {
     link = plan === 'tahunan' ? env.MAYAR_LINK_TAHUNAN
       : plan === '3bulan' ? env.MAYAR_LINK_3BULAN
-        : env.MAYAR_LINK_6BULAN;
+        : plan === '1bulan' ? env.MAYAR_LINK_1BULAN
+          : env.MAYAR_LINK_6BULAN;
   }
   if (!link) {
     return json({ error: 'Pembayaran belum dikonfigurasi untuk paket ini.' }, 503);
@@ -240,13 +242,17 @@ async function detectTerminalPlan(env, { productId, amount, invoiceIds }) {
     if (env.MAYAR_PRODUCT_TAHUNAN && productId == env.MAYAR_PRODUCT_TAHUNAN) return 'tahunan';
     if (env.MAYAR_PRODUCT_6BULAN && productId == env.MAYAR_PRODUCT_6BULAN) return '6bulan';
     if (env.MAYAR_PRODUCT_3BULAN && productId == env.MAYAR_PRODUCT_3BULAN) return '3bulan';
+    if (env.MAYAR_PRODUCT_1BULAN && productId == env.MAYAR_PRODUCT_1BULAN) return '1bulan';
   }
   // 2) Jaring pengaman: cocokkan NOMINAL dgn harga paket terminal [0.9x..1.5x].
   const amt = parseInt(amount, 10) || 0;
   if (amt > 0) {
     try {
       const cfg = await getBillingConfig(env);
-      for (const k of ['tahunan', '6bulan', '3bulan']) {
+      // Urutan dari besar ke kecil supaya rentang harga overlap tidak
+      // salah tangkap (harga tahunan/6b/3b/1b terpisah cukup jauh:
+      // 149rb / 699rb / 997rb / 1.75jt, tapi kita hormati urutan).
+      for (const k of ['tahunan', '6bulan', '3bulan', '1bulan']) {
         const price = (cfg.plans[k] && cfg.plans[k].priceReal) || 0;
         if (price > 0 && amt >= Math.round(price * 0.9) && amt <= Math.round(price * 1.5)) return k;
       }
