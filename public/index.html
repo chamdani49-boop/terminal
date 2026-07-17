@@ -16139,15 +16139,26 @@ function _startLiveFeedPolling() {
   }
 
   // ── State machine mini: proses 1 virtual candle terhadap rec ──
-  // Port dari scripts/build-tracker.js:derivePosition, SUBSET untuk:
-  //   PENDING     → TRIGGERED / SL_HIT / TP_HIT / RUNNING_MISSED
-  //   TRIGGERED   → SL_HIT / TP_HIT / TRIGGERED (partial TP1)
-  // Skip: TP_HIT, SL_HIT, EXPIRED, RUNNING_MISSED (sudah final untuk siklus ini).
+  // Port dari scripts/build-tracker.js:derivePosition, mengikuti aturan user:
+  //   1. Belum touch entry/SL/TP1/TP2 sampai 10 hari → EXPIRED (final)
+  //   2. Sudah touch entry, belum kena SL/TP1/TP2 → lanjutkan (tak dibatasi
+  //      10 hari, cuma horizonDays 30 hari via backend)
+  //   3. Belum 10 hari, harga drift >5% dari entry tanpa touch → RUNNING_MISSED
+  // Transisi yg di-handle overlay:
+  //   PENDING          → TRIGGERED / SL_HIT / TP_HIT / RUNNING_MISSED
+  //   TRIGGERED        → SL_HIT / TP_HIT / TRIGGERED (partial TP1)
+  //   RUNNING_MISSED   → TRIGGERED (kalau today's candle touch entry).
+  //                      "Sticky MISSED" saat belum touch: tidak flip-flop
+  //                      balik ke PENDING walau harga oscillate dekat entry —
+  //                      cegah UI berkedip. Backend tetap final source-of-truth.
+  // Skip: TP_HIT, SL_HIT, EXPIRED (sudah final).
+  // Guard expired di-handle di caller (overlayLiveTrackerState) via
+  // pendingExpiresAt < today.
   // Return {update, bucketTarget} atau null (no change).
   function _recomputeRecState(rec, candle){
     if (!rec || !candle) return null;
     var state = rec.state || 'PENDING';
-    if (state !== 'PENDING' && state !== 'TRIGGERED') return null;
+    if (state !== 'PENDING' && state !== 'TRIGGERED' && state !== 'RUNNING_MISSED') return null;
 
     var isBuy = rec.type === 'BUY';
     var dirSign = isBuy ? 1 : -1;
@@ -16175,23 +16186,31 @@ function _startLiveFeedPolling() {
     var effectiveSl = (hasTp1 && tp2 != null) ? entry : sl; // trailing SL after TP1 partial (staged)
     var triggered = (state === 'TRIGGERED');
 
-    // ── PENDING: cek touch entry ──
-    if (state === 'PENDING'){
+    // ── PENDING / RUNNING_MISSED: cek touch entry ──
+    if (state === 'PENDING' || state === 'RUNNING_MISSED'){
       var touched = isBuy ? (low <= entry) : (high >= entry);
       if (!touched){
-        // Belum kena. Cek RUNNING_MISSED (harga drift >5% dari entry).
         var dist = update.distanceToEntryPct;
         var awayFromEntry = isBuy ? dist > MISSED_THRESHOLD_PCT : dist < -MISSED_THRESHOLD_PCT;
-        if (awayFromEntry){
-          update.state = 'RUNNING_MISSED';
-          update.status = 'MISSED';
-          bucketTarget = 'missedList';
-          return { update: update, bucketTarget: bucketTarget };
+        if (state === 'PENDING'){
+          // PENDING → RUNNING_MISSED kalau harga baru drift jauh dari entry.
+          if (awayFromEntry){
+            update.state = 'RUNNING_MISSED';
+            update.status = 'MISSED';
+            bucketTarget = 'missedList';
+            return { update: update, bucketTarget: bucketTarget };
+          }
+          // Tetap PENDING — hanya update lastPrice/distance.
+          return { update: update, bucketTarget: null };
+        } else {
+          // state === 'RUNNING_MISSED': sticky. Belum touch entry → tetap
+          // MISSED, tidak flip balik ke PENDING (cegah UI berkedip saat
+          // harga oscillate di sekitar threshold 5%).
+          return { update: update, bucketTarget: null };
         }
-        // Tetap PENDING — hanya update lastPrice/distance.
-        return { update: update, bucketTarget: null };
       }
-      // TRIGGERED baru: fill di entry (atau gap-past → di OPEN)
+      // Touch entry → TRIGGERED. Untuk rec yg SEBELUMNYA MISSED, ini
+      // "revive" ke posisi jalan (harga balik nyentuh entry).
       triggered = true;
       update.didTouchEntry = true;
       update.entryTouchDate = candle.date;
@@ -16302,9 +16321,27 @@ function _startLiveFeedPolling() {
     return { update: update, bucketTarget: bucketTarget };
   }
 
+  // ── Guard expired: rec MENUNGGU entry yg sudah >10 hari dari openDate.
+  // User rule: "belum kena entry/SL/TP1/TP2 sampai 10 hari → EXPIRED (final)".
+  // Backend akan pindahkan ke historyList di refresh berikutnya; sementara
+  // itu jangan un-expire lewat overlay live walau today's candle nyentuh
+  // entry. UI sudah tandai "KADALUARSA" via __TR_isPendingExpired.
+  // TRIGGERED (posisi jalan) tidak kena guard ini — user rule "lanjutkan".
+  function _isPendingExpired(rec){
+    if (!rec || !rec.pendingExpiresAt) return false;
+    if (rec.state !== 'PENDING' && rec.state !== 'RUNNING_MISSED') return false;
+    var expTs = Date.parse(rec.pendingExpiresAt + 'T23:59:59Z');
+    if (!Number.isFinite(expTs)) return false;
+    return Date.now() > expTs;
+  }
+
   // ── Overlay live ke seluruh rec di __TR_DATA__ ──
-  // Iterate pendingList + openList → recompute → mutate rec in-place →
-  // pindahkan antar bucket kalau state berubah. Return jumlah rec yg pindah.
+  // Iterate pendingList + openList + missedList → recompute → mutate rec
+  // in-place → pindahkan antar bucket kalau state berubah. Return jumlah
+  // rec yg pindah + jumlah updated.
+  //
+  // missedList di-scan supaya rec RUNNING_MISSED yg harganya balik nyentuh
+  // entry (sebelum 10 hari) bisa "revive" ke TRIGGERED — sesuai user rule.
   function overlayLiveTrackerState(){
     var data = window.__TR_DATA__;
     if (!data) return { changed: 0, updated: 0 };
@@ -16318,12 +16355,16 @@ function _startLiveFeedPolling() {
     var buckets = { pendingList: pending, openList: open, missedList: missed, historyList: history };
     var moves = []; // {rec, from, to}
     var updated = 0;
+    var skippedExpired = 0;
 
-    // Scan pendingList + openList (missed/history dianggap final untuk siklus ini)
-    ['pendingList', 'openList'].forEach(function(bucketName){
+    // Scan pendingList + openList + missedList (history final).
+    ['pendingList', 'openList', 'missedList'].forEach(function(bucketName){
       var list = buckets[bucketName];
       // Clone karena mutation via splice bakal shift index — iterate snapshot.
       list.slice().forEach(function(rec){
+        // Guard: rec MENUNGGU entry yg sudah expired (>10 hari) — skip
+        // supaya tidak salah trigger ke TRIGGERED via overlay live.
+        if (_isPendingExpired(rec)){ skippedExpired++; return; }
         var candle = _synthTodayCandleForRec(rec);
         if (!candle) return;
         var res = _recomputeRecState(rec, candle);
@@ -16359,7 +16400,7 @@ function _startLiveFeedPolling() {
     data.missedCount  = missed.length;
     data.totalClosed  = history.length;
 
-    return { changed: moves.length, updated: updated, moves: moves };
+    return { changed: moves.length, updated: updated, moves: moves, skippedExpired: skippedExpired };
   }
 
   // ── Entry point: dipanggil tiap _pollLiveFeed sukses ──
@@ -16392,9 +16433,11 @@ function _startLiveFeedPolling() {
         var lvCount = D.live ? Object.keys(D.live).length : 0;
         var summary = 'run (reason=' + (reason||'?') + ') · updated=' + result.updated +
                       ' moved=' + result.changed +
+                      ' skipExpired=' + (result.skippedExpired || 0) +
                       ' · DATA.live keys=' + lvCount +
                       ' · pending=' + window.__TR_DATA__.pendingCount +
                       ' open=' + window.__TR_DATA__.open +
+                      ' missed=' + window.__TR_DATA__.missedCount +
                       ' history=' + window.__TR_DATA__.totalClosed;
         _dbg(summary, result.changed > 0 ? '#0f0' : '#8fd');
       }
