@@ -388,8 +388,11 @@ document.getElementById('yr').textContent=new Date().getFullYear();
 // ── Render 3 card billing dari konfigurasi admin (/api/billing-config) ──
 // Persentase hemat & harga per-bulan DIHITUNG OTOMATIS dari harga real & coret.
 // Kalau API gagal, card statis bawaan HTML tetap tampil (fallback).
-var PLAN_ORDER=['3bulan','6bulan','tahunan'];
-var PLAN_MONTHS={'3bulan':3,'6bulan':6,'tahunan':12};
+// PLAN_ORDER menentukan urutan render kartu. '1bulan' di depan (Paket
+// Tracker entry-level Rp 149rb) — status coming-soon, tombol non-aktif.
+// Sinkron dgn PLAN_ORDER server-side di src/lib/billing.js.
+var PLAN_ORDER=['1bulan','3bulan','6bulan','tahunan'];
+var PLAN_MONTHS={'1bulan':1,'3bulan':3,'6bulan':6,'tahunan':12};
 function escHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function rpId(n){return Number(n||0).toLocaleString('id-ID');}
 function calcPct(real,coret){real=Number(real)||0;coret=Number(coret)||0;if(coret<=0||real>=coret)return 0;return Math.round((1-real/coret)*100);}
