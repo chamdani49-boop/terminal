@@ -2984,7 +2984,32 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-cal-anchor{position:relative;display:inline-block}
 .tr-pf-cal-popup{position:absolute;top:calc(100% + 6px);right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,.4);padding:14px 14px 10px;width:290px;z-index:1050;font-size:12px;color:var(--text)}
 .tr-pf-cal-popup[hidden]{display:none}
-@media(max-width:520px){.tr-pf-cal-popup{right:auto;left:0;width:min(290px,90vw)}}
+/* HP: popup kalender berubah jadi modal centered fixed — tidak akan
+   pernah ter-clip oleh overflow ancestor (mis. subtab shell tracker
+   yang punya overflow-x, atau panel yg lebih pendek dari popup).
+   Backdrop dim disimulasi via box-shadow 100vmax hitam transparan
+   (tanpa perlu JS / DOM tambahan). Klik di area shadow tetap men-
+   trigger click-outside handler → popup nutup normal. */
+@media(max-width:520px){
+  .tr-pf-cal-popup{
+    position:fixed;
+    top:50%;left:50%;right:auto;bottom:auto;
+    transform:translate(-50%,-50%);
+    width:min(320px, calc(100vw - 24px));
+    max-height:calc(100vh - 40px);
+    overflow-y:auto;
+    z-index:1060;
+    padding:16px 16px 12px;
+    box-shadow:
+      0 0 0 100vmax rgba(6,4,20,.55),
+      0 24px 60px rgba(0,0,0,.45);
+  }
+  .tr-pf-cal-popup .cal-day{font-size:12.5px}
+  .tr-pf-cal-popup .cal-title{font-size:14px}
+  /* Backdrop element (dipakai Performa view) di HP redundant karena
+     popup sudah punya dim shadow sendiri — sembunyikan agar tidak dobel. */
+  .cal-backdrop{background:transparent!important}
+}
 .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
 .cal-title{font-weight:800;font-size:13px;letter-spacing:-.1px}
 .cal-nav{display:flex;gap:4px}
