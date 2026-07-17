@@ -64,6 +64,13 @@ jobs:
         env:
           TRACKER_SHEET_ID:  ${{ secrets.TRACKER_SHEET_ID }}
           TRACKER_SHEET_TAB: ${{ secrets.TRACKER_SHEET_TAB }}
+          # Sheet Live (harga real-time via gviz) — sama secret yg dipakai
+          # refresh-data.yml. Kalau di-set, build-tracker.js inject virtual
+          # today candle ke ohlc.json in-memory supaya rec yg rilis hari ini
+          # bisa langsung ke state TRIGGERED/SL_HIT/TP_HIT tanpa nunggu EOD.
+          # Kalau kosong: skip (tracker.json fallback ke state overlay klien-side).
+          LIVE_SHEET_ID:     ${{ secrets.LIVE_SHEET_ID }}
+          LIVE_GID:          ${{ secrets.LIVE_GID }}
         run: |
           node scripts/build-tracker.js
 
