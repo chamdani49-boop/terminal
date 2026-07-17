@@ -59,6 +59,25 @@ input.code{text-align:center;letter-spacing:10px;font-family:'IBM Plex Mono',mon
 .secure-list li::before{content:"✓";position:absolute;left:0;top:0;color:var(--green);font-weight:800}
 .secure-list b{color:var(--text);font-weight:700}
 .secure-foot{margin-top:11px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);line-height:1.5;text-align:center}
+
+/* WEBVIEW NOTICE — hanya muncul kalau in-app browser terdeteksi */
+.wv-notice{margin-bottom:18px;background:rgba(225,29,72,.07);border:1.5px solid rgba(225,29,72,.4);border-radius:var(--radius);padding:15px 16px}
+[data-theme="dark"] .wv-notice{background:rgba(251,113,133,.08);border-color:rgba(251,113,133,.4)}
+.wv-head{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:800;color:var(--red);margin-bottom:9px;line-height:1.3}
+.wv-head svg{width:20px;height:20px;flex-shrink:0}
+.wv-text{font-size:13px;color:var(--text);line-height:1.55;margin-bottom:9px}
+.wv-text:last-of-type{margin-bottom:12px}
+.wv-text b{font-weight:700}
+.wv-btn-primary{width:100%;background:var(--grad);color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border:none;border-radius:var(--radius);cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+.wv-btn-primary:hover{filter:brightness(1.07)}
+.wv-btn-primary svg{width:18px;height:18px}
+.wv-btn-second{width:100%;background:transparent;color:var(--text2);font-family:inherit;font-size:13px;font-weight:600;padding:10px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
+.wv-btn-second:hover{border-color:var(--accent);color:var(--text)}
+.wv-hint{font-size:12px;color:var(--text2);margin-top:11px;padding-top:10px;border-top:1px solid var(--border);line-height:1.55}
+.wv-hint b{color:var(--text);font-weight:700}
+.btn-google.wv-disabled{opacity:.5;cursor:not-allowed;position:relative}
+.btn-google.wv-disabled:hover{border-color:var(--border)}
+.wv-blocked-note{font-size:11px;color:var(--red);text-align:center;margin-top:-2px;margin-bottom:8px;font-weight:600}
 </style>
 </head>
 <body>
@@ -68,6 +87,23 @@ input.code{text-align:center;letter-spacing:10px;font-family:'IBM Plex Mono',mon
   <p class="sub">Akses Economstock Terminal, temukan saham undervalue.</p>
 
   <div class="msg" id="msg"></div>
+
+  <!-- WebView notice: hanya muncul kalau in-app browser terdeteksi -->
+  <div id="wvNotice" class="wv-notice" style="display:none">
+    <div class="wv-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></svg>
+      <span>Buka di browser untuk login</span>
+    </div>
+    <p class="wv-text">Kamu membuka Economstock lewat <b>browser dalam aplikasi</b> (mis. Threads/Instagram/TikTok). Google memblokir login OAuth dari sini demi keamanan.</p>
+    <p class="wv-text">Tap tombol di bawah untuk membuka halaman ini di browser aslimu (Chrome/Safari), lalu login seperti biasa.</p>
+    <button class="wv-btn-primary" id="wvOpenBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+      Buka di Browser
+    </button>
+    <button class="wv-btn-second" id="wvCopyBtn" type="button">Salin link</button>
+    <p class="wv-hint" id="wvHint" style="display:none">Kalau tombol tidak bekerja: tap ikon <b>⋯</b> di pojok atas layar → pilih <b>"Open in Browser"</b> / <b>"Open in Chrome"</b> / <b>"Open in Safari"</b>.</p>
+  </div>
+  <div class="wv-blocked-note" id="wvBlockedNote" style="display:none">↓ Diblokir Google di browser dalam aplikasi</div>
 
   <!-- Google -->
   <button class="btn-google" id="googleBtn">
@@ -133,6 +169,104 @@ var NEXT=params.get('next')||'/';
 document.getElementById('googleBtn').addEventListener('click',function(){
   location.href='/api/auth/google?next='+encodeURIComponent(NEXT);
 });
+
+// ==== In-app / WebView detection ====
+// Google memblokir OAuth dari in-app browser (error 403 disallowed_useragent).
+// Kalau terdeteksi, tampilkan notice + tombol "Buka di Browser".
+(function(){
+  var ua=navigator.userAgent||'';
+  var isIOS=/iP(hone|od|ad)/.test(ua);
+  var isAndroid=/Android/.test(ua);
+
+  // App markers yang punya in-app browser sendiri
+  var appMarkers=[
+    'Instagram','FBAN','FBAV','FB_IAB','FBIOS',   // FB / IG
+    'Threads',                                     // Threads (Meta)
+    'Line/',                                       // LINE
+    'TikTok','Musical_ly','BytedanceWebview',      // TikTok
+    'TwitterAndroid','Twitter for','X for',        // Twitter/X
+    'LinkedInApp',                                 // LinkedIn
+    'MicroMessenger','WeChat',                     // WeChat
+    'Snapchat',                                    // Snapchat
+    'Pinterest',                                   // Pinterest
+    'GSA/',                                        // Google Search App (juga diblokir)
+    'Messenger',                                   // FB Messenger
+    'KAKAOTALK','NAVER',                           // Korea
+    'DingTalk','Weibo','QQ/',                      // China
+    'YahooJPFetcher','YJApp'                       // Yahoo JP
+  ];
+  var byApp=appMarkers.some(function(m){return ua.indexOf(m)>=0;});
+  var byWv=isAndroid && /;\s*wv\)/.test(ua); // Android generic WebView
+  var byIOS=false;
+  if(isIOS){
+    // Legit iOS browsers: Safari, Chrome (CriOS), Firefox (FxiOS), Edge (EdgiOS), Opera (OPiOS), DuckDuckGo
+    var legit=/Safari\//.test(ua)||/CriOS/.test(ua)||/FxiOS/.test(ua)||/EdgiOS/.test(ua)||/OPiOS/.test(ua)||/DuckDuckGo/.test(ua);
+    byIOS=!legit;
+  }
+  var inApp=byApp||byWv||byIOS;
+  if(!inApp) return;
+
+  var notice=document.getElementById('wvNotice');
+  var blockedNote=document.getElementById('wvBlockedNote');
+  var gBtn=document.getElementById('googleBtn');
+  if(notice) notice.style.display='block';
+  if(blockedNote) blockedNote.style.display='block';
+  if(gBtn){
+    gBtn.classList.add('wv-disabled');
+    gBtn.disabled=true;
+    gBtn.setAttribute('aria-disabled','true');
+    gBtn.title='Buka halaman ini di browser (Chrome/Safari) dulu, lalu login.';
+  }
+
+  var pageUrl=location.href;
+  var hintEl=document.getElementById('wvHint');
+  function showHint(){ if(hintEl) hintEl.style.display='block'; }
+
+  document.getElementById('wvOpenBtn').addEventListener('click',function(){
+    // Selalu tampilkan hint setelah 1.5s sebagai fallback edukasi
+    setTimeout(showHint,1500);
+
+    if(isAndroid){
+      // Android: intent:// akan memicu browser sistem (biasanya Chrome)
+      var noScheme=pageUrl.replace(/^https?:\/\//,'');
+      var intentUrl='intent://'+noScheme+'#Intent;scheme=https;action=android.intent.action.VIEW;end';
+      // Coba juga googlechrome:// sebagai fallback halus
+      try{ window.location.href=intentUrl; }
+      catch(e){ window.location.href='googlechrome://'+noScheme; }
+      return;
+    }
+    if(isIOS){
+      // iOS: banyak in-app browser respek target=_blank -> buka Safari
+      var w=null;
+      try{ w=window.open(pageUrl,'_blank'); }catch(e){}
+      if(!w){
+        // Fallback: coba Chrome iOS scheme (kalau Chrome ter-install)
+        var noScheme=pageUrl.replace(/^https?:\/\//,'');
+        try{ window.location.href='googlechrome://'+noScheme; }catch(e){}
+      }
+      return;
+    }
+    // Desktop/lainnya
+    try{ window.open(pageUrl,'_blank'); }catch(e){ window.location.href=pageUrl; }
+  });
+
+  document.getElementById('wvCopyBtn').addEventListener('click',function(){
+    var text=pageUrl;
+    var btn=document.getElementById('wvCopyBtn');
+    var orig=btn.textContent;
+    function done(){ btn.textContent='✓ Tersalin — buka Chrome/Safari lalu paste'; setTimeout(function(){btn.textContent=orig;},2500); showHint(); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done,function(){ fallback(); });
+    } else { fallback(); }
+    function fallback(){
+      var ta=document.createElement('textarea'); ta.value=text;
+      ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); done(); }catch(e){ btn.textContent='Gagal salin — salin manual dari address bar'; setTimeout(function(){btn.textContent=orig;},2500); }
+      document.body.removeChild(ta);
+    }
+  });
+})();
 
 // Email: minta kode
 var emailEl=document.getElementById('email');
