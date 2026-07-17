@@ -11866,7 +11866,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var chg = (px.src === 'live') ? chgOf(r.ticker) : null;
       var chgCls = chg==null ? '' : (chg>0?'up':(chg<0?'dn':''));
       var chgStr = chg==null ? '' : '<span class="tr-ov-latest-chg '+chgCls+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</span>';
-      return '<div class="tr-ov-latest-row" data-ticker="'+esc(r.ticker||'')+'" data-firm-id="'+esc(r.firmId||'')+'" data-firm="'+esc(r.firm||'')+'" data-open-date="'+esc(r.openDate||'')+'" title="Klik area baris untuk chart rekomendasi · klik kode saham utk Analisis · klik sekuritas utk detail firm">'
+      return '<div class="tr-ov-latest-row" data-ticker="'+esc(r.ticker||'')+'" data-firm-id="'+esc(r.firmId||'')+'" data-firm="'+esc(r.firm||'')+'" data-open-date="'+esc(r.openDate||'')+'" data-rec-id="'+esc(r.id||'')+'" title="Klik area baris untuk chart rekomendasi · klik kode saham utk Analisis · klik sekuritas utk detail firm">'
         + '<span class="tr-ov-latest-no">'+(i+1)+'</span>'
         + '<span class="tr-ov-latest-date">'+esc(r.openDate||'—')+'</span>'
         + '<span class="tr-ov-latest-tick" data-action="stock">'+esc(r.ticker||'—')+'</span>'
@@ -12023,16 +12023,49 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if (action === 'stock' && ticker && window.__TR_openAnalisis) { window.__TR_openAnalisis(ticker); return; }
 
       // Klik area kosong (bukan sekuritas / kode saham) → popup chart detail.
+      // Prioritas:
+      //   1. __TR_showRec(rec) — modal Tracker sendiri (trRecModal) dgn
+      //      chart candlestick + zones entry→TP/SL. Datanya LANGSUNG dari
+      //      tracker.json (openList/historyList/dst), matching by rec.id.
+      //   2. showRecDetail (kartu Bareksa) dari DATA.consensus_slim kalau
+      //      match by firm+date — fallback bila __TR_showRec belum ready.
+      //   3. Halaman Analisis (drilldown).
       if (ticker) {
+        var recId = feedRow.getAttribute('data-rec-id');
+        if (recId && _ovTryOpenTrRec(recId)) return;
         var firmName = feedRow.getAttribute('data-firm') || '';
         var openDate = (feedRow.getAttribute('data-open-date') || '').slice(0,10);
         if (_ovTryOpenRecDetail(ticker, firmName, openDate)) return;
-        // Fallback: kalau consensus_slim tidak punya data ticker ini
         if (window.__TR_openAnalisis) { window.__TR_openAnalisis(ticker); return; }
         if (window.__TR_openStock)    window.__TR_openStock(ticker);
       }
     }
   });
+
+  // Helper #1: buka modal Tracker sendiri (trRecModal) dari rec di
+  // tracker.json. Cari rec berdasarkan id di 5 list utama data. Kalau
+  // ketemu, invoke window.__TR_showRec(rec) yang render chart candlestick
+  // + zones entry→TP (hijau) & entry→SL (merah). Return true kalau
+  // berhasil open; false bila __TR_showRec belum siap atau id tidak match.
+  function _ovTryOpenTrRec(recId){
+    if (!recId || typeof window.__TR_showRec !== 'function') return false;
+    var data = null;
+    try { data = window.__TR_getData && window.__TR_getData(); } catch(_){}
+    if (!data) return false;
+    var lists = [data.openList, data.historyList, data.pendingList,
+                 data.unfilledList, data.missedList];
+    for (var i = 0; i < lists.length; i++) {
+      var list = lists[i];
+      if (!Array.isArray(list)) continue;
+      for (var j = 0; j < list.length; j++) {
+        if (list[j] && list[j].id === recId) {
+          try { window.__TR_showRec(list[j]); return true; }
+          catch(_) { return false; }
+        }
+      }
+    }
+    return false;
+  }
 
   // Helper: cari entry paling cocok di DATA.consensus_slim[ticker] utk
   // baris tracker (firm + openDate), lalu invoke showRecDetail global.
