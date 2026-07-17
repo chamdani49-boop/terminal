@@ -9144,10 +9144,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     s = s.replace(/\s+AND$/, '');            // "KOREA INVESTMENT AND" → "KOREA INVESTMENT"
     s = s.replace(/\s+/g, ' ').trim();
     // Alias map untuk kasus di mana normalisasi otomatis tidak cukup
-    // (akronim yang jauh dari nama lengkap). Tambahkan di sini kalau
-    // ada firm lain yang ke-split di Sheet dgn nama akronim.
+    // (akronim yang jauh dari nama lengkap, atau varian spelling dgn
+    // vs tanpa spasi). Tambahkan di sini kalau ada firm lain yang
+    // ke-split di Sheet dgn nama variasi.
     var ALIASES = {
-      'KISI': 'KOREA INVESTMENT'  // "KISI Sekuritas" = "Korea Investment And Sekuritas Indonesia"
+      'KISI':        'KOREA INVESTMENT',   // "KISI Sekuritas" = "Korea Investment And Sekuritas Indonesia"
+      'INDOPREMIER': 'INDO PREMIER'        // "Indopremier Sekuritas" = "Indo Premier Sekuritas"
     };
     if (ALIASES[s]) s = ALIASES[s];
     return s;
