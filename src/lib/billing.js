@@ -33,6 +33,7 @@ export const DEFAULT_BILLING = {
       priceReal: 149000,
       priceCoret: 199000,
       sub: 'Akses fitur Tracker rekomendasi trading (segera hadir)',
+      audience: ['Trader', 'Spekulan'],
       features: [
         'Akses penuh menu Tracker (rekomendasi Entry/TP/SL)',
         'Papan peringkat sekuritas + performa vs IHSG',
@@ -48,6 +49,7 @@ export const DEFAULT_BILLING = {
       priceReal: 699000,
       priceCoret: 1000000,
       sub: 'Sekali bayar untuk 3 bulan penuh',
+      audience: ['Investor', 'Swing Trader', 'Trader', 'Spekulan', 'Investor Dividen'],
       features: [
         'Akses penuh seluruh fitur Economstock Terminal',
         'Valuasi & konsensus analis lengkap',
@@ -62,6 +64,7 @@ export const DEFAULT_BILLING = {
       priceReal: 997000,
       priceCoret: 1500000,
       sub: 'Sekali bayar untuk 6 bulan penuh',
+      audience: ['Investor', 'Swing Trader', 'Trader', 'Spekulan', 'Investor Dividen'],
       features: [
         'Akses penuh seluruh fitur Economstock Terminal',
         'Valuasi & konsensus analis lengkap',
@@ -76,6 +79,7 @@ export const DEFAULT_BILLING = {
       priceReal: 1750000,
       priceCoret: 2750000,
       sub: 'Sekali bayar untuk 1 tahun penuh',
+      audience: ['Investor', 'Swing Trader', 'Trader', 'Spekulan', 'Investor Dividen'],
       features: [
         'Akses penuh seluruh fitur Economstock Terminal',
         'Valuasi & konsensus analis lengkap',
@@ -164,6 +168,7 @@ export function publicBilling(cfg) {
       name: s.name, dur: s.dur, sub: s.sub, btnText: s.btnText,
       priceReal: s.priceReal, priceCoret: s.priceCoret,
       features: s.features,
+      audience: Array.isArray(s.audience) ? s.audience.slice() : [],   // target audience tags
       hasLink: !!(s.mayarLink && s.mayarLink.length),
       comingSoon: !!s.comingSoon,   // Flag preview-only: tombol disabled di UI
     };

@@ -266,6 +266,40 @@ a{color:inherit;text-decoration:none}
 }
 .tier-elite-note b{color:var(--text)}
 
+/* Target audience — tag pills setelah harga, sebelum feature list.
+   Menandakan segmen investor/trader yg cocok utk paket. Tampil di semua
+   card (Tracker 2 tag, Premium 5 tag). */
+.plan-audience{
+  margin:12px 0 4px;padding:9px 11px;
+  background:var(--bg2);border:1px dashed var(--border);border-radius:8px;
+}
+.plan-audience-lbl{
+  display:block;font-size:10.5px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;
+}
+.plan-audience-tags{display:flex;flex-wrap:wrap;gap:5px}
+.aud-tag{
+  display:inline-block;font-size:10.5px;font-weight:700;
+  padding:3px 9px;border-radius:var(--radius-pill);
+  background:rgba(109,40,217,.10);color:var(--accent);
+  border:1px solid rgba(109,40,217,.22);white-space:nowrap;
+}
+/* Card featured (Tahunan) pakai warna berbeda supaya kontras */
+.plan.featured .aud-tag{
+  background:rgba(255,255,255,.12);color:#fff;
+  border:1px solid rgba(255,255,255,.25);
+}
+/* Card VIP pakai tint emas */
+.plan-vip .aud-tag{
+  background:rgba(234,179,8,.12);color:#eab308;
+  border:1px solid rgba(234,179,8,.3);
+}
+/* Card coming-soon (Tracker) pakai tint kuning muted */
+.plan.plan-soon .aud-tag{
+  background:rgba(217,119,6,.10);color:var(--yellow);
+  border:1px solid rgba(217,119,6,.24);
+}
+
 /* Tombol info ⓘ di feature list — inline setelah teks. Klik → popup */
 .feat-info{
   display:inline-flex;align-items:center;justify-content:center;
@@ -725,6 +759,17 @@ function planCardHtml(plan,pl,featured,promo){
   var btnCls = isSoon ? 'btn-pay soon' : (featured ? 'btn-pay' : 'btn-pay outline');
   var soonBadge = isSoon ? '<div class="plan-soon-badge">SEGERA HADIR</div>' : '';
   var soonAttr = isSoon ? ' aria-disabled="true"' : '';
+  // Target audience — tag pills menandakan segmen user yg cocok utk paket ini.
+  // Contoh: 'Trader · Spekulan' (Paket Tracker) vs 'Investor · Swing · Trader ·
+  // Spekulan · Investor Dividen' (Paket Premium). Tampil di antara sub &
+  // per-bulan supaya user langsung tahu paket ini pas atau tidak untuknya.
+  var audArr = Array.isArray(pl.audience) ? pl.audience : [];
+  var audHtml = audArr.length
+    ? '<div class="plan-audience"><span class="plan-audience-lbl">👤 Cocok untuk</span>'
+      + '<div class="plan-audience-tags">'
+      + audArr.map(function(a){ return '<span class="aud-tag">'+escHtml(a)+'</span>'; }).join('')
+      + '</div></div>'
+    : '';
   return ''+
     '<div class="plan'+(featured?' featured':'')+(isSoon?' plan-soon':'')+'"'+(featured?' data-promo="'+escHtml(promo||'PALING HEMAT')+'"':'')+'>'+
       soonBadge+
@@ -734,6 +779,7 @@ function planCardHtml(plan,pl,featured,promo){
       '<div class="plan-price"><span class="cur">Rp</span><span class="amt mono">'+rpId(pl.priceReal)+'</span></div>'+
       '<div class="plan-sub">'+escHtml(pl.sub)+'</div>'+
       '<div class="plan-permo mono">≈ Rp '+rpId(permo)+' / bulan</div>'+
+      audHtml+
       '<ul class="feat">'+feats+'</ul>'+
       '<button class="'+btnCls+'" data-plan="'+plan+'"'+soonAttr+'>'+escHtml(pl.btnText)+'</button>'+
     '</div>';
