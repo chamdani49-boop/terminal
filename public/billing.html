@@ -117,6 +117,154 @@ a{color:inherit;text-decoration:none}
   color:#fff;padding:5px 10px;border-radius:6px;
   box-shadow:0 4px 12px rgba(217,119,6,.28);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   TIER TABS — 3 kategori kolom di atas grid
+   Klik → toggle .tier-content di bawah (JS switchTier()).
+═══════════════════════════════════════════════════════════════ */
+.tier-tabs{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  margin-bottom:32px;
+}
+@media(max-width:640px){
+  .tier-tabs{grid-template-columns:1fr;gap:10px;margin-bottom:22px}
+}
+.tier-tab{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:18px 16px;
+  background:var(--card);border:2px solid var(--border);
+  border-radius:14px;cursor:pointer;text-align:center;
+  font-family:inherit;color:var(--text);
+  transition:all .18s ease;position:relative;
+}
+.tier-tab:hover{border-color:var(--accent);transform:translateY(-2px)}
+.tier-tab.active{
+  border-color:var(--accent);
+  background:linear-gradient(135deg,rgba(109,40,217,.08),var(--card));
+  box-shadow:0 8px 24px rgba(109,40,217,.14);
+}
+.tier-tab.active::after{
+  content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;
+  border-top:9px solid var(--accent);
+}
+.tier-tab-ico{font-size:26px;line-height:1;margin-bottom:2px}
+.tier-tab-name{font-size:15px;font-weight:800;letter-spacing:-.2px;color:var(--text)}
+.tier-tab-sub{font-size:11.5px;color:var(--text2);font-weight:500}
+.tier-tab.tier-tab-elite .tier-tab-name{
+  background:linear-gradient(135deg,#eab308,#f97316);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.tier-tab.tier-tab-elite.active{
+  border-color:#eab308;
+  background:linear-gradient(135deg,rgba(234,179,8,.1),var(--card));
+  box-shadow:0 8px 24px rgba(234,179,8,.16);
+}
+.tier-tab.tier-tab-elite.active::after{border-top-color:#eab308}
+@media(max-width:640px){
+  .tier-tab{padding:14px 12px;flex-direction:row;gap:10px;justify-content:flex-start;text-align:left}
+  .tier-tab-ico{font-size:22px}
+  .tier-tab-name{font-size:14px}
+  .tier-tab-sub{font-size:11px}
+  .tier-tab.active::after{display:none}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TIER CONTENT — grid detail per tier, di-toggle oleh JS
+═══════════════════════════════════════════════════════════════ */
+.tier-content{animation:tier-fade-in .28s ease}
+.tier-content[hidden]{display:none !important}
+@keyframes tier-fade-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Tier Tracker: 1 card sendiri — center dgn max-width */
+.grid-tier-tracker{
+  grid-template-columns:minmax(280px,420px);
+  justify-content:center;
+}
+@media(max-width:640px){.grid-tier-tracker{grid-template-columns:1fr}}
+
+/* Tier Premium: 3 card sejajar — pakai layout .grid default (repeat 3) */
+.grid-tier-premium{}
+
+/* Tier Elite: 2 card — center dgn max-width lebih ramping */
+.grid-tier-elite{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  max-width:820px;margin:0 auto;
+}
+@media(max-width:640px){.grid-tier-elite{grid-template-columns:1fr}}
+
+/* Intro Elite: hero mini di atas 2 card */
+.tier-elite-intro{
+  text-align:center;margin-bottom:26px;max-width:640px;margin-left:auto;margin-right:auto;
+}
+.tier-elite-badge{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+  background:linear-gradient(135deg,#eab308,#f97316);color:#fff;
+  padding:6px 16px;border-radius:20px;margin-bottom:14px;
+  box-shadow:0 6px 18px rgba(234,179,8,.32);
+}
+.tier-elite-intro h2{
+  font-size:clamp(20px,3.5vw,26px);font-weight:800;letter-spacing:-.3px;
+  margin-bottom:10px;color:var(--text);
+}
+.tier-elite-intro p{font-size:14px;color:var(--text2);line-height:1.6}
+
+/* Card VIP — border gradient emas, badge di corner */
+.plan-vip{
+  position:relative;
+  border:2px solid transparent;
+  background:linear-gradient(var(--card),var(--card)) padding-box,
+             linear-gradient(135deg,#eab308,#f97316,#eab308) border-box;
+  box-shadow:0 12px 32px rgba(234,179,8,.14);
+}
+.plan-vip.plan-vip-premium{
+  background:linear-gradient(var(--card),var(--card)) padding-box,
+             linear-gradient(135deg,#eab308 0%,#f97316 50%,#dc2626 100%) border-box;
+  box-shadow:0 14px 40px rgba(220,38,38,.16);
+}
+.plan-vip-badge{
+  position:absolute;top:14px;right:14px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:800;
+  letter-spacing:.5px;text-transform:uppercase;
+  background:linear-gradient(135deg,#eab308,#f97316);color:#fff;
+  padding:5px 12px;border-radius:6px;
+  box-shadow:0 4px 12px rgba(234,179,8,.35);
+}
+.plan-vip-premium .plan-vip-badge{
+  background:linear-gradient(135deg,#f97316,#dc2626);
+  box-shadow:0 4px 12px rgba(220,38,38,.35);
+}
+.plan-price-free{margin:14px 0 8px}
+.plan-price-tag{
+  font-size:34px;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(135deg,#eab308,#f97316);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.plan-vip-value{
+  font-size:12px;font-weight:700;color:var(--text3);
+  padding:6px 12px;background:var(--bg2);border-radius:var(--radius-pill);
+  display:inline-block;margin-bottom:10px;
+  border:1px dashed var(--border);
+}
+.plan-vip .plan-sub{color:var(--text2);font-size:13px;line-height:1.55}
+/* Tombol WA di card Elite */
+.btn-pay.wa{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:#25D366;color:#fff;text-decoration:none;
+  border:none;box-shadow:0 6px 20px rgba(37,211,102,.32);
+}
+.btn-pay.wa:hover{filter:brightness(1.05);color:#fff}
+.btn-pay.wa svg{width:20px;height:20px;fill:currentColor;flex-shrink:0}
+
+/* Note di bawah card Elite */
+.tier-elite-note{
+  margin-top:22px;padding:14px 18px;
+  background:var(--bg2);border:1px dashed var(--border);border-radius:var(--radius);
+  font-size:12.5px;color:var(--text2);line-height:1.65;text-align:center;
+  max-width:720px;margin-left:auto;margin-right:auto;
+}
+.tier-elite-note b{color:var(--text)}
 .btn-pay:hover{filter:brightness(1.07)}
 .btn-pay.outline{background:transparent;color:var(--accent);border:1.5px solid var(--accent);box-shadow:none}
 .btn-pay.outline:hover{background:var(--bg2)}
@@ -190,58 +338,157 @@ a{color:inherit;text-decoration:none}
 
 <main class="wrap">
   <section class="hero">
-    <span class="eyebrow">Langganan Premium</span>
-    <h1>Akses Penuh Economstock Terminal</h1>
-    <p>Pantau valuasi, konsensus analis, dan insight pasar dalam satu dashboard. Pilih durasi yang paling pas untukmu.</p>
+    <span class="eyebrow">Paket Langganan</span>
+    <h1>Pilih Paket Sesuai Kebutuhanmu</h1>
+    <p>Tiga jalur akses berbeda: fokus rekomendasi trading (Tracker), akses penuh dashboard (Premium), atau program eksklusif untuk nasabah &amp; investor besar (Elite Investor).</p>
   </section>
 
-  <section class="grid">
-    <!-- PAKET 3 BULAN -->
-    <div class="plan">
-      <div class="plan-name">Paket Kuartal</div>
-      <div class="plan-dur">3 Bulan</div>
-      <div class="plan-was"><span class="was-lbl">Normal</span><s class="was-big mono">Rp 1.000.000</s><span class="plan-off">Hemat 30%</span></div>
-      <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">699.000</span></div>
-      <div class="plan-sub">Sekali bayar untuk 3 bulan penuh</div>
-      <div class="plan-permo mono">≈ Rp 233.000 / bulan</div>
-      <ul class="feat">
-        <li><span class="ck">✓</span> Akses penuh seluruh fitur Economstock Terminal</li>
-        <li><span class="ck">✓</span> Valuasi &amp; konsensus analis lengkap</li>
-        <li><span class="ck">✓</span> Insight &amp; headline pasar</li>
-      </ul>
-      <button class="btn-pay outline" data-plan="3bulan" data-mayar="">Langganan 3 Bulan</button>
-    </div>
+  <!-- ─── 3 KATEGORI TAB — klik utk ganti detail cards ─── -->
+  <section class="tier-tabs" role="tablist" aria-label="Pilih kategori paket">
+    <button type="button" class="tier-tab" data-tier="tracker" role="tab" aria-selected="false">
+      <span class="tier-tab-ico">💰</span>
+      <span class="tier-tab-name">Paket Tracker</span>
+      <span class="tier-tab-sub">1 fitur · mulai 149rb</span>
+    </button>
+    <button type="button" class="tier-tab active" data-tier="premium" role="tab" aria-selected="true">
+      <span class="tier-tab-ico">🚀</span>
+      <span class="tier-tab-name">Full Akses Premium</span>
+      <span class="tier-tab-sub">Semua fitur · 3 bln – 1 thn</span>
+    </button>
+    <button type="button" class="tier-tab tier-tab-elite" data-tier="elite" role="tab" aria-selected="false">
+      <span class="tier-tab-ico">⭐</span>
+      <span class="tier-tab-name">Elite Investor</span>
+      <span class="tier-tab-sub">Gratis · bersyarat</span>
+    </button>
+  </section>
 
-    <!-- PAKET 6 BULAN -->
-    <div class="plan">
-      <div class="plan-name">Paket Semester</div>
-      <div class="plan-dur">6 Bulan</div>
-      <div class="plan-was"><span class="was-lbl">Normal</span><s class="was-big mono">Rp 1.500.000</s><span class="plan-off">Hemat 33%</span></div>
-      <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">997.000</span></div>
-      <div class="plan-sub">Sekali bayar untuk 6 bulan penuh</div>
-      <div class="plan-permo mono">≈ Rp 166.167 / bulan</div>
-      <ul class="feat">
-        <li><span class="ck">✓</span> Akses penuh seluruh fitur Economstock Terminal</li>
-        <li><span class="ck">✓</span> Valuasi &amp; konsensus analis lengkap</li>
-        <li><span class="ck">✓</span> Insight &amp; headline pasar</li>
-      </ul>
-      <button class="btn-pay outline" data-plan="6bulan" data-mayar="">Langganan 6 Bulan</button>
+  <!-- ─── TIER 1: PAKET TRACKER (auto-render via JS dari billing.js '1bulan') ─── -->
+  <section class="tier-content tier-tracker" data-tier-content="tracker" hidden aria-hidden="true">
+    <div class="grid grid-tier-tracker" id="tier-tracker-grid">
+      <!-- fallback pre-render kalau JS lambat -->
+      <div class="plan plan-soon">
+        <div class="plan-soon-badge">SEGERA HADIR</div>
+        <div class="plan-name">Paket Tracker</div>
+        <div class="plan-dur">1 Bulan</div>
+        <div class="plan-was"><span class="was-lbl">Normal</span><s class="was-big mono">Rp 199.000</s></div>
+        <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">149.000</span></div>
+        <div class="plan-sub">Akses fitur Tracker rekomendasi trading (segera hadir)</div>
+        <div class="plan-permo mono">≈ Rp 149.000 / bulan</div>
+        <ul class="feat">
+          <li><span class="ck">✓</span> Akses penuh menu Tracker (rekomendasi Entry/TP/SL)</li>
+          <li><span class="ck">✓</span> Papan peringkat sekuritas + performa vs IHSG</li>
+          <li><span class="ck">✓</span> Update rekomendasi harian</li>
+        </ul>
+        <button class="btn-pay soon" data-plan="1bulan" aria-disabled="true">Segera Hadir</button>
+      </div>
     </div>
+  </section>
 
-    <!-- PAKET TAHUNAN -->
-    <div class="plan featured" data-promo="PALING HEMAT">
-      <div class="plan-name">Paket Tahunan</div>
-      <div class="plan-dur">12 Bulan</div>
-      <div class="plan-was"><span class="was-lbl">Normal</span><s class="was-big mono">Rp 2.750.000</s><span class="plan-off">Hemat 36%</span></div>
-      <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">1.750.000</span></div>
-      <div class="plan-sub">Sekali bayar untuk 1 tahun penuh</div>
-      <div class="plan-permo mono">≈ Rp 145.833 / bulan</div>
-      <ul class="feat">
-        <li><span class="ck">✓</span> Akses penuh seluruh fitur Economstock Terminal</li>
-        <li><span class="ck">✓</span> Valuasi &amp; konsensus analis lengkap</li>
-        <li><span class="ck">✓</span> Hemat Rp 244.000 dibanding 2× paket 6 bulan</li>
-      </ul>
-      <button class="btn-pay" data-plan="tahunan" data-mayar="">Langganan Tahunan</button>
+  <!-- ─── TIER 2: FULL AKSES PREMIUM (default aktif — 3 card standar) ─── -->
+  <section class="tier-content tier-premium active" data-tier-content="premium" aria-hidden="false">
+    <div class="grid grid-tier-premium" id="tier-premium-grid">
+      <!-- fallback pre-render kalau JS lambat -->
+      <div class="plan">
+        <div class="plan-name">Paket Kuartal</div>
+        <div class="plan-dur">3 Bulan</div>
+        <div class="plan-was"><span class="was-lbl">Normal</span><s class="was-big mono">Rp 1.000.000</s><span class="plan-off">Hemat 30%</span></div>
+        <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">699.000</span></div>
+        <div class="plan-sub">Sekali bayar untuk 3 bulan penuh</div>
+        <div class="plan-permo mono">≈ Rp 233.000 / bulan</div>
+        <ul class="feat">
+          <li><span class="ck">✓</span> Akses penuh seluruh fitur Economstock Terminal</li>
+          <li><span class="ck">✓</span> Valuasi &amp; konsensus analis lengkap</li>
+          <li><span class="ck">✓</span> Insight &amp; headline pasar</li>
+        </ul>
+        <button class="btn-pay outline" data-plan="3bulan">Langganan 3 Bulan</button>
+      </div>
+      <div class="plan">
+        <div class="plan-name">Paket Semester</div>
+        <div class="plan-dur">6 Bulan</div>
+        <div class="plan-was"><span class="was-lbl">Normal</span><s class="was-big mono">Rp 1.500.000</s><span class="plan-off">Hemat 33%</span></div>
+        <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">997.000</span></div>
+        <div class="plan-sub">Sekali bayar untuk 6 bulan penuh</div>
+        <div class="plan-permo mono">≈ Rp 166.167 / bulan</div>
+        <ul class="feat">
+          <li><span class="ck">✓</span> Akses penuh seluruh fitur Economstock Terminal</li>
+          <li><span class="ck">✓</span> Valuasi &amp; konsensus analis lengkap</li>
+          <li><span class="ck">✓</span> Insight &amp; headline pasar</li>
+        </ul>
+        <button class="btn-pay outline" data-plan="6bulan">Langganan 6 Bulan</button>
+      </div>
+      <div class="plan featured" data-promo="PALING HEMAT">
+        <div class="plan-name">Paket Tahunan</div>
+        <div class="plan-dur">12 Bulan</div>
+        <div class="plan-was"><span class="was-lbl">Normal</span><s class="was-big mono">Rp 2.750.000</s><span class="plan-off">Hemat 36%</span></div>
+        <div class="plan-price"><span class="cur">Rp</span><span class="amt mono">1.750.000</span></div>
+        <div class="plan-sub">Sekali bayar untuk 1 tahun penuh</div>
+        <div class="plan-permo mono">≈ Rp 145.833 / bulan</div>
+        <ul class="feat">
+          <li><span class="ck">✓</span> Akses penuh seluruh fitur Economstock Terminal</li>
+          <li><span class="ck">✓</span> Valuasi &amp; konsensus analis lengkap</li>
+          <li><span class="ck">✓</span> Hemat Rp 244.000 dibanding 2× paket 6 bulan</li>
+        </ul>
+        <button class="btn-pay" data-plan="tahunan">Langganan Tahunan</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TIER 3: ELITE INVESTOR (2 card syarat — tombol WA, tidak ke checkout) ─── -->
+  <section class="tier-content tier-elite" data-tier-content="elite" hidden aria-hidden="true">
+    <div class="tier-elite-intro">
+      <span class="tier-elite-badge">⭐ ELITE INVESTOR</span>
+      <h2>Layanan Khusus untuk Nasabah &amp; Investor Besar</h2>
+      <p>Bekerja sama dengan <b>RHB Sekuritas Indonesia</b> — akses Economstock Terminal <b>gratis</b> untuk kamu yang memenuhi salah satu syarat berikut. Hubungi admin via WhatsApp untuk aktivasi.</p>
+    </div>
+    <div class="grid grid-tier-elite">
+
+      <!-- CARD 1: Nasabah RHB Deposit ≥ Rp 5jt → Free Tracker -->
+      <div class="plan plan-vip">
+        <div class="plan-vip-badge">🎁 GRATIS BERSYARAT</div>
+        <div class="plan-name">Nasabah RHB Sekuritas</div>
+        <div class="plan-dur">Akses Menu Tracker</div>
+        <div class="plan-price plan-price-free">
+          <span class="plan-price-tag mono">GRATIS</span>
+        </div>
+        <div class="plan-sub">Buka akun &amp; deposit di RHB Sekuritas, dapat akses menu <b>Tracker</b> tanpa biaya bulanan.</div>
+        <div class="plan-vip-value mono">Setara Rp 149.000 / bulan</div>
+        <ul class="feat">
+          <li><span class="ck">✓</span> Buka rekening RHB Sekuritas Indonesia</li>
+          <li><span class="ck">✓</span> Deposit minimal <b>Rp 5.000.000</b></li>
+          <li><span class="ck">✓</span> Akses gratis menu Tracker selama akun aktif</li>
+          <li><span class="ck">✓</span> Rekomendasi Entry/TP/SL dari analis terverifikasi</li>
+        </ul>
+        <a class="btn-pay wa" href="https://wa.me/6289654619822?text=Halo%2C%20saya%20tertarik%20dengan%20program%20Nasabah%20RHB%20(deposit%20Rp%205%20juta%20untuk%20akses%20Tracker%20gratis).%20Mohon%20info%20lebih%20lanjut." target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.273.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Hubungi Admin via WhatsApp
+        </a>
+      </div>
+
+      <!-- CARD 2: Portfolio ≥ Rp 500jt + RHB → Free Full Terminal -->
+      <div class="plan plan-vip plan-vip-premium featured" data-promo="EKSKLUSIF">
+        <div class="plan-vip-badge">👑 EKSKLUSIF</div>
+        <div class="plan-name">Portfolio Investor</div>
+        <div class="plan-dur">Full Akses Terminal</div>
+        <div class="plan-price plan-price-free">
+          <span class="plan-price-tag mono">GRATIS</span>
+        </div>
+        <div class="plan-sub">Investor dengan portofolio saham aktif ≥ <b>Rp 500 juta</b>, cukup buka akun RHB Sekuritas — akses <b>penuh</b> Economstock Terminal tanpa biaya.</div>
+        <div class="plan-vip-value mono">Setara Rp 1.750.000 / tahun</div>
+        <ul class="feat">
+          <li><span class="ck">✓</span> Portofolio saham aktif minimal <b>Rp 500.000.000</b></li>
+          <li><span class="ck">✓</span> Buka rekening RHB Sekuritas Indonesia</li>
+          <li><span class="ck">✓</span> Akses PENUH seluruh fitur (Valuasi, Konsensus, Tracker, Insight)</li>
+          <li><span class="ck">✓</span> Priority support &amp; insight eksklusif dari tim Economstock</li>
+        </ul>
+        <a class="btn-pay wa" href="https://wa.me/6289654619822?text=Halo%2C%20saya%20tertarik%20dengan%20program%20Elite%20Investor%20(portofolio%20di%20atas%20Rp%20500%20juta%20untuk%20akses%20full%20gratis).%20Mohon%20info%20lebih%20lanjut." target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.273.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Hubungi Admin via WhatsApp
+        </a>
+      </div>
+
+    </div>
+    <div class="tier-elite-note">
+      <b>📋 Cara verifikasi:</b> Hubungi admin via WhatsApp di atas dengan menyertakan (a) screenshot akun RHB Sekuritas aktif, dan (b) untuk paket Portfolio Investor: statement portofolio &gt; Rp 500 juta. Admin akan konfirmasi 1×24 jam &amp; aktivasi manual.
     </div>
   </section>
 
@@ -458,21 +705,60 @@ function bindPayButtons(){
   });
 }
 
+// Tier → plan mapping. Renderer populate 2 grid berbeda dari /api/billing-config.
+// Tier 'elite' pakai static HTML (2 card VIP) — tidak dari API.
+var TIER_PLANS = {
+  tracker: ['1bulan'],
+  premium: ['3bulan','6bulan','tahunan']
+};
+
+function renderTierGrid(tier, cfg){
+  var gridEl = document.getElementById('tier-'+tier+'-grid');
+  if (!gridEl) return;
+  var plans = TIER_PLANS[tier] || [];
+  var html = plans.map(function(p){
+    var pl = cfg.plans[p]; if (!pl) return '';
+    return planCardHtml(p, pl, cfg.featured === p, cfg.promoLabel);
+  }).join('');
+  if (html) gridEl.innerHTML = html;
+}
+
 (async function loadBillingConfig(){
   try{
     var r=await fetch('/api/billing-config',{headers:{'Accept':'application/json'}});
     if(!r.ok) return;
     var cfg=await r.json();
     if(!cfg||!cfg.plans) return;
-    var grid=document.querySelector('.grid');
-    if(!grid) return;
-    grid.innerHTML=PLAN_ORDER.map(function(p){
-      var pl=cfg.plans[p]; if(!pl) return '';
-      return planCardHtml(p,pl,cfg.featured===p,cfg.promoLabel);
-    }).join('');
+    renderTierGrid('tracker', cfg);
+    renderTierGrid('premium', cfg);
+    // Elite tier tidak dari API (static VIP cards)
     bindPayButtons();
   }catch(e){/* biarkan card statis sebagai fallback */}
 })();
+
+// ─── TIER TAB SWITCHING ─────────────────────────────────────
+// Klik tab → toggle .tier-content aktif. Default: 'premium'.
+// State tab tidak di-persist antar reload (setiap masuk /billing default
+// ke premium — paket paling umum & functional).
+function switchTier(tier){
+  document.querySelectorAll('.tier-tab').forEach(function(b){
+    var isActive = b.getAttribute('data-tier') === tier;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+  document.querySelectorAll('.tier-content').forEach(function(c){
+    var isActive = c.getAttribute('data-tier-content') === tier;
+    c.hidden = !isActive;
+    c.classList.toggle('active', isActive);
+    c.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+  });
+}
+document.querySelectorAll('.tier-tab').forEach(function(b){
+  b.addEventListener('click', function(){
+    var tier = b.getAttribute('data-tier');
+    if (tier) switchTier(tier);
+  });
+});
 
 
 </script>
