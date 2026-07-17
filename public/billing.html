@@ -455,9 +455,11 @@ a{color:inherit;text-decoration:none}
   <!-- ─── TIER 1: PAKET TRACKER (auto-render via JS dari billing.js '1bulan') ─── -->
   <section class="tier-content tier-tracker" data-tier-content="tracker" hidden aria-hidden="true">
     <div class="grid grid-tier-tracker" id="tier-tracker-grid">
-      <!-- fallback pre-render kalau JS lambat -->
-      <div class="plan plan-soon">
-        <div class="plan-soon-badge">SEGERA HADIR</div>
+      <!-- fallback pre-render kalau JS lambat. Paket Tracker sudah AKTIF —
+           tidak lagi memakai class .plan-soon / badge SEGERA HADIR. JS akan
+           overwrite dari /api/billing-config (comingSoon:false), fallback ini
+           tinggal sync supaya tidak "berkedip Segera Hadir" saat load. -->
+      <div class="plan">
         <div class="plan-name">Paket Tracker</div>
         <div class="plan-dur">1 Bulan</div>
         <div class="plan-was"><span class="was-lbl">Normal</span><s class="was-big mono">Rp 199.000</s></div>
@@ -735,7 +737,7 @@ document.getElementById('yr').textContent=new Date().getFullYear();
 // Persentase hemat & harga per-bulan DIHITUNG OTOMATIS dari harga real & coret.
 // Kalau API gagal, card statis bawaan HTML tetap tampil (fallback).
 // PLAN_ORDER menentukan urutan render kartu. '1bulan' di depan (Paket
-// Tracker entry-level Rp 149rb) — status coming-soon, tombol non-aktif.
+// Tracker entry-level Rp 149rb) — sudah AKTIF sejak migration 0009_scope.
 // Sinkron dgn PLAN_ORDER server-side di src/lib/billing.js.
 var PLAN_ORDER=['1bulan','3bulan','6bulan','tahunan'];
 var PLAN_MONTHS={'1bulan':1,'3bulan':3,'6bulan':6,'tahunan':12};
