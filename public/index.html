@@ -6745,7 +6745,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // firmShort: nama Sekuritas ditulis lengkap (bukan Sek.); hanya strip PT/Tbk.
   function firmShort(name){ if(!name) return '—'; return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim(); }
   function getData(){ try{ return (window.__TR_getData && window.__TR_getData()) || window.__TR_DATA__ || null; }catch(_){ return null; } }
-  function firmLabel(r){ var f=r&&r.firm&&String(r.firm).trim(); return f?f:(r&&r.analyst?String(r.analyst).trim():'—'); }
+  // Nama analis TIDAK ditampilkan sebagai fallback di UI mana pun kecuali
+  // trRecModal (popup detail rekomendasi). Kalau firm kosong → return '—'.
+  function firmLabel(r){ var f=r&&r.firm&&String(r.firm).trim(); return f?f:'—'; }
 
   function allRecs(d){
     var a=(d.openList||[]).map(function(r){return Object.assign({_cat:'active'},r);});
@@ -6789,7 +6791,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var leftName, leftIc, dataAttr;
     if(ctx==='stock'){ leftName=firmShort(firmLabel(r)); leftIc=(r.firm&&String(r.firm).trim())?'🏢':'👤'; dataAttr=' data-tr-firm-name="'+esc(firmLabel(r))+'"'; }
     else { leftName=r.ticker+(r.tickerName?(' · '+r.tickerName):''); leftIc='📈'; dataAttr=' data-tr-stock="'+esc(r.ticker)+'"'; }
-    var attr=(ctx==='stock'&&r.firm&&String(r.firm).trim()&&r.analyst)?('<span style="color:var(--text3);font-weight:500"> · '+esc(r.analyst)+'</span>'):'';
+    // Nama analis DIHILANGKAN dari daftar drawer — hanya boleh muncul di
+    // popup trRecModal. Sebelumnya di-append sebagai " · AnalystName" di
+    // sebelah nama firm; sekarang kosong.
+    var attr = '';
     return '<div class="tr-dt-row"'+dataAttr+'>'
       +'<div class="tr-dt-row-top">'
         +'<div class="tr-dt-row-name"><span class="ic">'+leftIc+'</span><span>'+esc(leftName)+'</span>'+attr+'</div>'
@@ -7989,7 +7994,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var listNo    = _idx + 1;  // nomor urut 1..N
       var st = stateInfo(r, isHistory);
       var tk = esc(r.ticker||'');
-      var analyst = r.analyst ? '<span class="tr-rec-analyst">· '+esc(r.analyst)+'</span>' : '';
+      // Nama analis DIHILANGKAN dari row tab Analisis — hanya muncul di
+      // popup trRecModal (klik row → modal detail). Variabel di-empty
+      // supaya template lain tidak break.
+      var analyst = '';
       var badgeCls = buy ? 'buy' : 'sell';
 
       // Live price + change% today PAKAI PRIORITY CHAIN dashboard (sinkron
@@ -10100,13 +10108,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var certLine = o.cert ? (' · ' + esc(String(o.cert).split(/[(-]/)[0].trim())) : '';
     var horizonLine = o.horizon ? ('  ·  ' + esc(o.horizon)) : '';
 
-    // ── FIRM-FIRST: sekuritas primary (bold), analis pelengkap. ────────
+    // ── FIRM-ONLY: hanya nama sekuritas yang ditampilkan; nama analis
+    //    tidak ditampilkan di kartu Live (hanya di popup trRecModal).
+    //    Kalau firm kosong (edge case), tampilkan '—' saja.
     var hasFirm = o.firm && String(o.firm).trim();
-    var primaryEntity = hasFirm ? firmShort(o.firm) : (o.analyst || '—');
-    var primaryIcon = hasFirm ? '🏢' : '👤';
-    var attribution = hasFirm && o.analyst
-      ? '<span class="tr-live-card-attr">oleh ' + esc(o.analyst) + '</span>'
-      : '';
+    var primaryEntity = hasFirm ? firmShort(o.firm) : '—';
+    var primaryIcon = '🏢';
+    var attribution = '';   // Nama analis TIDAK dimunculkan sbg attribution
 
     // State badge chip (di atas kartu)
     var stateBadgeHtml = '<span class="tr-state-badge tr-state-' + badge.cls + '">'
@@ -10169,10 +10177,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var trFilter = { q: '', firm: null, date: null };  // firm=null → semua; date=null → tgl terbaru
   var trCombined = [];                                 // openList + unfilledList terakhir
 
-  // Label sumber sebuah rekomendasi: firm (primary) atau analis (fallback).
+  // Label sumber sebuah rekomendasi: HANYA nama firm. Nama analis TIDAK
+  // dipakai sebagai fallback lagi (hanya boleh muncul di popup trRecModal).
   function firmOf(o){
     var f = o && o.firm && String(o.firm).trim();
-    return f ? f : (o && o.analyst ? String(o.analyst).trim() : '—');
+    return f ? f : '—';
   }
   // Tanggal sinyal (YYYY-MM-DD).
   function dayOf(o){ return String((o && o.openDate) || '').slice(0, 10); }
