@@ -220,17 +220,17 @@ function loadScreening() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 2b) LIVE SHEET OVERLAY — inject virtual today candle ke ohlc.json in-memory
+// 2b) LIVE OVERLAY — inject virtual today candle ke ohlc.json in-memory
 // ─────────────────────────────────────────────────────────────────────────
 // KENAPA: ohlc.json di-refresh EOD (~17:00 WIB). Rec yg rilis hari ini →
 // filter derivePosition `c[0] >= openTs` menghasilkan array kosong → state
 // stays PENDING padahal harga sudah bergerak (dan mungkin sudah kena entry/
 // SL/TP intraday).
 //
-// SOLUSI: fetch sheet Live LANGSUNG dari Google gviz (public read, zero auth),
-// build virtual today candle per ticker dari {price, change_pct}, append ke
-// ohlcData.tickers[t].candles. derivePosition langsung "lihat" candle hari ini
-// tanpa modifikasi state machine.
+// SOLUSI: fetch harga live dari SUMBER YG SAMA dgn UI Tracker & Dashboard
+// yaitu Worker `terminal-live` endpoint `/live.json`. Konsistensi absolut:
+// frontend & backend see snapshot yg persis identik dari Worker (yg internal
+// fetch dari Sheet Live via gviz + cache 60s + backup stale 12 jam).
 //
 // GUARD (mirror _ohlcMergeToday di frontend):
 //   - Hari kerja WIB (Sen–Jum)
@@ -240,35 +240,62 @@ function loadScreening() {
 //   - Belum ada candle >= today di ohlc.json (avoid duplicate)
 //
 // FORMAT candle: [ts_unix_sec, open, high, low, close] — sama dgn ohlc.json.
+//
+// AUTH: Worker `/live.json` butuh HMAC token (LIVE_TOKEN_SECRET, sama dgn
+// yg dipakai main Worker /api/live-token). Token digenerate di sini pakai
+// algo yg identik — b64url payload {scope:'live', exp} + '.' + b64url HMAC.
 
-// parseLive di-share dgn build-data.js (mirror logic dgn worker/src/index.js).
-let _parseLive = null;
-try { _parseLive = require('./build-data.js').parseLive; }
-catch (e) { console.warn('  ⚠ parseLive dari build-data.js tidak ter-load:', e.message); }
+const crypto = require('crypto');
+
+// URL Worker terminal-live. Bisa di-override via env var untuk staging.
+const DEFAULT_LIVE_WORKER_URL = 'https://terminal-live.chamdani49.workers.dev/live.json';
+
+function _b64url(input) {
+  return Buffer.from(input).toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Generate token yg valid untuk Worker terminal-live (~15 menit expiry).
+// Algo persis dgn src/index.js /api/live-token (hmacSign + b64urlEncode).
+function _generateLiveToken(secret) {
+  const exp = Math.floor(Date.now() / 1000) + 900; // 15 menit
+  const payloadB64 = _b64url(JSON.stringify({ scope: 'live', exp }));
+  const sig = crypto.createHmac('sha256', secret).update(payloadB64).digest();
+  const sigB64 = _b64url(sig);
+  return `${payloadB64}.${sigB64}`;
+}
 
 async function fetchLiveMap() {
-  const sheetId = process.env.LIVE_SHEET_ID;
-  const gid = process.env.LIVE_GID || '0';
-  if (!sheetId) {
-    console.log('  ℹ LIVE_SHEET_ID tidak di-set — skip live overlay.');
+  const secret = process.env.LIVE_TOKEN_SECRET;
+  const workerUrl = process.env.LIVE_WORKER_URL || DEFAULT_LIVE_WORKER_URL;
+  if (!secret) {
+    console.log('  ℹ LIVE_TOKEN_SECRET tidak di-set — skip live overlay.');
     return {};
   }
-  if (!_parseLive) {
-    console.warn('  ⚠ parseLive tidak tersedia — skip live overlay.');
+  let token;
+  try {
+    token = _generateLiveToken(secret);
+  } catch (e) {
+    console.warn('  ⚠ Generate token gagal:', e.message);
     return {};
   }
-  const cb = Date.now(); // cache-buster mencegah gviz cache stale
-  const url = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}/gviz/tq?tqx=out:csv&gid=${encodeURIComponent(gid)}&_cb=${cb}`;
+  // Cache-buster jendela 60 detik: URL berubah tiap menit → browser/CDN gak
+  // menyajikan salinan lama, TAPI dalam 1 jendela URL identik → Cloudflare
+  // edge cache tetap melayani dari cache (s-maxage 60).
+  const cb = Math.floor(Date.now() / 60000);
+  const url = workerUrl + '?token=' + encodeURIComponent(token) + '&_cb=' + cb;
   try {
     const res = await fetch(url, { redirect: 'follow', cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const csv = await res.text();
-    if (!csv || csv.trim().length < 10) throw new Error('CSV kosong / terlalu pendek');
-    const live = _parseLive(csv, {}) || {};
-    console.log(`  ✓ Live sheet: ${Object.keys(live).length} ticker fetched`);
-    return live;
+    const json = await res.json();
+    if (!json || json.ok !== true || !json.live) {
+      throw new Error('payload tidak valid: ' + JSON.stringify(json).slice(0, 200));
+    }
+    const staleTag = json.stale ? ' [STALE — pakai backup terakhir Worker]' : '';
+    console.log(`  ✓ Live feed (Worker): ${json.count || 0} ticker · generated_at=${json.generated_at || '?'}${staleTag}`);
+    return json.live;
   } catch (e) {
-    console.warn('  ⚠ Live sheet fetch gagal:', e.message);
+    console.warn('  ⚠ Live feed fetch gagal:', e.message);
     return {};
   }
 }

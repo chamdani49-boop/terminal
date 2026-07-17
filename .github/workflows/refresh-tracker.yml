@@ -64,13 +64,17 @@ jobs:
         env:
           TRACKER_SHEET_ID:  ${{ secrets.TRACKER_SHEET_ID }}
           TRACKER_SHEET_TAB: ${{ secrets.TRACKER_SHEET_TAB }}
-          # Sheet Live (harga real-time via gviz) — sama secret yg dipakai
-          # refresh-data.yml. Kalau di-set, build-tracker.js inject virtual
-          # today candle ke ohlc.json in-memory supaya rec yg rilis hari ini
-          # bisa langsung ke state TRIGGERED/SL_HIT/TP_HIT tanpa nunggu EOD.
-          # Kalau kosong: skip (tracker.json fallback ke state overlay klien-side).
-          LIVE_SHEET_ID:     ${{ secrets.LIVE_SHEET_ID }}
-          LIVE_GID:          ${{ secrets.LIVE_GID }}
+          # Live feed dari Worker terminal-live (sumber yg sama dgn UI
+          # Tracker & Dashboard). Butuh LIVE_TOKEN_SECRET (sama dgn yg
+          # dipakai main Worker /api/live-token — auto-generate token
+          # HMAC 15-min di build-tracker.js).
+          # Kalau di-set, build-tracker inject virtual today candle ke
+          # ohlc.json in-memory supaya rec yg rilis hari ini bisa langsung
+          # ke state TRIGGERED/SL_HIT/TP_HIT tanpa nunggu EOD refresh ohlc.
+          # Kalau kosong: skip (tracker.json fallback ke overlay klien-side).
+          LIVE_TOKEN_SECRET: ${{ secrets.LIVE_TOKEN_SECRET }}
+          # Optional: override URL Worker (default: terminal-live.chamdani49.workers.dev).
+          # LIVE_WORKER_URL: ${{ secrets.LIVE_WORKER_URL }}
         run: |
           node scripts/build-tracker.js
 
