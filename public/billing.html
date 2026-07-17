@@ -265,6 +265,62 @@ a{color:inherit;text-decoration:none}
   max-width:720px;margin-left:auto;margin-right:auto;
 }
 .tier-elite-note b{color:var(--text)}
+
+/* Tombol info ⓘ di feature list — inline setelah teks. Klik → popup */
+.feat-info{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;margin-left:4px;padding:0;
+  background:rgba(234,179,8,.14);color:#eab308;
+  border:1px solid rgba(234,179,8,.35);border-radius:50%;
+  font-family:inherit;font-size:10px;font-weight:800;
+  cursor:pointer;transition:all .15s ease;
+  vertical-align:middle;line-height:1;flex-shrink:0;
+}
+.feat-info:hover{background:#eab308;color:#fff;transform:scale(1.1)}
+
+/* Popup info — universal modal utk feature detail. z-index tinggi di
+   atas semua konten. Center dgn max-width supaya readable di mobile. */
+.info-popup-overlay{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(15,10,35,.72);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;padding:20px;
+  -webkit-tap-highlight-color:transparent;
+}
+.info-popup-overlay.open{display:flex;animation:info-pop-fade .2s ease-out}
+@keyframes info-pop-fade{from{opacity:0}to{opacity:1}}
+.info-popup{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;max-width:420px;width:100%;
+  max-height:calc(100vh - 40px);overflow-y:auto;
+  padding:22px 24px 20px;position:relative;
+  box-shadow:0 24px 60px rgba(0,0,0,.4);
+  animation:info-pop-in .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes info-pop-in{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.info-popup-close{
+  position:absolute;top:10px;right:12px;
+  width:30px;height:30px;border-radius:50%;
+  border:none;background:var(--bg2);color:var(--text2);
+  font-size:20px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.info-popup-close:hover{background:var(--red);color:#fff}
+.info-popup-title{
+  font-size:15px;font-weight:800;letter-spacing:-.2px;
+  color:var(--text);margin:0 30px 12px 0;line-height:1.3;
+}
+.info-popup-body{
+  font-size:13.5px;line-height:1.65;color:var(--text2);
+}
+.info-popup-body b{color:var(--text)}
+.info-popup-body .tag{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:800;letter-spacing:.4px;
+  padding:3px 9px;border-radius:5px;
+  background:linear-gradient(135deg,#eab308,#f97316);color:#fff;
+  margin:0 2px;vertical-align:baseline;
+}
 .btn-pay:hover{filter:brightness(1.07)}
 .btn-pay.outline{background:transparent;color:var(--accent);border:1.5px solid var(--accent);box-shadow:none}
 .btn-pay.outline:hover{background:var(--bg2)}
@@ -438,7 +494,7 @@ a{color:inherit;text-decoration:none}
     <div class="tier-elite-intro">
       <span class="tier-elite-badge">⭐ ELITE INVESTOR</span>
       <h2>Layanan Khusus untuk Nasabah &amp; Investor Besar</h2>
-      <p>Bekerja sama dengan <b>RHB Sekuritas Indonesia</b> — akses Economstock Terminal <b>gratis</b> untuk kamu yang memenuhi salah satu syarat berikut. Hubungi admin via WhatsApp untuk aktivasi.</p>
+      <p>Akses Economstock Terminal <b>gratis</b> untuk kamu yang memenuhi salah satu syarat berikut. Hubungi admin via WhatsApp untuk aktivasi.</p>
     </div>
     <div class="grid grid-tier-elite">
 
@@ -455,7 +511,7 @@ a{color:inherit;text-decoration:none}
         <ul class="feat">
           <li><span class="ck">✓</span> Buka rekening RHB Sekuritas Indonesia</li>
           <li><span class="ck">✓</span> Deposit minimal <b>Rp 5.000.000</b></li>
-          <li><span class="ck">✓</span> Akses gratis menu Tracker selama akun aktif</li>
+          <li><span class="ck">✓</span> Akses gratis menu Tracker selama akun aktif <button type="button" class="feat-info" data-info="rhb-renew" aria-label="Info perpanjangan otomatis">ⓘ</button></li>
           <li><span class="ck">✓</span> Rekomendasi Entry/TP/SL dari analis terverifikasi</li>
         </ul>
         <a class="btn-pay wa" href="https://wa.me/6289654619822?text=Halo%2C%20saya%20tertarik%20dengan%20program%20Nasabah%20RHB%20(deposit%20Rp%205%20juta%20untuk%20akses%20Tracker%20gratis).%20Mohon%20info%20lebih%20lanjut." target="_blank" rel="noopener">
@@ -477,7 +533,7 @@ a{color:inherit;text-decoration:none}
         <ul class="feat">
           <li><span class="ck">✓</span> Portofolio saham aktif minimal <b>Rp 500.000.000</b></li>
           <li><span class="ck">✓</span> Buka rekening RHB Sekuritas Indonesia</li>
-          <li><span class="ck">✓</span> Akses PENUH seluruh fitur (Valuasi, Konsensus, Tracker, Insight)</li>
+          <li><span class="ck">✓</span> Akses PENUH seluruh fitur economstock terminal <button type="button" class="feat-info" data-info="portfolio-renew" aria-label="Info perpanjangan otomatis">ⓘ</button></li>
           <li><span class="ck">✓</span> Priority support &amp; insight eksklusif dari tim Economstock</li>
         </ul>
         <a class="btn-pay wa" href="https://wa.me/6289654619822?text=Halo%2C%20saya%20tertarik%20dengan%20program%20Elite%20Investor%20(portofolio%20di%20atas%20Rp%20500%20juta%20untuk%20akses%20full%20gratis).%20Mohon%20info%20lebih%20lanjut." target="_blank" rel="noopener">
@@ -541,6 +597,15 @@ a{color:inherit;text-decoration:none}
   </div>
 
   <div class="foot">© <span id="yr"></span> Economstock Terminal · Semua harga dalam Rupiah (IDR)</div>
+
+  <!-- ═══ POPUP INFO — dipicu tombol ⓘ di feature list card Elite Investor ═══ -->
+  <div class="info-popup-overlay" id="infoPopup" role="dialog" aria-modal="true" aria-labelledby="infoPopupTitle">
+    <div class="info-popup">
+      <button type="button" class="info-popup-close" id="infoPopupClose" aria-label="Tutup">×</button>
+      <div class="info-popup-title" id="infoPopupTitle">—</div>
+      <div class="info-popup-body" id="infoPopupBody">—</div>
+    </div>
+  </div>
 </main>
 
 <script>
@@ -758,6 +823,48 @@ document.querySelectorAll('.tier-tab').forEach(function(b){
     var tier = b.getAttribute('data-tier');
     if (tier) switchTier(tier);
   });
+});
+
+// ═══ POPUP INFO ═══
+// Konten popup per key data-info. Aku pakai <b> utk highlight angka penting.
+var INFO_POPUPS = {
+  'rhb-renew': {
+    title: '🔄 Perpanjangan Otomatis (Nasabah RHB)',
+    body: 'Selain <b>deposit awal Rp 5.000.000</b>, kamu bisa dapat perpanjangan <span class="tag">GRATIS</span> akses menu Tracker untuk bulan berikutnya kalau di <b>bulan sebelumnya aktif bertransaksi minimal Rp 250.000.000</b> di akun RHB Sekuritas.<br><br>Tidak perlu deposit ulang — cukup <b>keep active trading</b>. Selama volume transaksi bulanan &ge; 250 juta, akses Tracker tetap gratis tiap bulannya.'
+  },
+  'portfolio-renew': {
+    title: '🔄 Perpanjangan Otomatis (Elite Investor)',
+    body: 'Selain syarat awal <b>portfolio saham &ge; Rp 500.000.000</b>, akses full akses Economstock Terminal juga bisa <b>diperpanjang gratis</b> setiap bulan berikutnya kalau di <b>bulan sebelumnya aktif bertransaksi minimal Rp 500.000.000</b> di akun RHB Sekuritas.<br><br>Tidak perlu update statement portfolio ulang — <span class="tag">GRATIS</span> otomatis diperpanjang selama volume transaksi bulanan &ge; 500 juta.'
+  }
+};
+
+function openInfoPopup(key){
+  var data = INFO_POPUPS[key]; if (!data) return;
+  var overlay = document.getElementById('infoPopup');
+  document.getElementById('infoPopupTitle').textContent = data.title;
+  document.getElementById('infoPopupBody').innerHTML = data.body;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeInfoPopup(){
+  var overlay = document.getElementById('infoPopup');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Trigger dari tombol ⓘ di feature list
+document.querySelectorAll('.feat-info').forEach(function(b){
+  b.addEventListener('click', function(e){
+    e.preventDefault(); e.stopPropagation();
+    openInfoPopup(b.getAttribute('data-info'));
+  });
+});
+// Close: tombol ×, klik backdrop, tekan ESC
+document.getElementById('infoPopupClose').addEventListener('click', closeInfoPopup);
+document.getElementById('infoPopup').addEventListener('click', function(e){
+  if (e.target === this) closeInfoPopup();
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') closeInfoPopup();
 });
 
 
