@@ -2622,12 +2622,155 @@ select.form-control option{background:var(--card);color:var(--text)}
    Server tetap balas 402 upgrade_required utk /valuation.json, /macro.json,
    dll — CSS ini hanya UI hint (user tidak lihat tombol yg dia gak boleh
    pakai). Kalau CSS ini di-bypass, backend tetap protect. */
-body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu){display:none !important}
-body.scope-tracker .bottom-nav-item:not(.tr-menu){display:none !important}
+/* SCOPE=TRACKER: nav tab lain (Dashboard/Pasar/Consensus/Valuasi) TETAP
+   TAMPIL sebagai teaser dgn icon kunci — bikin user aware ada fitur lain
+   yg tersedia via upgrade. Klik → tampilkan overlay preview locked (blur
+   + CTA billing). Bottom nav & search bar juga dibiarkan tampil tapi
+   klik akan trigger overlay yg sama.
+   Backend tetap balas 402 utk /data.json, /valuation.json dll — CSS +
+   overlay ini hanya UI upsell layer, backend tetap protect. */
+body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu){
+  opacity:.55;
+  position:relative;
+}
+body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu)::before{
+  content:"🔒 ";
+  font-size:11px;
+  opacity:.85;
+  margin-right:2px;
+}
+body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu):hover{
+  opacity:.85;
+  color:var(--accent);
+  cursor:pointer;
+}
+body.scope-tracker .bottom-nav-item:not(.tr-menu){opacity:.55}
 body.scope-tracker .search-wrap{display:none !important}
-/* Balance: karena semua tab lain hilang, tab Tracker jadi satu-satunya.
-   Beri sedikit style aktif supaya jelas ini menu yg boleh dipakai. */
+/* Tab Tracker tetap dominan */
 body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
+
+/* ─── LOCKED PREVIEW OVERLAY ────────────────────────────────────────── */
+.locked-preview-page{
+  position:fixed;
+  inset:60px 0 0 0;
+  z-index:400;
+  overflow-y:auto;
+  overflow-x:hidden;
+  background:var(--bg);
+}
+@media(max-width:640px){ .locked-preview-page{ inset:56px 0 60px 0; } }
+.locked-preview-content{
+  filter:blur(5px);
+  opacity:.6;
+  pointer-events:none;
+  user-select:none;
+  padding:20px 24px 40px;
+  max-width:1200px;
+  margin:0 auto;
+  min-height:calc(100vh - 60px);
+}
+@media(max-width:640px){ .locked-preview-content{ padding:14px 12px; } }
+.locked-preview-cta{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  z-index:401;
+  text-align:center;
+  background:linear-gradient(135deg,rgba(139,92,246,.14),rgba(59,130,246,.10));
+  border:2px solid rgba(139,92,246,.55);
+  border-radius:20px;
+  padding:36px 44px;
+  backdrop-filter:blur(24px) saturate(140%);
+  -webkit-backdrop-filter:blur(24px) saturate(140%);
+  box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 40px rgba(139,92,246,.2);
+  max-width:460px;
+  width:calc(100% - 40px);
+}
+:root[data-theme="light"] .locked-preview-cta{
+  background:linear-gradient(135deg,rgba(139,92,246,.10),rgba(59,130,246,.06));
+  box-shadow:0 20px 60px rgba(0,0,0,.15),0 0 40px rgba(139,92,246,.18);
+}
+.locked-icon-big{
+  font-size:56px;
+  margin-bottom:14px;
+  filter:drop-shadow(0 4px 12px rgba(139,92,246,.5));
+}
+.locked-cta-title{
+  font-size:22px;
+  font-weight:800;
+  margin:0 0 10px 0;
+  letter-spacing:-.3px;
+  color:var(--text)
+}
+@media(max-width:640px){ .locked-cta-title{font-size:19px} }
+.locked-cta-desc{
+  font-size:13.5px;
+  line-height:1.55;
+  color:var(--text2);
+  margin:0 0 22px 0;
+}
+.locked-cta-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:linear-gradient(135deg,#8b5cf6,#a78bfa);
+  color:#fff !important;
+  padding:13px 30px;
+  border-radius:12px;
+  font-weight:700;
+  font-size:14px;
+  text-decoration:none;
+  letter-spacing:.3px;
+  box-shadow:0 8px 24px rgba(139,92,246,.4);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.locked-cta-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 32px rgba(139,92,246,.5);
+}
+.locked-cta-sub{
+  margin-top:14px;
+  font-size:11px;
+  color:var(--text3);
+  font-family:'IBM Plex Mono',monospace;
+  letter-spacing:.4px;
+}
+
+/* Skeleton primitives untuk preview content — bikin outline layout
+   yang menyerupai halaman asli tanpa data sensitive. Kombinasi bar +
+   rectangles + fake numbers. Semua di-blur 5px anyway. */
+.lpv-sec{margin-bottom:20px}
+.lpv-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.lpv-h1{font-size:22px;font-weight:800;margin:0 0 6px 0;letter-spacing:-.3px}
+.lpv-sub{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:14px}
+.lpv-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.lpv-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.lpv-grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+@media(max-width:900px){
+  .lpv-grid-3{grid-template-columns:1fr}
+  .lpv-grid-4{grid-template-columns:repeat(2,1fr)}
+  .lpv-grid-2{grid-template-columns:1fr}
+}
+.lpv-stat-num{font-size:24px;font-weight:800;color:var(--accent);font-family:'IBM Plex Mono',monospace;margin:6px 0 2px}
+.lpv-stat-lbl{font-size:10px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase}
+.lpv-chart{height:220px;border-radius:8px;background:linear-gradient(180deg,rgba(139,92,246,.10),rgba(139,92,246,.02));position:relative;overflow:hidden}
+.lpv-chart svg{position:absolute;inset:0;width:100%;height:100%}
+.lpv-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px}
+.lpv-row:last-child{border:0}
+.lpv-badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.lpv-badge.buy{background:rgba(16,185,129,.15);color:var(--green)}
+.lpv-badge.neu{background:rgba(245,158,11,.14);color:#f59e0b}
+.lpv-badge.sell{background:rgba(239,68,68,.14);color:var(--red)}
+.lpv-ticker-tape{display:flex;gap:14px;padding:6px 10px;overflow:hidden;border-bottom:1px solid var(--border);font-size:11px;font-family:'IBM Plex Mono',monospace}
+.lpv-ticker-tape > span{white-space:nowrap;color:var(--text2)}
+.lpv-ticker-tape .up{color:var(--green)}
+.lpv-ticker-tape .dn{color:var(--red)}
+.lpv-heatmap{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;padding:2px}
+.lpv-heatmap > div{aspect-ratio:1.3;border-radius:4px;font-size:10px;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace}
+.lpv-tbl{width:100%;border-collapse:collapse;font-size:12px;font-family:'IBM Plex Mono',monospace}
+.lpv-tbl th{text-align:left;padding:8px 10px;background:var(--card);color:var(--text3);font-size:10px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.lpv-tbl td{padding:8px 10px;border-bottom:1px solid var(--border)}
 
 #page-tracker{padding:20px 24px 40px;max-width:1200px;margin:0 auto}
 @media(max-width:640px){ #page-tracker{padding:14px 12px 90px} }
@@ -27022,6 +27165,302 @@ document.addEventListener('keydown', (e) => {
     <div class="dm-disclaimer-mini">Konten ini murni informasi edukasi dan bukan ajakan/rekomendasi membeli atau menjual saham. Data Economstock Terminal adalah rangkuman ringkas yang dikumpulkan untuk keperluan analisis edukatif — kami tidak menyalin, mereproduksi, maupun menyebarluaskan laporan asli. Hak cipta atas laporan penuh tetap milik sekuritas penerbitnya. Selalu lakukan riset secara mandiri dan pastikan kamu memahami risikonya sebelum mengambil keputusan investasi.</div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════
+     LOCKED PREVIEW OVERLAY — untuk user scope='tracker'
+     Muncul saat user klik menu Dashboard/Pasar/Consensus/Valuasi.
+     Konten preview di-blur + CTA upgrade ke /billing.
+     Diinstall via IIFE di bawah: hook showPage() dan intercept navigasi.
+     ═══════════════════════════════════════════ -->
+<div class="locked-preview-page" id="lockedPreviewOverlay" style="display:none" aria-hidden="true">
+  <div class="locked-preview-content" id="lockedPreviewContent"></div>
+  <div class="locked-preview-cta">
+    <div class="locked-icon-big">🔒</div>
+    <h2 class="locked-cta-title" id="lockedCtaTitle">Fitur Premium</h2>
+    <p class="locked-cta-desc" id="lockedCtaDesc">Upgrade untuk membuka semua fitur.</p>
+    <a href="/billing" class="locked-cta-btn">🔓 Lihat Paket Full Akses</a>
+    <div class="locked-cta-sub">Kamu sedang di Paket Tracker · Ini fitur Full Akses</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// LOCKED PREVIEW SYSTEM — teaser fitur Full Akses utk user scope='tracker'
+// ═══════════════════════════════════════════
+// User yg beli Paket Tracker Rp 149rb (scope='tracker') tetap bisa LIHAT
+// menu Dashboard/Pasar Live/Consensus/Valuasi di navbar, tapi klik →
+// tampilkan overlay preview locked (layout mirroring halaman asli dgn
+// dummy data, blur 5px, CTA ke /billing). Tujuan: sales conversion —
+// user aware ada fitur lain tersedia via upgrade.
+//
+// Admin & user scope='full' TIDAK terpengaruh — showPage() jalan normal.
+//
+// HTML overlay: #lockedPreviewOverlay di atas.
+// Data source: DUMMY inline (bukan fetch). Layout mimicking real page:
+//   - Dashboard: hero + statistik + chart placeholder + tabel analis
+//   - Pasar Live: ticker tape + 2 chart + heatmap sektor + berita
+//   - Consensus: overview grid + list per saham (BUY/NEUTRAL/SELL badges)
+//   - Valuasi: tabel emiten dgn PBV/PER/DCF placeholder
+(function(){
+  'use strict';
+
+  var LOCKED_MENUS = ['dashboard','pasar','consensus','valuasi'];
+  var LOCKED_META = {
+    dashboard: {
+      title: '📊 Dashboard Analitik Saham',
+      desc: 'Statistik lengkap 957 saham IDX: hero + descriptive stats, chart historis 10 tahun, price target blueprint, analyst consensus, dan simulasi investasi.'
+    },
+    pasar: {
+      title: '📡 Pasar Live & Screening',
+      desc: 'Terminal real-time 2 panel candlestick + heatmap sektor + seasonality + feed berita pasar + tabel screening 100+ emiten dgn fundamental.'
+    },
+    consensus: {
+      title: '🔍 Consensus Analyst',
+      desc: 'Rangkuman rekomendasi analis 115 saham IDX — overview strong bull/bear, per saham dgn target price, dan per firm dgn track record win rate.'
+    },
+    valuasi: {
+      title: '💰 Valuasi Fundamental',
+      desc: 'Nilai wajar 957 emiten via PBV/PER/PSR/PEG/DCF + intrinsic score + earnings quality — upside table dgn margin of safety.'
+    }
+  };
+
+  // ── Preview HTML generators (static, dummy data) ────────────────
+  // Semua akan di-blur 5px, jadi content utama-nya "shape" & "outline".
+  function _sparkPath(){
+    // Random-ish smooth uptrend path — cuma untuk visual filler.
+    var pts = [];
+    var y = 60 + Math.random() * 20;
+    for (var i = 0; i < 40; i++){
+      y += (Math.random() - 0.4) * 8;
+      y = Math.max(20, Math.min(80, y));
+      pts.push([i * 25, y]);
+    }
+    return pts.map(function(p, i){ return (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]; }).join(' ');
+  }
+
+  function _fakeNum(min, max, dec){
+    var v = min + Math.random() * (max - min);
+    return dec ? v.toFixed(dec) : Math.round(v).toLocaleString('id-ID');
+  }
+
+  function _tickerTape(){
+    var codes = ['BBCA','BBRI','BMRI','TLKM','ASII','UNVR','INDF','GGRM','KLBF','SMGR','CPIN','ICBP'];
+    return '<div class="lpv-ticker-tape">' + codes.map(function(c){
+      var up = Math.random() > 0.4;
+      var pct = (Math.random() * 3).toFixed(2);
+      return '<span><strong>' + c + '</strong> ' + _fakeNum(500, 12000) +
+             ' <span class="' + (up ? 'up' : 'dn') + '">' + (up ? '▲' : '▼') + pct + '%</span></span>';
+    }).join('') + '</div>';
+  }
+
+  // ── Dashboard preview ────────────────────────────────────────────
+  function _previewDashboard(){
+    var tickers = ['BBCA','BBRI','BMRI','TLKM','ASII','UNVR'];
+    var recRows = tickers.slice(0,5).map(function(t){
+      var r = Math.random();
+      var badge = r > 0.66 ? '<span class="lpv-badge buy">BUY</span>' :
+                  r > 0.33 ? '<span class="lpv-badge neu">HOLD</span>' :
+                             '<span class="lpv-badge sell">SELL</span>';
+      return '<div class="lpv-row"><span>' + t + ' · Sekuritas XYZ</span>' +
+             '<span>Tgt ' + _fakeNum(1000, 12000) + '</span>' + badge + '</div>';
+    }).join('');
+
+    return _tickerTape() +
+      '<div class="lpv-sec"><h1 class="lpv-h1">TLKM · Telkom Indonesia</h1>' +
+      '<div class="lpv-sub">Rp ' + _fakeNum(2000, 4000) + ' · ▲ 1.23% · Vol ' + _fakeNum(10, 99) + 'M lot</div></div>' +
+      '<div class="lpv-grid-2">' +
+        '<div class="lpv-card"><div class="lpv-sub">📈 Historical Chart (10 tahun)</div>' +
+          '<div class="lpv-chart"><svg viewBox="0 0 1000 100" preserveAspectRatio="none">' +
+            '<path d="' + _sparkPath() + '" fill="none" stroke="#8b5cf6" stroke-width="2"/>' +
+          '</svg></div></div>' +
+        '<div class="lpv-card"><div class="lpv-sub">📊 Statistik Deskriptif</div>' +
+          '<div class="lpv-grid-3" style="grid-template-columns:1fr 1fr">' +
+            '<div><div class="lpv-stat-lbl">YoY</div><div class="lpv-stat-num">+12.4%</div></div>' +
+            '<div><div class="lpv-stat-lbl">MoM</div><div class="lpv-stat-num">+2.8%</div></div>' +
+            '<div><div class="lpv-stat-lbl">YTD</div><div class="lpv-stat-num">+8.1%</div></div>' +
+            '<div><div class="lpv-stat-lbl">Z-Score</div><div class="lpv-stat-num">-0.42</div></div>' +
+          '</div></div>' +
+      '</div>' +
+      '<div class="lpv-sec"><div class="lpv-card"><div class="lpv-sub">🎯 Price Target Blueprint · Rekomendasi Analis</div>' +
+        recRows + '</div></div>' +
+      '<div class="lpv-grid-3">' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Konsensus</div><div class="lpv-stat-num">BUY</div><div class="lpv-sub">18 dari 24 analis</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Avg Target</div><div class="lpv-stat-num">' + _fakeNum(3000, 5000) + '</div><div class="lpv-sub">+15% upside</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Fair Value (PBV)</div><div class="lpv-stat-num">' + _fakeNum(2800, 4500) + '</div><div class="lpv-sub">Model DCF · IRR 9.2%</div></div>' +
+      '</div>';
+  }
+
+  // ── Pasar Live preview ───────────────────────────────────────────
+  function _previewPasar(){
+    var sectors = ['Bank','Consumer','Energy','Basic Mat.','Financial','Telco','Property','Health','Tech','Retail','Utility','Transport','Auto','Media','Food','Industrial'];
+    var hm = sectors.map(function(s){
+      var v = (Math.random() * 6 - 2).toFixed(1);
+      var pos = parseFloat(v) >= 0;
+      return '<div style="background:' + (pos ? '#10b981' : '#ef4444') + '">' + s + '<br>' + (pos ? '+' : '') + v + '%</div>';
+    }).join('');
+    var news = ['Rupiah menguat vs USD di sesi Asia', 'IHSG tembus 7.500 · sektor bank memimpin', 'Blok pemodal asing net buy Rp 1.2T', 'CPI Juli 3.2% · di bawah ekspektasi', 'BI rate tetap 6.00% · konsensus'];
+    var newsRows = news.map(function(n){ return '<div class="lpv-row"><span>📰 ' + n + '</span><span style="color:var(--text3);font-size:10px">2 jam lalu</span></div>'; }).join('');
+
+    return _tickerTape() +
+      '<div class="lpv-sec"><h1 class="lpv-h1">📡 Terminal — Pasar Live</h1>' +
+      '<div class="lpv-sub">Real-time IHSG · Konsensus · Heatmap sektor · Feed berita</div></div>' +
+      '<div class="lpv-grid-3">' +
+        '<div class="lpv-card"><div class="lpv-sub">📈 Chart A — BBRI</div><div class="lpv-chart"><svg viewBox="0 0 1000 200" preserveAspectRatio="none"><path d="' + _sparkPath() + '" fill="none" stroke="#10b981" stroke-width="2"/></svg></div></div>' +
+        '<div class="lpv-card"><div class="lpv-sub">📈 Chart B — BBCA</div><div class="lpv-chart"><svg viewBox="0 0 1000 200" preserveAspectRatio="none"><path d="' + _sparkPath() + '" fill="none" stroke="#8b5cf6" stroke-width="2"/></svg></div></div>' +
+        '<div class="lpv-card"><div class="lpv-sub">📊 Statistik IHSG</div>' +
+          '<div class="lpv-stat-lbl" style="margin-top:8px">IHSG</div><div class="lpv-stat-num">7.534</div>' +
+          '<div class="lpv-stat-lbl" style="margin-top:8px">Volume</div><div class="lpv-stat-num">12.4T</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="lpv-sec"><div class="lpv-card"><div class="lpv-sub">🔥 Heatmap Sektor Hari Ini</div><div class="lpv-heatmap">' + hm + '</div></div></div>' +
+      '<div class="lpv-grid-2">' +
+        '<div class="lpv-card"><div class="lpv-sub">📰 Feed Berita Pasar</div>' + newsRows + '</div>' +
+        '<div class="lpv-card"><div class="lpv-sub">📅 Seasonality Bulanan</div><div class="lpv-chart"><svg viewBox="0 0 1000 200" preserveAspectRatio="none"><path d="' + _sparkPath() + '" fill="none" stroke="#f59e0b" stroke-width="2"/></svg></div></div>' +
+      '</div>';
+  }
+
+  // ── Consensus preview ────────────────────────────────────────────
+  function _previewConsensus(){
+    var tickers = ['BBCA','BBRI','BMRI','TLKM','ASII','UNVR','INDF','KLBF','ICBP','ADRO','GGRM','SMGR'];
+    var cards = tickers.map(function(t){
+      var buyPct = 30 + Math.random() * 60;
+      return '<div class="lpv-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong>' + t + '</strong><span class="lpv-badge buy">BUY</span></div>' +
+             '<div class="lpv-stat-lbl">Target Rata-rata</div>' +
+             '<div class="lpv-stat-num" style="font-size:20px">' + _fakeNum(1000, 12000) + '</div>' +
+             '<div class="lpv-sub" style="margin-top:6px">' + buyPct.toFixed(0) + '% BUY · ' + Math.floor(Math.random()*20+5) + ' analis</div>' +
+             '<div style="height:6px;background:var(--border);border-radius:3px;margin-top:8px;overflow:hidden"><div style="height:100%;width:' + buyPct + '%;background:linear-gradient(90deg,#10b981,#059669)"></div></div>' +
+             '</div>';
+    }).join('');
+
+    var firms = ['Mandiri Sekuritas','BNI Sekuritas','BCA Sekuritas','Samuel Sekuritas','Sucor Sekuritas','OCBC Sekuritas','CGS International','RHB Sekuritas'];
+    var firmRows = firms.map(function(f){
+      var wr = (50 + Math.random() * 30).toFixed(1);
+      return '<div class="lpv-row"><span>🏢 ' + f + '</span><span>Win Rate ' + wr + '% · ' + Math.floor(Math.random()*100+20) + ' trade</span><span class="lpv-badge buy">Aktif</span></div>';
+    }).join('');
+
+    return '<div class="lpv-sec"><h1 class="lpv-h1">🔍 Consensus Analyst</h1>' +
+      '<div class="lpv-sub">115 saham IDX · Overview / Per Saham / Per Firm</div></div>' +
+      '<div class="lpv-grid-4">' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Total Analis</div><div class="lpv-stat-num">247</div><div class="lpv-sub">di 34 sekuritas</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">BUY %</div><div class="lpv-stat-num">68%</div><div class="lpv-sub">konsensus umum</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Avg Upside</div><div class="lpv-stat-num">+14.8%</div><div class="lpv-sub">target vs harga</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Update</div><div class="lpv-stat-num">1.2K</div><div class="lpv-sub">rec per bulan</div></div>' +
+      '</div>' +
+      '<div class="lpv-sec"><div class="lpv-sub" style="margin-top:20px">📋 Kartu Konsensus Per Saham</div><div class="lpv-grid-4">' + cards + '</div></div>' +
+      '<div class="lpv-sec"><div class="lpv-card"><div class="lpv-sub">🏢 Ranking Firm Sekuritas</div>' + firmRows + '</div></div>';
+  }
+
+  // ── Valuasi preview ──────────────────────────────────────────────
+  function _previewValuasi(){
+    var tickers = ['BBCA','BBRI','BMRI','TLKM','ASII','UNVR','INDF','KLBF','ICBP','ADRO','GGRM','SMGR','CPIN','JSMR','PGAS'];
+    var rows = tickers.map(function(t){
+      var upside = (Math.random() * 40 - 15).toFixed(1);
+      var pos = parseFloat(upside) >= 0;
+      return '<tr>' +
+        '<td><strong>' + t + '</strong></td>' +
+        '<td>' + _fakeNum(500, 15000) + '</td>' +
+        '<td>' + (Math.random() * 3 + 0.5).toFixed(2) + '×</td>' +
+        '<td>' + (Math.random() * 25 + 5).toFixed(1) + '×</td>' +
+        '<td>' + _fakeNum(1000, 18000) + '</td>' +
+        '<td style="color:' + (pos ? 'var(--green)' : 'var(--red)') + ';font-weight:700">' + (pos ? '+' : '') + upside + '%</td>' +
+        '<td>' + (60 + Math.random() * 35).toFixed(0) + '/100</td>' +
+      '</tr>';
+    }).join('');
+
+    return '<div class="lpv-sec"><h1 class="lpv-h1">💰 Valuasi Fundamental IDX</h1>' +
+      '<div class="lpv-sub">957 emiten · PBV / PER / PSR / PEG / DCF · Intrinsic Score</div></div>' +
+      '<div class="lpv-grid-4">' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Undervalued</div><div class="lpv-stat-num" style="color:var(--green)">324</div><div class="lpv-sub">upside > 15%</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Fair Value</div><div class="lpv-stat-num">421</div><div class="lpv-sub">±15% dari harga</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Overvalued</div><div class="lpv-stat-num" style="color:var(--red)">212</div><div class="lpv-sub">downside &gt; 15%</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Avg Score</div><div class="lpv-stat-num">72</div><div class="lpv-sub">intrinsic quality</div></div>' +
+      '</div>' +
+      '<div class="lpv-sec"><div class="lpv-card" style="padding:0;overflow:hidden"><table class="lpv-tbl">' +
+        '<thead><tr><th>Kode</th><th>Harga</th><th>PBV</th><th>PER</th><th>Fair Value</th><th>Upside</th><th>Score</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+      '</table></div></div>';
+  }
+
+  var PREVIEWS = {
+    dashboard: _previewDashboard,
+    pasar: _previewPasar,
+    consensus: _previewConsensus,
+    valuasi: _previewValuasi
+  };
+
+  // ── Show/hide overlay ────────────────────────────────────────────
+  function showLockedPreview(name){
+    // Hide semua .page yg sedang active
+    var pages = document.querySelectorAll('.page');
+    for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
+
+    // Sync top nav (highlight tab yg di-klik)
+    var tabs = document.querySelectorAll('.nav-tab');
+    for (var j = 0; j < tabs.length; j++){
+      var t = tabs[j];
+      var onclick = t.getAttribute('onclick') || '';
+      t.classList.toggle('active', onclick.indexOf("'" + name + "'") >= 0);
+    }
+    // Sync bottom nav
+    var bnItems = document.querySelectorAll('.bottom-nav-item');
+    for (var k = 0; k < bnItems.length; k++) bnItems[k].classList.remove('active');
+    var bn = document.getElementById('bn-' + name);
+    if (bn) bn.classList.add('active');
+
+    var overlay = document.getElementById('lockedPreviewOverlay');
+    var content = document.getElementById('lockedPreviewContent');
+    var titleEl = document.getElementById('lockedCtaTitle');
+    var descEl  = document.getElementById('lockedCtaDesc');
+    if (!overlay || !content) return;
+
+    var meta = LOCKED_META[name] || { title: '🔒 Fitur Premium', desc: 'Upgrade untuk buka akses.' };
+    if (titleEl) titleEl.textContent = meta.title;
+    if (descEl) descEl.textContent = meta.desc;
+    var gen = PREVIEWS[name];
+    content.innerHTML = gen ? gen() : '';
+
+    overlay.style.display = 'block';
+    overlay.setAttribute('aria-hidden', 'false');
+    try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch(_){}
+  }
+
+  function hideLockedPreview(){
+    var overlay = document.getElementById('lockedPreviewOverlay');
+    if (!overlay) return;
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+    var content = document.getElementById('lockedPreviewContent');
+    if (content) content.innerHTML = ''; // free memory
+  }
+  window.__hideLockedPreview = hideLockedPreview;
+
+  // ── Hook showPage() untuk intercept navigasi user scope='tracker' ─
+  function isTrackerScope(){
+    return window.__ES_SCOPE === 'tracker' && !window.__ES_IS_ADMIN;
+  }
+
+  function installHook(){
+    if (typeof window.showPage !== 'function'){
+      setTimeout(installHook, 80);
+      return;
+    }
+    if (window.__lockedHookInstalled) return;
+    window.__lockedHookInstalled = true;
+
+    var original = window.showPage;
+    window.showPage = function(name){
+      if (isTrackerScope() && LOCKED_MENUS.indexOf(name) >= 0){
+        showLockedPreview(name);
+        return;
+      }
+      // Non-locked target → hide overlay dulu kalau ada, lalu jalanin normal
+      hideLockedPreview();
+      return original.apply(this, arguments);
+    };
+  }
+  installHook();
+})();
+</script>
 
 <script src="/panduan.js" defer></script>
 </body>
