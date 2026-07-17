@@ -3924,10 +3924,53 @@ body.tr-profile-open .tr-subpane{display:none !important}
    Sebelumnya: clamp(300px, 46vh, 420px) — di layar landscape aspect
    ratio jadi ~5:1 & candle terlihat kejepit. */
 .tr-recmodal-chart-wrap{
-  position:relative;width:100%;height:clamp(480px, 62vh, 620px);
+  position:relative;width:100%;height:clamp(560px, 70vh, 720px);
   background:var(--bg2);border-radius:12px;overflow:hidden;
   border:1px solid var(--border);
 }
+/* Segmented toggle utk pilih chart engine: 'own' (lightweight-charts +
+   zones — default) vs 'tv' (TradingView widget iframe). */
+.tr-recmodal-chart-toggle{
+  display:inline-flex;gap:4px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:9px;padding:3px;margin-bottom:2px;align-self:flex-start;
+}
+.tr-recmodal-chart-mode-btn{
+  background:transparent;border:none;color:var(--text3);
+  font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:.3px;
+  padding:6px 12px;border-radius:6px;cursor:pointer;
+  transition:all .18s ease;white-space:nowrap;
+}
+.tr-recmodal-chart-mode-btn:hover{color:var(--text)}
+.tr-recmodal-chart-mode-btn.active{
+  background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(124,58,237,.28);
+}
+/* Iframe TradingView — hide default, muncul saat mode='tv'. */
+.tr-recmodal-tv{
+  position:absolute;inset:0;background:var(--bg2);display:none;
+}
+.tr-recmodal-tv.on{display:block}
+.tr-recmodal-tv iframe{width:100%;height:100%;border:0;display:block}
+/* Chart kita — hide saat mode='tv' (via kelas .off di container chart-wrap). */
+.tr-recmodal-chart-wrap.tv-mode .tr-recmodal-chart,
+.tr-recmodal-chart-wrap.tv-mode .tr-recmodal-zones{display:none !important}
+/* Badge hit di level cards — 'TERISI' utk entry, 'HIT' utk TP, 'KENA' utk SL.
+   Position absolute di corner atas kanan card. Card sendiri sudah relative. */
+.tr-recmodal-level-hit{
+  position:absolute;top:5px;right:5px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:8.5px;font-weight:800;letter-spacing:.4px;
+  padding:2.5px 6px;border-radius:4px;
+  line-height:1;text-transform:uppercase;
+}
+.tr-recmodal-level.entry .tr-recmodal-level-hit{background:rgba(109,40,217,.18);color:var(--accent);border:1px solid rgba(109,40,217,.35)}
+.tr-recmodal-level.tp .tr-recmodal-level-hit{background:rgba(5,150,105,.18);color:var(--green);border:1px solid rgba(5,150,105,.35)}
+.tr-recmodal-level.sl .tr-recmodal-level-hit{background:rgba(225,29,72,.18);color:var(--red);border:1px solid rgba(225,29,72,.35)}
+/* Card dgn hit → subtle pulse ring di border kanan supaya kelihatan
+   'aktif'. Tidak ganggu layout. */
+.tr-recmodal-level.is-hit{box-shadow:0 0 0 1px currentColor inset;}
+.tr-recmodal-level.entry.is-hit{--_hitc:rgba(109,40,217,.4);box-shadow:0 0 0 1.5px var(--_hitc) inset}
+.tr-recmodal-level.tp.is-hit{--_hitc:rgba(5,150,105,.55);box-shadow:0 0 0 1.5px var(--_hitc) inset}
+.tr-recmodal-level.sl.is-hit{--_hitc:rgba(225,29,72,.55);box-shadow:0 0 0 1.5px var(--_hitc) inset}
 .tr-recmodal-chart{width:100%;height:100%}
 /* z-index tinggi supaya zona SELALU di atas canvas chart lightweight-charts
    (canvas kadang punya z-index sendiri). Tanpa ini zona ada di DOM tapi
@@ -3999,7 +4042,9 @@ body.tr-profile-open .tr-subpane{display:none !important}
   .tr-recmodal-body{padding:14px 14px 12px;max-height:calc(100vh - 20px);gap:9px}
   .tr-recmodal-hd{padding-right:38px}
   .tr-recmodal-tick{font-size:21px}
-  .tr-recmodal-chart-wrap{height:min(400px, 52vh)}
+  .tr-recmodal-chart-wrap{height:min(480px, 62vh)}
+  .tr-recmodal-chart-mode-btn{padding:5px 10px;font-size:10.5px}
+  .tr-recmodal-level-hit{font-size:8px;padding:2px 5px}
   .tr-recmodal-level{padding:8px 10px}
   .tr-recmodal-level .val{font-size:14.5px}
   .tr-recmodal-foot-item .val{font-size:12px}
@@ -13473,6 +13518,12 @@ window._attachCandleTooltip = function(chart, series, container, candles){
   }
 
   function hideModal(){
+    // Unmount iframe TradingView (kalau lagi mode tv) supaya tidak boros
+    // network di background saat modal ditutup.
+    try {
+      var tvEl = document.getElementById('trRecModalTv');
+      if (tvEl) tvEl.innerHTML = '';
+    } catch(_){}
     var m = $('trRecModal'); if (!m) return;
     m.classList.remove('open');
     m.setAttribute('aria-hidden', 'true');
@@ -13839,14 +13890,27 @@ window._attachCandleTooltip = function(chart, series, container, candles){
 
     $('trRecModalDate').textContent = 'Rilis: ' + fmtDate(rec.openDate);
 
-    // Level cards
+    // Level cards — dengan status badge:
+    //   Entry  → 'TERISI' bila didTouchEntry=true (harga sudah menyentuh entry)
+    //   TP1    → 'HIT'    bila tpHits mengandung 'TP1'
+    //   TP2    → 'HIT'    bila tpHits mengandung 'TP2'
+    //   SL     → 'KENA'   bila closedBy='SL' atau 'SL_TRAIL'
+    // Card yang terkena hit juga dapat class `is-hit` → ring inset lebih tebal
+    // agar visually terlihat aktif.
+    var tpHits = Array.isArray(rec.tpHits) ? rec.tpHits : [];
+    var closedBy = String(rec.closedBy || '');
+    var entryTouched = !!rec.didTouchEntry;
+    var isTP1Hit = tpHits.indexOf('TP1') >= 0;
+    var isTP2Hit = tpHits.indexOf('TP2') >= 0;
+    var isSLHit  = closedBy === 'SL' || closedBy === 'SL_TRAIL';
+
     var entryPrice = +rec.entry;
     var pctFromEntry = function(v){
       if (!Number.isFinite(+v) || !Number.isFinite(entryPrice) || entryPrice <= 0) return null;
       var isBuy = type !== 'SELL';
       return ((+v - entryPrice) / entryPrice) * 100 * (isBuy ? 1 : -1);
     };
-    var makeLevel = function(cls, label, price, showRet){
+    var makeLevel = function(cls, label, price, showRet, hitBadge){
       var hasVal = Number.isFinite(+price) && +price > 0;
       var retTxt = '';
       if (showRet && hasVal){
@@ -13855,18 +13919,21 @@ window._attachCandleTooltip = function(chart, series, container, candles){
           retTxt = '<div class="ret">' + esc(fmtPct(p, 1)) + '</div>';
         }
       }
-      return '<div class="tr-recmodal-level ' + cls + '">'
+      var badgeHtml = hitBadge ? '<div class="tr-recmodal-level-hit">' + hitBadge + '</div>' : '';
+      var hitCls = hitBadge ? ' is-hit' : '';
+      return '<div class="tr-recmodal-level ' + cls + hitCls + '">'
         + '<div class="lbl">' + label + '</div>'
         + '<div class="val">' + (hasVal ? esc(fmtN(price)) : '—') + '</div>'
         + retTxt
+        + badgeHtml
         + '</div>';
     };
     var hasT2 = Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1;
     $('trRecModalLevels').innerHTML =
-        makeLevel('entry', 'ENTRY', rec.entry, false)
-      + makeLevel('tp',   hasT2 ? 'TP1' : 'TP', rec.tp1, true)
-      + (hasT2 ? makeLevel('tp', 'TP2', rec.tp2, true) : '')
-      + makeLevel('sl',   'STOP-LOSS', rec.sl, true);
+        makeLevel('entry', 'ENTRY',      rec.entry, false, entryTouched ? '✓ TERISI' : '')
+      + makeLevel('tp',    hasT2 ? 'TP1' : 'TP', rec.tp1, true,  isTP1Hit ? '✓ HIT' : '')
+      + (hasT2 ? makeLevel('tp', 'TP2',  rec.tp2, true, isTP2Hit ? '✓ HIT' : '') : '')
+      + makeLevel('sl',    'STOP-LOSS',  rec.sl,    true,  isSLHit  ? '✗ KENA' : '');
 
     // Footer: harga sekarang, P&L, exit (kalau ada).
     // Harga Sekarang PAKAI SHEET LIVE via __TR_getLive helper (priority chain
@@ -13957,6 +14024,60 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     }
   }
 
+  // Toggle chart engine antara 'own' (default — lightweight-charts + zones)
+  // dan 'tv' (TradingView widget iframe). Zones hanya visible di mode 'own'.
+  // State reset ke 'own' setiap kali showModal() dipanggil.
+  var _chartMode = 'own';   // 'own' | 'tv'
+
+  function setChartMode(mode){
+    if (mode !== 'own' && mode !== 'tv') mode = 'own';
+    _chartMode = mode;
+    var wrap = document.getElementById('trRecModalChartWrap');
+    var tvEl = document.getElementById('trRecModalTv');
+    if (!wrap || !tvEl) return;
+    // Sync active state di 2 tombol toggle
+    var btns = document.querySelectorAll('.tr-recmodal-chart-mode-btn');
+    for (var i = 0; i < btns.length; i++){
+      var isActive = btns[i].getAttribute('data-mode') === mode;
+      btns[i].classList.toggle('active', isActive);
+      btns[i].setAttribute('aria-selected', isActive ? 'true' : 'false');
+    }
+    if (mode === 'tv'){
+      wrap.classList.add('tv-mode');
+      tvEl.classList.add('on');
+      mountTradingView(_currentRec);
+    } else {
+      wrap.classList.remove('tv-mode');
+      tvEl.classList.remove('on');
+      // Unmount iframe supaya tidak boros network/CPU saat modal masih terbuka
+      // tapi user sudah pindah ke chart kita.
+      tvEl.innerHTML = '';
+    }
+  }
+
+  // Mount TradingView Advanced Chart widget via iframe embed.
+  // Symbol IDX Indonesia: 'IDX:{TICKER}' (mis. IDX:BUMI). Theme dark/light
+  // otomatis mengikuti terminal (data-theme document element).
+  function mountTradingView(rec){
+    var tvEl = document.getElementById('trRecModalTv'); if (!tvEl || !rec) return;
+    if (tvEl.firstChild) return;   // already mounted
+    var ticker = String(rec.ticker || '').toUpperCase();
+    if (!ticker) { tvEl.innerHTML = '<div class="tr-recmodal-empty">Kode saham tidak tersedia.</div>'; return; }
+    var isDark = (document.documentElement.getAttribute('data-theme') === 'dark');
+    var theme = isDark ? 'dark' : 'light';
+    var symbol = encodeURIComponent('IDX:' + ticker);
+    // Widget embed URL — interval D (harian), locale id, hide top toolbar
+    // brand, expose price scale + drawing tools. Origin & lokal Jakarta.
+    var src = 'https://s.tradingview.com/widgetembed/'
+      + '?symbol=' + symbol
+      + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0'
+      + '&toolbarbg=' + (isDark ? '1a1330' : 'f1f3f6')
+      + '&studies=%5B%5D&theme=' + theme + '&style=1'
+      + '&timezone=Asia%2FJakarta&locale=id'
+      + '&utm_source=terminal.economstock.com&utm_medium=widget';
+    tvEl.innerHTML = '<iframe src="' + src + '" allowtransparency="true" scrolling="no" allowfullscreen loading="lazy" title="TradingView chart ' + esc(ticker) + '"></iframe>';
+  }
+
   function showModal(rec){
     if (!rec) return;
     cleanupChart();
@@ -13970,10 +14091,22 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     if (_keyHandler) document.removeEventListener('keydown', _keyHandler);
     _keyHandler = function(e){ if (e.key === 'Escape') hideModal(); };
     document.addEventListener('keydown', _keyHandler);
+    // Default mode setiap buka modal = 'own' (chart kita). User bisa toggle
+    // ke TradingView via tombol, tapi reset ke default saat modal dibuka lagi.
+    setChartMode('own');
     // Render chart async (fetch OHLC, then draw)
     renderChart(rec);
   }
   window.__TR_showRec = showModal;
+
+  // Delegated click handler utk tombol toggle chart engine.
+  document.addEventListener('click', function(e){
+    if (!e.target || !e.target.closest) return;
+    var btn = e.target.closest('.tr-recmodal-chart-mode-btn');
+    if (!btn) return;
+    var mode = btn.getAttribute('data-mode');
+    if (mode) setChartMode(mode);
+  });
 
   // ── Klik untuk buka modal: pakai CAPTURE phase supaya kita run
   //    SEBELUM handler openStock/drawer di IIFE lain (yg pakai bubble).
@@ -26364,9 +26497,20 @@ document.addEventListener('keydown', (e) => {
         <span class="tr-recmodal-date" id="trRecModalDate">—</span>
       </div>
     </div>
-    <div class="tr-recmodal-chart-wrap">
+    <!-- Toggle chart engine: default 'Chart Kita' (lightweight-charts + zones),
+         opsi 'TradingView' (iframe widget). Zona entry/TP/SL hanya visible di
+         mode Chart Kita — TradingView pakai chart eksternal tanpa overlay. -->
+    <div class="tr-recmodal-chart-toggle" role="tablist" aria-label="Pilihan chart">
+      <button type="button" class="tr-recmodal-chart-mode-btn active" data-mode="own" role="tab" aria-selected="true">📊 Chart Kita</button>
+      <button type="button" class="tr-recmodal-chart-mode-btn" data-mode="tv" role="tab" aria-selected="false">📈 TradingView</button>
+    </div>
+    <div class="tr-recmodal-chart-wrap" id="trRecModalChartWrap">
       <div class="tr-recmodal-chart" id="trRecModalChart"></div>
       <div class="tr-recmodal-zones" id="trRecModalZones"></div>
+      <!-- TradingView widget iframe — di-inject saat user toggle ke TV mode.
+           HTML tetap kosong sampai user klik supaya tidak load iframe eksternal
+           bila user tidak butuh (hemat network + skip external request). -->
+      <div class="tr-recmodal-tv" id="trRecModalTv"></div>
       <div class="tr-recmodal-empty" id="trRecModalLoading">
         <span style="font-size:22px">📡</span>
         <span>Memuat candle…</span>
