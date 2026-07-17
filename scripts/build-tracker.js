@@ -220,6 +220,143 @@ function loadScreening() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// 2b) LIVE OVERLAY — inject virtual today candle ke ohlc.json in-memory
+// ─────────────────────────────────────────────────────────────────────────
+// KENAPA: ohlc.json di-refresh EOD (~17:00 WIB). Rec yg rilis hari ini →
+// filter derivePosition `c[0] >= openTs` menghasilkan array kosong → state
+// stays PENDING padahal harga sudah bergerak (dan mungkin sudah kena entry/
+// SL/TP intraday).
+//
+// SOLUSI: fetch harga live dari SUMBER YG SAMA dgn UI Tracker & Dashboard
+// yaitu Worker `terminal-live` endpoint `/live.json`. Konsistensi absolut:
+// frontend & backend see snapshot yg persis identik dari Worker (yg internal
+// fetch dari Sheet Live via gviz + cache 60s + backup stale 12 jam).
+//
+// GUARD (mirror _ohlcMergeToday di frontend):
+//   - Hari kerja WIB (Sen–Jum)
+//   - Sudah lewat jam buka bursa (≥09:00 WIB) — sebelum itu, harga live masih
+//     closing kemarin → candle "hari ini" akan salah (harga = closing).
+//   - Live entry ada untuk ticker + price valid
+//   - Belum ada candle >= today di ohlc.json (avoid duplicate)
+//
+// FORMAT candle: [ts_unix_sec, open, high, low, close] — sama dgn ohlc.json.
+//
+// AUTH: Worker `/live.json` butuh HMAC token (LIVE_TOKEN_SECRET, sama dgn
+// yg dipakai main Worker /api/live-token). Token digenerate di sini pakai
+// algo yg identik — b64url payload {scope:'live', exp} + '.' + b64url HMAC.
+
+const crypto = require('crypto');
+
+// URL Worker terminal-live. Bisa di-override via env var untuk staging.
+const DEFAULT_LIVE_WORKER_URL = 'https://terminal-live.chamdani49.workers.dev/live.json';
+
+function _b64url(input) {
+  return Buffer.from(input).toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Generate token yg valid untuk Worker terminal-live (~15 menit expiry).
+// Algo persis dgn src/index.js /api/live-token (hmacSign + b64urlEncode).
+function _generateLiveToken(secret) {
+  const exp = Math.floor(Date.now() / 1000) + 900; // 15 menit
+  const payloadB64 = _b64url(JSON.stringify({ scope: 'live', exp }));
+  const sig = crypto.createHmac('sha256', secret).update(payloadB64).digest();
+  const sigB64 = _b64url(sig);
+  return `${payloadB64}.${sigB64}`;
+}
+
+async function fetchLiveMap() {
+  const secret = process.env.LIVE_TOKEN_SECRET;
+  const workerUrl = process.env.LIVE_WORKER_URL || DEFAULT_LIVE_WORKER_URL;
+  if (!secret) {
+    console.log('  ℹ LIVE_TOKEN_SECRET tidak di-set — skip live overlay.');
+    return {};
+  }
+  let token;
+  try {
+    token = _generateLiveToken(secret);
+  } catch (e) {
+    console.warn('  ⚠ Generate token gagal:', e.message);
+    return {};
+  }
+  // Cache-buster jendela 60 detik: URL berubah tiap menit → browser/CDN gak
+  // menyajikan salinan lama, TAPI dalam 1 jendela URL identik → Cloudflare
+  // edge cache tetap melayani dari cache (s-maxage 60).
+  const cb = Math.floor(Date.now() / 60000);
+  const url = workerUrl + '?token=' + encodeURIComponent(token) + '&_cb=' + cb;
+  try {
+    const res = await fetch(url, { redirect: 'follow', cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (!json || json.ok !== true || !json.live) {
+      throw new Error('payload tidak valid: ' + JSON.stringify(json).slice(0, 200));
+    }
+    const staleTag = json.stale ? ' [STALE — pakai backup terakhir Worker]' : '';
+    console.log(`  ✓ Live feed (Worker): ${json.count || 0} ticker · generated_at=${json.generated_at || '?'}${staleTag}`);
+    return json.live;
+  } catch (e) {
+    console.warn('  ⚠ Live feed fetch gagal:', e.message);
+    return {};
+  }
+}
+
+// Bangun 1 virtual candle "hari ini" dari live entry (mirror _ohlcMergeToday).
+// Format: [ts_unix_sec, open, high, low, close] — konsisten dgn ohlc.json.
+// Return null kalau data tidak valid.
+function buildTodayCandleFromLive(liveEntry, todayIso) {
+  if (!liveEntry) return null;
+  const price = +liveEntry.price;
+  if (!Number.isFinite(price) || price <= 0) return null;
+  const chg = Number.isFinite(liveEntry.change_pct) ? liveEntry.change_pct : 0;
+  const openEst = chg !== 0 ? Math.round(price / (1 + chg)) : price;
+  const ts = Math.floor(Date.parse(todayIso + 'T00:00:00Z') / 1000);
+  return [
+    ts,
+    openEst,
+    Math.max(openEst, price),
+    Math.min(openEst, price),
+    Math.round(price),
+  ];
+}
+
+// Return "today (WIB) ISO date" + guard flag apakah bursa sudah buka.
+// Bursa IDX Sen–Jum ≥09:00 WIB. Sebelum jam buka: virtual candle tidak sah
+// (harga live masih closing hari sebelumnya).
+function nowWibInfo() {
+  const nowWib = new Date(Date.now() + 7 * 3600 * 1000);
+  const todayIso = nowWib.toISOString().slice(0, 10);
+  const dow = nowWib.getUTCDay();       // 0=Min .. 6=Sab
+  const hour = nowWib.getUTCHours();
+  const sessionStarted = dow >= 1 && dow <= 5 && hour >= 9;
+  return { todayIsoWib: todayIso, sessionStarted };
+}
+
+// Augment ohlcData.tickers[*].candles in-place dgn virtual today candle.
+// Return jumlah ticker yg di-augment.
+function augmentOhlcWithLive(ohlcData, live) {
+  if (!ohlcData || !ohlcData.tickers || !live) return 0;
+  const { todayIsoWib, sessionStarted } = nowWibInfo();
+  if (!sessionStarted) {
+    console.log('  ℹ Bursa belum buka / weekend — skip live overlay ohlc.');
+    return 0;
+  }
+  const todayTs = Math.floor(Date.parse(todayIsoWib + 'T00:00:00Z') / 1000);
+  let augmented = 0;
+  for (const ticker in live) {
+    const entry = ohlcData.tickers[ticker];
+    if (!entry || !Array.isArray(entry.candles) || !entry.candles.length) continue;
+    // Skip kalau candle hari ini (atau lebih baru) sudah ada di ohlc.json.
+    const lastCandle = entry.candles[entry.candles.length - 1];
+    if (lastCandle && lastCandle[0] >= todayTs) continue;
+    const virtualCandle = buildTodayCandleFromLive(live[ticker], todayIsoWib);
+    if (!virtualCandle) continue;
+    entry.candles.push(virtualCandle);
+    augmented++;
+  }
+  return augmented;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // 3) FETCH IHSG DAILY (Yahoo ^JKSE)
 // ─────────────────────────────────────────────────────────────────────────
 async function fetchIhsgDaily() {
@@ -1068,6 +1205,19 @@ async function main() {
   const sheet = await fetchSheetRows();
   const ohlc = loadOhlc();
   const screening = loadScreening();
+
+  // ── Live overlay: inject virtual today candle ke ohlc in-memory ──
+  // Supaya rec yg rilis hari ini bisa berpindah state PENDING → TRIGGERED /
+  // SL_HIT / TP_HIT langsung di tracker.json (bukan cuma overlay klien-side).
+  // Sumber tercepat: sheet Live via gviz (public read, zero auth).
+  try {
+    const live = await fetchLiveMap();
+    const n = augmentOhlcWithLive(ohlc, live);
+    if (n > 0) console.log(`  ✓ Live overlay: ${n} ticker di-augment dgn virtual today candle`);
+  } catch (e) {
+    console.warn('  ⚠ Live overlay gagal (non-fatal):', e.message);
+  }
+
   let ihsgSeries = null;
   try { ihsgSeries = await fetchIhsgDaily(); }
   catch (e) { console.warn('  ⚠ ihsg fetch throw:', e.message); }
