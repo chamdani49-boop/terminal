@@ -16068,15 +16068,38 @@ function _startLiveFeedPolling() {
 
   var MISSED_THRESHOLD_PCT = 5;
 
+  // Ambil referensi DATA dari lexical scope (script utama).
+  // NOTE (bug fix): DATA di-declare sebagai `let DATA = null;` di line ~15209
+  // pada script tag yg SAMA dgn IIFE ini (14197–21930). `let` top-level TIDAK
+  // membuat properti di window (beda dgn `var`), jadi `window.DATA` selalu
+  // undefined. Pakai referensi lexical langsung — sama dgn `_ohlcMergeToday`
+  // di IIFE OHLC helpers yg juga akses DATA lewat closure.
+  function _getData(){
+    try { return DATA; } catch(_){ return null; }
+  }
+
+  // Debug helper: log ke console.info + on-screen _liveDbg box (kalau aktif).
+  function _dbg(msg, tag){
+    try {
+      console.info('[tracker-live]', msg);
+      if (typeof _liveDbg === 'function') _liveDbg('[TR overlay] ' + msg, tag || '#8fd');
+    } catch(_){}
+  }
+
   // ── Bangun virtual candle "hari ini" untuk 1 rec dari DATA.live ──
   // Return {ts, open, high, low, close, date} atau null.
   // Guarded oleh: sesi bursa buka + live fresh today + rec.openDate <= today.
   // Logika sama persis dgn _ohlcMergeToday (biar konsisten dgn chart popup).
+  var _skipReason = null; // untuk debug (kenapa candle null?)
   function _synthTodayCandleForRec(rec){
-    if (!rec || !rec.ticker) return null;
-    var DATA = window.DATA;
-    var lv = DATA && DATA.live && DATA.live[rec.ticker];
-    if (!lv || !Number.isFinite(lv.price) || lv.price <= 0) return null;
+    _skipReason = null;
+    if (!rec || !rec.ticker){ _skipReason = 'no-rec-ticker'; return null; }
+    var D = _getData();
+    var lv = D && D.live && D.live[rec.ticker];
+    if (!lv || !Number.isFinite(lv.price) || lv.price <= 0){
+      _skipReason = 'no-live-' + rec.ticker + (D ? '' : '-no-DATA') + (D && !D.live ? '-no-DATA.live' : '');
+      return null;
+    }
 
     // "Sekarang" dalam WIB (UTC+7). Bursa IDX Sen–Jum 09:00–16:30.
     var nowWib = new Date(Date.now() + 7 * 3600 * 1000);
@@ -16084,17 +16107,20 @@ function _startLiveFeedPolling() {
     var dowWib = nowWib.getUTCDay();
     var hourWib = nowWib.getUTCHours();
     var sessionStarted = dowWib >= 1 && dowWib <= 5 && hourWib >= 9;
-    if (!sessionStarted) return null;
+    if (!sessionStarted){ _skipReason = 'not-session (dow=' + dowWib + ' hour=' + hourWib + ')'; return null; }
 
     // Data live fresh hari ini? _meta.generated_at di-update tiap live poll.
-    var genAt = DATA && DATA._meta && DATA._meta.generated_at;
+    var genAt = D && D._meta && D._meta.generated_at;
     var genWibDay = genAt
       ? new Date(new Date(genAt).getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10)
       : null;
-    if (genWibDay !== todayStr) return null;
+    if (genWibDay !== todayStr){
+      _skipReason = 'not-fresh (genWibDay=' + genWibDay + ' today=' + todayStr + ')';
+      return null;
+    }
 
     // Rec di-rilis di masa depan? jangan overlay.
-    if (rec.openDate && rec.openDate > todayStr) return null;
+    if (rec.openDate && rec.openDate > todayStr){ _skipReason = 'future-rec'; return null; }
 
     var price = +lv.price;
     var liveChgPct = Number.isFinite(lv.change_pct) ? lv.change_pct : 0;
@@ -16340,44 +16366,67 @@ function _startLiveFeedPolling() {
   // Debounce sederhana + guard: hanya jalan kalau __TR_DATA__ ready.
   var _lastOverlayAt = 0;
   var _MIN_OVERLAY_INTERVAL_MS = 3000; // debounce 3 dtk (live poll 60s, aman)
-  function triggerOverlay(){
-    if (!window.__TR_DATA__) return;
+  var _loggedFirstRun = false;
+  function triggerOverlay(reason){
+    if (!window.__TR_DATA__){
+      if (!_loggedFirstRun) _dbg('skip: __TR_DATA__ belum ready (reason=' + (reason||'?') + ')', '#fa0');
+      return;
+    }
+    var D = _getData();
+    if (!D){
+      if (!_loggedFirstRun) _dbg('skip: DATA masih null (reason=' + (reason||'?') + ')', '#fa0');
+      return;
+    }
+    if (!D.live){
+      if (!_loggedFirstRun) _dbg('skip: DATA.live belum ada (reason=' + (reason||'?') + ')', '#fa0');
+      return;
+    }
     var now = Date.now();
     if (now - _lastOverlayAt < _MIN_OVERLAY_INTERVAL_MS) return;
     _lastOverlayAt = now;
     try {
       var result = overlayLiveTrackerState();
+      // First run always log, subsequent hanya kalau ada perubahan.
+      if (!_loggedFirstRun || result.changed > 0 || result.updated > 0){
+        _loggedFirstRun = true;
+        var lvCount = D.live ? Object.keys(D.live).length : 0;
+        var summary = 'run (reason=' + (reason||'?') + ') · updated=' + result.updated +
+                      ' moved=' + result.changed +
+                      ' · DATA.live keys=' + lvCount +
+                      ' · pending=' + window.__TR_DATA__.pendingCount +
+                      ' open=' + window.__TR_DATA__.open +
+                      ' history=' + window.__TR_DATA__.totalClosed;
+        _dbg(summary, result.changed > 0 ? '#0f0' : '#8fd');
+      }
+      // Ada rec yg pindah bucket ATAU field di-update → redraw UI.
       if (result.changed > 0 || result.updated > 0){
-        // Ada rec yg pindah bucket ATAU field di-update → redraw UI.
         if (typeof window.__TR_rerender === 'function'){
           window.__TR_rerender(window.__TR_DATA__);
         }
-        if (result.changed > 0){
-          try {
-            console.info('[tracker-live] overlay:',
-              result.changed, 'rec pindah bucket,',
-              result.updated, 'rec updated · pending=' + window.__TR_DATA__.pendingCount +
-              ' open=' + window.__TR_DATA__.open +
-              ' history=' + window.__TR_DATA__.totalClosed);
-          } catch(_){}
-        }
       }
     } catch (e){
-      try { console.warn('[tracker-live] overlay error:', e && e.message); } catch(_){}
+      _dbg('ERROR: ' + (e && e.message), '#f55');
     }
   }
 
   // Expose ke _pollLiveFeed hook + register callback saat tracker.json first load.
-  window.__TR_liveOverlay = triggerOverlay;
+  window.__TR_liveOverlay = function(){ triggerOverlay('live-poll'); };
 
   // Kalau __TR_DATA__ sudah loaded sebelum IIFE ini eksekusi, run overlay
   // sekali (best effort — mungkin DATA.live belum ada, tidak masalah).
   if (typeof window.__TR_onData === 'function'){
     window.__TR_onData(function(){
       // Delay kecil biar renderer awal sempat pasang DOM dulu, baru overlay.
-      setTimeout(triggerOverlay, 150);
+      setTimeout(function(){ triggerOverlay('tracker-load'); }, 150);
     });
   }
+
+  // Safety-net interval: race antara load tracker.json vs live feed bikin
+  // trigger via hook bisa "kelewatan" (tracker load lebih dulu → __TR_onData
+  // fire sebelum DATA.live siap; atau live feed sukses tapi __TR_DATA__ masih
+  // null). Interval 15s memastikan overlay eventually run selama page terbuka.
+  // Debounce 3s di triggerOverlay mencegah run berlebihan.
+  setInterval(function(){ triggerOverlay('interval'); }, 15 * 1000);
 })();
 
 // ═══════════════════════════════════════════
