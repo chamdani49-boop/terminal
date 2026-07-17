@@ -9315,10 +9315,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // di IIFE lain yg atur). Sub-tab bar sudah di-hide via CSS body.tr-profile-open.
     if (document.body.classList.contains('tr-profile-open')) return;
 
-    var saved = null;
-    try { saved = localStorage.getItem(LS_KEY); } catch(_){}
-    if (saved && !VALID_PANES[saved]) saved = null;
-    switchTab(saved || 'ringkasan');
+    // SELALU default ke Overview (ringkasan) saat menu Tracker dibuka —
+    // TIDAK restore sub-tab terakhir dari localStorage. localStorage LS_KEY
+    // masih di-update oleh switchTab() (kalau ada logic lain baca) tapi
+    // TIDAK dipakai lagi sebagai starting point. User yg klik sub-tab
+    // Live/Analisis/Analis/Performa di dalam Tracker tetap bisa navigate
+    // normal — hanya saat KELUAR & masuk lagi menu Tracker (via nav-tab),
+    // pane kembali ke Overview.
+    switchTab('ringkasan');
 
     // Fetch data (idempotent — sudah di-guard).
     loadTrackerData();
