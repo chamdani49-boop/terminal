@@ -52,6 +52,13 @@ function planDays(env, plan) {
   return parseInt(env.PLAN_DAYS_6BULAN || '182', 10);
 }
 
+// Map plan -> scope default (level akses otomatis saat aktivasi via Mayar).
+// Paket '1bulan' = paket Tracker-only (Rp 149rb). Paket lain = full access.
+// Admin bisa override scope per-user via /api/admin/users/extend {scope}.
+function planScope(plan) {
+  return plan === '1bulan' ? 'tracker' : 'full';
+}
+
 // Base URL API headless Mayar. Bisa di-override lewat env (mis. untuk sandbox).
 function mayarApiBase(env) {
   return (env.MAYAR_API_BASE || 'https://api.mayar.id/hl/v1').replace(/\/+$/, '');
@@ -344,7 +351,7 @@ export async function webhook(request, env, ctx) {
   if (txnId && (await txnAlreadyProcessed(env, txnId))) return json({ ok: true, duplicate: true });
 
   const user = await ensureUser(env, email);
-  await activateSubscription(env, user.id, plan, planDays(env, plan), 'mayar', txnId);
+  await activateSubscription(env, user.id, plan, planDays(env, plan), 'mayar', txnId, planScope(plan));
 
   return json({ ok: true, activated: { email, plan } });
 }

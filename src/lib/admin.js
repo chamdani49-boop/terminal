@@ -112,11 +112,14 @@ export async function handleAdminApi(request, env, url) {
       if (path === '/api/admin/users/extend') {
         const days = parseInt(body.days || '0', 10);
         if (!days || days < 1) return badRequest('days harus > 0');
+        // scope: 'tracker' | 'full' | undefined. Undefined → pertahankan
+        // scope existing (backward-compat + renewal safety).
+        const scope = body.scope === 'tracker' || body.scope === 'full' ? body.scope : undefined;
         // mode 'set' → setel masa aktif = sekarang + days (bisa MENGURANGI);
         // selain itu (default) → perpanjang/menambah dari kedaluwarsa saat ini.
         const sub = (body.mode === 'set')
-          ? await adminSetDays(env, email, days, body.plan)
-          : await adminExtendDays(env, email, days, body.plan);
+          ? await adminSetDays(env, email, days, body.plan, scope)
+          : await adminExtendDays(env, email, days, body.plan, scope);
         return json({ ok: true, sub });
       }
       if (path === '/api/admin/users/suspend') {

@@ -11,8 +11,8 @@ import { now } from './util.js';
 
 // PLAN_ORDER menentukan urutan tampil kartu di /billing DAN urutan editor
 // di panel admin. '1bulan' di depan supaya paket Tracker (entry-level 30 hari)
-// muncul paling kiri. Enforcement scope='tracker' untuk paket ini BELUM aktif
-// — soft launch UI-only, akan menyusul di phase berikutnya.
+// muncul paling kiri. Enforcement scope='tracker' sudah AKTIF: pembeli plan
+// '1bulan' via Mayar otomatis dapat scope='tracker' (lihat mayar.js planScope).
 export const PLAN_ORDER = ['1bulan', '3bulan', '6bulan', 'tahunan'];
 export const PLAN_MONTHS = { '1bulan': 1, '3bulan': 3, '6bulan': 6, 'tahunan': 12 };
 
@@ -23,25 +23,24 @@ export const DEFAULT_BILLING = {
   featured: 'tahunan',
   plans: {
     // Paket khusus TRACKER — akses hanya tab Tracker (scope='tracker' di DB).
-    // STATUS: TAMPILAN SAJA (preview) — tombol beli TIDAK aktif. Card tampil
-    // di /billing sbg pengumuman, tapi click tidak trigger checkout. Buyer
-    // menunggu aktivasi resmi (scope enforcement + admin panel siap).
-    // Aktifkan nanti dgn menghapus flag comingSoon di sini.
+    // AKTIF sejak migration 0009_scope.sql. Buyer via Mayar otomatis dapat
+    // scope='tracker' (lihat planScope di mayar.js). Admin bisa override
+    // per-user via panel /admin (modal Perpanjang → radio Scope).
     '1bulan': {
       name: 'Paket Tracker',
       dur: '1 Bulan',
       priceReal: 149000,
       priceCoret: 199000,
-      sub: 'Akses fitur Tracker rekomendasi trading (segera hadir)',
+      sub: 'Akses fitur Tracker rekomendasi trading',
       audience: ['Trader', 'Spekulan'],
       features: [
         'Akses penuh menu Tracker (rekomendasi Entry/TP/SL)',
         'Papan peringkat sekuritas + performa vs IHSG',
         'Update rekomendasi harian',
       ],
-      btnText: 'Segera Hadir',
+      btnText: 'Langganan Tracker 1 Bulan',
       mayarLink: '',
-      comingSoon: true,   // Flag: card tampil, tombol disabled + intercept click.
+      comingSoon: false,   // Sudah aktif — tombol beli enabled.
     },
     '3bulan': {
       name: 'Paket Kuartal',

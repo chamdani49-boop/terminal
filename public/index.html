@@ -2612,6 +2612,23 @@ select.form-control option{background:var(--card);color:var(--text)}
    semua user tanpa perlu body.tr-admin. Class `tr-admin` yg diset JS
    berdasarkan window.__ES_IS_ADMIN dibiarkan (harmless, no-op sekarang). */
 
+/* ── SCOPE ENFORCEMENT: paket Tracker (scope='tracker') ──────────────
+   User yg beli Paket Tracker Rp 149rb hanya boleh akses tab Tracker.
+   body.scope-tracker di-set oleh _ensureAccess() setelah /api/me
+   mengembalikan subscription.scope === 'tracker'. Admin skip (super).
+   Kita SEMBUNYIKAN semua nav-tab kecuali .tr-menu, semua bottom-nav-item
+   kecuali .tr-menu, dan search bar (karena search me-redirect ke halaman
+   Valuasi/Consensus yg gak boleh diakses).
+   Server tetap balas 402 upgrade_required utk /valuation.json, /macro.json,
+   dll — CSS ini hanya UI hint (user tidak lihat tombol yg dia gak boleh
+   pakai). Kalau CSS ini di-bypass, backend tetap protect. */
+body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu){display:none !important}
+body.scope-tracker .bottom-nav-item:not(.tr-menu){display:none !important}
+body.scope-tracker .search-wrap{display:none !important}
+/* Balance: karena semua tab lain hilang, tab Tracker jadi satu-satunya.
+   Beri sedikit style aktif supaya jelas ini menu yg boleh dipakai. */
+body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
+
 #page-tracker{padding:20px 24px 40px;max-width:1200px;margin:0 auto}
 @media(max-width:640px){ #page-tracker{padding:14px 12px 90px} }
 
@@ -15487,10 +15504,29 @@ async function _ensureAccess() {
     const j = await r.json();
     if (!j || !j.authenticated) { location.replace('/login'); return false; }
     window.__ES_IS_ADMIN = !!j.is_admin;
-    // Menu Tracker masih preview → hanya admin yg lihat tab-nya.
+    // Menu Tracker sekarang tampil utk semua user berlangganan — class
+    // tr-admin dibiarkan (harmless, no-op) demi backward compat CSS lawas.
     if (window.__ES_IS_ADMIN) try { document.body.classList.add('tr-admin'); } catch(_){}
     const active = j.subscription && j.subscription.active;
     if (!active && !j.is_admin) { location.replace('/billing'); return false; }
+
+    // Scope enforcement — user paket Tracker (scope='tracker') hanya boleh
+    // akses tab Tracker. Kita tandai body → CSS hide nav/bottom-nav lain
+    // + auto-navigate ke page Tracker saat masuk dashboard. Admin selalu
+    // punya akses penuh (skip). scope='full' = akses semua (default).
+    const scope = j.subscription && j.subscription.scope;
+    window.__ES_SCOPE = scope || (j.is_admin ? 'full' : 'full');
+    if (scope === 'tracker' && !j.is_admin) {
+      try { document.body.classList.add('scope-tracker'); } catch(_){}
+      // Navigate ke Tracker begitu SPA siap. Panggil 2x (sync + async)
+      // krn showPage() bisa belum ter-define saat _ensureAccess() jalan
+      // pertama; timeout memastikan tab Tracker aktif walau nanti ada
+      // logika restore last-tab yg jalan setelahnya.
+      try { if (typeof showPage === 'function') showPage('tracker'); } catch(_){}
+      setTimeout(function(){ try { if (typeof showPage === 'function') showPage('tracker'); } catch(_){} }, 200);
+      setTimeout(function(){ try { if (typeof showPage === 'function') showPage('tracker'); } catch(_){} }, 800);
+    }
+
     window.__ES_PROFILE = j;
     try { _renderAccount(j); } catch (_) {}
     try { _loadReferralStat(); } catch (_) {}

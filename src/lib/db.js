@@ -51,21 +51,38 @@ export async function getLatestSubscription(env, userId) {
     .bind(userId).first();
 }
 
+// Normalisasi nilai scope — hanya 2 nilai valid.
+//   'tracker' → akses hanya tab Tracker + /tracker.json
+//   'full'    → akses semua fitur (default; wajib untuk pelanggan lama)
+// Selain itu → dianggap 'full' (jaring pengaman thd nilai kotor).
+function normalizeScope(v) {
+  return v === 'tracker' ? 'tracker' : 'full';
+}
+
 // Aktifkan/perpanjang langganan. Jika sudah ada langganan aktif, tambahkan
 // durasi dari tanggal kedaluwarsa saat ini (stacking). Jika tidak, mulai dari sekarang.
-export async function activateSubscription(env, userId, plan, days, source = 'mayar', txnId = null) {
+// Parameter scope opsional:
+//   - null/undefined → PERTAHANKAN scope existing (kalau ada) atau default 'full'
+//   - 'tracker'      → paksa tracker-only (dipakai plan='1bulan')
+//   - 'full'         → paksa full access
+// Aturan penting: renewal user tracker (plan='1bulan') tetap 'tracker' —
+// TIDAK keliru 'upgrade' ke 'full' saat renewal.
+export async function activateSubscription(env, userId, plan, days, source = 'mayar', txnId = null, scope = null) {
   const t = now();
   const active = await getActiveSubscription(env, userId);
   const base = active && active.expires_at > t ? active.expires_at : t;
   const expires = base + days * 86400;
+  const scopeFinal = scope != null
+    ? normalizeScope(scope)
+    : (active && active.scope ? normalizeScope(active.scope) : 'full');
   if (active) {
-    await db(env).prepare("UPDATE subscriptions SET plan = ?, expires_at = ?, source = ?, mayar_txn_id = COALESCE(?, mayar_txn_id) WHERE id = ?")
-      .bind(plan, expires, source, txnId, active.id).run();
+    await db(env).prepare("UPDATE subscriptions SET plan = ?, expires_at = ?, source = ?, mayar_txn_id = COALESCE(?, mayar_txn_id), scope = ? WHERE id = ?")
+      .bind(plan, expires, source, txnId, scopeFinal, active.id).run();
     return getLatestSubscription(env, userId);
   }
   const id = randomId(16);
-  await db(env).prepare('INSERT INTO subscriptions (id, user_id, plan, status, started_at, expires_at, source, mayar_txn_id, created_at) VALUES (?,?,?,?,?,?,?,?,?)')
-    .bind(id, userId, plan, 'active', t, expires, source, txnId, t).run();
+  await db(env).prepare('INSERT INTO subscriptions (id, user_id, plan, status, started_at, expires_at, source, mayar_txn_id, created_at, scope) VALUES (?,?,?,?,?,?,?,?,?,?)')
+    .bind(id, userId, plan, 'active', t, expires, source, txnId, t, scopeFinal).run();
   return getLatestSubscription(env, userId);
 }
 
@@ -259,7 +276,7 @@ export async function listUsersWithSub(env) {
   const sql = (withSeen) => `
     SELECT u.id, u.email, u.name, u.created_at,
            s.plan AS plan, s.status AS sub_status, s.expires_at AS expires_at,
-           s.source AS source, s.mayar_txn_id AS txn${withSeen ? `,
+           s.source AS source, s.mayar_txn_id AS txn, s.scope AS scope${withSeen ? `,
            (SELECT MAX(a.seen_at) FROM account_ips a WHERE a.user_id = u.id) AS last_seen` : ''}
     FROM users u
     LEFT JOIN subscriptions s ON s.id = (
@@ -280,6 +297,7 @@ export async function listUsersWithSub(env) {
       email: r.email,
       nama: r.name || '-',
       paket: r.plan || '-',
+      scope: r.scope || null,          // 'full' | 'tracker' | null (user belum langganan)
       berakhir: r.expires_at || null,
       last_seen: r.last_seen || null,   // epoch detik aktivitas terakhir (null = belum pernah)
       status,
@@ -340,32 +358,38 @@ export async function listReferralsGrouped(env) {
   return Array.from(map.values()).sort((a, b) => (b.count - a.count) || (b.subscribed - a.subscribed));
 }
 
-export async function adminExtendDays(env, email, days, planOverride) {
+export async function adminExtendDays(env, email, days, planOverride, scopeOverride) {
   const u = await getUserByEmail(env, email);
   if (!u) throw new Error('User tidak ditemukan');
   const latest = await getLatestSubscription(env, u.id);
   const plan = planOverride || (latest ? latest.plan : 'custom');
-  return activateSubscription(env, u.id, plan, days, 'admin', null);
+  // scopeOverride: 'tracker' | 'full' | null. Kalau null → activateSubscription
+  // pertahankan scope existing (renewal) atau default 'full' utk baris baru.
+  return activateSubscription(env, u.id, plan, days, 'admin', null, scopeOverride || null);
 }
 
 // SET masa aktif = SEKARANG + days (override, BUKAN stacking). Dipakai admin
 // untuk MENGURANGI / menyetel ulang masa aktif (mis. set jadi 1 hari saja).
 // Berbeda dgn adminExtendDays yang menambah dari tanggal kedaluwarsa saat ini.
-export async function adminSetDays(env, email, days, planOverride) {
+// scopeOverride: 'tracker' | 'full' | null (pertahankan scope existing).
+export async function adminSetDays(env, email, days, planOverride, scopeOverride) {
   const u = await getUserByEmail(env, email);
   if (!u) throw new Error('User tidak ditemukan');
   const t = now();
   const expires = t + days * 86400;
   const latest = await getLatestSubscription(env, u.id);
   const plan = planOverride || (latest ? latest.plan : 'custom');
+  const scopeFinal = scopeOverride
+    ? normalizeScope(scopeOverride)
+    : (latest && latest.scope ? normalizeScope(latest.scope) : 'full');
   if (latest) {
-    await db(env).prepare("UPDATE subscriptions SET plan = ?, status = 'active', expires_at = ?, source = 'admin' WHERE id = ?")
-      .bind(plan, expires, latest.id).run();
+    await db(env).prepare("UPDATE subscriptions SET plan = ?, status = 'active', expires_at = ?, source = 'admin', scope = ? WHERE id = ?")
+      .bind(plan, expires, scopeFinal, latest.id).run();
     return getLatestSubscription(env, u.id);
   }
   const id = randomId(16);
-  await db(env).prepare('INSERT INTO subscriptions (id, user_id, plan, status, started_at, expires_at, source, mayar_txn_id, created_at) VALUES (?,?,?,?,?,?,?,?,?)')
-    .bind(id, u.id, plan, 'active', t, expires, 'admin', null, t).run();
+  await db(env).prepare('INSERT INTO subscriptions (id, user_id, plan, status, started_at, expires_at, source, mayar_txn_id, created_at, scope) VALUES (?,?,?,?,?,?,?,?,?,?)')
+    .bind(id, u.id, plan, 'active', t, expires, 'admin', null, t, scopeFinal).run();
   return getLatestSubscription(env, u.id);
 }
 
