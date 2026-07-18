@@ -4698,6 +4698,23 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   .tr-ov-latest-chg{font-size:9.5px}
   .tr-ov-latest-status {grid-row:2;grid-column:4;font-size:8.5px;padding:1px 5px}
   .tr-ov-latest-target {display:none}
+
+  /* FIX POPUP DI HP: span firm & ticker sebelumnya stretch mengisi
+     seluruh grid cell (default `justify-self:stretch`). Karena cell
+     firm ukurannya `1fr` → span firm menutupi ~60% row 1 width.
+     Tap di area itu selalu mendarat di firm (data-action="firm") →
+     openFirm fires (page switch ke detail firm), bukan popup chart
+     detail. Padahal di PC firm cell lebih sempit (banyak kolom
+     fixed lain), jadi ada whitespace di baris utk tap popup.
+     
+     Solusi: firm & tick jadi intrinsic width (justify-self:start),
+     firm dibatasi max-width 55% supaya nama panjang tetap ellipsize
+     TAPI selalu ada empty cell area di kanan span → tap di sana
+     bubble ke row.tr-ov-latest-row (no data-action) → popup fired.
+     Sinkron dgn behavior 3-zone di PC. */
+  .tr-ov-latest-tick,
+  .tr-ov-latest-firm{ justify-self:start; align-self:center }
+  .tr-ov-latest-firm{ max-width:55% }
 }
 
 /* Filter kelompok Basis × Target — reuse dari removed ranking wrap,
