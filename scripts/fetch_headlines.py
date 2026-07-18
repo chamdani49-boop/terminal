@@ -44,6 +44,7 @@ SOURCES = [
     ("IDX Channel",       "idxchannel.com"),
     ("IDN Financials",    "idnfinancials.com"),
     ("Kabar Bursa",       "kabarbursa.com"),
+    ("IQPlus",            "iqplus.info"),
 ]
 
 # Portal "luas" yang meliput banyak topik di luar pasar modal (otomotif,
