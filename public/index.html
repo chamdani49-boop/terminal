@@ -14682,8 +14682,23 @@ function getRecRating(r, code) {
 
   // Rec harus minimal 1 bulan lalu — KECUALI ada data harian (status), rec
   // baru pun bisa dinilai dari candle harian.
+  //
+  // FALLBACK (fix N/A untuk rec bulan-ini):
+  // Sebelumnya: rec-bulan-ini tanpa `status` LANGSUNG return null → tampil
+  // "N/A" di kolom Returns/Risk. Ini bikin inkonsistensi visual krn rec
+  // seangkatan yg PUNYA status tetap muncul bar-nya (data pipeline
+  // rec-status.json rebuild sekali sehari, sedangkan consensus_slim di
+  // data.json refresh tiap 5-15 menit → ada window rec baru belum
+  // ter-cover).
+  //
+  // Sekarang: tetap lanjut hitung rating dari monthly price_history +
+  // live data yang tersedia. Rating hasil biasanya konservatif (drawdown
+  // ≈ 0, returns bar 1) karena candle bulan-ini baru 1 titik, tapi jauh
+  // lebih informatif dan konsisten dgn rec seangkatan drpd "N/A" kosong.
+  // Rating akan otomatis akurat setelah cron `refresh-ohlc.yml` (sore
+  // WIB) rebuild rec-status.json.
   const ageMonths = ph.length - 1 - releaseIdx;
-  if (ageMonths < 1 && !status) return null;
+  // (Early-return "return null" utk ageMonths<1 && !status dihapus di sini.)
 
   // ── Price slice sejak rilis (monthly, untuk performance + fallback) ─────
   const slice = ph.slice(releaseIdx).map(row => row[code]).filter(v => v > 0);
