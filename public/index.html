@@ -4169,7 +4169,21 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-recmodal-tv iframe{width:100%;height:100%;border:0;display:block}
 /* Chart kita — hide saat mode='tv' (via kelas .off di container chart-wrap). */
 .tr-recmodal-chart-wrap.tv-mode .tr-recmodal-chart,
-.tr-recmodal-chart-wrap.tv-mode .tr-recmodal-zones{display:none !important}
+.tr-recmodal-chart-wrap.tv-mode .tr-recmodal-zones,
+.tr-recmodal-chart-wrap.tv-mode .tr-recmodal-watermark{display:none !important}
+/* Brand watermark utk mode 'Chart Kita'. Samar tapi kebaca — z-index di
+   antara canvas (default 0) dan zones (z-index:5), jadi label TP/SL/entry
+   TIDAK ketutup watermark. pointer-events:none supaya interaksi crosshair
+   lightweight-charts tidak terganggu. */
+.tr-recmodal-watermark{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:2;pointer-events:none;user-select:none;
+  font-family:inherit;font-weight:800;letter-spacing:.5px;
+  font-size:clamp(22px, 4.6vw, 56px);
+  white-space:nowrap;text-transform:lowercase;
+  color:rgba(15,23,42,0.055);
+}
+[data-theme="dark"] .tr-recmodal-watermark{color:rgba(255,255,255,0.055)}
 /* Badge hit di level cards — 'TERISI' utk entry, 'HIT' utk TP, 'KENA' utk SL.
    Position absolute di corner atas kanan card. Card sendiri sudah relative. */
 .tr-recmodal-level-hit{
@@ -27306,6 +27320,10 @@ document.addEventListener('keydown', (e) => {
     </div>
     <div class="tr-recmodal-chart-wrap" id="trRecModalChartWrap">
       <div class="tr-recmodal-chart" id="trRecModalChart"></div>
+      <!-- Watermark brand — samar, di atas canvas chart tapi di bawah
+           zone overlay (zones z-index:5) supaya label TP/SL tetap kebaca.
+           Auto-hide saat mode TradingView aktif (tv-mode). -->
+      <div class="tr-recmodal-watermark" aria-hidden="true">economstock terminal</div>
       <div class="tr-recmodal-zones" id="trRecModalZones"></div>
       <!-- TradingView widget iframe — di-inject saat user toggle ke TV mode.
            HTML tetap kosong sampai user klik supaya tidak load iframe eksternal
