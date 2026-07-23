@@ -889,6 +889,31 @@ select.form-control option{background:var(--card);color:var(--text)}
   #savingQuickContent .qr-val{font-size:12px}
 }
 
+/* Brand attribution "by Economstock" — footer kecil kartu Ringkasan.
+   Italic, muted, kanan-bawah supaya tidak dominan tapi tetap terlihat. */
+#savingQuickResult .qr-attr{
+  margin-top:10px;padding-top:8px;
+  border-top:1px dashed var(--border);
+  text-align:right;
+  font-family:inherit;font-size:11px;font-weight:600;font-style:italic;
+  letter-spacing:.3px;color:var(--text3);opacity:.75;
+  user-select:none;
+}
+
+/* Watermark chart simulasi DCA/Lump-Sum. Konsisten dgn watermark
+   tracker/consensus (uppercase, bold, samar). Posisi tengah-bawah
+   di atas x-axis Chart.js. pointer-events:none supaya tooltip &
+   hover Chart.js tetap normal. */
+.saving-chart-watermark{
+  position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+  z-index:1;pointer-events:none;user-select:none;
+  font-family:inherit;font-weight:800;letter-spacing:.5px;
+  font-size:clamp(5px, 1vw, 11px);
+  white-space:nowrap;text-transform:uppercase;
+  color:rgba(15,23,42,0.055);
+}
+[data-theme="dark"] .saving-chart-watermark{color:rgba(255,255,255,0.055)}
+
 /* Rincian dividen per tahun — kartu kecil di bawah ringkasan (additive).
    Serasi dgn estetika qr-list; tidak mengubah layout grid yang ada. */
 #savingQuickContent .qr-div-detail{
@@ -5740,6 +5765,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="card" id="savingQuickResult" style="display:none">
           <div class="card-title">Ringkasan</div>
           <div id="savingQuickContent"></div>
+          <!-- Brand attribution di kartu ringkasan (footer kecil, italic). -->
+          <div class="qr-attr" aria-hidden="true">by Economstock</div>
         </div>
       </div>
 
@@ -5764,7 +5791,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
               </div>
             </div>
           </div>
-          <div class="chart-wrap" style="height:220px"><canvas id="savingChart"></canvas></div>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="savingChart"></canvas>
+            <!-- Watermark brand samar di chart simulasi. Konsisten dgn
+                 watermark tracker/consensus. z-index rendah + pointer-events
+                 off supaya tidak mengganggu Chart.js tooltip. -->
+            <div class="saving-chart-watermark" aria-hidden="true">economstock terminal</div>
+          </div>
         </div>
         <div class="card" id="savingTableCard" style="display:none">
           <div class="card-title">Detail Per Periode</div>
