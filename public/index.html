@@ -914,6 +914,20 @@ select.form-control option{background:var(--card);color:var(--text)}
 }
 [data-theme="dark"] .saving-chart-watermark{color:rgba(255,255,255,0.055)}
 
+/* Watermark chart utama Dashboard (canvas #mainChart). Style identik
+   dgn watermark simulasi — kecil, bold, uppercase, samar. Posisi
+   bottom-center di atas x-axis. pointer-events:none supaya tooltip
+   Chart.js tetap normal. */
+.dashboard-chart-watermark{
+  position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+  z-index:1;pointer-events:none;user-select:none;
+  font-family:inherit;font-weight:800;letter-spacing:.5px;
+  font-size:clamp(5px, 1vw, 11px);
+  white-space:nowrap;text-transform:uppercase;
+  color:rgba(15,23,42,0.055);
+}
+[data-theme="dark"] .dashboard-chart-watermark{color:rgba(255,255,255,0.055)}
+
 /* Rincian dividen per tahun — kartu kecil di bawah ringkasan (additive).
    Serasi dgn estetika qr-list; tidak mengubah layout grid yang ada. */
 #savingQuickContent .qr-div-detail{
@@ -5475,7 +5489,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <div class="period-tab active" onclick="setPeriod(0)">All</div>
           </div>
         </div>
-        <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+        <div class="chart-wrap">
+          <canvas id="mainChart"></canvas>
+          <!-- Watermark brand samar di chart Dashboard. Konsisten dgn
+               watermark tracker/consensus/simulasi. Posisi bottom-center
+               di atas x-axis Chart.js. -->
+          <div class="dashboard-chart-watermark" aria-hidden="true">economstock terminal</div>
+        </div>
       </div>
 
       <!-- Analyst Recommendations Table -->
