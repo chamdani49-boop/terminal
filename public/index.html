@@ -2612,6 +2612,21 @@ select.form-control option{background:var(--card);color:var(--text)}
   animation:stamp-in .35s cubic-bezier(.2,1.3,.5,1) both;
 }
 [data-theme="dark"] .rec-chart-stamp{ background:rgba(74,222,128,.16) }
+/* Brand watermark utk chart consensus/dashboard rec-modal. Samar (~5.5%
+   opacity), z-index:1 (DI BAWAH stamp target-tercapai z-index:5) supaya
+   label "TARGET TERCAPAI" tetap terbaca jelas kalaupun overlap. Posisi
+   center chart (bukan top seperti tracker) supaya menjauh fisik dari
+   stamp yg berada di top:10px. pointer-events:none supaya tidak
+   mengganggu tooltip lightweight-charts. */
+.rec-modal-watermark{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:1;pointer-events:none;user-select:none;
+  font-family:inherit;font-weight:800;letter-spacing:1px;
+  font-size:clamp(10px, 2vw, 22px);
+  white-space:nowrap;text-transform:uppercase;
+  color:rgba(15,23,42,0.055);
+}
+[data-theme="dark"] .rec-modal-watermark{color:rgba(255,255,255,0.055)}
 .rec-chart-stamp-date{
   font-size:9px;font-weight:700;letter-spacing:.3px;
   text-transform:none;opacity:.85;
@@ -15119,6 +15134,15 @@ function renderRecChart(containerId, candles, releasePrice, targetPrice, recDate
       container.appendChild(stamp);
     }
   }
+
+  // ── Brand watermark samar di area chart ──
+  // Selalu di BAWAH stamp target-tercapai (z-index:1 vs stamp z-index:5)
+  // jadi label "TARGET TERCAPAI" tetap terbaca jelas kalaupun kena overlap.
+  const wm = document.createElement('div');
+  wm.className = 'rec-modal-watermark';
+  wm.textContent = 'economstock terminal';
+  wm.setAttribute('aria-hidden', 'true');
+  container.appendChild(wm);
 
   // Responsive resize
   const ro = new ResizeObserver(() => {
