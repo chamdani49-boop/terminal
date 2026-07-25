@@ -10819,6 +10819,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var d = (window.__TR_getData && window.__TR_getData()) || window.__TR_DATA__ || {};
       renderIhsg(d);
     } catch(_){}
+    // Juga refresh chip IHSG di Overview chart (Performa 30 Hari) supaya
+    // real-time mirror sempurna dgn dashboard Statistik Deskriptif — same
+    // trigger point, same source getStatsMerged('IHSG').current.
+    try {
+      if (typeof window.__TR_refreshOverviewIhsgChip === 'function'){
+        window.__TR_refreshOverviewIhsgChip();
+      }
+    } catch(_){}
   };
   // Polling ringan tiap 5s — pastikan tracker IHSG selalu sinkron dgn
   // getStatsMerged('IHSG') dashboard, meski applyLiveFeed hook lupa
@@ -12150,14 +12158,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
   }
 
-  // Periodik refresh chip IHSG saat period live (30D / MTD / bulan
-  // berjalan tahun ini / tahun berjalan). Untuk period historikal
-  // (bulan/tahun lalu), nilai statis → tidak perlu refresh.
+  // Refresh chip IHSG saat period live (30D / MTD / bulan berjalan
+  // tahun ini / tahun berjalan). Untuk period historikal → statis.
   //
   // Data source aligned dgn updateChart():
   //   30D → series30d filtered (daily)
   //   Lainnya (live) → price_history monthly via _buildIhsgFallbackFromMonthly
-  setInterval(function(){
+  //
+  // Trigger:
+  //   1. setInterval 5s → polling ringan, sinkron dgn tracker Live IHSG
+  //      ticker (renderIhsg) yg juga 5s. Match dashboard refresh rate.
+  //   2. window.__TR_refreshOverviewIhsgChip() exposed global → dashboard
+  //      applyLiveFeed bisa trigger langsung setiap live feed update
+  //      masuk (real-time mirror).
+  function _refreshOverviewIhsgChipLive(){
     var d = window.__TR_getData && window.__TR_getData();
     if (!d) return;
     var ihsgS = (d.ihsg && d.ihsg.series30d) || [];
@@ -12179,7 +12193,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
       filtered = _buildIhsgFallbackFromMonthly(_chartPeriod);
     }
     _updateIhsgChip(filtered, true);
-  }, 15000);
+  }
+  // Expose ke global — supaya applyLiveFeed di dashboard bisa trigger
+  // refresh chip setiap live feed IHSG update masuk (real-time mirror
+  // sempurna dgn Statistik Deskriptif dashboard).
+  window.__TR_refreshOverviewIhsgChip = function(){
+    try { _refreshOverviewIhsgChipLive(); } catch(_){}
+  };
+  // Polling 5s — samain rate dgn tracker Live IHSG ticker (renderIhsg).
+  setInterval(function(){
+    try { _refreshOverviewIhsgChipLive(); } catch(_){}
+  }, 5000);
 
   // ── Sidebar Peringkat (list firm dgn dot warna + last%) ──
   // Adopsi design rupiah-monitor AllCurrenciesChart. Baris berisi:
