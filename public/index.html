@@ -11730,6 +11730,75 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return out;
   }
 
+  // ── IHSG chip di header chart — sinkron dgn dashboard ──
+  // Current price prioritaskan window.getStatsMerged('IHSG').current
+  // (same source dgn row IHSG di dashboard Statistik Deskriptif — update
+  // live saat market jalan via applyLiveFeed / recomputeStats). Base 30d
+  // tetap dari tracker.json series30d (close 30 hari lalu, historical).
+  // Fallback ke ihsgSeries.last.close kalau getStatsMerged belum ready
+  // (mis. dashboard IIFE belum di-init saat Overview chart pertama render).
+  function _updateIhsgChip(ihsgSeries){
+    var chipVal = $('trIhsgChipVal');
+    var chipSub = $('trIhsgChipSub');
+    if (!chipVal && !chipSub) return;
+
+    var base = (ihsgSeries && ihsgSeries.length) ? +ihsgSeries[0].close : null;
+    var current = null;
+
+    // Priority 1: getStatsMerged (dashboard live).
+    try {
+      if (typeof window.getStatsMerged === 'function'){
+        var s = window.getStatsMerged('IHSG');
+        if (s && Number.isFinite(s.current) && s.current > 0){
+          current = s.current;
+        }
+      }
+    } catch(_){}
+    // Priority 2: fallback ke last close dari tracker.json series30d.
+    if (current == null && ihsgSeries && ihsgSeries.length){
+      var lastClose = +ihsgSeries[ihsgSeries.length - 1].close;
+      if (Number.isFinite(lastClose) && lastClose > 0) current = lastClose;
+    }
+
+    var ret = null;
+    if (Number.isFinite(base) && base > 0 && Number.isFinite(current)){
+      ret = ((current - base) / base) * 100;
+    }
+
+    if (chipVal){
+      if (ret == null){
+        chipVal.textContent = '—';
+        chipVal.className = 'tr-ihsg-chip-val';
+      } else {
+        chipVal.textContent = (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%';
+        chipVal.className = 'tr-ihsg-chip-val ' + (ret >= 0 ? 'up' : 'dn');
+      }
+    }
+    if (chipSub){
+      if (base != null && current != null){
+        // Format harga: 2 desimal (matching dashboard row IHSG).
+        chipSub.textContent =
+          Number(base).toLocaleString('id-ID', {minimumFractionDigits:2, maximumFractionDigits:2})
+          + ' → ' +
+          Number(current).toLocaleString('id-ID', {minimumFractionDigits:2, maximumFractionDigits:2});
+      } else {
+        chipSub.textContent = '—';
+      }
+    }
+  }
+
+  // Periodik refresh chip IHSG supaya sinkron dgn live feed dashboard.
+  // getStatsMerged('IHSG').current berubah saat DATA.live update via
+  // polling market. Refresh chip tiap 15s (ringan — cuma 1 call + 2 DOM
+  // update). Full chart TIDAK di-refresh (mahal, tidak perlu — line
+  // firm tidak berubah minute-by-minute).
+  setInterval(function(){
+    var d = window.__TR_getData && window.__TR_getData();
+    if (!d) return;
+    var ihsgS = (d.ihsg && d.ihsg.series30d) || [];
+    _updateIhsgChip(ihsgS);
+  }, 15000);
+
   // ── Sidebar Peringkat (list firm dgn dot warna + last%) ──
   // Adopsi design rupiah-monitor AllCurrenciesChart. Baris berisi:
   //   [rank] [dot] [code] [nama-singkat] [pct]
@@ -11873,38 +11942,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
       x.color = _CHART_PALETTE[i % _CHART_PALETTE.length];
     });
 
-    // IHSG stats untuk chip header (BUKAN di-plot sbg line di chart).
-    // Alasan: magnitude return firm (sum-of-pnl 100+ trade → bisa +140%)
-    // vs IHSG (index price change ±7% per 30 hari) TERLALU BEDA. Kalau
-    // di-plot bareng, IHSG jadi flat line di 0% & user bingung ('kok gitu?
-    // apa data dummy?'). Solusi: IHSG di-lift ke chip header sbg reference
-    // number — user tetap dapat konteks 'berapa return market' tanpa
-    // visual clutter di canvas chart.
-    var ihsgBase = ihsgSeries.length ? +ihsgSeries[0].close : null;
-    var ihsgLast = ihsgSeries.length ? +ihsgSeries[ihsgSeries.length - 1].close : null;
-    var ihsgRet = null;
-    if (Number.isFinite(ihsgBase) && ihsgBase > 0 && Number.isFinite(ihsgLast)){
-      ihsgRet = ((ihsgLast - ihsgBase) / ihsgBase) * 100;
-    }
-    // Update chip di header chart.
-    var chipVal = $('trIhsgChipVal');
-    var chipSub = $('trIhsgChipSub');
-    if (chipVal){
-      if (ihsgRet == null){
-        chipVal.textContent = '—';
-        chipVal.className = 'tr-ihsg-chip-val';
-      } else {
-        chipVal.textContent = (ihsgRet >= 0 ? '+' : '') + ihsgRet.toFixed(2) + '%';
-        chipVal.className = 'tr-ihsg-chip-val ' + (ihsgRet >= 0 ? 'up' : 'dn');
-      }
-    }
-    if (chipSub){
-      if (ihsgBase != null && ihsgLast != null){
-        chipSub.textContent = Number(ihsgBase).toLocaleString('id-ID') + ' → ' + Number(ihsgLast).toLocaleString('id-ID');
-      } else {
-        chipSub.textContent = '—';
-      }
-    }
+    // IHSG stats untuk chip header. Sinkron dgn Dashboard Statistik
+    // Deskriptif — pakai window.getStatsMerged('IHSG') sbg current price
+    // (same source dgn row IHSG di dashboard yg update live saat market
+    // jalan). Base tetap dari tracker.json ihsgSeries[0] (close 30 hari
+    // lalu). Return% = (currentLive - base30d) / base30d × 100.
+    // Fallback: kalau getStatsMerged belum ready → pakai
+    // ihsgSeries[last].close (data build-tracker.js, mungkin lag 1 hari).
+    _updateIhsgChip(ihsgSeries);
 
     var css = getComputedStyle(document.documentElement);
     var text3 = css.getPropertyValue('--text3').trim() || '#a49cc0';
@@ -11971,11 +12016,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
           // menampilkan nama firm + warna + last% (lebih informatif).
           legend: { display: false },
           tooltip: {
-            // Mode 'nearest' → cuma tampilkan 1 titik terdekat cursor
-            // (bukan semua line sekaligus). Adopsi behavior tooltip
-            // seasonality di menu Pasar Live — reduce clutter saat
-            // banyak line overlap. Tooltip minimal: nama sekuritas +
-            // return% pada tgl di titik itu.
+            // Mode 'nearest' → cuma tampilkan 1 titik terdekat cursor.
+            // Adopsi behavior tooltip seasonality di menu Pasar Live —
+            // reduce clutter. Tooltip 2 baris:
+            //   Line 1: 'Nama Sekuritas: +12.34%'      (kumulatif s.d. tgl)
+            //   Line 2: 'Return hari ini: +2.10%'      (delta vs tgl sebelumnya)
+            // afterLabel utk baris ke-2. Skip baris 2 kalau idx=0 (tidak
+            // ada tgl sebelumnya) atau tgl tanpa aktivitas trade (delta=0).
             mode: 'nearest', intersect: false,
             backgroundColor: card, borderColor: border, borderWidth: 1,
             titleColor: text2, bodyColor: text2, padding: 10,
@@ -11984,6 +12031,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
                 var y = it.parsed.y;
                 var pctStr = (Number.isFinite(y)) ? ((y>=0?'+':'') + y.toFixed(2) + '%') : '—';
                 return it.dataset.label + ': ' + pctStr;
+              },
+              afterLabel: function(it){
+                var idx = it.dataIndex;
+                if (idx == null || idx <= 0) return '';
+                var cur = it.parsed.y;
+                var prev = it.dataset.data[idx - 1];
+                if (!Number.isFinite(cur) || !Number.isFinite(prev)) return '';
+                var delta = cur - prev;
+                // Kalau delta hampir 0 (< 0.005%), skip — tgl tsb tidak
+                // ada trade selesai buat firm ini.
+                if (Math.abs(delta) < 0.005) return '';
+                var sign = delta >= 0 ? '+' : '';
+                return 'Return hari ini: ' + sign + delta.toFixed(2) + '%';
               }
             }
           }
