@@ -60,6 +60,11 @@
   // ke `html.tracker-loading #tr-view-main ...` (lihat CSS block).
   try { document.documentElement.classList.add('tracker-loading'); } catch (e) {}
 </script>
+<!-- Broker codes IDX (source of truth utk kode broker + flag asing/lokal).
+     Loaded BLOCKING (tanpa defer) supaya window.BrokerCodes tersedia
+     sebelum inline scripts di body execute. File kecil (~6KB), same-origin,
+     cached agresif setelah first load. -->
+<script src="/broker-codes.js"></script>
 <!-- Chart libs → semua di-defer supaya TIDAK block first-paint. Efeknya:
      - HTML mulai render segera setelah parsing head (splash Android PWA
        cepat hilang → loader kustom langsung muncul).
@@ -3222,6 +3227,15 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-mdet-item.active .rk{color:var(--accent)}
 .tr-mdet-item .av{width:32px;height:32px;flex-shrink:0;border-radius:8px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text2);letter-spacing:-.3px}
 .tr-mdet-item.active .av{background:var(--grad);color:#fff;border-color:transparent}
+/* Broker asing → kode 2 huruf di kotak avatar dirender merah. Berlaku
+   di semua tempat render firm avatar (sidebar Sekuritas, heading detail
+   firm #trPfAv, leaderboard view Per Firm .tr-lb-av). Saat item aktif
+   di sidebar (background gradient purple), pakai red-300 yg lebih terang
+   supaya tetap kebaca di atas gradient. */
+.av.brk-foreign,
+.tr-lb-av.brk-foreign,
+#trPfAv.brk-foreign{color:var(--red)}
+.tr-mdet-item.active .av.brk-foreign{color:#fca5a5}
 .tr-mdet-item .m{min-width:0;flex:1}
 .tr-mdet-item .nm{font-weight:700;font-size:12.5px;letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .tr-mdet-item .st{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:1px;display:flex;gap:6px}
@@ -7714,7 +7728,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── HERO / KPI ─────────────────────────────────────
   function populateHero(firm){
-    $id('trPfAv').textContent = initials(firm.name);
+    // Avatar: pakai kode broker IDX (2 huruf) via window.BrokerCodes.
+    // Fallback ke inisial nama kalau broker tidak ada di daftar.
+    // Broker asing → class .brk-foreign (huruf merah, styling di CSS).
+    var _av = $id('trPfAv');
+    if(_av){
+      var _bk = (window.BrokerCodes && window.BrokerCodes.avatar) ? window.BrokerCodes.avatar(firm.name) : null;
+      _av.textContent = _bk ? _bk.text : initials(firm.name);
+      _av.classList.toggle('brk-foreign', !!(_bk && _bk.foreign));
+    }
     $id('trPfName').textContent = firmShort(firm.name);
     var vb = $id('trPfVBadge'); if(vb) vb.style.display = firm.verified ? '' : 'none';
     var analystCount = (firm.analysts||[]).length;
@@ -10135,12 +10157,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var actCls = (f.id === activeId) ? ' active' : '';
       var rk = rankMap[f.id] || 0;
       var rkStr = rk ? (rk < 100 ? String(rk).padStart(2,'0') : String(rk)) : '—';
+      // Avatar: pakai kode broker IDX (via window.BrokerCodes) — fallback
+      // ke inisial nama. Broker asing → class .brk-foreign (huruf merah).
+      var _bk = (window.BrokerCodes && window.BrokerCodes.avatar) ? window.BrokerCodes.avatar(f.name) : null;
+      var _avTxt = _bk ? _bk.text : initials(f.name);
+      var _avCls = (_bk && _bk.foreign) ? ' brk-foreign' : '';
       // Sidebar cuma tampilin nomor peringkat + nama + trade + winrate.
       // Net return default (50/50 staged) sengaja TIDAK di sini biar tak
       // bikin confusion vs Net Return mode-aware di panel kanan.
       return '<div class="tr-mdet-item'+actCls+'" data-firm-id="'+esc(f.id||'')+'" title="#'+rkStr+' • '+esc(f.name||'')+'">'
         + '<div class="rk">'+rkStr+'</div>'
-        + '<div class="av">'+esc(initials(f.name))+'</div>'
+        + '<div class="av'+_avCls+'">'+esc(_avTxt)+'</div>'
         + '<div class="m">'
           + '<div class="nm">'+esc(short)+vb+'</div>'
           + '<div class="st"><span>'+(f.trades||0)+' trd</span><span>WR '+wrStr+'</span></div>'
@@ -11480,10 +11507,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
         : ((f.recsActive || []).length + ' aktif · menunggu selesai');
       var statVal = hasTrades ? fmtPct(net) : '—';
       var statCls = hasTrades ? (net >= 0 ? 'tr-up' : 'tr-dn') : '';
+      // Avatar: pakai kode broker IDX (via window.BrokerCodes) — fallback
+      // ke inisial nama. Broker asing → class .brk-foreign (huruf merah).
+      var _fbk = (window.BrokerCodes && window.BrokerCodes.avatar) ? window.BrokerCodes.avatar(f.name) : null;
+      var _fbkTxt = _fbk ? _fbk.text : initials(f.name);
+      var _fbkCls = (_fbk && _fbk.foreign) ? ' brk-foreign' : '';
       // data-firm-id (bukan data-key) → tidak trigger openProfile analis lama
       return '<div class="tr-lb-item" data-firm-id="' + esc(f.id) + '" role="button" title="Lihat detail di Tab Performa">'
         + '<div class="tr-lb-rank ' + rc + '">' + (i + 1) + '</div>'
-        + '<div class="tr-lb-av">' + initials(f.name) + '</div>'
+        + '<div class="tr-lb-av' + _fbkCls + '">' + esc(_fbkTxt) + '</div>'
         + '<div class="tr-lb-info">'
           + '<div class="tr-lb-name">' + esc(name) + ' ' + ver + '</div>'
           + '<div class="tr-lb-firm">' + subLine + '</div>'
