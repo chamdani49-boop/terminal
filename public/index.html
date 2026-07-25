@@ -8479,6 +8479,36 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     ihsgDatesSorted.sort();
 
+    // ── Fallback: pastikan latest trading day ada di IHSG series ──
+    // Yahoo Finance API ^JKSE (source utk ihsg.seriesFull) kadang delay
+    // 1-2 hari utk close terbaru. Kalau ada gap antara ihsg.date terakhir
+    // dgn data.json.live.IHSG (yg update dari Google Sheet Live tab —
+    // biasanya lebih fresh), pakai live price sbg close untuk latest
+    // trading day (inferred dari data.json._meta.generated_at, roll-
+    // back ke Jumat kalau weekend).
+    try {
+      var DATA_G = window.DATA;
+      if(DATA_G && DATA_G.live && DATA_G.live.IHSG){
+        var livePrice = +DATA_G.live.IHSG.price;
+        var metaGen   = DATA_G._meta && DATA_G._meta.generated_at;
+        if(Number.isFinite(livePrice) && livePrice > 0 && metaGen){
+          var genDate = new Date(metaGen);
+          var dow = genDate.getUTCDay(); // 0=Sun, 6=Sat
+          if(dow === 0) genDate.setUTCDate(genDate.getUTCDate() - 2); // Sun → Fri
+          else if(dow === 6) genDate.setUTCDate(genDate.getUTCDate() - 1); // Sat → Fri
+          var liveDateStr = genDate.toISOString().slice(0, 10);
+          var lastKnown = ihsgDatesSorted.length ? ihsgDatesSorted[ihsgDatesSorted.length - 1] : null;
+          // Append kalau live date > last known di seriesFull.
+          // Skip kalau sama (data sudah ada dari seriesFull).
+          if(lastKnown && liveDateStr > lastKnown && !ihsgClose[liveDateStr]){
+            ihsgClose[liveDateStr] = livePrice;
+            ihsgDatesSorted.push(liveDateStr);
+            ihsgDatesSorted.sort();
+          }
+        }
+      }
+    } catch(_){}
+
     // Compute IHSG daily return per date (%). Formula: (close_t - close_{t-1}) / close_{t-1} * 100.
     // Untuk tgl pertama di seriesFull → 0% (tidak ada prev). Buat map yg
     // cover semua tgl di ihsgSeries.
