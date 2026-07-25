@@ -7120,6 +7120,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <button type="button" class="tr-tab" data-tab="tp1">TP1 (<span id="trPfTabTp1N">0</span>)</button>
           <button type="button" class="tr-tab" data-tab="tp2">TP2 (<span id="trPfTabTp2N">0</span>)</button>
           <button type="button" class="tr-tab" data-tab="sl">SL (<span id="trPfTabSlN">0</span>)</button>
+          <button type="button" class="tr-tab" data-tab="expired">Expired (<span id="trPfTabExpN">0</span>)</button>
         </div>
         <div class="tr-rec-list slim" id="trPfRecList"></div>
 
@@ -8461,6 +8462,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function _recHitSL(r){
     return r && String(r.closedBy||'') === 'SL';
   }
+  // Expired = rec sudah closed tapi TIDAK menyentuh TP maupun SL sampai
+  // horizon habis. Backend simpan dua varian: 'EXPIRED' (rec triggered
+  // lalu horizon habis) & 'EXPIRED_UNFILLED' (rec tidak pernah triggered
+  // / harga tak menyentuh entry sampai kadaluarsa 10 hari). Dua-duanya
+  // masuk kategori "sudah lewat waktu tanpa hit apa2".
+  function _recHitExpired(r){
+    var cb = r && String(r.closedBy||'');
+    return cb === 'EXPIRED' || cb === 'EXPIRED_UNFILLED';
+  }
   function _sortByDate(arr, dir){
     return arr.slice().sort(function(a,b){
       var da = String(a.openDate||a.exitDate||'');
@@ -8511,6 +8521,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var histTP1F  = histListF.filter(_recHitTP1);
     var histTP2F  = histListF.filter(_recHitTP2);
     var histSlF   = histListF.filter(_recHitSL);
+    var histExpF  = histListF.filter(_recHitExpired);
 
     // Tab counters pakai LIST YG SUDAH DIFILTER TGL (reflect filter)
     var allN  = actListF.length + pendListF.length + missListF.length + histListF.length;
@@ -8519,12 +8530,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var tp1N  = histTP1F.length;
     var tp2N  = histTP2F.length;
     var slN   = histSlF.length;
+    var expN  = histExpF.length;
     var e; e=$id('trPfTabAllN');  if(e) e.textContent=allN;
     e=$id('trPfTabActN');  if(e) e.textContent=actN;
     e=$id('trPfTabPendN'); if(e) e.textContent=pendN;
     e=$id('trPfTabTp1N');  if(e) e.textContent=tp1N;
     e=$id('trPfTabTp2N');  if(e) e.textContent=tp2N;
     e=$id('trPfTabSlN');   if(e) e.textContent=slN;
+    e=$id('trPfTabExpN');  if(e) e.textContent=expN;
 
     // Pilih list sesuai tab (dari yg sudah difilter tgl)
     var list;
@@ -8534,6 +8547,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       case 'tp1':     list = histTP1F; break;
       case 'tp2':     list = histTP2F; break;
       case 'sl':      list = histSlF; break;
+      case 'expired': list = histExpF; break;
       case 'all':
       default:        list = actListF.concat(missListF).concat(pendListF).concat(histListF); break;
     }
@@ -8829,7 +8843,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     syncRecTabButtons();
     rerenderAll();
   }
-  var _VALID_REC_TABS = ['all','active','pending','tp1','tp2','sl'];
+  var _VALID_REC_TABS = ['all','active','pending','tp1','tp2','sl','expired'];
   function switchRecTab(tab){
     if(!_currentFirm || _VALID_REC_TABS.indexOf(tab)<0) return;
     _currentTab = tab;
