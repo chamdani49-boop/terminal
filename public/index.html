@@ -12331,7 +12331,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
         // behavior klik row di sidebar Peringkat). Bekerja dgn nearest
         // mode: Chart.js provide array elements[] paling dekat click point,
         // ambil elements[0].datasetIndex → firmId dari dataset.
+        //
+        // MOBILE (≤900px, saat sidebar Peringkat stack di bawah chart):
+        // toggle highlight via klik chart di-disable. Highlight hanya
+        // dari klik row di sidebar Peringkat. Setelah highlight aktif,
+        // tap di area chart tetap memunculkan tooltip popup (interaction
+        // mode 'nearest' + tooltip.filter → cuma line highlighted yg
+        // tampil tooltipnya). Rationale: di layar sempit gampang salah-
+        // sentuh line, dan alur "pilih dari list → tap untuk lihat detail"
+        // lebih ergonomis untuk jari.
         onClick: function(event, elements, chart){
+          if (typeof window !== 'undefined' && window.innerWidth <= 900) return;
           if (!elements || !elements.length) return;
           var idx = elements[0].datasetIndex;
           var ds = chart.data.datasets[idx];
@@ -12341,10 +12351,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
           if (d) updateChart(d);
         },
         // Cursor pointer saat cursor di area line (indikator clickable),
-        // default arrow di area kosong.
+        // default arrow di area kosong. Skip pointer cursor di mobile
+        // (klik chart untuk highlight sudah disabled di ≤900px).
         onHover: function(event, elements, chart){
           var cv = chart && chart.canvas;
-          if (cv) cv.style.cursor = (elements && elements.length) ? 'pointer' : 'default';
+          if (!cv) return;
+          if (typeof window !== 'undefined' && window.innerWidth <= 900){
+            cv.style.cursor = 'default';
+            return;
+          }
+          cv.style.cursor = (elements && elements.length) ? 'pointer' : 'default';
         }
       }
     });
