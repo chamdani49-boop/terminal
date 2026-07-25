@@ -7439,7 +7439,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-card" style="margin-top:14px">
             <div class="tr-card-h">
               <div>
-                <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Grafik Performa Analis 30 Hari</div>
+                <!-- Title di-update dinamis oleh renderDayChart berdasar
+                     _pfPeriod aktif: "30 Hari Terakhir", "Januari 2026",
+                     "Tahun 2026", dst. -->
+                <div class="tr-card-title" id="trPfDayChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Grafik Performa Analis · 30 Hari Terakhir</div>
                 <div class="tr-card-desc">P/L harian sekuritas (per exitDate) vs return harian IHSG + garis kumulatif — ikut mode eksekusi di atas.</div>
               </div>
             </div>
@@ -8450,6 +8453,32 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(!canvas || !wrap) return;
     if(typeof Chart === 'undefined'){ return; }
 
+    // Update chart title dinamis berdasar preset periode aktif.
+    // Mapping:
+    //   preset 30D     → "30 Hari Terakhir"
+    //   preset MTD     → "Bulan Ini (Juli)"
+    //   preset month   → "Januari 2026"
+    //   preset year    → "Tahun 2026"
+    //   custom range   → "01 Jul → 25 Jul"
+    //   no filter      → "Semua Tanggal"
+    var titleEl = $id('trPfDayChartTitle');
+    if(titleEl){
+      var lbl;
+      var presetLbl = _pfPeriodLabel(_pfPeriod);
+      if(_pfPeriod && presetLbl){
+        lbl = presetLbl;
+      } else if(_dateFilter){
+        if(_dateFilter.start === _dateFilter.end){
+          lbl = fmtLongDate(_dateFilter.start);
+        } else {
+          lbl = fmtChipDate(_dateFilter.start) + ' → ' + fmtChipDate(_dateFilter.end);
+        }
+      } else {
+        lbl = 'Semua Tanggal';
+      }
+      titleEl.innerHTML = '<span class="tr-ico" aria-hidden="true">📈</span> Grafik Performa Analis · ' + esc(lbl);
+    }
+
     // Clear old empty overlay
     var old = wrap.querySelector('.tr-pf-daychart-empty'); if(old) old.remove();
 
@@ -8879,17 +8908,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Panggil setelah user klik preset button / ubah select. Semua panel
   // Analis (KPI card, chart, rec list) ke-trigger lewat rerenderAll().
   //
-  // Popup dibiarkan TETAP TERBUKA saat preset di-klik — supaya user bisa
-  // eksplorasi beberapa preset berturut-turut & lihat efeknya real-time
-  // tanpa harus buka popup ulang. Popup baru tutup lewat OK (apply
-  // custom range), Reset (🌐 All), klik ✕, atau klik di luar popup.
+  // Popup ditutup otomatis setelah preset apply — mental model user
+  // lebih clean: klik preset → popup close → lihat efek. Kalau mau
+  // ganti preset lain, klik tombol kalender lagi (pasti open dari
+  // state hidden, tidak ada confusion toggle).
+  //
+  // Sebelumnya popup dibiarkan terbuka, tapi bikin UX confusion:
+  // - User klik preset, popup tetap open
+  // - User klik tombol kalender ingin ganti, popup TOGGLE → close
+  // - User pikir "popup gak muncul" padahal itu toggle behavior
   function _pfApplyPeriod(period){
     _pfPeriod = period;
     var range = _pfComputePeriodRange(period);
     if(range){
       _dateFilter = { start: range.start, end: range.end };
       // Snap kalender ke bulan awal range supaya user langsung lihat
-      // rentang yg lagi aktif ter-highlight di grid.
+      // rentang yg lagi aktif ter-highlight di grid (utk open selanjutnya).
       var startDate = _parseISO(range.start);
       if(startDate) _calView = { year: startDate.getFullYear(), month: startDate.getMonth() };
     } else {
@@ -8898,11 +8932,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
     _calPending = null;                 // clear pending selection kalendar
     _pfSyncPeriodUI();
     updateDateBtnLabel();
-    // Refresh kalender highlight kalau popup lagi terbuka — highlight
-    // days di-range akan sync dgn _dateFilter baru.
+    updateCalOkState();                 // sync OK button disabled state
+    // Auto-close popup — cleaner UX daripada leave-open (yg bikin
+    // confusion toggle waktu user klik date button berikutnya).
     var _popC = $id('trPfCalPopup');
     if(_popC && !_popC.hidden){
-      try { renderCalendar(); } catch(_){}
+      _popC.hidden = true;
+      var _dbC = $id('trPfDateBtn');
+      if(_dbC) _dbC.setAttribute('aria-expanded','false');
     }
     rerenderAll();
   }
@@ -9135,7 +9172,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // (mis. chart canvas issue), popup TETAP close & filter TETAP applied.
     // Sebelumnya kalau rerenderAll throw, popup bisa jadi stuck open dan
     // user berpikir "OK tidak bekerja".
-    if(!_calPending || !_calPending.start) return;
+    //
+    // Kalau tidak ada pending selection (mis. user aktifkan preset lalu
+    // klik OK tanpa pick day manual), OK berfungsi sbg tombol dismiss:
+    // close popup + selesai. Tidak lagi silent no-op yg bikin user pikir
+    // OK button rusak.
+    if(!_calPending || !_calPending.start){
+      closeCalPopup();
+      return;
+    }
     var s = _calPending.start;
     var e = _calPending.end || _calPending.start; // single day fallback
     try {
