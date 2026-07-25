@@ -4308,6 +4308,12 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-recmodal-level.entry.is-hit{--_hitc:rgba(109,40,217,.4);box-shadow:0 0 0 1.5px var(--_hitc) inset}
 .tr-recmodal-level.tp.is-hit{--_hitc:rgba(5,150,105,.55);box-shadow:0 0 0 1.5px var(--_hitc) inset}
 .tr-recmodal-level.sl.is-hit{--_hitc:rgba(225,29,72,.55);box-shadow:0 0 0 1.5px var(--_hitc) inset}
+/* Rec sudah lewat (closed: expired / SL hit / TP hit) → text di kotak
+   TP1/TP2/SL rata TENGAH horizontally. Entry box biarkan default (left)
+   sesuai permintaan user. Container .tr-recmodal-level pakai flex column,
+   jadi align-items:center mengontrol cross-axis alignment (horizontal). */
+.tr-recmodal-level.tp.is-closed,
+.tr-recmodal-level.sl.is-closed{align-items:center;text-align:center}
 .tr-recmodal-chart{width:100%;height:100%}
 /* z-index tinggi supaya zona SELALU di atas canvas chart lightweight-charts
    (canvas kadang punya z-index sendiri). Tanpa ini zona ada di DOM tapi
@@ -14490,6 +14496,12 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       var isBuy = type !== 'SELL';
       return ((+v - entryPrice) / entryPrice) * 100 * (isBuy ? 1 : -1);
     };
+    // Rec sudah closed / lewat → dipakai utk toggle class .is-closed di
+    // kotak TP1/TP2/SL (styling text center-aligned). Detection: rec
+    // punya exitDate (semua state closed: TP1/TP2 hit, SL hit, expired,
+    // expired unfilled — semuanya di-set backend saat rec beralih ke
+    // recsHistory dgn closedBy terisi).
+    var _isClosedRec = !!rec.exitDate;
     var makeLevel = function(cls, label, price, showRet, hitBadge){
       var hasVal = Number.isFinite(+price) && +price > 0;
       var retTxt = '';
@@ -14501,7 +14513,11 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       }
       var badgeHtml = hitBadge ? '<div class="tr-recmodal-level-hit">' + hitBadge + '</div>' : '';
       var hitCls = hitBadge ? ' is-hit' : '';
-      return '<div class="tr-recmodal-level ' + cls + hitCls + '">'
+      // .is-closed di-add utk semua card, tapi CSS cuma target .tp & .sl
+      // (entry biarkan default left-aligned). Ini simplify JS — CSS yg
+      // decide mana yg di-center.
+      var closedCls = _isClosedRec ? ' is-closed' : '';
+      return '<div class="tr-recmodal-level ' + cls + hitCls + closedCls + '">'
         + '<div class="lbl">' + label + '</div>'
         + '<div class="val">' + (hasVal ? esc(fmtN(price)) : '—') + '</div>'
         + retTxt
