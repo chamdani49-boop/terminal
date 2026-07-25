@@ -2923,6 +2923,71 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
   .tr-ihsg-chip-val{font-size:13.5px}
   .tr-ihsg-chip-sub{font-size:9.5px}
 }
+/* Layout chart Performa 30 Hari: chart kiri + sidebar Peringkat kanan.
+   Adopsi design rupiah-monitor AllCurrenciesChart — chart flex, sidebar
+   fixed width 260px. Mobile stack vertikal (breakpoint 900px). */
+.tr-chart-layout{display:flex;gap:16px;align-items:stretch;min-width:0}
+@media(max-width:900px){.tr-chart-layout{flex-direction:column}}
+.tr-chart-layout .tr-chart-wrap{flex:1 1 auto;min-width:0}
+.tr-chart-rank{
+  width:260px;flex-shrink:0;
+  display:flex;flex-direction:column;gap:2px;
+  padding:6px 0;
+}
+@media(max-width:900px){.tr-chart-rank{width:auto;max-height:280px;overflow-y:auto}}
+.tr-chart-rank-head{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:800;
+  letter-spacing:.5px;color:var(--text2);
+  text-transform:uppercase;line-height:1.2;
+  padding:0 6px;
+}
+.tr-chart-rank-note{
+  font-size:10px;color:var(--text3);
+  padding:2px 6px 8px;line-height:1.2;
+}
+.tr-chart-rank-list{
+  display:flex;flex-direction:column;gap:1px;
+  max-height:340px;overflow-y:auto;
+  padding-right:2px;
+}
+.tr-chart-rank-list::-webkit-scrollbar{width:5px}
+.tr-chart-rank-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.tr-chart-rank-list::-webkit-scrollbar-track{background:transparent}
+.tr-chart-rank-row{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 8px;border-radius:6px;cursor:pointer;
+  transition:background .12s;
+  background:transparent;border:1px solid transparent;
+  font-family:inherit;text-align:left;
+}
+.tr-chart-rank-row:hover{background:var(--bg2)}
+.tr-chart-rank-row.active{background:var(--bg2);border-color:var(--border)}
+.tr-chart-rank-row .idx{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:800;
+  color:var(--text3);width:22px;text-align:right;flex-shrink:0;
+  font-variant-numeric:tabular-nums;
+}
+.tr-chart-rank-row .dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+  border:1px solid rgba(255,255,255,.12);
+}
+.tr-chart-rank-row .code{
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:800;
+  letter-spacing:.3px;color:var(--text);
+  flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.tr-chart-rank-row .code.foreign{color:var(--red)}
+.tr-chart-rank-row .pct{
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:800;
+  flex-shrink:0;font-variant-numeric:tabular-nums;
+}
+.tr-chart-rank-row .pct.up{color:var(--green)}
+.tr-chart-rank-row .pct.dn{color:var(--red)}
+@media(max-width:640px){
+  .tr-chart-rank-row{padding:4px 7px;gap:7px}
+  .tr-chart-rank-row .code{font-size:11px}
+  .tr-chart-rank-row .pct{font-size:11px}
+}
 .tr-card-desc{font-size:11px;color:var(--text3);margin-top:2px}
 .tr-chart-wrap{position:relative;height:240px}
 .tr-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text2);margin-top:10px;font-family:'IBM Plex Mono',monospace}
@@ -6182,23 +6247,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-card-h">
       <div>
         <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
-        <div class="tr-card-desc">Return kumulatif semua sekuritas · klik nama sekuritas di legenda untuk hide/show line</div>
+        <div class="tr-card-desc">Perbandingan return kumulatif semua sekuritas · klik peringkat untuk highlight</div>
       </div>
-      <!-- IHSG stat chip: sekaligus reference benchmark utk konteks user.
-           IHSG return magnitude jauh lebih kecil dari firm compound return
-           (index price change ±7% vs sum-of-pnl bisa +140%) — kalau di-plot
-           di chart yg sama, IHSG line terlihat 'flat' & bikin bingung. Jadi
-           IHSG di-lift ke header sbg badge angka menonjol; user tetap dapat
-           konteks 'seberapa besar market return' tanpa visual clutter. -->
       <div class="tr-ihsg-chip" id="trIhsgChip" title="IHSG 30 hari — benchmark pasar">
         <span class="tr-ihsg-chip-lbl">IHSG 30d</span>
         <span class="tr-ihsg-chip-val" id="trIhsgChipVal">—</span>
         <span class="tr-ihsg-chip-sub" id="trIhsgChipSub">—</span>
       </div>
     </div>
-    <div class="tr-chart-wrap"><canvas id="trChart"></canvas></div>
-    <!-- Legend inline di-hapus; Chart.js built-in legend (bottom position)
-         menampilkan warna + nama sekuritas otomatis, adapt ke jumlah firm. -->
+    <!-- Layout: chart di kiri (flex-1), sidebar Peringkat di kanan (fixed
+         width). Mobile stack vertikal. Adopsi design dari repo
+         chamdani49-boop/rupiah-monitor (AllCurrenciesChart) — biar user
+         punya bahasa visual konsisten antar product Economstock. -->
+    <div class="tr-chart-layout">
+      <div class="tr-chart-wrap"><canvas id="trChart"></canvas></div>
+      <div class="tr-chart-rank">
+        <div class="tr-chart-rank-head">Peringkat vs IHSG</div>
+        <div class="tr-chart-rank-note">+ = outperform · − = underperform vs IHSG</div>
+        <div class="tr-chart-rank-list" id="trChartRankList"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ── HIGHLIGHTS (3 kartu, HP stack) ──────────────────────────
@@ -11584,6 +11652,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (kWSub) kWSub.textContent = wins + ' dari ' + total + ' rekomendasi';
   }
 
+  // State: firm yg sedang di-highlight (click di sidebar Peringkat).
+  // null = tidak ada highlight (semua line ditampilkan normal).
+  var _highlightedFirmId = null;
+  // Cache last computed data supaya bisa re-render chart saat highlight
+  // toggle tanpa recompute.
+  var _lastChartData = null;
+
   // Palet warna utk multi-firm chart. Dipilih vibrant + distinct supaya
   // banyak line tetap bisa dibedakan by eye. 32 warna: cukup untuk ~30
   // sekuritas anggota IDX. Kalau firm lebih dari 32, di-modulo (repeat).
@@ -11628,11 +11703,52 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return out;
   }
 
+  // ── Sidebar Peringkat (list firm dgn dot warna + last%) ──
+  // Adopsi design rupiah-monitor AllCurrenciesChart. Klik row → toggle
+  // highlight; line di canvas chart akan re-render dgn fokus di firm
+  // itu (line active tebal, line lain fade).
+  function _renderChartRankSidebar(firmsRanked){
+    var el = $('trChartRankList'); if (!el) return;
+    el.innerHTML = firmsRanked.map(function(x, i){
+      var isActive = _highlightedFirmId === x.firm.id;
+      var pctVal = +x.lastPct || 0;
+      var pctCls = pctVal >= 0 ? 'up' : 'dn';
+      var pctStr = (pctVal >= 0 ? '+' : '') + pctVal.toFixed(2) + '%';
+      // Broker code dari BrokerCodes (mis. 'DR' utk RHB, 'NI' utk BNI).
+      // Kalau tidak match, fallback ke inisial nama.
+      var bk = (window.BrokerCodes && window.BrokerCodes.avatar)
+               ? window.BrokerCodes.avatar(x.firm.name) : null;
+      var codeText = bk ? bk.text : String(x.firm.name || '').substring(0, 3).toUpperCase();
+      var codeCls  = (bk && bk.foreign) ? 'code foreign' : 'code';
+      return '<button type="button" class="tr-chart-rank-row' + (isActive ? ' active' : '') + '"'
+        + ' data-firm-id="' + esc(x.firm.id || '') + '"'
+        + ' title="' + esc(x.firm.name || '') + ' · ' + pctStr + '">'
+        + '<span class="idx">' + (i + 1) + '</span>'
+        + '<span class="dot" style="background:' + x.color + '"></span>'
+        + '<span class="' + codeCls + '">' + esc(codeText) + '</span>'
+        + '<span class="pct ' + pctCls + '">' + pctStr + '</span>'
+      + '</button>';
+    }).join('');
+  }
+
+  // Delegated click handler utk row Peringkat → toggle highlight.
+  // Attached sekali di module init (bukan tiap render).
+  document.addEventListener('click', function(e){
+    var row = e.target && e.target.closest && e.target.closest('.tr-chart-rank-row');
+    if (!row) return;
+    var fid = row.getAttribute('data-firm-id');
+    if (!fid) return;
+    // Toggle: kalau firm sama diklik lagi → clear highlight; else set new.
+    _highlightedFirmId = (_highlightedFirmId === fid) ? null : fid;
+    // Re-render chart pakai cached data (tidak recompute per-firm series).
+    var d = window.__TR_getData && window.__TR_getData();
+    if (d) updateChart(d);
+  });
+
   // ── Update chart Chart.js (destroy existing + recreate dgn data real) ──
-  // Sekarang render 1 line PER SEKURITAS (top 8 by canonical trades desc)
-  // + IHSG dashed line sbg benchmark. Style: smooth curves + point markers
-  // (gaya gambar referensi user). Chart.js built-in legend di bottom
-  // (auto adapt jumlah firm).
+  // Sekarang render 1 line PER SEKURITAS + sidebar Peringkat (klik row →
+  // highlight). Style: smooth curves + point markers, layout row (chart
+  // + sidebar). Adopsi design rupiah-monitor AllCurrenciesChart.
   function updateChart(data){
     if (typeof Chart === 'undefined') return;
     var ctx = $('trChart'); if (!ctx) return;
@@ -11660,10 +11776,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var timeline = Object.keys(dateSet).sort();
     if (!timeline.length) return;
 
-    // Ambil SEMUA firm yg punya trade (canonical trades > 0), diurut
-    // desc by trades (dominan dulu). Tie-break by net desc.
-    // User bisa klik legend Chart.js untuk hide/show line individual
-    // → fokus ke subset firm sesuai kebutuhan.
+    // Ambil SEMUA firm yg punya trade. Compute:
+    //   - Series daily equity per firm (utk chart lines).
+    //   - lastPct = return kumulatif di tgl terakhir (utk sort + display
+    //     di sidebar peringkat).
+    // Sort desc by lastPct — best performer paling atas di peringkat.
     var firmsAll = Object.values(byFirm);
     var firmsRanked = firmsAll.map(function(f){
       var st = (window.TrackerStats && window.TrackerStats.compute)
@@ -11671,11 +11788,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
                : { trades: f.trades || 0, net: +f.net || 0 };
       return { firm: f, stats: st };
     }).filter(function(x){ return x.stats.trades > 0; })
-      .sort(function(a,b){
-        var tdiff = (b.stats.trades||0) - (a.stats.trades||0);
-        if (tdiff !== 0) return tdiff;
-        return (b.stats.net||0) - (a.stats.net||0);
-      });
+      .map(function(x){
+        var series = _computeFirmDailyEquity(x.firm, timeline);
+        var lastPct = series.length ? series[series.length - 1] : 0;
+        return { firm: x.firm, stats: x.stats, series: series, lastPct: +lastPct || 0 };
+      })
+      .sort(function(a, b){ return b.lastPct - a.lastPct; });
+
+    // Assign warna palette by SORTED rank position — jadi warna line
+    // stabil terhadap peringkat (rank #1 selalu pakai warna pertama).
+    firmsRanked.forEach(function(x, i){
+      x.color = _CHART_PALETTE[i % _CHART_PALETTE.length];
+    });
 
     // IHSG stats untuk chip header (BUKAN di-plot sbg line di chart).
     // Alasan: magnitude return firm (sum-of-pnl 100+ trade → bisa +140%)
@@ -11717,30 +11841,46 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var card   = css.getPropertyValue('--card').trim() || '#ffffff';
     var redC   = css.getPropertyValue('--red').trim() || '#e11d48';
 
-    // Build datasets: 1 dataset per firm. Line thickness & point size di-
-    // kurangi (dibanding sebelumnya) supaya chart dgn banyak firm (30+)
-    // tetap readable. Point marker tetap ada tapi kecil (2px) — hover
-    // tetap responsif (6px on hover). Top-3 firm sedikit lebih tebal
-    // supaya menonjol sbg "leader board" visual.
-    var datasets = firmsRanked.map(function(x, i){
-      var color = _CHART_PALETTE[i % _CHART_PALETTE.length];
+    // Build datasets. Highlight logic (adopsi rupiah-monitor
+    // AllCurrenciesChart): kalau ada firm yg di-highlight (via klik row
+    // di sidebar Peringkat), line yg match = warna full + tebal; line
+    // lain = warna fade (alpha rendah) + tipis. Kalau tidak ada highlight
+    // → semua line normal.
+    var hasHighlight = _highlightedFirmId != null;
+    var datasets = firmsRanked.map(function(x){
       var name = String(x.firm.name || '').replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
-      var isTop = i < 3;
+      var isActive = _highlightedFirmId === x.firm.id;
+      // Kalau ada highlight & bukan yg aktif → append alpha '2a' (~16%
+      // opacity di hex) supaya line fade. Kalau active atau tidak ada
+      // highlight → full color.
+      var effectiveColor = hasHighlight ? (isActive ? x.color : x.color + '2a') : x.color;
       return {
         label: name,
-        data: _computeFirmDailyEquity(x.firm, timeline),
-        borderColor: color,
+        firmId: x.firm.id,           // custom prop
+        data: x.series,
+        borderColor: effectiveColor,
         backgroundColor: 'transparent',
         fill: false,
         tension: 0.35,
-        pointRadius: isTop ? 2.5 : 2,
-        pointHoverRadius: 6,
-        pointBackgroundColor: color,
-        pointBorderColor: color,
-        borderWidth: isTop ? 2.2 : 1.7,
-        spanGaps: true
+        pointRadius: hasHighlight ? (isActive ? 2.5 : 0) : 1.8,
+        pointHoverRadius: hasHighlight ? (isActive ? 6 : 3) : 6,
+        pointBackgroundColor: effectiveColor,
+        pointBorderColor: effectiveColor,
+        borderWidth: hasHighlight ? (isActive ? 2.8 : 1.2) : 1.7,
+        spanGaps: true,
+        // Highlighted firm digambar TERAKHIR (di atas) supaya tidak
+        // ketutup line lain. Chart.js `order` — lower = later drawn.
+        order: isActive ? -1 : (hasHighlight ? 1 : 0)
       };
     });
+
+    // Cache data supaya re-render on highlight toggle bisa reuse tanpa
+    // recompute _computeFirmDailyEquity utk tiap firm.
+    _lastChartData = { firmsRanked: firmsRanked, timeline: timeline };
+
+    // Render sidebar Peringkat.
+    _renderChartRankSidebar(firmsRanked);
+
     // (IHSG line di canvas chart DIHILANGKAN — sudah di chip header di atas.)
 
     new Chart(ctx, {
@@ -11749,14 +11889,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: true, position: 'bottom',
-            labels: {
-              color: text2, boxWidth: 10, boxHeight: 10,
-              padding: 8, usePointStyle: true, pointStyle: 'circle',
-              font: { size: 10.5, family: "'IBM Plex Mono',monospace" }
-            }
-          },
+          // Legend Chart.js DIMATIKAN — sidebar Peringkat di kanan sudah
+          // menampilkan nama firm + warna + last% (lebih informatif).
+          legend: { display: false },
           tooltip: {
             mode: 'index', intersect: false,
             backgroundColor: card, borderColor: border, borderWidth: 1,
