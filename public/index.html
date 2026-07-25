@@ -2863,11 +2863,7 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 .lpv-tbl td{padding:8px 10px;border-bottom:1px solid var(--border)}
 
 #page-tracker{padding:20px 24px 40px;max-width:1200px;margin:0 auto}
-/* Mobile: bump padding-bottom dari 90px ke 110px supaya konten terakhir
-   (mis. row Peringkat) tidak ketutup bottom-nav yg fixed. Bottom-nav
-   sekitar 63px normal, bisa sampai ~97px di iPhone dgn home indicator.
-   110px = safe buffer di semua device tanpa kompleksitas env(). */
-@media(max-width:640px){ #page-tracker{padding:14px 12px 110px} }
+@media(max-width:640px){ #page-tracker{padding:14px 12px 90px} }
 
 .tr-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
 .tr-title-wrap h1{font-size:20px;font-weight:800;margin:0;letter-spacing:-.3px}
@@ -11844,8 +11840,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     if (period.type === 'mtd'){
       var y = today.getUTCFullYear(), m = today.getUTCMonth();
-      var startMtd = new Date(Date.UTC(y, m, 1)).toISOString().slice(0,10);
-      return { start: startMtd, end: todayIso };
+      // Base = tanggal terakhir bulan lalu (bukan tgl 1 bulan ini). Ini
+      // biar return "Bulan Ini" di tracker MATCH dgn "MoM" di Dashboard
+      // Statistik Deskriptif (konvensi finance standar: MoM =
+      // end-of-prev-month → sekarang). Kalau pakai tgl 1 bulan ini
+      // sebagai base, opening gap Juli (mis. IHSG June-30→July-1 lompat
+      // ~1%) tidak ke-count → angka beda dari MoM Dashboard.
+      // new Date(Date.UTC(y, m, 0)) = day 0 of current month = last day
+      // of previous month (kalendaris, sebelum snap ke trading day).
+      var lastDayPrevMonth = new Date(Date.UTC(y, m, 0)).toISOString().slice(0,10);
+      return { start: lastDayPrevMonth, end: todayIso };
     }
     if (period.type === 'month' && typeof period.month === 'number' && period.year){
       // Bulan spesifik (0-11) di tahun period.year. Full-month range.
@@ -12384,15 +12388,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     // (IHSG line di canvas chart DIHILANGKAN — sudah di chip header di atas.)
 
-    // Interaction mode: selalu 'nearest' → cuma 1 line paling dekat
-    // cursor yg dapet tooltip. Ini kombinasi dgn tooltip.filter di
-    // bawah biar cuma line highlighted yg tampil tooltipnya saat
-    // highlight aktif.
+    // Interaction mode dinamis (mobile-friendly):
+    // - Mobile (<=900px) + highlight aktif → 'index' + axis:'x' + filter.
+    //   Chart.js pick items di X paling dekat cursor (Y diabaikan). Combined
+    //   dgn tooltip.filter (cuma loloskan firmId aktif), hasilnya: tap di
+    //   posisi X manapun secara horizontal → tooltip line highlighted
+    //   langsung muncul. Tidak perlu jari pas di line terang.
+    // - Desktop atau no-highlight → 'nearest' (behavior lama).
     //
-    // NB: sempat coba 'index' di mobile+highlight untuk lebih forgiving,
-    // tapi mode 'index' membuat tooltip list SEMUA dataset di X yg sama.
-    // Filter TIDAK selalu suppress ke 1 item di semua versi Chart.js →
-    // hasilnya popup penuh baris (jelek). Balik ke 'nearest' aja.
+    // PENTING: variable ini WAJIB di-declare sebelum dipakai. Bug historis
+    // di commit 24868b8 → 4d42be2: partial revert menghapus var tapi
+    // masih ada reference → ReferenceError → chart options error → semua
+    // tooltip muncul. Sekarang: declare + use di tooltip.mode & interaction.mode
+    // SAMA-SAMA.
+    var isMobileVp = (typeof window !== 'undefined' && window.innerWidth <= 900);
+    var interactionMode = (isMobileVp && hasHighlight) ? 'index' : 'nearest';
 
     new Chart(ctx, {
       type: 'line',
@@ -12404,13 +12414,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
           // menampilkan nama firm + warna + last% (lebih informatif).
           legend: { display: false },
           tooltip: {
-            // Mode 'nearest' → cuma 1 line paling dekat cursor.
+            // Mode 'nearest' (default) atau 'index' (mobile+highlight).
             // Tooltip 2 baris:
             //   Line 1: 'Nama Sekuritas: +12.34%'      (kumulatif s.d. tgl)
             //   Line 2: 'Return harian: +2.10%'        (delta vs tgl sebelumnya)
             // afterLabel utk baris ke-2. Skip baris 2 kalau idx=0 (tidak
             // ada tgl sebelumnya) atau tgl tanpa aktivitas trade (delta=0).
-            mode: 'nearest', intersect: false,
+            mode: interactionMode, intersect: false,
             backgroundColor: card, borderColor: border, borderWidth: 1,
             titleColor: text2, bodyColor: text2, padding: 10,
             // Filter tooltip item saat ada highlight aktif: cuma tampil
@@ -12471,12 +12481,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
             ticks: { color: text2, font: { size: 10, family: "'IBM Plex Mono',monospace" }, callback: function(v){ return (v>=0?'+':'') + v + '%'; } }
           }
         },
-        // Interaction 'nearest' + intersect:false → hover di area chart
-        // pakai proximity (bukan strict on-line), tooltip pop up di line
-        // yg vertically/horizontally paling dekat cursor. Kombinasi dgn
-        // tooltip.filter → cuma line highlighted yg tampil tooltipnya
-        // saat highlight aktif.
-        interaction: { mode: 'nearest', intersect: false },
+        // Interaction: mode dinamis (nearest / index — lihat komentar
+        // interactionMode di atas). intersect:false → tap area kosong
+        // dekat data tetap picking, tidak perlu strict on-line.
+        // axis:'x' → di mode 'index' picking berdasar posisi horizontal
+        // saja (Y diabaikan). Combined dgn tooltip.filter → mobile jadi
+        // forgiving: tap di mana aja secara horizontal → tooltip line
+        // highlighted muncul.
+        interaction: { mode: interactionMode, intersect: false, axis: 'x' },
         // Klik salah satu line di canvas → toggle highlight (mirror
         // behavior klik row di sidebar Peringkat). Bekerja dgn nearest
         // mode: Chart.js provide array elements[] paling dekat click point,
