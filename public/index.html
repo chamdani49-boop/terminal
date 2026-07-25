@@ -14427,20 +14427,58 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function renderStatusWidget(ticker, recs, k){
     // ── Aggregate metrics ────────────────────────────────────────────
     var buyN = 0, sellN = 0;
+    // "_All" arrays = universe semua rec (dipakai Opp Score, Sentimen, RR).
+    // "_L" arrays (Ladder) = subset PENDING(<=7 hari) + ACTIVE saja — per
+    // aturan user: Price Ladder di halaman Analisis HANYA hitung rec yg
+    // masih valid utk dieksekusi (menunggu belum kadaluarsa + aktif).
+    // Rec MISSED (harga sudah lari), TP/SL/EXPIRED dikecualikan dari
+    // ladder karena tidak relevan sbg zona entry yg bisa diambil skrg.
     var entries = [], tp1s = [], tp2s = [], sls = [];
+    var entriesL = [], tp1sL = [], tp2sL = [], slsL = [];
     var lastPrice = null;
     var durations = [], pnls = [];
     var stCounts = { active: 0, pending: 0, missed: 0, tp: 0, sl: 0, expired: 0 };
+    var ladderCount = 0;   // rec yg lolos filter ladder (utk debug/note)
+
+    // Filter helper — rec yg boleh masuk Price Ladder aggregate.
+    //   ACTIVE   : selalu masuk (posisi jalan, tidak ada expiry)
+    //   PENDING  : masuk kalau umur openDate <= 7 hari (custom threshold
+    //              utk ladder ini, beda dgn PENDING_EXPIRY_DAYS=10 global
+    //              yg dipakai badge KADALUARSA/backend)
+    //   selain itu (MISSED / TP / SL / EXPIRED): dikecualikan
+    var LADDER_PENDING_MAX_AGE_DAYS = 7;
+    var _todayMs = Date.now();
+    var _isLadderRec = function(r){
+      var st = statusOf(r);
+      if (st === 'ACTIVE') return true;
+      if (st === 'PENDING') {
+        if (!r.openDate) return true; // no date info → include defensif
+        var d = new Date(String(r.openDate) + 'T00:00:00Z');
+        var t = d.getTime();
+        if (isNaN(t)) return true;
+        var ageDays = (_todayMs - t) / 86400000;
+        return ageDays <= LADDER_PENDING_MAX_AGE_DAYS;
+      }
+      return false;
+    };
 
     recs.forEach(function(r){
       // Sentimen
       var t = String(r.type || 'BUY').toUpperCase();
       if (t === 'SELL') sellN++; else buyN++;
-      // Price levels
+      // Price levels — universe ALL (utk Opp Score RR + Track record legacy)
       if (Number.isFinite(+r.entry) && +r.entry > 0) entries.push(+r.entry);
       if (Number.isFinite(+r.tp1)   && +r.tp1   > 0) tp1s.push(+r.tp1);
       if (Number.isFinite(+r.tp2)   && +r.tp2   > 0) tp2s.push(+r.tp2);
       if (Number.isFinite(+r.sl)    && +r.sl    > 0) sls.push(+r.sl);
+      // Price levels — universe LADDER (PENDING<=7hari + ACTIVE only)
+      if (_isLadderRec(r)) {
+        ladderCount++;
+        if (Number.isFinite(+r.entry) && +r.entry > 0) entriesL.push(+r.entry);
+        if (Number.isFinite(+r.tp1)   && +r.tp1   > 0) tp1sL.push(+r.tp1);
+        if (Number.isFinite(+r.tp2)   && +r.tp2   > 0) tp2sL.push(+r.tp2);
+        if (Number.isFinite(+r.sl)    && +r.sl    > 0) slsL.push(+r.sl);
+      }
       // Live price (ambil dari rec yg punya lastPrice — biasanya sama utk 1 ticker)
       if (lastPrice == null && Number.isFinite(+r.lastPrice) && +r.lastPrice > 0) {
         lastPrice = +r.lastPrice;
@@ -14466,7 +14504,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var avg = function(arr){ return arr.length ? arr.reduce(function(a,b){return a+b;},0) / arr.length : null; };
     var min = function(arr){ return arr.length ? Math.min.apply(null, arr) : null; };
     var max = function(arr){ return arr.length ? Math.max.apply(null, arr) : null; };
+    // Avg universe ALL (utk Opp Score RR factor — biarkan seperti sebelumnya)
     var entryAvg = avg(entries), tp1Avg = avg(tp1s), tp2Avg = avg(tp2s), slAvg = avg(sls);
+    // Avg universe LADDER (utk Price Ladder — PENDING<=7hari + ACTIVE only)
+    var entryAvgL = avg(entriesL), tp1AvgL = avg(tp1sL), tp2AvgL = avg(tp2sL), slAvgL = avg(slsL);
 
     // Header
     $('trAnlConsN').textContent = k.n + ' rekomendasi';
@@ -14495,19 +14536,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var bSell = $('trAnlSentBarSell'); if (bSell) bSell.style.width = sellPct + '%';
 
     // ── 2. PRICE LADDER ────────────────────────────────────────────────
+    // Universe: PENDING (umur openDate <= 7 hari) + ACTIVE only. Rec MISSED,
+    // TP, SL, dan EXPIRED (termasuk pending yg sudah lewat 7 hari) di-EXCLUDE
+    // — ladder cuma tampilkan rec yg masih valid utk dieksekusi sekarang.
+    // Semua avg di sini pakai varian *L (bukan avg universe ALL).
     var ladder = $('trAnlLadderMarkers');
     var note = $('trAnlLadderNote');
     if (ladder) {
       // Kumpulkan semua price points untuk hitung range
       var points = [];
-      if (slAvg != null)    points.push(slAvg);
-      if (entryAvg != null) points.push(entryAvg);
-      if (tp1Avg != null)   points.push(tp1Avg);
-      if (tp2Avg != null)   points.push(tp2Avg);
+      if (slAvgL != null)    points.push(slAvgL);
+      if (entryAvgL != null) points.push(entryAvgL);
+      if (tp1AvgL != null)   points.push(tp1AvgL);
+      if (tp2AvgL != null)   points.push(tp2AvgL);
       if (lastPrice != null) points.push(lastPrice);
       if (points.length < 2) {
         ladder.innerHTML = '';
-        if (note) note.textContent = 'Belum cukup data harga.';
+        if (note) {
+          note.textContent = ladderCount === 0
+            ? 'Tidak ada rekomendasi aktif atau menunggu (≤7 hari) untuk saham ini.'
+            : 'Belum cukup data harga.';
+        }
       } else {
         var lo = Math.min.apply(null, points);
         var hi = Math.max.apply(null, points);
@@ -14519,8 +14568,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
           return Math.max(2, Math.min(98, ((v - pLo) / (pHi - pLo)) * 100));
         };
         var pctFromEntry = function(v){
-          if (v == null || entryAvg == null || entryAvg === 0) return null;
-          return ((v - entryAvg) / entryAvg) * 100;
+          if (v == null || entryAvgL == null || entryAvgL === 0) return null;
+          return ((v - entryAvgL) / entryAvgL) * 100;
         };
         // Kumpulkan marker items untuk stagger detection.
         // LIVE marker special: label + price + pct DIGABUNG jadi 1 badge kompak
@@ -14548,11 +14597,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
           }
           items.push({ cls: cls, lbl: lblHtml, val: valHtml, pos: pos });
         };
-        addItem('sl',    'SL',    slAvg,    true);
-        addItem('entry', 'Entry', entryAvg, false);
+        addItem('sl',    'SL',    slAvgL,    true);
+        addItem('entry', 'Entry', entryAvgL, false);
         addItem('live',  'Live',  lastPrice, true);
-        addItem('tp1',   'TP1',   tp1Avg,   true);
-        addItem('tp2',   'TP2',   tp2Avg,   true);
+        addItem('tp1',   'TP1',   tp1AvgL,   true);
+        addItem('tp2',   'TP2',   tp2AvgL,   true);
         // Stagger detection:
         //   1. LIVE tidak pernah stag (badge selalu di row 1 atas).
         //   2. Non-LIVE yg dekat LIVE (< 22% jarak) → paksa stag agar
@@ -14595,23 +14644,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
         if (note) {
           var msg = '';
           if (lastPrice == null) msg = 'Harga live tidak tersedia.';
-          else if (entryAvg == null) msg = 'Belum ada zona entry.';
+          else if (entryAvgL == null) msg = 'Belum ada zona entry aktif.';
           else {
             var dEntry = pctFromEntry(lastPrice);
-            var dTp1 = tp1Avg != null ? ((tp1Avg - lastPrice) / lastPrice * 100) : null;
-            var dSl  = slAvg  != null ? ((slAvg  - lastPrice) / lastPrice * 100) : null;
+            var dTp1 = tp1AvgL != null ? ((tp1AvgL - lastPrice) / lastPrice * 100) : null;
+            var dSl  = slAvgL  != null ? ((slAvgL  - lastPrice) / lastPrice * 100) : null;
             var mainMsg = '';
             if (Math.abs(dEntry) <= 1.5) {
               mainMsg = '📍 Di sekitar <b>zona Entry</b> — momen ideal.';
             } else if (dEntry < -1.5) {
               mainMsg = '⬇ <b>' + Math.abs(dEntry).toFixed(1) + '%</b> di bawah Entry.';
-            } else if (dEntry > 1.5 && (tp1Avg == null || lastPrice < tp1Avg)) {
+            } else if (dEntry > 1.5 && (tp1AvgL == null || lastPrice < tp1AvgL)) {
               mainMsg = '⬆ <b>+' + dEntry.toFixed(1) + '%</b> di atas Entry.';
-            } else if (tp1Avg != null && lastPrice >= tp1Avg) {
+            } else if (tp1AvgL != null && lastPrice >= tp1AvgL) {
               mainMsg = '🎯 <b>Lewat TP1</b> — target tercapai.';
             }
             var distMsg = '';
-            if (dTp1 != null && dSl != null && lastPrice > slAvg && lastPrice < tp1Avg) {
+            if (dTp1 != null && dSl != null && lastPrice > slAvgL && lastPrice < tp1AvgL) {
               distMsg = ' · Ke TP1 <b>+' + dTp1.toFixed(1) + '%</b> · SL <b>' + dSl.toFixed(1) + '%</b>';
             }
             msg = mainMsg + distMsg;
