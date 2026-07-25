@@ -2894,6 +2894,16 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 /* Card generik utk chart, simulator, list */
 .tr-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
 .tr-card-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+/* Headline row: title + IHSG chip sejajar. Flex row, tidak wrap
+   (chip tetap di kanan title, sama baris). Di HP font di-perkecil
+   kalau title panjang, tapi tetap tidak wrap. */
+.tr-card-headline{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%;flex-wrap:nowrap;min-width:0}
+.tr-card-titleblock{min-width:0;flex:1 1 auto}
+@media(max-width:640px){
+  .tr-card-headline{gap:8px}
+  .tr-card-headline .tr-card-title{font-size:12.5px}
+  .tr-card-headline .tr-card-desc{font-size:10.5px}
+}
 .tr-card-title{font-size:14px;font-weight:800;letter-spacing:-.2px;margin:0}
 /* IHSG stat chip di header chart Performa 30 Hari. Prominent enough utk
    catch eye tapi tidak overpower card title. Warna up/down via class
@@ -6307,15 +6317,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
        real data updateChart() ignore mode dan selalu render dailyEquity. -->
   <div class="tr-card">
     <div class="tr-card-h">
-      <div>
-        <div class="tr-card-title" id="trChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
-        <div class="tr-card-desc">Perbandingan return kumulatif semua sekuritas · klik peringkat untuk highlight</div>
+      <!-- Baris 1 (title + IHSG chip sejajar). Di HP tetap dalam
+           satu row via .tr-card-headline (flex, nowrap). -->
+      <div class="tr-card-headline">
+        <div class="tr-card-titleblock">
+          <div class="tr-card-title" id="trChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
+          <div class="tr-card-desc">Perbandingan return kumulatif semua sekuritas · klik peringkat untuk highlight</div>
+        </div>
+        <div class="tr-ihsg-chip" id="trIhsgChip" role="button" tabindex="0" title="Klik untuk clear highlight (chart kembali cerah semua)">
+          <span class="tr-ihsg-chip-lbl" id="trIhsgChipLbl">IHSG 30D</span>
+          <span class="tr-ihsg-chip-val" id="trIhsgChipVal">—</span>
+          <span class="tr-ihsg-chip-sub" id="trIhsgChipSub">—</span>
+        </div>
       </div>
-      <!-- Period selector — pilih rentang waktu chart. Data historis
-           lama mungkin belum ada; UI tetap tersedia sbg infrastruktur
-           supaya begitu data tumbuh (workflow refresh-tracker.js
-           mengumpulkan tiap hari), pilihan bulan/tahun lama otomatis
-           ke-populate tanpa perlu ubah kode. -->
+      <!-- Baris 2: Period selector. Data historis lama mungkin belum ada;
+           UI tetap tersedia sbg infrastruktur supaya begitu data tumbuh
+           (workflow refresh-tracker.js mengumpulkan tiap hari), pilihan
+           bulan/tahun lama otomatis ke-populate tanpa perlu ubah kode. -->
       <div class="tr-chart-period" id="trChartPeriod" role="tablist" aria-label="Periode chart">
         <button type="button" class="tr-cp-btn active" data-period-type="30d" role="tab" aria-selected="true">30D</button>
         <button type="button" class="tr-cp-btn" data-period-type="mtd" role="tab" aria-selected="false">Bulan Ini</button>
@@ -6323,11 +6341,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <select class="tr-cp-year" id="trChartPeriodYear" aria-label="Pilih tahun">
           <!-- Options di-generate di JS berdasar rentang tahun yg ada di data. -->
         </select>
-      </div>
-      <div class="tr-ihsg-chip" id="trIhsgChip" role="button" tabindex="0" title="Klik untuk clear highlight (chart kembali cerah semua)">
-        <span class="tr-ihsg-chip-lbl" id="trIhsgChipLbl">IHSG 30D</span>
-        <span class="tr-ihsg-chip-val" id="trIhsgChipVal">—</span>
-        <span class="tr-ihsg-chip-sub" id="trIhsgChipSub">—</span>
       </div>
     </div>
     <!-- Layout: chart di kiri (flex-1), sidebar Peringkat di kanan (fixed
@@ -12277,7 +12290,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: text3, font: { size: 10, family: "'IBM Plex Mono',monospace" }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+            ticks: {
+              color: text3, font: { size: 10, family: "'IBM Plex Mono',monospace" },
+              maxRotation: 0, autoSkip: true, maxTicksLimit: 8,
+              // Format label sumbu X: '2026-06-24' → '24 Jun' (tgl + bulan
+              // singkat). Full ISO ada di tooltip title (default), sumbu X
+              // singkat supaya cukup di mobile & mudah baca.
+              callback: function(value, index, ticks){
+                var lbl = this.getLabelForValue(value);
+                if (typeof lbl !== 'string' || lbl.length < 10) return lbl;
+                var y = parseInt(lbl.substring(0,4), 10);
+                var m = parseInt(lbl.substring(5,7), 10);
+                var d = parseInt(lbl.substring(8,10), 10);
+                if (!m || !d) return lbl;
+                var mons = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                return d + ' ' + mons[m - 1];
+              }
+            }
           },
           y: {
             grid: { color: border },
