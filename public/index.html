@@ -3266,6 +3266,15 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-datebtn.filtered{background:linear-gradient(135deg,rgba(124,58,237,.16),var(--bg2));border-color:rgba(124,58,237,.4);color:var(--text)}
 .tr-pf-datebtn .arr{font-size:9px;opacity:.6}
 
+/* Wrapper period preset + tombol kalender manual. Muncul di header
+   Mode Eksekusi (di header .tr-pf-seg-head). Flex row + wrap agar
+   mobile turun ke bawah tombol kalender di baris kedua. Gap kecil
+   antara segmented control preset dan tombol kalender. */
+.tr-pf-period-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+@media(max-width:640px){
+  .tr-pf-period-controls{width:100%;justify-content:flex-start;gap:6px}
+}
+
 /* Calendar popup — muncul di bawah tombol, position absolute */
 .tr-pf-cal-anchor{position:relative;display:inline-block}
 .tr-pf-cal-popup{position:absolute;top:calc(100% + 6px);right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,.4);padding:14px 14px 10px;width:290px;z-index:1050;font-size:12px;color:var(--text)}
@@ -7347,8 +7356,39 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="tr-pf-seg-wrap">
           <div class="tr-pf-seg-head">
             <div class="tr-pf-seg-label">🎛 Mode Eksekusi <span class="tr-pf-seg-active-lbl" id="trPfSegActiveLbl">Beli di Entry → TP1</span></div>
-            <div class="tr-pf-cal-anchor">
-              <button type="button" class="tr-pf-datebtn" id="trPfDateBtn" aria-haspopup="dialog" aria-controls="trPfCalPopup" aria-expanded="false" title="Filter tanggal rekomendasi"><span class="tr-ico" aria-hidden="true">📅</span> <span id="trPfDateBtnLbl">Semua Tanggal</span> <span class="arr">▾</span></button>
+            <!-- Grup kontrol tanggal: preset periode (30D / Bulan Ini /
+                 Bulan▾ / Tahun▾) + tombol kalender manual. Preset dan
+                 kalender manual saling eksklusif: memilih preset akan
+                 clear pilihan kalender, dan sebaliknya. Reset "🌐 All"
+                 di kalender kembalikan filter ke Semua Tanggal (tanpa
+                 preset). Default firm-open: preset 30D aktif.
+                 Adopsi UX identik dgn period selector di Overview
+                 (Performa 30 Hari) supaya bahasa visual konsisten. -->
+            <div class="tr-pf-period-controls">
+              <div class="tr-chart-period" id="trPfChartPeriod" role="tablist" aria-label="Periode filter rekomendasi">
+                <button type="button" class="tr-cp-btn active" data-period-type="30d" role="tab" aria-selected="true" title="30 hari terakhir (default)">30D</button>
+                <button type="button" class="tr-cp-btn" data-period-type="mtd" role="tab" aria-selected="false" title="Awal bulan berjalan hingga hari ini">Bulan Ini</button>
+                <select class="tr-cp-month" id="trPfChartPeriodMonth" aria-label="Pilih bulan spesifik">
+                  <option value="">Bulan</option>
+                  <option value="0">Januari</option>
+                  <option value="1">Februari</option>
+                  <option value="2">Maret</option>
+                  <option value="3">April</option>
+                  <option value="4">Mei</option>
+                  <option value="5">Juni</option>
+                  <option value="6">Juli</option>
+                  <option value="7">Agustus</option>
+                  <option value="8">September</option>
+                  <option value="9">Oktober</option>
+                  <option value="10">November</option>
+                  <option value="11">Desember</option>
+                </select>
+                <select class="tr-cp-year" id="trPfChartPeriodYear" aria-label="Pilih tahun">
+                  <!-- Options di-generate JS berdasar rentang tahun rec firm ini. -->
+                </select>
+              </div>
+              <div class="tr-pf-cal-anchor">
+                <button type="button" class="tr-pf-datebtn" id="trPfDateBtn" aria-haspopup="dialog" aria-controls="trPfCalPopup" aria-expanded="false" title="Filter tanggal rekomendasi (custom range via kalender)"><span class="tr-ico" aria-hidden="true">📅</span> <span id="trPfDateBtnLbl">30 Hari Terakhir</span> <span class="arr">▾</span></button>
               <div class="tr-pf-cal-popup" id="trPfCalPopup" role="dialog" aria-modal="false" hidden>
                 <div class="cal-head">
                   <div class="cal-title" id="trPfCalTitle">—</div>
@@ -7368,8 +7408,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+              </div><!-- /.tr-pf-cal-anchor -->
+            </div><!-- /.tr-pf-period-controls -->
+          </div><!-- /.tr-pf-seg-head -->
           <div class="tr-pf-seg-groups">
             <div class="tr-pf-seg-group">
               <div class="tr-pf-seg-group-lbl">Metode Entry</div>
@@ -8274,10 +8315,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   function renderKpi(firm){
     var st = computeModeStats(firm, _entryMode, _exitMode);
-    var actN  = (firm.recsActive||[]).length;
-    var histN = (firm.recsHistory||[]).length;
-    var pendN = (firm.recsPending||[]).length;
-    var missN = (firm.recsMissed||[]).length;
+    // Count by bucket, apply date filter (openDate ∈ range). Kalau
+    // preset periode aktif atau custom range di kalender, KPI "TOTAL
+    // REKOMENDASI" ikut menyusut. Semua Tanggal (filter null) →
+    // count semua. Konsisten dgn winrate/net/best/worst yg sudah
+    // filter via computeModeStats.
+    var actN  = (firm.recsActive||[]).filter(_recInDateFilter).length;
+    var histN = (firm.recsHistory||[]).filter(_recInDateFilter).length;
+    var pendN = (firm.recsPending||[]).filter(_recInDateFilter).length;
+    var missN = (firm.recsMissed||[]).filter(_recInDateFilter).length;
 
     var wrEl = $id('trPfKpiWr');
     if(wrEl){
@@ -8621,6 +8667,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Single day: start === end. Range: start < end. Apply ke rec list + KPI +
   // chart via filter openDate rec.
   var _dateFilter = null;
+  // Period preset state untuk header Mode Eksekusi. Mirror UX dari Overview
+  // chart period selector. Default firm-open = 30D. Preset dan calendar
+  // custom range MUTUALLY EXCLUSIVE: pilih preset → _dateFilter dihitung
+  // dari preset, calendar highlight ikut; pilih calendar (via popup OK) →
+  // _pfPeriod = null (custom), preset buttons deaktif.
+  //   null         → custom / no preset (calendar mode atau Semua Tanggal)
+  //   {type:'30d'}                     → 30 hari terakhir s.d. today
+  //   {type:'mtd'}                     → 1 bulan berjalan s.d. today
+  //   {type:'month', month:0-11, year} → bulan spesifik full-month
+  //   {type:'year', year}              → tahun kalender penuh
+  var _pfPeriod = { type: '30d' };
   // Temp selection state saat calendar popup terbuka. Committed ke _dateFilter
   // hanya saat user klik OK.
   //   null           → belum ada selection
@@ -8631,6 +8688,159 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _calView = null;
   // Cache set tanggal yg punya rec (Set of 'YYYY-MM-DD') utk firm aktif.
   var _calRecDates = null;
+
+  // Nama bulan Indonesia — dipakai label preset (mis. "Juli 2026", "Bulan
+  // Ini (Juli)"). Sama dgn _BULAN_ID di modul Overview supaya UX konsisten.
+  var _PF_BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+  // Hitung date range {start, end} ISO dari state preset. Return null kalau
+  // preset invalid (harusnya tidak terjadi kalau UI benar).
+  //   30d  → today-30 .. today
+  //   mtd  → last day prev month (bukan tgl 1 bulan ini — biar konsisten
+  //          dgn konvensi MoM di dashboard) .. today
+  //   month → tgl 1 .. akhir bulan; end di-cap ke today kalau month adalah
+  //           bulan berjalan tahun ini (jangan proyek masa depan)
+  //   year  → 1 Jan .. 31 Des; end di-cap ke today kalau year = current
+  function _pfComputePeriodRange(period){
+    if(!period || !period.type) return null;
+    var today = new Date();
+    var todayIso = today.toISOString().slice(0, 10);
+    var y0 = today.getUTCFullYear();
+    var m0 = today.getUTCMonth();
+
+    if(period.type === '30d'){
+      var d = new Date(todayIso + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() - 30);
+      return { start: d.toISOString().slice(0,10), end: todayIso };
+    }
+    if(period.type === 'mtd'){
+      // Base = tanggal terakhir bulan lalu (konvensi finance standar
+      // MoM). Kalau pakai tgl 1 bulan ini, opening gap H-1 tidak ke-
+      // count → return "Bulan Ini" beda dgn MoM Dashboard. Konsisten
+      // dgn logic Overview '_getPeriodRange' pada type 'mtd'.
+      var lastDayPrevMonth = new Date(Date.UTC(y0, m0, 0)).toISOString().slice(0,10);
+      return { start: lastDayPrevMonth, end: todayIso };
+    }
+    if(period.type === 'month' && typeof period.month === 'number' && period.year){
+      var startM = new Date(Date.UTC(period.year, period.month, 1)).toISOString().slice(0,10);
+      var endM   = new Date(Date.UTC(period.year, period.month + 1, 0)).toISOString().slice(0,10);
+      if(period.year === y0 && period.month === m0){
+        if(todayIso < endM) endM = todayIso;
+      }
+      return { start: startM, end: endM };
+    }
+    if(period.type === 'year' && period.year){
+      var start = period.year + '-01-01';
+      var end   = period.year + '-12-31';
+      if(period.year === y0) end = todayIso;
+      return { start: start, end: end };
+    }
+    return null;
+  }
+
+  // Label human-readable utk tombol kalender saat preset aktif.
+  // Contoh: "30 Hari Terakhir", "Bulan Ini (Juli)", "Juli 2026", "Tahun 2026".
+  function _pfPeriodLabel(period){
+    if(!period || !period.type) return null;
+    var today = new Date();
+    if(period.type === '30d') return '30 Hari Terakhir';
+    if(period.type === 'mtd'){
+      var m = _PF_BULAN_ID[today.getUTCMonth()];
+      return 'Bulan Ini (' + m + ')';
+    }
+    if(period.type === 'month' && typeof period.month === 'number' && period.year){
+      return _PF_BULAN_ID[period.month] + ' ' + period.year;
+    }
+    if(period.type === 'year' && period.year){
+      return 'Tahun ' + period.year;
+    }
+    return null;
+  }
+
+  // Populate dropdown tahun berdasar rentang tahun rec di firm aktif +
+  // current year. Sort DESC (tahun terbaru dulu). Infrastruktur: kalau
+  // data historis firm tumbuh, tahun-tahun lama otomatis muncul.
+  function _pfPopulateYearDropdown(firm){
+    var sel = $id('trPfChartPeriodYear'); if(!sel) return;
+    var currentYear = new Date().getUTCFullYear();
+    var yearsSet = {};
+    yearsSet[currentYear] = 1;
+    if(firm){
+      var all = (firm.recsActive||[])
+        .concat(firm.recsPending||[])
+        .concat(firm.recsMissed||[])
+        .concat(firm.recsHistory||[]);
+      all.forEach(function(r){
+        if(r && r.openDate){
+          var y = parseInt(String(r.openDate).substring(0,4), 10);
+          if(Number.isFinite(y) && y > 2000) yearsSet[y] = 1;
+        }
+      });
+    }
+    var years = Object.keys(yearsSet).map(function(y){ return +y; }).sort(function(a,b){ return b - a; });
+    var currentSel = sel.value ? +sel.value : currentYear;
+    sel.innerHTML = years.map(function(y){
+      return '<option value="' + y + '"' + (y === currentSel ? ' selected' : '') + '>' + y + '</option>';
+    }).join('');
+  }
+
+  // Sync UI period selector (aktif state buttons + selects) ke _pfPeriod.
+  // Panggil ini setiap kali _pfPeriod berubah, atau saat _pfPeriod = null
+  // (custom) → semua tombol deaktif.
+  function _pfSyncPeriodUI(){
+    var container = $id('trPfChartPeriod'); if(!container) return;
+    var btns = container.querySelectorAll('.tr-cp-btn');
+    var activeType = (_pfPeriod && _pfPeriod.type) || null;
+    for(var i=0;i<btns.length;i++){
+      var t = btns[i].getAttribute('data-period-type');
+      var isActive = (t === activeType);
+      btns[i].classList.toggle('active', isActive);
+      btns[i].setAttribute('aria-selected', isActive ? 'true' : 'false');
+    }
+    var yearSel = $id('trPfChartPeriodYear');
+    if(yearSel){
+      var yearActive = !!(_pfPeriod && (_pfPeriod.type === 'year' || _pfPeriod.type === 'month'));
+      yearSel.classList.toggle('active', yearActive);
+      if(yearActive && _pfPeriod.year){
+        var yVal = String(_pfPeriod.year);
+        var yOpt = yearSel.querySelector('option[value="' + yVal + '"]');
+        if(yOpt) yearSel.value = yVal;
+      }
+    }
+    var monthSel = $id('trPfChartPeriodMonth');
+    if(monthSel){
+      var monthActive = !!(_pfPeriod && _pfPeriod.type === 'month' && typeof _pfPeriod.month === 'number');
+      monthSel.classList.toggle('active', monthActive);
+      // Reset month select ke placeholder saat type bukan 'month' (mis.
+      // user pilih preset 30D / MTD / year, atau custom range) supaya
+      // dropdown tidak "stuck" menampilkan bulan yg tak lagi aktif.
+      monthSel.value = monthActive ? String(_pfPeriod.month) : '';
+    }
+  }
+
+  // Set preset baru → hitung range → apply ke _dateFilter → rerender.
+  // Panggil setelah user klik preset button / ubah select. Semua panel
+  // Analis (KPI card, chart, rec list) ke-trigger lewat rerenderAll().
+  function _pfApplyPeriod(period){
+    _pfPeriod = period;
+    var range = _pfComputePeriodRange(period);
+    if(range){
+      _dateFilter = { start: range.start, end: range.end };
+    } else {
+      _dateFilter = null;
+    }
+    _calPending = null;                 // clear pending selection kalendar
+    _pfSyncPeriodUI();
+    updateDateBtnLabel();
+    // Tutup popup kalender kalau lagi terbuka — preset & popup mutual
+    // eksklusif secara UX (preset menang, popup ditutup).
+    var _popC = $id('trPfCalPopup');
+    if(_popC && !_popC.hidden){
+      _popC.hidden = true;
+      var _dbC = $id('trPfDateBtn'); if(_dbC) _dbC.setAttribute('aria-expanded','false');
+    }
+    rerenderAll();
+  }
 
   function _buildRecDateSet(firm){
     var allRecs = (firm.recsActive||[])
@@ -8758,6 +8968,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var lbl = $id('trPfDateBtnLbl');
     var btn = $id('trPfDateBtn');
     if(!lbl || !btn) return;
+    // Preset aktif → tampilkan label preset friendly (mis. "30 Hari
+    // Terakhir", "Juli 2026"). Preset selalu memiliki _dateFilter
+    // terhitung, jadi cek preset dulu sebelum branch range.
+    var presetLbl = _pfPeriodLabel(_pfPeriod);
+    if(_pfPeriod && presetLbl){
+      lbl.textContent = presetLbl;
+      btn.classList.add('filtered');
+      return;
+    }
     if(_dateFilter){
       if(_dateFilter.start === _dateFilter.end){
         lbl.textContent = fmtLongDate(_dateFilter.start);
@@ -8856,7 +9075,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var e = _calPending.end || _calPending.start; // single day fallback
     try {
       _dateFilter = { start: s, end: e };
+      // Custom range via kalender → matikan preset. Mutual exclusive:
+      // preset dan custom range tidak boleh sama-sama aktif.
+      _pfPeriod = null;
       _calPending = null;
+      _pfSyncPeriodUI();
       updateDateBtnLabel();
       closeCalPopup();
     } catch(err){
@@ -8869,9 +9092,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   function resetCalFilter(){
     _dateFilter = null;
+    // Reset juga preset → button label kembali "Semua Tanggal" dan
+    // semua preset button deaktif. Tombol Reset "🌐 All" berarti
+    // "tampilkan semua rekomendasi" — bukan "kembali ke default 30D".
+    // User yg mau default bisa klik tombol 30D preset.
+    _pfPeriod = null;
     _calPending = null;
     _currentTab = 'all';
     syncRecTabButtons();
+    _pfSyncPeriodUI();
     updateDateBtnLabel();
     closeCalPopup();
     rerenderAll();
@@ -9304,19 +9533,32 @@ body.is-mobile-device.force-desktop .pl-col-main{
     _currentTab  = 'all';        // default tab jadi 'Semua' (bukan 'Aktif')
 
     populateHero(firm);
-    renderKpi(firm);
-    renderModeStats(firm);
 
     // Sync seg + tab UI state (2 group: entry + exit)
     syncSegState();
     var tabButtons = document.querySelectorAll('#trPfTabs .tr-tab');
     tabButtons.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===_currentTab); });
-    // Reset sort/date state saat buka firm baru
+    // Reset sort/date state saat buka firm baru.
+    // Date filter default = preset 30D (30 hari terakhir) — bukan lagi
+    // "Semua Tanggal". Ini sesuai UX Overview (Performa 30 Hari) supaya
+    // consistent bahasa visual antar tab. IMPORTANT: set _dateFilter
+    // SEBELUM renderKpi/renderModeStats supaya KPI cards langsung
+    // pakai filter 30D (kalau di-render sebelum reset, mereka pakai
+    // filter dari firm sebelumnya → mismatch dgn rec list & chart).
     _recSortDir = 'desc';
-    _dateFilter = null;
+    _pfPeriod = { type: '30d' };
+    var _initRange = _pfComputePeriodRange(_pfPeriod);
+    _dateFilter = _initRange ? { start: _initRange.start, end: _initRange.end } : null;
     _calView = null;
     _calRecDates = null;
+    // Populate dropdown tahun dari rec firm ini + sync UI state preset.
+    _pfPopulateYearDropdown(firm);
+    _pfSyncPeriodUI();
     updateDateBtnLabel();
+
+    // Render KPI & mode stats DENGAN filter 30D yg sudah diset di atas.
+    renderKpi(firm);
+    renderModeStats(firm);
     // Reset search kode saham juga — supaya user tidak "terjebak" dgn
     // query firm sebelumnya saat pindah ke firm lain.
     var _srchRec = $id('trPfRecSearch'); if(_srchRec) _srchRec.value = '';
@@ -9451,6 +9693,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var tab = t.closest('#trPfTabs .tr-tab');
     if(tab){ var tb=tab.getAttribute('data-tab'); if(tb){ switchRecTab(tb); } return; }
 
+    // 3b) Klik tombol preset periode (30D / Bulan Ini). Dropdown Bulan
+    //     dan Tahun handled via 'change' event listener terpisah di
+    //     bawah (select tidak fire 'click' untuk value change).
+    //     Cek preset SEBELUM date button supaya klik "30D" tidak
+    //     mendarat sbg click di luar popup.
+    var pbtn = t.closest('#trPfChartPeriod .tr-cp-btn');
+    if(pbtn){
+      e.preventDefault();
+      var ptype = pbtn.getAttribute('data-period-type');
+      if(ptype && (!_pfPeriod || _pfPeriod.type !== ptype || ptype === '30d' || ptype === 'mtd')){
+        // 30D/MTD tidak butuh month/year → state polos {type}. Kalau
+        // user klik preset yg SUDAH aktif (mis. 30D lagi), no-op supaya
+        // tidak trigger rerender sia-sia. Exception: 30D/MTD boleh
+        // "refresh" (recompute today, jadi kalau tab dibuka lama & tgl
+        // berubah, klik 30D bikin filter di-recompute ke today baru).
+        _pfApplyPeriod({ type: ptype });
+      }
+      return;
+    }
+
     // 4) Trigger tombol calendar popup
     if(t.closest('#trPfDateBtn')){ e.preventDefault(); toggleCalPopup(); return; }
     // 5) Navigasi bulan
@@ -9515,6 +9777,49 @@ body.is-mobile-device.force-desktop .pl-col-main{
   window.addEventListener('resize', function(){
     var panel = document.getElementById('trMdetPanel');
     if(panel && panel.style.display !== 'none') scheduleDayChartRedraw();
+  });
+
+  // Change handler utk dropdown Bulan + Tahun period selector — <select>
+  // tidak fire 'click' saat value berubah, pakai 'change'.
+  //
+  // Bulan × Tahun sistem: 2 dropdown independent.
+  //   - Pilih bulan (0-11)   → type='month'  dgn year = tahun terpilih.
+  //   - Pilih tahun          → kalau lagi 'month', keep bulan + update
+  //                            tahun. Else → type='year' (full year).
+  //   - Pilih placeholder "Bulan" (value '') di dropdown Bulan → clear
+  //                            month, switch ke type='year' dgn tahun
+  //                            terpilih.
+  // Identik dgn UX Overview '_getPeriodRange' handlers supaya konsisten.
+  document.addEventListener('change', function(e){
+    if(!e.target) return;
+    var id = e.target.id;
+    if(id === 'trPfChartPeriodYear'){
+      var y = parseInt(e.target.value, 10);
+      if(!Number.isFinite(y)) return;
+      if(_pfPeriod && _pfPeriod.type === 'month' && typeof _pfPeriod.month === 'number'){
+        // Keep month, update year.
+        _pfApplyPeriod({ type: 'month', month: _pfPeriod.month, year: y });
+      } else {
+        _pfApplyPeriod({ type: 'year', year: y });
+      }
+      return;
+    }
+    if(id === 'trPfChartPeriodMonth'){
+      var mVal = e.target.value;
+      var yearSel = $id('trPfChartPeriodYear');
+      var currentYr = (yearSel && parseInt(yearSel.value, 10))
+                    || (_pfPeriod && _pfPeriod.year)
+                    || new Date().getUTCFullYear();
+      if(mVal === '' || mVal == null){
+        // Deselect bulan → switch ke type='year' (full year).
+        _pfApplyPeriod({ type: 'year', year: currentYr });
+      } else {
+        var m = parseInt(mVal, 10);
+        if(!Number.isFinite(m) || m < 0 || m > 11) return;
+        _pfApplyPeriod({ type: 'month', month: m, year: currentYr });
+      }
+      return;
+    }
   });
 
   // Delegated input handler utk search kode saham di panel Rekomendasi
