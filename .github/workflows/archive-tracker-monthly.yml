@@ -1,0 +1,146 @@
+name: Archive Tracker (Monthly snapshot + Telegram notify)
+
+# ═══════════════════════════════════════════════════════════════════════
+# Setiap TGL 1 jam 01:00 WIB, jalankan pipeline arsip bulanan:
+#   1) Upsert isi sheet → public/tracker-history.json (sama dgn daily).
+#   2) Tulis snapshot bulanan public/tracker-history/YYYY-MM.json
+#      (untuk bulan yg baru saja lewat).
+#   3) Retention 3 tahun: hapus entry & file yg > 3 tahun.
+#   4) Kirim notif Telegram: sheet AMAN di-wipe manual jam 06:00 WIB.
+#
+# CRON TRIGGER LOGIC:
+#   01:00 WIB tgl 1 = 18:00 UTC hari sebelumnya (30/31 bulan lalu, atau
+#   28/29 utk Feb). Cron `0 18 28-31 * *` fire di 4 tanggal itu setiap
+#   bulan (kadang 3 utk bulan 30-hari), tapi kita HANYA jalankan bila
+#   waktu WIB saat itu = tgl 1 jam 01:xx.
+#
+#   Contoh: cron fire pada
+#     - 31 Jul 18:00 UTC → 1 Ags 01:00 WIB → JALAN (day=1)
+#     - 30 Jul 18:00 UTC → 31 Jul 01:00 WIB → SKIP (day=31)
+#     - 28 Feb (non-leap) 18:00 UTC → 1 Mar 01:00 WIB → JALAN
+#     - 28 Feb (leap) 18:00 UTC → 29 Feb 01:00 WIB → SKIP
+#     - 29 Feb (leap) 18:00 UTC → 1 Mar 01:00 WIB → JALAN
+#   Efeknya: dijamin persis 1x JALAN per bulan, pas 01:00 WIB tgl 1.
+#
+# PRASYARAT SECRET:
+#   - TRACKER_SHEET_ID    (sama dgn refresh-tracker.yml)
+#   - TRACKER_SHEET_TAB   (opsional)
+#   - TELEGRAM_BOT_TOKEN  (sudah di-set user; sama dgn worker Cloudflare)
+#   - TELEGRAM_CHAT_ID    (sudah di-set user; sama dgn worker Cloudflare)
+# ═══════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    - cron: '0 18 28-31 * *'   # 18:00 UTC di tgl 28-31 tiap bulan
+  workflow_dispatch:
+    inputs:
+      force_month:
+        description: 'Override snapshot month (format YYYY-MM). Kosong = bulan sebelumnya.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tracker-write
+  cancel-in-progress: false
+
+jobs:
+  archive-monthly:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Guard: hanya lanjut kalau waktu WIB saat ini adalah tgl 1 ──
+      # Cron fire di hari-hari akhir bulan (28-31 UTC), tapi hanya tepat
+      # pada tanggal yg besok-nya = tgl 1 kita boleh jalan. Manual dispatch
+      # (workflow_dispatch) selalu di-izinkan (bypass guard).
+      - name: Guard WIB day-of-month == 1
+        id: guard
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "manual dispatch — bypass guard."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Waktu WIB = UTC + 7 jam
+          wib_day=$(TZ=UTC date -d '+7 hours' +%d)
+          wib_full=$(TZ=UTC date -d '+7 hours' '+%Y-%m-%d %H:%M %Z')
+          echo "waktu WIB saat ini: $wib_full (day=$wib_day)"
+
+          if [ "$wib_day" = "01" ]; then
+            echo "✓ WIB tgl 1 — lanjut monthly archive."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "⏭  WIB bukan tgl 1 — skip. (cron fire di tanggal ini karena termasuk 28-31 UTC)"
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node
+        if: steps.guard.outputs.should_run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run archive-tracker (monthly)
+        if: steps.guard.outputs.should_run == 'true'
+        env:
+          TRACKER_SHEET_ID:   ${{ secrets.TRACKER_SHEET_ID }}
+          TRACKER_SHEET_TAB:  ${{ secrets.TRACKER_SHEET_TAB }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          FORCE_ARG=""
+          if [ -n "${{ github.event.inputs.force_month }}" ]; then
+            FORCE_ARG="--force-month=${{ github.event.inputs.force_month }}"
+          fi
+          node scripts/archive-tracker.js --monthly $FORCE_ARG
+
+      - name: Commit & push if changed
+        if: steps.guard.outputs.should_run == 'true'
+        id: commit
+        run: |
+          # Kumpulkan file yg diubah oleh archive-tracker.js:
+          #   - public/tracker-history.json          (cumulative)
+          #   - public/tracker-history/YYYY-MM.json  (snapshot bulanan; bisa >1
+          #     kalau retention menghapus file lama)
+          git add public/tracker-history.json public/tracker-history/ || true
+
+          if git diff --cached --quiet; then
+            echo "⏭  No changes — skip commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name  "tracker-archive[bot]"
+          git config user.email "tracker-archive@economstock.local"
+          git commit -m "tracker: monthly archive $(date -u +%FT%TZ)"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "✓ Pushed on attempt $attempt"
+              pushed=true
+              break
+            fi
+            echo "⚠️  Push gagal (attempt $attempt) — rebase ke origin/main lalu retry…"
+            git pull --rebase --autostash origin main || true
+            sleep $(( (RANDOM % 5) + 2 ))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "FATAL: push gagal setelah 5 percobaan."
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Purge jsDelivr CDN cache
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          response=$(curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/public/tracker-history.json" || true)
+          echo "Purge tracker-history.json: $response"
