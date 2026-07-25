@@ -12259,12 +12259,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
             // Adopsi behavior tooltip seasonality di menu Pasar Live —
             // reduce clutter. Tooltip 2 baris:
             //   Line 1: 'Nama Sekuritas: +12.34%'      (kumulatif s.d. tgl)
-            //   Line 2: 'Return hari ini: +2.10%'      (delta vs tgl sebelumnya)
+            //   Line 2: 'Return harian: +2.10%'        (delta vs tgl sebelumnya)
             // afterLabel utk baris ke-2. Skip baris 2 kalau idx=0 (tidak
             // ada tgl sebelumnya) atau tgl tanpa aktivitas trade (delta=0).
             mode: 'nearest', intersect: false,
             backgroundColor: card, borderColor: border, borderWidth: 1,
             titleColor: text2, bodyColor: text2, padding: 10,
+            // Filter tooltip item saat ada highlight aktif: cuma tampil
+            // untuk dataset yg firmId match _highlightedFirmId. Line
+            // faded (buram) → tooltip suppressed. Ini bikin user fokus
+            // di line aktif — hover jauh dari line aktif = tidak ada
+            // tooltip (indicator visual kalau user harus geser cursor
+            // ke line yg lagi di-highlight).
+            filter: function(tooltipItem){
+              if (_highlightedFirmId == null) return true;
+              return tooltipItem.dataset && tooltipItem.dataset.firmId === _highlightedFirmId;
+            },
             callbacks: {
               label: function(it){
                 var y = it.parsed.y;
