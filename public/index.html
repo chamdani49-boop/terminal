@@ -6154,7 +6154,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-card-h">
       <div>
         <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
-        <div class="tr-card-desc">Return kumulatif per sekuritas · Top 8 by aktivitas · vs IHSG (benchmark)</div>
+        <div class="tr-card-desc">Return kumulatif per sekuritas vs IHSG (benchmark) · hover chart untuk detail harga &amp; return</div>
       </div>
     </div>
     <div class="tr-chart-wrap"><canvas id="trChart"></canvas></div>
@@ -11635,11 +11635,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
       })
       .slice(0, 8);
 
-    // IHSG line pakai HARGA CLOSE ASLI (raw daily) — bukan cumulative
-    // return %. User rule: "ihsg gunakan chart asli harian saja". Render
-    // di secondary Y-axis (kanan, Rp) supaya scale-nya tidak bertabrakan
-    // dgn firm return % (kiri). Return % di-compute on-the-fly di
-    // tooltip saat cursor hover.
+    // IHSG line di-render sbg RETURN KUMULATIF % (base = close pertama di
+    // series30d) — supaya scale-nya SAMA dgn firm return %, jadi user bisa
+    // langsung bandingin visual: "sekuritas X di atas/bawah IHSG?".
+    // Harga close asli tetap disimpan (ihsgCloseArr) & di-lookup di tooltip
+    // supaya saat hover tampil BOTH harga + return% sekaligus.
     // Forward-fill kalau IHSG data belum ada utk tgl X (pipeline lag).
     var ihsgBase = ihsgSeries.length ? +ihsgSeries[0].close : null;
     var ihsgPriceByDate = {};
@@ -11647,9 +11647,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if (s && s.date && Number.isFinite(+s.close)) ihsgPriceByDate[s.date] = +s.close;
     });
     var lastIhsgPrice = null;
-    var ihsgClose = timeline.map(function(date){
+    var ihsgCloseArr = timeline.map(function(date){
       if (ihsgPriceByDate[date] != null) lastIhsgPrice = ihsgPriceByDate[date];
       return lastIhsgPrice;   // null di awal kalau IHSG belum start di tgl itu
+    });
+    // Convert ke return% vs base (utk plot di axis %)
+    var ihsgReturnArr = ihsgCloseArr.map(function(p){
+      if (p == null || !Number.isFinite(ihsgBase) || ihsgBase <= 0) return null;
+      return +(((p - ihsgBase) / ihsgBase) * 100).toFixed(2);
     });
 
     var css = getComputedStyle(document.documentElement);
@@ -11678,19 +11683,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
         spanGaps: true
       };
     });
-    // IHSG line — harga close asli, secondary Y-axis (kanan), dashed red.
+    // IHSG line — return% (single axis), dashed red, sedikit lebih tebal
+    // supaya menonjol sbg benchmark. Custom prop _closes utk lookup harga
+    // asli di tooltip.
     datasets.push({
       label: 'IHSG',
-      data: ihsgClose,
+      data: ihsgReturnArr,
+      _closes: ihsgCloseArr,    // shadow prop utk tooltip lookup
       borderColor: redC,
       backgroundColor: 'transparent',
       fill: false,
       tension: 0.4,
       pointRadius: 0,           // polos, tanpa marker (benchmark)
-      borderWidth: 2,
+      borderWidth: 2.5,
       borderDash: [5, 4],
-      spanGaps: true,
-      yAxisID: 'ihsg'           // dual axis: kanan (Rp)
+      spanGaps: true
     });
 
     new Chart(ctx, {
@@ -11712,23 +11719,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
             backgroundColor: card, borderColor: border, borderWidth: 1,
             titleColor: text2, bodyColor: text2,
             callbacks: {
-              // Tooltip label kondisional: IHSG tampil harga + return%,
-              // firm lines tampil return%. Return IHSG di-compute vs
-              // ihsgBase (close pertama di series) on-the-fly.
+              // Semua line di scale % → apple-to-apple comparison. Tooltip:
+              //   IHSG: tampilkan 'IHSG: +7.29% · 6.315' (return + harga asli).
+              //   Firm: tampilkan 'Firm Name: +12.34%'.
               label: function(it){
                 var y = it.parsed.y;
                 var lbl = it.dataset.label;
+                var pctStr = (Number.isFinite(y)) ? ((y>=0?'+':'') + y.toFixed(2) + '%') : '—';
                 if (lbl === 'IHSG'){
-                  if (!Number.isFinite(y)) return lbl + ': —';
-                  var priceStr = Number(y).toLocaleString('id-ID');
-                  var retStr = '';
-                  if (Number.isFinite(ihsgBase) && ihsgBase > 0){
-                    var ret = ((y - ihsgBase) / ihsgBase) * 100;
-                    retStr = ' (' + (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%)';
-                  }
-                  return lbl + ': ' + priceStr + retStr;
+                  var closes = it.dataset._closes;
+                  var closeVal = (closes && closes[it.dataIndex] != null) ? closes[it.dataIndex] : null;
+                  var priceStr = (closeVal != null) ? ' · ' + Number(closeVal).toLocaleString('id-ID') : '';
+                  return lbl + ': ' + pctStr + priceStr;
                 }
-                return lbl + ': ' + (y >= 0 ? '+' : '') + (Number.isFinite(y) ? y.toFixed(2) : '—') + '%';
+                return lbl + ': ' + pctStr;
               }
             }
           }
@@ -11739,17 +11743,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
             ticks: { color: text3, font: { size: 10, family: "'IBM Plex Mono',monospace" }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
           },
           y: {
-            position: 'left',
             grid: { color: border },
-            ticks: { color: text2, font: { size: 10, family: "'IBM Plex Mono',monospace" }, callback: function(v){ return v + '%'; } }
-          },
-          ihsg: {
-            position: 'right',
-            grid: { display: false },   // hindari double grid
-            ticks: {
-              color: text3, font: { size: 10, family: "'IBM Plex Mono',monospace" },
-              callback: function(v){ return Number(v).toLocaleString('id-ID'); }
-            }
+            ticks: { color: text2, font: { size: 10, family: "'IBM Plex Mono',monospace" }, callback: function(v){ return (v>=0?'+':'') + v + '%'; } }
           }
         },
         interaction: { mode: 'index', intersect: false }
