@@ -4960,6 +4960,28 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 .tr-ov-latest-tab span{opacity:.8;margin-left:2px;font-weight:500}
 .tr-ov-latest-tab.active span{opacity:1}
 
+/* Mobile dropdown filter status — muncul di layar sempit (<=640px),
+   inline dgn toggle "Terbaru | Per Firm". Hidden di desktop. */
+.tr-ov-latest-status-select{
+  display:none;   /* default hidden — desktop pakai tabs */
+  padding:5px 10px;font-size:11px;font-weight:700;
+  border:1px solid var(--border);border-radius:var(--radius-pill);
+  background:var(--card);color:var(--text);
+  cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:.3px;
+  min-width:0;max-width:180px;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' stroke='%23a49cc0' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 8px center;background-size:10px;
+  padding-right:24px;
+}
+.tr-ov-latest-status-select:hover{border-color:var(--accent);color:var(--accent)}
+.tr-ov-latest-status-select:focus{outline:2px solid rgba(124,58,237,.35);outline-offset:0}
+@media (max-width:640px){
+  /* Sembunyikan tabs pill baris (yg wrap 3 rows di HP), ganti dgn dropdown */
+  .tr-ov-latest-tabs{display:none !important}
+  .tr-ov-latest-status-select{display:inline-block}
+}
+
 .tr-ov-latest-btn{
   padding:5px 14px;font-size:11px;font-weight:700;
   border:1px solid var(--border);border-radius:var(--radius-pill);
@@ -6600,6 +6622,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <div class="tr-ov-latest-nav" role="group" aria-label="Pilih tampilan">
         <button type="button" class="tr-ov-latest-btn active" data-view="recent" aria-selected="true">Terbaru</button>
         <button type="button" class="tr-ov-latest-btn" data-view="firms" aria-selected="false">Per Firm</button>
+        <!-- Dropdown filter status — HANYA muncul di layar sempit/HP (mobile),
+             menggantikan baris tabs .tr-ov-latest-tabs yg wrap 3 rows di HP.
+             Di desktop, ini hidden dan tabs pill yg tampil. -->
+        <select class="tr-ov-latest-status-select" id="trOvLatestStatusSelect"
+                aria-label="Filter status rekomendasi (mobile)">
+          <option value="all">Semua (0)</option>
+          <option value="active">Aktif (0)</option>
+          <option value="pending">Menunggu (0)</option>
+          <option value="tp">TP (0)</option>
+          <option value="sl">SL (0)</option>
+          <option value="expired">Expired (0)</option>
+        </select>
       </div>
     </div>
     <!-- Filter Basis × Target — hanya muncul saat view=firms -->
@@ -13955,6 +13989,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
     setN('trOvLatestNTp',   counts.tp);
     setN('trOvLatestNSl',   counts.sl);
     setN('trOvLatestNExp',  counts.expired);
+    // Update dropdown mobile — refresh label per option dgn count baru,
+    // dan sync selected value dgn state tab aktif.
+    var sel = $('trOvLatestStatusSelect');
+    if(sel){
+      var lblMap = {
+        all:     'Semua ('    + counts.all     + ')',
+        active:  'Aktif ('    + counts.active  + ')',
+        pending: 'Menunggu (' + counts.pending + ')',
+        tp:      'TP ('       + counts.tp      + ')',
+        sl:      'SL ('       + counts.sl      + ')',
+        expired: 'Expired ('  + counts.expired + ')'
+      };
+      for(var oi=0; oi<sel.options.length; oi++){
+        var oval = sel.options[oi].value;
+        if(lblMap[oval]) sel.options[oi].text = lblMap[oval];
+      }
+      if(sel.value !== (_trOvLatestStatusTab || 'all')) sel.value = _trOvLatestStatusTab || 'all';
+    }
 
     // Filter 2: status tab (kalau bukan 'all')
     var tabKey = _trOvLatestStatusTab || 'all';
@@ -14107,14 +14159,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var el = $('trOvLatest'); if(!el) return;
     var filters = $('trOvFirmFilters');
     if(filters) filters.style.display = _trOvLatestView === 'firms' ? 'flex' : 'none';
-    // Status tabs cuma muncul di view 'recent'
+    // Status tabs cuma muncul di view 'recent' — desktop pill tabs +
+    // mobile dropdown, keduanya di-hide saat view='firms'.
     var stabs = $('trOvLatestTabs');
-    if(stabs) stabs.style.display = _trOvLatestView === 'firms' ? 'none' : 'flex';
+    var ssel  = $('trOvLatestStatusSelect');
+    if(stabs) stabs.style.display = _trOvLatestView === 'firms' ? 'none' : '';
+    if(ssel)  ssel.style.display  = _trOvLatestView === 'firms' ? 'none' : '';
     if(_trOvLatestView === 'firms') renderLatestFirms(el, _trOvLatestData || {});
     else                             renderLatestRecent(el, _trOvLatestData || {});
   }
 
-  // Click handler status tabs di panel Rekomendasi Terbaru
+  // Click handler status tabs di panel Rekomendasi Terbaru (desktop)
   document.addEventListener('click', function(e){
     var btn = e.target && e.target.closest && e.target.closest('#trOvLatestTabs .tr-ov-latest-tab');
     if(!btn) return;
@@ -14130,7 +14185,25 @@ body.is-mobile-device.force-desktop .pl-col-main{
       btn.classList.add('active');
       btn.setAttribute('aria-selected', 'true');
     }
+    // Sync dropdown mobile value juga (kalau user resize dari HP ke desktop)
+    var sel = $('trOvLatestStatusSelect');
+    if(sel && sel.value !== s) sel.value = s;
     // Re-render dgn filter status baru
+    if(_trOvLatestView === 'recent') renderLatestRecent($('trOvLatest'), _trOvLatestData || {});
+  });
+  // Change handler dropdown status (mobile) — sinkron ke tabs desktop
+  document.addEventListener('change', function(e){
+    var sel = e.target && e.target.closest && e.target.closest('#trOvLatestStatusSelect');
+    if(!sel) return;
+    var s = sel.value; if(!s || s === _trOvLatestStatusTab) return;
+    _trOvLatestStatusTab = s;
+    // Sync tab active class desktop
+    var tabs = document.querySelectorAll('#trOvLatestTabs .tr-ov-latest-tab');
+    for(var i=0; i<tabs.length; i++){
+      var isActive = tabs[i].getAttribute('data-status') === s;
+      tabs[i].classList.toggle('active', isActive);
+      tabs[i].setAttribute('aria-selected', isActive ? 'true' : 'false');
+    }
     if(_trOvLatestView === 'recent') renderLatestRecent($('trOvLatest'), _trOvLatestData || {});
   });
 
