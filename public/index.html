@@ -11874,8 +11874,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
         backgroundColor: 'transparent',
         fill: false,
         tension: 0.35,
-        pointRadius: hasHighlight ? (isActive ? 2.5 : 0) : 1.8,
-        pointHoverRadius: hasHighlight ? (isActive ? 6 : 3) : 6,
+        // Bintik (point marker) HANYA muncul di line yg lagi di-highlight.
+        // Default state: pointRadius=0 → chart bersih tanpa titik.
+        // Highlight active: pointRadius=3 → titik jelas menonjol.
+        // Highlight non-active: pointRadius=0 → fade + tanpa titik.
+        // pointHoverRadius tetap non-zero supaya hover cursor tetap
+        // dapat pop up tooltip (nearest mode).
+        pointRadius: hasHighlight && isActive ? 3 : 0,
+        pointHoverRadius: hasHighlight ? (isActive ? 6 : 3) : 5,
         pointBackgroundColor: effectiveColor,
         pointBorderColor: effectiveColor,
         borderWidth: hasHighlight ? (isActive ? 2.8 : 1.2) : 1.7,
