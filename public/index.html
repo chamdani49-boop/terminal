@@ -4484,20 +4484,47 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-recmodal-chart-wrap.tv-mode .tr-recmodal-chart,
 .tr-recmodal-chart-wrap.tv-mode .tr-recmodal-zones,
 .tr-recmodal-chart-wrap.tv-mode .tr-recmodal-watermark{display:none !important}
-/* Brand watermark utk mode 'Chart Kita'. Samar tapi kebaca — z-index di
-   antara canvas (default 0) dan zones (z-index:5), jadi label TP/SL/entry
-   TIDAK ketutup watermark. pointer-events:none supaya interaksi crosshair
-   lightweight-charts tidak terganggu. */
+/* Brand watermark utk mode 'Chart Kita'. 2 baris:
+   1. `.wm-brand` — samar/translucent (watermark klasik), meniru posisi
+      "ECONOMSTOCK TERMINAL" di gambar contoh dari user.
+   2. `.wm-tg` — solid/opaque, kecil, warna biru Telegram. Ini BUKAN
+      watermark — kanal identitas broadcast (t.me/ruanginvestor) yang
+      wajib kelihatan jelas saat gambar chart di-share ke Telegram.
+      Tetap kecil supaya tidak dominan di UI web sehari-hari.
+   z-index 10 : di atas canvas chart (0) tapi di bawah zones (5)? 
+   Tidak — 10 > 5, jadi ternyata watermark DI ATAS zones. Tapi karena
+   watermark di area top-center dan zones di area TP/SL (jauh dari
+   center-top), praktik tidak menutupi. Aman.
+   pointer-events:none supaya interaksi crosshair lightweight-charts
+   tidak terganggu. */
 .tr-recmodal-watermark{
   position:absolute;top:14px;left:0;right:0;
   z-index:10;pointer-events:none;user-select:none;
   text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  white-space:nowrap;
+}
+.tr-recmodal-watermark .wm-brand{
   font-family:inherit;font-weight:800;letter-spacing:1px;
   font-size:clamp(12px, 2.3vw, 28px);
-  white-space:nowrap;text-transform:uppercase;
+  text-transform:uppercase;
   color:rgba(15,23,42,0.12);
 }
-[data-theme="dark"] .tr-recmodal-watermark{color:rgba(255,255,255,0.12)}
+[data-theme="dark"] .tr-recmodal-watermark .wm-brand{color:rgba(255,255,255,0.12)}
+/* Kanal Telegram — SOLID, bukan watermark. Kecil (11px) supaya
+   tidak menggangu tampilan chart di web, tapi tetap terbaca jelas
+   saat gambar chart di-capture & di-broadcast ke Telegram. Warna
+   biru Telegram (#229ED9 official brand color) supaya secara visual
+   diasosiasikan dgn platform Telegram. */
+.tr-recmodal-watermark .wm-tg{
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:700;letter-spacing:.6px;
+  font-size:11px;
+  text-transform:uppercase;
+  color:#229ED9;
+  opacity:.95;
+}
+[data-theme="dark"] .tr-recmodal-watermark .wm-tg{color:#4FB8E8}
 /* Badge hit di level cards — 'TERISI' utk entry, 'HIT' utk TP, 'KENA' utk SL.
    Position absolute di corner atas kanan card. Card sendiri sudah relative. */
 .tr-recmodal-level-hit{
@@ -4588,6 +4615,31 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-recmodal-note{margin-top:10px;padding:9px 11px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
 .tr-recmodal-note-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:4px}
 .tr-recmodal-note-body{font-size:12px;color:var(--text2);line-height:1.55;white-space:pre-wrap;word-break:break-word}
+
+/* Share to Telegram — admin-only. Tombol kecil supaya tidak dominan
+   (fungsi kontrol admin, bukan tombol utama konsumsi user). Warna biru
+   Telegram official (#2AABEE→#229ED9) supaya recognizability tinggi.
+   Layout: tombol + label pesan status di sebelahnya (wrap ke bawah di
+   layar sempit). */
+.tr-recmodal-share{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+.tr-recmodal-share-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 11px;font-size:11.5px;font-weight:700;
+  background:linear-gradient(135deg,#2AABEE,#229ED9);
+  color:#fff;border:0;border-radius:6px;cursor:pointer;
+  font-family:inherit;letter-spacing:.2px;line-height:1.3;
+  transition:transform .1s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.tr-recmodal-share-btn:hover{box-shadow:0 4px 12px rgba(34,158,217,.35)}
+.tr-recmodal-share-btn:active{transform:translateY(1px)}
+.tr-recmodal-share-btn:disabled{opacity:.55;cursor:progress}
+.tr-recmodal-share-msg{
+  font-size:11px;color:var(--text3);
+  font-family:'IBM Plex Mono',monospace;
+  min-height:14px;
+}
+.tr-recmodal-share-msg.ok{color:var(--green)}
+.tr-recmodal-share-msg.err{color:var(--red)}
 
 @media (max-width:640px){
   .tr-recmodal-body{padding:14px 14px 12px;max-height:calc(100vh - 20px);gap:9px}
@@ -16952,6 +17004,9 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       // tapi user sudah pindah ke chart kita.
       tvEl.innerHTML = '';
     }
+    // Re-evaluate share button visibility: tersembunyi saat mode TV karena
+    // iframe TradingView cross-origin tidak bisa di-capture ke canvas.
+    _updateShareBtnVisibility();
   }
 
   // Mount TradingView Advanced Chart widget via iframe embed.
@@ -16995,8 +17050,196 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     setChartMode('own');
     // Render chart async (fetch OHLC, then draw)
     renderChart(rec);
+    // Reset pesan status share button + evaluate visibility (admin flag
+    // bisa saja belum ready saat modal pertama kali di-buka).
+    var _shareMsg = document.getElementById('trRecModalShareMsg');
+    if (_shareMsg) { _shareMsg.textContent = ''; _shareMsg.className = 'tr-recmodal-share-msg'; }
+    _updateShareBtnVisibility();
   }
   window.__TR_showRec = showModal;
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ADMIN-ONLY: Kirim gambar chart rec ini ke Telegram admin.
+  // ═══════════════════════════════════════════════════════════════════
+  // Alur:
+  //   1. Tombol muncul HANYA saat `window.__ES_IS_ADMIN === true` DAN
+  //      chart mode = 'own' (Chart Kita). Mode TradingView di-hide karena
+  //      iframe cross-origin tidak bisa di-capture ke canvas.
+  //   2. Klik → lazy-load html2canvas (~30KB dari CDN, cached) → capture
+  //      #trRecModalChartWrap (chart + watermark + zones) → PNG dataURL.
+  //   3. Build caption plain-text dari _currentRec (ticker/entry/state/
+  //      TP1/TP2/SL + %chg dari entry).
+  //   4. POST ke /api/admin/tracker/share-telegram (JSON body). Worker
+  //      re-verify admin gate & forward ke Telegram Bot sendPhoto pakai
+  //      chat_id yg sama dgn notif abuse (TELEGRAM_CHAT_ID).
+  //   5. Update label status di sebelah tombol (Terkirim ✓ / error).
+  //
+  // KEAMANAN: Frontend hide button = UX hint saja. Worker HARUS re-verify
+  // via requireAdmin(). User non-admin yg force-panggil endpoint akan
+  // 401/403.
+  // ═══════════════════════════════════════════════════════════════════
+  var _h2cLoading = null;
+  function _loadHtml2Canvas(){
+    if (typeof window.html2canvas === 'function') return Promise.resolve(window.html2canvas);
+    if (_h2cLoading) return _h2cLoading;
+    _h2cLoading = new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.async = true;
+      s.onload = function(){
+        if (typeof window.html2canvas === 'function') resolve(window.html2canvas);
+        else { _h2cLoading = null; reject(new Error('html2canvas invalid setelah load')); }
+      };
+      s.onerror = function(){ _h2cLoading = null; reject(new Error('Gagal load html2canvas dari CDN')); };
+      document.head.appendChild(s);
+    });
+    return _h2cLoading;
+  }
+
+  // Format % change dari entry ke target. Signed (+/-). 1 desimal.
+  function _fmtPctFromEntry(entry, target){
+    var e = +entry, t = +target;
+    if (!isFinite(e) || !isFinite(t) || e === 0) return '';
+    var p = ((t - e) / e) * 100;
+    return (p >= 0 ? '+' : '') + p.toFixed(1) + '%';
+  }
+
+  // Label state → text untuk caption Telegram. Ini shape yang user minta.
+  function _stateLabelForShare(rec){
+    var s = String(rec && (rec.state || rec.status) || '').toUpperCase();
+    if (s === 'PENDING')        return '⏳ MENUNGGU ENTRY';
+    if (s === 'TRIGGERED')      return '✓ TERISI';
+    if (s === 'RUNNING_MISSED') return '⚠️ TERLEWAT';
+    if (s === 'TP_HIT')         return '🎯 TP KENA';
+    if (s === 'SL_HIT')         return '❌ SL KENA';
+    if (s === 'EXPIRED')        return '⌛ KADALUARSA';
+    return '';
+  }
+
+  // Build caption HTML utk Telegram sendPhoto. Format persis contoh user:
+  //   NCKL
+  //   ENTRY: 870
+  //   ✓ TERISI
+  //   TP1: 935 +7.5%
+  //   TP2: 970 +11.5%
+  //   STOP-LOSS: 805 -7.5%
+  // Ticker di-<b>bold</b> (parse_mode=HTML). Sisanya plain.
+  function _buildShareCaption(rec){
+    if (!rec) return '';
+    var lines = [];
+    var ticker = String(rec.ticker || '—').toUpperCase();
+    lines.push('<b>' + esc(ticker) + '</b>');
+    if (rec.entry != null && rec.entry !== '') lines.push('ENTRY: ' + esc(rec.entry));
+    var stateLabel = _stateLabelForShare(rec);
+    if (stateLabel) lines.push(stateLabel);
+    if (rec.tp1 != null && rec.tp1 !== '') {
+      var p1 = _fmtPctFromEntry(rec.entry, rec.tp1);
+      lines.push('TP1: ' + esc(rec.tp1) + (p1 ? ' ' + p1 : ''));
+    }
+    if (rec.tp2 != null && rec.tp2 !== '') {
+      var p2 = _fmtPctFromEntry(rec.entry, rec.tp2);
+      lines.push('TP2: ' + esc(rec.tp2) + (p2 ? ' ' + p2 : ''));
+    }
+    if (rec.sl != null && rec.sl !== '') {
+      var ps = _fmtPctFromEntry(rec.entry, rec.sl);
+      lines.push('STOP-LOSS: ' + esc(rec.sl) + (ps ? ' ' + ps : ''));
+    }
+    return lines.join('\n');
+  }
+
+  // Toggle visibility tombol share berdasarkan (a) admin flag & (b) chart
+  // mode. Panggil dari showModal() dan setChartMode(). Idempoten.
+  function _updateShareBtnVisibility(){
+    var wrap = document.getElementById('trRecModalShareWrap');
+    if (!wrap) return;
+    var isAdmin = !!window.__ES_IS_ADMIN;
+    var isTv = _chartMode === 'tv';
+    wrap.hidden = !(isAdmin && !isTv);
+  }
+
+  async function _handleShareTelegram(){
+    var btn = document.getElementById('trRecModalShareBtn');
+    var msgEl = document.getElementById('trRecModalShareMsg');
+    if (!btn || !msgEl || !_currentRec) return;
+    if (btn.disabled) return; // prevent double-click race
+
+    var setMsg = function(text, cls){
+      msgEl.textContent = text || '';
+      msgEl.className = 'tr-recmodal-share-msg' + (cls ? ' ' + cls : '');
+    };
+
+    btn.disabled = true;
+    setMsg('Meng-capture chart…');
+
+    try {
+      // Guard defensif: kalau lagi TV mode (harusnya tombol sudah hidden),
+      // paksa switch ke 'own' + tunggu sebentar untuk repaint.
+      if (_chartMode === 'tv') {
+        setChartMode('own');
+        await new Promise(function(r){ setTimeout(r, 250); });
+      }
+
+      var h2c = await _loadHtml2Canvas();
+      var target = document.getElementById('trRecModalChartWrap');
+      if (!target) throw new Error('Chart wrapper tidak ditemukan');
+
+      // Beri 1 frame untuk repaint terakhir kalau ada state change
+      await new Promise(function(r){ requestAnimationFrame(function(){ setTimeout(r, 30); }); });
+
+      var canvas = await h2c(target, {
+        backgroundColor: null,        // preserve theme background dari parent
+        scale: (window.devicePixelRatio && window.devicePixelRatio > 1) ? 2 : 1.5,
+        logging: false,
+        useCORS: true,
+        allowTaint: false,
+      });
+      var dataUrl = canvas.toDataURL('image/png');
+      var caption = _buildShareCaption(_currentRec);
+
+      setMsg('Mengirim ke Telegram…');
+      var res = await fetch('/api/admin/tracker/share-telegram', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: dataUrl, caption: caption }),
+      });
+      var j = null;
+      try { j = await res.json(); } catch(_){}
+      if (!res.ok || !j || j.ok !== true) {
+        var errMsg = (j && (j.error || j.reason)) || ('HTTP ' + res.status);
+        throw new Error(errMsg);
+      }
+      setMsg('✓ Terkirim ke Telegram', 'ok');
+    } catch (e) {
+      setMsg('✗ ' + ((e && e.message) || 'Gagal kirim'), 'err');
+    } finally {
+      btn.disabled = false;
+      // Auto-clear pesan sukses/error setelah 8 detik supaya tidak menumpuk
+      setTimeout(function(){
+        if (msgEl.classList.contains('ok') || msgEl.classList.contains('err')) {
+          setMsg('');
+        }
+      }, 8000);
+    }
+  }
+
+  // Bind handler sekali. Karena tombol ada di dalam DOM yg selalu present
+  // (sub-modal Tracker permanent, tidak di-render on-demand), attach langsung
+  // saat IIFE load. Kalau elemen belum ada (script tereksekusi sebelum DOM
+  // ready?), fallback delegated click di document.
+  (function(){
+    var attach = function(){
+      var b = document.getElementById('trRecModalShareBtn');
+      if (b && !b.__esShareBound) {
+        b.addEventListener('click', _handleShareTelegram);
+        b.__esShareBound = true;
+      }
+    };
+    attach();
+    if (!document.getElementById('trRecModalShareBtn')) {
+      document.addEventListener('DOMContentLoaded', attach, { once: true });
+    }
+  })();
 
   // Delegated click handler utk tombol toggle chart engine.
   document.addEventListener('click', function(e){
@@ -29892,7 +30135,10 @@ document.addEventListener('keydown', (e) => {
       <!-- Watermark brand — samar, di atas canvas chart tapi di bawah
            zone overlay (zones z-index:5) supaya label TP/SL tetap kebaca.
            Auto-hide saat mode TradingView aktif (tv-mode). -->
-      <div class="tr-recmodal-watermark" aria-hidden="true">economstock terminal</div>
+      <div class="tr-recmodal-watermark" aria-hidden="true">
+        <span class="wm-brand">economstock terminal</span>
+        <span class="wm-tg">t.me/ruanginvestor</span>
+      </div>
       <div class="tr-recmodal-zones" id="trRecModalZones"></div>
       <!-- TradingView widget iframe — di-inject saat user toggle ke TV mode.
            HTML tetap kosong sampai user klik supaya tidak load iframe eksternal
@@ -29906,6 +30152,19 @@ document.addEventListener('keydown', (e) => {
     <div class="tr-recmodal-levels" id="trRecModalLevels"></div>
     <div class="tr-recmodal-foot" id="trRecModalFoot"></div>
     <div class="tr-recmodal-note" id="trRecModalNote" hidden></div>
+    <!-- ADMIN-ONLY: tombol kirim gambar chart rec ini ke Telegram admin
+         (chat_id sama dgn notif abuse). Visibility di-set client-side via
+         `window.__ES_IS_ADMIN` (dari /api/me), server-side WAJIB verify
+         lagi. `hidden` default supaya user biasa tidak lihat bahkan flash
+         sesaat sebelum JS eksekusi. Auto-sembunyi juga saat chart mode
+         TradingView aktif (iframe cross-origin tidak bisa di-capture). -->
+    <div class="tr-recmodal-share" id="trRecModalShareWrap" hidden>
+      <button type="button" class="tr-recmodal-share-btn" id="trRecModalShareBtn" title="Kirim gambar chart rec ini ke Telegram admin">
+        <span aria-hidden="true">📤</span>
+        <span>Kirim ke Telegram</span>
+      </button>
+      <span class="tr-recmodal-share-msg" id="trRecModalShareMsg" aria-live="polite"></span>
+    </div>
     <div class="dm-disclaimer-mini">Konten ini murni informasi edukasi dan bukan ajakan/rekomendasi membeli atau menjual saham. Data Economstock Terminal adalah rangkuman ringkas yang dikumpulkan untuk keperluan analisis edukatif — kami tidak menyalin, mereproduksi, maupun menyebarluaskan laporan asli. Hak cipta atas laporan penuh tetap milik sekuritas penerbitnya. Selalu lakukan riset secara mandiri dan pastikan kamu memahami risikonya sebelum mengambil keputusan investasi.</div>
   </div>
 </div>

@@ -115,6 +115,56 @@ export async function sendTelegram(env, text) {
   }
 }
 
+/**
+ * Kirim FOTO (PNG/JPEG) ke Telegram admin lewat sendPhoto API. Dipakai
+ * untuk fitur "Share to Telegram" di popup Tracker (chart rec + zone
+ * TP/SL yang di-capture client-side pakai html2canvas).
+ *
+ * @param {object} env      - Cloudflare Worker env (butuh TELEGRAM_BOT_TOKEN & _CHAT_ID)
+ * @param {Uint8Array} bytes - byte gambar mentah (bukan base64)
+ * @param {string} caption  - caption text (support HTML parse_mode)
+ * @param {object} [opts]   - { mime?: 'image/png'|'image/jpeg', filename?: string }
+ * @returns {{ok:true} | {ok:false, skipped?:true, reason?:string, error?:string}}
+ *
+ * Return shape sinkron dgn sendTelegram() supaya caller bisa treat error
+ * secara identik: kalau `skipped:true` → secret belum di-set (bisa balas
+ * 400 dgn message ramah). Kalau `error` → forwarding gagal (500/upstream).
+ */
+export async function sendTelegramPhoto(env, bytes, caption, opts) {
+  const token = (env.TELEGRAM_BOT_TOKEN || '').trim();
+  const chatId = (env.TELEGRAM_CHAT_ID || '').trim();
+  if (!token || !chatId) return { ok: false, skipped: true, reason: 'TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID belum di-set' };
+  if (!bytes || !bytes.length) return { ok: false, error: 'image bytes kosong' };
+
+  const mime = (opts && opts.mime) || 'image/png';
+  const ext = mime === 'image/jpeg' ? 'jpg' : 'png';
+  const filename = (opts && opts.filename) || `chart_${Date.now()}.${ext}`;
+  const hasCaption = !!(caption && String(caption).trim());
+
+  try {
+    const fd = new FormData();
+    fd.append('chat_id', chatId);
+    if (hasCaption) {
+      fd.append('caption', caption);
+      fd.append('parse_mode', 'HTML');
+    }
+    fd.append('photo', new Blob([bytes], { type: mime }), filename);
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+      method: 'POST',
+      body: fd,
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const j = await res.json(); if (j && j.description) msg = j.description; } catch (_) {}
+      return { ok: false, error: msg };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e && e.message) || 'fetch error' };
+  }
+}
+
 /** True bila boleh kirim notif untuk `key` (cooldown agar tidak spam). Pakai rate_counters. */
 async function notifyThrottled(env, key, cooldownSec) {
   if (!env.DB) return true;

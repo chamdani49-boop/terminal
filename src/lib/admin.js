@@ -8,7 +8,7 @@ import {
   getFeatureFlags, setFeatureFlags, listReferralsGrouped,
 } from './db.js';
 import { getBillingConfig, saveBillingConfig } from './billing.js';
-import { recentFlags, flagSummary, sendTelegram, deviceSummary, autosuspendEnabled } from './abuse.js';
+import { recentFlags, flagSummary, sendTelegram, sendTelegramPhoto, deviceSummary, autosuspendEnabled } from './abuse.js';
 
 export function isAdmin(env, email) {
   if (!email) return false;
@@ -61,6 +61,45 @@ export async function handleAdminApi(request, env, url) {
     if (r.ok) return json({ ok: true, message: 'Pesan test terkirim. Cek Telegram-mu.' });
     if (r.skipped) return json({ error: r.reason || 'Telegram belum dikonfigurasi.' }, 400);
     return json({ error: 'Gagal kirim: ' + (r.error || 'unknown') }, 400);
+  }
+
+  // ── Tracker: kirim gambar chart rec ke Telegram admin ──
+  // Frontend (popup Tracker, admin-only button) capture chart pakai
+  // html2canvas → dataURL PNG → POST ke sini. Kita decode base64 →
+  // forward ke Telegram Bot API sendPhoto (chat_id sama dgn abuse notif).
+  // Ukuran dibatasi 5MB (limit Telegram sendPhoto). Frontend hide button
+  // untuk non-admin sbg UX hint; verifikasi utama TETAP di endpoint ini
+  // via requireAdmin() gate di atas.
+  if (path === '/api/admin/tracker/share-telegram' && request.method === 'POST') {
+    let body;
+    try { body = await request.json(); } catch { return badRequest('Body tidak valid'); }
+    const dataUrl = String((body && body.imageBase64) || '');
+    const caption = String((body && body.caption) || '');
+    if (!/^data:image\/(png|jpe?g);base64,/i.test(dataUrl)) {
+      return json({ error: 'imageBase64 tidak valid (harus data:image/png|jpeg;base64,...)' }, 400);
+    }
+    // Guess mime dari prefix data URL
+    const mime = /image\/jpe?g/i.test(dataUrl.slice(0, 25)) ? 'image/jpeg' : 'image/png';
+    // Strip prefix, decode base64
+    const b64 = dataUrl.replace(/^data:[^,]*,/, '');
+    // Size guard: perkiraan cepat ukuran byte dari panjang base64.
+    // base64 ratio ≈ 3/4; +25% margin buffer.
+    const MAX_BYTES = 5 * 1024 * 1024;   // 5MB (limit Telegram sendPhoto)
+    if ((b64.length * 3) / 4 > MAX_BYTES) {
+      return json({ error: 'Gambar terlalu besar (>5MB). Coba tutup dulu tab lain / reload popup.' }, 400);
+    }
+    let bytes;
+    try {
+      const bin = atob(b64);
+      bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    } catch {
+      return json({ error: 'Base64 tidak valid / rusak' }, 400);
+    }
+    const r = await sendTelegramPhoto(env, bytes, caption, { mime });
+    if (r.ok) return json({ ok: true, message: 'Foto terkirim ke Telegram.' });
+    if (r.skipped) return json({ error: r.reason || 'Telegram belum dikonfigurasi.' }, 400);
+    return json({ error: 'Gagal kirim: ' + (r.error || 'unknown') }, 500);
   }
 
   // ── Billing: baca config lengkap (termasuk link Mayar) untuk editor ──
