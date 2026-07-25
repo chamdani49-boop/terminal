@@ -4941,6 +4941,25 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 /* Toggle Terbaru | Per Firm — mirror .ovl-btn dari Consensus Overview,
    dengan prefix .tr-ov-* untuk isolasi visual. */
 .tr-ov-latest-nav{display:inline-flex;gap:4px;flex-wrap:wrap}
+/* Status filter tabs untuk Rekomendasi Terbaru — konsisten dgn tab Analis
+   firm listing. Kompak, wrap di HP. */
+.tr-ov-latest-tabs{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;margin-bottom:2px;
+}
+.tr-ov-latest-tab{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+  padding:5px 10px;border-radius:6px;border:1px solid var(--border);
+  background:transparent;color:var(--text3);cursor:pointer;
+  transition:all .12s ease;letter-spacing:.3px;
+}
+.tr-ov-latest-tab:hover{border-color:var(--accent);color:var(--accent)}
+.tr-ov-latest-tab.active{
+  background:linear-gradient(180deg,rgba(124,58,237,.14),rgba(124,58,237,.06));
+  border-color:rgba(124,58,237,.42);color:var(--accent);font-weight:700;
+}
+.tr-ov-latest-tab span{opacity:.8;margin-left:2px;font-weight:500}
+.tr-ov-latest-tab.active span{opacity:1}
+
 .tr-ov-latest-btn{
   padding:5px 14px;font-size:11px;font-weight:700;
   border:1px solid var(--border);border-radius:var(--radius-pill);
@@ -6595,6 +6614,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <button type="button" class="tr-ov-rank-btn active" data-target="tp1" role="tab" aria-selected="true">TP1</button>
         <button type="button" class="tr-ov-rank-btn" data-target="tp2" role="tab" aria-selected="false">TP2</button>
       </div>
+    </div>
+    <!-- Filter status tabs — hanya muncul saat view=recent. Sinkron dgn
+         style Analis firm listing (Semua/Aktif/Menunggu/TP1/TP2/SL/Expired).
+         Rentang tanggal ikut kolom "Saham Paling Aktif" (default 30 hari
+         terakhir sesuai request user). -->
+    <div class="tr-ov-latest-tabs" id="trOvLatestTabs" role="tablist" aria-label="Filter status rekomendasi">
+      <button type="button" class="tr-ov-latest-tab active" data-status="all" role="tab" aria-selected="true">Semua (<span id="trOvLatestNAll">0</span>)</button>
+      <button type="button" class="tr-ov-latest-tab" data-status="active" role="tab" aria-selected="false">Aktif (<span id="trOvLatestNAct">0</span>)</button>
+      <button type="button" class="tr-ov-latest-tab" data-status="pending" role="tab" aria-selected="false">Menunggu (<span id="trOvLatestNPend">0</span>)</button>
+      <button type="button" class="tr-ov-latest-tab" data-status="tp" role="tab" aria-selected="false">TP (<span id="trOvLatestNTp">0</span>)</button>
+      <button type="button" class="tr-ov-latest-tab" data-status="sl" role="tab" aria-selected="false">SL (<span id="trOvLatestNSl">0</span>)</button>
+      <button type="button" class="tr-ov-latest-tab" data-status="expired" role="tab" aria-selected="false">Expired (<span id="trOvLatestNExp">0</span>)</button>
     </div>
     <div class="tr-ov-panel-sub" id="trOvLatestCount" style="align-self:flex-start">— rekomendasi</div>
     <div id="trOvLatest">
@@ -13371,12 +13402,29 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _trOvTopTickers = null;
   // State kalender filter tanggal — dipakai bersama updateOvTopTickers &
   // renderOvTickCal (defined below). null = tidak difilter (semua tgl).
-  var _tovTickDateFilter = null;    // { start:'YYYY-MM-DD', end:'YYYY-MM-DD' } | null
+  // Default filter: 30 hari terakhir (dari today ke belakang). User bisa
+  // ubah via kalender di header panel "Saham Paling Aktif". Filter ini
+  // JUGA berlaku untuk panel "Rekomendasi Terbaru" — biar sinkron.
+  function _tovInit30dFilter(){
+    var end = new Date();
+    var start = new Date(end.getTime() - 30 * 86400 * 1000);
+    var iso = function(d){
+      var y = d.getUTCFullYear();
+      var m = String(d.getUTCMonth()+1).padStart(2,'0');
+      var dd = String(d.getUTCDate()).padStart(2,'0');
+      return y+'-'+m+'-'+dd;
+    };
+    return { start: iso(start), end: iso(end) };
+  }
+  var _tovTickDateFilter = _tovInit30dFilter();  // default 30 hari terakhir
   var _tovTickCache = null;         // cache last data supaya bisa re-render tanpa fresh data
   function updateOvTopTickers(data){
     var canvas = $('trOvTopTickers'); if(!canvas || typeof Chart === 'undefined') return;
     if(data) _tovTickCache = data;
     var src = data || _tovTickCache; if(!src) return;
+    // Sync button label dgn filter state (misal '30 hari terakhir' saat
+    // load pertama kali dgn default filter).
+    try { _tovTickCalUpdateButton(); } catch(_){}
     // Filter rec berdasar _tovTickDateFilter (kolom L openDate)
     var inRange = function(r){
       if(!_tovTickDateFilter) return true;
@@ -13677,8 +13725,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var btn = $('trOvTickDateBtn');
     if(!lbl || !btn) return;
     if(_tovTickDateFilter){
+      // Detect preset "N hari terakhir" (rentang berakhir hari ini) →
+      // shorthand label yg ringkas. Kalau bukan preset, tampilkan range.
+      var todayIso = (function(){
+        var d = new Date();
+        var y = d.getUTCFullYear();
+        var m = String(d.getUTCMonth()+1).padStart(2,'0');
+        var dd = String(d.getUTCDate()).padStart(2,'0');
+        return y+'-'+m+'-'+dd;
+      })();
       var monthShort2 = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
       var fmt = function(iso){ var p = iso.split('-'); return p[2] + ' ' + monthShort2[+p[1]-1] + " '" + p[0].slice(-2); };
+      var isPresetEndToday = (_tovTickDateFilter.end === todayIso && _tovTickDateFilter.start !== _tovTickDateFilter.end);
+      if(isPresetEndToday){
+        var d1 = new Date(_tovTickDateFilter.start + 'T00:00:00Z');
+        var d2 = new Date(_tovTickDateFilter.end   + 'T00:00:00Z');
+        var days = Math.round((d2.getTime() - d1.getTime()) / 86400000);
+        if(days >= 1 && days <= 365){
+          lbl.textContent = days + ' hari terakhir';
+          btn.classList.add('filtered');
+          return;
+        }
+      }
       lbl.textContent = _tovTickDateFilter.start === _tovTickDateFilter.end
         ? fmt(_tovTickDateFilter.start)
         : (fmt(_tovTickDateFilter.start) + ' → ' + fmt(_tovTickDateFilter.end));
@@ -13753,6 +13821,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
       _tovTickCalPending = null;
       _tovTickCalUpdateButton();
       updateOvTopTickers();
+      // Rekomendasi Terbaru ikut refresh filter tanggal
+      if (typeof updateOvLatest === 'function') updateOvLatest();
       _tovTickCalClose();
       return;
     }
@@ -13764,6 +13834,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
         _tovTickDateFilter = { start: start, end: end };
         _tovTickCalUpdateButton();
         updateOvTopTickers();
+        // Rekomendasi Terbaru ikut refresh filter tanggal
+        if (typeof updateOvLatest === 'function') updateOvLatest();
       }
       _tovTickCalClose();
       return;
@@ -13779,6 +13851,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // di view Per Firm ini (semua firm, bukan cuma top/bottom 3).
   var _trOvLatestView = 'recent';      // 'recent' | 'firms'
   var _trOvLatestData = null;          // cache utk re-render antar interaksi
+  var _trOvLatestStatusTab = 'all';    // status filter: 'all' | 'active' | 'pending' | 'tp' | 'sl' | 'expired'
 
   function firmShortLbl(name){
     if(!name) return '—';
@@ -13842,20 +13915,79 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   var _fmtNRow = function(v){ return (v==null||!Number.isFinite(+v)) ? '—' : Number(v).toLocaleString('id-ID'); };
 
-  // View: Rekomendasi Terbaru — SEMUA baris (open+history+pending) sorted
-  // openDate desc. Sebelumnya cap 20; user minta munculkan semua. Baris
-  // di-scroll dalam container .tr-ov-latest-list (max-height di CSS).
+  // View: Rekomendasi Terbaru — filter by tanggal (mengikuti filter di
+  // panel "Saham Paling Aktif", default 30 hari terakhir) + filter by
+  // status tab (Semua / Aktif / Menunggu / TP / SL / Expired).
   function renderLatestRecent(el, data){
     var pool = [];
     (data.openList||[]).forEach(function(r){ pool.push({_b:'open',    r:r}); });
     (data.historyList||[]).forEach(function(r){ pool.push({_b:'history', r:r}); });
     (data.pendingList||[]).forEach(function(r){ pool.push({_b:'pending', r:r}); });
+    (data.missedList||[]).forEach(function(r){ pool.push({_b:'missed',  r:r}); });
+
+    // Filter 1: rentang tanggal — sinkron dgn _tovTickDateFilter (panel
+    // "Saham Paling Aktif"). Kalau null (user reset ke All Tanggal),
+    // include semua.
+    if (_tovTickDateFilter) {
+      pool = pool.filter(function(x){
+        var d = String(x.r.openDate || '').slice(0,10);
+        return d && d >= _tovTickDateFilter.start && d <= _tovTickDateFilter.end;
+      });
+    }
     pool.sort(function(a,b){ return String(b.r.openDate||'').localeCompare(String(a.r.openDate||'')); });
-    var take = pool;  // tampilkan semua — no slice
+
+    // Hitung count per status (utk tab counters) — dari pool yg sudah
+    // difilter tanggal. Pakai statusOfRow (TP1 lock aware).
+    var counts = { all: pool.length, active: 0, pending: 0, tp: 0, sl: 0, expired: 0 };
+    pool.forEach(function(x){
+      var st = statusOfRow(x._b, x.r);
+      if (st === 'AKTIF')    counts.active++;
+      else if (st === 'MENUNGGU') counts.pending++;
+      else if (st === 'TP')  counts.tp++;
+      else if (st === 'SL')  counts.sl++;
+      else if (st === 'EXP') counts.expired++;
+    });
+    // Update tab counters
+    var setN = function(id, n){ var e = $(id); if(e) e.textContent = n; };
+    setN('trOvLatestNAll',  counts.all);
+    setN('trOvLatestNAct',  counts.active);
+    setN('trOvLatestNPend', counts.pending);
+    setN('trOvLatestNTp',   counts.tp);
+    setN('trOvLatestNSl',   counts.sl);
+    setN('trOvLatestNExp',  counts.expired);
+
+    // Filter 2: status tab (kalau bukan 'all')
+    var tabKey = _trOvLatestStatusTab || 'all';
+    var tabMap = { active:'AKTIF', pending:'MENUNGGU', tp:'TP', sl:'SL', expired:'EXP' };
+    if (tabKey !== 'all' && tabMap[tabKey]) {
+      var want = tabMap[tabKey];
+      pool = pool.filter(function(x){ return statusOfRow(x._b, x.r) === want; });
+    }
+    var take = pool;
+
+    // Format subtitle: X rekomendasi · [rentang tgl] · [tab aktif]
     var cnt = $('trOvLatestCount');
-    if(cnt) cnt.textContent = pool.length + ' rekomendasi · sorted terbaru → lama';
+    if(cnt){
+      var subParts = [pool.length + ' rekomendasi'];
+      if (_tovTickDateFilter) {
+        var monthShort3 = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+        var fmt = function(iso){ var p = iso.split('-'); return p[2] + ' ' + monthShort3[+p[1]-1] + " '" + p[0].slice(-2); };
+        var rangeTxt = (_tovTickDateFilter.start === _tovTickDateFilter.end)
+          ? fmt(_tovTickDateFilter.start)
+          : (fmt(_tovTickDateFilter.start) + ' → ' + fmt(_tovTickDateFilter.end));
+        subParts.push(rangeTxt);
+      } else {
+        subParts.push('semua tanggal');
+      }
+      if (tabKey !== 'all') {
+        var tabLbl = { active:'Aktif', pending:'Menunggu', tp:'TP', sl:'SL', expired:'Expired' }[tabKey] || tabKey;
+        subParts.push('status: ' + tabLbl);
+      }
+      cnt.textContent = subParts.join(' · ');
+    }
     if(!take.length){
-      el.innerHTML = '<div class="tr-ov-latest-empty">Belum ada rekomendasi tercatat.</div>';
+      var emptyMsg = 'Belum ada rekomendasi di rentang & filter ini.';
+      el.innerHTML = '<div class="tr-ov-latest-empty">' + emptyMsg + '</div>';
       return;
     }
     // Harga saham per row: lastPrice (aktif/pending) → exitPrice (closed) →
@@ -13975,9 +14107,32 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var el = $('trOvLatest'); if(!el) return;
     var filters = $('trOvFirmFilters');
     if(filters) filters.style.display = _trOvLatestView === 'firms' ? 'flex' : 'none';
+    // Status tabs cuma muncul di view 'recent'
+    var stabs = $('trOvLatestTabs');
+    if(stabs) stabs.style.display = _trOvLatestView === 'firms' ? 'none' : 'flex';
     if(_trOvLatestView === 'firms') renderLatestFirms(el, _trOvLatestData || {});
     else                             renderLatestRecent(el, _trOvLatestData || {});
   }
+
+  // Click handler status tabs di panel Rekomendasi Terbaru
+  document.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest && e.target.closest('#trOvLatestTabs .tr-ov-latest-tab');
+    if(!btn) return;
+    var s = btn.getAttribute('data-status'); if(!s || s === _trOvLatestStatusTab) return;
+    _trOvLatestStatusTab = s;
+    var group = btn.parentElement;
+    if(group){
+      var siblings = group.querySelectorAll('.tr-ov-latest-tab');
+      for(var i=0; i<siblings.length; i++){
+        siblings[i].classList.remove('active');
+        siblings[i].setAttribute('aria-selected', 'false');
+      }
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+    }
+    // Re-render dgn filter status baru
+    if(_trOvLatestView === 'recent') renderLatestRecent($('trOvLatest'), _trOvLatestData || {});
+  });
 
   // ── Master render ──
   function renderRingkasan(data){
