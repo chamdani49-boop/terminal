@@ -65,6 +65,12 @@
      sebelum inline scripts di body execute. File kecil (~6KB), same-origin,
      cached agresif setelah first load. -->
 <script src="/broker-codes.js"></script>
+<!-- Tracker Stats — MESIN UTAMA winrate & net firm/sekuritas. Semua
+     halaman Tracker (sidebar Sekuritas, Overview Per Firm, Analis panel)
+     pakai window.TrackerStats.compute() supaya angkanya konsisten. Aturan:
+     entry filter, TP1 lock, SL murni = LOSS, expired = natural. Loaded
+     BLOCKING supaya tersedia sebelum inline scripts. -->
+<script src="/tracker-stats.js"></script>
 <!-- Chart libs → semua di-defer supaya TIDAK block first-paint. Efeknya:
      - HTML mulai render segera setelah parsing head (splash Android PWA
        cepat hilang → loader kustom langsung muncul).
@@ -7330,7 +7336,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var name, verified, groups, wr, net;
     if(f){
       name=f.name; verified=f.verified; groups=tagFirmRecs(f);
-      wr=(f.trades||0)>0?Math.round(f.winrate):null; net=(f.trades||0)>0?f.net:null;
+      // MESIN UTAMA: winrate & net konsisten dgn sidebar / Overview / Analis panel.
+      var _stF = (window.TrackerStats && window.TrackerStats.compute)
+                 ? window.TrackerStats.compute(f, {entry:'entry', exit:'tp1'})
+                 : null;
+      if(_stF && _stF.trades > 0){
+        wr = _stF.winrate; net = _stF.net;
+      } else {
+        wr = null; net = null;
+      }
     } else {
       var recs=allRecs(d).filter(function(r){ return firmLabel(r)===key; });
       if(!recs.length) return;
@@ -7665,22 +7679,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   function computeModeStats(firm, entryMode, exitMode){
-    var recs=(firm && firm.recsHistory || []).filter(_recInDateFilter);
-    var vals=[]; var wins=0;
-    var best=null, worst=null, bestRec=null, worstRec=null;
-    for(var i=0;i<recs.length;i++){
-      var p=getRecPnl(recs[i], entryMode, exitMode);
-      if(p==null) continue;
-      vals.push(+p);
-      if(+p>0) wins++;
-      if(best==null || +p > best){ best = +p; bestRec = recs[i]; }
-      if(worst==null || +p < worst){ worst = +p; worstRec = recs[i]; }
+    // Delegasi ke MESIN UTAMA (window.TrackerStats) — angka jadi
+    // konsisten dgn sidebar & Overview Per Firm. Date filter (dipilih
+    // user di UI Analis) diteruskan ke engine via option dateFilter.
+    if(window.TrackerStats && window.TrackerStats.compute){
+      return window.TrackerStats.compute(firm, {
+        entry: entryMode,
+        exit:  exitMode,
+        dateFilter: _dateFilter || null
+      });
     }
-    var total=vals.length;
-    var net = vals.reduce(function(s,v){return s+v;},0);
-    var avg = total?net/total:0;
-    var wr  = total?Math.round(wins/total*100):null;
-    return { total:total, wins:wins, wr:wr, net:net, avg:avg, best:best, worst:worst, bestRec:bestRec, worstRec:worstRec };
+    // Fallback defensif (script belum load) — return kosong biar tidak
+    // muncul angka nyasar. Semua caller sudah handle wr==null / total==0.
+    return { total:0, trades:0, wins:0, wr:null, winrate:null, net:0, avg:0, best:null, worst:null, bestRec:null, worstRec:null };
   }
 
   // AKUMULASI floating dari SEMUA rec aktif (state TRIGGERED, position open,
@@ -7743,8 +7754,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // Meta line firm profile: badge validity (STRONG/MODERATE/WEAK) DIHAPUS
     // per user request — konsep skor validitas dihilangkan di semua halaman
     // Tracker karena bikin bingung (winrate tidak selalu korelasi dgn skor).
+    // Trade count pakai MESIN UTAMA mode default (entry×tp1) supaya
+    // angka "N trade selesai" di header KONSISTEN dgn sidebar & Overview.
+    // (Angka mode-specific tampil di KPI strip di bawah via renderKpi.)
+    var _stHero = (window.TrackerStats && window.TrackerStats.compute)
+                  ? window.TrackerStats.compute(firm, {entry:'entry', exit:'tp1'})
+                  : null;
+    var _heroTrades = _stHero ? _stHero.trades : (firm.trades || 0);
     var parts = [];
-    parts.push(esc((firm.trades||0)+' trade selesai'));
+    parts.push(esc(_heroTrades+' trade selesai'));
     if(analystCount) parts.push(esc(analystCount+' analis'));
     $id('trPfMeta').innerHTML = parts.join(' · ');
 
@@ -10118,10 +10136,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
             || (f.id||'').toLowerCase().indexOf(q)>=0;
       });
     }
+    // Sort by CANONICAL trades desc (MESIN UTAMA mode entry×tp1) —
+    // supaya ranking sidebar konsisten dgn angka "X trd" yg ditampilkan
+    // di tiap item. Tie-breaker: canonical net desc. Cache stats supaya
+    // sort tidak N² compute (Object.keys.length × compare calls).
+    var _statCache = {};
+    function _st(f){
+      var k = f && f.id;
+      if(!k) return { trades:0, net:0 };
+      if(_statCache[k]) return _statCache[k];
+      var s = (window.TrackerStats && window.TrackerStats.compute)
+              ? window.TrackerStats.compute(f, {entry:'entry', exit:'tp1'})
+              : { trades: f.trades||0, net: +f.netPure||f.net||0 };
+      _statCache[k] = s;
+      return s;
+    }
     arr.sort(function(a,b){
-      var tdiff = (b.trades||0) - (a.trades||0);
+      var sa = _st(a), sb = _st(b);
+      var tdiff = (sb.trades||0) - (sa.trades||0);
       if(tdiff!==0) return tdiff;
-      return (+b.netPure||b.net||0) - (+a.netPure||a.net||0);
+      return (+sb.net||0) - (+sa.net||0);
     });
     return arr;
   }
@@ -10151,7 +10185,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var activeId = _activeFirmId();
     list.innerHTML = arr.map(function(f){
       var short = firmShort(f.name);
-      var wr = f.winrate;
+      // WR & trades pakai MESIN UTAMA (window.TrackerStats) mode default
+      // entry×tp1 supaya konsisten dgn Analis panel & Overview Per Firm.
+      // Fallback ke backend f.winrate/f.trades kalau TrackerStats belum
+      // ready (defensive, tidak seharusnya terjadi krn script blocking).
+      var _st = (window.TrackerStats && window.TrackerStats.compute)
+                ? window.TrackerStats.compute(f, {entry:'entry', exit:'tp1'})
+                : null;
+      var wr     = _st ? _st.winrate : f.winrate;
+      var trades = _st ? _st.trades  : (f.trades || 0);
       var wrStr = (wr==null||!Number.isFinite(+wr)) ? '—' : (+wr).toFixed(0)+'%';
       var vb = f.verified ? '<span class="vb">✓</span>' : '';
       var actCls = (f.id === activeId) ? ' active' : '';
@@ -10170,7 +10212,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         + '<div class="av'+_avCls+'">'+esc(_avTxt)+'</div>'
         + '<div class="m">'
           + '<div class="nm">'+esc(short)+vb+'</div>'
-          + '<div class="st"><span>'+(f.trades||0)+' trd</span><span>WR '+wrStr+'</span></div>'
+          + '<div class="st"><span>'+trades+' trd</span><span>WR '+wrStr+'</span></div>'
         + '</div>'
       + '</div>';
     }).join('');
@@ -11076,11 +11118,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
     });
 
     el.innerHTML = sorted.map(function(f, i){
-      var hasTrades = (f.trades || 0) > 0;
+      // MESIN UTAMA: winrate/net/trades konsisten. Fallback ke backend
+      // fields (defensive) kalau TrackerStats belum ready.
+      var _sfP = (window.TrackerStats && window.TrackerStats.compute)
+                 ? window.TrackerStats.compute(f, {entry:'entry', exit:'tp1'})
+                 : null;
+      var _trades = _sfP ? _sfP.trades : (f.trades || 0);
+      var _wins   = _sfP ? _sfP.wins   : (f.wins   || 0);
+      var hasTrades = _trades > 0;
       var rankCls = hasTrades && i < 3 ? 'rank-' + (i + 1) : '';
-      var wr = f.winrate || 0;
-      var net = f.net || 0;
-      var avg = f.avg || 0;
+      var wr  = _sfP ? (_sfP.winrate || 0) : (f.winrate || 0);
+      var net = _sfP ? _sfP.net           : (f.net     || 0);
+      var avg = _sfP ? _sfP.avg           : (f.avg     || 0);
       var activeCount = (f.recsActive || []).length;
       var analystCount = (f.analysts || []).length;
       // Performa BERJALAN (floating) untuk firm yg belum punya trade selesai —
@@ -11095,7 +11144,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           + '<div class="tr-perf-firm-l">'
             + '<div class="tr-perf-firm-rank">' + rankBadge(i) + '</div>'
             + '<div class="tr-perf-firm-name">' + esc(firmShort(f.name)) + (f.verified ? '<span class="tr-perf-firm-verified">✓ VERIF</span>' : '') + '</div>'
-            + '<div class="tr-perf-firm-meta-top">' + (hasTrades ? f.trades + ' rekomendasi selesai · ' + activeCount + ' aktif' : activeCount + ' rekomendasi aktif · belum ada yang selesai') + '</div>'
+            + '<div class="tr-perf-firm-meta-top">' + (hasTrades ? _trades + ' rekomendasi selesai · ' + activeCount + ' aktif' : activeCount + ' rekomendasi aktif · belum ada yang selesai') + '</div>'
           + '</div>'
         + '</div>'
 
@@ -11103,7 +11152,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           + '<div class="tr-perf-firm-stat">'
             + '<div class="tr-perf-firm-stat-lbl">' + (hasTrades ? 'WIN RATE' : 'RETURN BERJALAN') + '</div>'
             + '<div class="tr-perf-firm-stat-val big" style="color:' + (hasTrades ? pctColor(wr - 50) : (floatAvg == null ? 'var(--text3)' : pctColor(floatAvg))) + '">' + (hasTrades ? wr.toFixed(0) + '%' : (floatAvg == null ? '—' : fmtPct(floatAvg, { dec: 1 }))) + '</div>'
-            + '<div class="tr-perf-firm-stat-sub">' + (hasTrades ? f.wins + '/' + f.trades + ' menang' : (activeTrig.length + ' posisi aktif')) + '</div>'
+            + '<div class="tr-perf-firm-stat-sub">' + (hasTrades ? _wins + '/' + _trades + ' menang' : (activeTrig.length + ' posisi aktif')) + '</div>'
           + '</div>'
           + '<div class="tr-perf-firm-stat">'
             + '<div class="tr-perf-firm-stat-lbl">' + (hasTrades ? 'NET RETURN' : 'POSISI HIJAU') + '</div>'
@@ -11497,13 +11546,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     el.innerHTML = sorted.map(function(f, i){
       var rc = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
-      var hasTrades = (f.trades || 0) > 0;
-      var net = +f.net || 0;
-      var wr = +f.winrate || 0;
+      // MESIN UTAMA: winrate/net/trades konsisten.
+      var _sfLb = (window.TrackerStats && window.TrackerStats.compute)
+                  ? window.TrackerStats.compute(f, {entry:'entry', exit:'tp1'})
+                  : null;
+      var _lbTrades = _sfLb ? _sfLb.trades : (f.trades || 0);
+      var hasTrades = _lbTrades > 0;
+      var net = _sfLb ? _sfLb.net           : (+f.net || 0);
+      var wr  = _sfLb ? (_sfLb.winrate || 0) : (+f.winrate || 0);
       var ver = f.verified ? '<span class="tr-lb-ver">✓ VERIF</span>' : '';
       var name = firmShort(f.name);
       var subLine = hasTrades
-        ? (f.trades + ' selesai · WR ' + wr.toFixed(0) + '%')
+        ? (_lbTrades + ' selesai · WR ' + wr.toFixed(0) + '%')
         : ((f.recsActive || []).length + ' aktif · menunggu selesai');
       var statVal = hasTrades ? fmtPct(net) : '—';
       var statCls = hasTrades ? (net >= 0 ? 'tr-up' : 'tr-dn') : '';
@@ -11691,66 +11745,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   function computeFirmStats(firm, target){
-    var history = firm.recsHistory || [];
-    var totalTrades = 0, wins = 0, netSum = 0;
-
-    for(var i=0; i<history.length; i++){
-      var r = history[i];
-      if(!(+r.entry)) continue;
-      var tpHits = r.tpHits || [];
-      var closedBy = String(r.closedBy||'').toUpperCase();
-
-      if(target === 'tp1'){
-        var tp1 = +r.tp1 || 0;
-        if(!tp1) continue;
-        totalTrades++;
-        // WIN kalau TP1 tersentuh (langsung atau lewat TP2)
-        var tp1Hit = tpHits.indexOf('TP1') >= 0
-          || tpHits.indexOf('TP2') >= 0
-          || closedBy === 'TP1' || closedBy === 'TP2'
-          || closedBy === 'SL_TRAIL';
-        if(tp1Hit){
-          wins++;
-          netSum += _pctAt(r, tp1);
-        } else if(closedBy === 'SL'){
-          netSum += _pctAt(r, +r.sl || 0);
-        } else {
-          // EXPIRED / unfilled — pakai natural pnlPct dari backend
-          netSum += (+r.pnlPct || 0);
-        }
-      } else if(target === 'tp2'){
-        var tp2 = +r.tp2 || 0;
-        var tp1Ref = +r.tp1 || 0;
-        // Skip rec tanpa TP2 target (atau TP2==TP1 = effectively no TP2)
-        if(!tp2 || tp2 === tp1Ref) continue;
-        totalTrades++;
-        var tp2Hit = tpHits.indexOf('TP2') >= 0 || closedBy === 'TP2';
-        var tp1HitNoTp2 = !tp2Hit && (
-          tpHits.indexOf('TP1') >= 0
-          || closedBy === 'TP1'
-          || closedBy === 'SL_TRAIL'
-        );
-        if(tp2Hit){
-          wins++;
-          netSum += _pctAt(r, tp2);
-        } else if(tp1HitNoTp2){
-          // TP1 hit tapi TP2 belum → trailed exit at TP1 (small WIN)
-          wins++;
-          netSum += _pctAt(r, tp1Ref);
-        } else if(closedBy === 'SL'){
-          netSum += _pctAt(r, +r.sl || 0);
-        } else {
-          netSum += (+r.pnlPct || 0);
-        }
-      }
+    // Delegasi ke MESIN UTAMA (window.TrackerStats) supaya konsisten
+    // dgn sidebar & Analis panel. Default entry mode = 'entry' (skip
+    // rec yg tak sentuh entry) sesuai aturan default winrate user.
+    // Target = 'tp1' | 'tp2' — controlled by tombol Basis × Target
+    // di panel Rekomendasi Terbaru.
+    if(window.TrackerStats && window.TrackerStats.compute){
+      var s = window.TrackerStats.compute(firm, {entry:'entry', exit:target});
+      return { trades:s.trades, wins:s.wins, winrate:s.winrate||0, net:s.net };
     }
-
-    return {
-      trades: totalTrades,
-      wins: wins,
-      winrate: totalTrades ? (wins / totalTrades) * 100 : 0,
-      net: +netSum.toFixed(2)
-    };
+    // Fallback defensif (script belum load) — return kosong biar tidak
+    // muncul angka nyasar.
+    return { trades:0, wins:0, winrate:0, net:0 };
   }
 
   var MIN_TRADES_FOR_RANK = 5;
