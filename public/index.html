@@ -7575,7 +7575,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return {cls:'st-active',lbl:'● Aktif'};
   }
   function perfHtml(r){
-    if(r._cat==='closed'){ var p=+r.pnlPct||0; return '<span class="tr-dt-pnl" style="color:var(--'+(p>=0?'green':'red')+')">'+fmtPct(p)+'</span>'; }
+    if(r._cat==='closed'){ var p=(typeof pnlEffective==='function')? (pnlEffective(r)||0) : (+r.pnlPct||0); return '<span class="tr-dt-pnl" style="color:var(--'+(p>=0?'green':'red')+')">'+fmtPct(p)+'</span>'; }
     if(r._cat==='active'){ var fl=+r.floatingPct||0; return '<span class="tr-dt-pnl" style="color:var(--'+(fl>=0?'green':'red')+')">'+fmtPct(fl)+'</span>'; }
     var dd=r.distanceToEntryPct; return '<span style="color:var(--text3)">'+(dd!=null?(Math.abs(+dd).toFixed(1)+'% ke entry'):'—')+'</span>';
   }
@@ -7614,7 +7614,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var firms={}; recs.forEach(function(r){ firms[firmLabel(r)]=1; });
     var firmCount=Object.keys(firms).length;
     var closed=recs.filter(function(r){return r._cat==='closed';});
-    var wins=closed.filter(function(r){return (+r.pnlPct||0)>0;}).length;
+    // TP1 lock aware pnl via pnlEffective (SL_TRAIL → full TP1 return).
+    var wins=closed.filter(function(r){var p=pnlEffective(r); return Number.isFinite(p) && p>0;}).length;
     var wr=closed.length?Math.round(wins/closed.length*100):null;
     $('trDtKicker').textContent='SAHAM';
     $('trDtTitle').innerHTML=esc(tk)+' <span class="tr-dt-badge '+(buy>=sell?'buy':'sell')+'">'+(buy>=sell?'BIAS BELI':'BIAS JUAL')+'</span>';
@@ -7660,9 +7661,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if(!recs.length) return;
       name=key; verified=false;
       groups={ active:recs.filter(function(r){return r._cat==='active';}), unfilled:recs.filter(function(r){return r._cat==='unfilled';}), closed:recs.filter(function(r){return r._cat==='closed';}) };
-      var w=groups.closed.filter(function(r){return (+r.pnlPct||0)>0;}).length;
+      // TP1 lock aware pnl (SL_TRAIL → full TP1 return, bukan partial 50%)
+      var w=groups.closed.filter(function(r){var p=pnlEffective(r); return Number.isFinite(p) && p>0;}).length;
       wr=groups.closed.length?Math.round(w/groups.closed.length*100):null;
-      net=groups.closed.length?groups.closed.reduce(function(s,r){return s+(+r.pnlPct||0);},0):null;
+      net=groups.closed.length?groups.closed.reduce(function(s,r){var p=pnlEffective(r); return s+(Number.isFinite(p)?p:0);},0):null;
     }
     var actT=groups.active.filter(function(r){return Number.isFinite(+r.floatingPct);});
     var floatAvg=actT.length?actT.reduce(function(s,r){return s+(+r.floatingPct||0);},0)/actT.length:null;
@@ -7809,6 +7811,47 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return 'ACTIVE';
   }
   window.__TR_liveStatusOverride = liveStatusOverride;
+
+  // ── P&L locked (TP1 lock rule) — shared helper ────────────────────
+  // Backend rec.pnlPct utk SL_TRAIL biasanya partial 50% (realized dari
+  // strategi partial-exit backend). Per TP1 LOCK rule user, rec yg sudah
+  // sentuh TP1 dihitung FULL exit di TP1 → pnl locked di target penuh.
+  // Ini bikin winrate & return konsisten dgn TrackerStats.recPnl.
+  //
+  // Return TP1/TP2 locked pnl (%) atau null kalau rec belum kena TP1.
+  function pnlLockedTP1(rec){
+    if (!rec) return null;
+    var hits = rec.tpHits || [];
+    var cb = String(rec.closedBy || '');
+    var isBuy = String(rec.type||'BUY').toUpperCase() !== 'SELL';
+    var entry = +rec.entry;
+    if (!(Number.isFinite(entry) && entry > 0)) return null;
+    if (hits.indexOf('TP2') >= 0 || cb === 'TP2') {
+      var tp2v = +rec.tp2;
+      if (Number.isFinite(tp2v) && tp2v > 0) {
+        var p2 = ((tp2v - entry) / entry) * 100;
+        return isBuy ? p2 : -p2;
+      }
+    }
+    if (hits.indexOf('TP1') >= 0 || cb === 'TP1' || cb === 'SL_TRAIL') {
+      var tp1v = +rec.tp1;
+      if (Number.isFinite(tp1v) && tp1v > 0) {
+        var p1 = ((tp1v - entry) / entry) * 100;
+        return isBuy ? p1 : -p1;
+      }
+    }
+    return null;
+  }
+  // Effective P&L: prioritas TP1 lock > backend pnlPct > floatingPct
+  function pnlEffective(rec){
+    var locked = pnlLockedTP1(rec);
+    if (Number.isFinite(locked)) return locked;
+    if (rec && Number.isFinite(+rec.pnlPct)) return +rec.pnlPct;
+    if (rec && Number.isFinite(+rec.floatingPct)) return +rec.floatingPct;
+    return null;
+  }
+  window.__TR_pnlLockedTP1 = pnlLockedTP1;
+  window.__TR_pnlEffective = pnlEffective;
 
   // Base price utk floating berdasarkan mode aktif.
   // Entry mode: rec.entry (butuh didTouchEntry — kalau belum sentuh, return null)
@@ -11222,7 +11265,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
       cardCls = 'unfilled ' + (stateStr === 'RUNNING_MISSED' ? 'missed' : 'pending');
       rightPanel = '<div class="tr-live-card-waiting">⏳ Menunggu</div>';
     } else {
-      var floating = +o.floatingPct || 0;
+      // TP1 lock rule: kalau TP1/TP2 kena (backend via tpHits/closedBy
+      // atau live-derived _liveOv), P&L locked di target — bukan backend
+      // pnlPct partial (SL_TRAIL biasanya 50%). Konsisten dgn winrate.
+      var _cbC = String(o.closedBy||'');
+      var _hitsC = o.tpHits || [];
+      var _lockedTgt = null;
+      if (_hitsC.indexOf('TP2') >= 0 || _cbC === 'TP2' || _liveOv === 'TP2_LIVE') _lockedTgt = +o.tp2;
+      else if (_hitsC.indexOf('TP1') >= 0 || _cbC === 'TP1' || _cbC === 'SL_TRAIL' || _liveOv === 'TP1_LIVE') _lockedTgt = +o.tp1;
+      var floating;
+      if (_lockedTgt != null && Number.isFinite(_lockedTgt) && Number.isFinite(+o.entry) && +o.entry > 0) {
+        floating = ((_lockedTgt - +o.entry) / +o.entry) * 100 * (isBuy ? 1 : -1);
+      } else {
+        floating = +o.floatingPct || 0;
+      }
       var cls = floating >= 0 ? 'up' : 'dn';
       cardCls = floating >= 0 ? '' : 'dn';
       rightPanel = '<div class="tr-live-card-float ' + cls + '">' + fmtPct(floating) + '</div>'
@@ -12213,7 +12269,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var pnl = (window.TrackerStats && window.TrackerStats.recPnl)
                 ? window.TrackerStats.recPnl(r, {entry:'entry', exit:'tp1'})
                 : null;
-      if (pnl == null) pnl = +r.pnlPct || 0;  // fallback backend natural
+      // Fallback TP1 lock aware (SL_TRAIL → full TP1 return) via
+      // pnlEffective, sebelum fallback ke backend pnlPct partial.
+      if (pnl == null) {
+        var _pe = window.__TR_pnlEffective ? window.__TR_pnlEffective(r) : null;
+        pnl = Number.isFinite(_pe) ? _pe : (+r.pnlPct || 0);
+      }
       pnlByDate[r.exitDate] = (pnlByDate[r.exitDate] || 0) + (+pnl || 0);
     });
 
@@ -13750,6 +13811,31 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return 'active';
   }
   function pnlOfRow(r){
+    // TP1 LOCK rule: kalau rec sudah kena TP1/TP2 (backend detected via
+    // tpHits atau closedBy incl SL_TRAIL), P&L LOCKED di target. Ini
+    // penting utk konsistensi dgn winrate calculation (TrackerStats
+    // recPnl) yg juga TP1 lock. Backend pnlPct utk SL_TRAIL biasanya
+    // partial 50% (rule realisasi bertahap) — kita override ke full TP1.
+    var hits = (r && r.tpHits) || [];
+    var cb = String((r && r.closedBy) || '');
+    var isBuy = String((r && r.type) || 'BUY').toUpperCase() !== 'SELL';
+    var entry = +r.entry;
+    if (Number.isFinite(entry) && entry > 0) {
+      if (hits.indexOf('TP2') >= 0 || cb === 'TP2') {
+        var tp2v = +r.tp2;
+        if (Number.isFinite(tp2v) && tp2v > 0) {
+          var p2 = ((tp2v - entry) / entry) * 100;
+          return isBuy ? p2 : -p2;
+        }
+      }
+      if (hits.indexOf('TP1') >= 0 || cb === 'TP1' || cb === 'SL_TRAIL') {
+        var tp1v = +r.tp1;
+        if (Number.isFinite(tp1v) && tp1v > 0) {
+          var p1 = ((tp1v - entry) / entry) * 100;
+          return isBuy ? p1 : -p1;
+        }
+      }
+    }
     if(Number.isFinite(+r.pnlPct)) return +r.pnlPct;
     if(Number.isFinite(+r.floatingPct)) return +r.floatingPct;
     return null;
@@ -14148,14 +14234,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // karena tidak dipakai lagi di context Performa).
   // return { closedBalance, realizedGain, netPct, monthly }
   function simulate(closed, initialCap, slots){
-    var sorted = closed.slice().filter(function(t){ return t.exitDate && t.pnlPct != null; })
-                       .sort(function(a, b){ return String(a.exitDate).localeCompare(String(b.exitDate)); });
+    // TP1 lock aware pnl (SL_TRAIL → full TP1 return, bukan partial 50%).
+    // pnlEffective dari tracker IIFE — konsisten dgn winrate/return
+    // display di panel lain.
+    var _pnlEff = window.__TR_pnlEffective || function(r){ return +r.pnlPct; };
+    var sorted = closed.slice().filter(function(t){
+      if (!t.exitDate) return false;
+      var p = _pnlEff(t);
+      return Number.isFinite(p);
+    }).sort(function(a, b){ return String(a.exitDate).localeCompare(String(b.exitDate)); });
     var bal = initialCap;
     var monthly = {};
     for (var i = 0; i < sorted.length; i++) {
       var t = sorted[i];
+      var tPnl = _pnlEff(t);
+      if (!Number.isFinite(tPnl)) tPnl = 0;
       var slot = bal / slots;
-      var pnlIdr = slot * ((+t.pnlPct || 0) / 100);
+      var pnlIdr = slot * (tPnl / 100);
       var balBefore = bal;
       bal += pnlIdr;
       var ym = String(t.exitDate || '').slice(0, 7);
@@ -14164,12 +14259,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
         best: -Infinity, worst: Infinity, startBal: balBefore, endBal: bal
       };
       m.trades++;
-      var result = t.result || ((+t.pnlPct || 0) >= 0 ? 'WIN' : 'LOSS');
-      if (result === 'WIN') m.wins++;
-      else if (result === 'LOSS') m.losses++;
-      m.sumPnl += (+t.pnlPct || 0);
-      if ((+t.pnlPct || 0) > m.best)  m.best  = +t.pnlPct;
-      if ((+t.pnlPct || 0) < m.worst) m.worst = +t.pnlPct;
+      // Result WIN/LOSS derived dari tPnl (TP1 lock aware), bukan t.result
+      // (backend) yg untuk SL_TRAIL bisa NEUTRAL kalau partial < 0.1%.
+      if (tPnl > 0) m.wins++;
+      else if (tPnl < 0) m.losses++;
+      m.sumPnl += tPnl;
+      if (tPnl > m.best)  m.best  = tPnl;
+      if (tPnl < m.worst) m.worst = tPnl;
       m.endBal = bal;
     }
     return {
@@ -14465,6 +14561,29 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return 'ACTIVE';
   }
   function pnlOf(r){
+    // TP1 LOCK rule (sinkron dgn pnlOfRow di Overview & getRecPnl):
+    // rec yg sudah kena TP1/TP2 → P&L locked di target, bukan pnlPct
+    // partial dari backend (utk SL_TRAIL).
+    var hits = (r && r.tpHits) || [];
+    var cb = String((r && r.closedBy) || '');
+    var isBuy = String((r && r.type) || 'BUY').toUpperCase() !== 'SELL';
+    var entry = +r.entry;
+    if (Number.isFinite(entry) && entry > 0) {
+      if (hits.indexOf('TP2') >= 0 || cb === 'TP2') {
+        var tp2v = +r.tp2;
+        if (Number.isFinite(tp2v) && tp2v > 0) {
+          var p2 = ((tp2v - entry) / entry) * 100;
+          return isBuy ? p2 : -p2;
+        }
+      }
+      if (hits.indexOf('TP1') >= 0 || cb === 'TP1' || cb === 'SL_TRAIL') {
+        var tp1v = +r.tp1;
+        if (Number.isFinite(tp1v) && tp1v > 0) {
+          var p1 = ((tp1v - entry) / entry) * 100;
+          return isBuy ? p1 : -p1;
+        }
+      }
+    }
     if (Number.isFinite(+r.pnlPct))      return +r.pnlPct;
     if (Number.isFinite(+r.floatingPct)) return +r.floatingPct;
     return null;
@@ -16064,7 +16183,33 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     // realized. Fallback rec.floatingPct / rec.pnlPct.
     var _actMode = (typeof window.__TR_getActiveMode === 'function') ? window.__TR_getActiveMode() : { entry:'entry', exit:'tp1' };
     var pnl;
-    if (rec.exitDate && Number.isFinite(+rec.pnlPct)) {
+    // TP1 LOCK rule: kalau TP1/TP2 kena (tpHits atau closedBy incl SL_TRAIL),
+    // P&L locked di target — override rec.pnlPct backend yg utk SL_TRAIL
+    // biasanya partial 50%. Konsisten dgn winrate/return di list & mesin.
+    var _pnlLocked = null;
+    (function(){
+      var hitsP = rec.tpHits || [];
+      var cbP = String(rec.closedBy || '');
+      var isBuyP = String(rec.type||'BUY').toUpperCase() !== 'SELL';
+      var entryP = +rec.entry;
+      if (!(Number.isFinite(entryP) && entryP > 0)) return;
+      if (hitsP.indexOf('TP2') >= 0 || cbP === 'TP2') {
+        var tp2p = +rec.tp2;
+        if (Number.isFinite(tp2p) && tp2p > 0) {
+          var pp2 = ((tp2p - entryP) / entryP) * 100;
+          _pnlLocked = isBuyP ? pp2 : -pp2;
+        }
+      } else if (hitsP.indexOf('TP1') >= 0 || cbP === 'TP1' || cbP === 'SL_TRAIL') {
+        var tp1p = +rec.tp1;
+        if (Number.isFinite(tp1p) && tp1p > 0) {
+          var pp1 = ((tp1p - entryP) / entryP) * 100;
+          _pnlLocked = isBuyP ? pp1 : -pp1;
+        }
+      }
+    })();
+    if (Number.isFinite(_pnlLocked)) {
+      pnl = _pnlLocked;
+    } else if (rec.exitDate && Number.isFinite(+rec.pnlPct)) {
       pnl = +rec.pnlPct;
     } else if (typeof window.__TR_getModeFloating === 'function') {
       var _mf = window.__TR_getModeFloating(rec, _actMode.entry);
