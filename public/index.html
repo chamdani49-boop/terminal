@@ -14177,39 +14177,52 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     _zoneEndDate = null;
   }
 
-  // Hitung tanggal ujung kanan zona berdasar closedBy rec.
-  //   - 'TP1' murni     → exitDate (tgl candle TP1 kena)
-  //   - 'TP2'           → exitDate (tgl TP2 kena, sudah lewat TP1)
-  //   - 'SL' murni      → exitDate (tgl SL kena sebelum TP1)
-  //   - 'SL_TRAIL'      → TP1 hit date via OHLC scan; fallback ke exitDate
-  //                       kalau tidak ketemu di candle window.
-  //   - selain di atas  → null → layoutZones fallback ke expiry cap.
-  // Rule per user: kalau TP1 kena lalu balik ke SL (SL_TRAIL), zona stop
-  // di tgl TP1 kena, BUKAN di tgl SL_TRAIL. Ini butuh infer krn backend
-  // build-tracker.js hanya simpan exitDate akhir (SL_TRAIL date), tidak
-  // simpan TP1 hit date terpisah.
+  // Hitung tanggal ujung kanan zona kotak hijau/merah.
+  //
+  // Aturan (khusus untuk VISUAL ZONA — BEDA dari rumus winrate/mesin utama
+  // di tracker-stats.js. Rumus TP1 lock tetap: SL_TRAIL = WIN. Tapi untuk
+  // ZONA VISUAL kita ikut jejak candle real, tidak "kunci" ke TP1 kena):
+  //
+  //   1. Rec TIDAK sentuh entry (didTouchEntry=false):
+  //      → zona stop di openDate + 7 HARI kalender.
+  //      Nearest candle date >= target dipakai (hindari weekend miss).
+  //
+  //   2. Rec SENTUH entry (didTouchEntry=true) & sudah closed (ada exitDate):
+  //      → zona stop di exitDate. Berlaku untuk semua closed state:
+  //        TP1 → exitDate = tgl TP1 kena
+  //        TP2 → exitDate = tgl TP2 kena
+  //        SL  → exitDate = tgl SL kena
+  //        SL_TRAIL → exitDate = tgl trailed stop (SL trail) kena
+  //        EXPIRED → exitDate = tgl horizon habis
+  //
+  //   3. Rec SENTUH entry tapi masih AKTIF (belum closed, no exitDate):
+  //      → return null → layoutZones fallback proyeksi 5 candle stlh
+  //        candle terakhir supaya zona ke-extend ke area kosong kanan.
   function _computeZoneEndDate(rec, lwData){
     if (!rec) return null;
-    var cb = String(rec.closedBy || '').toUpperCase();
-    if (cb === 'TP1' || cb === 'TP2' || cb === 'SL') return rec.exitDate || null;
-    if (cb === 'SL_TRAIL'){
-      var tp1 = +rec.tp1;
-      if (!Number.isFinite(tp1) || tp1 <= 0) return rec.exitDate || null;
-      var buy = String(rec.type||'BUY').toUpperCase() !== 'SELL';
-      var od = rec.openDate || '';
+    var didTouch = !!rec.didTouchEntry;
+
+    // Rule 1: belum sentuh entry → 7 hari dari openDate
+    if (!didTouch){
+      if (!rec.openDate) return null;
+      var od = new Date(rec.openDate + 'T00:00:00Z');
+      if (isNaN(od.getTime())) return null;
+      od.setUTCDate(od.getUTCDate() + 7);
+      var target = od.toISOString().slice(0, 10);
+      // Snap ke nearest candle date >= target (skip weekend/holiday tanpa candle).
       if (Array.isArray(lwData)){
         for (var i = 0; i < lwData.length; i++){
           var c = lwData[i];
-          if (!c || !c.time) continue;
-          if (od && c.time < od) continue;      // skip candle sebelum openDate
-          var hit = buy ? (+c.high >= tp1) : (+c.low <= tp1);
-          if (hit) return c.time;               // TP1 kena di sini
-          if (rec.exitDate && c.time >= rec.exitDate) break;  // batas atas
+          if (c && c.time && c.time >= target) return c.time;
         }
       }
-      return rec.exitDate || null;              // fallback
+      return target;  // tidak ada candle di/setelah target — return raw, layoutZones handle
     }
-    // EXPIRED / EXPIRED_UNFILLED / active / pending / missed → null.
+
+    // Rule 2: sentuh entry & sudah closed → exitDate (semua trigger)
+    if (rec.exitDate) return rec.exitDate;
+
+    // Rule 3: sentuh entry, masih AKTIF → null (fallback proyeksi)
     return null;
   }
 
@@ -14302,46 +14315,29 @@ window._attachCandleTooltip = function(chart, series, container, candles){
 
     // xRight (ujung kanan zona):
     //   1. Kalau _zoneEndDate valid → pakai tgl itu (hasil _computeZoneEndDate
-    //      di renderChart yg handle SEMUA kasus closed: TP1/TP2/SL/SL_TRAIL).
-    //      Untuk SL_TRAIL, _zoneEndDate = tgl TP1 hit (bukan tgl SL_TRAIL) —
-    //      sesuai rule: kalau TP1 kena lalu balik ke SL, zona stop di TP1.
-    //   2. Else (rec masih aktif/pending/missed/expired unfilled): CAP ke
-    //      openDate + 10 HARI kalender (masa berlaku rekomendasi menunggu
-    //      entry). Zona tidak boleh melampaui tgl kadaluarsa.
-    //   3. Fallback akhir: projek 5 candle stlh candle akhir, atau ts.width().
+    //      di renderChart yg handle 3 rule: 7 hari utk !didTouch, exitDate
+    //      utk closed, null utk AKTIF).
+    //   2. Kalau target tgl belum ada candle-nya (mis. 7 hari lewat akhir
+    //      data, atau rec AKTIF): fallback proyeksi 7 candle logical dari
+    //      _entryIndex (approximate 7 hari trading) — supaya zona tetap
+    //      punya lebar visual.
+    //   3. Fallback akhir: 5 candle stlh candle terakhir atau ts.width().
     var xRight = null;
     if (_zoneEndDate){
       var xExit = ts.timeToCoordinate(_zoneEndDate);
       if (xExit != null && Number.isFinite(xExit) && xExit > xEntry) xRight = xExit;
+      // Kalau tgl target belum ada di data candle (mis. rec !didTouch
+      // dgn openDate baru, 7-hari-mendatang belum ada bar), fallback
+      // proyeksi 7 candle dari entry logical index (approx 7 hari trading).
+      if (xRight == null && _entryIndex >= 0){
+        try {
+          var xProj7 = ts.logicalToCoordinate(_entryIndex + 7);
+          if (xProj7 != null && Number.isFinite(xProj7) && xProj7 > xEntry) xRight = xProj7;
+        } catch(_){}
+      }
     }
-    // Cap ke openDate + 10 hari (masa berlaku rekomendasi menunggu entry).
-    // Diterapkan HANYA untuk rec yg belum closed via TP/SL — kalau sudah
-    // exit di TP/SL, xExit sudah pas. Untuk EXPIRED unfilled / PENDING /
-    // MISSED / TRIGGERED, zona berakhir di tgl expiry 10 hari itu.
-    if (xRight == null && rec.openDate){
-      try {
-        var expIso = (typeof window.__TR_getPendingExpiryIso === 'function')
-                     ? window.__TR_getPendingExpiryIso(rec) : null;
-        if (expIso){
-          var xExp = ts.timeToCoordinate(expIso);
-          if (xExp != null && Number.isFinite(xExp) && xExp > xEntry){
-            xRight = xExp;
-          } else {
-            // Fallback kalau expiry date > candle terakhir (belum ada bar
-            // untuk tanggal itu): pakai proyeksi berdasarkan jumlah hari
-            // dari openDate. 10 hari = 10 bar trading (approx) → aman
-            // pakai logicalToCoordinate dgn offset 10.
-            var od = ts.timeToCoordinate(rec.openDate);
-            if (od != null && Number.isFinite(od) && _entryIndex >= 0){
-              var xExpFallback = ts.logicalToCoordinate(_entryIndex + 10);
-              if (xExpFallback != null && Number.isFinite(xExpFallback) && xExpFallback > xEntry){
-                xRight = xExpFallback;
-              }
-            }
-          }
-        }
-      } catch(_){}
-    }
+    // Fallback akhir untuk rec AKTIF (Rule 3 = null): proyeksi 5 candle
+    // dari candle terakhir supaya zona ke-extend ke area kosong kanan.
     if (xRight == null && _lastCandleIndex >= 0){
       try {
         var xProj = ts.logicalToCoordinate(_lastCandleIndex + 5);
