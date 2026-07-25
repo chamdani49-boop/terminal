@@ -4160,6 +4160,10 @@ body.tr-profile-open .tr-subpane{display:none !important}
 .tr-state-badge.pending-expired{background:rgba(239,68,68,.16);color:var(--red);border:1px solid rgba(239,68,68,.42);text-shadow:0 0 8px rgba(239,68,68,.25)}
 /* Info tgl expiry di footer kartu — kecil, tenang; jadi merah kalau <=3 hari lagi. */
 .tr-rec-exp{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text3);display:inline-flex;align-items:center;gap:3px;letter-spacing:.3px}
+/* Trail info inline di date row — TP1 sempat kena lalu harga balik ke SL.
+   Kecil, warna text3 (tenang), inline (tidak bikin row baru). Wrap
+   otomatis karena parent .tr-rec-d flex-wrap:wrap. */
+.tr-rec-trail{font-size:.9em;color:var(--text3);opacity:.9;font-weight:600;white-space:nowrap}
 .tr-rec-exp.soon{color:#f59e0b;font-weight:700}
 .tr-rec-exp.past{color:var(--red);font-weight:800;text-transform:uppercase;letter-spacing:.6px}
 
@@ -9012,15 +9016,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
       //   • pending          → TIDAK ADA angka floating (posisi belum open).
       // Semua dgn KETERANGAN kecil di bawah: 'beli di harga entry' / 'beli di harga open'.
       var topPct = null, topPctCls = 'up', topPctLabel = '';
-      // Live-derived TP/SL: backend belum konfirmasi exit price, jadi
-      // floating dari live (bukan realized). Treat sbg active dari sisi
-      // PnL, meskipun _bucket sudah 'history' utk tab placement.
-      var _isLiveTPSL = r._liveOverride === 'TP1' || r._liveOverride === 'TP2' || r._liveOverride === 'SL';
-      if(_isLiveTPSL){
-        var _fltL = getModeFloating(r, _entryMode);
-        if(Number.isFinite(_fltL)){
-          topPct = _fltL;
-          topPctCls = _fltL >= 0 ? 'up' : 'dn';
+      // TP1 LOCK RULE untuk P&L display: sekali TP1/TP2 tersentuh (backend
+      // via tpHits/closedBy, atau live-derived via _liveOverride), P&L
+      // di-LOCK di target — tidak floating lagi walau harga live turun
+      // balik ke SL area. Konsisten dgn winrate/return calculation via
+      // getRecPnl & TrackerStats.recPnl (yg juga TP1 lock).
+      var _tp1LockedTgt = (function(){
+        var hits = r.tpHits || [];
+        var cb = String(r.closedBy||'');
+        if (hits.indexOf('TP2') >= 0 || cb === 'TP2' || r._liveOverride === 'TP2') return 'TP2';
+        if (hits.indexOf('TP1') >= 0 || cb === 'TP1' || cb === 'SL_TRAIL' || r._liveOverride === 'TP1') return 'TP1';
+        return null;
+      })();
+      if(_tp1LockedTgt && !isHistory){
+        // TP1/TP2 lock: return locked at target (bukan floating live).
+        var _tgtL = _tp1LockedTgt === 'TP2' ? +r.tp2 : +r.tp1;
+        var _baseL = getBasePriceForMode(r, _entryMode);
+        if(Number.isFinite(_baseL) && _baseL > 0 && Number.isFinite(_tgtL) && _tgtL > 0){
+          var _pnlL = ((_tgtL - _baseL) / _baseL) * 100;
+          topPct = buy ? _pnlL : -_pnlL;
+          topPctCls = topPct >= 0 ? 'up' : 'dn';
           topPctLabel = getBaseLabelForMode(_entryMode);
         }
       } else if(isHistory){
@@ -9034,7 +9049,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           topPctCls = topPct >= 0 ? 'up' : 'dn';
           topPctLabel = 'realized';
         }
-      } else if(isActive || isMissed){
+      } else if(isActive || isMissed || r._liveOverride === 'ACTIVE' || r._liveOverride === 'SL'){
         var _flt = getModeFloating(r, _entryMode);
         if(Number.isFinite(_flt)){
           topPct = _flt;
@@ -9067,6 +9082,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
       // Sektor sengaja tidak ditampilkan (permintaan user: sembunyikan
       // Energy/Basic Material/dll di semua halaman Tracker).
       var sectorStr = '';
+      // Trail info: rec sempat TP1 lalu harga balik ke area SL.
+      // Berlaku utk:
+      //   - closedBy='SL_TRAIL' (backend confirmed trailed stop hit)
+      //   - tpHits/closedBy TP1-locked TAPI live sekarang di/lewat SL
+      // Text inline kecil di date row (setelah tgl, sebelum status badge)
+      // — TIDAK bikin row baru, TIDAK memperlebar kolom, wrap kalau sempit.
+      var _trailInline = '';
+      var _slVal = +r.sl;
+      var _hasSlVal = Number.isFinite(_slVal) && _slVal > 0;
+      var _isTrailFromBackend = String(r.closedBy||'') === 'SL_TRAIL';
+      var _liveBelowSL = false;
+      if(_hasSlVal && Number.isFinite(_livePrice)){
+        _liveBelowSL = buy ? (_livePrice <= _slVal) : (_livePrice >= _slVal);
+      }
+      if(_isTrailFromBackend || (_tp1LockedTgt && _liveBelowSL && !isHistory)){
+        var _trailTxt = _isTrailFromBackend
+          ? 'Sempat TP1, balik ke SL'
+          : 'Sempat TP1, turun ke area SL';
+        _trailInline = ' · <span class="tr-rec-trail" title="Harga sempat menyentuh TP1, kemudian turun ke area SL. Per TP1 lock rule, rec tetap dihitung TP1 WIN — return locked di TP1.">🛡 '+_trailTxt+'</span>';
+      }
 
       // Info kadaluarsa untuk rec MENUNGGU ENTRY (pending/missed): tampilkan
       // tgl expiry + sisa hari, atau "Sudah kadaluarsa" kalau lewat.
@@ -9106,7 +9141,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           + '<div class="tr-rec-top-r">'+topPctHtml+'<span class="tr-rec-b '+badgeCls+'">'+(buy?'BUY':'SELL')+'</span></div>'
         + '</div>'
         + '<div class="tr-rec-inline">'+chips+'</div>'
-        + '<div class="tr-rec-d"><span>'+dateStr+sectorStr+'</span><span class="'+st.cls+'">'+st.lbl+'</span></div>'
+        + '<div class="tr-rec-d"><span>'+dateStr+sectorStr+_trailInline+'</span><span class="'+st.cls+'">'+st.lbl+'</span></div>'
         + expiryLine
       + '</div>';
     }).join('');
