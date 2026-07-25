@@ -12031,7 +12031,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Return: array {date, close} yg _updateIhsgChip bisa consume langsung
   // (first = base, last = current).
   function _buildIhsgFallbackFromMonthly(period){
-    var ph = (typeof window !== 'undefined' && window.DATA && window.DATA.price_history) || null;
+    // CRITICAL: `let DATA` dashboard TIDAK attach ke window (let/const
+    // di top-level module NOT global). Akses via typeof guard biar
+    // aman kalau DATA belum ada (script order / TDZ). Pattern ini sama
+    // dgn kode existing di line 7713, 13520, 20067, 23728.
+    var ph = null;
+    try {
+      if (typeof DATA !== 'undefined' && DATA && DATA.price_history){
+        ph = DATA.price_history;
+      }
+    } catch(_){}
     if (!ph || !ph.length) return [];
     var out = [];
 
