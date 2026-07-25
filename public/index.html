@@ -6154,15 +6154,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-card-h">
       <div>
         <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
-        <div class="tr-card-desc">Return kumulatif semua analis vs IHSG (benchmark pasar)</div>
+        <div class="tr-card-desc">Return kumulatif per sekuritas · Top 8 by aktivitas · vs IHSG (benchmark)</div>
       </div>
     </div>
     <div class="tr-chart-wrap"><canvas id="trChart"></canvas></div>
-    <div class="tr-legend">
-      <span><span class="tr-lg-dot" style="background:var(--accent)"></span>Analis</span>
-      <span><span class="tr-lg-dot" style="background:var(--red)"></span>IHSG</span>
-      <span><span class="tr-lg-dot" style="background:rgba(124,58,237,.22);height:8px;border-radius:2px"></span>Zona Alpha</span>
-    </div>
+    <!-- Legend inline di-hapus; Chart.js built-in legend (bottom position)
+         menampilkan warna + nama sekuritas otomatis, adapt ke jumlah firm. -->
   </div>
 
   <!-- ── HIGHLIGHTS (3 kartu, HP stack) ──────────────────────────
@@ -11548,56 +11545,147 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (kWSub) kWSub.textContent = wins + ' dari ' + total + ' rekomendasi';
   }
 
+  // Palet warna utk multi-firm chart. Dipilih vibrant + distinct
+  // (mirip gaya gambar referensi user) supaya banyak line tetap
+  // gampang dibedakan. Panjang max 8 firm.
+  var _CHART_PALETTE = [
+    '#38bdf8',  // sky-400
+    '#f97316',  // orange-500
+    '#22c55e',  // green-500
+    '#eab308',  // yellow-500
+    '#a78bfa',  // violet-400
+    '#ec4899',  // pink-500
+    '#22d3ee',  // cyan-400
+    '#f43f5e'   // rose-500
+  ];
+
+  // Compute daily cumulative equity untuk satu firm, di-align ke timeline.
+  // Pakai MESIN UTAMA (TrackerStats.recPnl mode entry×tp1) supaya konsisten
+  // dgn sidebar & leaderboard. Return array pnl kumulatif per tgl timeline
+  // (forward-fill: kalau tak ada trade pada tgl itu, pakai cum sebelumnya).
+  function _computeFirmDailyEquity(firm, timeline){
+    var hist = (firm && firm.recsHistory || []).slice()
+      .filter(function(r){ return r && r.exitDate; })
+      .sort(function(a,b){ return String(a.exitDate).localeCompare(String(b.exitDate)); });
+
+    // Group rec pnl by exitDate → hitung sum per hari, lalu cum-sum.
+    var pnlByDate = {};
+    hist.forEach(function(r){
+      var pnl = (window.TrackerStats && window.TrackerStats.recPnl)
+                ? window.TrackerStats.recPnl(r, {entry:'entry', exit:'tp1'})
+                : null;
+      if (pnl == null) pnl = +r.pnlPct || 0;  // fallback backend natural
+      pnlByDate[r.exitDate] = (pnlByDate[r.exitDate] || 0) + (+pnl || 0);
+    });
+
+    var cum = 0;
+    var out = [];
+    for (var i = 0; i < timeline.length; i++){
+      var d = timeline[i];
+      if (pnlByDate[d] != null) cum += pnlByDate[d];
+      out.push(+cum.toFixed(2));
+    }
+    return out;
+  }
+
   // ── Update chart Chart.js (destroy existing + recreate dgn data real) ──
+  // Sekarang render 1 line PER SEKURITAS (top 8 by canonical trades desc)
+  // + IHSG dashed line sbg benchmark. Style: smooth curves + point markers
+  // (gaya gambar referensi user). Chart.js built-in legend di bottom
+  // (auto adapt jumlah firm).
   function updateChart(data){
     if (typeof Chart === 'undefined') return;
     var ctx = $('trChart'); if (!ctx) return;
     var existing = Chart.getChart(ctx);
     if (existing) { try { existing.destroy(); } catch(_){} }
 
-    var dailyEquity = data.dailyEquity || [];
+    // Timeline: prefer IHSG dates (lebih lengkap 30 hari), else fallback
+    // ke dailyEquity dates dari backend.
     var ihsgSeries = (data.ihsg && data.ihsg.series30d) || [];
-    var ihsgBase = ihsgSeries.length ? ihsgSeries[0].close : null;
-    var ihsgCum = ihsgSeries.map(function(d){ return (ihsgBase > 0) ? +(((d.close - ihsgBase) / ihsgBase) * 100).toFixed(2) : 0; });
-
-    // Align: pakai IHSG dates sebagai timeline (lebih lengkap 30 hari).
-    // Data analis di-map by date; kalau tidak ada trade pada tanggal itu,
-    // pertahankan kumulatif terakhir (flat line).
-    var labels = [], consAligned = [];
-    var equityByDate = {};
-    dailyEquity.forEach(function(d){ equityByDate[d.date] = d.cumulative || 0; });
-
+    var dailyEquity = data.dailyEquity || [];
     var timeline = ihsgSeries.length ? ihsgSeries.map(function(s){ return s.date; })
-                                     : dailyEquity.map(function(d){ return d.date; });
-    var runCum = 0;
-    timeline.forEach(function(date){
-      labels.push(date);
-      if (equityByDate[date] != null) runCum = equityByDate[date];
-      consAligned.push(+runCum.toFixed(2));
+                                      : dailyEquity.map(function(d){ return d.date; });
+    if (!timeline.length) return;
+
+    // Pick top 8 firms by canonical trades desc.
+    var byFirm = data.byFirm || {};
+    var firmsAll = Object.values(byFirm);
+    var firmsRanked = firmsAll.map(function(f){
+      var st = (window.TrackerStats && window.TrackerStats.compute)
+               ? window.TrackerStats.compute(f, {entry:'entry', exit:'tp1'})
+               : { trades: f.trades || 0, net: +f.net || 0 };
+      return { firm: f, stats: st };
+    }).filter(function(x){ return x.stats.trades > 0; })
+      .sort(function(a,b){
+        var tdiff = (b.stats.trades||0) - (a.stats.trades||0);
+        if (tdiff !== 0) return tdiff;
+        return (b.stats.net||0) - (a.stats.net||0);
+      })
+      .slice(0, 8);
+
+    // IHSG kumulatif
+    var ihsgBase = ihsgSeries.length ? ihsgSeries[0].close : null;
+    var ihsgCum = ihsgSeries.map(function(d){
+      return (ihsgBase > 0) ? +(((d.close - ihsgBase) / ihsgBase) * 100).toFixed(2) : 0;
     });
 
     var css = getComputedStyle(document.documentElement);
-    var accentColor = css.getPropertyValue('--accent').trim() || '#6d28d9';
     var text3 = css.getPropertyValue('--text3').trim() || '#a49cc0';
     var text2 = css.getPropertyValue('--text2').trim() || '#6e6490';
     var border = css.getPropertyValue('--border').trim() || '#d4ccf0';
-    var card = css.getPropertyValue('--card').trim() || '#ffffff';
+    var card   = css.getPropertyValue('--card').trim() || '#ffffff';
+    var redC   = css.getPropertyValue('--red').trim() || '#e11d48';
+
+    // Build datasets: 1 dataset per firm + IHSG di akhir.
+    var datasets = firmsRanked.map(function(x, i){
+      var color = _CHART_PALETTE[i % _CHART_PALETTE.length];
+      var name = String(x.firm.name || '').replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
+      return {
+        label: name,
+        data: _computeFirmDailyEquity(x.firm, timeline),
+        borderColor: color,
+        backgroundColor: 'transparent',
+        fill: false,
+        tension: 0.4,           // smooth curve seperti gambar referensi
+        pointRadius: 3,         // titik marker terlihat
+        pointHoverRadius: 6,
+        pointBackgroundColor: color,
+        pointBorderColor: color,
+        borderWidth: 2.2,
+        spanGaps: true
+      };
+    });
+    // IHSG line — dashed red, di akhir supaya di render on top.
+    datasets.push({
+      label: 'IHSG',
+      data: ihsgCum,
+      borderColor: redC,
+      backgroundColor: 'transparent',
+      fill: false,
+      tension: 0.4,
+      pointRadius: 0,           // IHSG polos, tanpa marker (benchmark)
+      borderWidth: 2,
+      borderDash: [5, 4]
+    });
 
     new Chart(ctx, {
       type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          { label: 'Analis', data: consAligned, borderColor: accentColor, backgroundColor: 'rgba(124,58,237,0.16)', fill: '+1', tension: 0.3, pointRadius: 0, borderWidth: 2.5 },
-          { label: 'IHSG', data: ihsgCum, borderColor: (css.getPropertyValue('--red').trim() || '#e11d48'), backgroundColor: 'transparent', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [4, 3] }
-        ]
-      },
+      data: { labels: timeline, datasets: datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true, position: 'bottom',
+            labels: {
+              color: text2, boxWidth: 10, boxHeight: 10,
+              padding: 8, usePointStyle: true, pointStyle: 'circle',
+              font: { size: 10.5, family: "'IBM Plex Mono',monospace" }
+            }
+          },
           tooltip: {
-            mode: 'index', intersect: false, backgroundColor: card, borderColor: border, borderWidth: 1,
+            mode: 'index', intersect: false,
+            backgroundColor: card, borderColor: border, borderWidth: 1,
+            titleColor: text2, bodyColor: text2,
             callbacks: {
               label: function(it){
                 var y = it.parsed.y;
