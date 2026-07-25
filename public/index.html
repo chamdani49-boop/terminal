@@ -8924,8 +8924,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       _dateFilter = { start: range.start, end: range.end };
       // Snap kalender ke bulan awal range supaya user langsung lihat
       // rentang yg lagi aktif ter-highlight di grid (utk open selanjutnya).
+      // NOTE: renderCalendar() pakai _calView.y / _calView.m (bukan .year/.month),
+      // jadi gunakan naming yg sama supaya render tidak throw Invalid Date.
       var startDate = _parseISO(range.start);
-      if(startDate) _calView = { year: startDate.getFullYear(), month: startDate.getMonth() };
+      if(startDate) _calView = { y: startDate.getFullYear(), m: startDate.getMonth() };
     } else {
       _dateFilter = null;
     }
