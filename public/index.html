@@ -15946,10 +15946,19 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     // agar visually terlihat aktif.
     var tpHits = Array.isArray(rec.tpHits) ? rec.tpHits : [];
     var closedBy = String(rec.closedBy || '');
-    var entryTouched = !!rec.didTouchEntry;
-    var isTP1Hit = tpHits.indexOf('TP1') >= 0 || closedBy === 'TP1' || closedBy === 'TP2' || closedBy === 'SL_TRAIL';
-    var isTP2Hit = tpHits.indexOf('TP2') >= 0 || closedBy === 'TP2';
-    var isSLHit  = closedBy === 'SL';   // SL_TRAIL bukan kena SL asli
+    // Live-status override — konsisten dgn status badge di list & popup
+    // header. Rec yg backend belum tutup tapi harga live sudah cross
+    // level → HIT badge di level card ikut nyala.
+    var _liveOv = (typeof window.__TR_liveStatusOverride === 'function')
+                  ? window.__TR_liveStatusOverride(rec) : null;
+    var entryTouched = !!rec.didTouchEntry || _liveOv != null;   // any override → entry sudah touched
+    var isTP1Hit = tpHits.indexOf('TP1') >= 0
+                   || closedBy === 'TP1' || closedBy === 'TP2' || closedBy === 'SL_TRAIL'
+                   || _liveOv === 'TP1_LIVE' || _liveOv === 'TP2_LIVE';
+    var isTP2Hit = tpHits.indexOf('TP2') >= 0 || closedBy === 'TP2' || _liveOv === 'TP2_LIVE';
+    // SL hit: backend closed via SL/SL_TRAIL, atau live sudah lewat SL.
+    // SL_TRAIL treated sbg SL biasa (per aturan gak perlu SL trail).
+    var isSLHit  = closedBy === 'SL' || closedBy === 'SL_TRAIL' || _liveOv === 'SL_LIVE';
     var isTrailedAtEntry = closedBy === 'SL_TRAIL';  // exit di entry setelah TP1
 
     var entryPrice = +rec.entry;
