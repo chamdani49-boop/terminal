@@ -2925,10 +2925,20 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 }
 /* Layout chart Performa 30 Hari: chart kiri + sidebar Peringkat kanan.
    Adopsi design rupiah-monitor AllCurrenciesChart — chart flex, sidebar
-   fixed width 260px. Mobile stack vertikal (breakpoint 900px). */
+   fixed width 260px. Mobile stack vertikal (breakpoint 900px).
+
+   Chart height di layout row (desktop) di-set 380px supaya match tinggi
+   sidebar Peringkat (12+ rows visible) → tidak ada space kosong di kolom
+   chart. Mobile (column layout) tetap 240px yg lebih compact. */
 .tr-chart-layout{display:flex;gap:16px;align-items:stretch;min-width:0}
-@media(max-width:900px){.tr-chart-layout{flex-direction:column}}
 .tr-chart-layout .tr-chart-wrap{flex:1 1 auto;min-width:0}
+@media(min-width:901px){
+  .tr-chart-layout .tr-chart-wrap{height:380px}
+}
+@media(max-width:900px){
+  .tr-chart-layout{flex-direction:column}
+  .tr-chart-layout .tr-chart-wrap{height:260px}
+}
 .tr-chart-rank{
   width:260px;flex-shrink:0;
   display:flex;flex-direction:column;gap:2px;
@@ -2947,9 +2957,11 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 }
 .tr-chart-rank-list{
   display:flex;flex-direction:column;gap:1px;
-  max-height:340px;overflow-y:auto;
-  padding-right:2px;
+  overflow-y:auto;padding-right:2px;
+  /* max-height konsisten dgn chart height (380px - head/note ~40px) */
+  max-height:340px;
 }
+@media(min-width:901px){.tr-chart-rank-list{max-height:340px}}
 .tr-chart-rank-list::-webkit-scrollbar{width:5px}
 .tr-chart-rank-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .tr-chart-rank-list::-webkit-scrollbar-track{background:transparent}
