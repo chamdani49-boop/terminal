@@ -11635,22 +11635,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
       })
       .slice(0, 8);
 
-    // IHSG kumulatif dgn FORWARD-FILL — kalau IHSG data source belum ada
-    // untuk tgl X (mis. pipeline lag), pakai nilai IHSG terakhir yang
-    // tersedia. Line IHSG jadi flat di ujung kanan chart alih-alih hilang.
-    var ihsgBase = ihsgSeries.length ? ihsgSeries[0].close : null;
-    var ihsgByDate = {};
-    if (ihsgBase > 0){
-      ihsgSeries.forEach(function(s){
-        if (s && s.date && Number.isFinite(+s.close)){
-          ihsgByDate[s.date] = +(((s.close - ihsgBase) / ihsgBase) * 100).toFixed(2);
-        }
-      });
-    }
-    var lastIhsg = 0;
-    var ihsgCum = timeline.map(function(date){
-      if (ihsgByDate[date] != null) lastIhsg = ihsgByDate[date];
-      return lastIhsg;
+    // IHSG line pakai HARGA CLOSE ASLI (raw daily) — bukan cumulative
+    // return %. User rule: "ihsg gunakan chart asli harian saja". Render
+    // di secondary Y-axis (kanan, Rp) supaya scale-nya tidak bertabrakan
+    // dgn firm return % (kiri). Return % di-compute on-the-fly di
+    // tooltip saat cursor hover.
+    // Forward-fill kalau IHSG data belum ada utk tgl X (pipeline lag).
+    var ihsgBase = ihsgSeries.length ? +ihsgSeries[0].close : null;
+    var ihsgPriceByDate = {};
+    ihsgSeries.forEach(function(s){
+      if (s && s.date && Number.isFinite(+s.close)) ihsgPriceByDate[s.date] = +s.close;
+    });
+    var lastIhsgPrice = null;
+    var ihsgClose = timeline.map(function(date){
+      if (ihsgPriceByDate[date] != null) lastIhsgPrice = ihsgPriceByDate[date];
+      return lastIhsgPrice;   // null di awal kalau IHSG belum start di tgl itu
     });
 
     var css = getComputedStyle(document.documentElement);
@@ -11679,17 +11678,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
         spanGaps: true
       };
     });
-    // IHSG line — dashed red, di akhir supaya di render on top.
+    // IHSG line — harga close asli, secondary Y-axis (kanan), dashed red.
     datasets.push({
       label: 'IHSG',
-      data: ihsgCum,
+      data: ihsgClose,
       borderColor: redC,
       backgroundColor: 'transparent',
       fill: false,
       tension: 0.4,
-      pointRadius: 0,           // IHSG polos, tanpa marker (benchmark)
+      pointRadius: 0,           // polos, tanpa marker (benchmark)
       borderWidth: 2,
-      borderDash: [5, 4]
+      borderDash: [5, 4],
+      spanGaps: true,
+      yAxisID: 'ihsg'           // dual axis: kanan (Rp)
     });
 
     new Chart(ctx, {
@@ -11711,16 +11712,45 @@ body.is-mobile-device.force-desktop .pl-col-main{
             backgroundColor: card, borderColor: border, borderWidth: 1,
             titleColor: text2, bodyColor: text2,
             callbacks: {
+              // Tooltip label kondisional: IHSG tampil harga + return%,
+              // firm lines tampil return%. Return IHSG di-compute vs
+              // ihsgBase (close pertama di series) on-the-fly.
               label: function(it){
                 var y = it.parsed.y;
-                return it.dataset.label + ': ' + (y >= 0 ? '+' : '') + (Number.isFinite(y) ? y.toFixed(2) : '—') + '%';
+                var lbl = it.dataset.label;
+                if (lbl === 'IHSG'){
+                  if (!Number.isFinite(y)) return lbl + ': —';
+                  var priceStr = Number(y).toLocaleString('id-ID');
+                  var retStr = '';
+                  if (Number.isFinite(ihsgBase) && ihsgBase > 0){
+                    var ret = ((y - ihsgBase) / ihsgBase) * 100;
+                    retStr = ' (' + (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%)';
+                  }
+                  return lbl + ': ' + priceStr + retStr;
+                }
+                return lbl + ': ' + (y >= 0 ? '+' : '') + (Number.isFinite(y) ? y.toFixed(2) : '—') + '%';
               }
             }
           }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: text3, font: { size: 10, family: "'IBM Plex Mono',monospace" }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
-          y: { grid: { color: border }, ticks: { color: text2, font: { size: 10, family: "'IBM Plex Mono',monospace" }, callback: function(v){ return v + '%'; } } }
+          x: {
+            grid: { display: false },
+            ticks: { color: text3, font: { size: 10, family: "'IBM Plex Mono',monospace" }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+          },
+          y: {
+            position: 'left',
+            grid: { color: border },
+            ticks: { color: text2, font: { size: 10, family: "'IBM Plex Mono',monospace" }, callback: function(v){ return v + '%'; } }
+          },
+          ihsg: {
+            position: 'right',
+            grid: { display: false },   // hindari double grid
+            ticks: {
+              color: text3, font: { size: 10, family: "'IBM Plex Mono',monospace" },
+              callback: function(v){ return Number(v).toLocaleString('id-ID'); }
+            }
+          }
         },
         interaction: { mode: 'index', intersect: false }
       }
