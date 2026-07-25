@@ -3266,13 +3266,32 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-datebtn.filtered{background:linear-gradient(135deg,rgba(124,58,237,.16),var(--bg2));border-color:rgba(124,58,237,.4);color:var(--text)}
 .tr-pf-datebtn .arr{font-size:9px;opacity:.6}
 
-/* Wrapper period preset + tombol kalender manual. Muncul di header
-   Mode Eksekusi (di header .tr-pf-seg-head). Flex row + wrap agar
-   mobile turun ke bawah tombol kalender di baris kedua. Gap kecil
-   antara segmented control preset dan tombol kalender. */
-.tr-pf-period-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-@media(max-width:640px){
-  .tr-pf-period-controls{width:100%;justify-content:flex-start;gap:6px}
+/* Period selector di dalam popup kalender (Analis). Preset bar di atas
+   .cal-head, dipisahkan garis dashed. Grid 4-kolom kompak di dalam
+   popup 290px. Dropdown Bulan/Tahun di-expand ke penuh utk klik ramah.
+   Buttons 30D/Bulan Ini share row 1; dropdown row 2. */
+.tr-pf-cal-popup .tr-chart-period.tr-pf-cp-inpopup{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+  margin-bottom:10px;
+  padding:6px;
+  border-radius:8px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+}
+.tr-pf-cal-popup .tr-chart-period.tr-pf-cp-inpopup .tr-cp-btn{
+  padding:6px 8px;
+  font-size:11px;
+  text-align:center;
+  min-width:0;
+}
+.tr-pf-cal-popup .tr-chart-period.tr-pf-cp-inpopup .tr-cp-month,
+.tr-pf-cal-popup .tr-chart-period.tr-pf-cp-inpopup .tr-cp-year{
+  padding:6px 8px;
+  font-size:11px;
+  min-width:0;
+  width:100%;
 }
 
 /* Calendar popup — muncul di bawah tombol, position absolute */
@@ -7356,40 +7375,41 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="tr-pf-seg-wrap">
           <div class="tr-pf-seg-head">
             <div class="tr-pf-seg-label">🎛 Mode Eksekusi <span class="tr-pf-seg-active-lbl" id="trPfSegActiveLbl">Beli di Entry → TP1</span></div>
-            <!-- Grup kontrol tanggal: preset periode (30D / Bulan Ini /
-                 Bulan▾ / Tahun▾) + tombol kalender manual. Preset dan
-                 kalender manual saling eksklusif: memilih preset akan
-                 clear pilihan kalender, dan sebaliknya. Reset "🌐 All"
-                 di kalender kembalikan filter ke Semua Tanggal (tanpa
-                 preset). Default firm-open: preset 30D aktif.
-                 Adopsi UX identik dgn period selector di Overview
-                 (Performa 30 Hari) supaya bahasa visual konsisten. -->
-            <div class="tr-pf-period-controls">
-              <div class="tr-chart-period" id="trPfChartPeriod" role="tablist" aria-label="Periode filter rekomendasi">
-                <button type="button" class="tr-cp-btn active" data-period-type="30d" role="tab" aria-selected="true" title="30 hari terakhir (default)">30D</button>
-                <button type="button" class="tr-cp-btn" data-period-type="mtd" role="tab" aria-selected="false" title="Awal bulan berjalan hingga hari ini">Bulan Ini</button>
-                <select class="tr-cp-month" id="trPfChartPeriodMonth" aria-label="Pilih bulan spesifik">
-                  <option value="">Bulan</option>
-                  <option value="0">Januari</option>
-                  <option value="1">Februari</option>
-                  <option value="2">Maret</option>
-                  <option value="3">April</option>
-                  <option value="4">Mei</option>
-                  <option value="5">Juni</option>
-                  <option value="6">Juli</option>
-                  <option value="7">Agustus</option>
-                  <option value="8">September</option>
-                  <option value="9">Oktober</option>
-                  <option value="10">November</option>
-                  <option value="11">Desember</option>
-                </select>
-                <select class="tr-cp-year" id="trPfChartPeriodYear" aria-label="Pilih tahun">
-                  <!-- Options di-generate JS berdasar rentang tahun rec firm ini. -->
-                </select>
-              </div>
-              <div class="tr-pf-cal-anchor">
-                <button type="button" class="tr-pf-datebtn" id="trPfDateBtn" aria-haspopup="dialog" aria-controls="trPfCalPopup" aria-expanded="false" title="Filter tanggal rekomendasi (custom range via kalender)"><span class="tr-ico" aria-hidden="true">📅</span> <span id="trPfDateBtnLbl">30 Hari Terakhir</span> <span class="arr">▾</span></button>
+            <!-- Kontrol tanggal: tombol trigger popup kalender. Preset
+                 periode (30D / Bulan Ini / Bulan▾ / Tahun▾) berada
+                 DI DALAM popup — supaya header tetap ringkas. Reset
+                 "🌐 All" di kalender kembalikan filter ke Semua Tanggal
+                 (tanpa preset). Default firm-open: preset 30D aktif. -->
+            <div class="tr-pf-cal-anchor">
+              <button type="button" class="tr-pf-datebtn" id="trPfDateBtn" aria-haspopup="dialog" aria-controls="trPfCalPopup" aria-expanded="false" title="Filter tanggal rekomendasi (preset atau custom range)"><span class="tr-ico" aria-hidden="true">📅</span> <span id="trPfDateBtnLbl">30 Hari Terakhir</span> <span class="arr">▾</span></button>
               <div class="tr-pf-cal-popup" id="trPfCalPopup" role="dialog" aria-modal="false" hidden>
+                <!-- Preset periode di header popup: 30D / Bulan Ini +
+                     dropdown Bulan & Tahun. Preset dan kalender custom
+                     mutually exclusive — klik preset auto-set range,
+                     klik hari kalender + OK matikan preset (custom).
+                     Adopsi UX identik dgn Overview (Performa 30 Hari). -->
+                <div class="tr-chart-period tr-pf-cp-inpopup" id="trPfChartPeriod" role="tablist" aria-label="Periode filter rekomendasi">
+                  <button type="button" class="tr-cp-btn active" data-period-type="30d" role="tab" aria-selected="true" title="30 hari terakhir (default)">30D</button>
+                  <button type="button" class="tr-cp-btn" data-period-type="mtd" role="tab" aria-selected="false" title="Awal bulan berjalan hingga hari ini">Bulan Ini</button>
+                  <select class="tr-cp-month" id="trPfChartPeriodMonth" aria-label="Pilih bulan spesifik">
+                    <option value="">Bulan</option>
+                    <option value="0">Januari</option>
+                    <option value="1">Februari</option>
+                    <option value="2">Maret</option>
+                    <option value="3">April</option>
+                    <option value="4">Mei</option>
+                    <option value="5">Juni</option>
+                    <option value="6">Juli</option>
+                    <option value="7">Agustus</option>
+                    <option value="8">September</option>
+                    <option value="9">Oktober</option>
+                    <option value="10">November</option>
+                    <option value="11">Desember</option>
+                  </select>
+                  <select class="tr-cp-year" id="trPfChartPeriodYear" aria-label="Pilih tahun">
+                    <!-- Options di-generate JS berdasar rentang tahun rec firm ini. -->
+                  </select>
+                </div>
                 <div class="cal-head">
                   <div class="cal-title" id="trPfCalTitle">—</div>
                   <div class="cal-nav">
@@ -7407,9 +7427,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
                     <button type="button" class="cal-ok" id="trPfCalOk" title="Terapkan rentang tgl yg dipilih" disabled>OK</button>
                   </div>
                 </div>
-              </div>
-              </div><!-- /.tr-pf-cal-anchor -->
-            </div><!-- /.tr-pf-period-controls -->
+              </div><!-- /.tr-pf-cal-popup -->
+            </div><!-- /.tr-pf-cal-anchor -->
           </div><!-- /.tr-pf-seg-head -->
           <div class="tr-pf-seg-groups">
             <div class="tr-pf-seg-group">
@@ -8821,23 +8840,31 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Set preset baru → hitung range → apply ke _dateFilter → rerender.
   // Panggil setelah user klik preset button / ubah select. Semua panel
   // Analis (KPI card, chart, rec list) ke-trigger lewat rerenderAll().
+  //
+  // Popup dibiarkan TETAP TERBUKA saat preset di-klik — supaya user bisa
+  // eksplorasi beberapa preset berturut-turut & lihat efeknya real-time
+  // tanpa harus buka popup ulang. Popup baru tutup lewat OK (apply
+  // custom range), Reset (🌐 All), klik ✕, atau klik di luar popup.
   function _pfApplyPeriod(period){
     _pfPeriod = period;
     var range = _pfComputePeriodRange(period);
     if(range){
       _dateFilter = { start: range.start, end: range.end };
+      // Snap kalender ke bulan awal range supaya user langsung lihat
+      // rentang yg lagi aktif ter-highlight di grid.
+      var startDate = _parseISO(range.start);
+      if(startDate) _calView = { year: startDate.getFullYear(), month: startDate.getMonth() };
     } else {
       _dateFilter = null;
     }
     _calPending = null;                 // clear pending selection kalendar
     _pfSyncPeriodUI();
     updateDateBtnLabel();
-    // Tutup popup kalender kalau lagi terbuka — preset & popup mutual
-    // eksklusif secara UX (preset menang, popup ditutup).
+    // Refresh kalender highlight kalau popup lagi terbuka — highlight
+    // days di-range akan sync dgn _dateFilter baru.
     var _popC = $id('trPfCalPopup');
     if(_popC && !_popC.hidden){
-      _popC.hidden = true;
-      var _dbC = $id('trPfDateBtn'); if(_dbC) _dbC.setAttribute('aria-expanded','false');
+      try { renderCalendar(); } catch(_){}
     }
     rerenderAll();
   }
