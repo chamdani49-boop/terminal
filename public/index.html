@@ -8933,6 +8933,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     e=$id('trPfTabExpN');  if(e) e.textContent=expN;
 
     // Pilih list sesuai tab (dari yg sudah difilter tgl)
+    // Tab 'all' HARUS include liveTp1F/liveTp2F/liveSlF juga — rec yg
+    // live-promoted ke TP/SL tidak ada di actListF/pendListF/histListF,
+    // jadi tanpa ini mereka menghilang dari tab Semua padahal counter
+    // "Semua (X)" sudah ikut menghitung. Bug: user report saham kena
+    // SL (via live) tidak muncul di Semua.
     var list;
     switch(tab){
       case 'active':  list = actListF.concat(missListF); break;
@@ -8942,7 +8947,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
       case 'sl':      list = histSlF; break;
       case 'expired': list = histExpF; break;
       case 'all':
-      default:        list = actListF.concat(missListF).concat(pendListF).concat(histListF); break;
+      default:        list = actListF.concat(missListF).concat(pendListF).concat(histListF)
+                              .concat(liveTp1F).concat(liveTp2F).concat(liveSlF); break;
     }
     list = _sortByDate(list, _recSortDir);
 
