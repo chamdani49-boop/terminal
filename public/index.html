@@ -3009,6 +3009,41 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 /* IHSG chip di header — clickable utk clear highlight chart. */
 .tr-ihsg-chip{cursor:pointer;transition:border-color .12s, background .12s}
 .tr-ihsg-chip:hover{border-color:var(--accent);background:var(--card)}
+/* Period selector di header chart. Segmented buttons + year dropdown.
+   Compact style — dip di antara title-block dan IHSG chip. Mobile wrap. */
+.tr-chart-period{
+  display:flex;flex-wrap:wrap;align-items:center;gap:4px;
+  padding:3px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;
+  flex-shrink:0;
+}
+.tr-chart-period .tr-cp-btn{
+  padding:5px 10px;border-radius:6px;border:1px solid transparent;background:transparent;
+  color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:800;
+  letter-spacing:.2px;cursor:pointer;transition:all .12s;
+  white-space:nowrap;
+}
+.tr-chart-period .tr-cp-btn:hover{color:var(--text);background:var(--card)}
+.tr-chart-period .tr-cp-btn.active{
+  background:var(--grad);color:#fff;
+  box-shadow:0 1px 3px rgba(109,40,217,.25);
+}
+.tr-chart-period .tr-cp-year{
+  padding:5px 8px;border-radius:6px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:800;
+  cursor:pointer;transition:border-color .12s;outline:none;
+  min-width:70px;
+}
+.tr-chart-period .tr-cp-year:hover{border-color:var(--accent)}
+.tr-chart-period .tr-cp-year:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(109,40,217,.15)}
+.tr-chart-period .tr-cp-year.active{
+  background:var(--grad);color:#fff;border-color:transparent;
+}
+@media(max-width:640px){
+  .tr-chart-period{padding:2px;gap:3px}
+  .tr-chart-period .tr-cp-btn{padding:4px 8px;font-size:10px}
+  .tr-chart-period .tr-cp-year{padding:4px 6px;font-size:10px;min-width:60px}
+}
 @media(max-width:640px){
   .tr-chart-rank-row{padding:4px 7px;gap:6px}
   .tr-chart-rank-row .code{font-size:11px;width:28px}
@@ -6273,11 +6308,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <div class="tr-card">
     <div class="tr-card-h">
       <div>
-        <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
+        <div class="tr-card-title" id="trChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
         <div class="tr-card-desc">Perbandingan return kumulatif semua sekuritas · klik peringkat untuk highlight</div>
       </div>
-      <div class="tr-ihsg-chip" id="trIhsgChip" role="button" tabindex="0" title="IHSG 30 hari — klik untuk clear highlight (chart kembali cerah semua)">
-        <span class="tr-ihsg-chip-lbl">IHSG 30d</span>
+      <!-- Period selector — pilih rentang waktu chart. Data historis
+           lama mungkin belum ada; UI tetap tersedia sbg infrastruktur
+           supaya begitu data tumbuh (workflow refresh-tracker.js
+           mengumpulkan tiap hari), pilihan bulan/tahun lama otomatis
+           ke-populate tanpa perlu ubah kode. -->
+      <div class="tr-chart-period" id="trChartPeriod" role="tablist" aria-label="Periode chart">
+        <button type="button" class="tr-cp-btn active" data-period-type="30d" role="tab" aria-selected="true">30D</button>
+        <button type="button" class="tr-cp-btn" data-period-type="mtd" role="tab" aria-selected="false">Bulan Ini</button>
+        <button type="button" class="tr-cp-btn" data-period-type="lastMonth" role="tab" aria-selected="false">Bulan Lalu</button>
+        <select class="tr-cp-year" id="trChartPeriodYear" aria-label="Pilih tahun">
+          <!-- Options di-generate di JS berdasar rentang tahun yg ada di data. -->
+        </select>
+      </div>
+      <div class="tr-ihsg-chip" id="trIhsgChip" role="button" tabindex="0" title="Klik untuk clear highlight (chart kembali cerah semua)">
+        <span class="tr-ihsg-chip-lbl" id="trIhsgChipLbl">IHSG 30D</span>
         <span class="tr-ihsg-chip-val" id="trIhsgChipVal">—</span>
         <span class="tr-ihsg-chip-sub" id="trIhsgChipSub">—</span>
       </div>
@@ -11685,6 +11733,119 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Cache last computed data supaya bisa re-render chart saat highlight
   // toggle tanpa recompute.
   var _lastChartData = null;
+  // Period filter untuk chart. Type:
+  //   '30d'       : rolling 30 hari s.d. today (default).
+  //   'mtd'       : month-to-date (1 tgl bulan ini s.d. today).
+  //   'lastMonth' : bulan sebelumnya (full month).
+  //   'year'      : tahun kalender specific (year field wajib).
+  var _chartPeriod = { type: '30d' };
+
+  // Hitung date range dari period state. Return {start, end} ISO
+  // 'YYYY-MM-DD' atau null (tidak filter).
+  function _getPeriodRange(period, dataMinDate, dataMaxDate){
+    var today = new Date();
+    var todayIso = today.toISOString().slice(0, 10);
+    var maxIso = dataMaxDate || todayIso;
+    if (!period || !period.type) return null;
+
+    if (period.type === '30d'){
+      // 30 hari s.d. data terakhir (bukan client today — biar konsisten
+      // dgn data yg ada; kalau data lag, chart tetap masuk akal).
+      var end = maxIso;
+      var d = new Date(end + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() - 30);
+      return { start: d.toISOString().slice(0,10), end: end };
+    }
+    if (period.type === 'mtd'){
+      var y = today.getUTCFullYear(), m = today.getUTCMonth();
+      var startMtd = new Date(Date.UTC(y, m, 1)).toISOString().slice(0,10);
+      return { start: startMtd, end: todayIso };
+    }
+    if (period.type === 'lastMonth'){
+      var y2 = today.getUTCFullYear(), m2 = today.getUTCMonth();
+      var startPrev = new Date(Date.UTC(y2, m2 - 1, 1)).toISOString().slice(0,10);
+      // Last day prev month = day 0 of current month
+      var endPrev = new Date(Date.UTC(y2, m2, 0)).toISOString().slice(0,10);
+      return { start: startPrev, end: endPrev };
+    }
+    if (period.type === 'year' && period.year){
+      var start = period.year + '-01-01';
+      var end = period.year + '-12-31';
+      // Kalau tahun berjalan, cap ke today (jangan sampai chart proyek
+      // ke masa depan).
+      if (period.year === today.getUTCFullYear()) end = todayIso;
+      return { start: start, end: end };
+    }
+    return null;
+  }
+
+  // Label human-readable untuk chart title & chip IHSG. mtd/lastMonth
+  // pakai nama bulan Indonesia.
+  var _BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  function _periodLabel(period){
+    var today = new Date();
+    if (!period || period.type === '30d') return { title: 'Performa 30 Hari', chip: 'IHSG 30D' };
+    if (period.type === 'mtd'){
+      var m = _BULAN_ID[today.getUTCMonth()];
+      return { title: 'Performa Bulan Berjalan (' + m + ')', chip: 'IHSG MTD' };
+    }
+    if (period.type === 'lastMonth'){
+      var lm = _BULAN_ID[(today.getUTCMonth() - 1 + 12) % 12];
+      return { title: 'Performa Bulan Lalu (' + lm + ')', chip: 'IHSG Bln Lalu' };
+    }
+    if (period.type === 'year' && period.year){
+      return { title: 'Performa Tahun ' + period.year, chip: 'IHSG ' + period.year };
+    }
+    return { title: 'Performa', chip: 'IHSG' };
+  }
+
+  // Populate dropdown tahun berdasar data yg ada. Default: current year
+  // + tahun2 sebelumnya yg punya data. Infrastruktur: kalau data historis
+  // di masa depan tumbuh, tahun2 lama otomatis muncul di dropdown.
+  function _populateYearDropdown(ihsgSeries){
+    var sel = $('trChartPeriodYear'); if (!sel) return;
+    var currentYear = new Date().getUTCFullYear();
+    var yearsSet = {};
+    yearsSet[currentYear] = 1;  // current year selalu ada
+    if (Array.isArray(ihsgSeries)){
+      ihsgSeries.forEach(function(s){
+        if (s && s.date){
+          var y = parseInt(String(s.date).substring(0, 4), 10);
+          if (Number.isFinite(y) && y > 2000) yearsSet[y] = 1;
+        }
+      });
+    }
+    // Sort desc (tahun paling baru dulu).
+    var years = Object.keys(yearsSet).map(function(y){ return +y; }).sort(function(a,b){ return b - a; });
+    // Preserve current selection kalau ada, else default current year.
+    var currentSel = sel.value ? +sel.value : currentYear;
+    sel.innerHTML = years.map(function(y){
+      return '<option value="' + y + '"' + (y === currentSel ? ' selected' : '') + '>' + y + '</option>';
+    }).join('');
+  }
+
+  // Update UI period selector (aktif state buttons + title chart).
+  function _updatePeriodUI(){
+    var lbl = _periodLabel(_chartPeriod);
+    var titleEl = $('trChartTitle');
+    if (titleEl){
+      // Preserve <span class="tr-ico"> emoji at start
+      titleEl.innerHTML = '<span class="tr-ico" aria-hidden="true">📈</span> ' + esc(lbl.title);
+    }
+    var chipLbl = $('trIhsgChipLbl');
+    if (chipLbl) chipLbl.textContent = lbl.chip;
+    // Buttons active state
+    var btns = document.querySelectorAll('#trChartPeriod .tr-cp-btn');
+    for (var i = 0; i < btns.length; i++){
+      var isActive = btns[i].getAttribute('data-period-type') === _chartPeriod.type;
+      btns[i].classList.toggle('active', isActive);
+      btns[i].setAttribute('aria-selected', isActive ? 'true' : 'false');
+    }
+    var sel = $('trChartPeriodYear');
+    if (sel){
+      sel.classList.toggle('active', _chartPeriod.type === 'year');
+    }
+  }
 
   // Palet warna utk multi-firm chart. Dipilih vibrant + distinct supaya
   // banyak line tetap bisa dibedakan by eye. 32 warna: cukup untuk ~30
@@ -11730,33 +11891,42 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return out;
   }
 
-  // ── IHSG chip di header chart — sinkron dgn dashboard ──
-  // Current price prioritaskan window.getStatsMerged('IHSG').current
-  // (same source dgn row IHSG di dashboard Statistik Deskriptif — update
-  // live saat market jalan via applyLiveFeed / recomputeStats). Base 30d
-  // tetap dari tracker.json series30d (close 30 hari lalu, historical).
-  // Fallback ke ihsgSeries.last.close kalau getStatsMerged belum ready
-  // (mis. dashboard IIFE belum di-init saat Overview chart pertama render).
-  function _updateIhsgChip(ihsgSeries){
+  // ── IHSG chip di header chart ──
+  // Sinkron dgn Dashboard Statistik Deskriptif (via window.getStatsMerged
+  // 'IHSG'.current) HANYA saat period end = today (30D default). Untuk
+  // period historikal (lastMonth, tahun lalu), pakai close di series
+  // (statis — bukan live).
+  //
+  // Args:
+  //   filteredSeries: array IHSG series30d yg sudah di-filter sesuai
+  //                   period aktif ({date, close}). base = series[0],
+  //                   dan target = series[last] fallback current live.
+  //   liveEnd: true kalau period ends today (30D atau MTD atau tahun
+  //            berjalan) — pakai getStatsMerged utk current.
+  function _updateIhsgChip(filteredSeries, liveEnd){
     var chipVal = $('trIhsgChipVal');
     var chipSub = $('trIhsgChipSub');
     if (!chipVal && !chipSub) return;
 
-    var base = (ihsgSeries && ihsgSeries.length) ? +ihsgSeries[0].close : null;
+    var base = (filteredSeries && filteredSeries.length) ? +filteredSeries[0].close : null;
     var current = null;
 
-    // Priority 1: getStatsMerged (dashboard live).
-    try {
-      if (typeof window.getStatsMerged === 'function'){
-        var s = window.getStatsMerged('IHSG');
-        if (s && Number.isFinite(s.current) && s.current > 0){
-          current = s.current;
+    if (liveEnd){
+      // Priority 1: getStatsMerged (dashboard live) — SAMA PERSIS dgn
+      // row IHSG di dashboard Statistik Deskriptif.
+      try {
+        if (typeof window.getStatsMerged === 'function'){
+          var s = window.getStatsMerged('IHSG');
+          if (s && Number.isFinite(s.current) && s.current > 0){
+            current = s.current;
+          }
         }
-      }
-    } catch(_){}
-    // Priority 2: fallback ke last close dari tracker.json series30d.
-    if (current == null && ihsgSeries && ihsgSeries.length){
-      var lastClose = +ihsgSeries[ihsgSeries.length - 1].close;
+      } catch(_){}
+    }
+    // Fallback (atau default utk period non-live): last close di
+    // filteredSeries (tracker.json historical).
+    if (current == null && filteredSeries && filteredSeries.length){
+      var lastClose = +filteredSeries[filteredSeries.length - 1].close;
       if (Number.isFinite(lastClose) && lastClose > 0) current = lastClose;
     }
 
@@ -11776,7 +11946,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     if (chipSub){
       if (base != null && current != null){
-        // Format harga: 2 desimal (matching dashboard row IHSG).
         chipSub.textContent =
           Number(base).toLocaleString('id-ID', {minimumFractionDigits:2, maximumFractionDigits:2})
           + ' → ' +
@@ -11787,16 +11956,25 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
   }
 
-  // Periodik refresh chip IHSG supaya sinkron dgn live feed dashboard.
-  // getStatsMerged('IHSG').current berubah saat DATA.live update via
-  // polling market. Refresh chip tiap 15s (ringan — cuma 1 call + 2 DOM
-  // update). Full chart TIDAK di-refresh (mahal, tidak perlu — line
-  // firm tidak berubah minute-by-minute).
+  // Periodik refresh chip IHSG saat period=30D / MTD / tahun-berjalan
+  // (yg pakai live current). Untuk period historikal (lastMonth, tahun
+  // lalu), nilai statis dari series → tidak perlu refresh.
   setInterval(function(){
     var d = window.__TR_getData && window.__TR_getData();
     if (!d) return;
     var ihsgS = (d.ihsg && d.ihsg.series30d) || [];
-    _updateIhsgChip(ihsgS);
+    var today = new Date();
+    var isLive = _chartPeriod.type === '30d' || _chartPeriod.type === 'mtd'
+                 || (_chartPeriod.type === 'year' && _chartPeriod.year === today.getUTCFullYear());
+    if (!isLive) return;
+    // Filter series sesuai period sebelum update chip.
+    var allDates = ihsgS.map(function(s){ return s.date; }).sort();
+    var range = _getPeriodRange(_chartPeriod, allDates[0], allDates[allDates.length-1]);
+    var filtered = ihsgS;
+    if (range){
+      filtered = ihsgS.filter(function(s){ return s && s.date >= range.start && s.date <= range.end; });
+    }
+    _updateIhsgChip(filtered, true);
   }, 15000);
 
   // ── Sidebar Peringkat (list firm dgn dot warna + last%) ──
@@ -11884,6 +12062,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
       }
       return;
     }
+    // 4) Klik tombol period selector (30D / Bulan Ini / Bulan Lalu)
+    var pbtn = e.target && e.target.closest && e.target.closest('#trChartPeriod .tr-cp-btn');
+    if (pbtn){
+      var ptype = pbtn.getAttribute('data-period-type');
+      if (ptype && ptype !== _chartPeriod.type){
+        _chartPeriod = { type: ptype };
+        var d3 = window.__TR_getData && window.__TR_getData();
+        if (d3) updateChart(d3);
+      }
+      return;
+    }
+  });
+
+  // Change handler utk year dropdown — <select> pakai event 'change'
+  // (bukan click). Pilih tahun → set period type='year' + refresh chart.
+  document.addEventListener('change', function(e){
+    if (!e.target || e.target.id !== 'trChartPeriodYear') return;
+    var y = parseInt(e.target.value, 10);
+    if (!Number.isFinite(y)) return;
+    _chartPeriod = { type: 'year', year: y };
+    var d = window.__TR_getData && window.__TR_getData();
+    if (d) updateChart(d);
   });
 
   // ── Update chart Chart.js (destroy existing + recreate dgn data real) ──
@@ -11905,6 +12105,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var dailyEquity = data.dailyEquity || [];
     var byFirm = data.byFirm || {};
 
+    // Populate year dropdown & sync UI period ke label chart.
+    _populateYearDropdown(ihsgSeries);
+    _updatePeriodUI();
+
     var dateSet = {};
     ihsgSeries.forEach(function(s){ if(s && s.date) dateSet[s.date] = 1; });
     dailyEquity.forEach(function(d){ if(d && d.date) dateSet[d.date] = 1; });
@@ -11914,8 +12118,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
         if (r && r.exitDate) dateSet[r.exitDate] = 1;
       });
     });
-    var timeline = Object.keys(dateSet).sort();
-    if (!timeline.length) return;
+    // ALL dates di data (utk hitung data min/max).
+    var allDates = Object.keys(dateSet).sort();
+    if (!allDates.length) return;
+
+    // Filter timeline berdasar period state. Kalau tidak ada range,
+    // fallback ke full data.
+    var range = _getPeriodRange(_chartPeriod, allDates[0], allDates[allDates.length - 1]);
+    var timeline = allDates;
+    if (range){
+      timeline = allDates.filter(function(d){ return d >= range.start && d <= range.end; });
+    }
+    if (!timeline.length){
+      // Period tidak ada data — clear chart & sidebar dgn message.
+      var ctx0 = $('trChart'); if (ctx0){
+        var existing0 = Chart.getChart(ctx0);
+        if (existing0){ try { existing0.destroy(); } catch(_){} }
+      }
+      var rankEl = $('trChartRankList');
+      if (rankEl) rankEl.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:12px 6px;text-align:center;line-height:1.4">Belum ada data untuk periode ini.<br>Chart akan terisi seiring data terkumpul.</div>';
+      _updateIhsgChip(ihsgSeries.filter(function(s){ return s && s.date >= (range?range.start:'') && s.date <= (range?range.end:''); }));
+      return;
+    }
 
     // Ambil SEMUA firm yg punya trade. Compute:
     //   - Series daily equity per firm (utk chart lines).
@@ -11942,14 +12166,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
       x.color = _CHART_PALETTE[i % _CHART_PALETTE.length];
     });
 
-    // IHSG stats untuk chip header. Sinkron dgn Dashboard Statistik
-    // Deskriptif — pakai window.getStatsMerged('IHSG') sbg current price
-    // (same source dgn row IHSG di dashboard yg update live saat market
-    // jalan). Base tetap dari tracker.json ihsgSeries[0] (close 30 hari
-    // lalu). Return% = (currentLive - base30d) / base30d × 100.
-    // Fallback: kalau getStatsMerged belum ready → pakai
-    // ihsgSeries[last].close (data build-tracker.js, mungkin lag 1 hari).
-    _updateIhsgChip(ihsgSeries);
+    // IHSG chip: filter series sesuai period aktif. Live current
+    // (getStatsMerged) HANYA dipakai kalau period ends today (30D, MTD,
+    // atau tahun berjalan). Period historikal → nilai statis.
+    var filteredIhsg = range
+      ? ihsgSeries.filter(function(s){ return s && s.date >= range.start && s.date <= range.end; })
+      : ihsgSeries;
+    var todayCheck = new Date();
+    var isLivePeriod = _chartPeriod.type === '30d' || _chartPeriod.type === 'mtd'
+                       || (_chartPeriod.type === 'year' && _chartPeriod.year === todayCheck.getUTCFullYear());
+    _updateIhsgChip(filteredIhsg, isLivePeriod);
 
     var css = getComputedStyle(document.documentElement);
     var text3 = css.getPropertyValue('--text3').trim() || '#a49cc0';
@@ -12043,7 +12269,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
                 // ada trade selesai buat firm ini.
                 if (Math.abs(delta) < 0.005) return '';
                 var sign = delta >= 0 ? '+' : '';
-                return 'Return hari ini: ' + sign + delta.toFixed(2) + '%';
+                return 'Return harian: ' + sign + delta.toFixed(2) + '%';
               }
             }
           }
