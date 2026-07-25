@@ -7723,6 +7723,72 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   window.__TR_getLive = getLive;
 
+  // ── Live status override ──────────────────────────────────────────
+  // Backend (build-tracker.js) klasifikasi rec ke openList/pendingList/
+  // missedList/historyList berdasar OHLC scan yg dijalankan periodik
+  // (biasanya harian). Antara 2 rebuild, harga live bisa cross ke level
+  // TP/SL/entry — tapi bucket backend belum ter-update. Helper ini derive
+  // status TENTATIVE dari live price supaya UI langsung refleksi kondisi
+  // sekarang (mirip Overview Tracker), tanpa nunggu backend rebuild.
+  //
+  // Rule (per user): saat harga live cross entry/SL/TP1/TP2, status
+  // berubah. Closing final (exit price, PnL) tetap dari backend nanti.
+  //
+  // Return: 'ACTIVE' | 'TP1_LIVE' | 'TP2_LIVE' | 'SL_LIVE' | null
+  //   - 'ACTIVE'    : entry sudah tersentuh (live-derived), belum ada
+  //                   level TP/SL yg di-cross → rec sudah "jalan"
+  //   - 'TP2_LIVE'  : live sudah lewat TP2 → tentative TP2 hit
+  //   - 'TP1_LIVE'  : live sudah lewat TP1 (dan bukan TP2)
+  //   - 'SL_LIVE'   : live sudah lewat SL
+  //   - null        : tidak ada override (backend sudah closed rec,
+  //                   atau harga live tak tersedia, atau entry belum
+  //                   tersentuh via live check)
+  //
+  // Note: kalau rec sudah closed di backend (r.closedBy diisi), return
+  // null → biarkan backend yg definitif.
+  function liveStatusOverride(rec){
+    if (!rec) return null;
+    if (rec.closedBy) return null;              // backend sudah tutup
+    // Skip rec history — jangan override, backend definitif. Variants
+    // bucket name per IIFE:
+    //   - renderRecList firm listing: _bucket='history'
+    //   - Analis-per-ticker aggregate: _bucket='historyList'
+    //   - Overview tracker aggregate: _cat='closed'
+    if (rec._bucket === 'history' || rec._bucket === 'historyList') return null;
+    if (rec._cat === 'closed' || rec._cat === 'history') return null;
+    var live = getLive(rec.ticker);
+    if (!live || live.price == null) return null;
+    var lp = live.price;
+    var isBuy = String(rec.type||'BUY').toUpperCase() !== 'SELL';
+    var entry = (Number.isFinite(+rec.entry) && +rec.entry > 0) ? +rec.entry : null;
+    var tp1   = (Number.isFinite(+rec.tp1)   && +rec.tp1   > 0) ? +rec.tp1   : null;
+    var tp2v  = +rec.tp2;
+    var tp2   = (Number.isFinite(tp2v) && tp2v > 0 && tp2v !== +rec.tp1) ? tp2v : null;
+    var sl    = (Number.isFinite(+rec.sl)    && +rec.sl    > 0) ? +rec.sl    : null;
+    // Entry touched: backend flag OR live-derived (live sudah di/lewat entry)
+    var entryTouched = !!rec.didTouchEntry;
+    if (!entryTouched && entry != null) {
+      entryTouched = isBuy ? (lp <= entry) : (lp >= entry);
+    }
+    if (!entryTouched) return null;   // masih menunggu entry
+    // Entry sudah tersentuh — cek breach level dari yg paling extreme
+    // (TP2 > TP1 > SL). Untuk BUY, TP > entry > SL. Untuk SELL, kebalikan.
+    if (tp2 != null) {
+      var tp2Hit = isBuy ? (lp >= tp2) : (lp <= tp2);
+      if (tp2Hit) return 'TP2_LIVE';
+    }
+    if (tp1 != null) {
+      var tp1Hit = isBuy ? (lp >= tp1) : (lp <= tp1);
+      if (tp1Hit) return 'TP1_LIVE';
+    }
+    if (sl != null) {
+      var slHit = isBuy ? (lp <= sl) : (lp >= sl);
+      if (slHit) return 'SL_LIVE';
+    }
+    return 'ACTIVE';
+  }
+  window.__TR_liveStatusOverride = liveStatusOverride;
+
   // Base price utk floating berdasarkan mode aktif.
   // Entry mode: rec.entry (butuh didTouchEntry — kalau belum sentuh, return null)
   // HAKA mode: rec.openPriceAtPublish (masuk di open tgl rilis regardless of entry touch)
@@ -8385,6 +8451,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // state EXPIRED via closedBy='EXPIRED_UNFILLED' — kita bedakan itu dari
   // EXPIRED yg dari TRIGGERED (habis horizon setelah posisi jalan).
   function stateInfo(r, isHistory){
+    // Live-derived override — TENTATIVE state dari harga live sekarang.
+    // Prioritas lebih tinggi drpd backend classification karena live
+    // lebih fresh. Suffix "(live)" untuk transparansi ke user.
+    var lov = r && r._liveOverride;
+    if (lov === 'TP2') return { cls:'tr-rec-o tp', lbl:'🏆 Kena TP2 (live)' };
+    if (lov === 'TP1') return { cls:'tr-rec-o tp', lbl:'🎯 Kena TP1 (live)' };
+    if (lov === 'SL')  return { cls:'tr-rec-o sl', lbl:'✕ Kena SL (live)' };
+    if (lov === 'ACTIVE') return { cls:'tr-rec-o', lbl:'● Aktif (live)' };
     if(isHistory){
       var cb = r.closedBy; var tp = r.tpHits||[];
       if(cb==='TP2' || tp.indexOf('TP2')>=0) return {cls:'tr-rec-o tp', lbl:'🏆 Kena TP2'};
@@ -8787,17 +8861,54 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     function _apply(arr){ return _bySearch(_byDate(arr)); }
 
-    var actListF  = _apply(actList);
-    var pendListF = _apply(pendList);
-    var missListF = _apply(missList);
+    // ── Live-status override reclassification ────────────────────────
+    // Backend openList/pendingList/missedList di-rebuild periodik. Antara
+    // 2 rebuild, harga live bisa cross entry/TP/SL — bucket lama jadi
+    // stale. Rec pending/missed yg live sudah touch entry → auto-promote
+    // ke AKTIF. Rec aktif/pending yg live sudah lewat TP1/TP2/SL → move
+    // ke tab tsb sbg TENTATIVE (badge tandai "(live)"). Rec dari
+    // historyList (backend sudah tutup) TIDAK di-override.
+    // Fungsi: window.__TR_liveStatusOverride(rec) → 'ACTIVE'|'TP1_LIVE'|
+    // 'TP2_LIVE'|'SL_LIVE'|null. Untuk TP/SL live-promoted, kita ubah
+    // _bucket ke 'history' supaya outer loop treat sbg history row (badge
+    // langsung dari _liveOverride via stateInfo). PnL realized tidak ada
+    // (backend belum konfirmasi exit price) → topPct=null di history
+    // branch, atau fallback ke floating (acceptable).
+    var _liveOv = window.__TR_liveStatusOverride || function(){ return null; };
+    var actListF = [], pendListF = [], missListF = [];
+    var liveTp1F = [], liveTp2F = [], liveSlF = [];
+    function _classifyLive(r, fallbackBucket){
+      var ov = _liveOv(r);
+      // Rec yg override live (ACTIVE/TP/SL) berarti entry SUDAH tersentuh
+      // (didTouchEntry=true efektif) — override field ini di copy supaya
+      // getBasePriceForMode / getModeFloating bisa hitung floating PnL.
+      // Field asli backend TIDAK di-mutate (yg diubah cuma copy).
+      var promote = function(tag, bucket){
+        return Object.assign({}, r, { _bucket: bucket, _liveOverride: tag, didTouchEntry: true });
+      };
+      if (ov === 'TP2_LIVE') { liveTp2F.push(promote('TP2', 'history')); return; }
+      if (ov === 'TP1_LIVE') { liveTp1F.push(promote('TP1', 'history')); return; }
+      if (ov === 'SL_LIVE')  { liveSlF.push (promote('SL',  'history')); return; }
+      if (ov === 'ACTIVE')   { actListF.push(promote('ACTIVE', 'active')); return; }
+      // No override — keep di bucket original
+      if (fallbackBucket === 'active')       actListF.push(r);
+      else if (fallbackBucket === 'pending') pendListF.push(r);
+      else if (fallbackBucket === 'missed')  missListF.push(r);
+    }
+    _apply(actList).forEach(function(r){ _classifyLive(r, 'active'); });
+    _apply(pendList).forEach(function(r){ _classifyLive(r, 'pending'); });
+    _apply(missList).forEach(function(r){ _classifyLive(r, 'missed'); });
+
+    // History rec (backend sudah tutup) tetap dari backend classification
     var histListF = _apply(histList);
-    var histTP1F  = histListF.filter(_recHitTP1);
-    var histTP2F  = histListF.filter(_recHitTP2);
-    var histSlF   = histListF.filter(_recHitSL);
+    var histTP1F  = histListF.filter(_recHitTP1).concat(liveTp1F);
+    var histTP2F  = histListF.filter(_recHitTP2).concat(liveTp2F);
+    var histSlF   = histListF.filter(_recHitSL).concat(liveSlF);
     var histExpF  = histListF.filter(_recHitExpired);
 
-    // Tab counters pakai LIST YG SUDAH DIFILTER TGL (reflect filter)
-    var allN  = actListF.length + pendListF.length + missListF.length + histListF.length;
+    // Tab counters pakai LIST YG SUDAH DIFILTER TGL + LIVE OVERRIDE
+    var allN  = actListF.length + pendListF.length + missListF.length + histListF.length
+              + liveTp1F.length + liveTp2F.length + liveSlF.length;
     var actN  = actListF.length + missListF.length;   // treat missed sbg 'active-ish' (masih running/floating)
     var pendN = pendListF.length;
     var tp1N  = histTP1F.length;
@@ -8883,7 +8994,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
       //   • pending          → TIDAK ADA angka floating (posisi belum open).
       // Semua dgn KETERANGAN kecil di bawah: 'beli di harga entry' / 'beli di harga open'.
       var topPct = null, topPctCls = 'up', topPctLabel = '';
-      if(isHistory){
+      // Live-derived TP/SL: backend belum konfirmasi exit price, jadi
+      // floating dari live (bukan realized). Treat sbg active dari sisi
+      // PnL, meskipun _bucket sudah 'history' utk tab placement.
+      var _isLiveTPSL = r._liveOverride === 'TP1' || r._liveOverride === 'TP2' || r._liveOverride === 'SL';
+      if(_isLiveTPSL){
+        var _fltL = getModeFloating(r, _entryMode);
+        if(Number.isFinite(_fltL)){
+          topPct = _fltL;
+          topPctCls = _fltL >= 0 ? 'up' : 'dn';
+          topPctLabel = getBaseLabelForMode(_entryMode);
+        }
+      } else if(isHistory){
         var _histPnl = getRecPnl(r, _entryMode, _exitMode);
         if(Number.isFinite(_histPnl)){
           topPct = _histPnl;
@@ -14223,16 +14345,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   function statusOf(r){
-    if (r._bucket === 'pendingList') return 'PENDING';
-    if (r._bucket === 'missedList')  return 'MISSED';
-    // unfilledList superset — untuk edge case rec tanpa id yg lolos dedupe,
-    // simpulkan status dari r.state (RUNNING_MISSED → MISSED, PENDING → PENDING)
-    if (r._bucket === 'unfilledList'){
-      if (r.state === 'RUNNING_MISSED') return 'MISSED';
-      if (r.state === 'PENDING')        return 'PENDING';
-    }
-    // closedBy dari backend: 'TP1' | 'TP2' | 'SL' | 'SL_TRAIL' | 'EXPIRED'
-    // | 'EXPIRED_UNFILLED'. Universe rec closed = 4 kategori:
+    // Backend closed status wins (definitif) — check dulu sebelum live
+    // override. closedBy dari backend: 'TP1' | 'TP2' | 'SL' | 'SL_TRAIL' |
+    // 'EXPIRED' | 'EXPIRED_UNFILLED'. Universe rec closed = 4 kategori:
     //   - TP1 (kena TP1 utk rec tanpa TP2)  → 'TP' WIN
     //   - TP2 (kena TP2 utk rec dgn TP2)     → 'TP' WIN
     //   - SL biasa (kena SL sebelum TP1)     → 'SL' LOSS
@@ -14243,6 +14358,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (cb === 'TP1' || cb === 'TP2') return 'TP';
     if (cb === 'SL' || cb === 'SL_TRAIL') return 'SL';
     if (cb === 'EXPIRED' || cb === 'EXPIRED_UNFILLED') return 'EXPIRED';
+    // Live-status override — antara 2 backend rebuild, harga live bisa
+    // sudah cross entry/TP/SL. Konsisten dgn renderRecList firm listing.
+    if (typeof window.__TR_liveStatusOverride === 'function') {
+      var ov = window.__TR_liveStatusOverride(r);
+      if (ov === 'TP1_LIVE' || ov === 'TP2_LIVE') return 'TP';
+      if (ov === 'SL_LIVE')  return 'SL';
+      if (ov === 'ACTIVE')   return 'ACTIVE';
+    }
+    if (r._bucket === 'pendingList') return 'PENDING';
+    if (r._bucket === 'missedList')  return 'MISSED';
+    // unfilledList superset — untuk edge case rec tanpa id yg lolos dedupe,
+    // simpulkan status dari r.state (RUNNING_MISSED → MISSED, PENDING → PENDING)
+    if (r._bucket === 'unfilledList'){
+      if (r.state === 'RUNNING_MISSED') return 'MISSED';
+      if (r.state === 'PENDING')        return 'PENDING';
+    }
     // Fallback ke r.state (backend juga set 'TP_HIT'/'SL_HIT'/'EXPIRED')
     if (r.state === 'TP_HIT' || r.state === 'TP') return 'TP';
     if (r.state === 'SL_HIT' || r.state === 'SL') return 'SL';
@@ -15229,12 +15360,6 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     return String(f).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
   }
   function statusOfRec(r){
-    if (r._bucket === 'pendingList') return 'PENDING';
-    if (r._bucket === 'missedList')  return 'MISSED';
-    if (r._bucket === 'unfilledList'){
-      if (r.state === 'RUNNING_MISSED') return 'MISSED';
-      if (r.state === 'PENDING')        return 'PENDING';
-    }
     // closedBy dari backend: 'TP1' | 'TP2' | 'SL' | 'SL_TRAIL' | 'EXPIRED'
     // | 'EXPIRED_UNFILLED'. Universe closed = TP1/TP2 (WIN), SL biasa +
     // SL_TRAIL (LOSS), EXPIRED (NETRAL). SL_TRAIL tidak lagi WIN — di-remap
@@ -15243,6 +15368,19 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     if (cb === 'TP1' || cb === 'TP2') return 'TP';
     if (cb === 'SL' || cb === 'SL_TRAIL') return 'SL';
     if (cb === 'EXPIRED' || cb === 'EXPIRED_UNFILLED') return 'EXPIRED';
+    // Live-status override (sinkron dgn statusOf di menu Analis)
+    if (typeof window.__TR_liveStatusOverride === 'function') {
+      var ov = window.__TR_liveStatusOverride(r);
+      if (ov === 'TP1_LIVE' || ov === 'TP2_LIVE') return 'TP';
+      if (ov === 'SL_LIVE')  return 'SL';
+      if (ov === 'ACTIVE')   return 'ACTIVE';
+    }
+    if (r._bucket === 'pendingList') return 'PENDING';
+    if (r._bucket === 'missedList')  return 'MISSED';
+    if (r._bucket === 'unfilledList'){
+      if (r.state === 'RUNNING_MISSED') return 'MISSED';
+      if (r.state === 'PENDING')        return 'PENDING';
+    }
     // Fallback state
     if (r.state === 'TP_HIT' || r.state === 'TP') return 'TP';
     if (r.state === 'SL_HIT' || r.state === 'SL') return 'SL';
