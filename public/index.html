@@ -12018,6 +12018,76 @@ body.is-mobile-device.force-desktop .pl-col-main{
   //                   dan target = series[last] fallback current live.
   //   liveEnd: true kalau period ends today (30D atau MTD atau tahun
   //            berjalan) — pakai getStatsMerged utk current.
+  // Fallback IHSG series dari DATA.price_history monthly (dashboard).
+  // Tracker.json ihsg.series30d cuma 30 hari terakhir. Untuk period lama
+  // (mis. bulan Januari, tahun lalu), pakai monthly close dari price_history
+  // yg punya history ~10 tahun ke belakang.
+  //
+  // Konsep: price_history rows berlabel "YYYY-MM-01" berisi end-of-month
+  // close bulan itu. Untuk MoM chip Januari 2026 → base = row "2025-12-01"
+  // (Dec close), current = row "2026-01-01" (Jan close). Return = (Jan-Dec)/Dec
+  // = konvensi finance MoM.
+  //
+  // Return: array {date, close} yg _updateIhsgChip bisa consume langsung
+  // (first = base, last = current).
+  function _buildIhsgFallbackFromMonthly(period){
+    var ph = (typeof window !== 'undefined' && window.DATA && window.DATA.price_history) || null;
+    if (!ph || !ph.length) return [];
+    var out = [];
+
+    if (period && period.type === 'month' && typeof period.month === 'number' && period.year){
+      // Target month
+      var monthKey = period.year + '-' + String(period.month + 1).padStart(2, '0');
+      var idx = -1;
+      for (var i = 0; i < ph.length; i++){
+        var row = ph[i];
+        if (row && row.date && row.date.startsWith(monthKey)){ idx = i; break; }
+      }
+      if (idx >= 0 && Number.isFinite(ph[idx].IHSG)){
+        // Base = row sebelumnya (bulan sebelumnya) jika ada
+        if (idx > 0 && Number.isFinite(ph[idx - 1].IHSG)){
+          out.push({ date: ph[idx - 1].date, close: +ph[idx - 1].IHSG });
+        }
+        out.push({ date: ph[idx].date, close: +ph[idx].IHSG });
+      }
+      return out;
+    }
+
+    if (period && period.type === 'year' && period.year){
+      var yearStr = String(period.year);
+      var prevYearDec = String(period.year - 1) + '-12';
+      var baseRow = null;
+      for (var j = 0; j < ph.length; j++){
+        var r = ph[j];
+        if (!r || !r.date || !Number.isFinite(r.IHSG)) continue;
+        if (r.date.startsWith(prevYearDec)) baseRow = r;
+        if (r.date.startsWith(yearStr + '-')) out.push({ date: r.date, close: +r.IHSG });
+      }
+      if (baseRow) out.unshift({ date: baseRow.date, close: +baseRow.IHSG });
+      return out;
+    }
+
+    if (period && period.type === 'mtd'){
+      // MTD fallback (harusnya jarang trigger — daily data biasanya cover)
+      var today = new Date();
+      var y = today.getUTCFullYear(), m = today.getUTCMonth();
+      var curKey = y + '-' + String(m + 1).padStart(2, '0');
+      var curIdx = -1;
+      for (var k = 0; k < ph.length; k++){
+        if (ph[k] && ph[k].date && ph[k].date.startsWith(curKey)){ curIdx = k; break; }
+      }
+      if (curIdx >= 0 && Number.isFinite(ph[curIdx].IHSG)){
+        if (curIdx > 0 && Number.isFinite(ph[curIdx - 1].IHSG)){
+          out.push({ date: ph[curIdx - 1].date, close: +ph[curIdx - 1].IHSG });
+        }
+        out.push({ date: ph[curIdx].date, close: +ph[curIdx].IHSG });
+      }
+      return out;
+    }
+
+    return out;
+  }
+
   function _updateIhsgChip(filteredSeries, liveEnd){
     var chipVal = $('trIhsgChipVal');
     var chipSub = $('trIhsgChipSub');
@@ -12283,14 +12353,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
       timeline = allDates.filter(function(d){ return d >= range.start && d <= range.end; });
     }
     if (!timeline.length){
-      // Period tidak ada data — clear chart & sidebar dgn message.
+      // Period tidak ada data (mis. user pilih bulan lama sebelum data
+      // firm tracking mulai) — clear chart & sidebar dgn message.
       var ctx0 = $('trChart'); if (ctx0){
         var existing0 = Chart.getChart(ctx0);
         if (existing0){ try { existing0.destroy(); } catch(_){} }
       }
       var rankEl = $('trChartRankList');
       if (rankEl) rankEl.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:12px 6px;text-align:center;line-height:1.4">Belum ada data untuk periode ini.<br>Chart akan terisi seiring data terkumpul.</div>';
-      _updateIhsgChip(ihsgSeries.filter(function(s){ return s && s.date >= (range?range.start:'') && s.date <= (range?range.end:''); }));
+      // IHSG chip: fallback ke price_history monthly kalau daily
+      // series30d tidak cover period (mis. bulan-bulan lama).
+      var fallbackIhsg = _buildIhsgFallbackFromMonthly(_chartPeriod);
+      _updateIhsgChip(fallbackIhsg, false);
       return;
     }
 
@@ -12325,6 +12399,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var filteredIhsg = range
       ? ihsgSeries.filter(function(s){ return s && s.date >= range.start && s.date <= range.end; })
       : ihsgSeries;
+    // Fallback: kalau ihsg.series30d tidak cover period (mis. user pilih
+    // bulan lama), pakai DATA.price_history monthly dari dashboard.
+    if (!filteredIhsg.length){
+      filteredIhsg = _buildIhsgFallbackFromMonthly(_chartPeriod);
+    }
     var todayCheck = new Date();
     var isLivePeriod = _chartPeriod.type === '30d' || _chartPeriod.type === 'mtd'
                        || (_chartPeriod.type === 'year' && _chartPeriod.year === todayCheck.getUTCFullYear())
@@ -12484,11 +12563,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
         // Interaction: mode dinamis (nearest / index — lihat komentar
         // interactionMode di atas). intersect:false → tap area kosong
         // dekat data tetap picking, tidak perlu strict on-line.
-        // axis:'x' → di mode 'index' picking berdasar posisi horizontal
-        // saja (Y diabaikan). Combined dgn tooltip.filter → mobile jadi
-        // forgiving: tap di mana aja secara horizontal → tooltip line
-        // highlighted muncul.
-        interaction: { mode: interactionMode, intersect: false, axis: 'x' },
+        //
+        // AXIS: 'xy' default → 'nearest' pick 1 item terdekat 2D (bagus
+        // saat no-highlight, cursor cerah semua). 'x' HANYA saat mode
+        // 'index' (mobile+highlight) → picking by X-position only supaya
+        // tap horizontal manapun cukup, tooltip.filter reduce ke 1 line
+        // highlighted.
+        //
+        // PENTING: JANGAN axis:'x' di 'nearest' — hasilnya multiple items
+        // di X yg sama dianggap tie-distance → tooltip list SEMUA firms.
+        interaction: {
+          mode: interactionMode,
+          intersect: false,
+          axis: (interactionMode === 'index') ? 'x' : 'xy'
+        },
         // Klik salah satu line di canvas → toggle highlight (mirror
         // behavior klik row di sidebar Peringkat). Bekerja dgn nearest
         // mode: Chart.js provide array elements[] paling dekat click point,
