@@ -2863,13 +2863,11 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 .lpv-tbl td{padding:8px 10px;border-bottom:1px solid var(--border)}
 
 #page-tracker{padding:20px 24px 40px;max-width:1200px;margin:0 auto}
-/* Mobile: padding-bottom pakai calc(96px + safe-area) supaya konten
-   terakhir (mis. row Peringkat, footer card) tidak ketutup bottom-nav
-   yg fixed. Bottom-nav tinggi ~63px (padding 8+8 + icon 18 + gap 3 +
-   text 14 + item padding 6+6). Di iPhone dgn home indicator, safe-area
-   inset bottom bisa +34px → total nav 97px. 90px old value = kurang
-   margin di iPhone. Bump ke 96px + safe-area (auto-adaptive). */
-@media(max-width:640px){ #page-tracker{padding:14px 12px calc(96px + env(safe-area-inset-bottom, 0px))} }
+/* Mobile: bump padding-bottom dari 90px ke 110px supaya konten terakhir
+   (mis. row Peringkat) tidak ketutup bottom-nav yg fixed. Bottom-nav
+   sekitar 63px normal, bisa sampai ~97px di iPhone dgn home indicator.
+   110px = safe buffer di semua device tanpa kompleksitas env(). */
+@media(max-width:640px){ #page-tracker{padding:14px 12px 110px} }
 
 .tr-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
 .tr-title-wrap h1{font-size:20px;font-weight:800;margin:0;letter-spacing:-.3px}
@@ -2908,38 +2906,43 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 /* Cluster kanan: period selector + IHSG chip sejajar (desktop). */
 .tr-card-header-controls{display:flex;align-items:center;gap:10px;flex-shrink:0;min-width:0;justify-content:flex-end}
 @media(max-width:640px){
-  /* MOBILE layout header chart Performa (3 baris):
+  /* MOBILE layout header chart Performa — pakai CSS Grid biar eksplisit.
+     3 baris fixed:
        Baris 1: [📈 Performa 30 Hari]                     (title, full width)
        Baris 2: [Perbandingan return ...] [IHSG chip]     (desc + chip sejajar)
        Baris 3: [30D | Bulan Ini | Bulan▾ | 2026▾]        (period, full width)
 
      Trik: `display:contents` pada .tr-card-titleblock DAN
      .tr-card-header-controls bikin kedua wrapper "menghilang" secara
-     layout — title, desc, period, chip jadi flex-item LANGSUNG di
-     .tr-card-headline. Baru dgn begini bisa reflow bebas via order +
-     flex-basis. */
-  .tr-card-headline{gap:6px 10px;align-items:flex-start;flex-wrap:wrap}
+     layout — title/desc/period/chip jadi grid-item LANGSUNG di
+     .tr-card-headline. Grid named areas → placement eksplisit, tidak
+     bergantung ke flex order + basis (yg lebih rentan edge case). */
+  .tr-card-headline{
+    display:grid;
+    grid-template-columns:1fr auto;
+    grid-template-areas:
+      "title  title"
+      "desc   chip"
+      "period period";
+    gap:6px 10px;
+    align-items:start;
+    width:100%;
+  }
   .tr-card-titleblock{display:contents}
   .tr-card-header-controls{display:contents}
-  /* Baris 1: title full-width */
   .tr-card-headline .tr-card-title{
-    font-size:12.5px;order:0;flex-basis:100%;
+    grid-area:title;font-size:12.5px;margin:0;
   }
-  /* Baris 2: desc (grow) + IHSG chip (fixed). Order:1 → setelah title,
-     sebelum period. Desc flex:1 1 auto biar isi ruang tersisa; chip
-     tetap flex-shrink:0. align-self:center pada chip supaya vertical
-     center relatif ke tinggi desc. */
   .tr-card-headline .tr-card-desc{
-    font-size:10.5px;order:1;flex:1 1 auto;min-width:0;margin-top:0;
+    grid-area:desc;font-size:10.5px;margin-top:0;min-width:0;line-height:1.35;
   }
   .tr-card-headline > .tr-ihsg-chip,
   .tr-card-headline .tr-ihsg-chip{
-    order:1;align-self:center;
+    grid-area:chip;align-self:center;
   }
-  /* Baris 3: period selector full-width, kiri-aligned. */
   .tr-card-headline > .tr-chart-period,
   .tr-card-headline .tr-chart-period{
-    order:2;flex-basis:100%;margin-top:2px;justify-content:flex-start;
+    grid-area:period;margin-top:2px;justify-content:flex-start;
   }
 }
 .tr-card-title{font-size:14px;font-weight:800;letter-spacing:-.2px;margin:0}
@@ -12381,20 +12384,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     // (IHSG line di canvas chart DIHILANGKAN — sudah di chip header di atas.)
 
-    // Mode interaction dinamis: MOBILE + HIGHLIGHT aktif → 'index' (pick
-    // titik data by X-position aja, ignore Y-proximity). Bikin tap di HP
-    // jauh lebih mobile-friendly — user tap di mana aja secara horizontal,
-    // tooltip line yg lagi di-highlight langsung muncul (via tooltip.filter
-    // yg cuma loloskan firmId aktif). Tidak perlu jari pas di line terang.
+    // Interaction mode: selalu 'nearest' → cuma 1 line paling dekat
+    // cursor yg dapet tooltip. Ini kombinasi dgn tooltip.filter di
+    // bawah biar cuma line highlighted yg tampil tooltipnya saat
+    // highlight aktif.
     //
-    // Desktop atau no-highlight → 'nearest' (default) — mouse presisi,
-    // atau user browsing tanpa target spesifik.
-    //
-    // NB: interaction options di-set sekali saat chart di-construct.
-    // updateChart() destroy+recreate chart tiap highlight toggle → mode
-    // ini otomatis re-evaluated saat state berubah.
-    var isMobileVp = (typeof window !== 'undefined' && window.innerWidth <= 900);
-    var interactionMode = (isMobileVp && hasHighlight) ? 'index' : 'nearest';
+    // NB: sempat coba 'index' di mobile+highlight untuk lebih forgiving,
+    // tapi mode 'index' membuat tooltip list SEMUA dataset di X yg sama.
+    // Filter TIDAK selalu suppress ke 1 item di semua versi Chart.js →
+    // hasilnya popup penuh baris (jelek). Balik ke 'nearest' aja.
 
     new Chart(ctx, {
       type: 'line',
@@ -12406,16 +12404,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
           // menampilkan nama firm + warna + last% (lebih informatif).
           legend: { display: false },
           tooltip: {
-            // Mode: 'nearest' (default) atau 'index' (mobile+highlight).
+            // Mode 'nearest' → cuma 1 line paling dekat cursor.
             // Tooltip 2 baris:
             //   Line 1: 'Nama Sekuritas: +12.34%'      (kumulatif s.d. tgl)
             //   Line 2: 'Return harian: +2.10%'        (delta vs tgl sebelumnya)
             // afterLabel utk baris ke-2. Skip baris 2 kalau idx=0 (tidak
             // ada tgl sebelumnya) atau tgl tanpa aktivitas trade (delta=0).
-            mode: interactionMode, intersect: false,
-            // axis:'x' → snap tooltip position by X saja (untuk 'index'
-            // mode). Untuk 'nearest' mode ini juga OK (2D fallback).
-            axis: 'x',
+            mode: 'nearest', intersect: false,
             backgroundColor: card, borderColor: border, borderWidth: 1,
             titleColor: text2, bodyColor: text2, padding: 10,
             // Filter tooltip item saat ada highlight aktif: cuma tampil
@@ -12476,14 +12471,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
             ticks: { color: text2, font: { size: 10, family: "'IBM Plex Mono',monospace" }, callback: function(v){ return (v>=0?'+':'') + v + '%'; } }
           }
         },
-        // Interaction: mode dinamis (nearest / index — lihat komentar
-        // interactionMode di atas). intersect:false → tap area kosong
-        // dekat data tetap picking, tidak perlu strict on-line.
-        // axis:'x' → di mode 'index' picking berdasar posisi horizontal
-        // saja (Y diabaikan). Ini yg bikin mobile experience jadi
-        // forgiving — tap di mana aja secara horizontal langsung muncul
-        // tooltip line highlighted.
-        interaction: { mode: interactionMode, intersect: false, axis: 'x' },
+        // Interaction 'nearest' + intersect:false → hover di area chart
+        // pakai proximity (bukan strict on-line), tooltip pop up di line
+        // yg vertically/horizontally paling dekat cursor. Kombinasi dgn
+        // tooltip.filter → cuma line highlighted yg tampil tooltipnya
+        // saat highlight aktif.
+        interaction: { mode: 'nearest', intersect: false },
         // Klik salah satu line di canvas → toggle highlight (mirror
         // behavior klik row di sidebar Peringkat). Bekerja dgn nearest
         // mode: Chart.js provide array elements[] paling dekat click point,
