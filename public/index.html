@@ -14601,17 +14601,22 @@ window._attachCandleTooltip = function(chart, series, container, candles){
 
     // Level cards — dengan status badge:
     //   Entry  → 'TERISI' bila didTouchEntry=true (harga sudah menyentuh entry)
-    //   TP1    → 'HIT'    bila tpHits mengandung 'TP1'
+    //   TP1    → 'HIT'    bila tpHits mengandung 'TP1' (dan '🛡 TRAIL' saat SL_TRAIL:
+    //             TP1 hit lalu harga turun balik ke entry sbg trailed stop)
     //   TP2    → 'HIT'    bila tpHits mengandung 'TP2'
-    //   SL     → 'KENA'   bila closedBy='SL' atau 'SL_TRAIL'
+    //   SL     → 'KENA'   HANYA saat closedBy='SL' (SL asli sentuh). SL_TRAIL
+    //             bukan kena SL asli — harga turun balik ke entry (trailed stop
+    //             setelah TP1) → SL card TIDAK dapat badge KENA. Ini konsisten
+    //             dgn TP1 lock rule: rec WIN, exit di entry, SL asli tidak kena.
     // Card yang terkena hit juga dapat class `is-hit` → ring inset lebih tebal
     // agar visually terlihat aktif.
     var tpHits = Array.isArray(rec.tpHits) ? rec.tpHits : [];
     var closedBy = String(rec.closedBy || '');
     var entryTouched = !!rec.didTouchEntry;
-    var isTP1Hit = tpHits.indexOf('TP1') >= 0;
-    var isTP2Hit = tpHits.indexOf('TP2') >= 0;
-    var isSLHit  = closedBy === 'SL' || closedBy === 'SL_TRAIL';
+    var isTP1Hit = tpHits.indexOf('TP1') >= 0 || closedBy === 'TP1' || closedBy === 'TP2' || closedBy === 'SL_TRAIL';
+    var isTP2Hit = tpHits.indexOf('TP2') >= 0 || closedBy === 'TP2';
+    var isSLHit  = closedBy === 'SL';   // SL_TRAIL bukan kena SL asli
+    var isTrailedAtEntry = closedBy === 'SL_TRAIL';  // exit di entry setelah TP1
 
     var entryPrice = +rec.entry;
     var pctFromEntry = function(v){
@@ -14648,9 +14653,13 @@ window._attachCandleTooltip = function(chart, series, container, candles){
         + '</div>';
     };
     var hasT2 = Number.isFinite(+rec.tp2) && +rec.tp2 > 0 && +rec.tp2 !== +rec.tp1;
+    // Badge TP1: kalau SL_TRAIL (TP1 hit lalu harga balik ke entry sbg
+    // trailed stop), tampilkan '🛡 TRAIL' — konteks tambahan supaya user
+    // paham kenapa exit price = entry (bukan di TP1) walau statusnya WIN.
+    var tp1Badge = isTP1Hit ? (isTrailedAtEntry ? '🛡 HIT · TRAIL' : '✓ HIT') : '';
     $('trRecModalLevels').innerHTML =
         makeLevel('entry', 'ENTRY',      rec.entry, false, entryTouched ? '✓ TERISI' : '')
-      + makeLevel('tp',    hasT2 ? 'TP1' : 'TP', rec.tp1, true,  isTP1Hit ? '✓ HIT' : '')
+      + makeLevel('tp',    hasT2 ? 'TP1' : 'TP', rec.tp1, true,  tp1Badge)
       + (hasT2 ? makeLevel('tp', 'TP2',  rec.tp2, true, isTP2Hit ? '✓ HIT' : '') : '')
       + makeLevel('sl',    'STOP-LOSS',  rec.sl,    true,  isSLHit  ? '✗ KENA' : '');
 
