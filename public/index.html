@@ -8202,11 +8202,48 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     return out;
   }
-  function computeIhsgCumSeries(){
+  // Compute IHSG cumulative series, NORMALIZED to baseline = periode
+  // yang dipilih user (bukan default series30d[0]).
+  //
+  //   startIso: tgl awal periode (dari _dateFilter.start) — base 0% di
+  //             sini. Kalau null → pakai series30d[0] (behavior lama).
+  //   endIso:   tgl akhir periode (dari _dateFilter.end) — clip series
+  //             ke sini. Kalau null → pakai series30d[last].
+  //
+  // Kenapa? Sebelumnya IHSG selalu normalize ke series30d[0] (30 hari
+  // rolling). Kalau user pilih preset "Juli 2026", chart FIRM mulai 0%
+  // di Jul 1 (first trade Jul), tapi IHSG mulai 0% di Jun 25 → IHSG
+  // return terlihat "duluan" dan tidak comparable. Fix: normalize IHSG
+  // ke tgl awal periode → BOTH lines start at 0% di date yg sama,
+  // "return sejak periode mulai" adil untuk perbandingan.
+  //
+  // Sama dengan approach chart Dashboard '_computeFirmDailyEquity'
+  // yg reset cum=0 di timeline[0].
+  function computeIhsgCumSeries(startIso, endIso){
     var d=getData(); if(!d||!d.ihsg||!Array.isArray(d.ihsg.series30d)||!d.ihsg.series30d.length) return [];
     var s=d.ihsg.series30d.slice().sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
-    var base=+s[0].close; if(!Number.isFinite(base)||base===0) return [];
-    return s.map(function(pt){ return { date: pt.date, cum: +(((+pt.close-base)/base)*100).toFixed(3) }; });
+
+    // Base index: first IHSG point yg >= startIso. Kalau tidak ada
+    // (mis. user pilih bulan lama di luar cover series30d) → return
+    // empty (IHSG line hilang, chart cuma firm).
+    var baseIdx = 0;
+    if(startIso){
+      baseIdx = -1;
+      for(var i=0;i<s.length;i++){
+        if(s[i].date >= startIso){ baseIdx = i; break; }
+      }
+      if(baseIdx === -1) return [];
+    }
+    var base = +s[baseIdx].close;
+    if(!Number.isFinite(base) || base === 0) return [];
+
+    // Clip ke [baseIdx, endIso].
+    var filtered = s.slice(baseIdx);
+    if(endIso) filtered = filtered.filter(function(pt){ return pt.date <= endIso; });
+
+    return filtered.map(function(pt){
+      return { date: pt.date, cum: +(((+pt.close-base)/base)*100).toFixed(3) };
+    });
   }
   // Untuk chart cum: align x-axis pakai gabungan tgl (union) dari series firm & IHSG, isi flat sebelum tgl pertama.
   function alignSeriesToDates(series, dates){
@@ -8467,16 +8504,49 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Cumulative Chart (Chart.js) ────────────────────
+  // Timeline & baseline logic (matches Overview Performa 30 Hari chart):
+  //   1. Range = _dateFilter (dari preset periode / calendar custom).
+  //      Kalau null → pakai full data (Semua Tanggal).
+  //   2. IHSG normalize ke tgl awal range (base 0% di leftmost) — bukan
+  //      lagi ke series30d[0]. Ini fix baseline agar IHSG vs firm bisa
+  //      dibandingkan sebagai "return sejak periode dimulai".
+  //   3. Firm cum tetap accumulate dari first trade dlm range (sudah 0
+  //      by nature). alignSeriesToDates isi 0 utk dates sebelum first
+  //      trade → visually ke-align dgn IHSG baseline 0%.
+  //   4. Timeline dates di-clip ke range juga → x-axis TIDAK melampaui
+  //      periode yg dipilih (mis. pilih "Juli 2026" tapi IHSG cover
+  //      Jun 25-Jul 25 → x-axis dulu bocor ke Jun; sekarang cuma Jul).
   function renderCumChart(firm){
     if(typeof Chart === 'undefined'){ return; }
     var ctx = $id('trPfCumChart'); if(!ctx) return;
-    var firmSeries = computeCumSeries(firm, _entryMode, _exitMode);
-    var ihsgSeries = computeIhsgCumSeries();
 
-    // Union of dates: firm exit dates + IHSG dates
+    // Range dari date filter (preset atau custom). null = Semua Tanggal.
+    var rangeStart = (_dateFilter && _dateFilter.start) || null;
+    var rangeEnd   = (_dateFilter && _dateFilter.end)   || null;
+
+    var firmSeries = computeCumSeries(firm, _entryMode, _exitMode);
+    var ihsgSeries = computeIhsgCumSeries(rangeStart, rangeEnd);
+
+    // Union of dates: firm exit dates + IHSG dates. Clip ke range
+    // supaya x-axis fokus di periode yg dipilih user (jangan bocor ke
+    // luar preset).
     var dateSet = {};
-    firmSeries.forEach(function(p){ dateSet[p.date]=1; });
+    firmSeries.forEach(function(p){
+      if((!rangeStart || p.date >= rangeStart) && (!rangeEnd || p.date <= rangeEnd)){
+        dateSet[p.date] = 1;
+      }
+    });
     ihsgSeries.forEach(function(p){ dateSet[p.date]=1; });
+
+    // Kalau range set tapi dateSet kosong (no data in range, mis. firm
+    // belum ada trade di bulan itu & IHSG tidak cover) → tampilkan
+    // boundaries range biar x-axis menunjukkan periode kosong (bukan
+    // canvas blank yg misleading).
+    if(rangeStart && !Object.keys(dateSet).length){
+      dateSet[rangeStart] = 1;
+      if(rangeEnd && rangeEnd !== rangeStart) dateSet[rangeEnd] = 1;
+    }
+
     var dates = Object.keys(dateSet).sort();
 
     var firmVals = alignSeriesToDates(firmSeries, dates).map(function(v){ return v==null?0:v; });
@@ -8505,7 +8575,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
         },
         scales:{
           x:{ grid:{display:false}, ticks:{ color:c.text3, font:{size:10, family:"'IBM Plex Mono',monospace"}, maxRotation:0, autoSkip:false } },
-          y:{ grid:{color:c.grid}, ticks:{ color:c.tick, font:{size:10, family:"'IBM Plex Mono',monospace"}, callback:function(v){return v+'%';} } }
+          y:{
+            grid:{
+              // Baseline emphasis: garis Y=0 lebih tebal & warna tick
+              // (--text2, lebih menonjol dari grid lain) — jadi user
+              // langsung lihat "ini titik netral, di atas untung, di
+              // bawah rugi". Sama seperti Overview chart di Dashboard.
+              color: function(context){
+                if(context && context.tick && context.tick.value === 0) return c.tick;
+                return c.grid;
+              },
+              lineWidth: function(context){
+                if(context && context.tick && context.tick.value === 0) return 1.4;
+                return 1;
+              }
+            },
+            ticks:{
+              color:c.tick,
+              font:{size:10, family:"'IBM Plex Mono',monospace"},
+              // Format signed % (+80% / -10%) — mirror Dashboard chart.
+              callback:function(v){ return (v>=0?'+':'') + v + '%'; }
+            }
+          }
         },
         interaction:{ mode:'index', intersect:false }
       }
