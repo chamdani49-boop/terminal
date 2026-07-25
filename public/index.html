@@ -2895,6 +2895,34 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 .tr-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
 .tr-card-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .tr-card-title{font-size:14px;font-weight:800;letter-spacing:-.2px;margin:0}
+/* IHSG stat chip di header chart Performa 30 Hari. Prominent enough utk
+   catch eye tapi tidak overpower card title. Warna up/down via class
+   .up/.dn di val element. */
+.tr-ihsg-chip{
+  display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px;
+  padding:6px 12px;border-radius:9px;
+  background:var(--bg2);border:1px solid var(--border);
+  min-width:0;flex-shrink:0;
+}
+.tr-ihsg-chip-lbl{
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;color:var(--text3);line-height:1;
+}
+.tr-ihsg-chip-val{
+  font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:800;
+  letter-spacing:-.2px;color:var(--text);line-height:1.15;
+}
+.tr-ihsg-chip-val.up{color:var(--green)}
+.tr-ihsg-chip-val.dn{color:var(--red)}
+.tr-ihsg-chip-sub{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+  color:var(--text2);line-height:1;letter-spacing:-.1px;
+}
+@media(max-width:640px){
+  .tr-ihsg-chip{padding:5px 10px}
+  .tr-ihsg-chip-val{font-size:13.5px}
+  .tr-ihsg-chip-sub{font-size:9.5px}
+}
 .tr-card-desc{font-size:11px;color:var(--text3);margin-top:2px}
 .tr-chart-wrap{position:relative;height:240px}
 .tr-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text2);margin-top:10px;font-family:'IBM Plex Mono',monospace}
@@ -6154,7 +6182,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-card-h">
       <div>
         <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
-        <div class="tr-card-desc">Return kumulatif per sekuritas vs IHSG (benchmark) · hover chart untuk detail harga &amp; return</div>
+        <div class="tr-card-desc">Return kumulatif per sekuritas · Top 8 by aktivitas</div>
+      </div>
+      <!-- IHSG stat chip: sekaligus reference benchmark utk konteks user.
+           IHSG return magnitude jauh lebih kecil dari firm compound return
+           (index price change ±7% vs sum-of-pnl bisa +140%) — kalau di-plot
+           di chart yg sama, IHSG line terlihat 'flat' & bikin bingung. Jadi
+           IHSG di-lift ke header sbg badge angka menonjol; user tetap dapat
+           konteks 'seberapa besar market return' tanpa visual clutter. -->
+      <div class="tr-ihsg-chip" id="trIhsgChip" title="IHSG 30 hari — benchmark pasar">
+        <span class="tr-ihsg-chip-lbl">IHSG 30d</span>
+        <span class="tr-ihsg-chip-val" id="trIhsgChipVal">—</span>
+        <span class="tr-ihsg-chip-sub" id="trIhsgChipSub">—</span>
       </div>
     </div>
     <div class="tr-chart-wrap"><canvas id="trChart"></canvas></div>
@@ -11635,27 +11674,38 @@ body.is-mobile-device.force-desktop .pl-col-main{
       })
       .slice(0, 8);
 
-    // IHSG line di-render sbg RETURN KUMULATIF % (base = close pertama di
-    // series30d) — supaya scale-nya SAMA dgn firm return %, jadi user bisa
-    // langsung bandingin visual: "sekuritas X di atas/bawah IHSG?".
-    // Harga close asli tetap disimpan (ihsgCloseArr) & di-lookup di tooltip
-    // supaya saat hover tampil BOTH harga + return% sekaligus.
-    // Forward-fill kalau IHSG data belum ada utk tgl X (pipeline lag).
+    // IHSG stats untuk chip header (BUKAN di-plot sbg line di chart).
+    // Alasan: magnitude return firm (sum-of-pnl 100+ trade → bisa +140%)
+    // vs IHSG (index price change ±7% per 30 hari) TERLALU BEDA. Kalau
+    // di-plot bareng, IHSG jadi flat line di 0% & user bingung ('kok gitu?
+    // apa data dummy?'). Solusi: IHSG di-lift ke chip header sbg reference
+    // number — user tetap dapat konteks 'berapa return market' tanpa
+    // visual clutter di canvas chart.
     var ihsgBase = ihsgSeries.length ? +ihsgSeries[0].close : null;
-    var ihsgPriceByDate = {};
-    ihsgSeries.forEach(function(s){
-      if (s && s.date && Number.isFinite(+s.close)) ihsgPriceByDate[s.date] = +s.close;
-    });
-    var lastIhsgPrice = null;
-    var ihsgCloseArr = timeline.map(function(date){
-      if (ihsgPriceByDate[date] != null) lastIhsgPrice = ihsgPriceByDate[date];
-      return lastIhsgPrice;   // null di awal kalau IHSG belum start di tgl itu
-    });
-    // Convert ke return% vs base (utk plot di axis %)
-    var ihsgReturnArr = ihsgCloseArr.map(function(p){
-      if (p == null || !Number.isFinite(ihsgBase) || ihsgBase <= 0) return null;
-      return +(((p - ihsgBase) / ihsgBase) * 100).toFixed(2);
-    });
+    var ihsgLast = ihsgSeries.length ? +ihsgSeries[ihsgSeries.length - 1].close : null;
+    var ihsgRet = null;
+    if (Number.isFinite(ihsgBase) && ihsgBase > 0 && Number.isFinite(ihsgLast)){
+      ihsgRet = ((ihsgLast - ihsgBase) / ihsgBase) * 100;
+    }
+    // Update chip di header chart.
+    var chipVal = $('trIhsgChipVal');
+    var chipSub = $('trIhsgChipSub');
+    if (chipVal){
+      if (ihsgRet == null){
+        chipVal.textContent = '—';
+        chipVal.className = 'tr-ihsg-chip-val';
+      } else {
+        chipVal.textContent = (ihsgRet >= 0 ? '+' : '') + ihsgRet.toFixed(2) + '%';
+        chipVal.className = 'tr-ihsg-chip-val ' + (ihsgRet >= 0 ? 'up' : 'dn');
+      }
+    }
+    if (chipSub){
+      if (ihsgBase != null && ihsgLast != null){
+        chipSub.textContent = Number(ihsgBase).toLocaleString('id-ID') + ' → ' + Number(ihsgLast).toLocaleString('id-ID');
+      } else {
+        chipSub.textContent = '—';
+      }
+    }
 
     var css = getComputedStyle(document.documentElement);
     var text3 = css.getPropertyValue('--text3').trim() || '#a49cc0';
@@ -11683,22 +11733,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         spanGaps: true
       };
     });
-    // IHSG line — return% (single axis), dashed red, sedikit lebih tebal
-    // supaya menonjol sbg benchmark. Custom prop _closes utk lookup harga
-    // asli di tooltip.
-    datasets.push({
-      label: 'IHSG',
-      data: ihsgReturnArr,
-      _closes: ihsgCloseArr,    // shadow prop utk tooltip lookup
-      borderColor: redC,
-      backgroundColor: 'transparent',
-      fill: false,
-      tension: 0.4,
-      pointRadius: 0,           // polos, tanpa marker (benchmark)
-      borderWidth: 2.5,
-      borderDash: [5, 4],
-      spanGaps: true
-    });
+    // (IHSG line di canvas chart DIHILANGKAN — sudah di chip header di atas.)
 
     new Chart(ctx, {
       type: 'line',
@@ -11719,20 +11754,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
             backgroundColor: card, borderColor: border, borderWidth: 1,
             titleColor: text2, bodyColor: text2,
             callbacks: {
-              // Semua line di scale % → apple-to-apple comparison. Tooltip:
-              //   IHSG: tampilkan 'IHSG: +7.29% · 6.315' (return + harga asli).
-              //   Firm: tampilkan 'Firm Name: +12.34%'.
               label: function(it){
                 var y = it.parsed.y;
-                var lbl = it.dataset.label;
                 var pctStr = (Number.isFinite(y)) ? ((y>=0?'+':'') + y.toFixed(2) + '%') : '—';
-                if (lbl === 'IHSG'){
-                  var closes = it.dataset._closes;
-                  var closeVal = (closes && closes[it.dataIndex] != null) ? closes[it.dataIndex] : null;
-                  var priceStr = (closeVal != null) ? ' · ' + Number(closeVal).toLocaleString('id-ID') : '';
-                  return lbl + ': ' + pctStr + priceStr;
-                }
-                return lbl + ': ' + pctStr;
+                return it.dataset.label + ': ' + pctStr;
               }
             }
           }
