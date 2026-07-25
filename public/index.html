@@ -2897,12 +2897,22 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 /* Headline row: title + IHSG chip sejajar. Flex row, tidak wrap
    (chip tetap di kanan title, sama baris). Di HP font di-perkecil
    kalau title panjang, tapi tetap tidak wrap. */
-.tr-card-headline{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%;flex-wrap:nowrap;min-width:0}
+.tr-card-headline{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;flex-wrap:nowrap;min-width:0}
 .tr-card-titleblock{min-width:0;flex:1 1 auto}
+/* Cluster kanan: period selector + IHSG chip sejajar (desktop). Mobile
+   (≤640) period selector wrap ke baris di bawah via CSS order. */
+.tr-card-header-controls{display:flex;align-items:center;gap:10px;flex-shrink:0;min-width:0;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:640px){
-  .tr-card-headline{gap:8px}
+  .tr-card-headline{gap:8px;align-items:flex-start}
   .tr-card-headline .tr-card-title{font-size:12.5px}
   .tr-card-headline .tr-card-desc{font-size:10.5px}
+  /* Period selector wrap ke baris di bawah IHSG chip. Order 2 = setelah
+     IHSG chip (order default 0). Flex-basis 100% + margin-top biar jelas
+     jadi baris baru. */
+  .tr-card-header-controls{gap:6px}
+  .tr-card-header-controls .tr-chart-period{
+    order:2;flex-basis:100%;margin-top:2px;justify-content:flex-end;
+  }
 }
 .tr-card-title{font-size:14px;font-weight:800;letter-spacing:-.2px;margin:0}
 /* IHSG stat chip di header chart Performa 30 Hari. Prominent enough utk
@@ -3037,22 +3047,28 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
   background:var(--grad);color:#fff;
   box-shadow:0 1px 3px rgba(109,40,217,.25);
 }
-.tr-chart-period .tr-cp-year{
+.tr-chart-period .tr-cp-year,
+.tr-chart-period .tr-cp-month{
   padding:5px 8px;border-radius:6px;border:1px solid var(--border);
   background:var(--card);color:var(--text);
   font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:800;
   cursor:pointer;transition:border-color .12s;outline:none;
-  min-width:70px;
 }
-.tr-chart-period .tr-cp-year:hover{border-color:var(--accent)}
-.tr-chart-period .tr-cp-year:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(109,40,217,.15)}
-.tr-chart-period .tr-cp-year.active{
+.tr-chart-period .tr-cp-year{min-width:70px}
+.tr-chart-period .tr-cp-month{min-width:96px}
+.tr-chart-period .tr-cp-year:hover,
+.tr-chart-period .tr-cp-month:hover{border-color:var(--accent)}
+.tr-chart-period .tr-cp-year:focus,
+.tr-chart-period .tr-cp-month:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(109,40,217,.15)}
+.tr-chart-period .tr-cp-year.active,
+.tr-chart-period .tr-cp-month.active{
   background:var(--grad);color:#fff;border-color:transparent;
 }
 @media(max-width:640px){
   .tr-chart-period{padding:2px;gap:3px}
   .tr-chart-period .tr-cp-btn{padding:4px 8px;font-size:10px}
   .tr-chart-period .tr-cp-year{padding:4px 6px;font-size:10px;min-width:60px}
+  .tr-chart-period .tr-cp-month{padding:4px 6px;font-size:10px;min-width:82px}
 }
 @media(max-width:640px){
   .tr-chart-rank-row{padding:4px 7px;gap:6px}
@@ -6317,30 +6333,53 @@ body.is-mobile-device.force-desktop .pl-col-main{
        real data updateChart() ignore mode dan selalu render dailyEquity. -->
   <div class="tr-card">
     <div class="tr-card-h">
-      <!-- Baris 1 (title + IHSG chip sejajar). Di HP tetap dalam
-           satu row via .tr-card-headline (flex, nowrap). -->
+      <!-- Header row: title-block di kiri + right-cluster (period
+           selector + IHSG chip) di kanan. Desktop (>640px) semua
+           sejajar dalam satu row. Mobile (≤640px) period selector
+           wrap ke baris di bawahnya (via CSS order + flex-basis 100%).
+
+           "Bulan Lalu" button (v1) sudah diganti jadi dropdown bulan
+           Januari-Desember → kombinasi bulan + tahun bikin user bisa
+           pilih bulan spesifik di tahun manapun (tidak cuma prev month). -->
       <div class="tr-card-headline">
         <div class="tr-card-titleblock">
           <div class="tr-card-title" id="trChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
           <div class="tr-card-desc">Perbandingan return kumulatif semua sekuritas · klik peringkat untuk highlight</div>
         </div>
-        <div class="tr-ihsg-chip" id="trIhsgChip" role="button" tabindex="0" title="Klik untuk clear highlight (chart kembali cerah semua)">
-          <span class="tr-ihsg-chip-lbl" id="trIhsgChipLbl">IHSG 30D</span>
-          <span class="tr-ihsg-chip-val" id="trIhsgChipVal">—</span>
-          <span class="tr-ihsg-chip-sub" id="trIhsgChipSub">—</span>
+        <div class="tr-card-header-controls">
+          <!-- Period selector: 30D / Bulan Ini + dropdown Bulan + Tahun.
+               Data historis lama mungkin belum ada; UI tetap tersedia sbg
+               infrastruktur supaya begitu data tumbuh (workflow
+               refresh-tracker.js mengumpulkan tiap hari), pilihan
+               bulan/tahun lama otomatis ke-populate tanpa perlu ubah kode. -->
+          <div class="tr-chart-period" id="trChartPeriod" role="tablist" aria-label="Periode chart">
+            <button type="button" class="tr-cp-btn active" data-period-type="30d" role="tab" aria-selected="true">30D</button>
+            <button type="button" class="tr-cp-btn" data-period-type="mtd" role="tab" aria-selected="false">Bulan Ini</button>
+            <select class="tr-cp-month" id="trChartPeriodMonth" aria-label="Pilih bulan">
+              <option value="">Bulan</option>
+              <option value="0">Januari</option>
+              <option value="1">Februari</option>
+              <option value="2">Maret</option>
+              <option value="3">April</option>
+              <option value="4">Mei</option>
+              <option value="5">Juni</option>
+              <option value="6">Juli</option>
+              <option value="7">Agustus</option>
+              <option value="8">September</option>
+              <option value="9">Oktober</option>
+              <option value="10">November</option>
+              <option value="11">Desember</option>
+            </select>
+            <select class="tr-cp-year" id="trChartPeriodYear" aria-label="Pilih tahun">
+              <!-- Options di-generate di JS berdasar rentang tahun yg ada di data. -->
+            </select>
+          </div>
+          <div class="tr-ihsg-chip" id="trIhsgChip" role="button" tabindex="0" title="Klik untuk clear highlight (chart kembali cerah semua)">
+            <span class="tr-ihsg-chip-lbl" id="trIhsgChipLbl">IHSG 30D</span>
+            <span class="tr-ihsg-chip-val" id="trIhsgChipVal">—</span>
+            <span class="tr-ihsg-chip-sub" id="trIhsgChipSub">—</span>
+          </div>
         </div>
-      </div>
-      <!-- Baris 2: Period selector. Data historis lama mungkin belum ada;
-           UI tetap tersedia sbg infrastruktur supaya begitu data tumbuh
-           (workflow refresh-tracker.js mengumpulkan tiap hari), pilihan
-           bulan/tahun lama otomatis ke-populate tanpa perlu ubah kode. -->
-      <div class="tr-chart-period" id="trChartPeriod" role="tablist" aria-label="Periode chart">
-        <button type="button" class="tr-cp-btn active" data-period-type="30d" role="tab" aria-selected="true">30D</button>
-        <button type="button" class="tr-cp-btn" data-period-type="mtd" role="tab" aria-selected="false">Bulan Ini</button>
-        <button type="button" class="tr-cp-btn" data-period-type="lastMonth" role="tab" aria-selected="false">Bulan Lalu</button>
-        <select class="tr-cp-year" id="trChartPeriodYear" aria-label="Pilih tahun">
-          <!-- Options di-generate di JS berdasar rentang tahun yg ada di data. -->
-        </select>
       </div>
     </div>
     <!-- Layout: chart di kiri (flex-1), sidebar Peringkat di kanan (fixed
@@ -11747,10 +11786,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // toggle tanpa recompute.
   var _lastChartData = null;
   // Period filter untuk chart. Type:
-  //   '30d'       : rolling 30 hari s.d. today (default).
-  //   'mtd'       : month-to-date (1 tgl bulan ini s.d. today).
-  //   'lastMonth' : bulan sebelumnya (full month).
-  //   'year'      : tahun kalender specific (year field wajib).
+  //   '30d'   : rolling 30 hari s.d. today (default).
+  //   'mtd'   : month-to-date (1 tgl bulan ini s.d. today).
+  //   'month' : bulan spesifik (month 0-11) di tahun tertentu (year).
+  //             Kombinasi Bulan × Tahun dari 2 dropdown. Kalau bulan
+  //             yg dipilih = bulan berjalan tahun ini, end di-cap ke
+  //             today (tidak proyeksi ke masa depan).
+  //   'year'  : tahun kalender penuh (year field wajib).
   var _chartPeriod = { type: '30d' };
 
   // Hitung date range dari period state. Return {start, end} ISO
@@ -11774,12 +11816,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var startMtd = new Date(Date.UTC(y, m, 1)).toISOString().slice(0,10);
       return { start: startMtd, end: todayIso };
     }
-    if (period.type === 'lastMonth'){
-      var y2 = today.getUTCFullYear(), m2 = today.getUTCMonth();
-      var startPrev = new Date(Date.UTC(y2, m2 - 1, 1)).toISOString().slice(0,10);
-      // Last day prev month = day 0 of current month
-      var endPrev = new Date(Date.UTC(y2, m2, 0)).toISOString().slice(0,10);
-      return { start: startPrev, end: endPrev };
+    if (period.type === 'month' && typeof period.month === 'number' && period.year){
+      // Bulan spesifik (0-11) di tahun period.year. Full-month range.
+      var startM = new Date(Date.UTC(period.year, period.month, 1)).toISOString().slice(0,10);
+      var endM = new Date(Date.UTC(period.year, period.month + 1, 0)).toISOString().slice(0,10);
+      // Kalau bulan yg dipilih = bulan berjalan tahun ini, cap end ke today
+      // supaya chart tidak proyek ke masa depan (data belum ada).
+      if (period.year === today.getUTCFullYear() && period.month === today.getUTCMonth()){
+        if (todayIso < endM) endM = todayIso;
+      }
+      return { start: startM, end: endM };
     }
     if (period.type === 'year' && period.year){
       var start = period.year + '-01-01';
@@ -11792,8 +11838,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return null;
   }
 
-  // Label human-readable untuk chart title & chip IHSG. mtd/lastMonth
-  // pakai nama bulan Indonesia.
+  // Label human-readable untuk chart title & chip IHSG. mtd/month pakai
+  // nama bulan Indonesia.
   var _BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   function _periodLabel(period){
     var today = new Date();
@@ -11802,9 +11848,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var m = _BULAN_ID[today.getUTCMonth()];
       return { title: 'Performa Bulan Berjalan (' + m + ')', chip: 'IHSG MTD' };
     }
-    if (period.type === 'lastMonth'){
-      var lm = _BULAN_ID[(today.getUTCMonth() - 1 + 12) % 12];
-      return { title: 'Performa Bulan Lalu (' + lm + ')', chip: 'IHSG Bln Lalu' };
+    if (period.type === 'month' && typeof period.month === 'number' && period.year){
+      var mn = _BULAN_ID[period.month];
+      // Chip pakai singkatan 3-huruf + tahun biar muat. Title full name.
+      var mnShort = mn.substring(0, 3);
+      return { title: 'Performa ' + mn + ' ' + period.year, chip: 'IHSG ' + mnShort + ' ' + period.year };
     }
     if (period.type === 'year' && period.year){
       return { title: 'Performa Tahun ' + period.year, chip: 'IHSG ' + period.year };
@@ -11854,9 +11902,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
       btns[i].classList.toggle('active', isActive);
       btns[i].setAttribute('aria-selected', isActive ? 'true' : 'false');
     }
+    // Year select: active kalau type 'year' ATAU 'month' (month juga
+    // butuh tahun). Sync value ke state.
     var sel = $('trChartPeriodYear');
     if (sel){
-      sel.classList.toggle('active', _chartPeriod.type === 'year');
+      var yearActive = (_chartPeriod.type === 'year' || _chartPeriod.type === 'month');
+      sel.classList.toggle('active', yearActive);
+      if (yearActive && _chartPeriod.year){
+        var yVal = String(_chartPeriod.year);
+        // Guard: hanya set value kalau option-nya ada (year select
+        // di-populate dari data — tahun exotic bisa saja belum ada).
+        var yOpt = sel.querySelector('option[value="' + yVal + '"]');
+        if (yOpt) sel.value = yVal;
+      }
+    }
+    // Month select: active kalau type 'month'. Sync value ke state
+    // (empty string = placeholder "Bulan").
+    var monthSel = $('trChartPeriodMonth');
+    if (monthSel){
+      monthSel.classList.toggle('active', _chartPeriod.type === 'month');
+      monthSel.value = (_chartPeriod.type === 'month' && typeof _chartPeriod.month === 'number')
+                       ? String(_chartPeriod.month)
+                       : '';
     }
   }
 
@@ -11906,9 +11973,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── IHSG chip di header chart ──
   // Sinkron dgn Dashboard Statistik Deskriptif (via window.getStatsMerged
-  // 'IHSG'.current) HANYA saat period end = today (30D default). Untuk
-  // period historikal (lastMonth, tahun lalu), pakai close di series
-  // (statis — bukan live).
+  // 'IHSG'.current) HANYA saat period end = today (30D default, MTD,
+  // bulan berjalan tahun ini, tahun berjalan). Untuk period historikal
+  // (bulan/tahun lalu), pakai close di series (statis — bukan live).
   //
   // Args:
   //   filteredSeries: array IHSG series30d yg sudah di-filter sesuai
@@ -11969,16 +12036,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
   }
 
-  // Periodik refresh chip IHSG saat period=30D / MTD / tahun-berjalan
-  // (yg pakai live current). Untuk period historikal (lastMonth, tahun
-  // lalu), nilai statis dari series → tidak perlu refresh.
+  // Periodik refresh chip IHSG saat period live (30D / MTD / bulan
+  // berjalan tahun ini / tahun berjalan). Untuk period historikal
+  // (bulan/tahun lalu), nilai statis dari series → tidak perlu refresh.
   setInterval(function(){
     var d = window.__TR_getData && window.__TR_getData();
     if (!d) return;
     var ihsgS = (d.ihsg && d.ihsg.series30d) || [];
     var today = new Date();
     var isLive = _chartPeriod.type === '30d' || _chartPeriod.type === 'mtd'
-                 || (_chartPeriod.type === 'year' && _chartPeriod.year === today.getUTCFullYear());
+                 || (_chartPeriod.type === 'year' && _chartPeriod.year === today.getUTCFullYear())
+                 || (_chartPeriod.type === 'month'
+                     && _chartPeriod.year === today.getUTCFullYear()
+                     && _chartPeriod.month === today.getUTCMonth());
     if (!isLive) return;
     // Filter series sesuai period sebelum update chip.
     var allDates = ihsgS.map(function(s){ return s.date; }).sort();
@@ -12075,7 +12145,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
       }
       return;
     }
-    // 4) Klik tombol period selector (30D / Bulan Ini / Bulan Lalu)
+    // 4) Klik tombol period selector (30D / Bulan Ini). Dropdown Bulan
+    //    dan Tahun handled via 'change' event listener terpisah di bawah.
     var pbtn = e.target && e.target.closest && e.target.closest('#trChartPeriod .tr-cp-btn');
     if (pbtn){
       var ptype = pbtn.getAttribute('data-period-type');
@@ -12088,15 +12159,49 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
   });
 
-  // Change handler utk year dropdown — <select> pakai event 'change'
-  // (bukan click). Pilih tahun → set period type='year' + refresh chart.
+  // Change handler utk dropdown Bulan + Tahun — <select> pakai event
+  // 'change' (bukan click).
+  //
+  // Bulan × Tahun sistem: 2 dropdown independent.
+  //   - Pilih bulan (0-11)   → type='month'  dgn year = tahun terpilih.
+  //   - Pilih tahun          → kalau lagi 'month', keep bulan + update
+  //                            tahun. Else → type='year' (full year).
+  //   - Pilih placeholder "Bulan" (value '') di dropdown Bulan → clear
+  //                            month, switch ke type='year' dgn tahun
+  //                            terpilih.
   document.addEventListener('change', function(e){
-    if (!e.target || e.target.id !== 'trChartPeriodYear') return;
-    var y = parseInt(e.target.value, 10);
-    if (!Number.isFinite(y)) return;
-    _chartPeriod = { type: 'year', year: y };
-    var d = window.__TR_getData && window.__TR_getData();
-    if (d) updateChart(d);
+    if (!e.target) return;
+    var id = e.target.id;
+    if (id === 'trChartPeriodYear'){
+      var y = parseInt(e.target.value, 10);
+      if (!Number.isFinite(y)) return;
+      if (_chartPeriod.type === 'month' && typeof _chartPeriod.month === 'number'){
+        // Keep month, update year.
+        _chartPeriod = { type: 'month', month: _chartPeriod.month, year: y };
+      } else {
+        _chartPeriod = { type: 'year', year: y };
+      }
+      var d = window.__TR_getData && window.__TR_getData();
+      if (d) updateChart(d);
+      return;
+    }
+    if (id === 'trChartPeriodMonth'){
+      var mVal = e.target.value;
+      // Preserve tahun currently selected. Fallback ke current year.
+      var yearSel = $('trChartPeriodYear');
+      var currentYr = (yearSel && parseInt(yearSel.value, 10)) || _chartPeriod.year || new Date().getUTCFullYear();
+      if (mVal === '' || mVal == null){
+        // Deselect bulan → switch ke type='year' (full year current).
+        _chartPeriod = { type: 'year', year: currentYr };
+      } else {
+        var m = parseInt(mVal, 10);
+        if (!Number.isFinite(m) || m < 0 || m > 11) return;
+        _chartPeriod = { type: 'month', month: m, year: currentYr };
+      }
+      var d2 = window.__TR_getData && window.__TR_getData();
+      if (d2) updateChart(d2);
+      return;
+    }
   });
 
   // ── Update chart Chart.js (destroy existing + recreate dgn data real) ──
@@ -12187,7 +12292,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       : ihsgSeries;
     var todayCheck = new Date();
     var isLivePeriod = _chartPeriod.type === '30d' || _chartPeriod.type === 'mtd'
-                       || (_chartPeriod.type === 'year' && _chartPeriod.year === todayCheck.getUTCFullYear());
+                       || (_chartPeriod.type === 'year' && _chartPeriod.year === todayCheck.getUTCFullYear())
+                       || (_chartPeriod.type === 'month'
+                           && _chartPeriod.year === todayCheck.getUTCFullYear()
+                           && _chartPeriod.month === todayCheck.getUTCMonth());
     _updateIhsgChip(filteredIhsg, isLivePeriod);
 
     var css = getComputedStyle(document.documentElement);
