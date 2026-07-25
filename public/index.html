@@ -11599,16 +11599,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var existing = Chart.getChart(ctx);
     if (existing) { try { existing.destroy(); } catch(_){} }
 
-    // Timeline: prefer IHSG dates (lebih lengkap 30 hari), else fallback
-    // ke dailyEquity dates dari backend.
+    // Timeline: UNION dates dari semua sumber (IHSG + dailyEquity + firm
+    // recsHistory exit dates). Penting: kalau salah satu source lag update
+    // (mis. IHSG pipeline lambat 1-2 hari), chart tetap render sampai tgl
+    // terakhir yang ada di source manapun. Line yg source-nya tak punya
+    // tgl itu akan forward-fill (flat) — bukan stop.
     var ihsgSeries = (data.ihsg && data.ihsg.series30d) || [];
     var dailyEquity = data.dailyEquity || [];
-    var timeline = ihsgSeries.length ? ihsgSeries.map(function(s){ return s.date; })
-                                      : dailyEquity.map(function(d){ return d.date; });
+    var byFirm = data.byFirm || {};
+
+    var dateSet = {};
+    ihsgSeries.forEach(function(s){ if(s && s.date) dateSet[s.date] = 1; });
+    dailyEquity.forEach(function(d){ if(d && d.date) dateSet[d.date] = 1; });
+    Object.keys(byFirm).forEach(function(k){
+      var f = byFirm[k]; if(!f) return;
+      (f.recsHistory || []).forEach(function(r){
+        if (r && r.exitDate) dateSet[r.exitDate] = 1;
+      });
+    });
+    var timeline = Object.keys(dateSet).sort();
     if (!timeline.length) return;
 
     // Pick top 8 firms by canonical trades desc.
-    var byFirm = data.byFirm || {};
     var firmsAll = Object.values(byFirm);
     var firmsRanked = firmsAll.map(function(f){
       var st = (window.TrackerStats && window.TrackerStats.compute)
@@ -11623,10 +11635,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
       })
       .slice(0, 8);
 
-    // IHSG kumulatif
+    // IHSG kumulatif dgn FORWARD-FILL — kalau IHSG data source belum ada
+    // untuk tgl X (mis. pipeline lag), pakai nilai IHSG terakhir yang
+    // tersedia. Line IHSG jadi flat di ujung kanan chart alih-alih hilang.
     var ihsgBase = ihsgSeries.length ? ihsgSeries[0].close : null;
-    var ihsgCum = ihsgSeries.map(function(d){
-      return (ihsgBase > 0) ? +(((d.close - ihsgBase) / ihsgBase) * 100).toFixed(2) : 0;
+    var ihsgByDate = {};
+    if (ihsgBase > 0){
+      ihsgSeries.forEach(function(s){
+        if (s && s.date && Number.isFinite(+s.close)){
+          ihsgByDate[s.date] = +(((s.close - ihsgBase) / ihsgBase) * 100).toFixed(2);
+        }
+      });
+    }
+    var lastIhsg = 0;
+    var ihsgCum = timeline.map(function(date){
+      if (ihsgByDate[date] != null) lastIhsg = ihsgByDate[date];
+      return lastIhsg;
     });
 
     var css = getComputedStyle(document.documentElement);
