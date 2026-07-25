@@ -13182,7 +13182,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
         },
         scales:{
           x:{grid:{color: border}, ticks:{color: text3, font:{size:10}, precision:0}, min:0},
-          y:{grid:{display:false}, ticks:{color: text2, font:{size:11, weight:'700'}}}
+          y:{
+            grid:{display:false},
+            ticks:{
+              color: text2,
+              font:{size:9.5, weight:'700'},
+              // autoSkip:false → paksa SEMUA label ticker muncul (tidak
+              // di-skip Chart.js walau padat). Font di-perkecil dari 11
+              // → 9.5 utk kompensasi supaya semua muat vertikal (10 rows).
+              autoSkip: false
+            }
+          }
         },
         onClick: function(_, els){
           if(!els[0]) return;
