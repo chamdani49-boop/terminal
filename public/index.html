@@ -11941,7 +11941,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
         // Interaction 'nearest' + intersect:false → hover di area chart
         // pakai proximity (bukan strict on-line), tooltip pop up di line
         // yg vertically/horizontally paling dekat cursor.
-        interaction: { mode: 'nearest', intersect: false }
+        interaction: { mode: 'nearest', intersect: false },
+        // Klik salah satu line di canvas → toggle highlight (mirror
+        // behavior klik row di sidebar Peringkat). Bekerja dgn nearest
+        // mode: Chart.js provide array elements[] paling dekat click point,
+        // ambil elements[0].datasetIndex → firmId dari dataset.
+        onClick: function(event, elements, chart){
+          if (!elements || !elements.length) return;
+          var idx = elements[0].datasetIndex;
+          var ds = chart.data.datasets[idx];
+          if (!ds || !ds.firmId) return;
+          _highlightedFirmId = (_highlightedFirmId === ds.firmId) ? null : ds.firmId;
+          var d = window.__TR_getData && window.__TR_getData();
+          if (d) updateChart(d);
+        },
+        // Cursor pointer saat cursor di area line (indikator clickable),
+        // default arrow di area kosong.
+        onHover: function(event, elements, chart){
+          var cv = chart && chart.canvas;
+          if (cv) cv.style.cursor = (elements && elements.length) ? 'pointer' : 'default';
+        }
       }
     });
   }
