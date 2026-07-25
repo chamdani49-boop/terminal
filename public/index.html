@@ -14021,6 +14021,14 @@ window._attachCandleTooltip = function(chart, series, container, candles){
   var _entryIndex = -1;       // index candle di/ setelah tanggal rilis rec
   var _zoneEls = null;        // { tp:{box,lbl}, tp2:{...}, sl:{...} }
   var _zoneRaf = null;        // requestAnimationFrame id (loop layout zona)
+  // _zoneEndDate: tgl ISO yg jadi ujung KANAN kotak hijau/merah zona.
+  // Dihitung sekali per rec di renderChart() berdasar aturan user:
+  //   - closedBy='TP1'|'TP2'|'SL' → exitDate (tgl hit)
+  //   - closedBy='SL_TRAIL'       → tgl TP1 hit (di-INFER dari OHLC scan)
+  //                                  bukan exitDate (yg = tgl SL_TRAIL)
+  //   - EXPIRED/EXPIRED_UNFILLED/aktif/pending/missed → null
+  //     → layoutZones() fallback ke expiry cap (10 hari) atau proyeksi.
+  var _zoneEndDate = null;
   var _isDark = function(){ return document.documentElement.getAttribute('data-theme') === 'dark'; };
 
   function $(id){ return document.getElementById(id); }
@@ -14101,6 +14109,43 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     _lastCandleIndex = -1;
     _entryIndex = -1;
     _zoneEls = null;
+    _zoneEndDate = null;
+  }
+
+  // Hitung tanggal ujung kanan zona berdasar closedBy rec.
+  //   - 'TP1' murni     → exitDate (tgl candle TP1 kena)
+  //   - 'TP2'           → exitDate (tgl TP2 kena, sudah lewat TP1)
+  //   - 'SL' murni      → exitDate (tgl SL kena sebelum TP1)
+  //   - 'SL_TRAIL'      → TP1 hit date via OHLC scan; fallback ke exitDate
+  //                       kalau tidak ketemu di candle window.
+  //   - selain di atas  → null → layoutZones fallback ke expiry cap.
+  // Rule per user: kalau TP1 kena lalu balik ke SL (SL_TRAIL), zona stop
+  // di tgl TP1 kena, BUKAN di tgl SL_TRAIL. Ini butuh infer krn backend
+  // build-tracker.js hanya simpan exitDate akhir (SL_TRAIL date), tidak
+  // simpan TP1 hit date terpisah.
+  function _computeZoneEndDate(rec, lwData){
+    if (!rec) return null;
+    var cb = String(rec.closedBy || '').toUpperCase();
+    if (cb === 'TP1' || cb === 'TP2' || cb === 'SL') return rec.exitDate || null;
+    if (cb === 'SL_TRAIL'){
+      var tp1 = +rec.tp1;
+      if (!Number.isFinite(tp1) || tp1 <= 0) return rec.exitDate || null;
+      var buy = String(rec.type||'BUY').toUpperCase() !== 'SELL';
+      var od = rec.openDate || '';
+      if (Array.isArray(lwData)){
+        for (var i = 0; i < lwData.length; i++){
+          var c = lwData[i];
+          if (!c || !c.time) continue;
+          if (od && c.time < od) continue;      // skip candle sebelum openDate
+          var hit = buy ? (+c.high >= tp1) : (+c.low <= tp1);
+          if (hit) return c.time;               // TP1 kena di sini
+          if (rec.exitDate && c.time >= rec.exitDate) break;  // batas atas
+        }
+      }
+      return rec.exitDate || null;              // fallback
+    }
+    // EXPIRED / EXPIRED_UNFILLED / active / pending / missed → null.
+    return null;
   }
 
   function hideModal(){
@@ -14191,16 +14236,17 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     if (xEntry < 0) xEntry = 0;
 
     // xRight (ujung kanan zona):
-    //   1. Kalau rec sudah closed via TP/SL → exitDate (zona berhenti di exit).
-    //   2. Else: CAP ke openDate + 10 HARI kalender (masa berlaku rekomendasi
-    //      menunggu entry). Zona tidak boleh melampaui tgl kadaluarsa —
-    //      supaya user visual jelas: "rekomendasi ini valid sampai kapan".
-    //   3. Fallback: projek 5 candle stlh candle akhir, atau ts.width().
-    var st = statusOfRec(rec);
-    var closedByHit = (st === 'TP' || st === 'SL');
+    //   1. Kalau _zoneEndDate valid → pakai tgl itu (hasil _computeZoneEndDate
+    //      di renderChart yg handle SEMUA kasus closed: TP1/TP2/SL/SL_TRAIL).
+    //      Untuk SL_TRAIL, _zoneEndDate = tgl TP1 hit (bukan tgl SL_TRAIL) —
+    //      sesuai rule: kalau TP1 kena lalu balik ke SL, zona stop di TP1.
+    //   2. Else (rec masih aktif/pending/missed/expired unfilled): CAP ke
+    //      openDate + 10 HARI kalender (masa berlaku rekomendasi menunggu
+    //      entry). Zona tidak boleh melampaui tgl kadaluarsa.
+    //   3. Fallback akhir: projek 5 candle stlh candle akhir, atau ts.width().
     var xRight = null;
-    if (closedByHit && rec.exitDate){
-      var xExit = ts.timeToCoordinate(rec.exitDate);
+    if (_zoneEndDate){
+      var xExit = ts.timeToCoordinate(_zoneEndDate);
       if (xExit != null && Number.isFinite(xExit) && xExit > xEntry) xRight = xExit;
     }
     // Cap ke openDate + 10 hari (masa berlaku rekomendasi menunggu entry).
@@ -14401,6 +14447,11 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       }
       if (_entryIndex < 0) _entryIndex = _lastCandleIndex;
     }
+
+    // Compute _zoneEndDate SEKARANG (setelah lwData siap) — dipakai
+    // layoutZones() untuk determine ujung kanan kotak hijau/merah.
+    // Untuk SL_TRAIL, ini akan scan lwData cari tgl TP1 hit.
+    _zoneEndDate = _computeZoneEndDate(rec, lwData);
 
     // Price lines di-hilangkan sesuai request user — biar chart bersih,
     // hanya candles + zona kotak sebagai visual utama. Info entry/TP/SL
