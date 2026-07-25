@@ -3197,57 +3197,25 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-daychart-wrap canvas{width:100% !important;height:100% !important;display:block}
 .tr-pf-daychart-empty{text-align:center;padding:70px 12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
 
-/* 2 chart card di detail firm (Grafik Performa 30 Hari + Return Kumulatif)
-   sejajar berdampingan mulai layar ≥1100px (PC). Di bawah itu stack vertikal.
-   HISTORY of fixes:
-   • v1 (buggy): align-items:stretch (default) + chart-wrap { flex:1 } →
-     canvas melar ikut card tertinggi → candle raksasa 400-500px.
-   • v2 (kompak tapi misaligned): align-items:start + chart-wrap fixed
-     280px → tiap card ukuran natural. Tapi card kanan (dgn legend RHB /
-     Beli di Entry / IHSG) lebih tinggi drpd card kiri → tampak tidak
-     sejajar dgn section 'Rekomendasi Sekuritas' di bawah.
-   • v3 (final): align-items:stretch DEFAULT + chart-wrap FIXED 280px.
-     Kedua card ditarik ke tinggi yang sama (align bottom edge). Chart
-     tidak ikut melar (fixed). Kalau card kiri lebih pendek isinya, ada
-     sedikit empty space di bawah chart-nya — dapat ditoleransi karena
-     benefit-nya lebih besar (kedua card + section di bawah sejajar
-     kolom-nya). */
+/* Chart card "Grafik Performa Analis 30 Hari" — sekarang single card
+   (dulu 2 side-by-side). Card kanan (NAV Reksadana Virtual) dihilangkan
+   per user request; Return IHSG di-merge ke chart ini sbg bar kedua.
+   Compact styling tetap dipertahankan. */
 .tr-pf-charts-row{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
-/* Compact styling utk 2 chart card di Analis — user request "perkecil agar
-   minimalis". Padding rapat, font heading turun 1 tier, chart height 220px
-   (was 280). Apply di SEMUA size supaya konsisten. */
 .tr-pf-charts-row > .tr-card{padding:13px 15px}
 .tr-pf-charts-row .tr-card-title{font-size:13px;line-height:1.2}
 .tr-pf-charts-row .tr-card-desc{font-size:10.5px;line-height:1.35;margin-top:2px}
 .tr-pf-charts-row .tr-card-h{margin-bottom:8px;gap:6px}
-.tr-pf-charts-row .tr-legend{font-size:10.5px;margin-top:8px;gap:10px}
-@media(min-width:1100px){
-  .tr-pf-charts-row{grid-template-columns:1fr 1fr}
-  .tr-pf-charts-row > .tr-card{margin-top:0 !important}
-  .tr-pf-charts-row .tr-pf-daychart-wrap,
-  .tr-pf-charts-row .tr-chart-wrap{height:220px !important}
-}
-/* Mobile ≤640: STACK vertical (atas-bawah), bukan 2-kolom sejajar.
-   User revert: "di versi hp tolong atur agar tidak sejajar, tapi atas
-   dan bawah seperti sebelumnya". Reasoning valid: 2-kolom di HP bikin
-   chart candle/line terlalu sempit horizontally — Y-axis labels + tick
-   timestamps + candles/line semua ter-compress. Full-width per card
-   memberikan ruang chart yg proper untuk terbaca. Padding + font tetap
-   compact untuk kesan minimalis. */
+.tr-pf-charts-row .tr-legend{font-size:10.5px;margin-top:8px;gap:12px;flex-wrap:wrap}
+.tr-pf-charts-row .tr-pf-daychart-wrap{height:260px}
 @media(max-width:640px){
-  .tr-pf-charts-row{grid-template-columns:1fr;gap:10px}
-  .tr-pf-charts-row > .tr-card{padding:11px 13px;margin-top:0 !important}
+  .tr-pf-charts-row > .tr-card{padding:11px 13px}
   .tr-pf-charts-row .tr-card-title{font-size:12.5px;line-height:1.2}
-  .tr-pf-charts-row .tr-card-desc{font-size:10px;line-height:1.35;display:block}
+  .tr-pf-charts-row .tr-card-desc{font-size:10px;line-height:1.35}
   .tr-pf-charts-row .tr-card-h{margin-bottom:7px}
-  .tr-pf-charts-row .tr-pf-daychart-wrap,
-  .tr-pf-charts-row .tr-chart-wrap{height:190px !important;padding:8px 6px !important}
-  .tr-pf-charts-row .tr-legend{font-size:9.5px;gap:8px;margin-top:6px}
+  .tr-pf-charts-row .tr-pf-daychart-wrap{height:220px;padding:8px 6px}
+  .tr-pf-charts-row .tr-legend{font-size:9.5px;gap:8px 12px;margin-top:6px}
   .tr-pf-charts-row .tr-lg-dot{width:9px}
-  /* Truncate nama firm supaya tidak wrap kalau panjang (mis. "Korea
-     Investment And Sekuritas Indonesia"). Stack mode punya lebih banyak
-     ruang → max-width 200px lebih generous drpd 2-col mode (120px). */
-  #trPfCumFirmLbl{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
 }
 
 /* Wrap mode selector — dipindah dari dalam card Return Kumulatif ke ATAS 2
@@ -7464,33 +7432,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-pf-mode-stats" id="trPfModeStats"></div>
         </div>
 
-        <!-- 2 chart card sejajar berdampingan di PC (≥1100px). Di bawahnya stack.
-             KEDUA chart mengikuti mode aktif yg dipilih di #trPfSeg atas. -->
+        <!-- Single chart card: Grafik Performa Analis dgn 3 series
+             (bar P/L firm, bar return IHSG, line kumulatif firm).
+             Mengikuti mode aktif yg dipilih di #trPfSeg atas. -->
         <div class="tr-pf-charts-row">
           <div class="tr-card" style="margin-top:14px">
             <div class="tr-card-h">
               <div>
                 <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Grafik Performa Analis 30 Hari</div>
-                <div class="tr-card-desc">P/L harian per exitDate + garis kumulatif — ikut mode eksekusi di atas.</div>
+                <div class="tr-card-desc">P/L harian sekuritas (per exitDate) vs return harian IHSG + garis kumulatif — ikut mode eksekusi di atas.</div>
               </div>
             </div>
             <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
-          </div>
-
-          <div class="tr-card" style="margin-top:14px">
-            <div class="tr-card-h">
-              <div>
-                <!-- Title & desc di-update dinamis oleh renderCumChart:
-                     NAV mode → "NAV Reksadana Virtual · Simulator Portofolio"
-                     Arithmetic fallback → "Return Kumulatif · Simulator Eksekusi" -->
-                <div class="tr-card-title" id="trPfCumTitle">NAV Reksadana Virtual · Simulator Portofolio</div>
-                <div class="tr-card-desc" id="trPfCumDesc">Kurva NAV kalau kamu ikut semua rekomendasi sekuritas dgn alokasi equal-weight. Base NAB Rp 1.000. Idle cash parkir IHSG.</div>
-              </div>
-            </div>
-            <div class="tr-chart-wrap" style="margin-top:10px"><canvas id="trPfCumChart"></canvas></div>
             <div class="tr-legend">
-              <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Virtual Fund</span></span>
-              <span><span class="tr-lg-dot" style="background:var(--red)"></span>IHSG</span>
+              <span><span class="tr-lg-dot" style="background:var(--green)"></span>Bar hijau/merah: P/L Sekuritas</span>
+              <span><span class="tr-lg-dot" style="background:var(--text3)"></span>Bar abu: Return IHSG</span>
+              <span><span class="tr-lg-dot" style="background:var(--blue)"></span>Garis: Kumulatif Sekuritas</span>
             </div>
           </div>
         </div><!-- /tr-pf-charts-row -->
@@ -7845,7 +7802,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _entryMode   = 'entry';
   var _exitMode    = 'tp1';
   var _currentTab  = 'active';
-  var _cumChart    = null;
+  // _cumChart dihapus bersama chart NAV Reksadana Virtual (2026-07-25).
+  var _dayChart    = null;  // Chart.js instance utk renderDayChart (grouped bar + line).
   var _rafHandle   = null;
 
   // ── Live price/change helper — priority chain mirror dashboard ──
@@ -8189,40 +8147,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return buy ? pnlPct : -pnlPct;
   }
 
-  // ── Compute cumulative series ──────────────────────
-  // Sort by exitDate asc, iterate & accumulate. Return [{date, cum}].
-  function computeCumSeries(firm, entryMode, exitMode){
-    var recs=(firm && firm.recsHistory || []).slice()
-      .filter(function(r){ return r && r.exitDate; })
-      .filter(_recInDateFilter)
-      .sort(function(a,b){ return String(a.exitDate).localeCompare(String(b.exitDate)); });
-    var out=[]; var cum=0;
-    for(var i=0;i<recs.length;i++){
-      var p=getRecPnl(recs[i], entryMode, exitMode);
-      if(p==null) continue;
-      cum += +p;
-      out.push({ date: recs[i].exitDate, cum: +cum.toFixed(3) });
-    }
-    return out;
-  }
-  function computeIhsgCumSeries(){
-    var d=getData(); if(!d||!d.ihsg||!Array.isArray(d.ihsg.series30d)||!d.ihsg.series30d.length) return [];
-    var s=d.ihsg.series30d.slice().sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
-    var base=+s[0].close; if(!Number.isFinite(base)||base===0) return [];
-    return s.map(function(pt){ return { date: pt.date, cum: +(((+pt.close-base)/base)*100).toFixed(3) }; });
-  }
-  // Untuk chart cum: align x-axis pakai gabungan tgl (union) dari series firm & IHSG, isi flat sebelum tgl pertama.
-  function alignSeriesToDates(series, dates){
-    // series: sorted [{date, cum}]. dates: sorted array of dates.
-    // For each date in dates, return cum value at that date, forward-filled after firm's first date; before first date → 0 (belum ada aktivitas).
-    var out=[]; var idx=0; var last=null;
-    for(var i=0;i<dates.length;i++){
-      var d=dates[i];
-      while(idx<series.length && series[idx].date<=d){ last=series[idx].cum; idx++; }
-      out.push(last==null?null:last);
-    }
-    return out;
-  }
+  // NOTE: computeCumSeries / computeIhsgCumSeries / alignSeriesToDates
+  // dihapus bersama chart "Return Kumulatif / NAV Reksadana Virtual"
+  // per user request (2026-07-25). Chart tersebut di-merge ke
+  // renderDayChart sbg bar IHSG kedua. Hanya renderDayChart aktif.
 
   // Predicate: rec.openDate masuk _dateFilter range? null filter = accept all.
   function _recInDateFilter(rec){
@@ -8431,8 +8359,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
     // Label combo aktif di seg-wrap header
     var activeLbl = $id('trPfSegActiveLbl'); if(activeLbl) activeLbl.textContent = comboLabel();
-    // Legend label di bawah cum chart
-    var cumLbl = $id('trPfCumFirmLbl'); if(cumLbl && _currentFirm) cumLbl.textContent = firmShort(_currentFirm.name) + ' · ' + comboLabel();
     // Modal TIDAK di-refresh saat mode berubah (popup per-tombol independen).
   }
 
@@ -8469,374 +8395,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     try{ document.body.style.overflow = ''; }catch(_){}
   }
 
-  // ── Return Kumulatif Chart — ROUTER ──────────────────────
-  //
-  // 2 mode rendering:
-  //   1. NAV MODE (default, kalau data lengkap): kurva "NAV Reksadana
-  //      Virtual" — treat sekuritas sebagai reksadana yg ikut semua rec
-  //      mereka dgn equal-weight; idle cash parkir IHSG; NAV compound
-  //      (bunga majemuk). Base Rp 1.000 (konvensi NAB Awal reksadana
-  //      Indonesia). IHSG di-normalize ke Rp 1.000 juga → apple-to-apple.
-  //      Butuh: ihsg.seriesFull daily + ohlc.json (loaded via loadOhlcAll).
-  //   2. ARITHMETIC MODE (fallback): kurva legacy — sum pnl per exitDate
-  //      (bukan compound). IHSG % vs firm % di skala persen. Aktif kalau
-  //      NAV prerequisites tidak terpenuhi (mis. IHSG daily missing utk
-  //      periode > 58 hari lalu, atau OHLC failed load).
-  //
-  // Router memilih otomatis. Fallback silent — user tidak butuh tahu detail.
-  function renderCumChart(firm){
-    if(typeof Chart === 'undefined'){ return; }
-    var ctx = $id('trPfCumChart'); if(!ctx) return;
-    (async function(){
-      var ok = false;
-      try { ok = await _renderNavChart(firm); }
-      catch(err){
-        try { console.warn('[cumChart] NAV render error:', err && err.message || err); } catch(_){}
-      }
-      if(!ok) _renderArithmeticChart(firm);
-    })();
-  }
-
-  // ── NAV Reksadana Virtual Mode ───────────────────────────
-  //
-  // Formula per hari t (business day dari ihsg.seriesFull):
-  //   1. Set active recs = { r : entryTouchDate ≤ t ≤ (exitDate atau today) }
-  //   2. Per rec r, hitung daily return dari ohlc close:
-  //        - Entry day (t == entryTouchDate): (close_t - entryTouchPrice) / entryTouchPrice
-  //        - Exit day  (t == exitDate):       (exitPrice - close_{t-1}) / close_{t-1}
-  //        - Regular:                          (close_t - close_{t-1}) / close_{t-1}
-  //   3. R_firm[t] = mean(recReturns)                (equal-weight)
-  //   4. Kalau active empty → R_firm[t] = R_ihsg[t]  (parkir IHSG idle)
-  //   5. NAV_firm[t] = NAV_firm[t-1] × (1 + R_firm[t])
-  //   6. NAV_ihsg[t] = 1000 × (ihsgClose[t] / ihsgClose[timeline[0]])
-  //
-  // Return true kalau sukses, false kalau prerequisites gagal (data tidak
-  // cukup) → caller fallback ke arithmetic mode.
-  async function _renderNavChart(firm){
-    if(!firm) return false;
-    var ctx = $id('trPfCumChart'); if(!ctx) return false;
-
-    var d = getData();
-    var ihsgSeries = (d && d.ihsg && d.ihsg.seriesFull)
-                  || (d && d.ihsg && d.ihsg.series30d)
-                  || [];
-    if(!ihsgSeries.length) return false;
-
-    // Range dari _dateFilter (preset periode atau custom kalender).
-    var rangeStart = (_dateFilter && _dateFilter.start) || null;
-    var rangeEnd   = (_dateFilter && _dateFilter.end)   || null;
-
-    // IHSG close map + dates sorted (business days canonical).
-    var ihsgClose = {};
-    var ihsgDates = [];
-    for(var i=0;i<ihsgSeries.length;i++){
-      var p = ihsgSeries[i];
-      if(!p || !p.date || p.close == null) continue;
-      ihsgClose[p.date] = +p.close;
-      ihsgDates.push(p.date);
-    }
-    ihsgDates.sort();
-    if(ihsgDates.length < 2) return false;
-
-    // Timeline: IHSG dates ∩ range. Min 2 titik utk compound.
-    var timeline = ihsgDates.filter(function(dt){
-      return (!rangeStart || dt >= rangeStart) && (!rangeEnd || dt <= rangeEnd);
-    });
-    if(timeline.length < 2) return false;
-
-    // Load OHLC (idempotent, cached). Kalau tidak available → fallback.
-    if(typeof window.__OHLC_loadAll !== 'function') return false;
-    var ohlcData;
-    try { ohlcData = await window.__OHLC_loadAll(); }
-    catch(_) { return false; }
-    var ohlcTickers = (ohlcData && ohlcData.tickers) || {};
-    if(!Object.keys(ohlcTickers).length) return false;
-
-    // Rec eligible utk NAV: entered position (has entryTouchDate atau
-    // di recsActive/recsHistory). Skip pending/missed (belum entry).
-    var eligibleRecs = [].concat(firm.recsActive || []).concat(firm.recsHistory || []);
-    eligibleRecs = eligibleRecs.filter(function(r){
-      if(!r || !r.ticker) return false;
-      return r.entryTouchDate || r.openDate;
-    });
-
-    // Pre-decode ohlc.candles → {date: close} map utk fast lookup.
-    // Candles format: [ts_seconds, o, h, l, c].
-    var closeMaps = {};
-    for(var k=0;k<eligibleRecs.length;k++){
-      var t = eligibleRecs[k].ticker;
-      if(!t || closeMaps[t]) continue;
-      var candles = (ohlcTickers[t] && ohlcTickers[t].candles) || [];
-      var m = {};
-      for(var cc=0;cc<candles.length;cc++){
-        var candle = candles[cc];
-        if(!Array.isArray(candle) || candle.length < 5) continue;
-        var iso = new Date(candle[0]*1000).toISOString().slice(0,10);
-        m[iso] = +candle[4]; // close
-      }
-      closeMaps[t] = m;
-    }
-
-    // Compute NAV curve daily.
-    var baseNav = 1000;
-    var firmNav = [];
-    var ihsgNav = [];
-    var currentFirmNav = baseNav;
-    var baseIhsgClose = ihsgClose[timeline[0]];
-    if(!baseIhsgClose) return false;
-
-    for(var i2=0; i2<timeline.length; i2++){
-      var date = timeline[i2];
-      var prevDate = i2 > 0 ? timeline[i2-1] : null;
-
-      // Titik pertama: kedua NAV = base.
-      if(i2 === 0){
-        firmNav.push({ date: date, nav: baseNav, activeCount: 0 });
-        ihsgNav.push({ date: date, nav: baseNav });
-        continue;
-      }
-
-      // IHSG NAV normalized ke base.
-      var ihsgToday = ihsgClose[date] != null ? ihsgClose[date] : ihsgClose[prevDate];
-      var currentIhsgNav = baseNav * (ihsgToday / baseIhsgClose);
-      ihsgNav.push({ date: date, nav: +currentIhsgNav.toFixed(2) });
-
-      // IHSG daily return (dipakai utk idle cash).
-      var prevIhsg = ihsgClose[prevDate] || ihsgToday;
-      var ihsgReturn = prevIhsg > 0 ? (ihsgToday - prevIhsg) / prevIhsg : 0;
-      if(!Number.isFinite(ihsgReturn)) ihsgReturn = 0;
-
-      // Firm daily return: rata-rata daily return semua rec aktif.
-      var activeReturns = [];
-      for(var r=0;r<eligibleRecs.length;r++){
-        var rec = eligibleRecs[r];
-        var recStart = rec.entryTouchDate || rec.openDate;
-        var recEnd   = rec.exitDate || null;
-
-        if(!recStart || date < recStart) continue;
-        if(recEnd && date > recEnd) continue;
-
-        var closeMap = closeMaps[rec.ticker];
-        if(!closeMap) continue;
-
-        var rr = null;
-        if(prevDate < recStart){
-          // Entry day → return dari entryTouchPrice → close hari ini
-          var closeToday = closeMap[date];
-          var entryPx = +rec.entryTouchPrice || +rec.entry || +rec.entryPrice;
-          if(closeToday && entryPx){
-            rr = (closeToday - entryPx) / entryPx;
-          }
-        } else if(recEnd && date === recEnd){
-          // Exit day → return dari close kmrn → exitPrice
-          var pC = closeMap[prevDate];
-          var exPx = +rec.exitPrice;
-          if(pC && exPx){
-            rr = (exPx - pC) / pC;
-          }
-        } else {
-          // Regular day close-to-close
-          var c1 = closeMap[prevDate];
-          var c2 = closeMap[date];
-          if(c1 && c2){
-            rr = (c2 - c1) / c1;
-          }
-        }
-
-        if(rr != null && Number.isFinite(rr)) activeReturns.push(rr);
-      }
-
-      var dayReturn;
-      var activeCount = activeReturns.length;
-      if(activeCount === 0){
-        // Idle → parkir IHSG (always-invested style reksadana asli)
-        dayReturn = ihsgReturn;
-      } else {
-        var sum = 0;
-        for(var m2=0;m2<activeCount;m2++) sum += activeReturns[m2];
-        dayReturn = sum / activeCount;
-      }
-
-      currentFirmNav = currentFirmNav * (1 + dayReturn);
-      firmNav.push({
-        date: date,
-        nav: +currentFirmNav.toFixed(2),
-        activeCount: activeCount
-      });
-    }
-
-    // Prepare chart data.
-    var firmVals = firmNav.map(function(pt){ return pt.nav; });
-    var ihsgVals = ihsgNav.map(function(pt){ return pt.nav; });
-    var step = Math.max(1, Math.floor(timeline.length / 6));
-    var labels = timeline.map(function(dt, ii){
-      return (ii % step === 0 || ii === timeline.length - 1) ? fmtShortDate(dt) : '';
-    });
-
-    var c = trColors();
-    if(_cumChart){ try { _cumChart.destroy(); } catch(_){} _cumChart = null; }
-
-    // Update card title & DOM legend label utk NAV mode.
-    var titleEl = $id('trPfCumTitle');
-    if(titleEl) titleEl.textContent = 'NAV Reksadana Virtual · Simulator Portofolio';
-    var descEl = $id('trPfCumDesc');
-    if(descEl) descEl.textContent = 'Kurva NAV kalau kamu ikut semua rekomendasi sekuritas dgn alokasi equal-weight. Base NAB Rp 1.000. Idle cash parkir IHSG.';
-    var firmLegend = $id('trPfCumFirmLbl');
-    if(firmLegend) firmLegend.textContent = firmShort(firm.name) + ' Virtual Fund · ' + comboLabel();
-
-    _cumChart = new Chart(ctx, {
-      type: 'line',
-      data: { labels: labels, datasets: [
-        {
-          label: firmShort(firm.name) + ' Virtual Fund · ' + comboLabel(),
-          data: firmVals,
-          borderColor: c.accent,
-          backgroundColor: c.accentBg,
-          fill: false,
-          tension: 0.28,
-          pointRadius: 0,
-          borderWidth: 2.5
-        },
-        {
-          label: 'IHSG',
-          data: ihsgVals,
-          borderColor: c.red,
-          backgroundColor: 'transparent',
-          fill: false,
-          tension: 0.28,
-          pointRadius: 0,
-          borderWidth: 2,
-          borderDash: [4, 3]
-        }
-      ]},
-      options: {
-        responsive: true, maintainAspectRatio: false, animation: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            mode: 'index', intersect: false,
-            backgroundColor: c.tooltipBg, borderColor: c.grid, borderWidth: 1,
-            callbacks: {
-              title: function(items){
-                if(!items || !items.length) return '';
-                var idx = items[0].dataIndex;
-                return timeline[idx] || items[0].label || '';
-              },
-              label: function(it){
-                var y = it.parsed.y;
-                var pct = ((y - 1000) / 1000) * 100;
-                var priceStr = 'Rp ' + y.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                var pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
-                return it.dataset.label + ': ' + priceStr + '  (' + pctStr + ')';
-              },
-              footer: function(items){
-                if(!items || !items.length) return '';
-                var idx = items[0].dataIndex;
-                var fp = firmNav[idx];
-                var ip = ihsgNav[idx];
-                if(!fp || !ip) return '';
-                var alpha = ip.nav > 0 ? ((fp.nav - ip.nav) / ip.nav) * 100 : 0;
-                var alphaStr = (alpha >= 0 ? '+' : '') + alpha.toFixed(2) + '%';
-                var activeStr = fp.activeCount > 0
-                  ? 'Aktif: ' + fp.activeCount + ' rec (equal-weight)'
-                  : 'Idle: parkir IHSG';
-                return 'Alpha: ' + alphaStr + ' · ' + activeStr;
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { color: c.text3, font: { size: 10, family: "'IBM Plex Mono',monospace" }, maxRotation: 0, autoSkip: false }
-          },
-          y: {
-            grid: {
-              // Emphasis di baseline NAV = 1000 (garis referensi "modal awal").
-              color: function(ctx2){
-                if(ctx2 && ctx2.tick && Math.abs(ctx2.tick.value - 1000) < 0.5) return c.tick;
-                return c.grid;
-              },
-              lineWidth: function(ctx2){
-                if(ctx2 && ctx2.tick && Math.abs(ctx2.tick.value - 1000) < 0.5) return 1.4;
-                return 1;
-              }
-            },
-            ticks: {
-              color: c.tick,
-              font: { size: 10, family: "'IBM Plex Mono',monospace" },
-              callback: function(v){
-                return 'Rp ' + (+v).toLocaleString('id-ID', { maximumFractionDigits: 0 });
-              }
-            }
-          }
-        },
-        interaction: { mode: 'index', intersect: false }
-      }
-    });
-
-    return true;
-  }
-
-  // ── Arithmetic Sum Mode (Fallback) ───────────────────────
-  // Kurva legacy: sum pnl per exitDate, IHSG normalize ke series30d[0].
-  // Bukan compound. Aktif kalau NAV mode prerequisites gagal (mis. IHSG
-  // daily seriesFull tidak cover range yg dipilih user).
-  function _renderArithmeticChart(firm){
-    if(typeof Chart === 'undefined'){ return; }
-    var ctx = $id('trPfCumChart'); if(!ctx) return;
-
-    // Update card title & desc utk fallback mode.
-    var titleEl = $id('trPfCumTitle');
-    if(titleEl) titleEl.textContent = 'Return Kumulatif · Simulator Eksekusi';
-    var descEl = $id('trPfCumDesc');
-    if(descEl) descEl.textContent = 'Kurva P/L kumulatif sekuritas vs IHSG — ikut mode eksekusi di atas.';
-    var firmLegend = $id('trPfCumFirmLbl');
-    if(firmLegend) firmLegend.textContent = firmShort(firm.name) + ' · ' + comboLabel();
-
-    var firmSeries = computeCumSeries(firm, _entryMode, _exitMode);
-    var ihsgSeries = computeIhsgCumSeries();
-
-    // Union of dates: firm exit dates + IHSG dates
-    var dateSet = {};
-    firmSeries.forEach(function(p){ dateSet[p.date]=1; });
-    ihsgSeries.forEach(function(p){ dateSet[p.date]=1; });
-    var dates = Object.keys(dateSet).sort();
-
-    var firmVals = alignSeriesToDates(firmSeries, dates).map(function(v){ return v==null?0:v; });
-    var ihsgVals = alignSeriesToDates(ihsgSeries, dates).map(function(v){ return v==null?0:v; });
-
-    // Labels: tampilkan tgl setiap N step
-    var step = Math.max(1, Math.floor(dates.length/6));
-    var labels = dates.map(function(d,i){ return (i%step===0 || i===dates.length-1) ? fmtShortDate(d) : ''; });
-
-    var c = trColors();
-    if(_cumChart){ try{ _cumChart.destroy(); }catch(_){} _cumChart=null; }
-    _cumChart = new Chart(ctx, {
-      type:'line',
-      data:{ labels:labels, datasets:[
-        { label: firmShort(firm.name)+' · '+comboLabel(), data: firmVals, borderColor:c.accent, backgroundColor:c.accentBg, fill:'+1', tension:0.28, pointRadius:0, borderWidth:2.5 },
-        { label:'IHSG', data: ihsgVals, borderColor:c.red, backgroundColor:'transparent', fill:false, tension:0.28, pointRadius:0, borderWidth:2, borderDash:[4,3] }
-      ]},
-      options:{
-        responsive:true, maintainAspectRatio:false, animation:false,
-        plugins:{ legend:{display:false},
-          tooltip:{ mode:'index', intersect:false, backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1,
-            callbacks:{
-              title:function(items){ if(!items||!items.length) return ''; var i=items[0].dataIndex; return dates[i]||items[0].label||''; },
-              label:function(it){ var y=it.parsed.y; return it.dataset.label+': '+(y>=0?'+':'')+(+y).toFixed(2)+'%'; }
-            } }
-        },
-        scales:{
-          x:{ grid:{display:false}, ticks:{ color:c.text3, font:{size:10, family:"'IBM Plex Mono',monospace"}, maxRotation:0, autoSkip:false } },
-          y:{ grid:{color:c.grid}, ticks:{ color:c.tick, font:{size:10, family:"'IBM Plex Mono',monospace"}, callback:function(v){return v+'%';} } }
-        },
-        interaction:{ mode:'index', intersect:false }
-      }
-    });
-  }
-
-  // ── Per-firm 30-day chart (vanilla canvas, mirror drawDayChart) ──
+  // NOTE: renderCumChart / _renderNavChart / _renderArithmeticChart
+  // dihapus (2026-07-25) — chart NAV Reksadana Virtual dihilangkan
+  // per user request; return IHSG di-merge ke renderDayChart sbg bar.
   // Agregasi rec P/L per exitDate (menggunakan getRecPnl untuk mode aktif),
   // lalu bar hijau/merah + garis kumulatif biru.
   // Rec yg gak eligible (getRecPnl==null) di-skip dari agregasi hari itu.
@@ -8866,16 +8427,35 @@ body.is-mobile-device.force-desktop .pl-col-main{
     });
   }
 
+  // ── Grafik Performa Analis 30 Hari — Chart.js grouped bar + line ──
+  //
+  // 3 series di 1 chart:
+  //   1. Bar hijau/merah: P/L harian firm (agregat pnl rec exit di hari itu)
+  //      warna dinamis per hari: hijau kalau net positif, merah kalau negatif
+  //   2. Bar abu (semi-transparan): return harian IHSG di tgl yg sama
+  //      dihitung dari ihsg.seriesFull daily close, di-map ke exit dates firm
+  //   3. Line biru: cumulative P/L firm (arithmetic sum) di Y-axis kanan
+  //
+  // Tooltip index-mode: hover di manapun di kolom tanggal → tampilkan
+  // ketiga nilai + jumlah trade + wins/losses ringkas untuk hari itu.
+  //
+  // Dulu chart ini digambar manual di canvas (vanilla). Sekarang pakai
+  // Chart.js supaya:
+  //   - Grouped bar (firm + IHSG side-by-side) native, no manual pixel math
+  //   - Tooltip interaktif built-in (mouse tracking + positioning otomatis)
+  //   - Responsive ikut container size otomatis
   function renderDayChart(firm){
     var canvas = $id('trPfDayChart');
     var wrap = canvas ? canvas.parentElement : null;
     if(!canvas || !wrap) return;
+    if(typeof Chart === 'undefined'){ return; }
+
     // Clear old empty overlay
     var old = wrap.querySelector('.tr-pf-daychart-empty'); if(old) old.remove();
 
     var series = computeFirmDailyEquity(firm, _entryMode, _exitMode);
     if(!series.length){
-      canvas.width=1; canvas.height=1;
+      if(_dayChart){ try{ _dayChart.destroy(); }catch(_){} _dayChart=null; }
       var em = document.createElement('div');
       em.className = 'tr-pf-daychart-empty';
       em.textContent = 'Belum ada rekomendasi memenuhi kombinasi mode ini.';
@@ -8883,84 +8463,188 @@ body.is-mobile-device.force-desktop .pl-col-main{
       return;
     }
 
-    var dpr = window.devicePixelRatio || 1;
-    var cssW = canvas.offsetWidth || wrap.clientWidth || 600;
-    var cssH = canvas.offsetHeight || 200;
-    canvas.width = Math.max(1, cssW*dpr);
-    canvas.height = Math.max(1, cssH*dpr);
-    var ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    ctx.clearRect(0,0,cssW,cssH);
+    // Get IHSG daily close series (prefer seriesFull ~58 hari, fallback
+    // series30d ~30 hari). Map date → close utk lookup cepat.
+    var d = getData();
+    var ihsgRaw = (d && d.ihsg && d.ihsg.seriesFull)
+               || (d && d.ihsg && d.ihsg.series30d)
+               || [];
+    var ihsgClose = {};
+    var ihsgDatesSorted = [];
+    for(var ii=0;ii<ihsgRaw.length;ii++){
+      var pt = ihsgRaw[ii];
+      if(!pt || !pt.date || pt.close == null) continue;
+      ihsgClose[pt.date] = +pt.close;
+      ihsgDatesSorted.push(pt.date);
+    }
+    ihsgDatesSorted.sort();
+
+    // Compute IHSG daily return per date (%). Formula: (close_t - close_{t-1}) / close_{t-1} * 100.
+    // Untuk tgl pertama di seriesFull → 0% (tidak ada prev). Buat map yg
+    // cover semua tgl di ihsgSeries.
+    var ihsgReturnByDate = {};
+    for(var ij=0;ij<ihsgDatesSorted.length;ij++){
+      var dt = ihsgDatesSorted[ij];
+      if(ij === 0){ ihsgReturnByDate[dt] = 0; continue; }
+      var prevClose = ihsgClose[ihsgDatesSorted[ij-1]];
+      var curClose  = ihsgClose[dt];
+      if(prevClose > 0 && Number.isFinite(curClose)){
+        ihsgReturnByDate[dt] = +(((curClose - prevClose) / prevClose) * 100).toFixed(3);
+      } else {
+        ihsgReturnByDate[dt] = 0;
+      }
+    }
+
+    // Timeline = tanggal exit firm. Bar IHSG di-align via lookup date.
+    // Kalau exit date tidak ada di IHSG series (mis. hari libur non-trading
+    // atau di luar cover 58 hari), IHSG bar = null → Chart.js skip render.
+    var dates = series.map(function(s){ return s.date; });
+    var firmBarVals = series.map(function(s){ return +(+s.dayPnl || 0).toFixed(3); });
+    var firmCumVals = series.map(function(s){ return +(+s.cumulative || 0).toFixed(3); });
+    var ihsgBarVals = dates.map(function(dt){
+      var r = ihsgReturnByDate[dt];
+      return r != null && Number.isFinite(r) ? r : null;
+    });
+
+    // Labels x-axis: tanggal MM-DD, tampilkan setiap N step.
+    var step = Math.max(1, Math.floor(dates.length / 6));
+    var labels = dates.map(function(dt, i){
+      return (i % step === 0 || i === dates.length - 1) ? String(dt).slice(5) : '';
+    });
 
     var c = trColors();
-    var pad={ t:14, r:46, b:26, l:42 };
-    var W = cssW - pad.l - pad.r;
-    var H = cssH - pad.t - pad.b;
-    var N = series.length;
+    if(_dayChart){ try{ _dayChart.destroy(); }catch(_){} _dayChart = null; }
 
-    var dayMax = 2;
-    series.forEach(function(d){ var a=Math.abs(d.dayPnl||0); if(a>dayMax) dayMax=a; });
-    var dayScale = H/2/dayMax;
-    var zeroY = pad.t + H/2;
+    // Warna dinamis per-bar firm: hijau kalau positif, merah kalau negatif.
+    var firmBarColors = firmBarVals.map(function(v){ return v >= 0 ? c.green : c.red; });
 
-    var cums = series.map(function(d){ return d.cumulative||0; });
-    var cumMin = Math.min.apply(null, cums.concat([0]));
-    var cumMax = Math.max.apply(null, cums.concat([0]));
-    var cumRange = (cumMax - cumMin) || 1;
-    function cumY(v){ return pad.t + (1 - (v - cumMin)/cumRange) * H; }
-
-    // Grid
-    ctx.strokeStyle = c.grid;
-    ctx.globalAlpha = 0.4;
-    ctx.lineWidth = 1;
-    for(var i=0;i<=4;i++){ var y=pad.t+(i/4)*H; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+W,y); ctx.stroke(); }
-    ctx.globalAlpha = 1;
-
-    // Bars
-    var barW = Math.max(3, (W/N)*0.7);
-    var gap  = (W/N) - barW;
-    ctx.font = '9px "IBM Plex Mono", monospace';
-    ctx.textBaseline = 'top';
-    series.forEach(function(d,i){
-      var x = pad.l + i*(barW+gap) + gap/2;
-      var v = d.dayPnl||0;
-      var h = Math.abs(v)*dayScale;
-      ctx.fillStyle = v>=0 ? c.green : c.red;
-      ctx.globalAlpha = 0.85;
-      if(v>=0) ctx.fillRect(x, zeroY-h, barW, h);
-      else ctx.fillRect(x, zeroY, barW, h);
-      ctx.globalAlpha = 1;
-      if(i%Math.max(1,Math.floor(N/6))===0 || i===N-1){
-        ctx.fillStyle = c.text3;
-        var lbl = String(d.date||'').slice(5);
-        ctx.fillText(lbl, x, pad.t+H+6);
+    _dayChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          // Bar firm P/L (hijau/merah). Y-axis kiri (%).
+          {
+            label: firmShort(firm.name),
+            type: 'bar',
+            data: firmBarVals,
+            backgroundColor: firmBarColors,
+            borderColor: firmBarColors,
+            borderWidth: 0,
+            yAxisID: 'y',
+            order: 2
+          },
+          // Bar IHSG return (abu semi-transparan). Warna netral supaya
+          // tidak bersaing visual dgn bar firm — IHSG di sini konteks.
+          {
+            label: 'IHSG',
+            type: 'bar',
+            data: ihsgBarVals,
+            backgroundColor: 'rgba(160, 156, 195, 0.35)', // --text2 alpha
+            borderColor: 'rgba(160, 156, 195, 0.7)',
+            borderWidth: 1,
+            yAxisID: 'y',
+            order: 2
+          },
+          // Line kumulatif firm. Y-axis kanan (%).
+          {
+            label: firmShort(firm.name) + ' Kumulatif',
+            type: 'line',
+            data: firmCumVals,
+            borderColor: c.blue,
+            backgroundColor: 'transparent',
+            fill: false,
+            tension: 0.28,
+            pointRadius: 0,
+            borderWidth: 2.2,
+            yAxisID: 'y2',
+            order: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false }, // legend custom di HTML (tr-legend)
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: c.tooltipBg,
+            borderColor: c.grid,
+            borderWidth: 1,
+            callbacks: {
+              title: function(items){
+                if(!items || !items.length) return '';
+                var idx = items[0].dataIndex;
+                return dates[idx] || items[0].label || '';
+              },
+              label: function(it){
+                var v = it.parsed.y;
+                if(v == null || !Number.isFinite(v)) return it.dataset.label + ': —';
+                var sign = v >= 0 ? '+' : '';
+                return it.dataset.label + ': ' + sign + v.toFixed(2) + '%';
+              },
+              footer: function(items){
+                if(!items || !items.length) return '';
+                var idx = items[0].dataIndex;
+                var s = series[idx];
+                if(!s) return '';
+                var t = s.trades || 0;
+                var w = s.wins || 0;
+                var l = s.losses || 0;
+                return t + ' trade' + (t !== 1 ? 's' : '') +
+                       ' · ' + w + ' win / ' + l + ' loss';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: c.text3,
+              font: { size: 10, family: "'IBM Plex Mono',monospace" },
+              maxRotation: 0,
+              autoSkip: false
+            }
+          },
+          // Y kiri: P/L harian (%) — untuk bar firm + IHSG.
+          y: {
+            position: 'left',
+            grid: {
+              // Baseline Y=0 emphasized (garis netral).
+              color: function(ctxG){
+                if(ctxG && ctxG.tick && ctxG.tick.value === 0) return c.tick;
+                return c.grid;
+              },
+              lineWidth: function(ctxG){
+                if(ctxG && ctxG.tick && ctxG.tick.value === 0) return 1.3;
+                return 1;
+              }
+            },
+            ticks: {
+              color: c.tick,
+              font: { size: 10, family: "'IBM Plex Mono',monospace" },
+              callback: function(v){ return (v >= 0 ? '+' : '') + v + '%'; }
+            }
+          },
+          // Y kanan: kumulatif (%) — utk line saja. Grid off supaya tidak
+          // dobel dgn Y kiri.
+          y2: {
+            position: 'right',
+            grid: { display: false },
+            ticks: {
+              color: c.blue,
+              font: { size: 10, family: "'IBM Plex Mono',monospace" },
+              callback: function(v){ return (v >= 0 ? '+' : '') + v + '%'; }
+            }
+          }
+        },
+        interaction: { mode: 'index', intersect: false }
       }
     });
-
-    // Zero line
-    ctx.strokeStyle = c.text3;
-    ctx.globalAlpha = 0.5;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(pad.l, zeroY); ctx.lineTo(pad.l+W, zeroY); ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // Cum line
-    ctx.lineWidth = 2.2;
-    ctx.strokeStyle = c.blue;
-    ctx.beginPath();
-    series.forEach(function(d,i){
-      var x = pad.l + i*(barW+gap) + gap/2 + barW/2;
-      var y = cumY(d.cumulative||0);
-      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    });
-    ctx.stroke();
-
-    // Right axis labels
-    ctx.fillStyle = c.text3;
-    ctx.font = '9px "IBM Plex Mono", monospace';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(cumMax.toFixed(1)+'%', pad.l+W+4, pad.t+4);
-    ctx.fillText(cumMin.toFixed(1)+'%', pad.l+W+4, pad.t+H-4);
   }
 
   // ── Rec list ────────────────────────────────────────
@@ -9885,13 +9569,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     populateHero(firm);
 
-    // Prefetch OHLC (async, non-blocking) supaya chart NAV Reksadana
-    // langsung siap saat rerender pertama. Idempotent — loadOhlcAll
-    // caches payload; kalau sudah loaded tinggal reuse.
-    if(typeof window.__OHLC_loadAll === 'function'){
-      try { window.__OHLC_loadAll().catch(function(){}); } catch(_){}
-    }
-
     // Sync seg + tab UI state (2 group: entry + exit)
     syncSegState();
     var tabButtons = document.querySelectorAll('#trPfTabs .tr-tab');
@@ -9938,7 +9615,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     scheduleDayChartRedraw();
     setTimeout(function(){
-      if(_currentFirm){ renderCumChart(_currentFirm); renderDayChart(_currentFirm); }
+      if(_currentFirm){ renderDayChart(_currentFirm); }
     }, 30);
     renderRecList(firm, _currentTab);
 
@@ -9972,7 +9649,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(!_currentFirm) return;
     renderKpi(_currentFirm);
     renderModeStats(_currentFirm);
-    renderCumChart(_currentFirm);
     renderDayChart(_currentFirm);
     renderRecList(_currentFirm, _currentTab);
   }
