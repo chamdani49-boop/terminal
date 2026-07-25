@@ -3214,6 +3214,12 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-mdet-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:all .15s;border:1px solid transparent;background:transparent}
 .tr-mdet-item:hover{background:var(--bg2);border-color:var(--border)}
 .tr-mdet-item.active{background:linear-gradient(90deg,rgba(124,58,237,.16),rgba(124,58,237,.04));border-color:rgba(124,58,237,.35);box-shadow:0 2px 8px rgba(124,58,237,.08)}
+/* Nomor peringkat firm di sidebar Sekuritas. Berbasis full-list (bukan hasil
+   filter search), jadi angka konsisten & tetap merefleksikan posisi asli
+   firm di leaderboard walau list sedang di-filter. Zero-padded 2 digit
+   (01..99) + tabular-nums supaya kolom rata scr vertikal. */
+.tr-mdet-item .rk{flex-shrink:0;min-width:22px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:-.2px;font-variant-numeric:tabular-nums;line-height:1}
+.tr-mdet-item.active .rk{color:var(--accent)}
 .tr-mdet-item .av{width:32px;height:32px;flex-shrink:0;border-radius:8px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text2);letter-spacing:-.3px}
 .tr-mdet-item.active .av{background:var(--grad);color:#fff;border-color:transparent}
 .tr-mdet-item .m{min-width:0;flex:1}
@@ -10108,6 +10114,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function renderSidebar(){
     var list = $id('trMdetList'); if(!list) return;
     var q = ($id('trMdetSearch') && $id('trMdetSearch').value) || '';
+    // Peringkat berbasis full-list (bukan hasil filter). Kalau user
+    // search "bn" & BNI Sekuritas ada di ranking #5, tetap tampil "05" —
+    // bukan "01". Lebih informatif krn user tahu posisi asli firm di
+    // leaderboard walau list sedang di-filter.
+    var rankMap = {};
+    firmList('').forEach(function(f, i){ if(f && f.id) rankMap[f.id] = i + 1; });
     var arr = firmList(q);
     var cnt = $id('trMdetCount'); if(cnt) cnt.textContent = String(arr.length);
     if(!arr.length){
@@ -10121,10 +10133,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var wrStr = (wr==null||!Number.isFinite(+wr)) ? '—' : (+wr).toFixed(0)+'%';
       var vb = f.verified ? '<span class="vb">✓</span>' : '';
       var actCls = (f.id === activeId) ? ' active' : '';
-      // Sidebar cuma tampilin nama + trade + winrate.
+      var rk = rankMap[f.id] || 0;
+      var rkStr = rk ? (rk < 100 ? String(rk).padStart(2,'0') : String(rk)) : '—';
+      // Sidebar cuma tampilin nomor peringkat + nama + trade + winrate.
       // Net return default (50/50 staged) sengaja TIDAK di sini biar tak
       // bikin confusion vs Net Return mode-aware di panel kanan.
-      return '<div class="tr-mdet-item'+actCls+'" data-firm-id="'+esc(f.id||'')+'" title="'+esc(f.name||'')+'">'
+      return '<div class="tr-mdet-item'+actCls+'" data-firm-id="'+esc(f.id||'')+'" title="#'+rkStr+' • '+esc(f.name||'')+'">'
+        + '<div class="rk">'+rkStr+'</div>'
         + '<div class="av">'+esc(initials(f.name))+'</div>'
         + '<div class="m">'
           + '<div class="nm">'+esc(short)+vb+'</div>'
