@@ -7480,13 +7480,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-card" style="margin-top:14px">
             <div class="tr-card-h">
               <div>
-                <div class="tr-card-title">Return Kumulatif · Simulator Eksekusi</div>
-                <div class="tr-card-desc">Kurva P/L kumulatif sekuritas vs IHSG — ikut mode eksekusi di atas.</div>
+                <!-- Title & desc di-update dinamis oleh renderCumChart:
+                     NAV mode → "NAV Reksadana Virtual · Simulator Portofolio"
+                     Arithmetic fallback → "Return Kumulatif · Simulator Eksekusi" -->
+                <div class="tr-card-title" id="trPfCumTitle">NAV Reksadana Virtual · Simulator Portofolio</div>
+                <div class="tr-card-desc" id="trPfCumDesc">Kurva NAV kalau kamu ikut semua rekomendasi sekuritas dgn alokasi equal-weight. Base NAB Rp 1.000. Idle cash parkir IHSG.</div>
               </div>
             </div>
             <div class="tr-chart-wrap" style="margin-top:10px"><canvas id="trPfCumChart"></canvas></div>
             <div class="tr-legend">
-              <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Sekuritas</span></span>
+              <span><span class="tr-lg-dot" style="background:var(--accent)"></span><span id="trPfCumFirmLbl">Virtual Fund</span></span>
               <span><span class="tr-lg-dot" style="background:var(--red)"></span>IHSG</span>
             </div>
           </div>
@@ -8466,10 +8469,331 @@ body.is-mobile-device.force-desktop .pl-col-main{
     try{ document.body.style.overflow = ''; }catch(_){}
   }
 
-  // ── Cumulative Chart (Chart.js) ────────────────────
+  // ── Return Kumulatif Chart — ROUTER ──────────────────────
+  //
+  // 2 mode rendering:
+  //   1. NAV MODE (default, kalau data lengkap): kurva "NAV Reksadana
+  //      Virtual" — treat sekuritas sebagai reksadana yg ikut semua rec
+  //      mereka dgn equal-weight; idle cash parkir IHSG; NAV compound
+  //      (bunga majemuk). Base Rp 1.000 (konvensi NAB Awal reksadana
+  //      Indonesia). IHSG di-normalize ke Rp 1.000 juga → apple-to-apple.
+  //      Butuh: ihsg.seriesFull daily + ohlc.json (loaded via loadOhlcAll).
+  //   2. ARITHMETIC MODE (fallback): kurva legacy — sum pnl per exitDate
+  //      (bukan compound). IHSG % vs firm % di skala persen. Aktif kalau
+  //      NAV prerequisites tidak terpenuhi (mis. IHSG daily missing utk
+  //      periode > 58 hari lalu, atau OHLC failed load).
+  //
+  // Router memilih otomatis. Fallback silent — user tidak butuh tahu detail.
   function renderCumChart(firm){
     if(typeof Chart === 'undefined'){ return; }
     var ctx = $id('trPfCumChart'); if(!ctx) return;
+    (async function(){
+      var ok = false;
+      try { ok = await _renderNavChart(firm); }
+      catch(err){
+        try { console.warn('[cumChart] NAV render error:', err && err.message || err); } catch(_){}
+      }
+      if(!ok) _renderArithmeticChart(firm);
+    })();
+  }
+
+  // ── NAV Reksadana Virtual Mode ───────────────────────────
+  //
+  // Formula per hari t (business day dari ihsg.seriesFull):
+  //   1. Set active recs = { r : entryTouchDate ≤ t ≤ (exitDate atau today) }
+  //   2. Per rec r, hitung daily return dari ohlc close:
+  //        - Entry day (t == entryTouchDate): (close_t - entryTouchPrice) / entryTouchPrice
+  //        - Exit day  (t == exitDate):       (exitPrice - close_{t-1}) / close_{t-1}
+  //        - Regular:                          (close_t - close_{t-1}) / close_{t-1}
+  //   3. R_firm[t] = mean(recReturns)                (equal-weight)
+  //   4. Kalau active empty → R_firm[t] = R_ihsg[t]  (parkir IHSG idle)
+  //   5. NAV_firm[t] = NAV_firm[t-1] × (1 + R_firm[t])
+  //   6. NAV_ihsg[t] = 1000 × (ihsgClose[t] / ihsgClose[timeline[0]])
+  //
+  // Return true kalau sukses, false kalau prerequisites gagal (data tidak
+  // cukup) → caller fallback ke arithmetic mode.
+  async function _renderNavChart(firm){
+    if(!firm) return false;
+    var ctx = $id('trPfCumChart'); if(!ctx) return false;
+
+    var d = getData();
+    var ihsgSeries = (d && d.ihsg && d.ihsg.seriesFull)
+                  || (d && d.ihsg && d.ihsg.series30d)
+                  || [];
+    if(!ihsgSeries.length) return false;
+
+    // Range dari _dateFilter (preset periode atau custom kalender).
+    var rangeStart = (_dateFilter && _dateFilter.start) || null;
+    var rangeEnd   = (_dateFilter && _dateFilter.end)   || null;
+
+    // IHSG close map + dates sorted (business days canonical).
+    var ihsgClose = {};
+    var ihsgDates = [];
+    for(var i=0;i<ihsgSeries.length;i++){
+      var p = ihsgSeries[i];
+      if(!p || !p.date || p.close == null) continue;
+      ihsgClose[p.date] = +p.close;
+      ihsgDates.push(p.date);
+    }
+    ihsgDates.sort();
+    if(ihsgDates.length < 2) return false;
+
+    // Timeline: IHSG dates ∩ range. Min 2 titik utk compound.
+    var timeline = ihsgDates.filter(function(dt){
+      return (!rangeStart || dt >= rangeStart) && (!rangeEnd || dt <= rangeEnd);
+    });
+    if(timeline.length < 2) return false;
+
+    // Load OHLC (idempotent, cached). Kalau tidak available → fallback.
+    if(typeof window.__OHLC_loadAll !== 'function') return false;
+    var ohlcData;
+    try { ohlcData = await window.__OHLC_loadAll(); }
+    catch(_) { return false; }
+    var ohlcTickers = (ohlcData && ohlcData.tickers) || {};
+    if(!Object.keys(ohlcTickers).length) return false;
+
+    // Rec eligible utk NAV: entered position (has entryTouchDate atau
+    // di recsActive/recsHistory). Skip pending/missed (belum entry).
+    var eligibleRecs = [].concat(firm.recsActive || []).concat(firm.recsHistory || []);
+    eligibleRecs = eligibleRecs.filter(function(r){
+      if(!r || !r.ticker) return false;
+      return r.entryTouchDate || r.openDate;
+    });
+
+    // Pre-decode ohlc.candles → {date: close} map utk fast lookup.
+    // Candles format: [ts_seconds, o, h, l, c].
+    var closeMaps = {};
+    for(var k=0;k<eligibleRecs.length;k++){
+      var t = eligibleRecs[k].ticker;
+      if(!t || closeMaps[t]) continue;
+      var candles = (ohlcTickers[t] && ohlcTickers[t].candles) || [];
+      var m = {};
+      for(var cc=0;cc<candles.length;cc++){
+        var candle = candles[cc];
+        if(!Array.isArray(candle) || candle.length < 5) continue;
+        var iso = new Date(candle[0]*1000).toISOString().slice(0,10);
+        m[iso] = +candle[4]; // close
+      }
+      closeMaps[t] = m;
+    }
+
+    // Compute NAV curve daily.
+    var baseNav = 1000;
+    var firmNav = [];
+    var ihsgNav = [];
+    var currentFirmNav = baseNav;
+    var baseIhsgClose = ihsgClose[timeline[0]];
+    if(!baseIhsgClose) return false;
+
+    for(var i2=0; i2<timeline.length; i2++){
+      var date = timeline[i2];
+      var prevDate = i2 > 0 ? timeline[i2-1] : null;
+
+      // Titik pertama: kedua NAV = base.
+      if(i2 === 0){
+        firmNav.push({ date: date, nav: baseNav, activeCount: 0 });
+        ihsgNav.push({ date: date, nav: baseNav });
+        continue;
+      }
+
+      // IHSG NAV normalized ke base.
+      var ihsgToday = ihsgClose[date] != null ? ihsgClose[date] : ihsgClose[prevDate];
+      var currentIhsgNav = baseNav * (ihsgToday / baseIhsgClose);
+      ihsgNav.push({ date: date, nav: +currentIhsgNav.toFixed(2) });
+
+      // IHSG daily return (dipakai utk idle cash).
+      var prevIhsg = ihsgClose[prevDate] || ihsgToday;
+      var ihsgReturn = prevIhsg > 0 ? (ihsgToday - prevIhsg) / prevIhsg : 0;
+      if(!Number.isFinite(ihsgReturn)) ihsgReturn = 0;
+
+      // Firm daily return: rata-rata daily return semua rec aktif.
+      var activeReturns = [];
+      for(var r=0;r<eligibleRecs.length;r++){
+        var rec = eligibleRecs[r];
+        var recStart = rec.entryTouchDate || rec.openDate;
+        var recEnd   = rec.exitDate || null;
+
+        if(!recStart || date < recStart) continue;
+        if(recEnd && date > recEnd) continue;
+
+        var closeMap = closeMaps[rec.ticker];
+        if(!closeMap) continue;
+
+        var rr = null;
+        if(prevDate < recStart){
+          // Entry day → return dari entryTouchPrice → close hari ini
+          var closeToday = closeMap[date];
+          var entryPx = +rec.entryTouchPrice || +rec.entry || +rec.entryPrice;
+          if(closeToday && entryPx){
+            rr = (closeToday - entryPx) / entryPx;
+          }
+        } else if(recEnd && date === recEnd){
+          // Exit day → return dari close kmrn → exitPrice
+          var pC = closeMap[prevDate];
+          var exPx = +rec.exitPrice;
+          if(pC && exPx){
+            rr = (exPx - pC) / pC;
+          }
+        } else {
+          // Regular day close-to-close
+          var c1 = closeMap[prevDate];
+          var c2 = closeMap[date];
+          if(c1 && c2){
+            rr = (c2 - c1) / c1;
+          }
+        }
+
+        if(rr != null && Number.isFinite(rr)) activeReturns.push(rr);
+      }
+
+      var dayReturn;
+      var activeCount = activeReturns.length;
+      if(activeCount === 0){
+        // Idle → parkir IHSG (always-invested style reksadana asli)
+        dayReturn = ihsgReturn;
+      } else {
+        var sum = 0;
+        for(var m2=0;m2<activeCount;m2++) sum += activeReturns[m2];
+        dayReturn = sum / activeCount;
+      }
+
+      currentFirmNav = currentFirmNav * (1 + dayReturn);
+      firmNav.push({
+        date: date,
+        nav: +currentFirmNav.toFixed(2),
+        activeCount: activeCount
+      });
+    }
+
+    // Prepare chart data.
+    var firmVals = firmNav.map(function(pt){ return pt.nav; });
+    var ihsgVals = ihsgNav.map(function(pt){ return pt.nav; });
+    var step = Math.max(1, Math.floor(timeline.length / 6));
+    var labels = timeline.map(function(dt, ii){
+      return (ii % step === 0 || ii === timeline.length - 1) ? fmtShortDate(dt) : '';
+    });
+
+    var c = trColors();
+    if(_cumChart){ try { _cumChart.destroy(); } catch(_){} _cumChart = null; }
+
+    // Update card title & DOM legend label utk NAV mode.
+    var titleEl = $id('trPfCumTitle');
+    if(titleEl) titleEl.textContent = 'NAV Reksadana Virtual · Simulator Portofolio';
+    var descEl = $id('trPfCumDesc');
+    if(descEl) descEl.textContent = 'Kurva NAV kalau kamu ikut semua rekomendasi sekuritas dgn alokasi equal-weight. Base NAB Rp 1.000. Idle cash parkir IHSG.';
+    var firmLegend = $id('trPfCumFirmLbl');
+    if(firmLegend) firmLegend.textContent = firmShort(firm.name) + ' Virtual Fund · ' + comboLabel();
+
+    _cumChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: labels, datasets: [
+        {
+          label: firmShort(firm.name) + ' Virtual Fund · ' + comboLabel(),
+          data: firmVals,
+          borderColor: c.accent,
+          backgroundColor: c.accentBg,
+          fill: false,
+          tension: 0.28,
+          pointRadius: 0,
+          borderWidth: 2.5
+        },
+        {
+          label: 'IHSG',
+          data: ihsgVals,
+          borderColor: c.red,
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.28,
+          pointRadius: 0,
+          borderWidth: 2,
+          borderDash: [4, 3]
+        }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false,
+            backgroundColor: c.tooltipBg, borderColor: c.grid, borderWidth: 1,
+            callbacks: {
+              title: function(items){
+                if(!items || !items.length) return '';
+                var idx = items[0].dataIndex;
+                return timeline[idx] || items[0].label || '';
+              },
+              label: function(it){
+                var y = it.parsed.y;
+                var pct = ((y - 1000) / 1000) * 100;
+                var priceStr = 'Rp ' + y.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                var pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+                return it.dataset.label + ': ' + priceStr + '  (' + pctStr + ')';
+              },
+              footer: function(items){
+                if(!items || !items.length) return '';
+                var idx = items[0].dataIndex;
+                var fp = firmNav[idx];
+                var ip = ihsgNav[idx];
+                if(!fp || !ip) return '';
+                var alpha = ip.nav > 0 ? ((fp.nav - ip.nav) / ip.nav) * 100 : 0;
+                var alphaStr = (alpha >= 0 ? '+' : '') + alpha.toFixed(2) + '%';
+                var activeStr = fp.activeCount > 0
+                  ? 'Aktif: ' + fp.activeCount + ' rec (equal-weight)'
+                  : 'Idle: parkir IHSG';
+                return 'Alpha: ' + alphaStr + ' · ' + activeStr;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: c.text3, font: { size: 10, family: "'IBM Plex Mono',monospace" }, maxRotation: 0, autoSkip: false }
+          },
+          y: {
+            grid: {
+              // Emphasis di baseline NAV = 1000 (garis referensi "modal awal").
+              color: function(ctx2){
+                if(ctx2 && ctx2.tick && Math.abs(ctx2.tick.value - 1000) < 0.5) return c.tick;
+                return c.grid;
+              },
+              lineWidth: function(ctx2){
+                if(ctx2 && ctx2.tick && Math.abs(ctx2.tick.value - 1000) < 0.5) return 1.4;
+                return 1;
+              }
+            },
+            ticks: {
+              color: c.tick,
+              font: { size: 10, family: "'IBM Plex Mono',monospace" },
+              callback: function(v){
+                return 'Rp ' + (+v).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+              }
+            }
+          }
+        },
+        interaction: { mode: 'index', intersect: false }
+      }
+    });
+
+    return true;
+  }
+
+  // ── Arithmetic Sum Mode (Fallback) ───────────────────────
+  // Kurva legacy: sum pnl per exitDate, IHSG normalize ke series30d[0].
+  // Bukan compound. Aktif kalau NAV mode prerequisites gagal (mis. IHSG
+  // daily seriesFull tidak cover range yg dipilih user).
+  function _renderArithmeticChart(firm){
+    if(typeof Chart === 'undefined'){ return; }
+    var ctx = $id('trPfCumChart'); if(!ctx) return;
+
+    // Update card title & desc utk fallback mode.
+    var titleEl = $id('trPfCumTitle');
+    if(titleEl) titleEl.textContent = 'Return Kumulatif · Simulator Eksekusi';
+    var descEl = $id('trPfCumDesc');
+    if(descEl) descEl.textContent = 'Kurva P/L kumulatif sekuritas vs IHSG — ikut mode eksekusi di atas.';
+    var firmLegend = $id('trPfCumFirmLbl');
+    if(firmLegend) firmLegend.textContent = firmShort(firm.name) + ' · ' + comboLabel();
+
     var firmSeries = computeCumSeries(firm, _entryMode, _exitMode);
     var ihsgSeries = computeIhsgCumSeries();
 
@@ -9560,6 +9884,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     _currentTab  = 'all';        // default tab jadi 'Semua' (bukan 'Aktif')
 
     populateHero(firm);
+
+    // Prefetch OHLC (async, non-blocking) supaya chart NAV Reksadana
+    // langsung siap saat rerender pertama. Idempotent — loadOhlcAll
+    // caches payload; kalau sudah loaded tinggal reuse.
+    if(typeof window.__OHLC_loadAll === 'function'){
+      try { window.__OHLC_loadAll().catch(function(){}); } catch(_){}
+    }
 
     // Sync seg + tab UI state (2 group: entry + exit)
     syncSegState();
@@ -17332,6 +17663,10 @@ async function fetchOhlcForModal(ticker, fromDate) {
   // Merge candle hari ini dari sheet Live + filter dari fromDate
   return _ohlcMergeToday(ticker, candles, fromDate);
 }
+
+// Expose OHLC helpers ke IIFE lain (mis. NAV Reksadana chart di Analis).
+// Reuse cache `_ohlcAll` yang sama — tidak double-fetch. Idempotent.
+window.__OHLC_loadAll = loadOhlcAll;
 
 /**
  * Gabungkan data hari ini dari DATA.live ke candles.
