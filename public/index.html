@@ -14108,10 +14108,18 @@ window._attachCandleTooltip = function(chart, series, container, candles){
 
   // Global lookup: cari rec by id di semua tracker list (dedupe by
   // priority order sama dgn aggregate() di Analisis IIFE).
+  // Backend build-tracker.js meng-CAP top-level historyList ke 500 rec
+  // (paling recent), tapi byFirm[X].recsHistory menyimpan SEMUA rec
+  // history firm itu tanpa cap. UI panel Analis Rekomendasi Sekuritas
+  // baca dari byFirm → ada rec yg tampil di UI tapi tidak muncul di
+  // top-level lists. Klik row rec → findRecById lookup fail → popup
+  // gak muncul (silent). Fix: fallback scan ke byFirm.recs* setelah
+  // top-level miss.
   window.__TR_findRecById = function(id){
     if (!id || !window.__TR_getData) return null;
     var data = window.__TR_getData();
     if (!data) return null;
+    // 1) Top-level lists (fast path)
     var lists = ['openList','historyList','pendingList','missedList','unfilledList'];
     for (var i = 0; i < lists.length; i++){
       var arr = data[lists[i]]; if (!Array.isArray(arr)) continue;
@@ -14120,6 +14128,33 @@ window._attachCandleTooltip = function(chart, series, container, candles){
           var copy = {}; for (var p in arr[j]) if (Object.prototype.hasOwnProperty.call(arr[j],p)) copy[p] = arr[j][p];
           copy._bucket = lists[i];
           return copy;
+        }
+      }
+    }
+    // 2) Fallback: scan byFirm[*].recs* (menutup gap 117+ rec yg di-cap
+    //    dari top-level historyList). Bucket → list-name mapping:
+    //      recsActive  → openList
+    //      recsPending → pendingList
+    //      recsMissed  → missedList
+    //      recsHistory → historyList
+    var byFirm = data.byFirm || {};
+    var fmap = {
+      recsActive:  'openList',
+      recsPending: 'pendingList',
+      recsMissed:  'missedList',
+      recsHistory: 'historyList'
+    };
+    for (var fkey in byFirm){
+      if (!Object.prototype.hasOwnProperty.call(byFirm, fkey)) continue;
+      var f = byFirm[fkey]; if (!f) continue;
+      for (var bkey in fmap){
+        var farr = f[bkey]; if (!Array.isArray(farr)) continue;
+        for (var k = 0; k < farr.length; k++){
+          if (farr[k] && farr[k].id === id){
+            var copy2 = {}; for (var p2 in farr[k]) if (Object.prototype.hasOwnProperty.call(farr[k],p2)) copy2[p2] = farr[k][p2];
+            copy2._bucket = fmap[bkey];
+            return copy2;
+          }
         }
       }
     }
