@@ -13121,10 +13121,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if (r.state === 'RUNNING_MISSED') return 'MISSED';
       if (r.state === 'PENDING')        return 'PENDING';
     }
-    if (r.state === 'TP' || r.closedBy === 'TP')      return 'TP';
-    if (r.state === 'SL' || r.closedBy === 'SL')      return 'SL';
-    if (r.state === 'EXPIRED' || r.closedBy === 'EXPIRED') return 'EXPIRED';
-    if (r._bucket === 'historyList') return r.closedBy || 'CLOSED';
+    // closedBy dari backend: 'TP1' | 'TP2' | 'SL' | 'SL_TRAIL' | 'EXPIRED'
+    // | 'EXPIRED_UNFILLED'. Kunci TP1 (mesin utama rule): TP1 kena, meski
+    // harga balik ke SL (SL_TRAIL), tetap WIN → status 'TP'. SL murni
+    // (belum sentuh TP1) → 'SL' (LOSS).
+    var cb = String(r.closedBy || '');
+    if (cb === 'TP1' || cb === 'TP2' || cb === 'SL_TRAIL') return 'TP';
+    if (cb === 'SL') return 'SL';
+    if (cb === 'EXPIRED' || cb === 'EXPIRED_UNFILLED') return 'EXPIRED';
+    // Fallback ke r.state (backend juga set 'TP_HIT'/'SL_HIT'/'EXPIRED')
+    if (r.state === 'TP_HIT' || r.state === 'TP') return 'TP';
+    if (r.state === 'SL_HIT' || r.state === 'SL') return 'SL';
+    if (r.state === 'EXPIRED') return 'EXPIRED';
+    if (r._bucket === 'historyList') return cb || 'CLOSED';
     return 'ACTIVE';
   }
   function pnlOf(r){
@@ -14060,9 +14069,16 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       if (r.state === 'RUNNING_MISSED') return 'MISSED';
       if (r.state === 'PENDING')        return 'PENDING';
     }
-    if (r.state === 'TP' || r.closedBy === 'TP')      return 'TP';
-    if (r.state === 'SL' || r.closedBy === 'SL')      return 'SL';
-    if (r.state === 'EXPIRED' || r.closedBy === 'EXPIRED') return 'EXPIRED';
+    // closedBy dari backend: 'TP1' | 'TP2' | 'SL' | 'SL_TRAIL' | 'EXPIRED'
+    // | 'EXPIRED_UNFILLED'. Kunci TP1: SL_TRAIL (kena SL setelah TP1) → WIN.
+    var cb = String(r.closedBy || '');
+    if (cb === 'TP1' || cb === 'TP2' || cb === 'SL_TRAIL') return 'TP';
+    if (cb === 'SL') return 'SL';
+    if (cb === 'EXPIRED' || cb === 'EXPIRED_UNFILLED') return 'EXPIRED';
+    // Fallback state
+    if (r.state === 'TP_HIT' || r.state === 'TP') return 'TP';
+    if (r.state === 'SL_HIT' || r.state === 'SL') return 'SL';
+    if (r.state === 'EXPIRED') return 'EXPIRED';
     if (r.state === 'RUNNING_MISSED') return 'MISSED';
     if (r.state === 'PENDING') return 'PENDING';
     return 'ACTIVE';
@@ -14457,16 +14473,23 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     // hanya candles + zona kotak sebagai visual utama. Info entry/TP/SL
     // sudah ada di zona chip labels + level cards di bawah chart.
 
-    // Marker exit kalau rec sudah closed
+    // Marker exit kalau rec sudah closed. Backend simpan closedBy sebagai
+    // 'TP1'/'TP2'/'SL'/'SL_TRAIL'/'EXPIRED'/'EXPIRED_UNFILLED'. Kunci TP1:
+    // SL_TRAIL (kena SL setelah TP1) dianggap WIN → green arrowUp
+    // konsisten dgn TP1/TP2. SL murni → red arrowDown. Selain itu → gray
+    // circle. Text = closedBy asli (mis. 'TP1', 'SL Trail') supaya user
+    // langsung tahu jenis exit-nya.
     if (rec.exitDate && Number.isFinite(+rec.exitPrice) && +rec.exitPrice > 0){
       try {
         var closedBy = String(rec.closedBy || '').toUpperCase();
+        var isWinExit  = closedBy === 'TP1' || closedBy === 'TP2' || closedBy === 'SL_TRAIL';
+        var isLossExit = closedBy === 'SL';
         _series.setMarkers([{
           time: rec.exitDate,
-          position: closedBy === 'TP' ? 'aboveBar' : 'belowBar',
-          color: closedBy === 'TP' ? upColor : (closedBy === 'SL' ? downColor : '#94a3b8'),
-          shape: closedBy === 'TP' ? 'arrowUp' : (closedBy === 'SL' ? 'arrowDown' : 'circle'),
-          text: closedBy || 'Close'
+          position: isWinExit ? 'aboveBar' : (isLossExit ? 'belowBar' : 'aboveBar'),
+          color:    isWinExit ? upColor : (isLossExit ? downColor : '#94a3b8'),
+          shape:    isWinExit ? 'arrowUp' : (isLossExit ? 'arrowDown' : 'circle'),
+          text:     closedBy || 'Close'
         }]);
       } catch(_){}
     }
