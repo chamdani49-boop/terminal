@@ -2863,7 +2863,13 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 .lpv-tbl td{padding:8px 10px;border-bottom:1px solid var(--border)}
 
 #page-tracker{padding:20px 24px 40px;max-width:1200px;margin:0 auto}
-@media(max-width:640px){ #page-tracker{padding:14px 12px 90px} }
+/* Mobile: padding-bottom pakai calc(96px + safe-area) supaya konten
+   terakhir (mis. row Peringkat, footer card) tidak ketutup bottom-nav
+   yg fixed. Bottom-nav tinggi ~63px (padding 8+8 + icon 18 + gap 3 +
+   text 14 + item padding 6+6). Di iPhone dgn home indicator, safe-area
+   inset bottom bisa +34px → total nav 97px. 90px old value = kurang
+   margin di iPhone. Bump ke 96px + safe-area (auto-adaptive). */
+@media(max-width:640px){ #page-tracker{padding:14px 12px calc(96px + env(safe-area-inset-bottom, 0px))} }
 
 .tr-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
 .tr-title-wrap h1{font-size:20px;font-weight:800;margin:0;letter-spacing:-.3px}
@@ -2902,25 +2908,38 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 /* Cluster kanan: period selector + IHSG chip sejajar (desktop). */
 .tr-card-header-controls{display:flex;align-items:center;gap:10px;flex-shrink:0;min-width:0;justify-content:flex-end}
 @media(max-width:640px){
-  /* MOBILE: kembali ke layout lama — title+IHSG di baris 1, period
-     selector full-width di baris 2 (kiri-aligned).
-     Trik: `display:contents` pada .tr-card-header-controls bikin wrapper
-     itu "menghilang" secara layout — period selector + IHSG chip jadi
-     flex-item LANGSUNG di .tr-card-headline. Baru dgn begini flex-basis
-     100% ke period selector ngambil 100% lebar card (bukan 100% lebar
-     cluster sempit yg diikuti IHSG chip).
-     .tr-card-headline juga di-switch ke flex-wrap:wrap supaya period
-     selector bisa jatuh ke baris 2. */
-  .tr-card-headline{gap:8px;align-items:flex-start;flex-wrap:wrap}
-  .tr-card-headline .tr-card-title{font-size:12.5px}
-  .tr-card-headline .tr-card-desc{font-size:10.5px}
+  /* MOBILE layout header chart Performa (3 baris):
+       Baris 1: [📈 Performa 30 Hari]                     (title, full width)
+       Baris 2: [Perbandingan return ...] [IHSG chip]     (desc + chip sejajar)
+       Baris 3: [30D | Bulan Ini | Bulan▾ | 2026▾]        (period, full width)
+
+     Trik: `display:contents` pada .tr-card-titleblock DAN
+     .tr-card-header-controls bikin kedua wrapper "menghilang" secara
+     layout — title, desc, period, chip jadi flex-item LANGSUNG di
+     .tr-card-headline. Baru dgn begini bisa reflow bebas via order +
+     flex-basis. */
+  .tr-card-headline{gap:6px 10px;align-items:flex-start;flex-wrap:wrap}
+  .tr-card-titleblock{display:contents}
   .tr-card-header-controls{display:contents}
-  /* Period selector: order:2 → jatuh setelah titleblock (order 0) &
-     IHSG chip (order 0). flex-basis:100% → full lebar card. Left-align
-     buttons konsisten dgn layout awal. */
+  /* Baris 1: title full-width */
+  .tr-card-headline .tr-card-title{
+    font-size:12.5px;order:0;flex-basis:100%;
+  }
+  /* Baris 2: desc (grow) + IHSG chip (fixed). Order:1 → setelah title,
+     sebelum period. Desc flex:1 1 auto biar isi ruang tersisa; chip
+     tetap flex-shrink:0. align-self:center pada chip supaya vertical
+     center relatif ke tinggi desc. */
+  .tr-card-headline .tr-card-desc{
+    font-size:10.5px;order:1;flex:1 1 auto;min-width:0;margin-top:0;
+  }
+  .tr-card-headline > .tr-ihsg-chip,
+  .tr-card-headline .tr-ihsg-chip{
+    order:1;align-self:center;
+  }
+  /* Baris 3: period selector full-width, kiri-aligned. */
   .tr-card-headline > .tr-chart-period,
   .tr-card-headline .tr-chart-period{
-    order:2;flex-basis:100%;margin-top:4px;justify-content:flex-start;
+    order:2;flex-basis:100%;margin-top:2px;justify-content:flex-start;
   }
 }
 .tr-card-title{font-size:14px;font-weight:800;letter-spacing:-.2px;margin:0}
