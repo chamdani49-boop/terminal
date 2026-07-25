@@ -7553,10 +7553,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // panel yg tampilkan status rec) selaras via helper terpusat ini.
     var ov = (typeof window.__TR_liveStatusOverride === 'function')
              ? window.__TR_liveStatusOverride(r) : null;
-    if (ov === 'TP2_LIVE') return {cls:'st-tp',lbl:'🏆 TP2 (live)'};
-    if (ov === 'TP1_LIVE') return {cls:'st-tp',lbl:'🎯 TP1 (live)'};
-    if (ov === 'SL_LIVE')  return {cls:'st-sl',lbl:'✕ SL (live)'};
-    if (ov === 'ACTIVE')   return {cls:'st-active',lbl:'● Aktif (live)'};
+    if (ov === 'TP2_LIVE') return {cls:'st-tp',lbl:'🏆 TP2'};
+    if (ov === 'TP1_LIVE') return {cls:'st-tp',lbl:'🎯 TP1'};
+    if (ov === 'SL_LIVE')  return {cls:'st-sl',lbl:'✕ SL'};
+    if (ov === 'ACTIVE')   return {cls:'st-active',lbl:'● Aktif'};
     var s=r.state||'TRIGGERED';
     // Fallback client-side untuk rec pending yg sudah lewat 10 hari
     // (backend cache lama mungkin masih PENDING) — treat sbg kadaluarsa.
@@ -8462,12 +8462,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function stateInfo(r, isHistory){
     // Live-derived override — TENTATIVE state dari harga live sekarang.
     // Prioritas lebih tinggi drpd backend classification karena live
-    // lebih fresh. Suffix "(live)" untuk transparansi ke user.
+    // lebih fresh. Label tanpa suffix "(live)" per request user — mesin
+    // tetap jalan, tampilan bersih.
     var lov = r && r._liveOverride;
-    if (lov === 'TP2') return { cls:'tr-rec-o tp', lbl:'🏆 Kena TP2 (live)' };
-    if (lov === 'TP1') return { cls:'tr-rec-o tp', lbl:'🎯 Kena TP1 (live)' };
-    if (lov === 'SL')  return { cls:'tr-rec-o sl', lbl:'✕ Kena SL (live)' };
-    if (lov === 'ACTIVE') return { cls:'tr-rec-o', lbl:'● Aktif (live)' };
+    if (lov === 'TP2') return { cls:'tr-rec-o tp', lbl:'🏆 Kena TP2' };
+    if (lov === 'TP1') return { cls:'tr-rec-o tp', lbl:'🎯 Kena TP1' };
+    if (lov === 'SL')  return { cls:'tr-rec-o sl', lbl:'✕ Kena SL' };
+    if (lov === 'ACTIVE') return { cls:'tr-rec-o', lbl:'● Aktif' };
     if(isHistory){
       var cb = r.closedBy; var tp = r.tpHits||[];
       if(cb==='TP2' || tp.indexOf('TP2')>=0) return {cls:'tr-rec-o tp', lbl:'🏆 Kena TP2'};
@@ -11112,10 +11113,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // Tracker (Overview, Analis firm, Analis-per-ticker).
     if (rec && typeof window.__TR_liveStatusOverride === 'function') {
       var ov = window.__TR_liveStatusOverride(rec);
-      if (ov === 'TP2_LIVE') return { icon: '🏆', label: 'Kena TP2 (live)', cls: 'tp' };
-      if (ov === 'TP1_LIVE') return { icon: '🎯', label: 'Kena TP1 (live)', cls: 'tp' };
-      if (ov === 'SL_LIVE')  return { icon: '✕',  label: 'Kena SL (live)',  cls: 'sl' };
-      if (ov === 'ACTIVE')   return { icon: '●',  label: 'Aktif (live)',    cls: 'active' };
+      if (ov === 'TP2_LIVE') return { icon: '🏆', label: 'Kena TP2', cls: 'tp' };
+      if (ov === 'TP1_LIVE') return { icon: '🎯', label: 'Kena TP1', cls: 'tp' };
+      if (ov === 'SL_LIVE')  return { icon: '✕',  label: 'Kena SL',  cls: 'sl' };
+      if (ov === 'ACTIVE')   return { icon: '●',  label: 'Aktif',    cls: 'active' };
     }
     var expiredPending = (rec && (state === 'PENDING' || state === 'RUNNING_MISSED')
                           && typeof window.__TR_isPendingExpired === 'function'
