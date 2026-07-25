@@ -5,7 +5,7 @@
    performa firm/sekuritas (sidebar Sekuritas, Overview Per Firm,
    panel detail Analis, dst) — supaya angkanya KONSISTEN.
 
-   Kebijakan (per user, 25 Jul 2026):
+   Kebijakan (per user, 25 Jul 2026 — revised):
 
    1. Default winrate DIHITUNG hanya untuk rec yang harganya
       benar-benar menyentuh entry (didTouchEntry). Rec yang tidak
@@ -16,17 +16,18 @@
       - Metode Entry: 'entry' (default) | 'haka'
       - Target Exit : 'tp1'   (default) | 'tp2'
 
-   3. Kunci TP1 (TP1 LOCK):
-      Sekali harga menyentuh TP1, rec DIKUNCI sebagai TP1 WIN,
-      meskipun setelah itu harga jatuh balik ke TP1/entry/SL.
-      Tidak downgrade ke LOSS. Backend menandai kasus ini via:
-         tpHits.indexOf('TP1') >= 0
-         atau closedBy in {'TP1', 'TP2', 'SL_TRAIL'}
+   3. Universe rec closed (per revised rule, gak perlu SL trail):
+      - TP1 (rec tanpa TP2 target)   → WIN at TP1
+      - TP2 (rec dgn TP2 target)     → WIN at TP2
+      - SL biasa (kena SL sebelum TP1) → LOSS at SL
+      - SL_TRAIL (TP1 sempat tersentuh lalu balik ke SL area)
+        → LOSS at SL (DIPERLAKUKAN SAMA SEPERTI SL BIASA — tidak lagi WIN)
+      - EXPIRED (habis horizon tanpa hit) → pakai rec.exitPrice natural
 
-   4. SL murni: kena SL SEBELUM TP1 pernah tersentuh → LOSS di SL.
-
-   5. Expired tanpa hit apa2: pakai rec.exitPrice natural (logika
-      waktu / horizon dari backend, tidak diubah).
+   4. Tidak ada lagi konsep "TP1 lock": rec SL_TRAIL yang dulu dianggap
+      WIN kecil di TP1 sekarang di-classify sebagai LOSS penuh di SL.
+      _hitTP1() sengaja EXCLUDE SL_TRAIL supaya rec ini masuk cabang
+      LOSS di recPnl().
 
    API:
       var st = window.TrackerStats.compute(firm, {
@@ -53,16 +54,20 @@
     return String((rec && rec.type) || 'BUY').toUpperCase() === 'BUY';
   }
 
-  // hitTP1: sekali TP1 tersentuh, dianggap TRUE selamanya meski harga
-  // jatuh balik ke entry/SL. Sumber signal (mana pun terpenuhi):
-  //   - tpHits punya 'TP1' atau 'TP2'  (TP2 hit implies TP1 juga hit)
-  //   - closedBy = TP1, TP2, atau SL_TRAIL (trailing SL setelah TP1)
+  // hitTP1: rec dihitung WIN kalau ditutup di TP1/TP2. SL_TRAIL (TP1 fisik
+  // tersentuh tapi balik ke SL area) DIKECUALIKAN — per aturan "gak perlu
+  // SL trail", rec ini treated as LOSS di stat, bukan WIN. Sumber signal:
+  //   - tpHits punya 'TP1' atau 'TP2'
+  //   - closedBy = 'TP1' atau 'TP2'
+  //   - closedBy = 'SL_TRAIL' → return FALSE (short-circuit sebelum cek tpHits,
+  //     karena backend juga set tpHits=['TP1'] utk rec SL_TRAIL)
   function _hitTP1(rec) {
+    var cb = String((rec && rec.closedBy) || '');
+    if (cb === 'SL_TRAIL') return false;
     var hits = (rec && rec.tpHits) || [];
     if (hits.indexOf('TP1') >= 0) return true;
     if (hits.indexOf('TP2') >= 0) return true;
-    var cb = String((rec && rec.closedBy) || '');
-    return cb === 'TP1' || cb === 'TP2' || cb === 'SL_TRAIL';
+    return cb === 'TP1' || cb === 'TP2';
   }
 
   function _hitTP2(rec) {
@@ -113,12 +118,15 @@
     // ── Step 2: exit price ──
     // Rule TP1 LOCK (Aturan #3): sekali TP1 tersentuh, WIN at TP1
     // — tidak downgrade meskipun harga jatuh balik ke SL.
+    // SL_TRAIL sekarang treated sbg SL biasa (LOSS) — exit di rec.sl.
+    // Fallback ke rec.exitPrice kalau rec.sl tidak valid (defensive).
+    var isSLLike = (closedBy === 'SL' || closedBy === 'SL_TRAIL');
     var exitPrice = null;
     if (exitMode === 'tp1') {
       if (hitTP1) {
-        exitPrice = +rec.tp1;                                    // TP1 WIN — LOCKED
-      } else if (closedBy === 'SL' && Number.isFinite(+rec.sl)) {
-        exitPrice = +rec.sl;                                     // SL LOSS
+        exitPrice = +rec.tp1;                                    // TP1/TP2 WIN
+      } else if (isSLLike && Number.isFinite(+rec.sl)) {
+        exitPrice = +rec.sl;                                     // SL / SL_TRAIL LOSS
       } else {
         exitPrice = Number.isFinite(+rec.exitPrice) ? +rec.exitPrice : null;   // expired
       }
@@ -131,9 +139,11 @@
         exitPrice = +rec.tp2;                                    // TP2 WIN penuh
       } else if (hitTP1) {
         // TP1 hit tapi TP2 belum → trailed at TP1 (small WIN).
+        // Note: _hitTP1 sudah exclude SL_TRAIL, jadi cabang ini hanya
+        // ke-reach saat rec benar-benar TP1/TP2-only tanpa SL_TRAIL.
         exitPrice = +rec.tp1;
-      } else if (closedBy === 'SL' && Number.isFinite(+rec.sl)) {
-        exitPrice = +rec.sl;                                     // SL LOSS sebelum TP1
+      } else if (isSLLike && Number.isFinite(+rec.sl)) {
+        exitPrice = +rec.sl;                                     // SL / SL_TRAIL LOSS
       } else {
         exitPrice = Number.isFinite(+rec.exitPrice) ? +rec.exitPrice : null;
       }

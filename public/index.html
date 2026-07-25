@@ -7538,7 +7538,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var cb=r.closedBy, tp=r.tpHits||[];
       if(cb==='TP2'||tp.indexOf('TP2')>=0) return {cls:'st-tp',lbl:'🏆 TP2'};
       if(cb==='TP1') return {cls:'st-tp',lbl:'🎯 TP1'};
-      if(cb==='SL_TRAIL') return {cls:'st-tp',lbl:'🛡 SL Trail'};
+      // SL_TRAIL treated sbg SL biasa (LOSS) — icon 🛡 dipertahankan sbg
+      // konteks "TP1 sempat tersentuh" tapi cls merah.
+      if(cb==='SL_TRAIL') return {cls:'st-sl',lbl:'🛡 SL Trail'};
       if(cb==='SL') return {cls:'st-sl',lbl:'✕ SL'};
       // Rec kadaluarsa tanpa pernah triggered → label KADALUARSA supaya
       // user tahu ini bukan "posisi selesai" tapi rekom gagal terisi.
@@ -8386,8 +8388,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(isHistory){
       var cb = r.closedBy; var tp = r.tpHits||[];
       if(cb==='TP2' || tp.indexOf('TP2')>=0) return {cls:'tr-rec-o tp', lbl:'🏆 Kena TP2'};
+      // SL_TRAIL: TP1 sempat tersentuh tapi harga balik ke SL — treat sbg SL
+      // biasa (LOSS). Check DULU sebelum cek tp.indexOf('TP1') karena backend
+      // ikut set tpHits=['TP1'] utk rec SL_TRAIL — kalau tidak dicek dulu,
+      // rec SL_TRAIL akan salah masuk cabang "Kena TP1".
+      if(cb==='SL_TRAIL') return {cls:'tr-rec-o sl', lbl:'🛡 SL Trail'};
       if(cb==='TP1' || tp.indexOf('TP1')>=0) return {cls:'tr-rec-o tp', lbl:'🎯 Kena TP1'};
-      if(cb==='SL_TRAIL') return {cls:'tr-rec-o tp', lbl:'🛡 SL Trail'};
       if(cb==='SL') return {cls:'tr-rec-o sl', lbl:'✕ Kena SL'};
       // Rec kadaluarsa TANPA pernah triggered → khusus "KADALUARSA" merah,
       // supaya user tahu ini bukan "posisi selesai" tapi rekom yg gagal terisi.
@@ -8707,18 +8713,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(pop.hidden) openCalPopup(); else closeCalPopup();
   }
 
+  // Hit TP1 utk tab counter: hanya rec yg closed via TP1 atau TP2 (bukan
+  // SL_TRAIL). Meskipun SL_TRAIL secara fisik sempat menyentuh TP1, exit
+  // akhirnya di area SL — dikelompokkan ke tab SL, bukan TP1.
   function _recHitTP1(r){
     var hits = r && r.tpHits || [];
-    return hits.indexOf('TP1') >= 0 || String(r.closedBy||'')==='TP1' || String(r.closedBy||'')==='SL_TRAIL';
+    var cb = String((r && r.closedBy)||'');
+    if (cb === 'SL_TRAIL') return false;
+    return hits.indexOf('TP1') >= 0 || cb === 'TP1' || cb === 'TP2';
   }
   function _recHitTP2(r){
     var hits = r && r.tpHits || [];
     return hits.indexOf('TP2') >= 0 || String(r.closedBy||'')==='TP2';
   }
-  // SL murni = kena stop-loss SEBELUM TP1 (tidak termasuk SL_TRAIL yg
-  // sebenernya WIN karena TP1 sudah kena duluan lalu di-trail ke entry).
+  // Kena SL = SL biasa (SL sebelum TP1) + SL_TRAIL (TP1 sempat tersentuh
+  // lalu balik ke SL). Per aturan "gak perlu SL trail" — dua-duanya
+  // dihitung LOSS. Backend masih membedakan closedBy='SL' vs 'SL_TRAIL'
+  // utk keperluan display (badge/tooltip), tapi stats tab counter
+  // menggabungkan keduanya.
   function _recHitSL(r){
-    return r && String(r.closedBy||'') === 'SL';
+    var cb = r && String(r.closedBy||'');
+    return cb === 'SL' || cb === 'SL_TRAIL';
   }
   // Expired = rec sudah closed tapi TIDAK menyentuh TP maupun SL sampai
   // horizon habis. Backend simpan dua varian: 'EXPIRED' (rec triggered
@@ -10963,8 +10978,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
       case 'RUNNING_MISSED': return { icon: '🚀', label: 'Harga Lari',          cls: 'missed'  };
       case 'TRIGGERED':      return { icon: '●',  label: 'Entry Tercapai',      cls: 'active'  };
       case 'TP_HIT':
+        // SL_TRAIL: TP1 sempat tersentuh lalu harga balik ke SL area. Per
+        // aturan "gak perlu SL trail", treat sbg SL biasa (LOSS). Icon 🛡
+        // tetap dipakai supaya user tahu ada history TP1-hit, tapi cls='sl'
+        // (merah) & label tanpa klaim "WIN".
+        if (closedBy === 'SL_TRAIL')     return { icon: '🛡', label: 'SL Trailing', cls: 'sl' };
         if (tpHits.indexOf('TP2') >= 0)  return { icon: '🏆', label: 'Kena TP2', cls: 'tp'    };
-        if (closedBy === 'SL_TRAIL')     return { icon: '🛡', label: 'SL Trailing (WIN)', cls: 'tp' };
         return { icon: '🎯', label: 'Kena TP1', cls: 'tp' };
       case 'SL_HIT':         return { icon: '✕',  label: 'Kena SL',             cls: 'sl'      };
       case 'EXPIRED':
@@ -12810,10 +12829,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var winCount = history.filter(function(r){
       if(!isRecent(r.closedDate)) return false;
       var by = String(r.closedBy||'').toUpperCase();
-      return by==='TP1' || by==='TP2' || by==='SL_TRAIL';
+      // SL_TRAIL tidak lagi WIN — treat sbg SL biasa (LOSS)
+      return by==='TP1' || by==='TP2';
     }).length;
     var lossCount = history.filter(function(r){
-      return isRecent(r.closedDate) && String(r.closedBy||'').toUpperCase()==='SL';
+      if(!isRecent(r.closedDate)) return false;
+      var by = String(r.closedBy||'').toUpperCase();
+      return by==='SL' || by==='SL_TRAIL';
     }).length;
     if(actNew)  actNew.textContent = newCount;
     if(actWin){
@@ -14210,12 +14232,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if (r.state === 'PENDING')        return 'PENDING';
     }
     // closedBy dari backend: 'TP1' | 'TP2' | 'SL' | 'SL_TRAIL' | 'EXPIRED'
-    // | 'EXPIRED_UNFILLED'. Kunci TP1 (mesin utama rule): TP1 kena, meski
-    // harga balik ke SL (SL_TRAIL), tetap WIN → status 'TP'. SL murni
-    // (belum sentuh TP1) → 'SL' (LOSS).
+    // | 'EXPIRED_UNFILLED'. Universe rec closed = 4 kategori:
+    //   - TP1 (kena TP1 utk rec tanpa TP2)  → 'TP' WIN
+    //   - TP2 (kena TP2 utk rec dgn TP2)     → 'TP' WIN
+    //   - SL biasa (kena SL sebelum TP1)     → 'SL' LOSS
+    //   - EXPIRED (habis horizon tanpa hit)  → 'EXPIRED' NETRAL
+    // SL_TRAIL (kena SL setelah TP1 sempat tersentuh) tidak diperlakukan
+    // khusus lagi → di-remap ke 'SL' (LOSS), konsisten dgn exit final.
     var cb = String(r.closedBy || '');
-    if (cb === 'TP1' || cb === 'TP2' || cb === 'SL_TRAIL') return 'TP';
-    if (cb === 'SL') return 'SL';
+    if (cb === 'TP1' || cb === 'TP2') return 'TP';
+    if (cb === 'SL' || cb === 'SL_TRAIL') return 'SL';
     if (cb === 'EXPIRED' || cb === 'EXPIRED_UNFILLED') return 'EXPIRED';
     // Fallback ke r.state (backend juga set 'TP_HIT'/'SL_HIT'/'EXPIRED')
     if (r.state === 'TP_HIT' || r.state === 'TP') return 'TP';
@@ -14605,13 +14631,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // 4 faktor terbobot:
     //   40% sentimen  — bullishness dari BUY vs SELL count analis
     //   30% proximity — seberapa dekat harga live ke entry rata2
-    //   20% hit rate  — % rec closed yg kena TP (bukan SL)
+    //   20% hit rate  — TP / (TP + SL + EXPIRED) rec closed (sinkron menu Analis)
     //   10% RR        — risk-reward ratio rata2 (dinormalisasi)
     var avgDur = avg(durations);
     var opp = computeOpportunityScore({
       buyN: buyN, sellN: sellN,
       lastPrice: lastPrice, entryAvg: entryAvg, tp1Avg: tp1Avg, slAvg: slAvg,
-      tp: stCounts.tp, sl: stCounts.sl
+      tp: stCounts.tp, sl: stCounts.sl, expired: stCounts.expired
     });
 
     var oppValEl = $('trAnlOppVal'); if (oppValEl) oppValEl.textContent = opp.hasData ? opp.score : '—';
@@ -14689,8 +14715,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
       hasAnyRealData = true;
     }
 
-    // 3. Hit rate (20%): kena TP / (TP + SL) rec closed
-    var closedResolved = (x.tp || 0) + (x.sl || 0);
+    // 3. Hit rate (20%): kena TP / (TP + SL + EXPIRED) rec closed
+    //    Sinkron dgn Win Rate di menu Analis (computeKpi): EXPIRED masuk
+    //    penyebut sebagai bagian dari "closed rec" universe. SL_TRAIL
+    //    sudah di-remap ke 'SL' di statusOf() → tidak inflate WIN lagi.
+    var closedResolved = (x.tp || 0) + (x.sl || 0) + (x.expired || 0);
     if (closedResolved > 0) {
       factors.hitrate = (x.tp / closedResolved) * 100;
       hasAnyRealData = true;
@@ -14746,7 +14775,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (opp) {
       factorsHtml += mkRow('📊 Sentimen Analis', 0.4, opp.factors.sentiment, 'Persen BUY vs total rec');
       factorsHtml += mkRow('🎯 Proximity ke Entry', 0.3, opp.factors.proximity, 'Seberapa dekat harga live ke entry rata²');
-      factorsHtml += mkRow('🏆 Hit Rate Historis', 0.2, opp.factors.hitrate, 'Rec closed yg kena TP (bukan SL)');
+      factorsHtml += mkRow('🏆 Hit Rate Historis', 0.2, opp.factors.hitrate, 'TP / (TP + SL + Expired) — sinkron menu Analis');
       factorsHtml += mkRow('⚖ Risk-Reward', 0.1, opp.factors.rr, 'RR ratio rata² (TP1-Entry)/(Entry-SL)');
     }
     var scoreVal = opp ? opp.score : 0;
@@ -15158,10 +15187,12 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       if (r.state === 'PENDING')        return 'PENDING';
     }
     // closedBy dari backend: 'TP1' | 'TP2' | 'SL' | 'SL_TRAIL' | 'EXPIRED'
-    // | 'EXPIRED_UNFILLED'. Kunci TP1: SL_TRAIL (kena SL setelah TP1) → WIN.
+    // | 'EXPIRED_UNFILLED'. Universe closed = TP1/TP2 (WIN), SL biasa +
+    // SL_TRAIL (LOSS), EXPIRED (NETRAL). SL_TRAIL tidak lagi WIN — di-remap
+    // ke 'SL' konsisten dgn statusOf() di menu Analis.
     var cb = String(r.closedBy || '');
-    if (cb === 'TP1' || cb === 'TP2' || cb === 'SL_TRAIL') return 'TP';
-    if (cb === 'SL') return 'SL';
+    if (cb === 'TP1' || cb === 'TP2') return 'TP';
+    if (cb === 'SL' || cb === 'SL_TRAIL') return 'SL';
     if (cb === 'EXPIRED' || cb === 'EXPIRED_UNFILLED') return 'EXPIRED';
     // Fallback state
     if (r.state === 'TP_HIT' || r.state === 'TP') return 'TP';
@@ -15593,16 +15624,17 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     // sudah ada di zona chip labels + level cards di bawah chart.
 
     // Marker exit kalau rec sudah closed. Backend simpan closedBy sebagai
-    // 'TP1'/'TP2'/'SL'/'SL_TRAIL'/'EXPIRED'/'EXPIRED_UNFILLED'. Kunci TP1:
-    // SL_TRAIL (kena SL setelah TP1) dianggap WIN → green arrowUp
-    // konsisten dgn TP1/TP2. SL murni → red arrowDown. Selain itu → gray
-    // circle. Text = closedBy asli (mis. 'TP1', 'SL Trail') supaya user
-    // langsung tahu jenis exit-nya.
+    // 'TP1'/'TP2'/'SL'/'SL_TRAIL'/'EXPIRED'/'EXPIRED_UNFILLED'. Klasifikasi:
+    //   - TP1 / TP2         → green arrowUp (WIN)
+    //   - SL / SL_TRAIL     → red arrowDown (LOSS — SL_TRAIL treated as SL biasa)
+    //   - EXPIRED           → gray circle (NETRAL)
+    // Text = closedBy asli (mis. 'TP1', 'SL Trail') supaya user langsung tahu
+    // jenis exit-nya.
     if (rec.exitDate && Number.isFinite(+rec.exitPrice) && +rec.exitPrice > 0){
       try {
         var closedBy = String(rec.closedBy || '').toUpperCase();
-        var isWinExit  = closedBy === 'TP1' || closedBy === 'TP2' || closedBy === 'SL_TRAIL';
-        var isLossExit = closedBy === 'SL';
+        var isWinExit  = closedBy === 'TP1' || closedBy === 'TP2';
+        var isLossExit = closedBy === 'SL'  || closedBy === 'SL_TRAIL';
         _series.setMarkers([{
           time: rec.exitDate,
           position: isWinExit ? 'aboveBar' : (isLossExit ? 'belowBar' : 'aboveBar'),
