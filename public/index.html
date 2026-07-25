@@ -2986,18 +2986,33 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 .tr-chart-rank-row .code{
   font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:800;
   letter-spacing:.3px;color:var(--text);
-  flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  width:32px;flex-shrink:0;
 }
 .tr-chart-rank-row .code.foreign{color:var(--red)}
+/* Nama singkat sekuritas — clickable link ke tab Analis. Muted color
+   default, accent + underline saat hover supaya jelas affordance-nya. */
+.tr-chart-rank-row .nm{
+  flex:1 1 auto;min-width:0;
+  font-family:inherit;font-size:10.5px;font-weight:600;
+  color:var(--text3);letter-spacing:-.1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  cursor:pointer;transition:color .12s;
+  padding:2px 0;
+}
+.tr-chart-rank-row .nm:hover{color:var(--accent);text-decoration:underline}
 .tr-chart-rank-row .pct{
   font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:800;
   flex-shrink:0;font-variant-numeric:tabular-nums;
 }
 .tr-chart-rank-row .pct.up{color:var(--green)}
 .tr-chart-rank-row .pct.dn{color:var(--red)}
+/* IHSG chip di header — clickable utk clear highlight chart. */
+.tr-ihsg-chip{cursor:pointer;transition:border-color .12s, background .12s}
+.tr-ihsg-chip:hover{border-color:var(--accent);background:var(--card)}
 @media(max-width:640px){
-  .tr-chart-rank-row{padding:4px 7px;gap:7px}
-  .tr-chart-rank-row .code{font-size:11px}
+  .tr-chart-rank-row{padding:4px 7px;gap:6px}
+  .tr-chart-rank-row .code{font-size:11px;width:28px}
+  .tr-chart-rank-row .nm{font-size:10px}
   .tr-chart-rank-row .pct{font-size:11px}
 }
 .tr-card-desc{font-size:11px;color:var(--text3);margin-top:2px}
@@ -6261,7 +6276,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
         <div class="tr-card-desc">Perbandingan return kumulatif semua sekuritas · klik peringkat untuk highlight</div>
       </div>
-      <div class="tr-ihsg-chip" id="trIhsgChip" title="IHSG 30 hari — benchmark pasar">
+      <div class="tr-ihsg-chip" id="trIhsgChip" role="button" tabindex="0" title="IHSG 30 hari — klik untuk clear highlight (chart kembali cerah semua)">
         <span class="tr-ihsg-chip-lbl">IHSG 30d</span>
         <span class="tr-ihsg-chip-val" id="trIhsgChipVal">—</span>
         <span class="tr-ihsg-chip-sub" id="trIhsgChipSub">—</span>
@@ -11716,9 +11731,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Sidebar Peringkat (list firm dgn dot warna + last%) ──
-  // Adopsi design rupiah-monitor AllCurrenciesChart. Klik row → toggle
-  // highlight; line di canvas chart akan re-render dgn fokus di firm
-  // itu (line active tebal, line lain fade).
+  // Adopsi design rupiah-monitor AllCurrenciesChart. Baris berisi:
+  //   [rank] [dot] [code] [nama-singkat] [pct]
+  //
+  // Interaksi:
+  //   - Klik nama singkat (data-action="nav") → navigate ke tab Analis
+  //     + open firm panel via window.__TR_openFirm(id).
+  //   - Klik area lain (rank/dot/code/pct) → toggle highlight chart.
+  //
+  // Nama singkat = firmShort (strip PT / Tbk), overflow: ellipsis via
+  // CSS supaya tidak wrap. Muted color + hover underline supaya jelas
+  // clickable.
   function _renderChartRankSidebar(firmsRanked){
     var el = $('trChartRankList'); if (!el) return;
     el.innerHTML = firmsRanked.map(function(x, i){
@@ -11732,29 +11755,66 @@ body.is-mobile-device.force-desktop .pl-col-main{
                ? window.BrokerCodes.avatar(x.firm.name) : null;
       var codeText = bk ? bk.text : String(x.firm.name || '').substring(0, 3).toUpperCase();
       var codeCls  = (bk && bk.foreign) ? 'code foreign' : 'code';
-      return '<button type="button" class="tr-chart-rank-row' + (isActive ? ' active' : '') + '"'
-        + ' data-firm-id="' + esc(x.firm.id || '') + '"'
-        + ' title="' + esc(x.firm.name || '') + ' · ' + pctStr + '">'
+      // Nama singkat: strip PT prefix & Tbk suffix.
+      var shortName = String(x.firm.name || '')
+        .replace(/^PT\s+/i, '')
+        .replace(/\s+Tbk\.?$/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      var fid = esc(x.firm.id || '');
+      return '<div class="tr-chart-rank-row' + (isActive ? ' active' : '') + '"'
+        + ' role="button" tabindex="0"'
+        + ' data-firm-id="' + fid + '"'
+        + ' title="' + esc(x.firm.name || '') + ' · klik utk highlight chart">'
         + '<span class="idx">' + (i + 1) + '</span>'
         + '<span class="dot" style="background:' + x.color + '"></span>'
         + '<span class="' + codeCls + '">' + esc(codeText) + '</span>'
+        + '<span class="nm" data-action="nav" data-firm-id="' + fid + '"'
+        + ' title="Buka detail ' + esc(x.firm.name || '') + ' di tab Analis">'
+        + esc(shortName) + '</span>'
         + '<span class="pct ' + pctCls + '">' + pctStr + '</span>'
-      + '</button>';
+      + '</div>';
     }).join('');
   }
 
-  // Delegated click handler utk row Peringkat → toggle highlight.
-  // Attached sekali di module init (bukan tiap render).
+  // Delegated click handler untuk row Peringkat.
+  //   Priority 1: klik nama sekuritas (data-action="nav") → open firm
+  //               di tab Analis (mengarah ke panel detail firm).
+  //   Priority 2: klik area lain di row (rank/dot/code/pct) → toggle
+  //               highlight chart.
+  //   Priority 3: klik chip IHSG di header → clear highlight (chart
+  //               kembali cerah semua).
   document.addEventListener('click', function(e){
+    // 1) Nav ke Analis (klik nama)
+    var navEl = e.target && e.target.closest && e.target.closest('.tr-chart-rank-row [data-action="nav"]');
+    if (navEl){
+      e.stopPropagation();
+      var fidNav = navEl.getAttribute('data-firm-id');
+      if (fidNav && typeof window.__TR_openFirm === 'function'){
+        window.__TR_openFirm(fidNav);
+      }
+      return;
+    }
+    // 2) Toggle highlight (klik row Peringkat)
     var row = e.target && e.target.closest && e.target.closest('.tr-chart-rank-row');
-    if (!row) return;
-    var fid = row.getAttribute('data-firm-id');
-    if (!fid) return;
-    // Toggle: kalau firm sama diklik lagi → clear highlight; else set new.
-    _highlightedFirmId = (_highlightedFirmId === fid) ? null : fid;
-    // Re-render chart pakai cached data (tidak recompute per-firm series).
-    var d = window.__TR_getData && window.__TR_getData();
-    if (d) updateChart(d);
+    if (row){
+      var fid = row.getAttribute('data-firm-id');
+      if (!fid) return;
+      _highlightedFirmId = (_highlightedFirmId === fid) ? null : fid;
+      var d = window.__TR_getData && window.__TR_getData();
+      if (d) updateChart(d);
+      return;
+    }
+    // 3) Klik chip IHSG di header chart → clear highlight
+    var ihsg = e.target && e.target.closest && e.target.closest('#trIhsgChip');
+    if (ihsg){
+      if (_highlightedFirmId != null){
+        _highlightedFirmId = null;
+        var d2 = window.__TR_getData && window.__TR_getData();
+        if (d2) updateChart(d2);
+      }
+      return;
+    }
   });
 
   // ── Update chart Chart.js (destroy existing + recreate dgn data real) ──
