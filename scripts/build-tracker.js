@@ -46,10 +46,11 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT       = path.join(__dirname, '..');
-const OUT_PATH   = path.join(ROOT, 'public', 'tracker.json');
-const OHLC_PATH  = path.join(ROOT, 'public', 'ohlc.json');
-const SCREEN_PATH= path.join(ROOT, 'public', 'screening.json');
-const MACRO_PATH = path.join(ROOT, 'public', 'macro.json');
+const OUT_PATH     = path.join(ROOT, 'public', 'tracker.json');
+const OHLC_PATH    = path.join(ROOT, 'public', 'ohlc.json');
+const SCREEN_PATH  = path.join(ROOT, 'public', 'screening.json');
+const MACRO_PATH   = path.join(ROOT, 'public', 'macro.json');
+const HISTORY_PATH = path.join(ROOT, 'public', 'tracker-history.json');
 
 const MAX_HISTORY = parseInt(process.env.TRACKER_MAX_HISTORY || '500', 10);
 const DAILY_EQUITY_DAYS = 30;
@@ -217,6 +218,65 @@ function loadScreening() {
     console.warn('  ⚠ screening.json rusak:', e.message);
     return {};
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 2c) LOAD TRACKER HISTORY (public/tracker-history.json) — ARSIP KUMULATIF
+// ─────────────────────────────────────────────────────────────────────────
+// Sheet Google Tracker akan di-WIPE user tiap tgl 1 tiap bulan (mulai bulan
+// berjalan Agustus 2026 dst.) supaya sheet tidak menumpuk & lambat. Supaya
+// visual di web TIDAK KEHILANGAN data historis, workflow terpisah
+// (`archive-tracker.yml`) melakukan upsert isi sheet ke file JSON kumulatif
+// `public/tracker-history.json` setiap hari jam 19:00 WIB, plus snapshot
+// bulanan `public/tracker-history/YYYY-MM.json` setiap tgl 1 jam 01 WIB.
+//
+// KENAPA di-load DI SINI: `build-tracker.js` merge (sheet items ∪ history
+// items) → dedup by stableItemKey → normalize → derive state. Efeknya:
+//   - Trade closed di bulan lampau (sudah lenyap dari sheet) tetap masuk
+//     historyList / winrate / dsb.
+//   - Trade masih aktif (TRIGGERED / PENDING) yang ter-arsip lalu sheet
+//     di-wipe → tetap dilacak, `derivePosition` menghitung state fresh dari
+//     OHLC terbaru → kalau TP/SL akhirnya kena, state ikut ter-update di
+//     tracker.json (tanpa perlu re-input manual ke sheet).
+//   - Sheet menang saat identity conflict → user tetap bisa koreksi
+//     rekomendasi dgn edit langsung di sheet (arsip di-abaikan utk key ybs).
+//
+// FORMAT FILE: { version, generatedAt, count, items: [...] } dgn items[]
+// berbentuk RAW sheet rows (persis output gvizTableToItems, bukan hasil
+// normalize). Memudahkan re-normalize kalau schema normalizeRow berubah.
+// ─────────────────────────────────────────────────────────────────────────
+function loadTrackerHistory() {
+  if (!fs.existsSync(HISTORY_PATH)) return { items: [], version: 1 };
+  try {
+    const raw = JSON.parse(fs.readFileSync(HISTORY_PATH, 'utf8'));
+    const items = Array.isArray(raw && raw.items) ? raw.items : [];
+    return {
+      items,
+      version: (raw && raw.version) || 1,
+      generatedAt: raw && raw.generatedAt,
+      count: items.length,
+    };
+  } catch (e) {
+    console.warn('  ⚠ tracker-history.json rusak:', e.message);
+    return { items: [], version: 1 };
+  }
+}
+
+// Identity stable untuk dedup arsip vs sheet. Tidak pakai `_row` karena
+// row-number sheet berubah setiap kali baris atas di-hapus. Prioritas:
+//   1) `_ts` (submission timestamp dari kolom `timestamp` di sheet)
+//   2) content fingerprint (ticker + tanggal + firm + entry) sebagai fallback
+// Fingerprint content dipilih dari field yg tidak lazim di-edit user
+// (nilai numerik / ID posisi) supaya minor edit note/horizon tidak
+// mengubah identity.
+function stableItemKey(raw) {
+  if (!raw) return '';
+  const ts = raw._ts || 0;
+  const ticker = String(raw.ticker || '').trim().toUpperCase();
+  const tanggal = String(raw.tanggal || '').trim();
+  const firm = String(raw.firm || '').trim().toLowerCase();
+  const entry = String(raw.entry != null ? raw.entry : '').trim();
+  return `${ts}|${ticker}|${tanggal}|${firm}|${entry}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1203,8 +1263,31 @@ async function main() {
 
   // Fetch data
   const sheet = await fetchSheetRows();
+  const history = loadTrackerHistory();
   const ohlc = loadOhlc();
   const screening = loadScreening();
+
+  // ── Merge tracker-history.json (arsip kumulatif) ke sheet.items ──
+  // Sheet menang saat identity conflict — user tetap bisa koreksi rec
+  // dgn edit langsung di sheet (arsip diabaikan utk key ybs). Baris arsip
+  // yg TIDAK ada di sheet → di-append. Efek: setelah user wipe sheet tgl 1,
+  // build tetap bisa render historyList lengkap + derive state fresh utk
+  // rec aktif yg ter-arsip.
+  if (history.items.length) {
+    const sheetKeys = new Set((sheet.items || []).map(stableItemKey));
+    const historyOnly = history.items.filter(item => {
+      const k = stableItemKey(item);
+      return k && !sheetKeys.has(k);
+    });
+    console.log(`  ✓ Tracker history: sheet=${(sheet.items||[]).length}, archive=${history.items.length}, appendFromArchive=${historyOnly.length}`);
+    if (sheet.items) {
+      sheet.items = [...sheet.items, ...historyOnly];
+    } else {
+      sheet.items = historyOnly;
+    }
+  } else {
+    console.log('  ℹ tracker-history.json belum ada / kosong — build hanya dari sheet.');
+  }
 
   // ── Live overlay: inject virtual today candle ke ohlc in-memory ──
   // Supaya rec yg rilis hari ini bisa berpindah state PENDING → TRIGGERED /
@@ -1782,5 +1865,10 @@ if (require.main === module) {
     derivePosition, scoreValidity, buildAggregations,
     buildDailyEquity, buildSafetyNet, buildMarketBias, buildScoreBrackets,
     idOf,
+    // Shared helpers dipakai scripts/archive-tracker.js supaya logic
+    // fetch + identity dedup selalu sinkron dgn build pipeline.
+    fetchSheetRows, gvizTableToItems,
+    loadTrackerHistory, stableItemKey,
+    HISTORY_PATH,
   };
 }
