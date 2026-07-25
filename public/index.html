@@ -10184,7 +10184,20 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var item = e.target && e.target.closest && e.target.closest('#trMdetList .tr-mdet-item');
     if(item){
       var fid2 = item.getAttribute('data-firm-id');
-      if(fid2 && window.__TR_openFirm){ window.__TR_openFirm(fid2); }
+      if(fid2 && window.__TR_openFirm){
+        // Setelah user memilih sekuritas dari hasil pencarian, kembalikan
+        // list ke tampilan penuh (tanpa filter). Sebelumnya, kalau user
+        // ketik "bn" → klik BNI Sekuritas, input tetap terisi "bn" & list
+        // masih ke-filter, jadi sekuritas lain tidak terlihat sampai user
+        // menghapus input manual. Highlight item yg baru dipilih diurus
+        // oleh event 'tr-firm-open' (dispatch di __TR_openFirm).
+        var srch = $id('trMdetSearch');
+        if(srch && srch.value){
+          srch.value = '';
+          renderSidebar();
+        }
+        window.__TR_openFirm(fid2);
+      }
       return;
     }
   });
