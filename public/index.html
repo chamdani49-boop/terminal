@@ -3258,6 +3258,28 @@ body.tr-profile-open #tr-view-profile{display:block}
 /* Row: tabs kiri (scrollable) + sort tanggal kanan */
 .tr-pf-rec-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:4px;margin-bottom:8px;flex-wrap:wrap}
 .tr-pf-rec-tabs{margin:0;flex-wrap:wrap;flex:1 1 auto;min-width:0}
+/* Search kode saham utk panel Rekomendasi Sekuritas. Full-width row
+   di atas tab bar. text-transform:uppercase supaya user ketik lowercase
+   (bbri) langsung tampil BBRI. Placeholder retain casing normal
+   (via ::placeholder rule). Konsisten PC & HP. */
+.tr-pf-rec-search{margin:6px 0 10px}
+.tr-pf-rec-search input{
+  width:100%;
+  padding:9px 12px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-size:12.5px;
+  font-family:inherit;
+  outline:none;
+  transition:border-color .15s, box-shadow .15s;
+  text-transform:uppercase;
+  letter-spacing:.3px;
+}
+.tr-pf-rec-search input::placeholder{color:var(--text3);text-transform:none;letter-spacing:0}
+.tr-pf-rec-search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,40,217,.12)}
+@media(max-width:640px){.tr-pf-rec-search input{padding:8px 11px;font-size:12px}}
 .tr-pf-rec-sort{background:var(--card);border:1px solid var(--border);color:var(--text2);cursor:pointer;padding:6px 11px;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;transition:all .15s;display:inline-flex;align-items:center;gap:6px;letter-spacing:.2px;white-space:nowrap;flex-shrink:0}
 .tr-pf-rec-sort:hover{background:var(--bg2);color:var(--text);border-color:rgba(124,58,237,.4)}
 .tr-pf-rec-sort .arr{opacity:.5;font-size:10px;transition:transform .18s}
@@ -7078,6 +7100,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div><!-- /tr-pf-charts-row -->
 
         <div class="tr-sec-title" style="margin-top:14px;margin-bottom:6px">Rekomendasi Sekuritas</div>
+        <!-- Search kode saham. Berlaku di seluruh rekomendasi sekuritas
+             terpilih (semua bucket), TIDAK terikat date filter — sengaja
+             bypass supaya user bisa cari saham historis tanpa terpengaruh
+             range tgl yg sedang aktif di kalender di atas. -->
+        <div class="tr-pf-rec-search">
+          <input type="text" id="trPfRecSearch" placeholder="Cari kode saham (mis. BBRI, TLKM)..." autocomplete="off" spellcheck="false" aria-label="Cari kode saham di rekomendasi sekuritas ini">
+        </div>
         <div class="tr-tabs tr-pf-rec-tabs" id="trPfTabs">
           <button type="button" class="tr-tab active" data-tab="all">Semua (<span id="trPfTabAllN">0</span>)</button>
           <button type="button" class="tr-tab" data-tab="active">Aktif (<span id="trPfTabActN">0</span>)</button>
@@ -8437,6 +8466,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function renderRecList(firm, tab){
     var el = $id('trPfRecList'); if(!el) return;
 
+    // Baca query search kode saham. Kalau ada input, BYPASS date filter
+    // sesuai user rule: pencarian saham tidak terikat waktu — cari di
+    // seluruh riwayat rekomendasi firm terpilih (bukan cuma range tgl
+    // aktif). Empty query → behavior lama (date filter tetap applied).
+    var _qEl = $id('trPfRecSearch');
+    var _q = _qEl ? String(_qEl.value||'').trim().toUpperCase() : '';
+    var _searchActive = !!_q;
+
     // Kelompokkan rec ke buckets berlabel status
     var actList  = (firm.recsActive||[]).map(function(r){ return Object.assign({}, r, {_bucket:'active'}); });
     var pendList = (firm.recsPending||[]).map(function(r){ return Object.assign({}, r, {_bucket:'pending', state:'PENDING'}); });
@@ -8446,14 +8483,25 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // Apply date filter DULU sebelum hitung tab counter — supaya count ikut
     // update saat user pilih range tgl di kalender. Support single-day
     // (start===end) atau range (start<end) via helper _recInDateFilter.
+    // Search aktif → skip date filter (per user rule).
     function _byDate(arr){
+      if(_searchActive) return arr;      // pencarian bypass date filter
       if(!_dateFilter) return arr;
       return arr.filter(_recInDateFilter);
     }
-    var actListF  = _byDate(actList);
-    var pendListF = _byDate(pendList);
-    var missListF = _byDate(missList);
-    var histListF = _byDate(histList);
+    // Filter by ticker (case-insensitive substring). Empty query → no-op.
+    function _bySearch(arr){
+      if(!_searchActive) return arr;
+      return arr.filter(function(r){
+        return String(r.ticker||'').toUpperCase().indexOf(_q) >= 0;
+      });
+    }
+    function _apply(arr){ return _bySearch(_byDate(arr)); }
+
+    var actListF  = _apply(actList);
+    var pendListF = _apply(pendList);
+    var missListF = _apply(missList);
+    var histListF = _apply(histList);
     var histTP1F  = histListF.filter(_recHitTP1);
     var histTP2F  = histListF.filter(_recHitTP2);
     var histSlF   = histListF.filter(_recHitSL);
@@ -8486,7 +8534,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     list = _sortByDate(list, _recSortDir);
 
     if(!list.length){
-      el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:14px 4px;text-align:center">Belum ada rekomendasi di kategori ini.</div>';
+      var _emptyMsg = _searchActive
+        ? ('Tidak ada rekomendasi dengan kode saham "'+esc(_q)+'" di kategori ini.')
+        : 'Belum ada rekomendasi di kategori ini.';
+      el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:14px 4px;text-align:center">'+_emptyMsg+'</div>';
       return;
     }
     el.innerHTML = list.map(function(r, _idx){
@@ -8690,6 +8741,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     _calView = null;
     _calRecDates = null;
     updateDateBtnLabel();
+    // Reset search kode saham juga — supaya user tidak "terjebak" dgn
+    // query firm sebelumnya saat pindah ke firm lain.
+    var _srchRec = $id('trPfRecSearch'); if(_srchRec) _srchRec.value = '';
     // Tutup popup jika kebuka dari firm sebelumnya
     var popC = document.getElementById('trPfCalPopup');
     if(popC && !popC.hidden){ popC.hidden = true; var db=$id('trPfDateBtn'); if(db) db.setAttribute('aria-expanded','false'); }
@@ -8885,6 +8939,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
   window.addEventListener('resize', function(){
     var panel = document.getElementById('trMdetPanel');
     if(panel && panel.style.display !== 'none') scheduleDayChartRedraw();
+  });
+
+  // Delegated input handler utk search kode saham di panel Rekomendasi
+  // Sekuritas. Debounce 100ms supaya tidak re-render tiap keystroke.
+  // renderRecList sudah baca #trPfRecSearch value & filter by ticker.
+  var _tPfRecSrc = null;
+  document.addEventListener('input', function(e){
+    if(!e.target || e.target.id !== 'trPfRecSearch') return;
+    if(_tPfRecSrc) clearTimeout(_tPfRecSrc);
+    _tPfRecSrc = setTimeout(function(){
+      if(_currentFirm) renderRecList(_currentFirm, _currentTab);
+    }, 100);
   });
 
   // Realtime refresh — polling dashboard sudah update DATA.live tiap menit.
