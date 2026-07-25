@@ -8503,19 +8503,43 @@ body.is-mobile-device.force-desktop .pl-col-main{
     try{ document.body.style.overflow = ''; }catch(_){}
   }
 
-  // ── Cumulative Chart (Chart.js) ────────────────────
-  // Timeline & baseline logic (matches Overview Performa 30 Hari chart):
-  //   1. Range = _dateFilter (dari preset periode / calendar custom).
-  //      Kalau null → pakai full data (Semua Tanggal).
-  //   2. IHSG normalize ke tgl awal range (base 0% di leftmost) — bukan
-  //      lagi ke series30d[0]. Ini fix baseline agar IHSG vs firm bisa
-  //      dibandingkan sebagai "return sejak periode dimulai".
-  //   3. Firm cum tetap accumulate dari first trade dlm range (sudah 0
-  //      by nature). alignSeriesToDates isi 0 utk dates sebelum first
-  //      trade → visually ke-align dgn IHSG baseline 0%.
-  //   4. Timeline dates di-clip ke range juga → x-axis TIDAK melampaui
-  //      periode yg dipilih (mis. pilih "Juli 2026" tapi IHSG cover
-  //      Jun 25-Jul 25 → x-axis dulu bocor ke Jun; sekarang cuma Jul).
+  // Helper: ambil IHSG raw price series dari data.ihsg.series30d.
+  // Return array {date, close} ascending, di-clip ke [startIso, endIso].
+  // Empty kalau data tidak tersedia atau range di luar cover.
+  function getIhsgRawSeries(startIso, endIso){
+    var d = getData();
+    if(!d || !d.ihsg || !Array.isArray(d.ihsg.series30d) || !d.ihsg.series30d.length) return [];
+    var s = d.ihsg.series30d.slice().sort(function(a,b){
+      return String(a.date).localeCompare(String(b.date));
+    });
+    if(startIso) s = s.filter(function(pt){ return pt.date >= startIso; });
+    if(endIso)   s = s.filter(function(pt){ return pt.date <= endIso; });
+    return s.map(function(pt){ return { date: pt.date, close: +pt.close }; });
+  }
+
+  // ── Cumulative Chart (Chart.js) — INDEXED PRICE MODE ────────────
+  //
+  // Chart membandingkan return firm dgn pergerakan IHSG di skala HARGA
+  // yang sama (bukan lagi persentase). Konsepnya seperti "$100 invested"
+  // di analytics finansial:
+  //
+  //   - IHSG line = harga aktual IHSG (mis. 7,300 → 7,450 dst).
+  //   - FIRM line = kurva return firm ter-index ke harga IHSG awal.
+  //     Formula: firmPrice[t] = baseIhsg * (1 + firmCumReturn[t]/100)
+  //     Jadi firm dan IHSG mulai dari titik yang sama (base = IHSG close
+  //     di tgl awal periode), lalu firm tumbuh/turun sesuai return-nya.
+  //
+  // Contoh: base IHSG Jul 1 = 7,300. Firm cum return Jul 25 = +80%.
+  //         Firm virtual price Jul 25 = 7,300 × 1.80 = 13,140.
+  //         IHSG Jul 25 = 7,450 (naik ~2%).
+  //         → Chart terlihat: garis IHSG merangkak, garis firm melejit.
+  //
+  // Fallback: kalau IHSG tidak punya data di range (mis. user pilih
+  // periode di luar cover series30d), chart drop ke mode LAMA (Y-axis
+  // persentase, firm-only) supaya tetap informatif.
+  //
+  // Timeline: sama seperti sebelumnya — union firm exitDates + IHSG
+  // dates, di-clip ke _dateFilter range.
   function renderCumChart(firm){
     if(typeof Chart === 'undefined'){ return; }
     var ctx = $id('trPfCumChart'); if(!ctx) return;
@@ -8524,24 +8548,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var rangeStart = (_dateFilter && _dateFilter.start) || null;
     var rangeEnd   = (_dateFilter && _dateFilter.end)   || null;
 
-    var firmSeries = computeCumSeries(firm, _entryMode, _exitMode);
-    var ihsgSeries = computeIhsgCumSeries(rangeStart, rangeEnd);
+    var firmSeries    = computeCumSeries(firm, _entryMode, _exitMode);
+    var ihsgRawSeries = getIhsgRawSeries(rangeStart, rangeEnd);
+    var hasIhsg       = ihsgRawSeries.length > 0;
+    var baseIhsg      = hasIhsg ? ihsgRawSeries[0].close : null;
+    var baseIhsgDate  = hasIhsg ? ihsgRawSeries[0].date  : null;
 
-    // Union of dates: firm exit dates + IHSG dates. Clip ke range
-    // supaya x-axis fokus di periode yg dipilih user (jangan bocor ke
-    // luar preset).
+    // Union of dates: firm exit dates + IHSG dates. Clip ke range.
     var dateSet = {};
     firmSeries.forEach(function(p){
       if((!rangeStart || p.date >= rangeStart) && (!rangeEnd || p.date <= rangeEnd)){
         dateSet[p.date] = 1;
       }
     });
-    ihsgSeries.forEach(function(p){ dateSet[p.date]=1; });
+    ihsgRawSeries.forEach(function(p){ dateSet[p.date]=1; });
 
-    // Kalau range set tapi dateSet kosong (no data in range, mis. firm
-    // belum ada trade di bulan itu & IHSG tidak cover) → tampilkan
-    // boundaries range biar x-axis menunjukkan periode kosong (bukan
-    // canvas blank yg misleading).
+    // Kalau range set tapi dateSet kosong → tampilkan boundaries range
+    // biar x-axis menunjukkan periode kosong (bukan canvas blank).
     if(rangeStart && !Object.keys(dateSet).length){
       dateSet[rangeStart] = 1;
       if(rangeEnd && rangeEnd !== rangeStart) dateSet[rangeEnd] = 1;
@@ -8549,52 +8572,153 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     var dates = Object.keys(dateSet).sort();
 
-    var firmVals = alignSeriesToDates(firmSeries, dates).map(function(v){ return v==null?0:v; });
-    var ihsgVals = alignSeriesToDates(ihsgSeries, dates).map(function(v){ return v==null?0:v; });
+    // Firm cumulative % return aligned ke timeline (0 sebelum first trade).
+    var firmCums = alignSeriesToDates(firmSeries, dates).map(function(v){ return v==null?0:v; });
 
-    // Labels: tampilkan tgl setiap N step
+    // Build data untuk chart: PRICE mode kalau IHSG tersedia, else % mode.
+    var priceMode = hasIhsg && Number.isFinite(baseIhsg) && baseIhsg > 0;
+
+    var firmVals, ihsgVals;
+    if(priceMode){
+      // Firm virtual price = baseIhsg × (1 + cum/100)
+      firmVals = firmCums.map(function(pct){
+        return +(baseIhsg * (1 + pct/100)).toFixed(2);
+      });
+      // IHSG raw price aligned dgn forward-fill (kalau tgl weekend/libur
+      // tidak ada data, pakai close terakhir yg dikenal).
+      var ihsgMap = {};
+      ihsgRawSeries.forEach(function(p){ ihsgMap[p.date] = +p.close; });
+      var lastClose = baseIhsg;
+      ihsgVals = dates.map(function(d){
+        if(ihsgMap[d] != null) lastClose = ihsgMap[d];
+        return +lastClose.toFixed(2);
+      });
+    } else {
+      // Fallback: mode persentase (firm-only, IHSG hilang). Ini terjadi
+      // kalau user pilih periode di luar cover IHSG series30d.
+      firmVals = firmCums;
+      ihsgVals = [];
+    }
+
+    // Labels x-axis: tanggal setiap N step.
     var step = Math.max(1, Math.floor(dates.length/6));
     var labels = dates.map(function(d,i){ return (i%step===0 || i===dates.length-1) ? fmtShortDate(d) : ''; });
 
     var c = trColors();
     if(_cumChart){ try{ _cumChart.destroy(); }catch(_){} _cumChart=null; }
+
+    // Dataset label — sertakan info "base IHSG" ke firm supaya user
+    // paham chart-nya indexed, bukan raw price firm.
+    var firmLabel = firmShort(firm.name) + ' · ' + comboLabel();
+    if(priceMode) firmLabel += ' (indexed dari IHSG ' + baseIhsg.toLocaleString('id-ID') + ')';
+
+    var datasets = [
+      {
+        label: firmLabel,
+        data: firmVals,
+        borderColor: c.accent,
+        backgroundColor: c.accentBg,
+        fill: priceMode ? false : '+1',       // di price mode, jangan fill
+        tension: 0.28,
+        pointRadius: 0,
+        borderWidth: 2.5
+      }
+    ];
+    if(priceMode && ihsgVals.length){
+      datasets.push({
+        label: 'IHSG',
+        data: ihsgVals,
+        borderColor: c.red,
+        backgroundColor: 'transparent',
+        fill: false,
+        tension: 0.28,
+        pointRadius: 0,
+        borderWidth: 2,
+        borderDash: [4,3]
+      });
+    }
+
     _cumChart = new Chart(ctx, {
       type:'line',
-      data:{ labels:labels, datasets:[
-        { label: firmShort(firm.name)+' · '+comboLabel(), data: firmVals, borderColor:c.accent, backgroundColor:c.accentBg, fill:'+1', tension:0.28, pointRadius:0, borderWidth:2.5 },
-        { label:'IHSG', data: ihsgVals, borderColor:c.red, backgroundColor:'transparent', fill:false, tension:0.28, pointRadius:0, borderWidth:2, borderDash:[4,3] }
-      ]},
+      data:{ labels:labels, datasets: datasets },
       options:{
         responsive:true, maintainAspectRatio:false, animation:false,
-        plugins:{ legend:{display:false},
-          tooltip:{ mode:'index', intersect:false, backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1,
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            mode:'index', intersect:false,
+            backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1,
             callbacks:{
-              title:function(items){ if(!items||!items.length) return ''; var i=items[0].dataIndex; return dates[i]||items[0].label||''; },
-              label:function(it){ var y=it.parsed.y; return it.dataset.label+': '+(y>=0?'+':'')+(+y).toFixed(2)+'%'; }
-            } }
+              title:function(items){
+                if(!items||!items.length) return '';
+                var i=items[0].dataIndex;
+                return dates[i]||items[0].label||'';
+              },
+              label:function(it){
+                var y = it.parsed.y;
+                var idx = it.dataIndex;
+                if(priceMode){
+                  // Price mode: tampilkan harga + return% utk firm.
+                  var lbl = it.dataset.label.split(' · ')[0]; // strip mode
+                  var priceStr = (+y).toLocaleString('id-ID', {minimumFractionDigits:2, maximumFractionDigits:2});
+                  if(it.datasetIndex === 0){
+                    // Firm: sertakan return %
+                    var pct = firmCums[idx] || 0;
+                    return lbl + ': ' + priceStr + '  (' + (pct>=0?'+':'') + pct.toFixed(2) + '%)';
+                  } else {
+                    // IHSG
+                    return lbl + ': ' + priceStr;
+                  }
+                } else {
+                  // % mode
+                  return it.dataset.label + ': ' + (y>=0?'+':'') + (+y).toFixed(2) + '%';
+                }
+              },
+              // Footer note di price mode: baseline info.
+              footer: priceMode ? function(){
+                return 'Base: IHSG ' + baseIhsg.toLocaleString('id-ID')
+                     + ' pada ' + fmtShortDate(baseIhsgDate);
+              } : undefined
+            }
+          }
         },
         scales:{
-          x:{ grid:{display:false}, ticks:{ color:c.text3, font:{size:10, family:"'IBM Plex Mono',monospace"}, maxRotation:0, autoSkip:false } },
+          x:{
+            grid:{display:false},
+            ticks:{ color:c.text3, font:{size:10, family:"'IBM Plex Mono',monospace"}, maxRotation:0, autoSkip:false }
+          },
           y:{
             grid:{
-              // Baseline emphasis: garis Y=0 lebih tebal & warna tick
-              // (--text2, lebih menonjol dari grid lain) — jadi user
-              // langsung lihat "ini titik netral, di atas untung, di
-              // bawah rugi". Sama seperti Overview chart di Dashboard.
+              // Baseline emphasis: di % mode → highlight Y=0. Di price
+              // mode → highlight Y=baseIhsg (garis referensi harga awal).
               color: function(context){
-                if(context && context.tick && context.tick.value === 0) return c.tick;
+                if(!context || !context.tick) return c.grid;
+                var v = context.tick.value;
+                if(priceMode && baseIhsg != null){
+                  // Toleransi 0.5 karena tick auto-generate bisa 7300.05 dst
+                  if(Math.abs(v - baseIhsg) < 0.5) return c.tick;
+                } else if(v === 0){
+                  return c.tick;
+                }
                 return c.grid;
               },
               lineWidth: function(context){
-                if(context && context.tick && context.tick.value === 0) return 1.4;
+                if(!context || !context.tick) return 1;
+                var v = context.tick.value;
+                if(priceMode && baseIhsg != null){
+                  if(Math.abs(v - baseIhsg) < 0.5) return 1.4;
+                } else if(v === 0){
+                  return 1.4;
+                }
                 return 1;
               }
             },
             ticks:{
               color:c.tick,
               font:{size:10, family:"'IBM Plex Mono',monospace"},
-              // Format signed % (+80% / -10%) — mirror Dashboard chart.
-              callback:function(v){ return (v>=0?'+':'') + v + '%'; }
+              callback: priceMode
+                ? function(v){ return (+v).toLocaleString('id-ID', {maximumFractionDigits:0}); }
+                : function(v){ return (v>=0?'+':'') + v + '%'; }
             }
           }
         },
