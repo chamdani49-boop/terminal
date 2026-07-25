@@ -6182,7 +6182,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     <div class="tr-card-h">
       <div>
         <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
-        <div class="tr-card-desc">Return kumulatif per sekuritas · Top 8 by aktivitas</div>
+        <div class="tr-card-desc">Return kumulatif semua sekuritas · klik nama sekuritas di legenda untuk hide/show line</div>
       </div>
       <!-- IHSG stat chip: sekaligus reference benchmark utk konteks user.
            IHSG return magnitude jauh lebih kecil dari firm compound return
@@ -11584,18 +11584,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (kWSub) kWSub.textContent = wins + ' dari ' + total + ' rekomendasi';
   }
 
-  // Palet warna utk multi-firm chart. Dipilih vibrant + distinct
-  // (mirip gaya gambar referensi user) supaya banyak line tetap
-  // gampang dibedakan. Panjang max 8 firm.
+  // Palet warna utk multi-firm chart. Dipilih vibrant + distinct supaya
+  // banyak line tetap bisa dibedakan by eye. 32 warna: cukup untuk ~30
+  // sekuritas anggota IDX. Kalau firm lebih dari 32, di-modulo (repeat).
+  // Order: warna primer dulu (paling mudah dikenal) → tint variasi.
   var _CHART_PALETTE = [
-    '#38bdf8',  // sky-400
-    '#f97316',  // orange-500
-    '#22c55e',  // green-500
-    '#eab308',  // yellow-500
-    '#a78bfa',  // violet-400
-    '#ec4899',  // pink-500
-    '#22d3ee',  // cyan-400
-    '#f43f5e'   // rose-500
+    '#38bdf8', '#f97316', '#22c55e', '#eab308',
+    '#a78bfa', '#ec4899', '#22d3ee', '#f43f5e',
+    '#84cc16', '#06b6d4', '#f59e0b', '#8b5cf6',
+    '#14b8a6', '#f87171', '#fb923c', '#a3e635',
+    '#e879f9', '#60a5fa', '#4ade80', '#fbbf24',
+    '#c084fc', '#f472b6', '#34d399', '#67e8f9',
+    '#fdba74', '#bef264', '#f0abfc', '#93c5fd',
+    '#86efac', '#fde047', '#fca5a5', '#d8b4fe'
   ];
 
   // Compute daily cumulative equity untuk satu firm, di-align ke timeline.
@@ -11659,7 +11660,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var timeline = Object.keys(dateSet).sort();
     if (!timeline.length) return;
 
-    // Pick top 8 firms by canonical trades desc.
+    // Ambil SEMUA firm yg punya trade (canonical trades > 0), diurut
+    // desc by trades (dominan dulu). Tie-break by net desc.
+    // User bisa klik legend Chart.js untuk hide/show line individual
+    // → fokus ke subset firm sesuai kebutuhan.
     var firmsAll = Object.values(byFirm);
     var firmsRanked = firmsAll.map(function(f){
       var st = (window.TrackerStats && window.TrackerStats.compute)
@@ -11671,8 +11675,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         var tdiff = (b.stats.trades||0) - (a.stats.trades||0);
         if (tdiff !== 0) return tdiff;
         return (b.stats.net||0) - (a.stats.net||0);
-      })
-      .slice(0, 8);
+      });
 
     // IHSG stats untuk chip header (BUKAN di-plot sbg line di chart).
     // Alasan: magnitude return firm (sum-of-pnl 100+ trade → bisa +140%)
@@ -11714,22 +11717,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var card   = css.getPropertyValue('--card').trim() || '#ffffff';
     var redC   = css.getPropertyValue('--red').trim() || '#e11d48';
 
-    // Build datasets: 1 dataset per firm + IHSG di akhir.
+    // Build datasets: 1 dataset per firm. Line thickness & point size di-
+    // kurangi (dibanding sebelumnya) supaya chart dgn banyak firm (30+)
+    // tetap readable. Point marker tetap ada tapi kecil (2px) — hover
+    // tetap responsif (6px on hover). Top-3 firm sedikit lebih tebal
+    // supaya menonjol sbg "leader board" visual.
     var datasets = firmsRanked.map(function(x, i){
       var color = _CHART_PALETTE[i % _CHART_PALETTE.length];
       var name = String(x.firm.name || '').replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
+      var isTop = i < 3;
       return {
         label: name,
         data: _computeFirmDailyEquity(x.firm, timeline),
         borderColor: color,
         backgroundColor: 'transparent',
         fill: false,
-        tension: 0.4,           // smooth curve seperti gambar referensi
-        pointRadius: 3,         // titik marker terlihat
+        tension: 0.35,
+        pointRadius: isTop ? 2.5 : 2,
         pointHoverRadius: 6,
         pointBackgroundColor: color,
         pointBorderColor: color,
-        borderWidth: 2.2,
+        borderWidth: isTop ? 2.2 : 1.7,
         spanGaps: true
       };
     });
