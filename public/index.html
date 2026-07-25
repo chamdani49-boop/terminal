@@ -11905,9 +11905,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
           // menampilkan nama firm + warna + last% (lebih informatif).
           legend: { display: false },
           tooltip: {
-            mode: 'index', intersect: false,
+            // Mode 'nearest' → cuma tampilkan 1 titik terdekat cursor
+            // (bukan semua line sekaligus). Adopsi behavior tooltip
+            // seasonality di menu Pasar Live — reduce clutter saat
+            // banyak line overlap. Tooltip minimal: nama sekuritas +
+            // return% pada tgl di titik itu.
+            mode: 'nearest', intersect: false,
             backgroundColor: card, borderColor: border, borderWidth: 1,
-            titleColor: text2, bodyColor: text2,
+            titleColor: text2, bodyColor: text2, padding: 10,
             callbacks: {
               label: function(it){
                 var y = it.parsed.y;
@@ -11927,7 +11932,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
             ticks: { color: text2, font: { size: 10, family: "'IBM Plex Mono',monospace" }, callback: function(v){ return (v>=0?'+':'') + v + '%'; } }
           }
         },
-        interaction: { mode: 'index', intersect: false }
+        // Interaction 'nearest' + intersect:false → hover di area chart
+        // pakai proximity (bukan strict on-line), tooltip pop up di line
+        // yg vertically/horizontally paling dekat cursor.
+        interaction: { mode: 'nearest', intersect: false }
       }
     });
   }
