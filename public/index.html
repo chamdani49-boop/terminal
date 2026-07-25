@@ -7538,9 +7538,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var cb=r.closedBy, tp=r.tpHits||[];
       if(cb==='TP2'||tp.indexOf('TP2')>=0) return {cls:'st-tp',lbl:'🏆 TP2'};
       if(cb==='TP1') return {cls:'st-tp',lbl:'🎯 TP1'};
-      // SL_TRAIL treated sbg SL biasa (LOSS) — icon 🛡 dipertahankan sbg
-      // konteks "TP1 sempat tersentuh" tapi cls merah.
-      if(cb==='SL_TRAIL') return {cls:'st-sl',lbl:'🛡 SL Trail'};
+      // TP1 lock rule: SL_TRAIL (kena SL setelah TP1) tetap WIN — TP1
+      // sudah dianggap tercapai. Cls green tp, icon 🛡 sbg konteks bahwa
+      // exit fisik akhirnya di trailed stop, bukan di TP1 langsung.
+      if(cb==='SL_TRAIL') return {cls:'st-tp',lbl:'🛡 SL Trail'};
       if(cb==='SL') return {cls:'st-sl',lbl:'✕ SL'};
       // Rec kadaluarsa tanpa pernah triggered → label KADALUARSA supaya
       // user tahu ini bukan "posisi selesai" tapi rekom gagal terisi.
@@ -7774,6 +7775,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var tp2v  = +rec.tp2;
     var tp2   = (Number.isFinite(tp2v) && tp2v > 0 && tp2v !== +rec.tp1) ? tp2v : null;
     var sl    = (Number.isFinite(+rec.sl)    && +rec.sl    > 0) ? +rec.sl    : null;
+    // TP1 lock rule: kalau backend sudah rekam tpHits mengandung TP1/TP2,
+    // rec dihitung sudah kena TP1/TP2 — walaupun live sekarang balik ke
+    // area SL. Ini menghindari live "SL_LIVE" override yg keliru untuk
+    // rec SL_TRAIL scenario (TP1 sudah tersentuh sebelumnya).
+    var tpHits = Array.isArray(rec.tpHits) ? rec.tpHits : [];
+    if (tpHits.indexOf('TP2') >= 0) return 'TP2_LIVE';
+    if (tpHits.indexOf('TP1') >= 0) return 'TP1_LIVE';
     // Entry touched: backend flag OR live-derived (live sudah di/lewat entry)
     var entryTouched = !!rec.didTouchEntry;
     if (!entryTouched && entry != null) {
@@ -8472,11 +8480,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(isHistory){
       var cb = r.closedBy; var tp = r.tpHits||[];
       if(cb==='TP2' || tp.indexOf('TP2')>=0) return {cls:'tr-rec-o tp', lbl:'🏆 Kena TP2'};
-      // SL_TRAIL: TP1 sempat tersentuh tapi harga balik ke SL — treat sbg SL
-      // biasa (LOSS). Check DULU sebelum cek tp.indexOf('TP1') karena backend
-      // ikut set tpHits=['TP1'] utk rec SL_TRAIL — kalau tidak dicek dulu,
-      // rec SL_TRAIL akan salah masuk cabang "Kena TP1".
-      if(cb==='SL_TRAIL') return {cls:'tr-rec-o sl', lbl:'🛡 SL Trail'};
+      // TP1 lock rule: SL_TRAIL tetap WIN — TP1 sudah dianggap tercapai.
+      // Cls green tp, icon 🛡 sbg konteks bahwa exit fisik di trailed stop.
+      if(cb==='SL_TRAIL') return {cls:'tr-rec-o tp', lbl:'🛡 SL Trail'};
       if(cb==='TP1' || tp.indexOf('TP1')>=0) return {cls:'tr-rec-o tp', lbl:'🎯 Kena TP1'};
       if(cb==='SL') return {cls:'tr-rec-o sl', lbl:'✕ Kena SL'};
       // Rec kadaluarsa TANPA pernah triggered → khusus "KADALUARSA" merah,
@@ -8797,27 +8803,23 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(pop.hidden) openCalPopup(); else closeCalPopup();
   }
 
-  // Hit TP1 utk tab counter: hanya rec yg closed via TP1 atau TP2 (bukan
-  // SL_TRAIL). Meskipun SL_TRAIL secara fisik sempat menyentuh TP1, exit
-  // akhirnya di area SL — dikelompokkan ke tab SL, bukan TP1.
+  // Hit TP1 utk tab counter: sekali TP1 tersentuh (via tpHits atau
+  // closedBy='TP1'/'TP2'/'SL_TRAIL'), rec dihitung WIN di TP1 tab.
+  // TP1 lock rule: SL_TRAIL termasuk TP1 hit (harga sempat sentuh TP1
+  // sebelum di-trail turun ke SL area — WIN karena TP1 sudah tercapai).
   function _recHitTP1(r){
     var hits = r && r.tpHits || [];
-    var cb = String((r && r.closedBy)||'');
-    if (cb === 'SL_TRAIL') return false;
-    return hits.indexOf('TP1') >= 0 || cb === 'TP1' || cb === 'TP2';
+    return hits.indexOf('TP1') >= 0 || String(r.closedBy||'')==='TP1' || String(r.closedBy||'')==='SL_TRAIL';
   }
   function _recHitTP2(r){
     var hits = r && r.tpHits || [];
     return hits.indexOf('TP2') >= 0 || String(r.closedBy||'')==='TP2';
   }
-  // Kena SL = SL biasa (SL sebelum TP1) + SL_TRAIL (TP1 sempat tersentuh
-  // lalu balik ke SL). Per aturan "gak perlu SL trail" — dua-duanya
-  // dihitung LOSS. Backend masih membedakan closedBy='SL' vs 'SL_TRAIL'
-  // utk keperluan display (badge/tooltip), tapi stats tab counter
-  // menggabungkan keduanya.
+  // SL murni = kena stop-loss SEBELUM TP1 (tidak termasuk SL_TRAIL yg
+  // sebenernya WIN karena TP1 sudah kena duluan lalu di-trail ke entry).
+  // TP1 lock rule: SL_TRAIL sudah masuk _recHitTP1 sbg WIN.
   function _recHitSL(r){
-    var cb = r && String(r.closedBy||'');
-    return cb === 'SL' || cb === 'SL_TRAIL';
+    return r && String(r.closedBy||'') === 'SL';
   }
   // Expired = rec sudah closed tapi TIDAK menyentuh TP maupun SL sampai
   // horizon habis. Backend simpan dua varian: 'EXPIRED' (rec triggered
@@ -11127,11 +11129,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
       case 'RUNNING_MISSED': return { icon: '🚀', label: 'Harga Lari',          cls: 'missed'  };
       case 'TRIGGERED':      return { icon: '●',  label: 'Entry Tercapai',      cls: 'active'  };
       case 'TP_HIT':
-        // SL_TRAIL: TP1 sempat tersentuh lalu harga balik ke SL area. Per
-        // aturan "gak perlu SL trail", treat sbg SL biasa (LOSS). Icon 🛡
-        // tetap dipakai supaya user tahu ada history TP1-hit, tapi cls='sl'
-        // (merah) & label tanpa klaim "WIN".
-        if (closedBy === 'SL_TRAIL')     return { icon: '🛡', label: 'SL Trailing', cls: 'sl' };
+        // TP1 lock rule: SL_TRAIL (TP1 hit lalu balik ke SL area) tetap
+        // dihitung WIN — TP1 sudah tersentuh, dianggap sukses. Label
+        // "SL Trailing (WIN)" supaya user tau exit fisik di trailed stop
+        // walau WIN. Cls tp (green).
+        if (closedBy === 'SL_TRAIL')     return { icon: '🛡', label: 'SL Trailing (WIN)', cls: 'tp' };
         if (tpHits.indexOf('TP2') >= 0)  return { icon: '🏆', label: 'Kena TP2', cls: 'tp'    };
         return { icon: '🎯', label: 'Kena TP1', cls: 'tp' };
       case 'SL_HIT':         return { icon: '✕',  label: 'Kena SL',             cls: 'sl'      };
@@ -12986,13 +12988,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var winCount = history.filter(function(r){
       if(!isRecent(r.closedDate)) return false;
       var by = String(r.closedBy||'').toUpperCase();
-      // SL_TRAIL tidak lagi WIN — treat sbg SL biasa (LOSS)
-      return by==='TP1' || by==='TP2';
+      // TP1 lock rule: SL_TRAIL tetap WIN (TP1 sempat tersentuh)
+      return by==='TP1' || by==='TP2' || by==='SL_TRAIL';
     }).length;
     var lossCount = history.filter(function(r){
-      if(!isRecent(r.closedDate)) return false;
-      var by = String(r.closedBy||'').toUpperCase();
-      return by==='SL' || by==='SL_TRAIL';
+      // SL murni (belum TP1). SL_TRAIL sudah masuk winCount.
+      return isRecent(r.closedDate) && String(r.closedBy||'').toUpperCase()==='SL';
     }).length;
     if(actNew)  actNew.textContent = newCount;
     if(actWin){
@@ -13688,10 +13689,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return String(name).replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
   }
   function statusOfRow(bucket, r){
-    // Backend closed status wins dulu (definitif).
+    // Backend closed status wins dulu (definitif). TP1 lock rule:
+    // SL_TRAIL → TP (WIN), SL murni → SL (LOSS).
     var by = String(r.closedBy||'').toUpperCase();
-    if(by === 'TP' || by === 'TP1' || by === 'TP2') return 'TP';
-    if(by === 'SL' || by === 'SL_TRAIL') return 'SL';
+    if(by === 'TP' || by === 'TP1' || by === 'TP2' || by === 'SL_TRAIL') return 'TP';
+    if(by === 'SL') return 'SL';
     if(by === 'EXPIRED') return 'EXP';
     // Live-status override (TENTATIVE) — konsisten dgn renderRecList Analis
     // firm listing. Rec pending yg live sudah touch entry → AKTIF; rec
@@ -14392,16 +14394,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function statusOf(r){
     // Backend closed status wins (definitif) — check dulu sebelum live
     // override. closedBy dari backend: 'TP1' | 'TP2' | 'SL' | 'SL_TRAIL' |
-    // 'EXPIRED' | 'EXPIRED_UNFILLED'. Universe rec closed = 4 kategori:
-    //   - TP1 (kena TP1 utk rec tanpa TP2)  → 'TP' WIN
-    //   - TP2 (kena TP2 utk rec dgn TP2)     → 'TP' WIN
-    //   - SL biasa (kena SL sebelum TP1)     → 'SL' LOSS
-    //   - EXPIRED (habis horizon tanpa hit)  → 'EXPIRED' NETRAL
-    // SL_TRAIL (kena SL setelah TP1 sempat tersentuh) tidak diperlakukan
-    // khusus lagi → di-remap ke 'SL' (LOSS), konsisten dgn exit final.
+    // 'EXPIRED' | 'EXPIRED_UNFILLED'. TP1 LOCK RULE: sekali TP1 tersentuh,
+    // rec dihitung TP1 WIN — termasuk SL_TRAIL (kena SL setelah TP1). Ini
+    // rule bisnis utama utk winrate & return: analis yg berhasil sentuh
+    // TP1 dianggap sukses walaupun exit fisik akhirnya di trailed stop.
+    // Universe rec closed:
+    //   - TP1 / TP2 / SL_TRAIL              → 'TP' WIN (TP1 lock)
+    //   - SL murni (kena SL sebelum TP1)    → 'SL' LOSS
+    //   - EXPIRED (habis horizon tanpa hit) → 'EXPIRED' NETRAL
     var cb = String(r.closedBy || '');
-    if (cb === 'TP1' || cb === 'TP2') return 'TP';
-    if (cb === 'SL' || cb === 'SL_TRAIL') return 'SL';
+    if (cb === 'TP1' || cb === 'TP2' || cb === 'SL_TRAIL') return 'TP';
+    if (cb === 'SL') return 'SL';
     if (cb === 'EXPIRED' || cb === 'EXPIRED_UNFILLED') return 'EXPIRED';
     // Live-status override — antara 2 backend rebuild, harga live bisa
     // sudah cross entry/TP/SL. Konsisten dgn renderRecList firm listing.
@@ -15406,12 +15409,12 @@ window._attachCandleTooltip = function(chart, series, container, candles){
   }
   function statusOfRec(r){
     // closedBy dari backend: 'TP1' | 'TP2' | 'SL' | 'SL_TRAIL' | 'EXPIRED'
-    // | 'EXPIRED_UNFILLED'. Universe closed = TP1/TP2 (WIN), SL biasa +
-    // SL_TRAIL (LOSS), EXPIRED (NETRAL). SL_TRAIL tidak lagi WIN — di-remap
-    // ke 'SL' konsisten dgn statusOf() di menu Analis.
+    // | 'EXPIRED_UNFILLED'. TP1 lock rule (sinkron dgn statusOf menu
+    // Analis): SL_TRAIL (kena SL setelah TP1) → 'TP' WIN. SL murni
+    // (kena SL sebelum TP1) → 'SL' LOSS.
     var cb = String(r.closedBy || '');
-    if (cb === 'TP1' || cb === 'TP2') return 'TP';
-    if (cb === 'SL' || cb === 'SL_TRAIL') return 'SL';
+    if (cb === 'TP1' || cb === 'TP2' || cb === 'SL_TRAIL') return 'TP';
+    if (cb === 'SL') return 'SL';
     if (cb === 'EXPIRED' || cb === 'EXPIRED_UNFILLED') return 'EXPIRED';
     // Live-status override (sinkron dgn statusOf di menu Analis)
     if (typeof window.__TR_liveStatusOverride === 'function') {
@@ -15856,17 +15859,18 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     // sudah ada di zona chip labels + level cards di bawah chart.
 
     // Marker exit kalau rec sudah closed. Backend simpan closedBy sebagai
-    // 'TP1'/'TP2'/'SL'/'SL_TRAIL'/'EXPIRED'/'EXPIRED_UNFILLED'. Klasifikasi:
-    //   - TP1 / TP2         → green arrowUp (WIN)
-    //   - SL / SL_TRAIL     → red arrowDown (LOSS — SL_TRAIL treated as SL biasa)
-    //   - EXPIRED           → gray circle (NETRAL)
-    // Text = closedBy asli (mis. 'TP1', 'SL Trail') supaya user langsung tahu
-    // jenis exit-nya.
+    // 'TP1'/'TP2'/'SL'/'SL_TRAIL'/'EXPIRED'/'EXPIRED_UNFILLED'. TP1 lock
+    // rule utk marker:
+    //   - TP1 / TP2 / SL_TRAIL → green arrowUp (WIN — TP1 sempat tersentuh)
+    //   - SL murni             → red arrowDown (LOSS)
+    //   - EXPIRED              → gray circle (NETRAL)
+    // Text = closedBy asli (mis. 'TP1', 'SL Trail') supaya user langsung
+    // tahu jenis exit fisik-nya (untuk konteks) meski status WIN.
     if (rec.exitDate && Number.isFinite(+rec.exitPrice) && +rec.exitPrice > 0){
       try {
         var closedBy = String(rec.closedBy || '').toUpperCase();
-        var isWinExit  = closedBy === 'TP1' || closedBy === 'TP2';
-        var isLossExit = closedBy === 'SL'  || closedBy === 'SL_TRAIL';
+        var isWinExit  = closedBy === 'TP1' || closedBy === 'TP2' || closedBy === 'SL_TRAIL';
+        var isLossExit = closedBy === 'SL';
         _series.setMarkers([{
           time: rec.exitDate,
           position: isWinExit ? 'aboveBar' : (isLossExit ? 'belowBar' : 'aboveBar'),
@@ -15951,14 +15955,14 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     // level → HIT badge di level card ikut nyala.
     var _liveOv = (typeof window.__TR_liveStatusOverride === 'function')
                   ? window.__TR_liveStatusOverride(rec) : null;
-    var entryTouched = !!rec.didTouchEntry || _liveOv != null;   // any override → entry sudah touched
+    var entryTouched = !!rec.didTouchEntry || _liveOv != null;
+    // TP1 lock rule: TP1 hit termasuk SL_TRAIL (harga sempat sentuh TP1
+    // lalu balik ke SL). SL hit = SL murni saja (SL_TRAIL bukan LOSS).
     var isTP1Hit = tpHits.indexOf('TP1') >= 0
                    || closedBy === 'TP1' || closedBy === 'TP2' || closedBy === 'SL_TRAIL'
                    || _liveOv === 'TP1_LIVE' || _liveOv === 'TP2_LIVE';
     var isTP2Hit = tpHits.indexOf('TP2') >= 0 || closedBy === 'TP2' || _liveOv === 'TP2_LIVE';
-    // SL hit: backend closed via SL/SL_TRAIL, atau live sudah lewat SL.
-    // SL_TRAIL treated sbg SL biasa (per aturan gak perlu SL trail).
-    var isSLHit  = closedBy === 'SL' || closedBy === 'SL_TRAIL' || _liveOv === 'SL_LIVE';
+    var isSLHit  = closedBy === 'SL' || _liveOv === 'SL_LIVE';   // SL_TRAIL bukan kena SL asli
     var isTrailedAtEntry = closedBy === 'SL_TRAIL';  // exit di entry setelah TP1
 
     var entryPrice = +rec.entry;
