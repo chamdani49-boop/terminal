@@ -12926,6 +12926,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _recsByTicker = {};   // { TICKER: [rec...] }
   var _tickers = [];        // sorted list by rec count
   var _current = null;      // active ticker
+  // _lastTvTicker: ticker yg terakhir sudah dirender ke TradingView widget.
+  // Dipakai switchTicker() sebagai guard supaya widget TIDAK dibongkar
+  // & iframe TradingView TIDAK direload tiap kali data pipeline (tracker.json
+  // poll) memicu renderAnalisis → switchTicker(ticker yg sama). Rebuild
+  // widget berat (TLS handshake ke s3.tradingview.com, fetch config, render
+  // candle) → user melihat chart "refresh sendiri" & halaman terasa lemot.
+  var _lastTvTicker = null;
 
   var _consDonut = null;    // Chart.js donut (widget status di kanan chart)
   var _searchList = [];     // hasil filter search saham yg sedang tampil
@@ -13581,7 +13588,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
     renderKpiStrip(k);
     renderStatusWidget(ticker, recs, k);
     renderRecTable(recs);
-    renderTvChart(ticker);
+    // Guard: rebuild TradingView widget HANYA kalau ticker berubah. Tanpa
+    // guard ini, tiap kali data pipeline refresh tracker.json (renderAnalisis
+    // → switchTicker dgn ticker yg sama), iframe TV akan direload dari
+    // s3.tradingview.com — user merasakan chart "refresh sendiri" & halaman
+    // lemot. Bagian lain (Hero/KPI/StatusWidget/RecTable) tetap re-render
+    // supaya data terbaru (rec baru masuk, status berubah) tetap ke-update.
+    // Theme toggle listener memanggil renderTvChart(_current) langsung untuk
+    // force rebuild saat ganti dark/light.
+    if (_lastTvTicker !== ticker){
+      renderTvChart(ticker);
+      _lastTvTicker = ticker;
+    }
     try { localStorage.setItem('tr_anl_ticker', ticker); } catch(_){}
   }
 
