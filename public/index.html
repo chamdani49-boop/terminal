@@ -12143,7 +12143,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // Periodik refresh chip IHSG saat period live (30D / MTD / bulan
   // berjalan tahun ini / tahun berjalan). Untuk period historikal
-  // (bulan/tahun lalu), nilai statis dari series → tidak perlu refresh.
+  // (bulan/tahun lalu), nilai statis → tidak perlu refresh.
+  //
+  // Data source aligned dgn updateChart():
+  //   30D → series30d filtered (daily)
+  //   Lainnya (live) → price_history monthly via _buildIhsgFallbackFromMonthly
   setInterval(function(){
     var d = window.__TR_getData && window.__TR_getData();
     if (!d) return;
@@ -12155,12 +12159,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
                      && _chartPeriod.year === today.getUTCFullYear()
                      && _chartPeriod.month === today.getUTCMonth());
     if (!isLive) return;
-    // Filter series sesuai period sebelum update chip.
-    var allDates = ihsgS.map(function(s){ return s.date; }).sort();
-    var range = _getPeriodRange(_chartPeriod, allDates[0], allDates[allDates.length-1]);
-    var filtered = ihsgS;
-    if (range){
-      filtered = ihsgS.filter(function(s){ return s && s.date >= range.start && s.date <= range.end; });
+    var filtered;
+    if (_chartPeriod.type === '30d'){
+      var allDates = ihsgS.map(function(s){ return s.date; }).sort();
+      var range = _getPeriodRange(_chartPeriod, allDates[0], allDates[allDates.length-1]);
+      filtered = range
+        ? ihsgS.filter(function(s){ return s && s.date >= range.start && s.date <= range.end; })
+        : ihsgS;
+    } else {
+      filtered = _buildIhsgFallbackFromMonthly(_chartPeriod);
     }
     _updateIhsgChip(filtered, true);
   }, 15000);
@@ -12361,9 +12368,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
       }
       var rankEl = $('trChartRankList');
       if (rankEl) rankEl.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:12px 6px;text-align:center;line-height:1.4">Belum ada data untuk periode ini.<br>Chart akan terisi seiring data terkumpul.</div>';
-      // IHSG chip: fallback ke price_history monthly kalau daily
-      // series30d tidak cover period (mis. bulan-bulan lama).
-      var fallbackIhsg = _buildIhsgFallbackFromMonthly(_chartPeriod);
+      // IHSG chip tetap tampil: pakai price_history monthly (untuk non-30D)
+      // atau series30d filter (untuk 30D — meski jarang trigger empty timeline).
+      var fallbackIhsg;
+      if (_chartPeriod.type === '30d'){
+        fallbackIhsg = ihsgSeries.filter(function(s){
+          return s && s.date >= (range?range.start:'') && s.date <= (range?range.end:'');
+        });
+      } else {
+        fallbackIhsg = _buildIhsgFallbackFromMonthly(_chartPeriod);
+      }
       _updateIhsgChip(fallbackIhsg, false);
       return;
     }
@@ -12393,16 +12407,32 @@ body.is-mobile-device.force-desktop .pl-col-main{
       x.color = _CHART_PALETTE[i % _CHART_PALETTE.length];
     });
 
-    // IHSG chip: filter series sesuai period aktif. Live current
-    // (getStatsMerged) HANYA dipakai kalau period ends today (30D, MTD,
-    // atau tahun berjalan). Period historikal → nilai statis.
-    var filteredIhsg = range
-      ? ihsgSeries.filter(function(s){ return s && s.date >= range.start && s.date <= range.end; })
-      : ihsgSeries;
-    // Fallback: kalau ihsg.series30d tidak cover period (mis. user pilih
-    // bulan lama), pakai DATA.price_history monthly dari dashboard.
-    if (!filteredIhsg.length){
+    // IHSG chip data source policy:
+    //   - '30D' → pakai ihsg.series30d (rolling 30 hari daily). Return
+    //             dihitung sendiri (first close → last close atau live).
+    //   - 'mtd', 'month', 'year' → SELALU pakai price_history monthly
+    //             (dari dashboard, ~10 tahun history). Sesuai pattern
+    //             yg dipakai seasonality di Pasar Live — end-of-month
+    //             close akurat, konvensi MoM standar.
+    //
+    // Ini fix issue: series30d cuma cover 30 hari terakhir, jadi pilih
+    // "Juni 2026" atau bulan lama sebelumnya hasilkan angka salah karena
+    // data awal bulan hilang. price_history punya row per bulan (end of
+    // month close), jadi MoM/YTD/etc di-compute akurat.
+    var filteredIhsg;
+    if (_chartPeriod.type === '30d'){
+      filteredIhsg = range
+        ? ihsgSeries.filter(function(s){ return s && s.date >= range.start && s.date <= range.end; })
+        : ihsgSeries;
+    } else {
       filteredIhsg = _buildIhsgFallbackFromMonthly(_chartPeriod);
+      // Ultimate fallback (mis. price_history missing / kode IHSG tak ada):
+      // balik ke series30d filter biar chip tidak kosong sama sekali.
+      if (!filteredIhsg.length){
+        filteredIhsg = range
+          ? ihsgSeries.filter(function(s){ return s && s.date >= range.start && s.date <= range.end; })
+          : ihsgSeries;
+      }
     }
     var todayCheck = new Date();
     var isLivePeriod = _chartPeriod.type === '30d' || _chartPeriod.type === 'mtd'
