@@ -13426,6 +13426,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
             }
           },
           y: {
+            // Position kanan — user request. Sebelah kiri chart jadi
+            // punya ruang lebih untuk data awal periode (label X paling
+            // kiri tidak lagi berdempetan dgn Y-axis labels).
+            position: 'right',
             grid: { color: border },
             ticks: { color: text2, font: { size: 10, family: "'IBM Plex Mono',monospace" }, callback: function(v){ return (v>=0?'+':'') + v + '%'; } }
           }
