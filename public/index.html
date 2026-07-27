@@ -32,7 +32,7 @@
   //   window.__ES_BUILD_VERSION
   // Kalau nilai-nya bukan versi terbaru yg diharapkan, artinya browser
   // masih load HTML lama (cache issue).
-  window.__ES_BUILD_VERSION = '2026-07-27-fresh-recs-limit';
+  window.__ES_BUILD_VERSION = '2026-07-27-fix-null-openpx';
 
   // Set theme as early as possible to prevent flash of wrong theme.
   (function() {
@@ -20091,17 +20091,34 @@ function _startLiveFeedPolling() {
       : price;
     var ts = Math.floor(new Date(todayStr + 'T00:00:00Z').getTime() / 1000);
 
-    // Update running max/min dgn snapshot terbaru & ambil range hasil merge.
-    var idSt = _touchIntradayLive(rec.ticker, price, todayStr);
-    // Virtual candle high/low = intraday observation SAJA (tidak include
-    // openEst). Alasan: `openEst = yesterday's close` sering GAP dari
-    // today's actual open (open bisa berbeda jauh dari close-kemarin).
-    // Kalau kita paksa include openEst dalam range, false-positive touch
-    // sering muncul (kasus BRIS original: yesterday close 1815 di bawah
-    // entry 1820 → dianggap ter-cross padahal today's actual price path
-    // mungkin start di 1830 langsung, tidak pernah touch 1820).
-    var hi = idSt ? idSt.high : price;
-    var lo = idSt ? idSt.low  : price;
+    // ── Candle high/low: pakai backend `intraday_*` DIRECT (source of truth) ──
+    // Sebelumnya coba pakai __TR_intradayLive (running max/min in-memory
+    // frontend, 60s granularity via live poll). Tapi ada race condition:
+    // kalau first-call terjadi sebelum DATA.live[t].intraday_* di-populated
+    // dari data.json (mis. saat cache-fast-boot dari localStorage yg stale),
+    // seed=null → init dgn cuma `price` snapshot. Kalau kebetulan snapshot
+    // itu adalah harga BELOW entry (dari cache old build hari ini yg
+    // capture dip momentary), __TR_intradayLive.low salah ter-track di
+    // bawah entry → TRIGGER SALAH.
+    //
+    // Solusi: DIRECT dari DATA.live[t].intraday_low/high (build-data.js
+    // akumulasi 5-min granularity, persistent). Merge dgn `price` sekarang.
+    // Fallback: single-point kalau intraday belum ter-akumulasi (before
+    // backend rebuild pertama hari ini). Trade-off: kehilangan resolusi
+    // 60s → 5-min. Acceptable krn EOD Yahoo OHLC final revalidate anyway.
+    var hi, lo;
+    var lvHi = +lv.intraday_high, lvLo = +lv.intraday_low;
+    if (lv.intraday_date === todayStr
+        && Number.isFinite(lvHi) && lvHi > 0
+        && Number.isFinite(lvLo) && lvLo > 0) {
+      hi = Math.max(lvHi, price);
+      lo = Math.min(lvLo, price);
+    } else {
+      // Fallback single-point: high = low = current price. Aman utk
+      // trigger detection — tidak span palsu dari close-kemarin.
+      hi = price;
+      lo = price;
+    }
 
     return {
       ts: ts,
@@ -20172,29 +20189,31 @@ function _startLiveFeedPolling() {
     //    865-875 → old check `low ≤ 880` selalu TRUE karena low ≤ open ≤
     //    entry → salah TRIGGERED. New check `high ≥ 880` FALSE → correct
     //    stay PENDING).
-    var publishRef = Number.isFinite(+rec.openPriceAtPublish) ? +rec.openPriceAtPublish : open;
+    // CRITICAL: pakai `> 0` guard, bukan cuma `Number.isFinite`. Karena
+    // `+null` dan `+undefined` = NaN dan 0 masing-masing — `isFinite(0)` =
+    // true, jadi rec dgn `openPriceAtPublish=null` (semua rec fresh sblm
+    // backend rebuild) SALAH lolos check. Bug lama: publishRef jadi 0,
+    // isLimitDirection = entry <= 0 = FALSE → STOP → touched = high >=
+    // entry = TRUE walau harga tidak pernah touch entry. Contoh EMAS:
+    // entry=6100, current=6200, intraday_high=6225 → touched=TRUE (salah).
+    var _hasValidPublishPrice = Number.isFinite(+rec.openPriceAtPublish)
+                                && +rec.openPriceAtPublish > 0;
+    var publishRef = _hasValidPublishPrice ? +rec.openPriceAtPublish : open;
     var isLimitDirection = isBuy ? (entry <= publishRef) : (entry >= publishRef);
 
     // ── FRESH SAME-DAY REC — direction inference unreliable ──────────
     // Kalau rec rilis hari ini WIB DAN `openPriceAtPublish` belum di-set
-    // backend, `publishRef` fallback ke `candle.open = openEst = close
-    // kemarin`. Ini bisa misclassify LIMIT ↔ STOP kalau `entry` posisi-nya
-    // antara close-kemarin dan harga sekarang (kasus BRIS: entry 1820,
-    // close-kemarin 1815, harga 1845 → openEst=1815<entry=1820 → salah
-    // classified sbg BUY STOP → touched=high≥entry=TRUE walau harga real
-    // tidak pernah dip ke entry).
+    // backend (belum ada bar historis sebelum today), pakai LIMIT-style
+    // semantic (match user's mental model):
+    //   BUY entry X → touched saat ada observed price ≤ X (dip/fill)
+    //   SELL entry X → touched saat ada observed price ≥ X (rally/fill)
     //
-    // FIX: untuk rec fresh (openDate === today WIB), pakai touch detection
-    // BERBASIS RANGE — unambiguous utk kedua LIMIT & STOP:
-    //   touched = (low ≤ entry ≤ high)
-    // Semantic: harga pernah crossing level entry pada sesi berjalan (dari
-    // sisi manapun). Ini bekerja karena __TR_intradayLive sekarang track
-    // running max/min sesungguhnya, jadi range = real observed intraday.
-    // Rec yg lebih tua tetap pakai direction-inference asli (publishBar =
-    // real historical OHLC, direction jelas).
+    // Bug yang sudah difix: kondisi `!Number.isFinite(+rec.openPriceAtPublish)`
+    // salah karena `+null=0` isFinite → false negative. Sekarang pakai
+    // `_hasValidPublishPrice` yg cek > 0.
     var _todayWibIsoLocal = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
     var isFreshSameDayRec = rec.openDate === _todayWibIsoLocal
-                            && !Number.isFinite(+rec.openPriceAtPublish);
+                            && !_hasValidPublishPrice;
 
     // ── PENDING / RUNNING_MISSED: cek touch entry ──
     if (state === 'PENDING' || state === 'RUNNING_MISSED'){
