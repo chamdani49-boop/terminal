@@ -4622,6 +4622,11 @@ body.tr-profile-open .tr-subpane{display:none !important}
    Layout: tombol + label pesan status di sebelahnya (wrap ke bawah di
    layar sempit). */
 .tr-recmodal-share{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+/* Override: `display:flex` di atas mengalahkan [hidden] default UA, jadi
+   tombol tetap tampil buat non-admin. Rule ini memaksa hidden benar-benar
+   menyembunyikan wrapper (dipakai via `wrap.hidden = true` dari JS untuk
+   user non-admin ATAU saat chart mode TradingView aktif). */
+.tr-recmodal-share[hidden]{display:none !important}
 .tr-recmodal-share-btn{
   display:inline-flex;align-items:center;gap:6px;
   padding:6px 11px;font-size:11.5px;font-weight:700;
