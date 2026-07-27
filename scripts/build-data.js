@@ -1402,6 +1402,93 @@ function isLiveCacheHit(outPath, newLive) {
   }
 }
 
+// ─────────────────────────────────────────────
+// Akumulasi INTRADAY HIGH/LOW lintas build.
+// ─────────────────────────────────────────────
+// Live Sheet hanya kasih 1 snapshot per ticker: {price, change_pct, max/low
+// 1 tahun}. TIDAK ada high/low intraday sesungguhnya. Kalau kita synthesize
+// virtual candle "hari ini" pakai formula lama `low=min(openEst, price)`,
+// range candle jadi span dari close-kemarin ke harga-sekarang — bisa
+// melewati level entry/TP/SL walau harga real hari ini tidak pernah ke sana.
+// Ini bikin rec Tracker false-trigger (mis. BRIS entry 1820, current 1845,
+// close kemarin 1815 → range 1815..1845 span entry padahal harga tidak
+// pernah dip ke 1820).
+//
+// FIX: kita akumulasi max/min lintas build sendiri. Setiap build (5 mnt
+// cadence saat market jalan), baca state lama dari data.json.live[ticker]
+// dan update:
+//   - hari ini WIB → high = max(prev_high, new_price), low = min(prev_low, new_price)
+//   - hari baru    → reset: high = low = new_price, date = today
+//   - sesi belum buka / weekend → jangan sentuh (biar frontend/build-tracker
+//     bisa fall back ke single-point atau MENUNGGU state)
+//
+// Field yg ditulis ke data.json.live[ticker]:
+//   intraday_high  : number  (max price observed today WIB)
+//   intraday_low   : number  (min price observed today WIB)
+//   intraday_date  : "YYYY-MM-DD" (WIB tanggal saat state ini akurat)
+//
+// Consumer: build-tracker.js (server-side virtual candle) & frontend
+// _synthTodayCandleForRec (client-side overlay). Keduanya prefer field
+// intraday_* ini daripada synthesized min/max(openEst, price).
+function _mergeIntradayState(newLive, oldLive) {
+  if (!newLive || typeof newLive !== 'object') return;
+
+  // Hari ini WIB. Skip semua kalau sesi bursa belum buka (Sen-Jum ≥09:00 WIB).
+  // Alasan: sebelum bursa buka, `live.price` masih harga close hari sebelumnya
+  // (harga sheet stale) — kalau kita init intraday_high/low dari nilai itu,
+  // frontend bakal salah anggap "sudah ada intraday range hari ini".
+  const nowWib = new Date(Date.now() + 7 * 3600 * 1000);
+  const dow = nowWib.getUTCDay();      // 0=Min .. 6=Sab
+  const hour = nowWib.getUTCHours();
+  const sessionActive = dow >= 1 && dow <= 5 && hour >= 9;
+  if (!sessionActive) return;
+  const todayIso = nowWib.toISOString().slice(0, 10);
+
+  const old = (oldLive && typeof oldLive === 'object') ? oldLive : {};
+  let carriedCount = 0;
+  let resetCount = 0;
+  let initCount = 0;
+
+  for (const t of Object.keys(newLive)) {
+    const entry = newLive[t];
+    if (!entry || typeof entry !== 'object') continue;
+    const price = +entry.price;
+    if (!Number.isFinite(price) || price <= 0) continue;
+
+    const prev = old[t];
+    const prevDate = prev && prev.intraday_date;
+    const prevHigh = prev && +prev.intraday_high;
+    const prevLow  = prev && +prev.intraday_low;
+    const prevValid = prevDate === todayIso
+                      && Number.isFinite(prevHigh) && prevHigh > 0
+                      && Number.isFinite(prevLow)  && prevLow  > 0;
+
+    if (prevValid) {
+      // Sama-hari → carry forward + akumulasi
+      entry.intraday_high = Math.max(prevHigh, price);
+      entry.intraday_low  = Math.min(prevLow,  price);
+      entry.intraday_date = todayIso;
+      carriedCount++;
+    } else if (prev && prevDate && prevDate !== todayIso) {
+      // Hari baru → reset dari price sekarang (satu titik)
+      entry.intraday_high = price;
+      entry.intraday_low  = price;
+      entry.intraday_date = todayIso;
+      resetCount++;
+    } else {
+      // Belum pernah punya state → init dari price sekarang
+      entry.intraday_high = price;
+      entry.intraday_low  = price;
+      entry.intraday_date = todayIso;
+      initCount++;
+    }
+  }
+
+  if (carriedCount || resetCount || initCount) {
+    console.log(`  ✓ Intraday state: ${carriedCount} carried · ${resetCount} reset · ${initCount} init (date=${todayIso})`);
+  }
+}
+
 async function main() {
   // ── Parse mode dari CLI arg atau env ──────────────────────────────────
   // Prioritas: --mode=xxx arg > REFRESH_MODE env > default 'full'
@@ -1500,6 +1587,12 @@ async function main() {
 
       const newLive = parseLive(liveCsv, debug);
 
+      // Intraday high/low akumulasi lintas build (lihat _mergeIntradayState).
+      // Harus jalan SEBELUM cache-hit check biar walau harga sama persis,
+      // intraday_date tetap ter-refresh (edge case: pagi hari baru pertama
+      // build, harga = close kemarin, tapi date pindah).
+      _mergeIntradayState(newLive, baseData.live);
+
       // Cache check — harga identik? Skip.
       if (isLiveCacheHit(outPath, newLive)) {
         process.exit(0);
@@ -1579,6 +1672,8 @@ async function main() {
 
       // Live: pakai fresh kalau ada, fallback ke base.live
       const newLive = liveCsv ? parseLive(liveCsv, debug) : (baseData.live || {});
+      // Intraday high/low akumulasi (hanya kalau fresh live tersedia).
+      if (liveCsv) _mergeIntradayState(newLive, baseData.live);
       if (liveCsv) applyLiveOverlay(price_history, newLive, debug);
 
       // Consensus: pakai fresh kalau ada, fallback ke base consensus
@@ -1705,6 +1800,8 @@ async function main() {
 
   // Live overlay
   const live = liveCsv ? parseLive(liveCsv, debug) : (baseData ? baseData.live || {} : {});
+  // Intraday high/low akumulasi (hanya kalau fresh live tersedia).
+  if (liveCsv) _mergeIntradayState(live, baseData ? baseData.live : null);
   applyLiveOverlay(price_history, live, debug);
   applyRollingWindow(price_history);
 

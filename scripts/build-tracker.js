@@ -51,6 +51,12 @@ const OHLC_PATH    = path.join(ROOT, 'public', 'ohlc.json');
 const SCREEN_PATH  = path.join(ROOT, 'public', 'screening.json');
 const MACRO_PATH   = path.join(ROOT, 'public', 'macro.json');
 const HISTORY_PATH = path.join(ROOT, 'public', 'tracker-history.json');
+// data.json ditulis oleh scripts/build-data.js dgn field `live[ticker].
+// intraday_{high,low,date}` yg terakumulasi lintas build (setiap 5 mnt saat
+// market jalan). Kita baca sebagai supplemental source utk virtual candle
+// build biar range high/low real intraday — bukan span palsu dari
+// close-kemarin ke harga-sekarang.
+const DATA_PATH    = path.join(ROOT, 'public', 'data.json');
 
 const MAX_HISTORY = parseInt(process.env.TRACKER_MAX_HISTORY || '500', 10);
 const DAILY_EQUITY_DAYS = 30;
@@ -325,6 +331,42 @@ function _generateLiveToken(secret) {
   return `${payloadB64}.${sigB64}`;
 }
 
+// Baca `public/data.json` dan return field .live (per-ticker snapshot yg
+// diperkaya intraday_high/intraday_low/intraday_date oleh build-data.js).
+// Return {} kalau file tidak ada / parse error / field kosong. Non-fatal.
+function _readIntradayFromDataJson() {
+  try {
+    if (!fs.existsSync(DATA_PATH)) return {};
+    const raw = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
+    return (raw && raw.live && typeof raw.live === 'object') ? raw.live : {};
+  } catch (e) {
+    console.warn('  ⚠ Baca intraday dari data.json gagal (non-fatal):', e.message);
+    return {};
+  }
+}
+
+// Merge intraday_high/intraday_low/intraday_date dari data.json.live ke
+// live map dari Worker /live.json. Worker map hanya kasih price+change_pct
+// (stateless per invocation), sedangkan data.json.live punya state ter-
+// akumulasi lintas 5-min build. Setelah merge, `buildTodayCandleFromLive`
+// bisa pakai intraday range real utk high/low virtual candle.
+function _enrichLiveWithIntraday(liveMap, intradayFromData) {
+  if (!liveMap || typeof liveMap !== 'object') return 0;
+  if (!intradayFromData || typeof intradayFromData !== 'object') return 0;
+  let n = 0;
+  for (const t of Object.keys(liveMap)) {
+    const src = intradayFromData[t];
+    if (!src) continue;
+    if (!Number.isFinite(+src.intraday_high) || !Number.isFinite(+src.intraday_low)) continue;
+    if (!src.intraday_date) continue;
+    liveMap[t].intraday_high = +src.intraday_high;
+    liveMap[t].intraday_low  = +src.intraday_low;
+    liveMap[t].intraday_date = src.intraday_date;
+    n++;
+  }
+  return n;
+}
+
 async function fetchLiveMap() {
   const secret = process.env.LIVE_TOKEN_SECRET;
   const workerUrl = process.env.LIVE_WORKER_URL || DEFAULT_LIVE_WORKER_URL;
@@ -360,9 +402,24 @@ async function fetchLiveMap() {
   }
 }
 
-// Bangun 1 virtual candle "hari ini" dari live entry (mirror _ohlcMergeToday).
+// Bangun 1 virtual candle "hari ini" dari live entry.
 // Format: [ts_unix_sec, open, high, low, close] — konsisten dgn ohlc.json.
 // Return null kalau data tidak valid.
+//
+// PRIORITAS high/low:
+//   1. `liveEntry.intraday_high/low` (kalau intraday_date === today WIB) —
+//      diakumulasi lintas build oleh build-data.js._mergeIntradayState.
+//      Ini range intraday sesungguhnya (max/min semua snapshot yg pernah
+//      dilihat hari ini), merged lagi dgn `price` sekarang biar ikut fresh.
+//   2. Fallback single-point: high = low = price. Aman utk trigger
+//      detection (nggak span palsu). Cocok utk kondisi pertama kali
+//      state belum ke-init (mis. build pertama pagi hari).
+//
+// CATATAN: `open` tetap pakai `openEst = price / (1+change_pct)` = close
+// kemarin. Ini semantic-nya adalah "baseline reference sebelum sesi mulai"
+// dan dipakai `derivePosition` utk direction inference (LIMIT vs STOP).
+// BUKAN benar-benar open hari ini — nggak apa-apa karena tidak dipakai
+// utk trigger detection lagi (yg pakai high/low real dari intraday).
 function buildTodayCandleFromLive(liveEntry, todayIso) {
   if (!liveEntry) return null;
   const price = +liveEntry.price;
@@ -370,11 +427,31 @@ function buildTodayCandleFromLive(liveEntry, todayIso) {
   const chg = Number.isFinite(liveEntry.change_pct) ? liveEntry.change_pct : 0;
   const openEst = chg !== 0 ? Math.round(price / (1 + chg)) : price;
   const ts = Math.floor(Date.parse(todayIso + 'T00:00:00Z') / 1000);
+
+  // Prioritas 1: pakai intraday_high/low akumulasi lintas build kalau
+  // tersedia & sama-hari. Merge lagi dgn `price` (sekarang) biar nggak
+  // miss update terbaru antara build sebelumnya → sekarang.
+  const idHi = +liveEntry.intraday_high;
+  const idLo = +liveEntry.intraday_low;
+  const idDate = liveEntry.intraday_date;
+  const hasIntraday = idDate === todayIso
+                      && Number.isFinite(idHi) && idHi > 0
+                      && Number.isFinite(idLo) && idLo > 0;
+  let high, low;
+  if (hasIntraday) {
+    high = Math.max(idHi, price);
+    low  = Math.min(idLo, price);
+  } else {
+    // Fallback single-point — tidak span palsu dari close-kemarin.
+    high = price;
+    low  = price;
+  }
+
   return [
     ts,
     openEst,
-    Math.max(openEst, price),
-    Math.min(openEst, price),
+    Math.round(high),
+    Math.round(low),
     Math.round(price),
   ];
 }
@@ -1107,6 +1184,22 @@ function derivePosition(rec, ohlcEntry, todayIso) {
     ? (rec.entry <= publishOpenPx)
     : (rec.entry >= publishOpenPx);
 
+  // ── FRESH SAME-DAY REC (rec.openDate === todayIso) ──────────────────
+  // Publish bar utk rec fresh = virtual candle live (openEst=close-kemarin).
+  // publishOpenPx dari virtual candle TIDAK reliable utk direction inference
+  // — bisa misclassify LIMIT ↔ STOP kalau entry posisi-nya antara close-
+  // kemarin dan harga sekarang. Kasus BRIS: entry=1820, openEst=1815,
+  // price=1845 → publishOpenPx=1815<entry → salah classified BUY STOP →
+  // touched=high≥entry=TRUE walau harga real tidak pernah dip ke 1820.
+  //
+  // FIX: kalau fresh & pakai virtual bar (openEst), pakai touch detection
+  // BERBASIS RANGE — unambiguous utk kedua LIMIT & STOP:
+  //   touched = (low ≤ entry ≤ high)
+  // Semantic: harga pernah cross level entry pada intraday range (dari
+  // sisi manapun). Bekerja karena high/low sekarang = intraday_high/low
+  // ter-akumulasi lintas 5-min build (bukan span palsu openEst..price).
+  const isFreshSameDayRec = rec.openDate === todayIso;
+
   for (let i = 0; i < relevant.length; i++) {
     const c = relevant[i];
     if (c[0] > horizonEndTs) break;
@@ -1116,7 +1209,13 @@ function derivePosition(rec, ohlcEntry, todayIso) {
     // Cek entry-touch (hanya sekali)
     if (!triggered) {
       let touched;
-      if (isLimitDirection) {
+      // Untuk fresh same-day rec (rec.openDate === todayIso), publishBar
+      // = virtual candle → publishOpenPx tidak reliable. Pakai range check.
+      // Iterasi hanya 1 bar untuk fresh (relevant = [virtual candle] saja).
+      const isFreshBar = isFreshSameDayRec && relevant.length === 1;
+      if (isFreshBar) {
+        touched = (low <= rec.entry) && (rec.entry <= high);
+      } else if (isLimitDirection) {
         // LIMIT: BUY on dip / SELL on rally
         touched = isBuy ? (low <= rec.entry) : (high >= rec.entry);
       } else {
@@ -1130,7 +1229,12 @@ function derivePosition(rec, ohlcEntry, todayIso) {
         result.entryTouchDate = new Date(ts * 1000).toISOString().slice(0, 10);
         // Fill price — direction-aware. Gap through entry = fill at open
         // (worse than entry). Otherwise fill at entry level.
-        if (isBuy) {
+        if (isFreshBar) {
+          // openPx = openEst (close kemarin, bukan open real hari ini) →
+          // gap-detection tidak reliable. Fair assumption: fill @entry.
+          // EOD Yahoo OHLC rebuild akan revalidate & set fill akurat.
+          result.entryTouchPrice = +rec.entry;
+        } else if (isBuy) {
           if (isLimitDirection) {
             // BUY LIMIT: fill @open kalau gap-down through entry, else @entry
             result.entryTouchPrice = (openPx <= rec.entry) ? +openPx : +rec.entry;
@@ -1605,6 +1709,14 @@ async function main() {
   // Sumber tercepat: sheet Live via gviz (public read, zero auth).
   try {
     const live = await fetchLiveMap();
+    // Enrich Worker map dgn intraday state dari data.json (akumulasi 5-min).
+    // Kalau enrich gagal / data.json belum ada → buildTodayCandleFromLive
+    // fallback ke single-point (aman, tidak span palsu).
+    const intradayFromData = _readIntradayFromDataJson();
+    const enriched = _enrichLiveWithIntraday(live, intradayFromData);
+    if (enriched > 0) {
+      console.log(`  ✓ Enrich live dgn intraday state dari data.json: ${enriched} ticker`);
+    }
     const n = augmentOhlcWithLive(ohlc, live);
     if (n > 0) console.log(`  ✓ Live overlay: ${n} ticker di-augment dgn virtual today candle`);
   } catch (e) {

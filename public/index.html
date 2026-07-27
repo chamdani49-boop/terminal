@@ -19227,6 +19227,13 @@ function _overlayLiveInto(data, live) {
       max_date:  lv.max_date || prevLv.max_date || null,
       low_price: (Number.isFinite(lv.low_price) && lv.low_price > 0) ? lv.low_price : (prevLv.low_price ?? null),
       low_date:  lv.low_date || prevLv.low_date || null,
+      // Intraday state (dari build-data.js akumulasi lintas build 5 mnt).
+      // Worker `/live.json` TIDAK expose field ini — kalau kita naif replace,
+      // intraday_* hilang tiap 60s live poll → __TR_intradayLive seed gagal.
+      // Prefer fresh dari feed kalau ada (future-proof), fallback ke prevLv.
+      intraday_high: Number.isFinite(+lv.intraday_high) ? +lv.intraday_high : (Number.isFinite(+prevLv.intraday_high) ? +prevLv.intraday_high : null),
+      intraday_low:  Number.isFinite(+lv.intraday_low)  ? +lv.intraday_low  : (Number.isFinite(+prevLv.intraday_low)  ? +prevLv.intraday_low  : null),
+      intraday_date: lv.intraday_date || prevLv.intraday_date || null,
     };
 
     // 2) price_history baris terakhir (bulan berjalan) → drive semua recompute.
@@ -19434,10 +19441,68 @@ function _startLiveFeedPolling() {
     } catch(_){}
   }
 
+  // ── Intraday running max/min tracker (in-memory, per ticker) ──────
+  // Rangkuman pergerakan harga live yg kita lihat SEPANJANG SESI hari ini
+  // WIB. Diakumulasi setiap kali `_synthTodayCandleForRec(rec)` di-call
+  // (via hook __TR_liveOverlay tiap live poll, 60s cadence). Reset otomatis
+  // saat hari WIB berubah. Seed awal diambil dari DATA.live[t].intraday_*
+  // (state ter-akumulasi dari build-data.js, granularity 5 mnt) supaya
+  // tetap reflect intraday range walau user baru buka tab siang hari.
+  //
+  // Kenapa ini penting: sebelum fix ini, virtual candle low/high pakai
+  // `min/max(openEst, price)` di mana openEst = close-kemarin. Range palsu
+  // yg span dari close-kemarin ke harga-sekarang bisa lewat entry padahal
+  // harga real hari ini tidak pernah ke sana → false TERISI (bug BRIS).
+  var __TR_intradayLive = {};
+  function _todayWibIso(){
+    return new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+  }
+  // Update state utk 1 ticker berdasarkan snapshot terbaru. Called dari
+  // _synthTodayCandleForRec (jalur normal, tiap live poll utk tiap rec).
+  function _touchIntradayLive(ticker, price, todayIso){
+    if (!ticker || !Number.isFinite(price) || price <= 0) return null;
+    var today = todayIso || _todayWibIso();
+    var st = __TR_intradayLive[ticker];
+    if (!st || st.date !== today){
+      // Init / reset hari baru. Seed dari DATA.live kalau ada state ter-
+      // akumulasi dari build-data.js (5-min granularity) — kita ambil,
+      // lalu merge dgn `price` sekarang biar ikut fresh.
+      var seedHi = null, seedLo = null;
+      try {
+        var D = _getData();
+        var lv = D && D.live && D.live[ticker];
+        if (lv && lv.intraday_date === today
+            && Number.isFinite(+lv.intraday_high) && +lv.intraday_high > 0
+            && Number.isFinite(+lv.intraday_low)  && +lv.intraday_low  > 0){
+          seedHi = +lv.intraday_high;
+          seedLo = +lv.intraday_low;
+        }
+      } catch(_){}
+      st = {
+        date: today,
+        high: seedHi != null ? Math.max(seedHi, price) : price,
+        low:  seedLo != null ? Math.min(seedLo, price) : price,
+      };
+      __TR_intradayLive[ticker] = st;
+    } else {
+      if (price > st.high) st.high = price;
+      if (price < st.low)  st.low  = price;
+    }
+    return st;
+  }
+
   // ── Bangun virtual candle "hari ini" untuk 1 rec dari DATA.live ──
   // Return {ts, open, high, low, close, date} atau null.
   // Guarded oleh: sesi bursa buka + live fresh today + rec.openDate <= today.
-  // Logika sama persis dgn _ohlcMergeToday (biar konsisten dgn chart popup).
+  //
+  // HIGH/LOW PRIORITY (SAMA dgn scripts/build-tracker.js.buildTodayCandleFromLive):
+  //   1. Running max/min in-memory (__TR_intradayLive) yg auto-seed dari
+  //      DATA.live[t].intraday_* (build-data.js akumulasi). Real intraday
+  //      range → nggak span palsu.
+  //   2. Fallback single-point: high = low = price (aman utk trigger
+  //      detection saat state belum ke-init).
+  // OPEN tetap pakai `openEst = price / (1 + change_pct)` = close kemarin
+  // sbg baseline reference utk direction inference (LIMIT vs STOP).
   var _skipReason = null; // untuk debug (kenapa candle null?)
   function _synthTodayCandleForRec(rec){
     _skipReason = null;
@@ -19476,12 +19541,18 @@ function _startLiveFeedPolling() {
       ? Math.round(price / (1 + liveChgPct))
       : price;
     var ts = Math.floor(new Date(todayStr + 'T00:00:00Z').getTime() / 1000);
+
+    // Update running max/min dgn snapshot terbaru & ambil range hasil merge.
+    var idSt = _touchIntradayLive(rec.ticker, price, todayStr);
+    var hi = idSt ? idSt.high : price;
+    var lo = idSt ? idSt.low  : price;
+
     return {
       ts: ts,
       date: todayStr,
       open: openEst,
-      high: Math.max(openEst, price),
-      low:  Math.min(openEst, price),
+      high: hi,
+      low:  lo,
       close: Math.round(price)
     };
   }
@@ -19548,10 +19619,37 @@ function _startLiveFeedPolling() {
     var publishRef = Number.isFinite(+rec.openPriceAtPublish) ? +rec.openPriceAtPublish : open;
     var isLimitDirection = isBuy ? (entry <= publishRef) : (entry >= publishRef);
 
+    // ── FRESH SAME-DAY REC — direction inference unreliable ──────────
+    // Kalau rec rilis hari ini WIB DAN `openPriceAtPublish` belum di-set
+    // backend, `publishRef` fallback ke `candle.open = openEst = close
+    // kemarin`. Ini bisa misclassify LIMIT ↔ STOP kalau `entry` posisi-nya
+    // antara close-kemarin dan harga sekarang (kasus BRIS: entry 1820,
+    // close-kemarin 1815, harga 1845 → openEst=1815<entry=1820 → salah
+    // classified sbg BUY STOP → touched=high≥entry=TRUE walau harga real
+    // tidak pernah dip ke entry).
+    //
+    // FIX: untuk rec fresh (openDate === today WIB), pakai touch detection
+    // BERBASIS RANGE — unambiguous utk kedua LIMIT & STOP:
+    //   touched = (low ≤ entry ≤ high)
+    // Semantic: harga pernah crossing level entry pada sesi berjalan (dari
+    // sisi manapun). Ini bekerja karena __TR_intradayLive sekarang track
+    // running max/min sesungguhnya, jadi range = real observed intraday.
+    // Rec yg lebih tua tetap pakai direction-inference asli (publishBar =
+    // real historical OHLC, direction jelas).
+    var _todayWibIsoLocal = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+    var isFreshSameDayRec = rec.openDate === _todayWibIsoLocal
+                            && !Number.isFinite(+rec.openPriceAtPublish);
+
     // ── PENDING / RUNNING_MISSED: cek touch entry ──
     if (state === 'PENDING' || state === 'RUNNING_MISSED'){
       var touched;
-      if (isLimitDirection) {
+      if (isFreshSameDayRec) {
+        // Range-based (unambiguous) — pakai intraday_low..intraday_high
+        // yg sudah ter-akumulasi. Kalau candle single-point (belum ada
+        // range signifikan), otomatis low===high===close → FALSE kecuali
+        // close persis di entry.
+        touched = (low <= entry) && (entry <= high);
+      } else if (isLimitDirection) {
         touched = isBuy ? (low <= entry) : (high >= entry);
       } else {
         touched = isBuy ? (high >= entry) : (low <= entry);
@@ -19583,7 +19681,13 @@ function _startLiveFeedPolling() {
       triggered = true;
       update.didTouchEntry = true;
       update.entryTouchDate = candle.date;
-      if (isBuy) {
+      if (isFreshSameDayRec) {
+        // Direction unknown & `open` = openEst (close kemarin, bukan open
+        // real hari ini) → gap-detection tidak reliable. Fair assumption:
+        // fill @entry. Backend rebuild EOD nanti akan revalidate dgn OHLC
+        // real (Yahoo) dan set entryTouchPrice akurat.
+        update.entryTouchPrice = +entry;
+      } else if (isBuy) {
         if (isLimitDirection) {
           // BUY LIMIT: fill @open kalau gap-down through entry (open ≤ entry), else @entry
           update.entryTouchPrice = (open <= entry) ? +open : +entry;
