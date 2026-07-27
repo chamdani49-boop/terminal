@@ -10,13 +10,28 @@
 # ── HTML shells: NEVER cache without server revalidation. ──────────────
 # Bug: default browser heuristic caching pernah bikin user tetap load
 # JS/HTML LAMA walau sudah hard-refresh (Ctrl+Shift+R) berjam-jam setelah
-# deploy baru. Ini bikin frontend logic (mis. _recomputeRecState) tetap
-# pakai kode lama padahal server sudah punya versi baru. Fix: pakai
-# `no-cache` (bukan `no-store`) supaya browser boleh simpan tapi HARUS
-# revalidate via If-Modified-Since / ETag tiap request. Kalau server bilang
-# 304 Not Modified → pakai cache (hemat bytes). Kalau 200 → dapat versi
-# baru. Zero-risk stale HTML.
+# deploy baru. Fix: pakai `no-cache` (bukan `no-store`) supaya browser
+# boleh simpan tapi HARUS revalidate via If-Modified-Since / ETag tiap
+# request. 304 Not Modified → hemat bytes; 200 → dapat versi baru.
+#
+# PENTING: kita cover BOTH the clean-URL routes yang di-rewrite oleh
+# Worker (src/index.js) DAN raw .html path. Karena Worker rewrite
+# `/dashboard` → `/index.html` INTERNAL tapi client hit `/dashboard`,
+# _headers matches by URL client-side. Kalau cuma `/index.html`, request
+# ke `/dashboard` skip rule ini.
 /
+  Cache-Control: no-cache, must-revalidate
+
+/dashboard
+  Cache-Control: no-cache, must-revalidate
+
+/admin
+  Cache-Control: no-cache, must-revalidate
+
+/billing
+  Cache-Control: no-cache, must-revalidate
+
+/login
   Cache-Control: no-cache, must-revalidate
 
 /index.html
@@ -33,6 +48,21 @@
 
 # Service worker — sama, HARUS re-validate biar SW version bump ke-detect.
 /sw.js
+  Cache-Control: no-cache, must-revalidate
+
+# Static JS shell (broker-codes, panduan, pwa-install, tracker-stats) —
+# gak bisa di-hash-versioned (di-import langsung dari HTML tanpa ?v=),
+# jadi force revalidate juga.
+/broker-codes.js
+  Cache-Control: no-cache, must-revalidate
+
+/panduan.js
+  Cache-Control: no-cache, must-revalidate
+
+/pwa-install.js
+  Cache-Control: no-cache, must-revalidate
+
+/tracker-stats.js
   Cache-Control: no-cache, must-revalidate
 
 /*

@@ -27,6 +27,13 @@
 <link rel="dns-prefetch" href="https://s3.tradingview.com">
 <link rel="dns-prefetch" href="https://www.tradingview.com">
 <script>
+  // BUILD VERSION MARKER — bump saat deploy ada fix penting supaya user
+  // bisa cepat verifikasi kode terbaru sudah ke-load. Cek di console:
+  //   window.__ES_BUILD_VERSION
+  // Kalau nilai-nya bukan versi terbaru yg diharapkan, artinya browser
+  // masih load HTML lama (cache issue).
+  window.__ES_BUILD_VERSION = '2026-07-27-fresh-recs-limit';
+
   // Set theme as early as possible to prevent flash of wrong theme.
   (function() {
     try {
