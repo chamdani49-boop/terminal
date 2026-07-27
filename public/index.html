@@ -32,7 +32,7 @@
   //   window.__ES_BUILD_VERSION
   // Kalau nilai-nya bukan versi terbaru yg diharapkan, artinya browser
   // masih load HTML lama (cache issue).
-  window.__ES_BUILD_VERSION = '2026-07-27-fix-null-openpx';
+  window.__ES_BUILD_VERSION = '2026-07-27-limit-semantic';
 
   // Set theme as early as possible to prevent flash of wrong theme.
   (function() {
@@ -17668,10 +17668,22 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       var _mf = window.__TR_getModeFloating(rec, _actMode.entry);
       if (Number.isFinite(_mf)) {
         pnl = _mf;
-      } else if (rec.didTouchEntry && effectiveLastPrice != null
-                 && Number.isFinite(+rec.entry) && +rec.entry > 0) {
-        var _isBuyRec = String(rec.type||'BUY').toUpperCase() === 'BUY';
-        pnl = ((effectiveLastPrice - +rec.entry) / +rec.entry) * 100 * (_isBuyRec ? 1 : -1);
+      } else if (rec.didTouchEntry && effectiveLastPrice != null) {
+        // Floating base = fill price (entryTouchPrice) kalau ada, else entry.
+        // Konsisten dgn user intent: "floating G&L ikut harga open, bukan
+        // harga entry". Kalau rec gap-down BUY fill di 180 vs entry 192,
+        // floating dihitung dari 180 (better untuk trader).
+        var _flBase = (Number.isFinite(+rec.entryTouchPrice) && +rec.entryTouchPrice > 0)
+                      ? +rec.entryTouchPrice
+                      : (Number.isFinite(+rec.entry) && +rec.entry > 0 ? +rec.entry : null);
+        if (_flBase != null) {
+          var _isBuyRec = String(rec.type||'BUY').toUpperCase() === 'BUY';
+          pnl = ((effectiveLastPrice - _flBase) / _flBase) * 100 * (_isBuyRec ? 1 : -1);
+        } else if (Number.isFinite(+rec.floatingPct)) {
+          pnl = +rec.floatingPct;
+        } else {
+          pnl = null;
+        }
       } else if (Number.isFinite(+rec.floatingPct)) {
         pnl = +rec.floatingPct;
       } else {
@@ -17686,6 +17698,28 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     var footHtml = ''
       + '<div class="tr-recmodal-foot-item"><span class="lbl">Harga Sekarang</span><span class="val">' + esc(fmtN(effectiveLastPrice)) + '</span></div>'
       + '<div class="tr-recmodal-foot-item"><span class="lbl">P&amp;L</span><span class="val' + pnlCls + '">' + esc(pnl == null ? '—' : fmtPct(pnl, 1)) + '</span></div>';
+
+    // Info "Fill di Harga X" — hanya tampil kalau entry ter-fill di harga
+    // BERBEDA dari entry target (gap-fill scenario). Contoh: BUY entry
+    // 192, open day 24 Jul = 180 (gap-down dalam zona SL-Entry) → fill
+    // di 180. P&L floating dihitung dari 180, bukan 192. Note ini
+    // meng-eksplisit-kan supaya user paham kenapa P&L bisa "lebih baik"
+    // dari target. Bisa juga gap-up utk SELL.
+    if (rec.didTouchEntry
+        && Number.isFinite(+rec.entryTouchPrice) && +rec.entryTouchPrice > 0
+        && Number.isFinite(+rec.entry) && +rec.entry > 0
+        && +rec.entryTouchPrice !== +rec.entry) {
+      var _fp = +rec.entryTouchPrice;
+      var _ep = +rec.entry;
+      var _isBuyFill = String(rec.type||'BUY').toUpperCase() !== 'SELL';
+      var _gapDir = _isBuyFill
+        ? (_fp < _ep ? 'gap-down' : 'gap-up')
+        : (_fp > _ep ? 'gap-up' : 'gap-down');
+      var _fillLbl = 'Fill @ ' + fmtN(_fp)
+                     + ' <span style="font-size:10px;opacity:.65">(' + _gapDir + ' dari entry ' + fmtN(_ep) + ')</span>';
+      footHtml += '<div class="tr-recmodal-foot-item" title="Harga saat rec ter-fill (gap-open di zona antara Entry & SL). P&L floating dihitung dari harga fill ini, bukan dari entry target."><span class="lbl">Terisi di</span><span class="val">' + _fillLbl + '</span></div>';
+    }
+
     // Horizon — durasi holding yang direkomendasikan analis (dari kolom Sheet).
     // Tampilkan hanya kalau ada isi (skip kalau kosong).
     if (rec.horizon && String(rec.horizon).trim()) {
@@ -20161,7 +20195,17 @@ function _startLiveFeedPolling() {
     if (!Number.isFinite(entry) || !Number.isFinite(tp1) || !Number.isFinite(sl)) return null;
 
     var open = candle.open, high = candle.high, low = candle.low, close = candle.close;
-    var pctAt = function(px){ return ((px - entry) / entry * 100) * dirSign; };
+    // pctAt: P&L (%) dari price `px` vs BASE. Base = fill price kalau
+    // triggered (rec.entryTouchPrice atau update.entryTouchPrice pending),
+    // else rec.entry. Konsisten dgn user intent: floating G&L ikut harga
+    // fill (bisa open kalau gap), bukan target entry.
+    var pctAt = function(px){
+      var etp = (update && Number.isFinite(+update.entryTouchPrice) && +update.entryTouchPrice > 0)
+                ? +update.entryTouchPrice
+                : (Number.isFinite(+rec.entryTouchPrice) && +rec.entryTouchPrice > 0
+                   ? +rec.entryTouchPrice : entry);
+      return ((px - etp) / etp * 100) * dirSign;
+    };
 
     var update = {
       lastPrice: close,
@@ -20178,115 +20222,68 @@ function _startLiveFeedPolling() {
     var effectiveSl = (hasTp1 && tp2 != null) ? entry : sl; // trailing SL after TP1 partial (staged)
     var triggered = (state === 'TRIGGERED');
 
-    // ── LIMIT vs STOP direction inference — sinkron dgn backend
-    //    derivePosition. Publish reference: rec.openPriceAtPublish (dari
-    //    backend, kalau tersedia) ATAU candle.open (virtual openEst = prev
-    //    close, untuk rec openDate=today yg backend belum punya candle).
-    //    BUY LIMIT (entry ≤ publishRef): touched saat low ≤ entry
-    //    BUY STOP  (entry >  publishRef): touched saat high ≥ entry
-    //    SELL analog. Cegah bug "TRIGGERED sebelum breakout" untuk STOP
-    //    setup (mis. rec BUY entry 880, publish open 870, hari ini range
-    //    865-875 → old check `low ≤ 880` selalu TRUE karena low ≤ open ≤
-    //    entry → salah TRIGGERED. New check `high ≥ 880` FALSE → correct
-    //    stay PENDING).
-    // CRITICAL: pakai `> 0` guard, bukan cuma `Number.isFinite`. Karena
-    // `+null` dan `+undefined` = NaN dan 0 masing-masing — `isFinite(0)` =
-    // true, jadi rec dgn `openPriceAtPublish=null` (semua rec fresh sblm
-    // backend rebuild) SALAH lolos check. Bug lama: publishRef jadi 0,
-    // isLimitDirection = entry <= 0 = FALSE → STOP → touched = high >=
-    // entry = TRUE walau harga tidak pernah touch entry. Contoh EMAS:
-    // entry=6100, current=6200, intraday_high=6225 → touched=TRUE (salah).
-    var _hasValidPublishPrice = Number.isFinite(+rec.openPriceAtPublish)
-                                && +rec.openPriceAtPublish > 0;
-    var publishRef = _hasValidPublishPrice ? +rec.openPriceAtPublish : open;
-    var isLimitDirection = isBuy ? (entry <= publishRef) : (entry >= publishRef);
-
-    // ── FRESH SAME-DAY REC — direction inference unreliable ──────────
-    // Kalau rec rilis hari ini WIB DAN `openPriceAtPublish` belum di-set
-    // backend (belum ada bar historis sebelum today), pakai LIMIT-style
-    // semantic (match user's mental model):
-    //   BUY entry X → touched saat ada observed price ≤ X (dip/fill)
-    //   SELL entry X → touched saat ada observed price ≥ X (rally/fill)
+    // ── PENDING / RUNNING_MISSED: cek touch entry (LIMIT-only semantic) ──
+    // Sinkron dgn backend derivePosition — semua rec diperlakukan LIMIT.
     //
-    // Bug yang sudah difix: kondisi `!Number.isFinite(+rec.openPriceAtPublish)`
-    // salah karena `+null=0` isFinite → false negative. Sekarang pakai
-    // `_hasValidPublishPrice` yg cek > 0.
-    var _todayWibIsoLocal = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
-    var isFreshSameDayRec = rec.openDate === _todayWibIsoLocal
-                            && !_hasValidPublishPrice;
-
-    // ── PENDING / RUNNING_MISSED: cek touch entry ──
+    // BUY (SL < Entry):
+    //   openPx ≤ SL         → TERLEWAT (gap tembus SL, position never opened)
+    //   SL < openPx ≤ Entry → TERISI @open (gap-fill di zona SL..Entry)
+    //   openPx > Entry, low ≤ Entry → TERISI @Entry (intraday dip fill)
+    // SELL (Entry < SL): mirror.
     if (state === 'PENDING' || state === 'RUNNING_MISSED'){
-      var touched;
-      if (isFreshSameDayRec) {
-        // LIMIT-style semantic — match user's mental model:
-        //   BUY entry X → touched saat harga live pernah <= X
-        //     (dip/fill: kalau ada observed price di atau di bawah entry,
-        //      LIMIT order akan fill di harga itu — jadi entry "kejemput")
-        //   SELL entry X → touched saat harga live pernah >= X (rally/fill)
-        //
-        // KENAPA BUKAN direction-based (LIMIT vs STOP): direction inference
-        // dari openEst=close-kemarin sering salah kalau entry dekat close-
-        // kemarin. Contoh ASII: entry 4980 > openEst 4960 → salah classify
-        // sbg BUY STOP → touched=high>=entry=FALSE, padahal harga live
-        // 4930 sudah jauh di bawah entry 4980 (LIMIT sudah fill).
-        //
-        // Cukup pakai LIMIT-only semantic (paling common utk analyst recs).
-        // low = intraday_low ter-akumulasi (running min lintas polls).
-        touched = isBuy ? (low <= entry) : (high >= entry);
-      } else if (isLimitDirection) {
-        touched = isBuy ? (low <= entry) : (high >= entry);
+      var fillPrice = null;
+      var missedByGap = false;
+
+      if (isBuy) {
+        if (open <= sl) {
+          missedByGap = true;
+        } else if (open <= entry) {
+          // Gap-fill di [SL, Entry]
+          fillPrice = +open;
+        } else if (low <= entry) {
+          // Intraday dip through entry
+          fillPrice = +entry;
+        }
       } else {
-        touched = isBuy ? (high >= entry) : (low <= entry);
+        // SELL
+        if (open >= sl) {
+          missedByGap = true;
+        } else if (open >= entry) {
+          fillPrice = +open;
+        } else if (high >= entry) {
+          fillPrice = +entry;
+        }
       }
-      if (!touched){
+
+      if (missedByGap) {
+        // Gap tembus SL — position never opened, TERLEWAT permanent.
+        update.state = 'RUNNING_MISSED';
+        update.status = 'MISSED';
+        bucketTarget = state === 'PENDING' ? 'missedList' : null;
+        return { update: update, bucketTarget: bucketTarget };
+      }
+
+      if (fillPrice == null) {
+        // Not touched this bar. Cek drift (kabur):
+        //   BUY: kabur naik (dist > threshold)
+        //   SELL: kabur turun (dist < -threshold)
         var dist = update.distanceToEntryPct;
-        // Kabur direction juga tergantung LIMIT/STOP:
-        //   LIMIT BUY (buy on dip): kabur = harga naik jauh dari entry
-        //   STOP  BUY (buy on breakout): kabur = harga turun jauh
-        var awayFromEntry;
-        if (isLimitDirection) {
-          awayFromEntry = isBuy ? (dist > MISSED_THRESHOLD_PCT) : (dist < -MISSED_THRESHOLD_PCT);
-        } else {
-          awayFromEntry = isBuy ? (dist < -MISSED_THRESHOLD_PCT) : (dist > MISSED_THRESHOLD_PCT);
+        var awayFromEntry = isBuy ? (dist > MISSED_THRESHOLD_PCT)
+                                   : (dist < -MISSED_THRESHOLD_PCT);
+        if (state === 'PENDING' && awayFromEntry) {
+          update.state = 'RUNNING_MISSED';
+          update.status = 'MISSED';
+          bucketTarget = 'missedList';
+          return { update: update, bucketTarget: bucketTarget };
         }
-        if (state === 'PENDING'){
-          if (awayFromEntry){
-            update.state = 'RUNNING_MISSED';
-            update.status = 'MISSED';
-            bucketTarget = 'missedList';
-            return { update: update, bucketTarget: bucketTarget };
-          }
-          return { update: update, bucketTarget: null };
-        } else {
-          return { update: update, bucketTarget: null };
-        }
+        return { update: update, bucketTarget: null };
       }
-      // Touched → TRIGGERED. Fill price direction-aware.
+
+      // Touched → TRIGGERED. Set fill price.
       triggered = true;
       update.didTouchEntry = true;
       update.entryTouchDate = candle.date;
-      if (isFreshSameDayRec) {
-        // Direction unknown & `open` = openEst (close kemarin, bukan open
-        // real hari ini) → gap-detection tidak reliable. Fair assumption:
-        // fill @entry. Backend rebuild EOD nanti akan revalidate dgn OHLC
-        // real (Yahoo) dan set entryTouchPrice akurat.
-        update.entryTouchPrice = +entry;
-      } else if (isBuy) {
-        if (isLimitDirection) {
-          // BUY LIMIT: fill @open kalau gap-down through entry (open ≤ entry), else @entry
-          update.entryTouchPrice = (open <= entry) ? +open : +entry;
-        } else {
-          // BUY STOP: fill @open kalau gap-up through entry (open ≥ entry), else @entry
-          update.entryTouchPrice = (open >= entry) ? +open : +entry;
-        }
-      } else {
-        if (isLimitDirection) {
-          update.entryTouchPrice = (open >= entry) ? +open : +entry;
-        } else {
-          update.entryTouchPrice = (open <= entry) ? +open : +entry;
-        }
-      }
+      update.entryTouchPrice = fillPrice;
       update.state = 'TRIGGERED';
       update.status = 'OPEN';
       update.openPriceAtPublish = rec.openPriceAtPublish || +open;

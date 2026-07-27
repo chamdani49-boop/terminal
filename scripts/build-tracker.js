@@ -1130,7 +1130,16 @@ function derivePosition(rec, ohlcEntry, todayIso) {
   const publishBar = relevant[0] || null;
   if (publishBar) result.openPriceAtPublish = +publishBar[1];
 
-  const pctAt = (px) => ((px - rec.entry) / rec.entry * 100) * dirSign;
+  // pctAt: P&L (%) dari price `px` vs BASE. Base = fill price kalau
+  // triggered (entryTouchPrice), else rec.entry. Ini bikin realized P&L
+  // reflect harga fill ASLI — gap-down BUY fill di 180 vs target 192
+  // ngasih return yg lebih baik saat exit di TP1. Konsisten dgn user
+  // intent: "floating G&L ikut harga open, bukan harga entry".
+  const pctAt = (px) => {
+    const base = (result.entryTouchPrice != null && result.entryTouchPrice > 0)
+                 ? result.entryTouchPrice : rec.entry;
+    return ((px - base) / base * 100) * dirSign;
+  };
   const pctFromOpen = (px) => result.openPriceAtPublish
     ? ((px - result.openPriceAtPublish) / result.openPriceAtPublish * 100) * dirSign
     : null;
@@ -1155,46 +1164,29 @@ function derivePosition(rec, ohlcEntry, todayIso) {
   let triggered = false;
   let triggeredIdx = -1;
 
-  // ── LIMIT vs STOP direction inference ─────────────────────────────────
-  // Bug: check lama `low <= entry` untuk BUY selalu TRUE kalau entry di
-  // ATAS candle open (BUY STOP / breakout setup) → rec dianggap triggered
-  // padahal harga BELUM naik menyentuh entry. Contoh: rec BUY entry=880,
-  // publish open=870. Hari ini range 865-875, never touched 880. Backend
-  // lama: low=865 <= 880 → TRIGGERED (salah). Fix: bedakan direction dari
-  // posisi entry vs publish-day open.
+  // ── LIMIT-only semantic (per user's mental model) ─────────────────────
+  // Semua rec diperlakukan sebagai LIMIT order (BUY on dip / SELL on
+  // rally), tidak lagi pakai direction inference LIMIT vs STOP.
   //
-  //   BUY LIMIT   (entry <= publishOpen) → touched saat low <= entry
-  //                 (harga turun ke entry / gap down through)
-  //   BUY STOP    (entry >  publishOpen) → touched saat high >= entry
-  //                 (harga naik ke entry / gap up through)
-  //   SELL LIMIT  (entry >= publishOpen) → touched saat high >= entry
-  //   SELL STOP   (entry <  publishOpen) → touched saat low <= entry
+  // BUY (SL < Entry):
+  //   openPx ≤ SL          → TERLEWAT (gap tembus SL, position never opened)
+  //   SL < openPx ≤ Entry  → TERISI @open (gap-fill di zona antara SL & Entry)
+  //   openPx > Entry, low ≤ Entry → TERISI @Entry (intraday dip fill LIMIT)
+  //   openPx > Entry, low > Entry → belum touched, next bar
   //
-  // Fill-price:
-  //   BUY LIMIT   gap-down (open <= entry) → fill @open. Else @entry.
-  //   BUY STOP    gap-up   (open >= entry) → fill @open. Else @entry.
-  //   SELL LIMIT  gap-up   (open >= entry) → fill @open. Else @entry.
-  //   SELL STOP   gap-down (open <= entry) → fill @open. Else @entry.
-  const publishOpenPx = publishBar ? +publishBar[1] : rec.entry;
-  const isLimitDirection = isBuy
-    ? (rec.entry <= publishOpenPx)
-    : (rec.entry >= publishOpenPx);
-
-  // ── FRESH SAME-DAY REC (rec.openDate === todayIso) ──────────────────
-  // Publish bar utk rec fresh = virtual candle live (openEst=close-kemarin).
-  // publishOpenPx dari virtual candle TIDAK reliable utk direction inference
-  // — bisa misclassify LIMIT ↔ STOP kalau entry posisi-nya antara close-
-  // kemarin dan harga sekarang. Kasus BRIS: entry=1820, openEst=1815,
-  // price=1845 → publishOpenPx=1815<entry → salah classified BUY STOP →
-  // touched=high≥entry=TRUE walau harga real tidak pernah dip ke 1820.
+  // SELL (Entry < SL): mirror.
+  //   openPx ≥ SL          → TERLEWAT
+  //   Entry ≤ openPx < SL  → TERISI @open (gap-fill)
+  //   openPx < Entry, high ≥ Entry → TERISI @Entry (rally fill)
   //
-  // FIX: kalau fresh & pakai virtual bar (openEst), pakai touch detection
-  // BERBASIS RANGE — unambiguous utk kedua LIMIT & STOP:
-  //   touched = (low ≤ entry ≤ high)
-  // Semantic: harga pernah cross level entry pada intraday range (dari
-  // sisi manapun). Bekerja karena high/low sekarang = intraday_high/low
-  // ter-akumulasi lintas 5-min build (bukan span palsu openEst..price).
-  const isFreshSameDayRec = rec.openDate === todayIso;
+  // KENAPA: analyst recs di sheet mostly LIMIT (buy on dip). Direction
+  // inference dari publishOpen sering salah karena openPx ambigu (bisa
+  // gap dari close-kemarin, atau intraday). User mental model lebih
+  // simple: "harga masuk zona, fill di open kalau gap; nggak fill kalau
+  // langsung ke SL area". BUY STOP breakout recs jarang; kalau ada,
+  // trade-off (rare) di-accept.
+  let missedByGapFlag = false;   // Flag: rec di-skip karena gap tembus SL
+  let gapFillOpenPx = null;       // Tracked utk debug (harga open saat gap fill)
 
   for (let i = 0; i < relevant.length; i++) {
     const c = relevant[i];
@@ -1204,52 +1196,39 @@ function derivePosition(rec, ohlcEntry, todayIso) {
 
     // Cek entry-touch (hanya sekali)
     if (!triggered) {
-      let touched;
-      // Untuk fresh same-day rec (rec.openDate === todayIso), publishBar
-      // = virtual candle → publishOpenPx tidak reliable utk direction
-      // inference. Pakai LIMIT-style semantic (match user's mental model):
-      //   BUY: touched kalau ada observed price ≤ entry (dip/fill)
-      //   SELL: touched kalau ada observed price ≥ entry (rally/fill)
-      // Iterasi hanya 1 bar untuk fresh (relevant = [virtual candle] saja).
-      const isFreshBar = isFreshSameDayRec && relevant.length === 1;
-      if (isFreshBar) {
-        touched = isBuy ? (low <= rec.entry) : (high >= rec.entry);
-      } else if (isLimitDirection) {
-        // LIMIT: BUY on dip / SELL on rally
-        touched = isBuy ? (low <= rec.entry) : (high >= rec.entry);
+      let fillPrice = null;
+      if (isBuy) {
+        if (openPx <= rec.sl) {
+          // Gap-open tembus SL → TERLEWAT (permanent, break loop).
+          missedByGapFlag = true;
+          break;
+        } else if (openPx <= rec.entry) {
+          // Gap-fill di [SL, Entry] zone → fill @open (better than entry).
+          fillPrice = +openPx;
+          gapFillOpenPx = +openPx;
+        } else if (low <= rec.entry) {
+          // openPx > Entry, tapi intraday dip ke Entry → LIMIT fill @Entry.
+          fillPrice = +rec.entry;
+        }
       } else {
-        // STOP: BUY on breakout / SELL on breakdown
-        touched = isBuy ? (high >= rec.entry) : (low <= rec.entry);
+        // SELL — mirror
+        if (openPx >= rec.sl) {
+          missedByGapFlag = true;
+          break;
+        } else if (openPx >= rec.entry) {
+          fillPrice = +openPx;
+          gapFillOpenPx = +openPx;
+        } else if (high >= rec.entry) {
+          fillPrice = +rec.entry;
+        }
       }
-      if (touched) {
+
+      if (fillPrice != null) {
         triggered = true;
         triggeredIdx = i;
         result.didTouchEntry = true;
         result.entryTouchDate = new Date(ts * 1000).toISOString().slice(0, 10);
-        // Fill price — direction-aware. Gap through entry = fill at open
-        // (worse than entry). Otherwise fill at entry level.
-        if (isFreshBar) {
-          // openPx = openEst (close kemarin, bukan open real hari ini) →
-          // gap-detection tidak reliable. Fair assumption: fill @entry.
-          // EOD Yahoo OHLC rebuild akan revalidate & set fill akurat.
-          result.entryTouchPrice = +rec.entry;
-        } else if (isBuy) {
-          if (isLimitDirection) {
-            // BUY LIMIT: fill @open kalau gap-down through entry, else @entry
-            result.entryTouchPrice = (openPx <= rec.entry) ? +openPx : +rec.entry;
-          } else {
-            // BUY STOP: fill @open kalau gap-up through entry, else @entry
-            result.entryTouchPrice = (openPx >= rec.entry) ? +openPx : +rec.entry;
-          }
-        } else {
-          if (isLimitDirection) {
-            // SELL LIMIT: fill @open kalau gap-up through entry, else @entry
-            result.entryTouchPrice = (openPx >= rec.entry) ? +openPx : +rec.entry;
-          } else {
-            // SELL STOP: fill @open kalau gap-down through entry, else @entry
-            result.entryTouchPrice = (openPx <= rec.entry) ? +openPx : +rec.entry;
-          }
-        }
+        result.entryTouchPrice = fillPrice;
       }
     }
 
@@ -1357,16 +1336,22 @@ function derivePosition(rec, ohlcEntry, todayIso) {
         result.pnlPure = phase === 'phase2' ? (realizedPct + floatPct * 0.5) : floatPct;
       }
     } else {
-      // Belum triggered — PENDING vs RUNNING_MISSED vs EXPIRED_UNFILLED
+      // Belum triggered — PENDING vs RUNNING_MISSED (gap/drift) vs EXPIRED_UNFILLED
       const dist = Math.abs(result.distanceToEntryPct || 0);
-      // Arah kabur (missed) — direction-aware:
-      //   BUY LIMIT (entry ≤ open) → kabur naik: lastPrice > entry & jauh
-      //   BUY STOP  (entry > open) → kabur turun: lastPrice < entry & jauh
-      //   SELL LIMIT (entry ≥ open) → kabur turun: lastPrice < entry & jauh
-      //   SELL STOP  (entry < open) → kabur naik: lastPrice > entry & jauh
+      // Kalau di loop tadi gap-tembus-SL terjadi (missedByGapFlag), rec
+      // ini langsung TERLEWAT — nggak peduli expiry atau drift threshold.
+      if (missedByGapFlag) {
+        result.state = 'RUNNING_MISSED';
+        result.status = 'MISSED';
+        // Optional: bisa tambah result.missedReason = 'gap_through_sl' di sini
+        // kalau nanti UI mau distinguish gap-missed vs drift-missed.
+      } else {
+      // Arah kabur (drift-missed) — LIMIT-only semantic:
+      //   BUY  → kabur naik: lastPrice > entry & jauh
+      //   SELL → kabur turun: lastPrice < entry & jauh
       const awayFromEntry = isBuy
-        ? (isLimitDirection ? (result.lastPrice - rec.entry > 0) : (rec.entry - result.lastPrice > 0))
-        : (isLimitDirection ? (rec.entry - result.lastPrice > 0) : (result.lastPrice - rec.entry > 0));
+        ? (result.lastPrice - rec.entry > 0)
+        : (rec.entry - result.lastPrice > 0);
       const missed = awayFromEntry && dist > MISSED_THRESHOLD_PCT;
       // Cap expiry rekomendasi belum triggered: min(horizon asli, 1 bulan
       // dari openDate). Ini memaksa semua rekomendasi "menunggu entry"
@@ -1390,6 +1375,7 @@ function derivePosition(rec, ohlcEntry, todayIso) {
       } else {
         result.state = 'PENDING';
         result.status = 'PENDING';
+      }
       }
     }
   }

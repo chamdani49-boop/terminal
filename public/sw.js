@@ -29,7 +29,7 @@
 //   3. Client reload berikutnya (mis. via message SW→client, atau user
 //      manual refresh) dapat HTML/JS fresh dari server (bukan cache).
 // Selalu bump ke tanggal + tag pendek supaya jelas kapan bumped.
-const SW_VERSION = 'v3-2026-07-27-fix-null-openpx';
+const SW_VERSION = 'v4-2026-07-27-limit-semantic';
 
 self.addEventListener('install', (event) => {
   // Aktifkan SW baru segera setelah install → user tak perlu tutup tab.
