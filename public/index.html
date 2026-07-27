@@ -4674,18 +4674,72 @@ body.tr-profile-open .tr-subpane{display:none !important}
 #tr-view-main .tr-kpi .v,
 #tr-view-main .tr-kpi .s,
 #tr-view-main #trChart,
-#tr-view-main .tr-chart-wrap,
 #tr-view-main .tr-legend,
 #tr-view-main .tr-ov-highlights,
 #tr-view-main .tr-ov-grid-2,
 #tr-view-main .tr-ov-latest-wrap{transition:opacity .3s ease .05s}
 html.tracker-loading #tr-view-main .tr-kpi .v,
 html.tracker-loading #tr-view-main #trChart,
-html.tracker-loading #tr-view-main .tr-chart-wrap,
 html.tracker-loading #tr-view-main .tr-legend,
 html.tracker-loading #tr-view-main .tr-ov-highlights,
 html.tracker-loading #tr-view-main .tr-ov-grid-2,
 html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
+
+/* ─── Chart skeleton (Performa 30 Hari) ───
+   Visual placeholder saat tracker.json belum siap ATAU Chart.js belum
+   render — supaya kolom chart tidak terasa "kosong lama". Skeleton
+   di-toggle via class:
+     .tr-chart-wrap.loading .tr-chart-skel{visible}
+   HTML overhead 1 <div>; CSS pure (no JS deps). Auto-hide setelah
+   updateChart() jalan (canvas terisi). */
+.tr-chart-wrap .tr-chart-skel{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:14px 10px 24px 10px;gap:4px;
+  pointer-events:none;
+  overflow:hidden;
+  border-radius:8px;
+  background:linear-gradient(180deg, transparent 0%, var(--bg2) 100%);
+  opacity:0;transition:opacity .2s ease;
+}
+.tr-chart-wrap.loading .tr-chart-skel{opacity:1}
+/* 6 baris "fake line" horizontal utk hint bentuk chart. Tiap baris
+   punya lebar random-ish (via nth-child) + shimmer sweep. */
+.tr-chart-skel-line{
+  height:2px;border-radius:2px;
+  background:linear-gradient(90deg, var(--border) 0%, var(--text3) 50%, var(--border) 100%);
+  background-size:200% 100%;
+  animation:tr-chart-shimmer 1.4s ease-in-out infinite;
+  opacity:.55;
+}
+.tr-chart-skel-line:nth-child(1){width:92%;animation-delay:.00s;margin-bottom:22px}
+.tr-chart-skel-line:nth-child(2){width:78%;animation-delay:.12s;margin-bottom:18px}
+.tr-chart-skel-line:nth-child(3){width:88%;animation-delay:.24s;margin-bottom:14px}
+.tr-chart-skel-line:nth-child(4){width:66%;animation-delay:.36s;margin-bottom:12px}
+.tr-chart-skel-line:nth-child(5){width:82%;animation-delay:.48s;margin-bottom:10px}
+.tr-chart-skel-line:nth-child(6){width:70%;animation-delay:.60s}
+@keyframes tr-chart-shimmer{
+  0%  {background-position:200% 0}
+  100%{background-position:-200% 0}
+}
+/* Skeleton rows utk sidebar Peringkat vs IHSG — visible saat data belum
+   siap. Di-hide otomatis begitu updateChart() mengganti innerHTML container
+   dgn row real (skeleton diinsert lewat HTML, real render replace-nya). */
+.tr-chart-rank-skel{display:flex;flex-direction:column;gap:3px;padding:2px 0}
+.tr-chart-rank-skel-row{
+  height:22px;border-radius:6px;
+  background:linear-gradient(90deg, var(--bg2) 0%, var(--card) 50%, var(--bg2) 100%);
+  background-size:200% 100%;
+  animation:tr-chart-shimmer 1.4s ease-in-out infinite;
+  opacity:.6;
+}
+.tr-chart-rank-skel-row:nth-child(2){animation-delay:.08s}
+.tr-chart-rank-skel-row:nth-child(3){animation-delay:.16s}
+.tr-chart-rank-skel-row:nth-child(4){animation-delay:.24s}
+.tr-chart-rank-skel-row:nth-child(5){animation-delay:.32s}
+.tr-chart-rank-skel-row:nth-child(6){animation-delay:.40s}
+.tr-chart-rank-skel-row:nth-child(7){animation-delay:.48s}
+.tr-chart-rank-skel-row:nth-child(8){animation-delay:.56s}
 
 /* ═══════════════════════════════════════════════════════════════════
    OVERVIEW PAGE — Highlights (4 kartu 2×2) + Ranking (2 kolom).
@@ -6516,11 +6570,36 @@ body.is-mobile-device.force-desktop .pl-col-main{
          chamdani49-boop/rupiah-monitor (AllCurrenciesChart) — biar user
          punya bahasa visual konsisten antar product Economstock. -->
     <div class="tr-chart-layout">
-      <div class="tr-chart-wrap"><canvas id="trChart"></canvas></div>
+      <div class="tr-chart-wrap loading" id="trChartWrap">
+        <canvas id="trChart"></canvas>
+        <!-- Skeleton placeholder — visible saat tracker.json belum siap
+             ATAU Chart.js belum render. Di-hide oleh updateChart() dgn
+             remove class 'loading' setelah new Chart(...) selesai. -->
+        <div class="tr-chart-skel" aria-hidden="true">
+          <div class="tr-chart-skel-line"></div>
+          <div class="tr-chart-skel-line"></div>
+          <div class="tr-chart-skel-line"></div>
+          <div class="tr-chart-skel-line"></div>
+          <div class="tr-chart-skel-line"></div>
+          <div class="tr-chart-skel-line"></div>
+        </div>
+      </div>
       <div class="tr-chart-rank">
         <div class="tr-chart-rank-head">Peringkat vs IHSG</div>
         <div class="tr-chart-rank-note">+ = outperform · − = underperform vs IHSG</div>
-        <div class="tr-chart-rank-list" id="trChartRankList"></div>
+        <div class="tr-chart-rank-list" id="trChartRankList">
+          <!-- Skeleton rows utk sidebar Peringkat saat data belum siap. -->
+          <div class="tr-chart-rank-skel" aria-hidden="true">
+            <div class="tr-chart-rank-skel-row"></div>
+            <div class="tr-chart-rank-skel-row"></div>
+            <div class="tr-chart-rank-skel-row"></div>
+            <div class="tr-chart-rank-skel-row"></div>
+            <div class="tr-chart-rank-skel-row"></div>
+            <div class="tr-chart-rank-skel-row"></div>
+            <div class="tr-chart-rank-skel-row"></div>
+            <div class="tr-chart-rank-skel-row"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -12776,6 +12855,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Cache last computed data supaya bisa re-render chart saat highlight
   // toggle tanpa recompute.
   var _lastChartData = null;
+  // First-render flag: initial paint di-animate ringan (350ms) supaya
+  // user dapat visual "chart appearing". Setelahnya (period change,
+  // highlight toggle, data refresh) skip animation → snap instant biar
+  // interaksi terasa responsive.
+  var _chartFirstRender = true;
+  // Cache colors palette style props per firmId untuk _applyHighlightFast
+  // — supaya bisa restore original color tanpa recompute.
+  var _firmBaseColorById = {};
   // Period filter untuk chart. Type:
   //   '30d'   : rolling 30 hari s.d. today (default).
   //   'mtd'   : month-to-date (1 tgl bulan ini s.d. today).
@@ -13231,23 +13318,22 @@ body.is-mobile-device.force-desktop .pl-col-main{
       }
       return;
     }
-    // 2) Toggle highlight (klik row Peringkat)
+    // 2) Toggle highlight (klik row Peringkat) — fast-path: cuma mutate
+    //    style dataset + chart.update('none'). Tidak destroy+rebuild.
     var row = e.target && e.target.closest && e.target.closest('.tr-chart-rank-row');
     if (row){
       var fid = row.getAttribute('data-firm-id');
       if (!fid) return;
       _highlightedFirmId = (_highlightedFirmId === fid) ? null : fid;
-      var d = window.__TR_getData && window.__TR_getData();
-      if (d) updateChart(d);
+      _applyHighlightFast();
       return;
     }
-    // 3) Klik chip IHSG di header chart → clear highlight
+    // 3) Klik chip IHSG di header chart → clear highlight (fast-path)
     var ihsg = e.target && e.target.closest && e.target.closest('#trIhsgChip');
     if (ihsg){
       if (_highlightedFirmId != null){
         _highlightedFirmId = null;
-        var d2 = window.__TR_getData && window.__TR_getData();
-        if (d2) updateChart(d2);
+        _applyHighlightFast();
       }
       return;
     }
@@ -13314,11 +13400,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Sekarang render 1 line PER SEKURITAS + sidebar Peringkat (klik row →
   // highlight). Style: smooth curves + point markers, layout row (chart
   // + sidebar). Adopsi design rupiah-monitor AllCurrenciesChart.
+  //
+  // Chart lama TIDAK destroy di awal — supaya fast-path (timeline+firm
+  // set unchanged) bisa reuse instance existing. Destroy hanya terjadi
+  // di 2 tempat: (1) empty-timeline path bawah kalau chart existing perlu
+  // di-clear, (2) full rebuild path (canReuse=false) tepat sebelum
+  // `new Chart(ctx, ...)`.
   function updateChart(data){
     if (typeof Chart === 'undefined') return;
     var ctx = $('trChart'); if (!ctx) return;
-    var existing = Chart.getChart(ctx);
-    if (existing) { try { existing.destroy(); } catch(_){} }
 
     // Timeline: UNION dates dari semua sumber (IHSG + dailyEquity + firm
     // recsHistory exit dates). Penting: kalau salah satu source lag update
@@ -13373,6 +13463,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
         fallbackIhsg = _buildIhsgFallbackFromMonthly(_chartPeriod);
       }
       _updateIhsgChip(fallbackIhsg, false);
+      // Hide skeleton — user sudah dapat pesan empty state, tidak boleh
+      // stuck di shimmer.
+      var wrapEmpty = $('trChartWrap');
+      if (wrapEmpty) wrapEmpty.classList.remove('loading');
+      // Reset _lastChartData supaya next render (period valid) trigger
+      // full rebuild (bukan fast-path yg akan salah karena chart sudah
+      // destroy).
+      _lastChartData = null;
       return;
     }
 
@@ -13449,6 +13547,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // lain = warna fade (alpha rendah) + tipis. Kalau tidak ada highlight
     // → semua line normal.
     var hasHighlight = _highlightedFirmId != null;
+    // Reset cache warna base per firmId — dipakai _applyHighlightFast
+    // supaya toggle highlight bisa restore warna full tanpa recompute.
+    _firmBaseColorById = {};
+    firmsRanked.forEach(function(x){ _firmBaseColorById[x.firm.id] = x.color; });
     var datasets = firmsRanked.map(function(x){
       var name = String(x.firm.name || '').replace(/^PT\s+/i,'').replace(/\s+Tbk\.?$/i,'').replace(/\s+/g,' ').trim();
       var isActive = _highlightedFirmId === x.firm.id;
@@ -13482,12 +13584,84 @@ body.is-mobile-device.force-desktop .pl-col-main{
       };
     });
 
+    // ── Fast-path: chart existing dgn timeline & firm-set identik ──
+    //
+    // Skenario: live overlay refresh tiap 15s / candle bikin bucket
+    // pindah. Timeline (rentang tgl) & susunan firm rank umumnya sama
+    // — cukup mutate chart.data.datasets[i].data + labels + update('none').
+    // Hindari destroy+recreate → tidak ada flash animasi, tidak
+    // rebuild dataset ~30 lines.
+    //
+    // Kondisi reuse:
+    //   1. Chart instance existing (belum di-destroy).
+    //   2. _lastChartData ada (bukan first render).
+    //   3. Timeline length + endpoints identik.
+    //   4. Jumlah firm sama.
+    //   5. Firm IDs urut identik (order penting: warna assigned by rank).
+    //
+    // Kalau ada mismatch → fallback ke path destroy+new Chart di bawah.
+    var _existingChart = null;
+    try { _existingChart = (typeof Chart !== 'undefined') ? Chart.getChart(ctx) : null; } catch(_){}
+    var _canReuseChart = !!(_existingChart && _lastChartData
+      && Array.isArray(_lastChartData.timeline)
+      && _lastChartData.timeline.length === timeline.length
+      && _lastChartData.timeline[0] === timeline[0]
+      && _lastChartData.timeline[timeline.length - 1] === timeline[timeline.length - 1]
+      && Array.isArray(_lastChartData.firmsRanked)
+      && _lastChartData.firmsRanked.length === firmsRanked.length);
+    if (_canReuseChart){
+      for (var _ci = 0; _ci < firmsRanked.length; _ci++){
+        if (!_lastChartData.firmsRanked[_ci]
+            || !_lastChartData.firmsRanked[_ci].firm
+            || _lastChartData.firmsRanked[_ci].firm.id !== firmsRanked[_ci].firm.id){
+          _canReuseChart = false; break;
+        }
+      }
+    }
+
     // Cache data supaya re-render on highlight toggle bisa reuse tanpa
     // recompute _computeFirmDailyEquity utk tiap firm.
     _lastChartData = { firmsRanked: firmsRanked, timeline: timeline };
 
     // Render sidebar Peringkat.
     _renderChartRankSidebar(firmsRanked);
+
+    if (_canReuseChart){
+      // In-place mutation: preserve chart instance, swap data.
+      try {
+        _existingChart.data.labels = timeline;
+        for (var _mi = 0; _mi < datasets.length; _mi++){
+          var _existDs = _existingChart.data.datasets[_mi];
+          var _newDs   = datasets[_mi];
+          if (!_existDs){ _existingChart.data.datasets[_mi] = _newDs; continue; }
+          // Update field yg bisa berubah (data, styles, order). label
+          // & firmId biasanya stabil tapi tetap sync utk safety.
+          _existDs.data                = _newDs.data;
+          _existDs.label               = _newDs.label;
+          _existDs.firmId              = _newDs.firmId;
+          _existDs.borderColor         = _newDs.borderColor;
+          _existDs.pointBackgroundColor= _newDs.pointBackgroundColor;
+          _existDs.pointBorderColor    = _newDs.pointBorderColor;
+          _existDs.pointRadius         = _newDs.pointRadius;
+          _existDs.pointHoverRadius    = _newDs.pointHoverRadius;
+          _existDs.borderWidth         = _newDs.borderWidth;
+          _existDs.order               = _newDs.order;
+        }
+        // Trim kalau count berkurang (shouldn't happen — sudah di-guard,
+        // tapi defensive).
+        _existingChart.data.datasets.length = datasets.length;
+        _existingChart.update('none');
+        // Skeleton overlay pastikan hidden (kalau reuse path dipanggil
+        // sebelum pertama kali sempat hide di rebuild path).
+        var wrapReuse = $('trChartWrap');
+        if (wrapReuse) wrapReuse.classList.remove('loading');
+        _chartFirstRender = false;
+        return;
+      } catch(_e){
+        // Fallback ke destroy+rebuild kalau reuse path error.
+        try { _existingChart.destroy(); } catch(_){}
+      }
+    }
 
     // (IHSG line di canvas chart DIHILANGKAN — sudah di chip header di atas.)
 
@@ -13507,11 +13681,32 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var isMobileVp = (typeof window !== 'undefined' && window.innerWidth <= 900);
     var interactionMode = (isMobileVp && hasHighlight) ? 'index' : 'nearest';
 
+    // Full rebuild path: destroy chart existing (kalau ada) baru bikin
+    // fresh. Fast-path di atas sudah return kalau timeline+firm-set unchanged.
+    try {
+      var _prevChart = (typeof Chart !== 'undefined') ? Chart.getChart(ctx) : null;
+      if (_prevChart) { try { _prevChart.destroy(); } catch(_){} }
+    } catch(_){}
+
     new Chart(ctx, {
       type: 'line',
       data: { labels: timeline, datasets: datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
+        // Animation: initial paint = 350ms sweep (visual feedback saat
+        // chart appear); rebuild berikutnya (period change / data refresh)
+        // = instant (0ms) supaya UX terasa snappy. Highlight toggle pakai
+        // _applyHighlightFast() (chart.update('none')) — tidak lewat
+        // path ini.
+        animation: _chartFirstRender ? { duration: 350, easing: 'easeOutQuart' } : false,
+        // Non-hover transitions (resize / show-hide) — skip animation
+        // supaya window resize tidak terasa lambat.
+        transitions: {
+          active:  { animation: { duration: 0 } },
+          resize:  { animation: { duration: 0 } },
+          show:    { animation: { duration: 0 } },
+          hide:    { animation: { duration: 0 } }
+        },
         plugins: {
           // Legend Chart.js DIMATIKAN — sidebar Peringkat di kanan sudah
           // menampilkan nama firm + warna + last% (lebih informatif).
@@ -13625,8 +13820,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
           var ds = chart.data.datasets[idx];
           if (!ds || !ds.firmId) return;
           _highlightedFirmId = (_highlightedFirmId === ds.firmId) ? null : ds.firmId;
-          var d = window.__TR_getData && window.__TR_getData();
-          if (d) updateChart(d);
+          // Fast-path: mutate style + chart.update('none'). Snap-instant.
+          _applyHighlightFastRef();
         },
         // Cursor pointer saat cursor di area line (indikator clickable),
         // default arrow di area kosong. Skip pointer cursor di mobile
@@ -13642,7 +13837,81 @@ body.is-mobile-device.force-desktop .pl-col-main{
         }
       }
     });
+
+    // Chart sudah render → hide skeleton overlay + flip firstRender flag
+    // supaya rebuild berikutnya tidak re-animasi.
+    var wrap = $('trChartWrap');
+    if (wrap) wrap.classList.remove('loading');
+    _chartFirstRender = false;
   }
+
+  // ── Fast-path: highlight toggle tanpa destroy+rebuild ──
+  //
+  // Highlight (klik row Peringkat / klik chip IHSG / klik line di
+  // canvas) HANYA mengubah style dataset (borderColor, borderWidth,
+  // pointRadius, order) — data & timeline tidak berubah. Recreate
+  // Chart.js instance mahal (~200-400ms + animation). Path ini
+  // memutasi dataset props existing + chart.update('none') = instant.
+  //
+  // Fallback: kalau chart belum ada (mis. dipanggil sebelum data
+  // pertama landing), delegasi ke updateChart(data) supaya konsisten.
+  function _applyHighlightFast(){
+    var ctx = $('trChart'); if (!ctx) return;
+    var chart = null;
+    try { chart = (typeof Chart !== 'undefined') ? Chart.getChart(ctx) : null; } catch(_){}
+    if (!chart){
+      var d = window.__TR_getData && window.__TR_getData();
+      if (d) updateChart(d);
+      return;
+    }
+    var hasHighlight = _highlightedFirmId != null;
+    var isMobileVp = (typeof window !== 'undefined' && window.innerWidth <= 900);
+    var interactionMode = (isMobileVp && hasHighlight) ? 'index' : 'nearest';
+
+    // Mutate dataset styles in-place — resolve base color dari cache.
+    (chart.data.datasets || []).forEach(function(ds){
+      var fid = ds && ds.firmId; if (!fid) return;
+      var base = _firmBaseColorById[fid] || ds.borderColor || '#888';
+      // Strip potential '2a' alpha suffix dari borderColor sebelumnya
+      // sebelum comparing — tapi cache _firmBaseColorById sudah simpan
+      // versi bersih, jadi pakai cache langsung.
+      var isActive = _highlightedFirmId === fid;
+      var effectiveColor = hasHighlight ? (isActive ? base : base + '2a') : base;
+      ds.borderColor = effectiveColor;
+      ds.pointBackgroundColor = effectiveColor;
+      ds.pointBorderColor = effectiveColor;
+      ds.pointRadius = hasHighlight && isActive ? 3 : 0;
+      ds.pointHoverRadius = hasHighlight ? (isActive ? 6 : 3) : 5;
+      ds.borderWidth = hasHighlight ? (isActive ? 2.8 : 1.2) : 1.7;
+      ds.order = isActive ? -1 : (hasHighlight ? 1 : 0);
+    });
+
+    // Update interaction mode (mobile+highlight → 'index' + axis:'x').
+    try {
+      if (chart.options && chart.options.plugins && chart.options.plugins.tooltip){
+        chart.options.plugins.tooltip.mode = interactionMode;
+      }
+      if (chart.options && chart.options.interaction){
+        chart.options.interaction.mode = interactionMode;
+        chart.options.interaction.axis = (interactionMode === 'index') ? 'x' : 'xy';
+      }
+    } catch(_){}
+
+    chart.update('none');
+
+    // Toggle .active class di sidebar Peringkat rows — hindari innerHTML
+    // rewrite penuh (tidak scroll-jump, tidak flicker).
+    var rankList = $('trChartRankList');
+    if (rankList){
+      var rows = rankList.querySelectorAll('.tr-chart-rank-row');
+      for (var i = 0; i < rows.length; i++){
+        var rfid = rows[i].getAttribute('data-firm-id');
+        rows[i].classList.toggle('active', rfid && rfid === _highlightedFirmId);
+      }
+    }
+  }
+  // Expose (dipakai click handlers + onClick chart di bawah).
+  var _applyHighlightFastRef = _applyHighlightFast;
 
   // ── Update papan peringkat: analis dummy → SEKURITAS real ──
   function updateLb(data){
