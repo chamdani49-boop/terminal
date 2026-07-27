@@ -7913,8 +7913,61 @@ body.is-mobile-device.force-desktop .pl-col-main{
     //   - Overview tracker aggregate: _cat='closed'
     if (rec._bucket === 'history' || rec._bucket === 'historyList') return null;
     if (rec._cat === 'closed' || rec._cat === 'history') return null;
+
+    // TP1/TP2 lock — dari backend rec.tpHits (bukan dari harga live).
+    // Valid tanpa peduli jam bursa; TP1/TP2 hit sekali → LOCKED forever
+    // per aturan TP1 lock rule.
+    var tpHits = Array.isArray(rec.tpHits) ? rec.tpHits : [];
+    if (tpHits.indexOf('TP2') >= 0) return 'TP2_LIVE';
+    if (tpHits.indexOf('TP1') >= 0) return 'TP1_LIVE';
+
     var live = getLive(rec.ticker);
     if (!live || live.price == null) return null;
+
+    // ══════════════════════════════════════════════════════════════════
+    // SESSION GUARD — cegah bug "AKTIF sebelum bursa buka".
+    // ══════════════════════════════════════════════════════════════════
+    // Di luar jam bursa (weekend / Senin pagi sebelum 09:00 WIB / setelah
+    // 16:00 WIB kalau live worker stale), `live.price` = harga CLOSE dari
+    // sesi terakhir yg jalan — bukan harga real-time. Kalau kita derive
+    // entry-touch pakai harga stale ini, rec PENDING baru dgn openDate=
+    // hari ini SALAH ter-flag sbg AKTIF (contoh bug: 08:56 WIB Senin,
+    // 27-07-2026 rec RAJA entry=870, live=870 dari close Jumat → naik ke
+    // AKTIF, padahal market Senin belum buka jam 09:00).
+    //
+    // Backend `build-tracker.js` sudah punya guard equivalent di
+    // `augmentOhlcWithLive()` (skip inject virtual candle bila session
+    // belum start). Live-overlay klien `_synthTodayCandleForRec()` juga
+    // guard sama (di IIFE lain di file ini). Function ini SEBELUMNYA
+    // kelewat — hanya cek closedBy/bucket, tidak cek waktu.
+    //
+    // Guard: hari kerja WIB (Sen-Jum) + jam ≥ 09:00 WIB (waktu buka IDX).
+    // Freshness live feed (`DATA._meta.generated_at` di hari yg sama)
+    // juga di-cek supaya kalau live worker down/stale saat sesi jalan,
+    // kita masih fallback ke backend state (return null).
+    //
+    // Efek fix: di luar sesi, function return null → statusOfRow fallback
+    // ke bucket asli (pending → MENUNGGU, open → AKTIF). Backend
+    // rec.state jadi otoritas final. Backend-triggered rec (didTouchEntry
+    // = true saat backend build sebelumnya) tetap tampil AKTIF via
+    // fallback bucket 'open', jadi TIDAK ada regresi.
+    var _nowWib = new Date(Date.now() + 7 * 3600 * 1000);
+    var _dowWib = _nowWib.getUTCDay();       // 0=Min .. 6=Sab
+    var _hourWib = _nowWib.getUTCHours();
+    var _sessionActive = _dowWib >= 1 && _dowWib <= 5 && _hourWib >= 9;
+    if (!_sessionActive) return null;
+    // Live feed freshness — kalau _meta.generated_at bukan hari ini WIB,
+    // anggap stale (mis. worker gagal refresh sejak Jumat).
+    try {
+      var _genAt = (typeof DATA !== 'undefined' && DATA && DATA._meta) ? DATA._meta.generated_at : null;
+      if (_genAt) {
+        var _todayWib = _nowWib.toISOString().slice(0, 10);
+        var _genWibDay = new Date(new Date(_genAt).getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+        if (_genWibDay !== _todayWib) return null;
+      }
+    } catch(_){}
+    // ══════════════════════════════════════════════════════════════════
+
     var lp = live.price;
     var isBuy = String(rec.type||'BUY').toUpperCase() !== 'SELL';
     var entry = (Number.isFinite(+rec.entry) && +rec.entry > 0) ? +rec.entry : null;
@@ -7922,13 +7975,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var tp2v  = +rec.tp2;
     var tp2   = (Number.isFinite(tp2v) && tp2v > 0 && tp2v !== +rec.tp1) ? tp2v : null;
     var sl    = (Number.isFinite(+rec.sl)    && +rec.sl    > 0) ? +rec.sl    : null;
-    // TP1 lock rule: kalau backend sudah rekam tpHits mengandung TP1/TP2,
-    // rec dihitung sudah kena TP1/TP2 — walaupun live sekarang balik ke
-    // area SL. Ini menghindari live "SL_LIVE" override yg keliru untuk
-    // rec SL_TRAIL scenario (TP1 sudah tersentuh sebelumnya).
-    var tpHits = Array.isArray(rec.tpHits) ? rec.tpHits : [];
-    if (tpHits.indexOf('TP2') >= 0) return 'TP2_LIVE';
-    if (tpHits.indexOf('TP1') >= 0) return 'TP1_LIVE';
+    // NB: TP1 lock rule (tpHits.indexOf(TP1/TP2)) sudah di-check DI ATAS,
+    // sebelum session guard — jadi TP-locked rec tetap kelihatan TP walau
+    // di luar jam bursa (data backend murni, tidak butuh live).
     // Entry touched: backend flag OR live-derived (live sudah di/lewat entry)
     var entryTouched = !!rec.didTouchEntry;
     if (!entryTouched && entry != null) {
