@@ -7583,7 +7583,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
                      _pfPeriod aktif: "30 Hari Terakhir", "Januari 2026",
                      "Tahun 2026", dst. -->
                 <div class="tr-card-title" id="trPfDayChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Grafik Performa Analis · 30 Hari Terakhir</div>
-                <div class="tr-card-desc">P/L harian sekuritas (per exitDate) vs return harian IHSG + garis kumulatif — ikut mode eksekusi di atas.</div>
+                <div class="tr-card-desc">P/L harian sekuritas (exit + floating live posisi aktif) vs return harian IHSG + garis kumulatif — ikut mode eksekusi di atas.</div>
               </div>
             </div>
             <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
@@ -8599,25 +8599,78 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var recs = (firm && firm.recsHistory || [])
       .filter(function(r){ return r && r.exitDate; })
       .filter(_recInDateFilter);
-    if(!recs.length) return [];
     var byDate = {};
     recs.forEach(function(r){
       var pnl = getRecPnl(r, entryMode, exitMode);
       if(pnl==null) return; // mode-eligibility filter
       var d = r.exitDate;
-      if(!byDate[d]) byDate[d] = { date:d, trades:0, wins:0, losses:0, sumPnl:0 };
+      if(!byDate[d]) byDate[d] = { date:d, trades:0, wins:0, losses:0, sumPnl:0, floating:0, floatingCount:0 };
       byDate[d].trades += 1;
       byDate[d].sumPnl += +pnl;
       if(+pnl > 0) byDate[d].wins++; else if(+pnl < 0) byDate[d].losses++;
     });
+
+    // ── FLOATING RETURN: include unrealized dari recsActive di TODAY ──
+    //
+    // Marking-to-market posisi aktif: sum floatingPct dari semua rec
+    // recsActive (didTouchEntry=true, masih running) → attach ke bucket
+    // TGL HARI INI di series. Efek visual: bar hari ini = realized closes
+    // hari ini + mark-to-market floating semua active positions.
+    //
+    // Reuse computeActiveFloatingSum(firm, entryMode) yang sudah dipakai
+    // KPI card "FLOATING BERJALAN" — konsisten dgn angka yg user lihat
+    // di header. Fungsi ini sudah:
+    //   - Filter rec.openDate via _recInDateFilter (respect date filter).
+    //   - Compute floating pakai getModeFloating (respect entry mode).
+    //   - Return { sum, count, total }.
+    //
+    // Guard: hanya include kalau TODAY masih dalam _dateFilter range
+    // (kalau ada filter). Historical filter → skip (floating tidak
+    // relevan buat snapshot masa lalu). No filter → always include.
+    //
+    // User rationale: "toh nanti closing akan di validasi dgn harga
+    // price dari OHLC kan" — floating hari ini akurat untuk snapshot
+    // realtime; final pnl akan reconcile via OHLC saat rec beneran close.
+    var todayISO = '';
+    try { todayISO = new Date().toISOString().slice(0, 10); } catch(_){}
+    var floatingInFilter = false;
+    if (todayISO){
+      if (_dateFilter){
+        floatingInFilter = (todayISO >= _dateFilter.start && todayISO <= _dateFilter.end);
+      } else {
+        floatingInFilter = true; // no filter → always include today
+      }
+    }
+    if (floatingInFilter){
+      try {
+        var flt = computeActiveFloatingSum(firm, entryMode);
+        if (flt && flt.count > 0 && Number.isFinite(+flt.sum)){
+          if (!byDate[todayISO]){
+            byDate[todayISO] = { date: todayISO, trades: 0, wins: 0, losses: 0, sumPnl: 0, floating: 0, floatingCount: 0 };
+          }
+          byDate[todayISO].floating      += +flt.sum;
+          byDate[todayISO].floatingCount += flt.count;
+          byDate[todayISO].sumPnl        += +flt.sum;
+        }
+      } catch(_){}
+    }
+
+    // Kalau tidak ada bucket sama sekali (no closed history + no active),
+    // return kosong supaya empty-state message tampil.
     var dates = Object.keys(byDate).sort();
+    if (!dates.length) return [];
     if(dates.length > 30) dates = dates.slice(dates.length-30);
     var cum = 0;
     return dates.map(function(d){
       var row = byDate[d];
       var dayPnl = +row.sumPnl.toFixed(3);
       cum += dayPnl;
-      return { date:d, trades:row.trades, wins:row.wins, losses:row.losses, dayPnl:dayPnl, cumulative:+cum.toFixed(3) };
+      return {
+        date:d, trades:row.trades, wins:row.wins, losses:row.losses,
+        dayPnl:dayPnl, cumulative:+cum.toFixed(3),
+        floating:+(row.floating||0).toFixed(3),
+        floatingCount:row.floatingCount||0
+      };
     });
   }
 
@@ -8844,8 +8897,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
                 var t = s.trades || 0;
                 var w = s.wins || 0;
                 var l = s.losses || 0;
-                return t + ' trade' + (t !== 1 ? 's' : '') +
-                       ' · ' + w + ' win / ' + l + ' loss';
+                var lines = [];
+                if (t > 0){
+                  lines.push(t + ' trade' + (t !== 1 ? 's' : '') +
+                             ' · ' + w + ' win / ' + l + ' loss');
+                }
+                // Kalau bar ini punya floating (biasanya tgl hari ini),
+                // tampilkan breakdown supaya user tahu porsi realized vs
+                // mark-to-market unrealized.
+                if (s.floatingCount && Number.isFinite(+s.floating)){
+                  var sign = s.floating >= 0 ? '+' : '';
+                  lines.push('Σ ' + s.floatingCount + ' aktif · floating ' +
+                             sign + (+s.floating).toFixed(2) + '%');
+                }
+                if (!lines.length) return '';
+                return lines;
               }
             }
           }
@@ -11463,6 +11529,46 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if (input) input.value = '';
     }, 120);
   });
+
+  // ── Live refresh hook: firm profile ikut update saat data refresh ──
+  //
+  // Live overlay IIFE panggil __TR_rerender tiap ~15s (safety) atau saat
+  // candle intraday bikin state transition. Renderer di file ini
+  // (KPI card FLOATING BERJALAN, chart Grafik Performa Analis, rec list
+  // dgn floating column) SEMUA baca dari rec.floatingPct / rec.lastPrice
+  // yg live overlay update. Tapi tanpa hook __TR_onData, halaman firm
+  // profile tidak re-render otomatis — user harus manual switch mode
+  // atau tab dulu.
+  //
+  // Fix: subscribe __TR_onData → panggil rerenderAll() kalau _currentFirm
+  // aktif (user lagi buka firm profile). Kalau _currentFirm null (user
+  // di halaman lain), rerenderAll return early — no-op.
+  //
+  // Debounce 300ms: cegah thrashing kalau __TR_rerender fired berkali2
+  // dalam interval singkat (mis. beberapa candle transition beruntun).
+  var _refreshDebounce = null;
+  function _liveRefresh(){
+    if (!_currentFirm) return;
+    if (_refreshDebounce) clearTimeout(_refreshDebounce);
+    _refreshDebounce = setTimeout(function(){
+      _refreshDebounce = null;
+      try { rerenderAll(); } catch(_){}
+    }, 300);
+  }
+  function _hookLive(){
+    if (typeof window.__TR_onData === 'function'){
+      window.__TR_onData(_liveRefresh);
+      return true;
+    }
+    return false;
+  }
+  if (!_hookLive()){
+    var _liveTries = 0;
+    var _liveIv = setInterval(function(){
+      _liveTries++;
+      if (_hookLive() || _liveTries > 50) clearInterval(_liveIv);
+    }, 200);
+  }
 })();
 </script>
 
