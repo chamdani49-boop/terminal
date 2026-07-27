@@ -10913,6 +10913,90 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   window.__TR_normalizeFirms = normalizeFirmsInData;
 
+  // ── Normalisasi referensi objek rec (dedupe by id) ─────────────────
+  // Backend build-tracker.js membangun rec sebagai OBJEK BERBEDA di 2
+  // tempat:
+  //   - Top-level lists   : data.openList/pendingList/missedList/historyList
+  //     (via makeOpenListObj — field lengkap, dgn firm/firmId)
+  //   - byFirm arrays     : data.byFirm[X].recsActive/Pending/Missed/History
+  //     (via makeRecActiveObj/makeRecHistoryObj — field lebih ringkas)
+  //
+  // Setelah JSON.parse, kedua-nya jadi REFERENSI TERPISAH walau rec.id
+  // identik. Efeknya: live-overlay yg mutate rec di top-level (mis. state
+  // PENDING → TRIGGERED via _recomputeRecState saat harga live nyentuh
+  // entry) TIDAK propagate ke rec di byFirm array. Halaman Analis (firm
+  // profile) baca dari byFirm → tampil status stale (MENUNGGU) padahal
+  // Overview Tracker (baca top-level) tampil AKTIF utk rec yg sama.
+  //
+  // FIX: dedupe by id → SEMUA reference (top-level, byFirm, unfilledList)
+  // point ke OBJECT YANG SAMA. Overlay mutation propagate ke semua path.
+  //
+  // Merge strategy: field-set berbeda antara makeOpenListObj (kaya) vs
+  // makeRecActiveObj (ringkas). Kita pilih top-level sbg canonical (field
+  // lebih lengkap), lalu MERGE field byFirm yg belum ada (mis. jika suatu
+  // saat byFirm punya field khusus). Idempotent — bisa dipanggil ulang
+  // tanpa efek samping.
+  function normalizeRecReferences(data){
+    if (!data || typeof data !== 'object') return data;
+    var canonical = {};   // id → rec (canonical reference)
+
+    // Pass 1: register canonical dari top-level lists (prioritas)
+    var TOP_LISTS = ['openList','pendingList','missedList','historyList','unfilledList'];
+    TOP_LISTS.forEach(function(k){
+      var arr = data[k]; if (!Array.isArray(arr)) return;
+      arr.forEach(function(r){
+        if (r && r.id && !canonical[r.id]) canonical[r.id] = r;
+      });
+    });
+
+    // Pass 1b: register canonical dari byFirm (utk rec history overflow
+    // beyond top-level cap 500). Item ini akan jadi canonical utk id-nya.
+    var byFirm = (data.byFirm && typeof data.byFirm === 'object') ? data.byFirm : {};
+    var BF_BUCKETS = ['recsActive','recsPending','recsMissed','recsHistory'];
+    Object.keys(byFirm).forEach(function(fid){
+      var firm = byFirm[fid]; if (!firm) return;
+      BF_BUCKETS.forEach(function(bk){
+        var arr = firm[bk]; if (!Array.isArray(arr)) return;
+        arr.forEach(function(r){
+          if (r && r.id && !canonical[r.id]) canonical[r.id] = r;
+        });
+      });
+    });
+
+    // Pass 2: replace non-canonical dgn canonical + merge field yg missing.
+    // Menjaga tidak ada info yg hilang saat consolidate.
+    var replacements = 0;
+    function _dedupeArr(arr){
+      if (!Array.isArray(arr)) return;
+      for (var i = 0; i < arr.length; i++){
+        var r = arr[i];
+        if (!r || !r.id) continue;
+        var canon = canonical[r.id];
+        if (canon && canon !== r){
+          // Merge field yg belum ada di canonical
+          for (var p in r){
+            if (Object.prototype.hasOwnProperty.call(r, p) && !(p in canon)){
+              canon[p] = r[p];
+            }
+          }
+          arr[i] = canon;
+          replacements++;
+        }
+      }
+    }
+    TOP_LISTS.forEach(function(k){ _dedupeArr(data[k]); });
+    Object.keys(byFirm).forEach(function(fid){
+      var firm = byFirm[fid]; if (!firm) return;
+      BF_BUCKETS.forEach(function(bk){ _dedupeArr(firm[bk]); });
+    });
+
+    if (replacements > 0){
+      try { console.log('[Tracker] normalizeRecReferences: ' + replacements + ' rec references di-dedupe'); } catch(_){}
+    }
+    return data;
+  }
+  window.__TR_normalizeRecs = normalizeRecReferences;
+
   // ── Re-invoke seluruh renderer tracker ────────────────────────────
   // Dipakai:
   //   (a) load pertama (dari loadTrackerData).
@@ -10949,6 +11033,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
         // Canonicalize firm names SEBELUM set ke __TR_DATA__ dan panggil
         // callbacks. Idempotent: kalau backend sudah kanonik, ini no-op.
         try { normalizeFirmsInData(json); } catch(e){ try{ console.error('normalizeFirms failed:', e); }catch(_){} }
+        // Normalisasi REFERENSI OBJEK rec — backend build-tracker.js emit
+        // rec sebagai object BERBEDA di top-level lists (openList/pendingList/
+        // dst) vs byFirm[X].recs* arrays. Setelah JSON.parse, kedua-nya jadi
+        // reference terpisah. Efeknya: overlay live yg mutate rec di
+        // openList (mis. state PENDING → TRIGGERED, didTouchEntry=false → true)
+        // TIDAK propagate ke byFirm array. Halaman Analis (firm profile)
+        // baca dari byFirm → tampil status stale (MENUNGGU) padahal Overview
+        // Tracker (baca top-level) tampil AKTIF. Fix: merge referensi
+        // berdasar rec.id supaya SEMUA path baca object yg SAMA.
+        try { normalizeRecReferences(json); } catch(e){ try{ console.error('normalizeRecReferences failed:', e); }catch(_){} }
         window.__TR_DATA__ = json;
         window.__TR_DATA_STATE__ = json && json.pending ? 'pending' : 'ok';
         _reinvokeRenderers(json);
