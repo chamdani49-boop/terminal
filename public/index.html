@@ -4511,12 +4511,15 @@ body.tr-profile-open .tr-subpane{display:none !important}
   color:rgba(15,23,42,0.12);
 }
 [data-theme="dark"] .tr-recmodal-watermark .wm-brand{color:rgba(255,255,255,0.12)}
-/* Kanal Telegram — SOLID, bukan watermark. Kecil (11px) supaya
-   tidak menggangu tampilan chart di web, tapi tetap terbaca jelas
-   saat gambar chart di-capture & di-broadcast ke Telegram. Warna
-   biru Telegram (#229ED9 official brand color) supaya secara visual
-   diasosiasikan dgn platform Telegram. */
+/* Kanal Telegram — TIDAK ditampilkan di popup website (baik user biasa
+   maupun admin). Hanya muncul saat admin klik "Kirim ke Telegram" →
+   sebelum html2canvas capture, kita toggle class `.capturing` di
+   `#trRecModalChartWrap` → CSS di bawah menampilkan .wm-tg → gambar
+   yg di-broadcast ke Telegram tetap punya identitas kanal. Setelah
+   capture selesai, class dihapus lagi supaya popup web kembali bersih.
+   Warna biru Telegram (#229ED9 official brand color). */
 .tr-recmodal-watermark .wm-tg{
+  display:none;
   font-family:'IBM Plex Mono', monospace;
   font-weight:700;letter-spacing:.6px;
   font-size:11px;
@@ -4524,6 +4527,7 @@ body.tr-profile-open .tr-subpane{display:none !important}
   color:#229ED9;
   opacity:.95;
 }
+.tr-recmodal-chart-wrap.capturing .tr-recmodal-watermark .wm-tg{display:inline-block}
 [data-theme="dark"] .tr-recmodal-watermark .wm-tg{color:#4FB8E8}
 /* Badge hit di level cards — 'TERISI' utk entry, 'HIT' utk TP, 'KENA' utk SL.
    Position absolute di corner atas kanan card. Card sendiri sudah relative. */
@@ -17387,6 +17391,12 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       var target = document.getElementById('trRecModalChartWrap');
       if (!target) throw new Error('Chart wrapper tidak ditemukan');
 
+      // Tampilkan kanal Telegram (.wm-tg = "t.me/ruanginvestor") HANYA
+      // selama capture. Class ini di-set sebelum html2canvas dijalankan
+      // dan dihapus di block `finally` di bawah supaya popup web tidak
+      // menampilkan tulisan itu lagi setelah kirim selesai/gagal.
+      target.classList.add('capturing');
+
       // Beri 1 frame untuk repaint terakhir kalau ada state change
       await new Promise(function(r){ requestAnimationFrame(function(){ setTimeout(r, 30); }); });
 
@@ -17397,6 +17407,8 @@ window._attachCandleTooltip = function(chart, series, container, candles){
         useCORS: true,
         allowTaint: false,
       });
+      // Sudah selesai capture — sembunyikan lagi kanal Telegram di popup web.
+      target.classList.remove('capturing');
       var dataUrl = canvas.toDataURL('image/png');
       var caption = _buildShareCaption(_currentRec);
 
@@ -17418,6 +17430,12 @@ window._attachCandleTooltip = function(chart, series, container, candles){
       setMsg('✗ ' + ((e && e.message) || 'Gagal kirim'), 'err');
     } finally {
       btn.disabled = false;
+      // Safety net: pastikan class `capturing` selalu dihapus meskipun
+      // html2canvas throw / user reload di tengah proses. Idempoten.
+      try {
+        var _tgtCleanup = document.getElementById('trRecModalChartWrap');
+        if (_tgtCleanup) _tgtCleanup.classList.remove('capturing');
+      } catch(_){}
       // Auto-clear pesan sukses/error setelah 8 detik supaya tidak menumpuk
       setTimeout(function(){
         if (msgEl.classList.contains('ok') || msgEl.classList.contains('err')) {
