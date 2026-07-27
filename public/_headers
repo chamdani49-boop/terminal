@@ -7,8 +7,34 @@
 /valuation.json
   Cache-Control: public, max-age=120, s-maxage=120, stale-while-revalidate=600
 
-# Static assets (the HTML shell) can be cached longer; HTML revalidates
-# instantly via Pages' atomic deploys.
+# ── HTML shells: NEVER cache without server revalidation. ──────────────
+# Bug: default browser heuristic caching pernah bikin user tetap load
+# JS/HTML LAMA walau sudah hard-refresh (Ctrl+Shift+R) berjam-jam setelah
+# deploy baru. Ini bikin frontend logic (mis. _recomputeRecState) tetap
+# pakai kode lama padahal server sudah punya versi baru. Fix: pakai
+# `no-cache` (bukan `no-store`) supaya browser boleh simpan tapi HARUS
+# revalidate via If-Modified-Since / ETag tiap request. Kalau server bilang
+# 304 Not Modified → pakai cache (hemat bytes). Kalau 200 → dapat versi
+# baru. Zero-risk stale HTML.
+/
+  Cache-Control: no-cache, must-revalidate
+
+/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/admin.html
+  Cache-Control: no-cache, must-revalidate
+
+/billing.html
+  Cache-Control: no-cache, must-revalidate
+
+/login.html
+  Cache-Control: no-cache, must-revalidate
+
+# Service worker — sama, HARUS re-validate biar SW version bump ke-detect.
+/sw.js
+  Cache-Control: no-cache, must-revalidate
+
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff

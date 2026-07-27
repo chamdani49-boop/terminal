@@ -87,9 +87,43 @@
     } catch (e) { return Promise.reject(e); }
   }
 
-  // ── Service Worker registration ──
+  // ── Service Worker registration + auto-reload on SW update ──
+  //
+  // Kalau SW versi baru aktif (mis. setelah bug fix di JS di-deploy),
+  // SW akan `postMessage({type:'SW_UPDATED'})` ke semua tab. Kita auto-
+  // reload sekali (dgn guard supaya tidak loop) supaya klien langsung
+  // load HTML/JS fresh — user gak perlu manual Ctrl+Shift+R.
+  //
+  // Guard: `__ES_SW_RELOADED` di sessionStorage — kalau sudah reload
+  // dalam session ini, jangan reload lagi (prevent infinite loop kalau
+  // ada bug SW yg trigger message berulang).
+  function _autoReloadOnSwUpdate() {
+    try {
+      navigator.serviceWorker.addEventListener('message', function (ev) {
+        var data = ev && ev.data;
+        if (!data || data.type !== 'SW_UPDATED') return;
+        try {
+          if (sessionStorage.getItem('__ES_SW_RELOADED') === '1') return;
+          sessionStorage.setItem('__ES_SW_RELOADED', '1');
+        } catch (_) {}
+        // Kasih console info supaya user paham kalau lihat DevTools.
+        try { console.info('[SW] versi baru aktif (' + (data.version || '?') + ') — auto-reload utk load kode fresh.'); } catch (_) {}
+        // Reload dgn small delay supaya console log flushed & user gak
+        // lihat "flicker" kalau lagi buka popup. `location.reload()` tanpa
+        // arg = normal reload (pakai HTTP cache). Karena SW fetch handler
+        // sudah pakai `cache: 'no-store'` untuk navigate, HTML pasti fresh.
+        setTimeout(function () {
+          try { location.reload(); } catch (_) {}
+        }, 300);
+      });
+    } catch (_) {}
+  }
+
   function registerSW() {
     if (!('serviceWorker' in navigator)) return;
+    // Pasang listener SW-message SEBELUM register, biar tidak ke-lewat
+    // event `SW_UPDATED` yg fires cepat setelah install pertama.
+    _autoReloadOnSwUpdate();
     // Delay registrasi supaya tak mengganggu main thread saat page-load kritis.
     W.addEventListener('load', function () {
       try {
