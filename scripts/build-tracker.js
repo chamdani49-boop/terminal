@@ -579,29 +579,234 @@ function parseHorizonDays(v) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// CANONICAL FIRM NAME — normalisasi nama sekuritas
+// CANONICAL FIRM NAME — normalisasi nama sekuritas ke daftar resmi IDX
 // ─────────────────────────────────────────────────────────────────────────
 // Nama sekuritas di Sheet sering di-input tidak konsisten:
 //   - "RHB Sekuritas" vs "RHB Sekuritas Indonesia" (harus jadi 1 firm)
+//   - "Kay Hian Sekuritas" vs "UOB Kay Hian Sekuritas" (harus jadi 1 firm —
+//     nama resmi IDX: "UOB KAY HIAN SEKURITAS")
 //   - "PHINTRACO SEKURITAS" vs "Phintraco Sekuritas" (beda case → 1 firm)
 //   - "PT Reliance Sekuritas Indonesia Tbk" (PT + Tbk = noise → strip)
 //   - "CGS International" vs "CGS International Sekuritas Indonesia" (1 firm)
 // Tapi HATI-HATI ada brand-prefix yang MEMBEDAKAN firm:
-//   - "Valbury Sekuritas" ≠ "KB Valbury Sekuritas" (KB = distinct brand)
+//   - "Valbury Sekuritas" ≠ "KB Valbury Sekuritas" (KB = distinct brand
+//     Korea Investment). Kalau daftar resmi IDX hanya punya "KB VALBURY
+//     SEKURITAS", input "Valbury Sekuritas" akan di-merge ke situ karena
+//     tidak ada standalone Valbury di daftar IDX (single canonical wins).
 //
-// STRATEGI:
-//   canonicalFirmKey(): UPPERCASE, strip "PT " prefix, " Tbk" suffix,
-//     " Sekuritas Indonesia" / " Sekuritas" suffix, " Indonesia" suffix.
-//     Prefix brand (KB, BRI, BNI, dll) TIDAK di-strip → tetap distinct.
-//   canonicalFirmDisplay(): strip "PT " prefix + " Tbk" suffix saja
-//     (case & rest preserved) — untuk display name yang bersih.
-//   pickBestDisplay(): dari kumpulan varian dengan canonical-key sama,
-//     pilih yg terbaik: non-ALL-CAPS dulu, lalu paling panjang, lalu
-//     alphabetical. → "RHB Sekuritas Indonesia" menang atas "RHB Sekuritas";
-//     "Phintraco Sekuritas" menang atas "PHINTRACO SEKURITAS".
+// STRATEGI DUA-LAPIS:
+//   LAPIS 1 (utama) — matchCanonicalFirm(): tokenize input & bandingkan
+//     signature-nya dgn daftar resmi 92 sekuritas IDX di public/broker-
+//     codes.js. Kalau input token subset canonical (atau vice-versa)
+//     setelah drop generic tokens (PT, TBK, SEKURITAS, INDONESIA, dsb),
+//     input di-normalize ke canonical name.
+//   LAPIS 2 (fallback) — regex strip generic suffix/prefix untuk nama-
+//     nama yg belum ada di broker-codes.js. Menjaga fitur existing
+//     ("RHB Sekuritas" ≡ "RHB Sekuritas Indonesia" via fuzzy strip).
+//
+// KENAPA broker-codes.js jadi SoT: user maintain daftar itu secara
+// eksplisit (92 broker per Jul 2026). Tiap nambah broker baru cukup edit
+// public/broker-codes.js — build-tracker.js otomatis parse ulang tiap
+// build via loadBrokerList().
 // ─────────────────────────────────────────────────────────────────────────
+
+// Generic tokens yg di-strip saat build signature. Semua UPPERCASE.
+const _FIRM_GENERIC_TOKENS = new Set([
+  'PT', 'TBK', 'SEKURITAS', 'SECURITIES',
+  'INDONESIA', 'ASIA', 'INTERNATIONAL', 'INTL',
+  'AND', 'OF', 'THE',
+]);
+
+function _firmSignatureTokens(name) {
+  if (!name) return [];
+  const raw = String(name)
+    // CamelCase split: "IndoPremier" → "Indo Premier", "JPMorgan" stays
+    // (semua kapital berturut-turut tetap 1 token). Regex ini insert space
+    // hanya di boundary lowercase→UPPERCASE, jadi "JPMorgan" tetap utuh.
+    // Efek: user yg tulis "IndoPremier Sekuritas" akan match sama dgn
+    // "Indo Premier Sekuritas" di leaderboard.
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .toUpperCase()
+    .replace(/&/g, ' AND ')
+    .replace(/[.,()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(t => t && !_FIRM_GENERIC_TOKENS.has(t));
+  // Merge consecutive single-letter tokens jadi 1 acronym string. Ini
+  // menormalkan dot-abbreviation dgn versi tanpa titiknya, mis.
+  //   "J.P. Morgan"  → ["J", "P", "MORGAN"] → ["JP", "MORGAN"]
+  //   "JP Morgan"    → ["JP", "MORGAN"]     → ["JP", "MORGAN"]  (already merged)
+  //   "H.S.B.C."     → ["H","S","B","C"]    → ["HSBC"]
+  // Hasilnya matchCanonicalFirm konsisten mengabaikan format titik.
+  const merged = [];
+  let acc = '';
+  for (const t of raw) {
+    if (t.length === 1 && /^[A-Z]$/.test(t)) {
+      acc += t;
+    } else {
+      if (acc) { merged.push(acc); acc = ''; }
+      merged.push(t);
+    }
+  }
+  if (acc) merged.push(acc);
+  return merged;
+}
+
+// Kumpulan token yang HARUS dipertahankan uppercase saat title-casing
+// canonical name (brand acronyms, singkatan holding, dll). Di-derive
+// otomatis dari broker-codes.js: tiap token ≤3 huruf yg muncul di daftar
+// resmi dianggap acronym, KECUALI yg ada di `_PROPER_NOUN_SHORT` (kata
+// pendek yg kebetulan bukan singkatan, mis. "KAY" di UOB Kay Hian).
+//
+// Kalau nanti user tambah broker baru dgn acronym unik ke broker-codes.js,
+// otomatis ke-detect. Kalau nanti nemu proper noun 3-huruf baru yg mesti
+// jangan di-uppercase, tinggal tambahkan ke _PROPER_NOUN_SHORT.
+const _PROPER_NOUN_SHORT = new Set(['KAY']);
+let _acronymSetCache = null;
+function _getAcronymSet() {
+  if (_acronymSetCache) return _acronymSetCache;
+  const acr = new Set();
+  for (const name of _loadCanonicalBrokers()) {
+    for (const tok of _firmSignatureTokens(name)) {
+      if (tok.length <= 3 && !_PROPER_NOUN_SHORT.has(tok)) acr.add(tok);
+    }
+  }
+  _acronymSetCache = acr;
+  return acr;
+}
+
+// Title-case brand-safe untuk canonical name (UPPERCASE dari broker-
+// codes.js). Rules:
+//   1. Token match _ACRONYMS (auto-derived dari LIST) → UPPERCASE
+//      (UOB, KB, RHB, DBS, MNC, KGI, CGS, dsb.)
+//   2. Token pattern dot-abbreviation "J.P." atau "H.S.B.C." → UPPERCASE
+//   3. Token ≤2 chars → UPPERCASE (semua kata 2-huruf pasti acronym)
+//   4. Else → Title-case ("Kay", "Hian", "Sekuritas", "Morgan")
+function _titleCaseFirmName(s) {
+  if (!s) return '';
+  const acronyms = _getAcronymSet();
+  return String(s).toLowerCase()
+    .split(/\s+/)
+    .map(w => {
+      if (!w) return '';
+      const wu = w.toUpperCase();
+      // Dot-abbreviation (J.P., H.S.B.C., dll.) → UPPERCASE penuh
+      if (/^[a-z](\.[a-z])+\.?$/i.test(w)) return wu;
+      // Auto-derived acronym set (UOB, RHB, MNC, dst.)
+      if (acronyms.has(wu)) return wu;
+      // Kata ≤ 2 huruf tanpa vokal → acronym
+      if (w.length <= 2) return wu;
+      // Default: title case
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    })
+    .join(' ');
+}
+
+// Load daftar resmi broker dari public/broker-codes.js. File itu adalah
+// JS browser dgn IIFE — kita extract array LIST via regex + eval sandbox
+// (`new Function` — aman karena file di repo sendiri). Return array nama
+// broker uppercase (persis dari LIST[].name).
+//
+// Dipanggil sekali per build (lazy singleton via _canonicalBrokerCache).
+let _canonicalBrokerCache = null;
+function _loadCanonicalBrokers() {
+  if (_canonicalBrokerCache !== null) return _canonicalBrokerCache;
+  const brokerCodesPath = path.join(ROOT, 'public', 'broker-codes.js');
+  if (!fs.existsSync(brokerCodesPath)) {
+    console.warn('  ⚠ public/broker-codes.js tidak ada — canonical firm merge disabled.');
+    _canonicalBrokerCache = [];
+    return _canonicalBrokerCache;
+  }
+  try {
+    const src = fs.readFileSync(brokerCodesPath, 'utf8');
+    // Match: `var LIST = [ ... ];` — greedy dot to allow multi-line array
+    const m = src.match(/var\s+LIST\s*=\s*(\[[\s\S]*?\]);/);
+    if (!m) {
+      console.warn('  ⚠ broker-codes.js: pattern LIST array tidak ditemukan.');
+      _canonicalBrokerCache = [];
+      return _canonicalBrokerCache;
+    }
+    // Eval sandbox: `new Function` tidak akses closure di sini, hanya
+    // literal object/array. Aman utk data yang kita kontrol.
+    const list = new Function('return ' + m[1])();
+    if (!Array.isArray(list)) {
+      _canonicalBrokerCache = [];
+      return _canonicalBrokerCache;
+    }
+    _canonicalBrokerCache = list
+      .map(b => b && b.name ? String(b.name).trim() : null)
+      .filter(Boolean);
+    console.log(`  ✓ Loaded ${_canonicalBrokerCache.length} canonical broker names dari broker-codes.js`);
+    return _canonicalBrokerCache;
+  } catch (e) {
+    console.warn('  ⚠ Gagal parse broker-codes.js:', e.message);
+    _canonicalBrokerCache = [];
+    return _canonicalBrokerCache;
+  }
+}
+
+// Cache signature per broker (Set of tokens) supaya matchCanonicalFirm
+// tidak re-tokenize tiap panggil (dipanggil O(recs) kali).
+let _canonicalSigCache = null;
+function _getCanonicalSigs() {
+  if (_canonicalSigCache) return _canonicalSigCache;
+  const brokers = _loadCanonicalBrokers();
+  _canonicalSigCache = brokers.map(name => ({
+    name,
+    sig: new Set(_firmSignatureTokens(name)),
+  }));
+  return _canonicalSigCache;
+}
+
+// Cocokkan nama firm dari sheet ke daftar resmi. Return canonical name
+// (UPPERCASE dari broker-codes.js) atau null kalau tidak ada match.
+//
+// Algoritma:
+//   - Hitung inputSig (Set tokens setelah drop generic tokens).
+//   - Untuk tiap canonical broker, hitung overlap dgn inputSig.
+//   - Match syarat: inputSig ⊆ canonicalSig ATAU canonicalSig ⊆ inputSig
+//     (setelah drop generic tokens).
+//   - Kalau multiple match, pilih yg listCov terbesar (paling spesifik).
+//     Tie-break: signature lebih panjang menang (misal input "Kay Hian"
+//     match ke "UOB KAY HIAN SEKURITAS" bukan "KAY HIAN" hypothetical).
+function matchCanonicalFirm(inputName) {
+  const inputTokens = _firmSignatureTokens(inputName);
+  if (!inputTokens.length) return null;
+  const inputSig = new Set(inputTokens);
+
+  const canonicals = _getCanonicalSigs();
+  let best = null;
+  let bestScore = -Infinity;
+
+  for (const { name, sig } of canonicals) {
+    if (!sig.size) continue;
+    let overlap = 0;
+    for (const t of inputSig) if (sig.has(t)) overlap++;
+    if (overlap === 0) continue;
+    const inputCov = overlap / inputSig.size;
+    const listCov  = overlap / sig.size;
+    // Syarat match: salah satu sisi harus FULLY covered (subset).
+    if (inputCov < 1.0 && listCov < 1.0) continue;
+    // Score: prefer listCov tinggi (canonical yg spesifik) > inputCov >
+    // sig.size besar (canonical lebih deskriptif).
+    const score = listCov * 100 + inputCov * 10 + sig.size * 0.01;
+    if (score > bestScore) {
+      bestScore = score;
+      best = name;
+    }
+  }
+  return best;
+}
+
+// Public API — sama dgn versi sebelumnya tapi sekarang canonical-aware.
 function canonicalFirmKey(name) {
   if (!name) return '';
+  // Prioritas: match ke daftar resmi IDX
+  const canon = matchCanonicalFirm(name);
+  if (canon) return canon.toUpperCase();
+  // Fallback: regex strip lama (biar backward compat & handle firm yg
+  // belum ada di broker-codes.js)
   let s = String(name).trim().toUpperCase();
   s = s.replace(/^PT\s+/, '');
   s = s.replace(/[.,]/g, ' ');
@@ -618,6 +823,14 @@ function canonicalFirmDisplay(name) {
   return s.replace(/\s+/g, ' ').trim();
 }
 function pickBestDisplay(variants) {
+  // Prioritas 1: kalau ada varian yg match ke canonical broker-codes.js,
+  // pakai title-cased canonical name (source of truth).
+  for (const v of (variants || [])) {
+    const canon = matchCanonicalFirm(v);
+    if (canon) return _titleCaseFirmName(canon);
+  }
+  // Prioritas 2: fallback lama — pilih varian terbaik dari input user
+  // (non-caps, terpanjang, alphabetical).
   const cleaned = Array.from(new Set(
     (variants || []).map(canonicalFirmDisplay).filter(Boolean)
   ));
