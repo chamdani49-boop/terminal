@@ -19544,6 +19544,13 @@ function _startLiveFeedPolling() {
 
     // Update running max/min dgn snapshot terbaru & ambil range hasil merge.
     var idSt = _touchIntradayLive(rec.ticker, price, todayStr);
+    // Virtual candle high/low = intraday observation SAJA (tidak include
+    // openEst). Alasan: `openEst = yesterday's close` sering GAP dari
+    // today's actual open (open bisa berbeda jauh dari close-kemarin).
+    // Kalau kita paksa include openEst dalam range, false-positive touch
+    // sering muncul (kasus BRIS original: yesterday close 1815 di bawah
+    // entry 1820 → dianggap ter-cross padahal today's actual price path
+    // mungkin start di 1830 langsung, tidak pernah touch 1820).
     var hi = idSt ? idSt.high : price;
     var lo = idSt ? idSt.low  : price;
 
@@ -19644,11 +19651,21 @@ function _startLiveFeedPolling() {
     if (state === 'PENDING' || state === 'RUNNING_MISSED'){
       var touched;
       if (isFreshSameDayRec) {
-        // Range-based (unambiguous) — pakai intraday_low..intraday_high
-        // yg sudah ter-akumulasi. Kalau candle single-point (belum ada
-        // range signifikan), otomatis low===high===close → FALSE kecuali
-        // close persis di entry.
-        touched = (low <= entry) && (entry <= high);
+        // LIMIT-style semantic — match user's mental model:
+        //   BUY entry X → touched saat harga live pernah <= X
+        //     (dip/fill: kalau ada observed price di atau di bawah entry,
+        //      LIMIT order akan fill di harga itu — jadi entry "kejemput")
+        //   SELL entry X → touched saat harga live pernah >= X (rally/fill)
+        //
+        // KENAPA BUKAN direction-based (LIMIT vs STOP): direction inference
+        // dari openEst=close-kemarin sering salah kalau entry dekat close-
+        // kemarin. Contoh ASII: entry 4980 > openEst 4960 → salah classify
+        // sbg BUY STOP → touched=high>=entry=FALSE, padahal harga live
+        // 4930 sudah jauh di bawah entry 4980 (LIMIT sudah fill).
+        //
+        // Cukup pakai LIMIT-only semantic (paling common utk analyst recs).
+        // low = intraday_low ter-akumulasi (running min lintas polls).
+        touched = isBuy ? (low <= entry) : (high >= entry);
       } else if (isLimitDirection) {
         touched = isBuy ? (low <= entry) : (high >= entry);
       } else {

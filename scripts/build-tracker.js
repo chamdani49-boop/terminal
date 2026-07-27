@@ -428,24 +428,20 @@ function buildTodayCandleFromLive(liveEntry, todayIso) {
   const openEst = chg !== 0 ? Math.round(price / (1 + chg)) : price;
   const ts = Math.floor(Date.parse(todayIso + 'T00:00:00Z') / 1000);
 
-  // Prioritas 1: pakai intraday_high/low akumulasi lintas build kalau
-  // tersedia & sama-hari. Merge lagi dgn `price` (sekarang) biar nggak
-  // miss update terbaru antara build sebelumnya → sekarang.
+  // Virtual candle high/low = intraday observation SAJA (tidak include
+  // openEst). Alasan: `openEst = yesterday's close` sering GAP dari
+  // today's actual open, jadi tidak reliable sbg titik dalam today's
+  // price path. Kalau kita paksa include openEst dalam range → false
+  // positive touch (mis. yesterday close di seberang entry dari today's
+  // price path).
   const idHi = +liveEntry.intraday_high;
   const idLo = +liveEntry.intraday_low;
   const idDate = liveEntry.intraday_date;
   const hasIntraday = idDate === todayIso
                       && Number.isFinite(idHi) && idHi > 0
                       && Number.isFinite(idLo) && idLo > 0;
-  let high, low;
-  if (hasIntraday) {
-    high = Math.max(idHi, price);
-    low  = Math.min(idLo, price);
-  } else {
-    // Fallback single-point — tidak span palsu dari close-kemarin.
-    high = price;
-    low  = price;
-  }
+  const high = hasIntraday ? Math.max(idHi, price) : price;
+  const low  = hasIntraday ? Math.min(idLo, price) : price;
 
   return [
     ts,
@@ -1210,11 +1206,14 @@ function derivePosition(rec, ohlcEntry, todayIso) {
     if (!triggered) {
       let touched;
       // Untuk fresh same-day rec (rec.openDate === todayIso), publishBar
-      // = virtual candle → publishOpenPx tidak reliable. Pakai range check.
+      // = virtual candle → publishOpenPx tidak reliable utk direction
+      // inference. Pakai LIMIT-style semantic (match user's mental model):
+      //   BUY: touched kalau ada observed price ≤ entry (dip/fill)
+      //   SELL: touched kalau ada observed price ≥ entry (rally/fill)
       // Iterasi hanya 1 bar untuk fresh (relevant = [virtual candle] saja).
       const isFreshBar = isFreshSameDayRec && relevant.length === 1;
       if (isFreshBar) {
-        touched = (low <= rec.entry) && (rec.entry <= high);
+        touched = isBuy ? (low <= rec.entry) : (high >= rec.entry);
       } else if (isLimitDirection) {
         // LIMIT: BUY on dip / SELL on rally
         touched = isBuy ? (low <= rec.entry) : (high >= rec.entry);
