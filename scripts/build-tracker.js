@@ -1235,7 +1235,20 @@ function derivePosition(rec, ohlcEntry, todayIso) {
     // Kalau belum triggered → lanjut ke bar berikutnya (jangan cek TP/SL)
     if (!triggered) continue;
 
-    const slHit = isBuy ? low <= effectiveSl : high >= effectiveSl;
+    // ── SL: CLOSE-based (wick tolerance) — per user preference ──
+    // SL hanya trigger kalau CLOSE menembus SL. Wick intraday yg cuma
+    // nyentuh SL lalu bounce balik TIDAK dianggap stop out. Alasan:
+    //   1. Daily tracker: wick sering data noise (Yahoo tick) atau
+    //      false-break yang bounce cepat.
+    //   2. User's mental model: 'kalau close di atas SL lagi, position
+    //      still valid, harga hanya wick sebentar'.
+    // Contoh BUMI 24 Jul: [o=180 h=183 l=168 c=171]. low=168=SL exactly,
+    // tapi close=171 > SL → position stays AKTIF (bukan SL_HIT).
+    //
+    // TP: TETAP intraday-inclusive (high >= tp1 utk BUY). TP = 'take
+    // profit', analyst set target — kalau harga sempat nyentuh target,
+    // dianggap LIMIT sell/buy sudah execute.
+    const slHit = isBuy ? (close <= effectiveSl) : (close >= effectiveSl);
     const tp1Hit = isBuy ? high >= rec.tp1 : low <= rec.tp1;
     const tp2Hit = hasT2 && (isBuy ? high >= rec.tp2 : low <= rec.tp2);
 

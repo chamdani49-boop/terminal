@@ -32,7 +32,7 @@
   //   window.__ES_BUILD_VERSION
   // Kalau nilai-nya bukan versi terbaru yg diharapkan, artinya browser
   // masih load HTML lama (cache issue).
-  window.__ES_BUILD_VERSION = '2026-07-27-limit-semantic';
+  window.__ES_BUILD_VERSION = '2026-07-27-close-based-sl';
 
   // Set theme as early as possible to prevent flash of wrong theme.
   (function() {
@@ -20293,7 +20293,10 @@ function _startLiveFeedPolling() {
 
     // ── TRIGGERED (existing atau baru): cek SL/TP di candle ini ──
     if (triggered){
-      var slHit = isBuy ? (low <= effectiveSl) : (high >= effectiveSl);
+      // SL close-based (wick tolerance): SL hanya trigger kalau close
+      // menembus SL. Wick intraday tidak dihitung. Sinkron dgn backend
+      // derivePosition. TP tetap intraday-inclusive (touch target = fill).
+      var slHit = isBuy ? (close <= effectiveSl) : (close >= effectiveSl);
       var tp1Hit = !hasTp1 && (isBuy ? (high >= tp1) : (low <= tp1));
       var tp2Hit = tp2 != null && (isBuy ? (high >= tp2) : (low <= tp2));
 
