@@ -13158,6 +13158,45 @@ body.is-mobile-device.force-desktop .pl-col-main{
       pnlByDate[r.exitDate] = (pnlByDate[r.exitDate] || 0) + (+pnl || 0);
     });
 
+    // ── FLOATING RETURN: include unrealized dari posisi AKTIF ──
+    //
+    // Rec di firm.recsActive = posisi entry sudah tersentuh & masih live.
+    // Backend hitung rec.floatingPct = (lastPrice - entry) / entry × 100
+    // (buy) atau kebalikannya (sell). lastPrice update via live overlay
+    // (candle intraday).
+    //
+    // Kita masukkan sum floating pct ke bucket TGL TERAKHIR di timeline
+    // — bukan bikin bucket per-hari-terpisah (kita tidak punya history
+    // harga harian live). Efek visual: cumulative line "menendang" naik/
+    // turun di titik terakhir sesuai kondisi live saat ini. Same-day
+    // active positions memang tidak ada pnlByDate sebelumnya, jadi
+    // kelihatan sbg lonjakan di ujung — sesuai maksud "as-of-now" snapshot
+    // yg diminta user.
+    //
+    // Guard 1: hanya untuk period yg END-nya = today. Untuk periode
+    // historikal (Juni 2026, tahun 2025, dst), floating tidak relevan
+    // karena chart tsb representasi snapshot masa lalu. lastDate check
+    // via === todayISO handle ini.
+    //
+    // Guard 2: skip pending/missed — belum ambil posisi, tidak ada
+    // realized nor unrealized. Hanya recsActive (didTouchEntry=true &
+    // masih running) yg dihitung.
+    var lastDate = timeline[timeline.length - 1];
+    if (lastDate){
+      var todayISO = '';
+      try { todayISO = new Date().toISOString().slice(0, 10); } catch(_){}
+      if (lastDate === todayISO){
+        var actives = (firm && firm.recsActive) || [];
+        for (var ai = 0; ai < actives.length; ai++){
+          var ar = actives[ai];
+          if (!ar) continue;
+          var flt = +ar.floatingPct;
+          if (!Number.isFinite(flt)) continue;
+          pnlByDate[lastDate] = (pnlByDate[lastDate] || 0) + flt;
+        }
+      }
+    }
+
     var cum = 0;
     var out = [];
     for (var i = 0; i < timeline.length; i++){
@@ -13538,6 +13577,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
         if (r && r.exitDate) dateSet[r.exitDate] = 1;
       });
     });
+
+    // Extend timeline ke TODAY untuk live periods (30D, MTD, current
+    // year/month). Ini penting supaya:
+    //   1. Chart line meluas sampai hari ini walau backend feed lag
+    //      (mis. IHSG series30d terakhir kemarin, tapi rec active
+    //      punya floating live yg harus dilihat di chart).
+    //   2. Floating pct dari recsActive punya slot untuk di-plot
+    //      (_computeFirmDailyEquity attach ke lastDate=today).
+    // Historical periods (Juni 2026, tahun 2025, dst) tidak dipengaruhi
+    // — flag isLive guard sesuai pattern _updateIhsgChip.
+    try {
+      var _today = new Date();
+      var _todayISO = _today.toISOString().slice(0, 10);
+      var _isLive = _chartPeriod.type === '30d'
+        || _chartPeriod.type === 'mtd'
+        || (_chartPeriod.type === 'year' && _chartPeriod.year === _today.getUTCFullYear())
+        || (_chartPeriod.type === 'month'
+            && _chartPeriod.year === _today.getUTCFullYear()
+            && _chartPeriod.month === _today.getUTCMonth());
+      if (_isLive) dateSet[_todayISO] = 1;
+    } catch(_){}
+
     // ALL dates di data (utk hitung data min/max).
     var allDates = Object.keys(dateSet).sort();
     if (!allDates.length) return;
