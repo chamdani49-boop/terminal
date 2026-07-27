@@ -7975,14 +7975,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var tp2v  = +rec.tp2;
     var tp2   = (Number.isFinite(tp2v) && tp2v > 0 && tp2v !== +rec.tp1) ? tp2v : null;
     var sl    = (Number.isFinite(+rec.sl)    && +rec.sl    > 0) ? +rec.sl    : null;
-    // NB: TP1 lock rule (tpHits.indexOf(TP1/TP2)) sudah di-check DI ATAS,
-    // sebelum session guard — jadi TP-locked rec tetap kelihatan TP walau
-    // di luar jam bursa (data backend murni, tidak butuh live).
-    // Entry touched: backend flag OR live-derived (live sudah di/lewat entry)
+
+    // Entry-touched — ONLY dari flag rec.didTouchEntry (di-set backend
+    // atau _recomputeRecState overlay). Naive check `lp <= entry` lama
+    // DIBUANG karena OVER-TRIGGER untuk STOP setup: rec BUY dgn entry di
+    // atas publish price (breakout play), current price yg kebetulan
+    // masih di bawah entry (belum breakout) di-mark ACTIVE keliru padahal
+    // harga belum naik menyentuh entry. `_recomputeRecState` yg baru
+    // sudah direction-aware (LIMIT vs STOP), jadi rec.didTouchEntry
+    // di-set dgn benar oleh overlay live. Cukup dipercayai flag itu.
     var entryTouched = !!rec.didTouchEntry;
-    if (!entryTouched && entry != null) {
-      entryTouched = isBuy ? (lp <= entry) : (lp >= entry);
-    }
     if (!entryTouched) return null;   // masih menunggu entry
     // Entry sudah tersentuh — cek breach level dari yg paling extreme
     // (TP2 > TP1 > SL). Untuk BUY, TP > entry > SL. Untuk SELL, kebalikan.
@@ -14428,7 +14430,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if (ov === 'SL_LIVE')  return 'SL';
       if (ov === 'ACTIVE')   return 'AKTIF';
     }
-    if(bucket === 'pending') return 'MENUNGGU';
+    // MISSED (state RUNNING_MISSED) juga MENUNGGU: rec belum kena entry,
+    // hanya harga sudah kabur >5%. Bukan AKTIF. Fix bug lama: bucket
+    // 'missed' fall-through ke default 'AKTIF' → salah kelihatan aktif
+    // di rekomendasi terbaru padahal backend flag-nya RUNNING_MISSED.
+    if(bucket === 'pending' || bucket === 'missed') return 'MENUNGGU';
     return 'AKTIF';
   }
   function statusClsRow(s){
@@ -19365,37 +19371,70 @@ function _startLiveFeedPolling() {
     var effectiveSl = (hasTp1 && tp2 != null) ? entry : sl; // trailing SL after TP1 partial (staged)
     var triggered = (state === 'TRIGGERED');
 
+    // ── LIMIT vs STOP direction inference — sinkron dgn backend
+    //    derivePosition. Publish reference: rec.openPriceAtPublish (dari
+    //    backend, kalau tersedia) ATAU candle.open (virtual openEst = prev
+    //    close, untuk rec openDate=today yg backend belum punya candle).
+    //    BUY LIMIT (entry ≤ publishRef): touched saat low ≤ entry
+    //    BUY STOP  (entry >  publishRef): touched saat high ≥ entry
+    //    SELL analog. Cegah bug "TRIGGERED sebelum breakout" untuk STOP
+    //    setup (mis. rec BUY entry 880, publish open 870, hari ini range
+    //    865-875 → old check `low ≤ 880` selalu TRUE karena low ≤ open ≤
+    //    entry → salah TRIGGERED. New check `high ≥ 880` FALSE → correct
+    //    stay PENDING).
+    var publishRef = Number.isFinite(+rec.openPriceAtPublish) ? +rec.openPriceAtPublish : open;
+    var isLimitDirection = isBuy ? (entry <= publishRef) : (entry >= publishRef);
+
     // ── PENDING / RUNNING_MISSED: cek touch entry ──
     if (state === 'PENDING' || state === 'RUNNING_MISSED'){
-      var touched = isBuy ? (low <= entry) : (high >= entry);
+      var touched;
+      if (isLimitDirection) {
+        touched = isBuy ? (low <= entry) : (high >= entry);
+      } else {
+        touched = isBuy ? (high >= entry) : (low <= entry);
+      }
       if (!touched){
         var dist = update.distanceToEntryPct;
-        var awayFromEntry = isBuy ? dist > MISSED_THRESHOLD_PCT : dist < -MISSED_THRESHOLD_PCT;
+        // Kabur direction juga tergantung LIMIT/STOP:
+        //   LIMIT BUY (buy on dip): kabur = harga naik jauh dari entry
+        //   STOP  BUY (buy on breakout): kabur = harga turun jauh
+        var awayFromEntry;
+        if (isLimitDirection) {
+          awayFromEntry = isBuy ? (dist > MISSED_THRESHOLD_PCT) : (dist < -MISSED_THRESHOLD_PCT);
+        } else {
+          awayFromEntry = isBuy ? (dist < -MISSED_THRESHOLD_PCT) : (dist > MISSED_THRESHOLD_PCT);
+        }
         if (state === 'PENDING'){
-          // PENDING → RUNNING_MISSED kalau harga baru drift jauh dari entry.
           if (awayFromEntry){
             update.state = 'RUNNING_MISSED';
             update.status = 'MISSED';
             bucketTarget = 'missedList';
             return { update: update, bucketTarget: bucketTarget };
           }
-          // Tetap PENDING — hanya update lastPrice/distance.
           return { update: update, bucketTarget: null };
         } else {
-          // state === 'RUNNING_MISSED': sticky. Belum touch entry → tetap
-          // MISSED, tidak flip balik ke PENDING (cegah UI berkedip saat
-          // harga oscillate di sekitar threshold 5%).
           return { update: update, bucketTarget: null };
         }
       }
-      // Touch entry → TRIGGERED. Untuk rec yg SEBELUMNYA MISSED, ini
-      // "revive" ke posisi jalan (harga balik nyentuh entry).
+      // Touched → TRIGGERED. Fill price direction-aware.
       triggered = true;
       update.didTouchEntry = true;
       update.entryTouchDate = candle.date;
-      if (isBuy && open <= entry)          update.entryTouchPrice = +open;
-      else if (!isBuy && open >= entry)    update.entryTouchPrice = +open;
-      else                                  update.entryTouchPrice = +entry;
+      if (isBuy) {
+        if (isLimitDirection) {
+          // BUY LIMIT: fill @open kalau gap-down through entry (open ≤ entry), else @entry
+          update.entryTouchPrice = (open <= entry) ? +open : +entry;
+        } else {
+          // BUY STOP: fill @open kalau gap-up through entry (open ≥ entry), else @entry
+          update.entryTouchPrice = (open >= entry) ? +open : +entry;
+        }
+      } else {
+        if (isLimitDirection) {
+          update.entryTouchPrice = (open >= entry) ? +open : +entry;
+        } else {
+          update.entryTouchPrice = (open <= entry) ? +open : +entry;
+        }
+      }
       update.state = 'TRIGGERED';
       update.status = 'OPEN';
       update.openPriceAtPublish = rec.openPriceAtPublish || +open;
