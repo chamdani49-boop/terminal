@@ -16376,6 +16376,7 @@ window._attachCandleTooltip = function(chart, series, container, candles){
   var _keyHandler = null;
   var _lastCandleIndex = -1;  // index candle terakhir (utk proyeksi 5 candle)
   var _entryIndex = -1;       // index candle di/ setelah tanggal rilis rec
+  var _entryIsFuture = false; // true bila openDate belum punya candle (rec today, market belum buka)
   var _zoneEls = null;        // { tp:{box,lbl}, tp2:{...}, sl:{...} }
   var _zoneRaf = null;        // requestAnimationFrame id (loop layout zona)
   // _zoneEndDate: tgl ISO yg jadi ujung KANAN kotak hijau/merah zona.
@@ -16516,8 +16517,31 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     var chartEl = $('trRecModalChart'); if (chartEl) chartEl.innerHTML = '';
     _lastCandleIndex = -1;
     _entryIndex = -1;
+    _entryIsFuture = false;
     _zoneEls = null;
     _zoneEndDate = null;
+  }
+
+  // Hitung jumlah hari kerja (Sen-Jum) antara fromISO (exclusive) dan
+  // toISO (inclusive). Dipakai untuk proyeksi _entryIndex saat openDate
+  // rec ada di masa depan (candle-nya belum muncul di OHLC). Contoh:
+  //   from='2026-07-24' (Jumat), to='2026-07-27' (Senin) → 1 (Senin)
+  //   from='2026-07-24', to='2026-07-31' (Jumat depan) → 5 (Sen-Jum)
+  //   from='2026-07-24', to='2026-07-25' (Sabtu) → 0
+  // Return 0 kalau input invalid atau fromISO ≥ toISO.
+  function _countBusinessDaysBetween(fromISO, toISO){
+    if (!fromISO || !toISO || fromISO >= toISO) return 0;
+    var from = new Date(fromISO + 'T00:00:00Z');
+    var to = new Date(toISO + 'T00:00:00Z');
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) return 0;
+    var count = 0;
+    var cur = new Date(from.getTime() + 86400 * 1000); // mulai dari hari SETELAH from
+    while (cur.getTime() <= to.getTime()){
+      var dow = cur.getUTCDay(); // 0=Min, 6=Sab
+      if (dow !== 0 && dow !== 6) count++;
+      cur.setUTCDate(cur.getUTCDate() + 1);
+    }
+    return count;
   }
 
   // Hitung tanggal ujung kanan zona kotak hijau/merah.
@@ -16644,9 +16668,14 @@ window._attachCandleTooltip = function(chart, series, container, candles){
 
     var ts = _chart.timeScale();
 
-    // xEntry: koordinat by tanggal rilis (fallback logicalToCoordinate)
+    // xEntry: koordinat by tanggal rilis (fallback logicalToCoordinate).
+    // Kalau openDate di masa depan (candle-nya belum ada, _entryIsFuture=
+    // true), skip timeToCoordinate — beberapa versi lightweight-charts
+    // return coord candle terakhir untuk time yg tidak ada di data.
+    // Langsung pakai logicalToCoordinate(_entryIndex) yg sudah di-project
+    // di renderChart via business-day gap.
     var xEntry = null;
-    if (rec.openDate){
+    if (rec.openDate && !_entryIsFuture){
       var xC = ts.timeToCoordinate(rec.openDate);
       if (xC != null && Number.isFinite(xC)) xEntry = xC;
     }
@@ -16845,11 +16874,28 @@ window._attachCandleTooltip = function(chart, series, container, candles){
     // Dipakai layoutZones utk proyeksi 5 candle & setVisibleLogicalRange.
     _lastCandleIndex = lwData.length > 0 ? (lwData.length - 1) : -1;
     _entryIndex = -1;
+    _entryIsFuture = false;
     if (rec.openDate){
       for (var ei = 0; ei < lwData.length; ei++){
         if (lwData[ei].time >= rec.openDate){ _entryIndex = ei; break; }
       }
-      if (_entryIndex < 0) _entryIndex = _lastCandleIndex;
+      if (_entryIndex < 0 && _lastCandleIndex >= 0){
+        // openDate di masa depan — belum ada candle-nya (mis. rec rilis
+        // hari ini pagi, bursa Senin belum buka jam 09 WIB, sedangkan
+        // ohlc.json baru sampai Jumat). FALLBACK LAMA: _entryIndex =
+        // _lastCandleIndex → bikin zona hijau/merah "nempel" ke candle
+        // Jumat, padahal rec-nya untuk Senin.
+        //
+        // FIX: proyeksi index ke depan berdasar jumlah HARI KERJA (Sen-Jum)
+        // antara last candle date dan openDate. Chart punya rightOffset:8
+        // slot kosong di kanan, jadi index proyeksi tetap dalam range
+        // logical yg valid untuk logicalToCoordinate(). Zona akhirnya
+        // ter-anchor di posisi tgl openDate, sesuai ekspektasi user.
+        var lastDate = (lwData[_lastCandleIndex] && lwData[_lastCandleIndex].time) || null;
+        var daysAhead = _countBusinessDaysBetween(lastDate, rec.openDate);
+        _entryIndex = _lastCandleIndex + Math.max(1, daysAhead);
+        _entryIsFuture = true;
+      }
     }
 
     // Compute _zoneEndDate SEKARANG (setelah lwData siap) — dipakai
