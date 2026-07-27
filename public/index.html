@@ -11105,13 +11105,102 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   window.__TR_rerender = _reinvokeRenderers;
 
-  // ── Fetch tracker.json (sekali per session) ────────────────────────
-  function loadTrackerData(force){
-    if (window.__TR_DATA_STATE__ === 'loading') return;
-    if (window.__TR_DATA__ && !force) return; // sudah dimuat
-    window.__TR_DATA_STATE__ = 'loading';
-    updateStatusHint('loading');
+  // ── Stale-While-Revalidate cache (localStorage) ────────────────────
+  //
+  // Tujuan: kolom Tracker (chart, KPI, papan peringkat) muncul INSTANT
+  // dari snapshot terakhir yang di-cache, sementara fetch tracker.json
+  // fresh jalan di background. Update DOM in-place lewat _reinvokeRenderers
+  // + fast-path updateChart (chart.update('none')) → tidak ada flash.
+  //
+  // Cache:
+  //   - Key    : 'tr.cache.v1'  (bump ke v2 kalau schemaVersion berubah)
+  //   - Value  : JSON.stringify(tracker.json) — ~1.7MB
+  //   - Storage: localStorage (sync read, cepat ~30-80ms JSON.parse)
+  //   - Write  : async (setTimeout 100ms) supaya tidak block callback render.
+  //   - Expiry : 24 jam (safety net kalau user offline berhari-hari).
+  //
+  // Kenapa localStorage bukan Cache API?
+  //   - Sinkron: bisa render sebelum fetch balik (Cache API async).
+  //   - Simpler: tidak perlu ubah SW, tidak konflik dgn strategi
+  //     non-caching SW existing.
+  //   - Ukuran: 1.7MB masuk quota 5-10MB per-origin di semua browser modern.
+  //
+  // Kalau schemaVersion di JSON tidak match cache lama → invalidate.
+  var _TR_CACHE_KEY     = 'tr.cache.v1';
+  var _TR_CACHE_MAX_AGE = 24 * 3600 * 1000; // 24 jam
 
+  function _readCachedTrackerData(){
+    try {
+      if (typeof localStorage === 'undefined') return null;
+      var raw = localStorage.getItem(_TR_CACHE_KEY);
+      if (!raw) return null;
+      var wrap = JSON.parse(raw);
+      if (!wrap || !wrap.json || !wrap.ts) return null;
+      // Expiry check.
+      if ((Date.now() - wrap.ts) > _TR_CACHE_MAX_AGE){
+        try { localStorage.removeItem(_TR_CACHE_KEY); } catch(_){}
+        return null;
+      }
+      // Sanity: pastikan struktur data valid (paling minimal byFirm ada).
+      var j = wrap.json;
+      if (!j || typeof j !== 'object' || !j.byFirm) return null;
+      return j;
+    } catch(_){
+      // Corrupt cache → hapus, next fetch akan re-populate.
+      try { localStorage.removeItem(_TR_CACHE_KEY); } catch(__){}
+      return null;
+    }
+  }
+
+  function _writeCachedTrackerData(json){
+    // Async write: jangan block callback render (chart baru saja tampil,
+    // user butuh main thread free untuk animation frames).
+    setTimeout(function(){
+      try {
+        if (typeof localStorage === 'undefined' || !json) return;
+        var payload = JSON.stringify({ ts: Date.now(), json: json });
+        localStorage.setItem(_TR_CACHE_KEY, payload);
+      } catch(_){
+        // QuotaExceeded / serialization error → hapus cache lama supaya
+        // sisa storage kembali dan next attempt bisa retry.
+        try { localStorage.removeItem(_TR_CACHE_KEY); } catch(__){}
+      }
+    }, 100);
+  }
+
+  // ── Fetch tracker.json (SWR: cache-first, network revalidate) ──────
+  function loadTrackerData(force){
+    // FRESH guard: kalau fresh data sudah landing di session ini, no-op.
+    // Cache-hydrated data BUKAN "fresh" — biar fetch tetap jalan.
+    if (window.__TR_DATA_FRESH__ && !force) return;
+    if (window.__TR_DATA_STATE__ === 'loading') return;
+
+    // ── Fase 1: cache-first hydrate ──
+    // Baca snapshot lokal (kalau ada + belum expired) → apply ke
+    // __TR_DATA__ + fire callbacks → chart muncul TANPA nunggu network.
+    if (!window.__TR_DATA__){
+      var cached = _readCachedTrackerData();
+      // Skip cache kalau snapshot lama = 'pending' (backend belum siap
+      // saat itu). Kita mau fetch fresh dulu, biar user tidak dapat
+      // state pending yang mungkin sudah usang.
+      if (cached && !cached.pending){
+        try { normalizeFirmsInData(cached); } catch(_){}
+        try { normalizeRecReferences(cached); } catch(_){}
+        window.__TR_DATA__ = cached;
+        // Marker 'ok' (bukan 'stale') supaya status hint UI tidak show
+        // warning — dari sisi user, chart tampil normal & refresh silent.
+        window.__TR_DATA_STATE__ = 'ok';
+        try { _reinvokeRenderers(cached); } catch(_){}
+      }
+    }
+
+    window.__TR_DATA_STATE__ = 'loading';
+    // Loading hint hanya di-update kalau cache MISS (belum ada __TR_DATA__).
+    // Kalau cache HIT, UI sudah tampil — jangan tumpuk loading hint di
+    // atas konten yg sudah kelihatan.
+    if (!window.__TR_DATA__) updateStatusHint('loading');
+
+    // ── Fase 2: fetch fresh (background revalidate) ──
     fetch(DATA_URL + '?t=' + Date.now(), { headers: { 'Accept': 'application/json' } })
       .then(function(r){
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -11133,13 +11222,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
         try { normalizeRecReferences(json); } catch(e){ try{ console.error('normalizeRecReferences failed:', e); }catch(_){} }
         window.__TR_DATA__ = json;
         window.__TR_DATA_STATE__ = json && json.pending ? 'pending' : 'ok';
+        window.__TR_DATA_FRESH__ = true;
         _reinvokeRenderers(json);
+        // Persist snapshot fresh utk next open — async, tidak block frame.
+        _writeCachedTrackerData(json);
       })
       .catch(function(e){
-        window.__TR_DATA_STATE__ = 'error';
-        updateStatusHint('error', null, e && e.message);
+        // Kalau fetch gagal tapi kita udah render dari cache, TETAP jangan
+        // set error state — user tetap punya konten (walau agak stale).
+        // Cache-hit case: __TR_DATA__ sudah terisi tapi __TR_DATA_FRESH__
+        // masih false. Biarin state 'ok' (dari cache hydrate).
+        if (!window.__TR_DATA__){
+          window.__TR_DATA_STATE__ = 'error';
+          updateStatusHint('error', null, e && e.message);
+        } else {
+          // Cache-hit + fetch error → tandai balik ke 'ok' supaya
+          // UI tidak stuck di 'loading'.
+          window.__TR_DATA_STATE__ = 'ok';
+        }
       });
   }
+  // Expose untuk debugging manual (mis. bust cache dari console).
+  window.__TR_clearCache = function(){
+    try { localStorage.removeItem(_TR_CACHE_KEY); } catch(_){}
+  };
 
   // ── Tab switcher ──────────────────────────────────────────────────
   function switchTab(name){
