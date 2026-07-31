@@ -1,7 +1,13 @@
 {
-"generated_at": "2026-07-31T15:05:34+00:00",
+"generated_at": "2026-07-31T15:15:55+00:00",
 "count": 80,
 "items": [
+{
+"title": "Aral Melintang Emiten Ritel Semester II/2026",
+"link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNNlJRTzVjaUo5dVJURVBCTW1DbG9rSzUtRFJJbDV4bGdGdV8wTlcwQmh3aDNDcll2WkMxb3JERGtLMnBHZWdBOFFIZnZaNmVmeGg5RTZDRS1wTmNQVmN0TFE0QjMzakJJUnZfU0dua1hoeE54S0c2MXJSc3NkcTdYMzVDOXFqMDBFazZpSFpVd2doRjM5Uk9oMGFFNk0?oc=5",
+"source": "Bisnis.com",
+"ts": 1785510367
+},
 {
 "title": "Asa Investasi Baru Redam PHK di Industri Nasional",
 "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxNdFF4aXcxdURPckJfTkVmQW5CNUdHdFJGWUJpYmd3SGJNZXZDd3QxUmxIR3pQMFptT1N4MkEtY0FUQUlQNjdFSHNvczhkNUtvZHpxTGNmbDYyUE54eExRWWw2RThHcnFLSHVRMFZOdGFmcVNXNmh6UGFsY1NnLXZnNE12WnZWa0FHQk9ZSVdfM29jWkhXNGZkT0dQVzd2QXU0d2V4Nw?oc=5",
@@ -105,6 +111,12 @@
 "ts": 1785494280
 },
 {
+"title": "Gaet VinFast, Danamon Bidik Pertumbuhan Pembiayaan EV Nasional",
+"link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxNMVFmMFk3bDItalVTWGJ1YlNCQW1wX2Nja21qV2twaWdUNkVDZjdRblNYTE9JQkpzRWE1eS1JcDdFdGp0aTgzS25MQzlvdTliRm1xUmlmTFpZa2VKR1M5S3hKQ29pemdaa1NBRFZHOVFpMDBtZUs1M2xZQkZ1OVRGTVl5WnpqV0tRTVgzTGRMSVlqNFNSN0xvZ2huRV80Q3o3LWVDZg?oc=5",
+"source": "InvestorTrust",
+"ts": 1785493740
+},
+{
 "title": "Berita Populer",
 "link": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBmSWRKVmw3bHBWUEtwLVk0b3RNQU85eHV3dllzYjJQNHVQZC1ndnBDcmNieUM3OU5GRlozUlB1UlY0NEozaFZMbzZMNDFyMnYtMnZMZDFOVENzZXh5WmxoSC1xNXVsNXl2T21jcUJnLWlxN2xaWXh4UlA2OA?oc=5",
 "source": "IDN Financials",
@@ -127,6 +139,12 @@
 "link": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNeExqdEtIc19DOFV4cXBubmloV056RG9KYXdkYjBJYjJHN0hPQXYwVFZEN3R4aU4tclQzbzJka244NTJSektyRWxHRHJ1QTlxUU1iNUk2Ujl5SGpLenpKRVItNDY0YVdnOHN1SnF1djZfWE44NFRvSXNLMDZYVHdacktFVmtiOXBobklydnRSWl9VMmd3Qy11NVVCMEpNbEVsLWdRc2xDSExSQk9tNk5NRXFzUHVtaVdPcnRleXpHZy05eFMyQllJS0VqMms?oc=5",
 "source": "CNBC Indonesia",
 "ts": 1785493014
+},
+{
+"title": "VinFast Gandeng Danamon, Perkuat Pembiayaan Dealer untuk Kebut Ekspansi EV",
+"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPVUxBQjJ5d2o3Q2ZpZlRDQkRNd1FQWDI0NGN1b1UxNk9QdTljZmJ2d2pkTDJqWGNUMkNBcnlOZVcxLUl3eGxfcHFJRkJzY3RrZl8weXhvaWN6U05RTG90emcyek9lWlE3Um41N0ZvUWRSSWJieWVlZEMzOHlyYmZTOW12WExsMHBxbTIwaWxPcjB5MDZDSVJ2b1h2UVZJenl4XzRSUlZ5WVkzaF9XZWZMeVRqT1Q?oc=5",
+"source": "InvestorTrust",
+"ts": 1785492660
 },
 {
 "title": "Mengintip Kunci BBCA Cetak Laba Nyaris Samai BMRI meski Aset Lebih Kecil",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxOb0U0VjJaQjBqeksxYTR0SlJJbFlHZHM4NGlCcllYWGdMaTRaUi1VT0V3Qm9tMXhhNUZyYUotWC1ONTcxbzNJdmJGT0VHVWJnVERtdGZFSmdpT2N6anpnNXFuemZvTUlhdGc2aV9ITEVLOEVqWXJqdXE5SVJjUS1ra3BaVFRtcHlWSU44aDFMdFRjUEViMUxPUjFjMXlJZTZTNUF3ZnJmTWF6RWxfcjBrN3hfSdIBqwFBVV95cUxOeUhGWlR6QlAwVWwwLThiS2xaam1PNXJyMDMzRW5EYVd5bmRJSnRkNTFIRUJTMDlHQVFqRjBQTlhhaE9kVTFDbzJReUNNdmM2WHY0NUp2Vnc1cXZHSnJzTXJsU3BlRWU0end5bjhyWnMxYUJOYm1iRlpuaVgtNmFMVnBsTDdNb2ROVUZHcy13WE4temlRLUVxcXJBTE45LWx2MVliQ05IX1NqMzg?oc=5",
 "source": "Kontan",
 "ts": 1785465147
-},
-{
-"title": "Kala Hilirisasi Timah Tersandera Industri Manufaktur",
-"link": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxQcFRiMjF4UmdWTi1UclNGYUZLNEhpSmhIZmptd0dZRmMtbElWR3VON3lzdUJiVWt2eWFZMENFdkhrZllYRF8zVURiTUVMMXlTY3ZNWEdpODc5Rm1Ca3M0dTdpVzVJamd1cHByZHA3NE8wb29hVTlVUkVISC12MXhQbFlTT0lNWFF2WFJOR2wyWVVKSWZnaVhXSExsUklxMEJ4T1Y2ZGprdEo?oc=5",
-"source": "Bisnis.com",
-"ts": 1785464615
-},
-{
-"title": "Daftar Broker yang Jual Saham TPIA, Ada yang Sampai Rp651 Miliar - Market",
-"link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxOOXRJWFlPME45M2kyNkh0ZVlwNWdlcG9sajJfS0dTbElyNnZVN2lqNHplc3JWOERka2RRLWROZTAzd2Z0eXpvLWZvNlRPTWRZY3VYa3kxZkpJTV9GVGYzMXRmd09aVUVlMlg2R3NIOGxna2J4YjVlcnRibnk3d1BmRUhzRkxYalVROUVDUlV0ZmlMMDNzSjZfWTZVVU1UNFQ0TDJ0eFN1VWpUMFlYQlRXY1lvZVdsZw?oc=5",
-"source": "Bloomberg Technoz",
-"ts": 1785463848
-},
-{
-"title": "Grafik Harga Emas Antam Batangan (31 Juli 2026), Hari Ini Turun atau Naik?",
-"link": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxPS2NCOGFxbGwwUDdIUXlhcnZzSDRTRzV5S0kxWVpUNVFvZWFxVTM3aXIzTjhCemtoZkx4aGdUMVRmN0R4X3R3Q05iblNBVEVWTVlUX2RXVHYzSjF0X29STGtxRFVmUzZsTUdKYXhIa1hDVVdIMDFlbjl6eWpLT3ZGNjhXTFRlalRBRHlsd3Z2cVhTZEhaekMxTklxNlozOXRmVGRwd3RpQTY?oc=5",
-"source": "Kontan",
-"ts": 1785463661
 }
 ]
 }
