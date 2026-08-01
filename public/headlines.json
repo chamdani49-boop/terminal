@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-01T13:17:07+00:00",
+"generated_at": "2026-08-01T13:30:44+00:00",
 "count": 80,
 "items": [
 {
@@ -19,6 +19,12 @@
 "link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxQbW44YXVVYjlaSllFYWJxQS1XNEVqdlUzVU5vZmJOZXV3SlFFaEtTREgyQjFDRzRiNWRWSmFBLTE5Zmw4czJvWkR1UGgtUmR5NFhRMjMwaUN1Yklnc1JSQzZJS1Q0SV80WHFXdFk3N2pWa3JKMG96WEFDRjhUWkF0M1hSNGpHU1ZSRFRZT2ZnY3pUQWxETU41TG40X2V5c3BDT3VQQlVpcV9pWUJ3S2Z4UWY3YjE?oc=5",
 "source": "Kabar Bursa",
 "ts": 1785579900
+},
+{
+"title": "IHSG Berpeluang Menguat Terbatas Pekan Depan, Saham-Saham Ini Bisa Ditimbang",
+"link": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQbGt3TjlzTk90TFVFQkVZX01jUlZTZ3RzX2JVam9mYl96bzd2RnlJTjFCQVpzY3RUbGFrWjk2dzNEV1lEMVRsMk1KTkxObUNwT0JlWFhjcmtXT3FyeGpPUU4tdXpyLW84RzBSODNkQUF5VjBzWl9SQ214bTZPN3pSUzdEMmJXV0tyeENQQ2FZa0E1a2MyRGZOZUlyRmxFNUI1Sl9oaEtUaFNEdXFVcFZqadIBqAFBVV95cUxQT3owNWU0RzJleTN0TldkVHVFc1hXZkpPVUFUZXppeDlEUHJXNDdrQUxDR0NxTHE1eW55Z1dlTWlfS2lPbmhkSk4wOEh4UzN1LWlJMXN3U1NEWHg4ZmtweGhUbzhTazQ2X3dQejVlZU91b1RGMW04VUpyeXVXSDJHNWtsNUFobFJlRTVaQlNxZzByU2czbnlpVHRzUHJrOEZtTXFUSWxlMHY?oc=5",
+"source": "Kontan",
+"ts": 1785579041
 },
 {
 "title": "Raih Investortrust Best Insurance 2026, Tugu Re Perkuat Posisi Perusahaan Reasuransi Terbaik",
@@ -363,10 +369,22 @@
 "ts": 1785516685
 },
 {
+"title": "Spanyol Juara Piala Dunia 2026, Ferran Torres Bungkam Argentina di Babak Tambahan",
+"link": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQVGpwUnV0VTc3R0VLcUo1QjFDTm4tcmxKUlBDY1lOcEhUM2hoNVdpWm52NEdIdFM4QkZkaG9ERmxGUzNIQ01XLWlPMkxteVFvOVF5VHBIb2M5Y3FOVTFpM2p1Y203a0REWUZpS29HZUFIMnpfaGdIMUxDSjhxeHFOVTNUZUw4MVh3ejBtbXJIQTVGNTZ3bUZPeGUzUDhPSXBMN0tqNlpoQllJQdIBrwFBVV95cUxORmd1ZncyejlWUnFvYkIwUUZCNTlsSGMxeGR4NGx3M2ZCVDdpcmJaUVVDY3ROVGdWVDN4cHd1a3BGRUFTNWlFSWRia0t3YzhLX3hmek94ajZURFA4X1B4cUFGTEF2MWNwSnUwNm8zWnVXNmpsaUpkcXgzOWhUblVzWU5WNlZSaXhrdVluRXJpOWlmbm5nQ3phTVdJeEpuRTZBYmVzVjh4d2lCM3pQdmRz?oc=5",
+"source": "Stockwatch",
+"ts": 1785514086
+},
+{
 "title": "IHSG Sesi I Menguat 29,914 Poin, ASII dan AMMN Pimpin Kenaikan",
 "link": "https://news.google.com/rss/articles/CBMikwFBVV95cUxPNVF3QWE5UE9HUUpSMGhhSVAxd0VJdE1CWHR4NVI5M19TU0lTVTlGTV9kMXBGaWJPaFpCVS16ZXNpWHpSX3lobU51ek01YnUtN0ttT0lEdnJoVW5EM0lYLThqM2RyaHJHUVE1UXpYc2NyYlMxSWIzUGJKT2V1YWpRUVBEcHJpQ05SenlvR05WaHVJUEk?oc=5",
 "source": "Stockwatch",
 "ts": 1785513560
+},
+{
+"title": "Capex Tembus USD94,2 Juta, CDIA Pastikan Ekspansi Infrastruktur Terus Berlanjut",
+"link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxONzAySGhhOGxHeXZFbmM4bHYzOEtmUHZwbVhDajc5MVYzaTJ4MHgtSXhhQmpIZW0xb1NPVUhaOXRBc2FrYjhQeTBpS1dRamJHYTRYQ1k2VmpIT2M0NUVDM2FkUThMT1JkQ0FjX2lNR05vX20wakN2RE42b3E4ZGszaFd1WTZKYmluZjVtTzNZcDVKbGZTT3pVOTZqaDVwdjJWaGRwdDRoT2JiMkZrU1NDVFRPYWpheknSAbwBQVVfeXFMTk04MndzTHd0bjJuWFdfZnZ6ZWlET041VVZ0dVdYZXhNMzY1MUtxdGlCVHBjNV9lY2k0YnUxYWJlcGRxMFdtYjBHY2x1ODQ0Y3BLVm51cWY5YTR5X2NGRG9RQnZkVkRDUEo1aHN0b2pFX1FxUlVLYUpnaWtsZ0VOTklaRWNQTkloTXM2STRvbkhoMko2TUlkSE5JR2xnelNVYmdPc2QxTG5HZ1BjUnBrMkJBWGNIN1Y3STdiOEc?oc=5",
+"source": "IDX Channel",
+"ts": 1785512220
 },
 {
 "title": "Cegah Fraud, Asuransi Mulai Andalkan Bantuan AI",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxQYjZlaXhpdkFwRU9DMU1FNW01RnE0TXd3R3RjaGlXekJGcWt0QzgycjVqeGhVNktWenVhSVA5ZXhfY09VX2JHYkRxMXNwS3pMUy1PQXZjeEpRSUQ3SUM2QWUzU0M4X2tzSGE0YUtHN2VUbjJpaV94RVZ5N3BrdXl3ZXU3cHU1M0dhRXJ2ZlF4MFRzeGRWMjNPeVZBejkzSkZqanpPNEZZV3g4NDItWmU0YXJFUUJYYVpiLVE5eHhFeXljUk42WDN1a1lHWdIB0AFBVV95cUxPX0g5QWNDU0Jub1ZxU2Q2S3NaLVF5SjJJLTEtejFFZnZOSzc3elJQcDNkUTRVNEltYXpLNFpIOFlTdzZyQzRkLXNHcDFmOG5GTUFaZzdpcnFrWXhxSnQ3Y1VwZWNTamdBNlVwQzR1ckxkZWM4dTdQaUpXOU8xMXA0Q1R2aGRKMVFoYmJMODB4WW9iRG5lQkVYYnloRHlvWm1nTm5TeWREUGxVVVZpcmdhTlV5enpmd09nOFF1c3QtVVFfMk9vX2EydDNBU2tCb1Fi?oc=5",
 "source": "CNBC Indonesia",
 "ts": 1785500109
-},
-{
-"title": "Ambisi B50 Butuh Reformasi Tata Kelola",
-"link": "https://news.google.com/rss/articles/CBMilgFBVV95cUxPTnByLVZJNmtrRVh4RHBneUdwSWtCUFRTVEw0VlFWYXpjYVlhRm9mVnltSkpseFRremZad09IZ0RpdXJESnMzTFRxMzhseUh4WW5UcVkxOTczWmo1MXdmWjhBb1JacWQ1T1R3QzZXYVlhdTJJblh2b3JvQ2F6OUxtQUxKQzMxVnVfVFE1MldGLTFpenNSNnc?oc=5",
-"source": "Bisnis.com",
-"ts": 1785499531
-},
-{
-"title": "Berita Terbaru IPO Niramas Utama",
-"link": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE43WmtaOUdWemJVdWZzTTlONXFWLUNfOVZ4RGVYRXhGVWFKU2tsOGFCOGRaUHBXb0k4aWJ0Wko0WVNZNVdrcjlRVTQ0OW1aSVlkbDROVGs3US0?oc=5",
-"source": "Katadata",
-"ts": 1785499531
-},
-{
-"title": "JELI Respons Panic Selling seusai AB Jual 68 Juta Lot, Saham Sempat Anjlok 8%",
-"link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQbkI4VkxBc0hZZHNwZmlQZ0ViQnV4SU9xbXEwX0tUMWRLRTVDTTVZeEp5R0t1VFpkM0w1dmVZYkZQZkN4aTBoT0dhdWNBbVJJYUxDN25HZFBGN242MmVWUFNiaTEwUEZUWHBtRGF2RFU4N1NvOHFUa015UUhYNTF5UHFaakxmMFdQaThYN1lVVjFjOGQtZVVCNGN0eG1acjVUNVhRWDR4Tkw5TEpiZ3QzY3ptelc0dE54UlRRazZSWG5oRnFvQ0Nv0gHMAUFVX3lxTE5JM3JBU3ozMUN4Qm9zTFVWM1UwSXZMdGFNbm1tSFo3WVJPeWM1WXB4ZnYyX29HNGg2UzZ3bDdxY2taQmd4YWVsZmdSb1cydFpHZk5SSnQ4cl9LZEdoZmlPUU9JOGRCZ2x5R3RDQjhlQWY0U29CSDNHdFNwdk44Wkg4ZlFTU0VXb3Uxb2NDT3duSWhzNndYU2hoSGJXUWFpTUt2UG5fZ1pSSHpqNGFDYnhpcVE0My1NZEVVU2JWQW10N2NsVVVnU3Fsb3ZWeQ?oc=5",
-"source": "Katadata",
-"ts": 1785498540
 }
 ]
 }
