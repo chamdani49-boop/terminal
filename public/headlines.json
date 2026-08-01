@@ -1,7 +1,19 @@
 {
-"generated_at": "2026-08-01T00:00:55+00:00",
+"generated_at": "2026-08-01T00:15:46+00:00",
 "count": 80,
 "items": [
+{
+"title": "Menata Tata Kelola Dana Pensiun",
+"link": "https://news.google.com/rss/articles/CBMic0FVX3lxTE1QUlZZUmFPcWpZdmRuSjU0MjBHSUFUNTdIeHEyNGRVS1J1djloeWpSZlpMYWpFaXdvMXZ3Rk1XMkhMdGVyNy1jYmdfWW44enp6b0FZYy1adkQtai1CYUYxaldHdUR4YkRMRG1aNlloRllaWDg?oc=5",
+"source": "Kontan",
+"ts": 1785542748
+},
+{
+"title": "Kebijakan Agak Laen",
+"link": "https://news.google.com/rss/articles/CBMiY0FVX3lxTE9HdmdkaEUtUHZUWTRkN3VrQXV0T0Z3aVJiZVR4OXVrU2RBZ1VwRWd4Zk1FRVQ4R2Y4M2ZNdGFWMDhGU3RlVkMwMVNrMU8wMGdMQWQ3UlJkQ2h4VWw0dmQxME9NYw?oc=5",
+"source": "Kontan",
+"ts": 1785542438
+},
 {
 "title": "OJK Kejar Pialang Asuransi Ilegal",
 "link": "https://news.google.com/rss/articles/CBMidkFVX3lxTE5RTnpyVGJFSk5jNk9wUHNLWkVwVDJjYXA2T0lNYTNaTkx3QVV0WmluVU9RTThkaXpNQ2V0Qkc0ZkVyMmRHY3VERkNvM2E5YTlVQ3c2aS1DcVczMDFISXQzZkVMaVhRaC1fRnVpck5MeTNMOW04b0E?oc=5",
@@ -64,6 +76,12 @@
 },
 {
 "title": "Bisnis.com Dinobatkan Media Nasional Terbaik Pada Media Brand Awards 2026 - Bisnis.com",
+"link": "https://news.google.com/rss/articles/CBMiugFBVV95cUxPSlNhSUJrclRiWktfTmt2eVNxb3dtZzc3QUtoRkxkekdQYjB3aF9rdUZxNHNZZ1Z6bE1HWGxjQ1lVQ3MyTXpZemlodlYxMkJ3dHZ6Ri1BS0RrOGlBb0E4dzdMSGVCM3poLWVCcVl2ZktGLUs4SEswbHAtMF9xZlo1Q2pvS251SnhqQWJSQm1nVVNndVlMRnRJR3BaS21WanMzWnI2clE3Q0hoU3JYWVpaVEtRdDIxajkwR2c?oc=5",
+"source": "Bisnis.com",
+"ts": 1785502839
+},
+{
+"title": "Bisnis.com Dinobatkan Media Nasional Terbaik Pada Media Brand Awards 2026",
 "link": "https://news.google.com/rss/articles/CBMiugFBVV95cUxPSlNhSUJrclRiWktfTmt2eVNxb3dtZzc3QUtoRkxkekdQYjB3aF9rdUZxNHNZZ1Z6bE1HWGxjQ1lVQ3MyTXpZemlodlYxMkJ3dHZ6Ri1BS0RrOGlBb0E4dzdMSGVCM3poLWVCcVl2ZktGLUs4SEswbHAtMF9xZlo1Q2pvS251SnhqQWJSQm1nVVNndVlMRnRJR3BaS21WanMzWnI2clE3Q0hoU3JYWVpaVEtRdDIxajkwR2c?oc=5",
 "source": "Bisnis.com",
 "ts": 1785502839
@@ -238,6 +256,12 @@
 },
 {
 "title": "Bisnis Indonesia Forum: Kolaborasi Otomotif Topang Pariwisata - Bisnis.com",
+"link": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNS01rQ0g4emp3MTNoQUtrQzhpajF6WmVLUUpSSDA0d2czUUJxbTVyRTJxb2hQVDBJaEtocGJncDZFOHhKTjRaajRkbHpNc005U3JUQzRwSU1CUk1Jc1J4YUNsNUpJeTc1OEd6WnZHQ29YX2xXTzJDSWQ2ZlE0cUFWNFJVbzF4SFBqV3hoOXQ5dzhCS3p1U1ZneHluNzhrQmk3Sks2NnJ4YmVpZw?oc=5",
+"source": "Bisnis.com",
+"ts": 1785488408
+},
+{
+"title": "Bisnis Indonesia Forum: Kolaborasi Otomotif Topang Pariwisata",
 "link": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNS01rQ0g4emp3MTNoQUtrQzhpajF6WmVLUUpSSDA0d2czUUJxbTVyRTJxb2hQVDBJaEtocGJncDZFOHhKTjRaajRkbHpNc005U3JUQzRwSU1CUk1Jc1J4YUNsNUpJeTc1OEd6WnZHQ29YX2xXTzJDSWQ2ZlE0cUFWNFJVbzF4SFBqV3hoOXQ5dzhCS3p1U1ZneHluNzhrQmk3Sks2NnJ4YmVpZw?oc=5",
 "source": "Bisnis.com",
 "ts": 1785488408
@@ -457,30 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxON0VIUVhnTTB4bzM4d1lGSFJzV09fUzZhazZkdDlhUTI0Z3EtdmN3Z0NJN05kRU52c3NrZWYzdDdaOW1hV3dyWFhvR0JBNXdUSFBMbmFmRDhpbXdoRjFvTXgxTjJHTHNMaUZ1NHhhaDVpdnp6NkxNMjJheUdSeVp5RTB0T3RiSlJxT3ZBN2t0VVVuRUVNTUdiRmtsbUJRTWpZMkQtX1NjZ0lqRHpjTm5xUWJId1Q4cE05?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1785470400
-},
-{
-"title": "BELI milik Grup Djarum konsisten rugi, saham ambles 43% sejak IPO",
-"link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNZmIxOThCbGRyNVhobFBGUDFuVVpxSjVHTGU4TmFUVlRaazNCb1M5WC1mVUUyaUVvbjYyTGhsMGZxNFVLNGpfODdDRlhuODFFaWVCTDBQWnNMTFI3Q3VCc19ob1V1UHBHTVR0VTZUV2NXRkQ3LVg5UlpfZlJ5b1p6RDlzTmN4am1oVkdyaE40cmZHSmxKNzBVZ3VpOHB5NS1COXFsRVdJb3RkLXM?oc=5",
-"source": "IDN Financials",
-"ts": 1785469800
-},
-{
-"title": "6 Saham Ini Terjerat FCA BEI Gegara Free Float , Ada Emiten Sri Tahir",
-"link": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNZ3NPRWdUR0Q4V1pEWXRGUGRuc0hZM1lnaVBMMjlzYlp5c29waTM4akhmRWttYTdjTDEtNFdWcUpHQkM5YjRxcTdpZHlNM3BkVWs2RDV1TmJKa1JVR3lkQ191alNaNGpXeEI0MXk3S01ZeUctWE0tSjNocWtCSWpkanpWbmFnS095MExaVWF2eld6OF9iNkRxQnhRQ1NlY2xz?oc=5",
-"source": "EmitenNews",
-"ts": 1785469140
-},
-{
-"title": "KOKA Catat Lompatan Pendapatan Hampir 4 Kali Lipat, Rugi Jadi Susut 61,83%",
-"link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPRkdlTmxsZkJUSjlPY2lwd3lPcVFQeXZRWW45TXRhVUJyQVMzcHg0RTRnTkdrQlpqTlRKNThCS3hnWFp4OTEtaDdJcko1T3FnemZmRGJjT3psdVJTWEdOamlONUZtaTRjS05icGxnUHN5ak1UaGVYZUhrZUtPN1gyNGhOWXNBeEpCODVMSXpiVm5TRzlvLWh3b2hpcEc?oc=5",
-"source": "EmitenTrust",
-"ts": 1785468464
-},
-{
-"title": "OJK Buka Suara Soal Penerbitan Panda Bond dan Patriot Bond",
-"link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxOblRnQUFGdkNpNjVtZ3NjREprMUtUNWVFYnZmWUNPZHBCWEJpVXB0d0JiMXpuVDlSS2hTMzFiTTVXLVlwN2FoaExXbS1uM3FYV0JPbU9tRmxDalh6d09KV0wxZ3doYWxydmNLTEw1Q0hoWDY4STlxeFREVUZmS2FHSkFEeGNyZFdpa1h6M1UyT2pKdnRveWl3N0ZhMDFteVcxMUlVdFJEalBnZmVJenY0?oc=5",
-"source": "Bloomberg Technoz",
-"ts": 1785468000
 }
 ]
 }
