@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-04T15:00:57+00:00",
+"generated_at": "2026-08-04T15:15:46+00:00",
 "count": 80,
 "items": [
 {
@@ -57,6 +57,12 @@
 "ts": 1785839248
 },
 {
+"title": "BEI Minta Penjelasan MDIA, Ada Transaksi Jumbo oleh Pengendali",
+"link": "https://news.google.com/rss/articles/CBMijwFBVV95cUxQbVU4OFFaN1did09tMWgzQ2JNQ2NsMFZrQ3BjUXlCUmdsY3JGT0c4QTd3Z1B3WHNuOWJoZ04yVy1QNWpFcFF0eXlfT01vaVhhNVBMcGpHM3o4R3ltSTlHMXdkNXJlMnBMbTZCQ21XSWI3alU5d2hSam9wTG5MNk0yNHFvWjFFRDZ4ODV0VXpaVQ?oc=5",
+"source": "EmitenTrust",
+"ts": 1785838880
+},
+{
 "title": "9 Sektor Saham Naik, Properti Memimpin (Selasa, 4 Agustus 2026)",
 "link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxNSGdocHc5S3RNUVpUMEU5S2RtQzYtLVduY1Zrdmc4RG9xZTdtbGE2VHA3d0J0V1FMUFowT0pGa2dXYkpKM3duMmtlZFJ0NDRnZFltYzMyZHFHUnpadXpDZW9QSVE3aDZEZGxaampGQVkwUGZXNWR5V0MzcHFicFhCRWktQ0M2QmRwSldtSndraXBoazN6Q0I0d1dzN1FLZ2pHS1VpQVNKQl9QOGNKV1BGcVZPNW8zNGtCY0xleURB?oc=5",
 "source": "Katadata",
@@ -100,6 +106,12 @@
 },
 {
 "title": "Cipta Sarana (DKHH) Kantongi Kredit dari Bank Mandiri Limit Rp74 Miliar - Bisnis.com",
+"link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxQeWF0SXo5NGl4RUxHdXE2d2MxNHpWS2l1WUhvU1l5X0R3a3o1blF4TTdlN0wzbDVkRXZJTXVvNXZZTEJ6Q1hIeXEtdHhFRWpLeTRWM0tqSFphVGZTNkhKbEFwZENiSlZsM0JhRm9RdHRUZFpIUkhOblV3UW5xUGZnNFc5T3pJU012aEVnZ3JINWNTWEJQUzk0LVNlRWtKMEFIcEx1UGFrSlllS0NmVGJ4clg3MGxmZWE4ZnROU1dn?oc=5",
+"source": "Bisnis.com",
+"ts": 1785836773
+},
+{
+"title": "Cipta Sarana (DKHH) Kantongi Kredit dari Bank Mandiri Limit Rp74 Miliar",
 "link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxQeWF0SXo5NGl4RUxHdXE2d2MxNHpWS2l1WUhvU1l5X0R3a3o1blF4TTdlN0wzbDVkRXZJTXVvNXZZTEJ6Q1hIeXEtdHhFRWpLeTRWM0tqSFphVGZTNkhKbEFwZENiSlZsM0JhRm9RdHRUZFpIUkhOblV3UW5xUGZnNFc5T3pJU012aEVnZ3JINWNTWEJQUzk0LVNlRWtKMEFIcEx1UGFrSlllS0NmVGJ4clg3MGxmZWE4ZnROU1dn?oc=5",
 "source": "Bisnis.com",
 "ts": 1785836773
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMingFBVV95cUxQZEdnLVgxVnk3WjZvYWR1ZWZPTHg5SlNqV0hPem1Xc2Z1X2pPMGdCM2ZKSGVuY1BwLUJGOF92bjdiNlhLWHVvdEg4ZGFueVBTSkx1ZFFVT0FqWU4yeWh6QmR2MTRqZFhLdzBCZkNIOEs5QjJPRXhRYlpkQkttX3FLcXNIa05BX3Q3Q0R4S2dISkt2d3dqZkoydXNqZjNaQdIBowFBVV95cUxQZ1REMUgwaTJEb3JkR25nLVFuLUQyenBaN3VKMUt1U3MxTjRkdDN0NS1WSTJrV2VTalhtbUxCRlFEeUpMYkJLQ2Zkbk1lc1NtbkdDM3ozMUlCNmo2cUo3bFNsbDlaSklzSWw0dE50OHNaeFVORmRIQkVqYVdxODh4b3Nza2hjUUZuTHIxdks4N20wT1BWNGNNVER2OWxKcHpnSlNR?oc=5",
 "source": "IDX Channel",
 "ts": 1785810360
-},
-{
-"title": "KSSK Soal Penempatan SAL: Tak Ganggu Likuiditas Sistem Perbankan",
-"link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQUmlXT3NUd2Z3Sk1DUzA3T0hxblRQaDkzb2xNV0RqVjVaQXNaMjVMOGlsUDVQUmlaVUN2cFdjWVhBaW1qOHlsYThwZGVFeTVmY0d2YUdfZGxCeThPYWozaXp2bHI3a1dLQXdYU2w1TW9fM1JMZzZLdEZYVUVLdWNlT3MtejQ5c2ZFZ0MwdkxWWnJqbHZyNEtEME51VTBrcjZyM3IxZVFPT1YxUXQtbGRJQXA0V3BYdw?oc=5",
-"source": "Bloomberg Technoz",
-"ts": 1785810329
-},
-{
-"title": "Rupiah Melemah ke Rp 18.029 per US$ Imbas Data Ekonomi AS",
-"link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNaVdmdHBrWkxuSjhLVFRKNzdpNEVaVzh6eFNhS2lEU2lET09OTmxQajFYYlBodlBuMmRybFFIWXgxRFJucWdObmYtUE5lb3ZBbk4tUU9VN3FGUnd1TUFjcC1aVXNjak95T2ZaTUU5ME9nN2kxUDVfNm40ZUhJVTQ1b2RDNUM5RElRa2MxNWh5amVGdWN6Y2dZX3JfdDg2YVE3NjBxSWV1RC1KQ0Zp0gGyAUFVX3lxTFBWVnF0eEYwSms2Z3FYQVJvNWYyQW9FNmk0NkRlRHZPTTc2Wld2TWg2WmVIRG1tWXFLQW5Na2RfYy13RTYxdkVya3VVN3hFQUhqNFlnUEhwQWtVb0szMmlNa3o4TDVFZFFzUjI3djdrS1RaQVpuZ2hDZWxjN2k2Q0o3QzBRZFY2aUI4ZHJILWxac3JMOTV0SVVTeTUwUm52dmJFd3VjX09hd2JDcWpZLXFHM2c?oc=5",
-"source": "Katadata",
-"ts": 1785810060
 }
 ]
 }
