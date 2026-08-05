@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-05T12:30:46+00:00",
+"generated_at": "2026-08-05T12:45:41+00:00",
 "count": 80,
 "items": [
 {
@@ -151,6 +151,12 @@
 "link": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNb1FzYmpuVVE0QVYtNHFlSUdkekNoaGpXUVhySWIyN1dWQmpNMU5vdUdSRERET3VScnZaTjdXeTZOUml1S2FSMGpvX05XLUpEQmZuZ2Q1aUpWV1RBMnQ5a0tfVkhKSGxtbVRIejJla2pQeVlpWU9VSWhWalBIbFhrSmIwZ1V1TWdNa3RsNE85d9IBlAFBVV95cUxPTVJObW5iQWp3bzNzV0pIX1E1S2tiSFhvdFhTRVEzeFFkRTRFSi0zSjBxUTRsYzZGOTViNW13b3lqWllFd2lTX0NRcHVOdVlCQ2UzQ1BsbDUyaUhZWG0yUmhwV1BEZzI3UUpJWHNfZW42MkpZOVg4VHlqZjdFaXRfa2lIenEwMXBuR0JzcHpyUlFZelct?oc=5",
 "source": "Stockwatch",
 "ts": 1785912669
+},
+{
+"title": "Harga Emas Naik Lebih dari 2 Persen, Saham ANTM hingga BRMS Melesat",
+"link": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNbDZ3M0ZTbjlzN1JkaTU1SVNRNXBwQ3dZSlY4TDBZNHFUZTllbWVpcUlkaFlvUDdIajYyLVZwR1RRTnV0LUhHZjZHRThiN0tKWTdRZHc5QkZDX0QxRHBxamswN0MyRUMyOGFmWm05cE1rQUJXcmJZcEVYYkhkeTRZRndHTTI0YzZCdVp4Q19GTDg0WUJGNXc2WUpxeFd2V3BBX2liclhLelTSAa4BQVVfeXFMT1hPaWlUQlBtUGpaOFN6bWNtbkEtUzBtZmgxTW9wbjJHQ1NYd1IyaDdXSC1XYTNXMk1iR2gyNzlWVWplRkk0UU9yUnpCUUg0T0hDMEJGMjRPQTJYdEx6SVh0a0ZHRUhpQW8xTHB6M01UN0s2MU1WWlJyMGRib25hMnEyb05fczdrUndSSE5yM2ViS0cwaUR4WG56RmotWjhpeUs2M2xiRTdjU1Q4MUtB?oc=5",
+"source": "IDX Channel",
+"ts": 1785912480
 },
 {
 "title": "Model Bisnis BUMD Jabar Diubah, KDM Wajibkan Setor 90 Persen Pendapatan",
@@ -339,6 +345,12 @@
 "ts": 1785895596
 },
 {
+"title": "Ada yang Borong Saham BBRI Rp122 M Lewat JP Morgan - Market",
+"link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPX3dYUHozWm5KTHRLNHlfQWVKZmpiUU1lRC14NWl1OXJhUVplaXhRYkYzR2V3eDI0V2NlOVQ5LUVPMlVoZjRFYmVsN1IxR1haQ1lBUWxFYjJhbnFfVnlaTjRzNmJLQUpxNGZGQVZnb2EzQmhzTms4U0pEVjltT1JXMmt2N1FXNFYyaVZodERuYklYOTgwVlU2OWZac3hjME1kNHVNeV9wbw?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1785895515
+},
+{
 "title": "PCAM - Berita",
 "link": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE8yeHpaZWVyc1F2aUNzQ2MtMTlZanUycGFFWnpCWVhra2NobmM5OVpoVy1Hc1lNV0tnUmdlV1VLV1p4V0lvY0N2QkZXbldRbGxYS014SlhVcjlxcERK?oc=5",
 "source": "IDN Financials",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxNa3M2OWRZR2l2Rm9ldDN5R2ZWYmNoLWdLdmFzNXlBSklKYm50QzktOU9vQlJWZkZhQTV5b3UyQl9MS1dKbVRqaTcxZklVeU1WYUFuNnd2YnpPTUtqdUphRU9ybFIxWkNJb2M3a0lyajJRY0lhRjFTOXFMZGgxN1hUZmlvMUZVdlJzNjZMLXU5VjAzOUFtUnhKemUxeUtCcXYxczd1MF9pRzUtX0V4eU9WcmxaRVRKbjg?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1785882981
-},
-{
-"title": "Di Balik Investor Saham Lebih Memilih Cerita daripada Laba",
-"link": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQZjhGWHRRU2tfdzRfRUFxOFZpV3FmZHM1dlVrYlY2NFlCM2M0SUdlblUxY21BV05JWmFoYmZJeERPUXptVXpNaFFIQV9qRGVjcENXM254a2NNX0VQTFZ4M2JlMllsWExLV2xkb002MEV1TEkxeVk1TkFIUzFvUTZXcEFtZE1Pcl96dmxWYWgyUHBLX3Jkc0gxUGRiUGg2Qjh2RXJBV21QZ0xTMDU4ajg4dA?oc=5",
-"source": "Bisnis.com",
-"ts": 1785882600
-},
-{
-"title": "Blue Bird (BIRD) Tancap Gas di Semester II-2026",
-"link": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNdlBBYzlOX09RMS1vemM3VThER2ppZXhEWWxSQjJubE1DSi1PWXBydVBqcm9laW9tM1d2UFMzQVZhdGprbkxHUFRGM2t6akJKZUtORGVGcmd5MUtLTms5SVJQMnNFcEFKNno0aGVyYTZDaTJEb2VJX3VJSjZ2RW9jc3RrMm1FZw?oc=5",
-"source": "Kontan",
-"ts": 1785882039
 }
 ]
 }
