@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-07T00:30:48+00:00",
+"generated_at": "2026-08-07T00:45:43+00:00",
 "count": 80,
 "items": [
 {
@@ -55,6 +55,12 @@
 "link": "https://news.google.com/rss/articles/CBMihwFBVV95cUxQMnd3QWx2dFQ1eWtTNm5NUVNfVHNTVkh4MmZ6MG9HTkFoOVctM2RyZ2hETlVDYXFGc19oZThjUDM0b1pZZmNCVVNYOVZ2STZITVkwcGNINjBlMDhHWlh3c0NiOXcwSjBKYzNLdjRHNnJveDhUcWdMNzQ3QmdRLTdTZ05Rc3VOdlk?oc=5",
 "source": "Kontan",
 "ts": 1786052743
+},
+{
+"title": "Real Time Data & News",
+"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPbjZ2SzByVjZkQ3g5NDNhTFAxZ2FNdW5GbUVDWTZyeGtUT2xfbU4wSjVPZDVlbUh3eFF4N1RtZk9xUENNdnEtQTg0UXRLNzlkQVhxRU10cURQcWhxMlA3X3hzSHdqbFNFcEdVeHN4MlBWaDFRaFUwYnFpVjRBb2M0Nk1ESDRKTzFnemwxbUJFYXRGZEI5d3E2N3ZfVW83R3V6Ti1MTjBvOXA3WkNtTkRnUFN3?oc=5",
+"source": "IQPlus",
+"ts": 1786029203
 },
 {
 "title": "Pengendali Borong 700 Ribu Saham KDTN, Kini Kuasai 35,97%",
@@ -231,12 +237,6 @@
 "ts": 1786009549
 },
 {
-"title": "Real Time Data & News",
-"link": "https://news.google.com/rss/articles/CBMiogFBVV95cUxPSkxRQkxDOFJQQ1Q5cGVyOTBWcEEtU1dnUUg1VDhUUkhYTnhySjNiVVBBUm9kQ1llSFR1Qjk1MDBPcHoyV3JjREFOaEFFMDI1SHY3Q3p2cFpTUmZlek5OYV8teTNja0NZdHNPWXFyR2V0dGVPaTFPWFRtOWZ3SjdMRGxJV3FlOWNaZHRlRHdZaS0tSFNSc3NsWmNCd3ZZaGk0Zmc?oc=5",
-"source": "IQPlus",
-"ts": 1786009082
-},
-{
 "title": "Kinerja Surya Semesta Internusa (SSIA) Pulih per Semester I 2026, Simak Prospeknya",
 "link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPVm43ZnJiQmNIanZ5dGhvcjktaFBjZk1PRFlRdHVqNDFwaEI0Z21IU0M2NzBtVnJFTXlpcE1SUk9EbHVoTWxBc0NTb2U1WjF6M0NLUzJTVTVoaXZTS0s0Vmg2bFlheFF2SGVyaGdaN0NnemxoU29Hak5fckFpako4RmFRLWRremI3eTJXckRYeFZrcm81RmlGb3ByM29rQTVUenM1NWNBSUkyZHBmVUV2UVNXRUJnUdIBrgFBVV95cUxOYmR2WlhYaUFQNGx3TDMwTVBQUUdkVmc5R3F3WGJ0d2RYNDJKQVVZWUhndDVLZzk3MnRlTTlNcmRqZXI5Yk5VVnR3X0lqWnNhUUkzSHNqWU9obUdQMWpCNC1QZmN2bVFCR1NPel93LUU3QmgyRFQzN20zUVh3MWhUU0s4eXBjUEtNN1p1MnROc1plNlAyQ1NIQXVKcTFfTlpyS0RkTUQ3X1FkWl9CUnc?oc=5",
 "source": "Kontan",
@@ -393,6 +393,12 @@
 "ts": 1785999628
 },
 {
+"title": "Bisnis Indonesia Jajaki Kerja Sama dengan PHRI Sulsel, Dorong Publikasi Sektor Perhotelan",
+"link": "https://news.google.com/rss/articles/CBMizwFBVV95cUxNdHBWMno3V0M3NE5VOFVpWGRSOVhRUFpmV3lBMEFDdUNnejU1eHhuYXRuaV8zQTdmQTlPR2tuendDSlAzam1BcjA3M2x5NjNOLTNJQ3B5QzJyMXFobl9KZ2pURlNsZ3Y0QXBaWG82RXV5b3RWbC1qbXU4d2ozUm5oQzJjREtzdWtNaWVZSmF5SE1Ba0oyektiMFhwVjdvamJ4amNMUzNta1kzQlI2dUlQOGxKNm1uNmRveWhmYnd4NGY3OHBXZFdNTVg5WlF0RFU?oc=5",
+"source": "Bisnis.com",
+"ts": 1785999628
+},
+{
 "title": "Harga Emas Melompat Lagi Kamis (6/8), Segini Target Terdekat",
 "link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPVUVvYWJNS05CYzFSb1hSVmVMSzZ3WG1Ld1NjMnE4WmRPaUh1RWEtQ0tiNGlGTk1FLWZBVjlkclRfWVV2cDFSUk4zbFQ1ZDJoTG1ySHVXM2FSQjk3cnBnLWFMSThveWtVdlRFZTJ6anc3aERKaGpWd0lvYXpNbXBhaUVQZGpEY0pTZFppdVgzbGZCaUtlR25lS05ocFFEaWFSZEhoc2NMd0RWTGxWMlE?oc=5",
 "source": "Bisnis.com",
@@ -475,12 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxOOHZWNU5zd0Y4ZE00a2xSUmljdnJ3VEV6X3JBcTB2ZWh3T2l0Z3dlVXduNmhlVkxHVUE3aXYzTUVCSjRBamlhTndXOE9hRTVxc19HczR3dnd4UkROa1dFYzFrTUVqMFNEdWh5ZE9RVjdsYnpXUFFEOHhHVUItRnZWN2ozbjhpeC1wa0VzbVZxSkJTck5nUTRlUHBEbTJMNGxyckd6MF83bnl4QWlBQ05zN0EzUWpWUQ?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1785993374
-},
-{
-"title": "Rupiah Spot Menguat 0,05% ke Rp 17.924 per Dolar AS pada Kamis (6/8) Siang",
-"link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOTWQxTnBJNkQ4VmV1anFHQlM4b1lqUG9ESUZsdUpNME9xVzh6X3pubW5sSHJZTVNFaVJ1dEYwZUpqMmFGbGxnN19wMy1TS0NicnZ5WWZaX2hiX2laMnVxdGJHRjd6bng2Vm1lQjA4aG1JUnl4ZVZ3ZDl3dnczYWdveDl1ZGkxWGdtbXNtcGpNeE05RFRCRGFJS1Z5RWlEVWdLNzVNNWRKb9IBnwFBVV95cUxNcndqblg4THlkMmg4YnhFVDg4RGg2V2dkNGFqc3lsQTI5bnFSVVRtYUVOTTBmWkFmZUJpUFY4ZVBZcGdWOV9Gd3BXQWhfaTcxSG5ZMGczd212ZGtVbzdfeTFzbHc4anJIY0pQRkdkd2g4cl9hSGV1Y2pVX3NsRDRxaVpMV3hiQUZXTzYwQmRWbGRvcURfTXZkTmQ0MUE4TG8?oc=5",
-"source": "Kontan",
-"ts": 1785993078
 }
 ]
 }
