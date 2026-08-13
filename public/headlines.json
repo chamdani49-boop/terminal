@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-13T14:30:48+00:00",
+"generated_at": "2026-08-13T14:45:44+00:00",
 "count": 80,
 "items": [
 {
@@ -303,6 +303,12 @@
 "ts": 1786606500
 },
 {
+"title": "\"baterai%20motor\"",
+"link": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5vSGItWV9JMEpFWHdUZ1FGX1kteXl5cGpnanJ4N1NINzNhQjlwdVR1ZE4tTzg5U2tkN3l0R0pFME1KemJpOElTcW1vMmZGRFJIREYtbGFLSmQ?oc=5",
+"source": "InvestorTrust",
+"ts": 1786606276
+},
+{
 "title": "\"investortrust%20infovesta\"",
 "link": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE5TS3V0UlJJZG9SODlJVURUODFzckRxU3NTYVBxTzdKM3R3LWFmU2xlX2VHZEw0UVlqUk5lWUNjVnRodDRHRVBiVzZpSS05LTJZVVdtYTgyTjdkLXpXMTBzb0pRVVN3Zw?oc=5",
 "source": "InvestorTrust",
@@ -475,12 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMizwFBVV95cUxPTU5hSlA5VDh0dUVJSUJlazRKRzVkV2RfNm5IekJvZG14NktYMjNydWVkQ3Q1TU5GUnZZZnByUHcxYVNiSV83eEJRM0tzQm0zS00yZ05ZeDhtMGtkRnNIV0ZlQ3ktb0pGVm9id0RESFBxd29uZHZESkd5bXdrOFFkVHZGdUNTRFdqQko3VlEzS2JxaGVWbE5oU0N0TmFzUDRNTjlpaU1rUTY0MnRaWWF3d25TTm90YklKNW12ZVFma2xzc1pRMmU1OVhDWFFMWE0?oc=5",
 "source": "Katadata",
 "ts": 1786593300
-},
-{
-"title": "Emiten",
-"link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE9nYWRsYjR0X2xydVhsYUdSdWVVTlVmYmpmckdJMjZteU0zaW9nbGkyZkVNd0lIMHVwekVjLVhaYzJobzF4VElXaXNhcjItWGMzTmhRdFVXSGZ3UjREeThaVGIxZzdHMlR4?oc=5",
-"source": "Katadata",
-"ts": 1786593262
 }
 ]
 }
