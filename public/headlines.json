@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-15T12:45:42+00:00",
+"generated_at": "2026-08-15T13:00:51+00:00",
 "count": 80,
 "items": [
 {
@@ -21,6 +21,12 @@
 "ts": 1786792217
 },
 {
+"title": "EmitenTrust - EmitenTrust",
+"link": "https://news.google.com/rss/articles/CBMickFVX3lxTE94YnJEZ2tObVBzLVFzenhmbW1Cc0ZYaFI4Q1NiT3dzVzlpcUdRbnhIZGZmamtTOEFYYkE5QVdaSW1naGJhb202MnhEb25BbVl0aFB4M29jR3hNdi1Ma0NOaUNRQWNFMGRFM2ZsQXhUQmR5dw?oc=5",
+"source": "EmitenTrust",
+"ts": 1786791418
+},
+{
 "title": "Berita Terbaru",
 "link": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE5zZWFIdEpVLUVhd0VuREJtc05NMF9vMHdsZTdBZVlnam53OUpzeHV3bkNhaGU5VVpBWW1pVXRUNFlfOEF6alZsd1JIZlFpWEl3cU5HemEtMktpVm1MTi1XV2o5b0Q?oc=5",
 "source": "Kabar Bursa",
@@ -37,6 +43,12 @@
 "link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNUlNQcERjNmMybUloeVRoY1I0cm5rZXd5NWRRaGlEUW1TdGJab2loSk80MjFHZW1aUnFqNG9Ea3lhLVJPZU5ScEFmWFZ4d2VkVFRBN3ktQU1QVVNPakxyS3lXT0hNekE5N0hQTVRET0hMaGZMbXJDTGh1bXZSRHlpNE43YllsVW9qTVFpZElDYXQ0ejVpcHN6dm9uNWpXenpMdjdiS0VQWmZiS1JvR0c0MF9QanM?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1786775400
+},
+{
+"title": "Alasan BCA (BBCA) Hadirkan Fitur Tabungan Emas di myBCA",
+"link": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNbUFLVTJqejhPdU1STFFkczg3MTlvbmc0WFR4RDFHWGxtUUdYdFpwQk84UEM0cnpXUklGZGFnVmtCOVh6MEphc3k1WHgtYWJDSk9YdENKWmxWVW9walJYeFc4aldZZnNVRzduLXpOdm5LaUtYWk5VWl9oWUFPeGw0dGkyaEQ4TXVVZWZuVDV0elRpbC1ZMG1F0gGXAUFVX3lxTE1tQUtVMmp6OE91TVJMUWRzODcxOW9uZzRYVHhEMUdYbG1RR1h0WnBCTzhQQzRyeldSSUZkYWdWa0I5WHowSmFzeTVYeC1hYkNKT1h0Q0pabFZVb3BqUlh4VzhqV1lmc1VHN24tek52bktpS1haTlVaX2hZQU94bDR0aTJoRDhNdVVlZm5UNXR6VGlsLVkwbUU?oc=5",
+"source": "IDX Channel",
+"ts": 1786773660
 },
 {
 "title": "Prabowo Fokuskan RAPBN 2027 ke Pendidikan Alih-alih MBG, Ada Apa?",
@@ -109,6 +121,12 @@
 "link": "https://news.google.com/rss/articles/CBMic0FVX3lxTE9PQmw4TndMWUppR3NLY2M2VlF3VEZBLVpjRzFqWVdONHcwaVBYNVprSmxKMlNBTURBbjRoellWZndFTTliLXlaRU1nS0pzOWNHTlgzdHJRUGwtRmpCV3Z3VTg1TGNQRnlabmJkTWtBcTZGcUk?oc=5",
 "source": "Kontan",
 "ts": 1786759501
+},
+{
+"title": "Harga Emas Antam Logam Mulia Hari Ini Melonjak Rp 11.000 Jadi Segini",
+"link": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNOEFSU3ZBZ1Q1aDNkbnRVMHAyRlZBOE9Kc2QxUHlMY3hmVGFJbG1MNkdzWjRYWUJJSzZEcW5udUM1ejdHblhhdE9VaGdXSjhpRTBFdk5GS0tXMk5UeFp3SVUwNTlWZkxoWmNseVRfMDg3SFFDbWJ0Sm5IbHd0MVh4VHZNZjB6Wlo0bVVWY2NxNkd1dlZHdEJqMS10dk1lZEdUVkNqNlp3enBkcXY3NU5IZVI2YUdoMnExMVRHb1hBaE1wZW1CWk1vWWd4LWI?oc=5",
+"source": "CNBC Indonesia",
+"ts": 1786759219
 },
 {
 "title": "Rupiah Menguat Menjadi Rp 17.827, Ini Prediksi Pergerakannya Pekan Depan",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxPRmg1WFBjNzJrRFFuTXVvS2NiUU56cm4wdS05dXRobVZ3UWtfZmE1VS1xcURLZVNQNjhQNTV6RnFoeXZGbGxKYmdsVVJWOGFXcEpueHl6ckQxUzFpUkxabnptekY2RlFqMkw5VnNwb0hJSF84TmRYZWtsTVV1R0ZjQjd1SVYxQWF1amxaOGdmR2Y0ZGh4T3I3M2NKOXp4blZ5Y2ZodXdKWTg2ZWVE?oc=5",
 "source": "Katadata",
 "ts": 1786704093
-},
-{
-"title": "Niramas Utama (JELI) Perkuat Efisiensi Operasional dengan PLTS di Pabrik Pandaan",
-"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOd3FaY1NLTG1oUlJla3ZnUm11cHFITGJvWjEwZHpNanR4Q3dPYW91N2lDcDhIeXM3Z0s3cGlwWlJUVVluMmlpZ09hYkNsMG1kRFE2ZHIxejhoWDhxNUlZZVJzc0x5VGRwdDZXNW5pS0JvVDdzMTQtLWNubUhHeDQ1X1NvanQ1c0R2c2hIb3YyeThzQzJFQmdZd1BLcGR2TTVsSEZDTkdhdzNPQ2hGNUdqZEFod3XSAawBQVVfeXFMUFp3b3luOEdXcGVVTWl4T0VRc09kTEU4SE9aTmh4cWc3S3VmV2hBTlpTM2hIaDJ5TFYwdTd5RURieFFhNXZnb2hOWVhnQWs1QVdJcDhOSC05X3cwZF9WQ2ZfU1R5M0puVG4wcV9SaE1ESVlYTF9rOHVSNlZyc3E0aHV6aVRiUHFXNEYzek9zNnMwMXRnWW1wcFJiMFpYTTF4U0VpNDhXOTZkaWZidQ?oc=5",
-"source": "Kontan",
-"ts": 1786703798
-},
-{
-"title": "IHSG Ditutup Menguat Usai Pidato Kenegaraan (Jumat, 14 Agustus 2026) | Pusat Data Ekonomi dan Bisnis Indonesia",
-"link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxOTFI0MjZCR241cDlVLUJFY0t5TmtrWUE1bnlYSWxac1pQdkJKVWNlUy14dm9VWk50RkZ0QTVQY0JUa0Zvbzdfakl5YlVlSDM2NGNYWldBVTN5U1B3ZGFTT0pDZmlZcmVZWTlhcDdHOTRWaDdEWlJ4dWZiMDM0VkV4cHVRVlg4QUd1VGR5OVk3YXpLM2dfWWo5cGNxOFpGYWdpZER1SHo4WGEzTXNPY3pnTVhCM2dwdjJfWUNTQU5hM1ZQQlJyekE?oc=5",
-"source": "Katadata",
-"ts": 1786703782
-},
-{
-"title": "IHSG Ditutup Menguat Usai Pidato Kenegaraan (Jumat, 14 Agustus 2026)",
-"link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxOTFI0MjZCR241cDlVLUJFY0t5TmtrWUE1bnlYSWxac1pQdkJKVWNlUy14dm9VWk50RkZ0QTVQY0JUa0Zvbzdfakl5YlVlSDM2NGNYWldBVTN5U1B3ZGFTT0pDZmlZcmVZWTlhcDdHOTRWaDdEWlJ4dWZiMDM0VkV4cHVRVlg4QUd1VGR5OVk3YXpLM2dfWWo5cGNxOFpGYWdpZER1SHo4WGEzTXNPY3pnTVhCM2dwdjJfWUNTQU5hM1ZQQlJyekE?oc=5",
-"source": "Katadata",
-"ts": 1786703400
 }
 ]
 }
