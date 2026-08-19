@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-19T04:57:10+00:00",
+"generated_at": "2026-08-19T05:00:53+00:00",
 "count": 80,
 "items": [
 {
@@ -327,6 +327,12 @@
 "ts": 1787088941
 },
 {
+"title": "National",
+"link": "https://news.google.com/rss/articles/CBMiREFVX3lxTE52SmZNRFFrRFlDbC1OVXVWdGh4Ynd3LWJFdHp2SDA0UFE1RVF5MFA3UEkwR09wTW5XaWQ0dlc2Sjd3U09r?oc=5",
+"source": "Stockwatch",
+"ts": 1787088144
+},
+{
 "title": "\"banyuasin\"",
 "link": "https://news.google.com/rss/articles/CBMiUEFVX3lxTFBrb2xtZUhkNXM3ckxvaFF1M1llLTBhQU9QVkJQbGNaY2ZNOVZpcmhOUW9zOVV4TjNGdUJZU2ZfVUFwaTJOOVY1SW1zRC1RNE03?oc=5",
 "source": "InvestorTrust",
@@ -475,12 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQRGV3SWxXQjVzdlBXNXF0YTZxZ3J5QVhHX3J1RkxKZUxZWUppdFFBcFk3UVhMa1ZycXVlRjF5NHdJUTlpU28xMFJma3A3NENtWFBhanVhTDh5VC00LTRTQ3pQd09iVW03LTFyYjZES3pYaC1XcXJiY2RDelRBTU5RUmNORnNsZURCdU1ONExxV3U2VlR5QnFHN3F2YU1tcTVzZEk1RjZOcXFYSHV1ZGg4NThyeDRNQdIBrgFBVV95cUxPUW5qUU00dUZIWHl0ZDZ5NFpFbUFXSm5ndkhoU3Y2NXJMYjZiQUVKZlYwVkJab1ZObG9LUlVKeExtdzFxb2QxT2o1b1kzWm9YUXp2M0ZBMGNMY2R6MFJlZlJ5ejAtQ0xiOTNxdFNSNjZOVEtVcVQzbjN1MkxNTDA0RktBMlNLd3A5TzhmcjF1dnFYNTRBbTRGTWptQWxXUl96U1g0UFpicGkyMXhNN2c?oc=5",
 "source": "Kontan",
 "ts": 1787062635
-},
-{
-"title": "\"audjoseph\"",
-"link": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE9jRkRQcVBfUnRDQlFNUXRMaFRMX2FsTVBGN05pSDhQRlJCWXVQRnUwOGFxQ3AxRUNqaDJhbl9vd05mVllnVUdaTThZWjRYeXZo?oc=5",
-"source": "InvestorTrust",
-"ts": 1787062418
 }
 ]
 }
