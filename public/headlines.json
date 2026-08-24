@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-24T12:17:17+00:00",
+"generated_at": "2026-08-24T12:30:47+00:00",
 "count": 80,
 "items": [
 {
@@ -393,6 +393,12 @@
 "ts": 1787545504
 },
 {
+"title": "EmitenTrust",
+"link": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE0wVl9iTlBkNE5hempteHdMc2dhYWtSY0wxd2pVdGlpcUpjbnBCWGRqTElrYjRHUER4RzJfWFNodUNkUTBXOWd4WHFvYTM2WU1IbmpQMnFjUFdpVWctM1Bz?oc=5",
+"source": "EmitenTrust",
+"ts": 1787545252
+},
+{
 "title": "BMoney Buka Lounge di Surabaya, Investor Tembus 1 Juta",
 "link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPVXhxdl9zZ19hbE1Eb0ljb0xjUFN4MFVpdXpPY1RHWDNudHhLN1VqbmVfUTc5UVctUXY3bVBLME1lRXo5Y25FQnpUNE9sYzRJcTJ4NWxrV2VKb0pHeHE2WVpERmJmenBrOWJGX1VBYU10ZXY4cHVMcWxDQVNoMnZubDFxTXJ6TW9PVE56OGNrQWdVVWNYWDNWNG1UYUI?oc=5",
 "source": "Kabar Bursa",
@@ -475,12 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMifkFVX3lxTE1yMVg4RkktWllWckZGV3NacnNJRUc4eVJqZHJWTk9NZmFkT19Pa0hOYVBiRndDd1llckY1V1gxcmp4cjdWd3ZDSUUtZDhabzBFU1FxWjZ5MnJ5YzhLVDZVdEtwOXJLTGZHbExKVDllZFdmTFVteTBIZG9mU1NhUQ?oc=5",
 "source": "EmitenNews",
 "ts": 1787542080
-},
-{
-"title": "EmitenTrust",
-"link": "https://news.google.com/rss/articles/CBMiVEFVX3lxTE5rel84aXBSbFA3OGNPTzd1R1pzb3pUbzRKWGhvQWljaUtPMHI5MXV6LUl4OUFwSDVTTWV4MkFXUmVDbDZ2QVBSMGR2d0ZBRVcwNmV4Ug?oc=5",
-"source": "EmitenTrust",
-"ts": 1787542063
 }
 ]
 }
