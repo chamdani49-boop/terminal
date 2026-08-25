@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-25T08:54:37+00:00",
+"generated_at": "2026-08-25T09:00:52+00:00",
 "count": 80,
 "items": [
 {
@@ -19,6 +19,12 @@
 "link": "https://news.google.com/rss/articles/CBMikgFBVV95cUxOX2N4TjhWSEJTVWd0Qmp4N1IzS1RoN3JhTG8waVpmSkVZMGNXVWNHNmJvVGR2QVBzcHNNQng5ekhZQU5VZlY4end3YzFaUFNLYTFNNF8wS3NINGlLSlpZaXBfZ1RXVFhWZzJPbHdYaF9fUC1XSy1Yd2w1bWpYZjNRdVh4dFphQjh1Q2xaUnpFZDd2UQ?oc=5",
 "source": "Stockwatch",
 "ts": 1787643381
+},
+{
+"title": "EmitenTrust",
+"link": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE10RHlXaEUxTWJYRnluQWgtLTkxakVPajc1ZmcyNnE2M2pTVVZPYmdEZDhkZXhhY2NjX1VZWUE1SThJWlhSSUpKSk5wY0NUOVhyTG5PSEpvSzJaUjd3amc0?oc=5",
+"source": "EmitenTrust",
+"ts": 1787642931
 },
 {
 "title": "Bitcoin Menguat Tembus US$ 80.000, Regulasi AS Jadi Katalis",
@@ -157,6 +163,12 @@
 "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE5kdldfejIwT1VMcWx3M2FqMG9OakdjemlfaUYwSGtVZHZmS2FhWXpZak9MdUlKUFNidXVQQTRsbUZXM1lGY1FFSHA0aXZJVGc4dEpCNXVqQkNCbXl2MV82SW5yUlFtcmE3ZmNv?oc=5",
 "source": "Bisnis.com",
 "ts": 1787630044
+},
+{
+"title": "Bursa Saham",
+"link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE9Beko4R3hVYndFdURDU3BVdnV2M1JJYnRfOXdHenZwd1YtTm1rXy1YbXRmT2NYd25uQVY4RVZDTmE0RDQyLU5LeGpNUEZwUHNFa2hmSWZoZ1FsU3lDXzU4Tnl5MVdHV3ZpektFclR3aw?oc=5",
+"source": "Katadata",
+"ts": 1787629867
 },
 {
 "title": "Berita nahdlatul ulama Terkini dan Terbaru Hari Ini",
@@ -315,12 +327,6 @@
 "ts": 1787603808
 },
 {
-"title": "EmitenTrust",
-"link": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE81ZGpKeHVHc281dlZMTTRyZ2stcFU5cWstV2I5bGFHRTBIdzdTTm1xQTZ0NnJGNUNWQ1NudlE4aUZQaGxhWWhVVmVteHVaMVQw?oc=5",
-"source": "EmitenTrust",
-"ts": 1787589628
-},
-{
 "title": "\"stokberas%20pemerintah\"",
 "link": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE1QM3QzeXNrNXhlajBwaTRGdlljVHN5LUdyMERPbTdlUndFWlQxNElWTDBKWG9RTFhDUGo3R0o3S203a1RCSkFHbU9OSGdwcDdaNkRFWDhHQU1oWkk1b2lJdEp3?oc=5",
 "source": "InvestorTrust",
@@ -475,12 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE9RRFotZmowRHhfS0xxVGVIMXBnaGdxbXdyWHkxSEE5NHNsb0FzN3BEVkE5cHdmbDFtMFBkMTR5WnN2bDFiem9HcXh2bDZUeTV6bEx6NkJsQWw?oc=5",
 "source": "InvestorTrust",
 "ts": 1787576111
-},
-{
-"title": "Berita iPhone 13 Terkini dan Terbaru Hari Ini",
-"link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE5xZkhpTmc3LThzRVJyUHB3bHpVQ09ieklJNVZsQkFMOEJodlhuancxeGNNM0tWRUJSaFB2amZ5NkphSHFZY24wMUw4N3hIdTlqLWw3Y2E5QVNMWE1UMUxJMQ?oc=5",
-"source": "Bisnis.com",
-"ts": 1787575893
 }
 ]
 }
