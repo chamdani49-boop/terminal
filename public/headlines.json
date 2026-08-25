@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-25T10:30:46+00:00",
+"generated_at": "2026-08-25T10:45:44+00:00",
 "count": 80,
 "items": [
 {
@@ -39,10 +39,22 @@
 "ts": 1787646422
 },
 {
+"title": "EmitenTrust",
+"link": "https://news.google.com/rss/articles/CBMiYkFVX3lxTFBWX0dqd2VwWUN3eXl2ajZ3bU8tLWhjUW53YTNJdk54VGdTOTFkRTRkVTRHTkZ4R2NKQlNRYzdSWEEwc2VxRHNjbndTRG80YWo5ek5WcEM0c1E3bXJjcmduWXlB?oc=5",
+"source": "EmitenTrust",
+"ts": 1787646347
+},
+{
 "title": "Bursa Eropa Bervariasi, Investor Waspada Sanksi Ekonomi Baru AS terhadap Iran",
 "link": "https://news.google.com/rss/articles/CBMidkFVX3lxTE1VeHF6T09nQTViTEdVZl94NnVESHZ1S05YNmVOaDF6ckNJUlRRRHIyY281WkNHWXZ3d1NRMFN1VTFlZ0xoUzd1ZXZkVHB6Wm9PbE5SWEYzcjFrUl8wQjdqeHdHOGtpVTUwTkQtX1VxVU5mbUV1dHc?oc=5",
 "source": "Stockwatch",
 "ts": 1787645466
+},
+{
+"title": "Evaluasi Papan Pengembangan BEI: GOTO Top Tier & 15 Saham Baru Masuk",
+"link": "https://news.google.com/rss/articles/CBMingFBVV95cUxPOG96cDBEWndtdW1PTEdmekZlaDg3V2VUVHhCZjJ5R0ZjWEJleE9vMUJKWnIxdk1JRVJYWU02TE5DbHJYY2wyZ3dwMlU0TWp0VzFHM2dCT01YU0FCMThUVjBvSlZfRUNFUjh6eVZlUHFJV0hPZW1MOW5WM0RXSEFoSTlxNlk4QzlIMVlyaHhGYVpRSlRfYUc5bHJnMWtNQQ?oc=5",
+"source": "EmitenNews",
+"ts": 1787643900
 },
 {
 "title": "Komisaris CYBR Andri Hutama Jual 1,76 Juta Saham, Kepemilikan Turun",
@@ -55,12 +67,6 @@
 "link": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE9aQmlQOFNHVXUtMTZKV09aZ1BZLVgzM0Y4bmg0T0xPVWdDOUFWTTRvczhMN1JiX1VzSkhHZndjWThDLWlpc3QyV3JDdDM2R3RETGc?oc=5",
 "source": "InvestorTrust",
 "ts": 1787643199
-},
-{
-"title": "EmitenTrust",
-"link": "https://news.google.com/rss/articles/CBMiT0FVX3lxTFBPRVI2Zy1BaW5wM3ZYZmhkU0V2OFViM1FiMnd6UmJRYjJGNl8wODBZUExGaXc5UU5lZG9uTDNhLXpRYjFRMFdWeXAzTTBvakE?oc=5",
-"source": "EmitenTrust",
-"ts": 1787643099
 },
 {
 "title": "Bitcoin Menguat Tembus US$ 80.000, Regulasi AS Jadi Katalis",
@@ -321,6 +327,12 @@
 "ts": 1787619010
 },
 {
+"title": "Lo Kheng Hong Borong Lagi Jutaan Lembar Saham Properti",
+"link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxPRDNPa2wwYk1LdVpKLWNlb2tJNmgtaXRqcFNSTFFuZ1BoQ25oTDJudzVVM2plRldtTHJwLVpIYWFNYndIaWs0TkNaZ2J6TGliZ2FsclJ4WWVERVVlVGRPYnJhcXZpVVpPemw5Ym11Q0xZNGxhRl9yYzRJLVNyWXZCb2lBeHBHREg0QXpCakxLc1lhdjdCZDRac0JXMW1MM0FEdllOMkR5ZjdULUE?oc=5",
+"source": "Bisnis.com",
+"ts": 1787616000
+},
+{
 "title": "Segera IPO, Cermati Prospek Swayasa Prakarsa (SWAP)",
 "link": "https://news.google.com/rss/articles/CBMijAFBVV95cUxPSHRZMWdNcC1oNHBJaU52XzZGX21kOWVFa2dXLXVJQW44V00wMjZDYnNLU01qbUI3Tl9JNE1fQW54T1ppeEhXNlVMOXhIY1NLSTlQZUJNaGZIc2NKNU9ZeDVBd3lWWnRCTGFXRDVxU1dFNFNlekZSLTZTV241MVp4aHJHQ3lfMml5eHc1VNIBhAFBVV95cUxPcWo4a0VlbDlEY3B2YXQwSFVmZl84eGd5VEJlSjFhblhxVGJROV9qRWtWM21ONnl3R0ZwYWVKcE5jUWVNSFp2TTg5UTkwOGVidEtERkl1V3ZQbXhTb0xIRTRCcGNHX0hJNFpjUDR3NUZDZVBxV28tUEQ4OHlZbUlhU190RG4?oc=5",
 "source": "Kontan",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5KWmFKalFqZV9GeHhOUGU1NGVmd25pNDRrLS1kdmVqM3JNT2FkekJvTF8yM1lNcWVURW16ZlZRVEJhaHJ2SzItNThtRHpBMHZpTGZYVXIyVm8?oc=5",
 "source": "Bisnis.com",
 "ts": 1787582505
-},
-{
-"title": "Lo Kheng Hong Borong Lagi Jutaan Lembar Saham Properti",
-"link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxPRDNPa2wwYk1LdVpKLWNlb2tJNmgtaXRqcFNSTFFuZ1BoQ25oTDJudzVVM2plRldtTHJwLVpIYWFNYndIaWs0TkNaZ2J6TGliZ2FsclJ4WWVERVVlVGRPYnJhcXZpVVpPemw5Ym11Q0xZNGxhRl9yYzRJLVNyWXZCb2lBeHBHREg0QXpCakxLc1lhdjdCZDRac0JXMW1MM0FEdllOMkR5ZjdULUE?oc=5",
-"source": "Bisnis.com",
-"ts": 1787582290
-},
-{
-"title": "Berita pnm Terkini dan Terbaru Hari Ini",
-"link": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE8ydDdkOXp0aVkwNzdKSU12UHpUSXliWHc5WEswTldNRXI1RUNxMTQzMlpTWnVmbFFDY2MwVmt3bDBwcUc4cFdQTzE2dGlDYUVZRzk0OTJyNA?oc=5",
-"source": "Bisnis.com",
-"ts": 1787582226
 }
 ]
 }
