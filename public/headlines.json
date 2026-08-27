@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-27T14:15:44+00:00",
+"generated_at": "2026-08-27T14:30:49+00:00",
 "count": 80,
 "items": [
 {
@@ -25,6 +25,12 @@
 "link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNbFp6M1hJRlVKWXNnSXRCRnZwUHNBeFItbmNTa1VkN1AySUFLWWplSG5EanFFMlMzSmVuSWk3ZjE4VUowWWZzT2oxNW9aOGsxQmxOTEJaamNrZklfYmxZei1xcHNvdUJDUkNCbTczYmpKRGdEZ0FxY1FPWEVlcUxHamlNeGlqN1B1UEJWcmtIR21FaDRkSHk2a0NDWlJPdF84LUE4V0pZTW9iSDh3bWMwZDI1b9IBqwFBVV95cUxPTk1IRGE4RDIwRUxmMzk2ZDZlT3NSTnpVMzJtUjdjMHF1a1BrSXNsTF9hb0oxcGxPUHVVQnloeG9BOEJsdG5lbF80blJYM3NKaFoxazhZZlktT08wUVA4OEpVaWdyY09iR0tfbEo4U2dJeXhfQmpjdExsWVFNZEswZVRzVHUxUV9LN3RHZFE2R3c0eXJERnVBLTkxWlhhWHdKSmlpZnRjV1FERlk?oc=5",
 "source": "Kontan",
 "ts": 1787835377
+},
+{
+"title": "EmitenTrust",
+"link": "https://news.google.com/rss/articles/CBMiTkFVX3lxTFBKZHNpMWVTSm12WUNtUUZpVEZhdnpfRTdQc3lEM3FaQXM0VTB5TWwxbUs3bFZYY2ZHRmg3RlNZRk9UQmNHLWFmZlpaVWVnQQ?oc=5",
+"source": "EmitenTrust",
+"ts": 1787831610
 },
 {
 "title": "Ekonom CORE: Pertumbuhan Ekonomi Belum Banyak Dirasakan Kelas Menengah",
@@ -273,6 +279,12 @@
 "ts": 1787808224
 },
 {
+"title": "Korban Banjir Bandang Nepal Tembus 162 Jiwa, 558 Masih Hilang",
+"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQcDRVWUktQWtld08wSUMwWW9KczNOY3lWUWltMHVSemRNOWJSNGd6Sl9TYmZOeEctZnZsRTQxal9LTmc0M1UxcnpOdXhIdEtTMGNRcW5uTW5jNExvQVdUYnBJOVRacUw5T2hJQVducjg5WFFoU01WSHk1RjA5QzVGWEdDU3BmU2x2WXROeVNhYWlZT015M1BkU3lNWW5sMEhwTHUzREdWTG9zcXdZZXloMXJB?oc=5",
+"source": "Bisnis.com",
+"ts": 1787808126
+},
+{
 "title": "Pefindo Pangkas Rating PTPP Jadi idBB, Ada Risiko Refinancing Utang",
 "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxNQlFsbG5aZm13ejA5WUhxZmpVeDhFN19sZk5HQi1tbjZrUURVRDQ5R25Pa2lqNncwV0FsaEhkQ2JxY3FYUDYzZ1hWS3pzdXQwYklyZXVPS1c4WHpfNk4zQWtXLUgxWGRQQ2oyQzFEYVNXOFpHTnFYdlE2QzkwN2tOREZZRXNLMzNHSktfMDNHUlVsMFVPdHk3WkFiWUtSQ2NnalZEcdIBnAFBVV95cUxNMkIzV096S3pkNkhmTkpRZjhVWlUxMTR0TGNmMDBfdVBCVUVoUF9EQzhfZDFfOFE2UUkwTlNpalQ4YURzWmhkWE14ckJGbjZKUkwzN1lobzh3NVdVOUQ5TFE0QzRnSVMtWUJLNFEzX0t3VzB6TVUybDdBeUw5b0NnRkpDZURxX3pLSzdmVW5lUVhEaEk1eTFGdXZKSnM?oc=5",
 "source": "Kontan",
@@ -465,22 +477,10 @@
 "ts": 1787795220
 },
 {
-"title": "EmitenTrust",
-"link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE9RYzFrYlM0c25Jckl1cXVxOW5WaVlxOGxEeDVxS3EtaGIzOXFMU094Qk9PRl80T0ZDYUVSR3pKQXJzb21fanRtNFNoZXlLeFdUQ3c2ZUpGRXM2Z19peFNrLTkzLUhVU3ct?oc=5",
-"source": "EmitenTrust",
-"ts": 1787794503
-},
-{
 "title": "Bursa Asia Mixed di Pagi Ini (27/8), Pasar Perhatikan Kebijakan BOK & Kinerja Nvidia",
 "link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPMXlUNFNpWFJ5eUhMVDN2MV9XZERCbS1EWGRKbWZsZENNVkhYcmRVWFZZeXVWQU12R0gxLTFxSXVWRnlwTzFnY21yZXRubEY0QVFDTG01dUJKeDhHcDVNc0kxcTU3czA5ZTQ5VHE1OGtNUmFKLW5VV0ZTVF80T2doNEFtWnNuQk9uSEZWczVLSEU4Z2gyd2Ryek5tYWFxMllEckZWemNRMldOZzZISFoyS2ItZTDSAawBQVVfeXFMTlZxOEhGaThVbnBSRWtxdVNxdlBvN09XWVByaTFYdWpBNVFNLXllVHdQUFB5dkxROHNpanloRWM0emV4MVgya0R6R1Z6SUYyRW5jZk9fUzFlbDZqOXZCbGRYM1NCY2dKQzlhT1A3TWMxMnN2M0J1eFFmWmlzNFFWNXRaenNEQVotUWtSbG12ZzFUOHg0andBU1dlV1hjc0tNRmpjN0kwcE1wV2FIcA?oc=5",
 "source": "Kontan",
 "ts": 1787794382
-},
-{
-"title": "BNGA, BRIS Hingga BBCA Cs Mulai Berebut Cuan Kilau Emas",
-"link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNdHlSYVlEa1RaYXBNSmpObkhxM2hRSTNyZjdoUDBvQmxMZXgwRm0wcDlQRW1oSG9kaTd6S1dSbnpfM21vLWJ4VWNtZVl4LW5SSXZlTTZLSHpUQzZvUTVTbG9mY0x3SDB2dnduUmU2MVEwMDNGSk1HQzdYcGhweXd3cm12NmJCRHNpZ0tKbTVZMUU3NWFNUGVBYnV6dWlGcnN6NkdkZEFyQnFNdm8?oc=5",
-"source": "Bisnis.com",
-"ts": 1787794200
 }
 ]
 }
