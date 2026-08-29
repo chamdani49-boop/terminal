@@ -7629,7 +7629,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
                      _pfPeriod aktif: "30 Hari Terakhir", "Januari 2026",
                      "Tahun 2026", dst. -->
                 <div class="tr-card-title" id="trPfDayChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Grafik Performa Analis · 30 Hari Terakhir</div>
-                <div class="tr-card-desc">P/L harian sekuritas (exit + floating live posisi aktif) vs return harian IHSG + garis kumulatif — ikut mode eksekusi di atas.</div>
+                <div class="tr-card-desc">Mark-to-market <b>harian</b>: tiap hari bursa = realized terkunci (TP1/TP2 hit → dikunci) + floating posisi aktif dari harga close hari itu. Bar = pergerakan hari itu, garis = kumulatif — ikut mode eksekusi di atas.</div>
               </div>
             </div>
             <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
@@ -7993,6 +7993,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _currentTab  = 'active';
   // _cumChart dihapus bersama chart NAV Reksadana Virtual (2026-07-25).
   var _dayChart    = null;  // Chart.js instance utk renderDayChart (grouped bar + line).
+  var _ohlcMtmAll  = null;  // payload ohlc.json (cache) utk mark-to-market floating harian chart.
   var _rafHandle   = null;
 
   // ── Live price/change helper — priority chain mirror dashboard ──
@@ -8672,82 +8673,109 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // lalu bar hijau/merah + garis kumulatif biru.
   // Rec yg gak eligible (getRecPnl==null) di-skip dari agregasi hari itu.
   function computeFirmDailyEquity(firm, entryMode, exitMode){
-    var recs = (firm && firm.recsHistory || [])
-      .filter(function(r){ return r && r.exitDate; })
-      .filter(_recInDateFilter);
-    var byDate = {};
-    recs.forEach(function(r){
-      var pnl = getRecPnl(r, entryMode, exitMode);
-      if(pnl==null) return; // mode-eligibility filter
-      var d = r.exitDate;
-      if(!byDate[d]) byDate[d] = { date:d, trades:0, wins:0, losses:0, sumPnl:0, floating:0, floatingCount:0 };
-      byDate[d].trades += 1;
-      byDate[d].sumPnl += +pnl;
-      if(+pnl > 0) byDate[d].wins++; else if(+pnl < 0) byDate[d].losses++;
-    });
+    // ── DAILY MARK-TO-MARKET (per user): 1 bar per HARI BURSA dalam periode.
+    // Nilai firm di hari D = Σ kontribusi tiap rekomendasi cohort:
+    //   • Belum triggered pada D          → 0
+    //   • Sudah TUTUP pada/atkl D (exit≤D) → LOCKED realized pnl (getRecPnl:
+    //       TP1/TP2 hit → terkunci di target; TP1-lalu-SL → TP1; SL → rugi).
+    //       Nilai KONSTAN untuk semua hari setelah tutup.
+    //   • Masih AKTIF pada D              → FLOATING = (close[ticker][D]−base)/base,
+    //       pakai harga close OHLC hari D (hari terakhir pakai live price).
+    // Bar harian dayPnl = V[D] − V[D-1] (pergerakan return+floating hari itu).
+    // Garis kumulatif = V[D]. Cohort = rec (history+active) yg openDate-nya
+    // masuk filter periode (_recInDateFilter), konsisten dgn KPI Analis.
+    var cohort = ((firm && firm.recsHistory) || [])
+                   .concat((firm && firm.recsActive) || [])
+                   .filter(_recInDateFilter);
+    if(!cohort.length) return [];
 
-    // ── FLOATING RETURN: include unrealized dari recsActive di TODAY ──
-    //
-    // Marking-to-market posisi aktif: sum floatingPct dari semua rec
-    // recsActive (didTouchEntry=true, masih running) → attach ke bucket
-    // TGL HARI INI di series. Efek visual: bar hari ini = realized closes
-    // hari ini + mark-to-market floating semua active positions.
-    //
-    // Reuse computeActiveFloatingSum(firm, entryMode) yang sudah dipakai
-    // KPI card "FLOATING BERJALAN" — konsisten dgn angka yg user lihat
-    // di header. Fungsi ini sudah:
-    //   - Filter rec.openDate via _recInDateFilter (respect date filter).
-    //   - Compute floating pakai getModeFloating (respect entry mode).
-    //   - Return { sum, count, total }.
-    //
-    // Guard: hanya include kalau TODAY masih dalam _dateFilter range
-    // (kalau ada filter). Historical filter → skip (floating tidak
-    // relevan buat snapshot masa lalu). No filter → always include.
-    //
-    // User rationale: "toh nanti closing akan di validasi dgn harga
-    // price dari OHLC kan" — floating hari ini akurat untuk snapshot
-    // realtime; final pnl akan reconcile via OHLC saat rec beneran close.
-    var todayISO = '';
-    try { todayISO = new Date().toISOString().slice(0, 10); } catch(_){}
-    var floatingInFilter = false;
-    if (todayISO){
-      if (_dateFilter){
-        floatingInFilter = (todayISO >= _dateFilter.start && todayISO <= _dateFilter.end);
-      } else {
-        floatingInFilter = true; // no filter → always include today
-      }
-    }
-    if (floatingInFilter){
-      try {
-        var flt = computeActiveFloatingSum(firm, entryMode);
-        if (flt && flt.count > 0 && Number.isFinite(+flt.sum)){
-          if (!byDate[todayISO]){
-            byDate[todayISO] = { date: todayISO, trades: 0, wins: 0, losses: 0, sumPnl: 0, floating: 0, floatingCount: 0 };
-          }
-          byDate[todayISO].floating      += +flt.sum;
-          byDate[todayISO].floatingCount += flt.count;
-          byDate[todayISO].sumPnl        += +flt.sum;
+    // 1) Timeline hari bursa dalam window. Ambil tanggal candle OHLC dari
+    //    ticker cohort (union), fallback ke IHSG series, fallback exit dates.
+    var ohlcAll = _ohlcMtmAll;
+    var todayISO = ''; try { todayISO = new Date().toISOString().slice(0,10); } catch(_){}
+    var startISO, endISO = todayISO;
+    if(_dateFilter){ startISO = _dateFilter.start; endISO = _dateFilter.end; }
+    else { var _d0 = new Date(); _d0.setUTCDate(_d0.getUTCDate()-30); startISO = _d0.toISOString().slice(0,10); }
+    var dateSet = {};
+    if(ohlcAll && ohlcAll.tickers){
+      cohort.forEach(function(r){
+        var e = ohlcAll.tickers[r.ticker]; if(!e || !e.candles) return;
+        for(var k=0;k<e.candles.length;k++){
+          var ds = new Date(e.candles[k][0]*1000).toISOString().slice(0,10);
+          if(ds >= startISO && ds <= endISO) dateSet[ds] = 1;
         }
-      } catch(_){}
+      });
     }
+    if(!Object.keys(dateSet).length){
+      var dd = getData();
+      var ih = (dd && dd.ihsg && (dd.ihsg.seriesFull || dd.ihsg.series30d)) || [];
+      ih.forEach(function(p){ if(p && p.date && p.date>=startISO && p.date<=endISO) dateSet[p.date]=1; });
+    }
+    if(!Object.keys(dateSet).length){
+      cohort.forEach(function(r){ if(r.exitDate && r.exitDate>=startISO && r.exitDate<=endISO) dateSet[r.exitDate]=1; });
+    }
+    var timeline = Object.keys(dateSet).sort();
+    if(!timeline.length) return [];
+    if(timeline.length > 30) timeline = timeline.slice(timeline.length-30);
+    var lastIdx = timeline.length - 1;
 
-    // Kalau tidak ada bucket sama sekali (no closed history + no active),
-    // return kosong supaya empty-state message tampil.
-    var dates = Object.keys(byDate).sort();
-    if (!dates.length) return [];
-    if(dates.length > 30) dates = dates.slice(dates.length-30);
-    var cum = 0;
-    return dates.map(function(d){
-      var row = byDate[d];
-      var dayPnl = +row.sumPnl.toFixed(3);
-      cum += dayPnl;
-      return {
-        date:d, trades:row.trades, wins:row.wins, losses:row.losses,
-        dayPnl:dayPnl, cumulative:+cum.toFixed(3),
-        floating:+(row.floating||0).toFixed(3),
-        floatingCount:row.floatingCount||0
-      };
+    // 2) Precompute close per ticker di sepanjang timeline (forward-fill).
+    //    Hari terakhir → pakai live price kalau ada (fresh, samakan floating card).
+    var closeByTicker = {};
+    cohort.forEach(function(r){
+      if(closeByTicker[r.ticker]) return;
+      var byDate = {};
+      var e = ohlcAll && ohlcAll.tickers && ohlcAll.tickers[r.ticker];
+      if(e && e.candles){
+        for(var k=0;k<e.candles.length;k++){
+          var ds = new Date(e.candles[k][0]*1000).toISOString().slice(0,10);
+          byDate[ds] = +e.candles[k][4];
+        }
+      }
+      var arr = new Array(timeline.length), last = null;
+      for(var t=0;t<timeline.length;t++){ if(byDate[timeline[t]]!=null) last = byDate[timeline[t]]; arr[t] = last; }
+      try { var lv = getLive(r.ticker); if(lv && lv.price!=null && timeline[lastIdx]===todayISO) arr[lastIdx] = +lv.price; } catch(_){}
+      closeByTicker[r.ticker] = arr;
     });
+
+    // 3) Precompute per-rec: base price, arah, tgl triggered, locked pnl (kalau closed).
+    var recInfo = cohort.map(function(r){
+      var buy = String((r.type||'BUY')).toUpperCase() === 'BUY';
+      var base = getBasePriceForMode(r, entryMode);
+      var trigDate = r.entryTouchDate || (r.didTouchEntry ? r.openDate : null);
+      var locked = r.exitDate ? getRecPnl(r, entryMode, exitMode) : null; // final % terkunci
+      return { r:r, buy:buy, base:base, trigDate:trigDate, locked:locked };
+    });
+
+    // 4) Nilai per hari + pergerakan harian.
+    var prevV = 0, out = [];
+    for(var i=0;i<timeline.length;i++){
+      var D = timeline[i];
+      var V = 0, flSum = 0, flCount = 0, dTrades = 0, dWins = 0, dLosses = 0;
+      for(var j=0;j<recInfo.length;j++){
+        var ri = recInfo[j];
+        if(!ri.trigDate || ri.trigDate > D) continue;            // belum triggered pada D
+        var closedByD = ri.r.exitDate && ri.r.exitDate <= D;
+        if(closedByD){
+          if(ri.locked == null) continue;                        // tak eligible mode ini
+          V += ri.locked;
+          if(ri.r.exitDate === D){ dTrades++; if(ri.locked>0) dWins++; else if(ri.locked<0) dLosses++; }
+        } else {
+          if(!(ri.base > 0)) continue;                           // aktif pada D → floating
+          var arr = closeByTicker[ri.r.ticker];
+          var px = arr ? arr[i] : null;
+          if(px == null) continue;
+          var fl = ((px - ri.base) / ri.base) * 100 * (ri.buy ? 1 : -1);
+          if(!Number.isFinite(fl)) continue;
+          V += fl; flSum += fl; flCount++;
+        }
+      }
+      var dayPnl = V - prevV; prevV = V;
+      out.push({ date:D, dayPnl:+dayPnl.toFixed(3), cumulative:+V.toFixed(2),
+                 trades:dTrades, wins:dWins, losses:dLosses,
+                 floating:+flSum.toFixed(2), floatingCount:flCount });
+    }
+    return out;
   }
 
   // ── Grafik Performa Analis 30 Hari — Chart.js grouped bar + line ──
@@ -8801,6 +8829,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     // Clear old empty overlay
     var old = wrap.querySelector('.tr-pf-daychart-empty'); if(old) old.remove();
+
+    // ── Muat OHLC (1x per tab, cached) utk mark-to-market floating harian.
+    // Kalau belum siap: render dulu (realized-only fallback), lalu re-render
+    // penuh saat OHLC tiba. Kalau sudah cached: lanjut sinkron.
+    if (window.__OHLC_loadAll && !(_ohlcMtmAll && _ohlcMtmAll.__ok)) {
+      window.__OHLC_loadAll().then(function(all){
+        if (all && all.__ok) {
+          _ohlcMtmAll = all;
+          if (_currentFirm && firm && _currentFirm.id === firm.id) renderDayChart(firm);
+        }
+      });
+    }
 
     var series = computeFirmDailyEquity(firm, _entryMode, _exitMode);
     if(!series.length){
