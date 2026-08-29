@@ -8361,12 +8361,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // ke TP1/TP2, gimana realized WR & net-nya?".
     var exitPrice = null;
     if(exitMode === 'tp1'){
-      // TP1-lock + UPSIDE TP2 (per user): kalau TP2 tersentuh, ride sampai
-      // TP2 (tambah sisanya). Kalau cuma TP1 — atau TP1 lalu kena SL sebelum
-      // TP2 — tetap dicatat di TP1. Konsisten dgn tracker-stats.js recPnl.
-      if(hitTP2 && Number.isFinite(+rec.tp2) && +rec.tp2 !== +rec.tp1){
-        exitPrice = +rec.tp2;              // TP1 → lanjut TP2 (upside penuh)
-      } else if(hitTP1){
+      // TP1 MURNI (konservatif): exit di TP1 (incl SL_TRAIL / TP1-lalu-SL).
+      // Upside TP2 TIDAK ditambahkan di sini — itu mode TP2 — supaya toggle
+      // TP1 vs TP2 beda. Konsisten dgn tracker-stats.js recPnl.
+      if(hitTP1){
         exitPrice = +rec.tp1;              // WIN at TP1 (termasuk SL_TRAIL / TP1-lalu-SL)
       } else if(closedBy === 'SL' && Number.isFinite(+rec.sl)){
         exitPrice = +rec.sl;               // LOSS at original SL

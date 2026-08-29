@@ -118,14 +118,11 @@
     // SL murni (belum TP1) → exit di SL. Selain itu → exitPrice natural.
     var exitPrice = null;
     if (exitMode === 'tp1') {
-      // TP1-lock + UPSIDE TP2 (per user): "munculkan hit return dari TP1;
-      // jika ada TP2 dan TP2 tersentuh, tambahkan sisanya sampai TP2". Jadi
-      // rec yang lanjut kena TP2 di-exit di TP2 (return penuh sampai TP2),
-      // bukan berhenti di TP1. Rec yang cuma TP1 — atau TP1 lalu kena SL
-      // sebelum TP2 — TETAP dicatat di TP1 (TP1-lock).
-      if (hitTP2 && Number.isFinite(+rec.tp2) && +rec.tp2 !== +rec.tp1) {
-        exitPrice = +rec.tp2;                                    // TP1 → lanjut TP2 (upside penuh)
-      } else if (hitTP1) {
+      // TP1 MURNI (konservatif): exit di TP1 (incl SL_TRAIL / TP1-lalu-SL →
+      // TP1-lock). Upside TP2 SENGAJA TIDAK ditambahkan di sini — itu tugas
+      // mode TP2 — supaya toggle TP1 vs TP2 menghasilkan angka BERBEDA:
+      //   TP1 = "exit di target pertama" (aman), TP2 = "ride sampai TP2".
+      if (hitTP1) {
         exitPrice = +rec.tp1;                                    // TP1 WIN — LOCKED (incl SL_TRAIL / TP1-lalu-SL)
       } else if (closedBy === 'SL' && Number.isFinite(+rec.sl)) {
         exitPrice = +rec.sl;                                     // SL murni LOSS
