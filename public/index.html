@@ -19724,7 +19724,18 @@ async function _ensureAccess() {
     window.__ES_PROFILE = j;
     try { _renderAccount(j); } catch (_) {}
     try { _loadReferralStat(); } catch (_) {}
-    try { if (!j.tos_accepted && window.__esConsentGate) window.__esConsentGate(); } catch (_) {}
+    try {
+      if (!j.tos_accepted && window.__esConsentGate) {
+        if (window.__esTosAcceptedLocally && window.__esTosAcceptedLocally(j.email, j.tos_version)) {
+          // Browser ini sudah pernah setuju (email+versi sama) tapi server
+          // melaporkan belum → heal DIAM-DIAM (re-simpan consent) tanpa
+          // memunculkan popup lagi. Fire-and-forget; kalau gagal, tidak apa.
+          try { fetch('/api/accept-terms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch (_) {}
+        } else {
+          window.__esConsentGate();
+        }
+      }
+    } catch (_) {}
     return true;
   } catch (e) {
     // Endpoint error → jangan kunci user; data tetap dilindungi server.
@@ -31251,6 +31262,18 @@ document.addEventListener('keydown', (e) => {
     var chk=el('tosgChk'), btn=el('tosgBtn');
     btn.disabled=!(scrolledEnd && chk.checked);
   }
+  // Guard klien: ingat persetujuan per (email + versi) di localStorage supaya
+  // popup TIDAK muncul lagi di browser ini walau server sesekali melaporkan
+  // tos_accepted=false (mis. race baca D1 / sesi baru, sering kejadian di HP
+  // karena IP/PoP berpindah). Key memuat versi → kalau TOS_VERSION dinaikkan,
+  // key beda → popup muncul lagi (sesuai desain re-consent).
+  function _tosKey(email, ver){ return 'es_tos_ok:v' + String(ver||1) + ':' + String(email||'').toLowerCase(); }
+  window.__esTosAcceptedLocally = function(email, ver){
+    try { return localStorage.getItem(_tosKey(email, ver)) === '1'; } catch(_){ return false; }
+  };
+  window.__esMarkTosAcceptedLocally = function(email, ver){
+    try { localStorage.setItem(_tosKey(email, ver), '1'); } catch(_){}
+  };
   window.__esConsentGate=function(){
     if(shown) return; shown=true;
     var ov=el('tosgOverlay'), body=el('tosgBody'), chk=el('tosgChk'), btn=el('tosgBtn'), hint=el('tosgHint'), err=el('tosgErr');
@@ -31284,6 +31307,9 @@ document.addEventListener('keydown', (e) => {
         // Beri tahu panduan bahwa consent sudah disetujui → panduan boleh muncul
         // sekarang (menghindari popup privasi & panduan tampil bersamaan).
         try{ if(window.__ES_PROFILE) window.__ES_PROFILE.tos_accepted=true; }catch(_){}
+        // Ingat di browser ini (per email+versi) supaya tidak muncul lagi walau
+        // server sesekali melaporkan belum-setuju (race baca D1 / sesi baru).
+        try{ if(window.__ES_PROFILE) window.__esMarkTosAcceptedLocally(window.__ES_PROFILE.email, window.__ES_PROFILE.tos_version); }catch(_){}
       }catch(e){
         err.textContent='Gagal menyimpan persetujuan: '+(e.message||e)+'. Coba lagi.';
         err.style.display='block';
