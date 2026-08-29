@@ -1190,7 +1190,13 @@ function derivePosition(rec, ohlcEntry, todayIso) {
 
   for (let i = 0; i < relevant.length; i++) {
     const c = relevant[i];
-    if (c[0] > horizonEndTs) break;
+    // OPSI B (per user): posisi yang SUDAH kena entry (triggered) TIDAK
+    // dibatasi horizon waktu — scan LANJUT ke semua candle sampai kena TP
+    // atau SL, berapa lama pun. Batas horizon HANYA berlaku untuk posisi
+    // yang BELUM triggered (window deteksi entry = [openDate, horizon]);
+    // kalau lewat tanpa pernah kena entry → jatuh ke klasifikasi unfilled
+    // (PENDING / MISSED / EXPIRED_UNFILLED) di bawah.
+    if (!triggered && c[0] > horizonEndTs) break;
     result.barsHeld++;
     const openPx = c[1], high = c[2], low = c[3], close = c[4], ts = c[0];
 
@@ -1327,27 +1333,15 @@ function derivePosition(rec, ohlcEntry, todayIso) {
   // ── Belum exit: klasifikasikan state ──
   if (!result.exitDate) {
     if (triggered) {
-      // Posisi jalan (belum kena TP/SL)
-      if (nowTs > horizonEndTs) {
-        // EXPIRED (dari TRIGGERED)
-        const inHorizon = relevant.filter(c => c[0] <= horizonEndTs);
-        const exitCandle = inHorizon.length ? inHorizon[inHorizon.length - 1] : lastCandle;
-        const exitClose = exitCandle[4];
-        result.state = 'EXPIRED';
-        result.status = 'EXPIRED';
-        result.closedBy = 'EXPIRED';
-        result.exitDate = new Date(exitCandle[0] * 1000).toISOString().slice(0, 10);
-        result.exitPrice = exitClose;
-        const closePct = pctAt(exitClose);
-        result.pnlPure = phase === 'phase2' ? (realizedPct + closePct * 0.5) : closePct;
-        result.result = result.pnlPure > 0.1 ? 'WIN' : (result.pnlPure < -0.1 ? 'LOSS' : 'NEUTRAL');
-      } else {
-        // TRIGGERED (posisi aktif jalan, floating)
-        result.state = 'TRIGGERED';
-        result.status = 'OPEN'; // legacy alias
-        const floatPct = pctAt(result.lastPrice);
-        result.pnlPure = phase === 'phase2' ? (realizedPct + floatPct * 0.5) : floatPct;
-      }
+      // OPSI B (per user): posisi SUDAH kena entry tapi belum kena TP/SL →
+      // TETAP TRIGGERED (aktif/floating) TANPA batas waktu. Tidak pernah
+      // di-EXPIRE oleh horizon — ia jalan terus sampai benar-benar kena TP
+      // atau SL. (Dulu: lewat horizon → EXPIRED filled, ditutup paksa di
+      // harga pasar. Perilaku itu dihapus sesuai permintaan user.)
+      result.state = 'TRIGGERED';
+      result.status = 'OPEN'; // legacy alias
+      const floatPct = pctAt(result.lastPrice);
+      result.pnlPure = phase === 'phase2' ? (realizedPct + floatPct * 0.5) : floatPct;
     } else {
       // Belum triggered — PENDING vs RUNNING_MISSED (gap/drift) vs EXPIRED_UNFILLED
       const dist = Math.abs(result.distanceToEntryPct || 0);
