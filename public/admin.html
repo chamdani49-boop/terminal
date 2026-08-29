@@ -739,7 +739,7 @@ function render(){
       '<td class="u-email">'+u.email+'</td>'+
       '<td class="u-name">'+(u.nama||'—')+'</td>'+
       '<td><span class="pill '+planCls+'">'+(PLAN_LABEL[u.paket]||u.paket)+'</span>'+scopeBadge+'</td>'+
-      '<td class="mono">'+fmtDate(u.berakhir)+'</td>'+
+      '<td class="mono">'+(u.is_admin?'∞ Tanpa Batas':fmtDate(u.berakhir))+'</td>'+
       '<td><span class="pill '+stCls+'">'+stLabel+'</span></td>'+
       '<td class="u-seen">'+fmtLastSeen(u.last_seen)+'</td>'+
       actionsCell;
@@ -807,7 +807,7 @@ function downloadCsv(){
       csvCell(u.nama||''),
       csvCell(u.status),
       csvCell(PLAN_LABEL[u.paket]||u.paket||''),
-      csvCell(u.berakhir?fmtDate(u.berakhir):''),
+      csvCell(u.is_admin?'Tanpa Batas':(u.berakhir?fmtDate(u.berakhir):'')),
       csvCell(seenPlain(u.last_seen))
     ].join(','));
   });
