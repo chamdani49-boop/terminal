@@ -3437,6 +3437,13 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-info-body .tr-info-item{font-size:12.5px;line-height:1.6;color:var(--text2);margin-bottom:8px;padding-left:10px;border-left:2px solid var(--border)}
 .tr-pf-info-body .tr-info-k{font-weight:800;color:var(--text)}
 .tr-pf-info-body .tr-info-k.tr-up{color:var(--green)}
+.tr-pf-info-body .tr-info-eg{display:block;margin-top:5px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:11.5px;color:var(--text3);line-height:1.55}
+.tr-pf-info-body .tr-info-eg b{color:var(--text)}
+.tr-pf-info-body .tr-info-analogy{display:block;margin-top:4px;font-style:italic;color:var(--text3);font-size:11.5px;line-height:1.55}
+.tr-pf-info-body .tr-info-warn{color:var(--red);font-weight:800;font-style:normal}
+.tr-pf-info-body .tr-info-firm{font-size:12px;color:var(--text2);background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);border-radius:9px;padding:9px 11px;margin-bottom:12px;line-height:1.55}
+.tr-pf-info-body .tr-info-eg .tr-up{color:var(--green)}
+.tr-pf-info-body .tr-info-eg .tr-dn{color:var(--red)}
 
 /* ── Master-detail layout (tab Analis: kiri list sekuritas, kanan detail firm) ── */
 .tr-mdet{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:flex-start}
@@ -7733,31 +7740,55 @@ body.is-mobile-device.force-desktop .pl-col-main{
             </div>
             <div class="tr-pf-mode-modal-body tr-pf-info-body">
 
-              <div class="tr-info-note">Panduan singkat biar tidak bingung membedakan angka di halaman ini. Semua angka mengikuti <b>periode</b> &amp; <b>mode</b> yang dipilih di atas (mis. "30 Hari Terakhir · Beli di Entry → TP1").</div>
+              <div class="tr-info-note">Anggap sekuritas ini seperti <b>pelatih</b> yang memberi "sinyal" beli saham. Tiap sinyal punya target untung (TP) dan batas rugi (SL). Halaman ini menilai: <b>seberapa jago pelatih ini?</b> Semua angka mengikuti <b>periode</b> &amp; <b>mode</b> yang kamu pilih di atas.</div>
 
-              <div class="tr-info-sec">1) Dua konsep dasar</div>
-              <div class="tr-info-item"><span class="tr-info-k tr-up">Hasil nyata (realized)</span> — untung/rugi dari rekomendasi yang <b>SUDAH selesai</b> (sudah kena TP, kena SL, atau habis waktu). Angka ini <b>sudah pasti</b>, tidak berubah lagi.</div>
-              <div class="tr-info-item"><span class="tr-info-k" style="color:var(--text2)">Floating (posisi berjalan)</span> — untung/rugi posisi yang <b>MASIH aktif</b> (belum tutup). Masih bisa naik/turun ikut harga — <b>belum tentu jadi</b>.</div>
+              <div class="tr-info-firm">📌 Semua contoh angka di bawah ini <b>ASLI milik <span id="tiFirm">firm ini</span></b> — sesuai periode &amp; mode yang aktif sekarang.</div>
 
-              <div class="tr-info-sec">2) Angka di header</div>
-              <div class="tr-info-item"><span class="tr-info-k">TOTAL RETURN</span> — gabungan <b>hasil nyata + floating</b>. Gambaran "kondisi lengkap saat ini". Contoh: +9,24% = +7,31% (hasil selesai) + +1,93% (posisi berjalan). Karena ada floating, angka ini <b>belum final</b>.</div>
-              <div class="tr-info-item"><span class="tr-info-k">📊 Dibukukan periode ini</span> — <b>penjumlahan</b> return SEMUA rekomendasi yang <b>selesai (tutup)</b> dalam periode ini. Ini <b>arithmetic sum</b>: makin banyak rekomendasi, makin besar. Cocok untuk lihat "total perolehan", <b>bukan</b> return dompet. (Angka yang sama dipakai untuk peringkat di menu Overview.)</div>
+              <div class="tr-info-sec">1) Kunci utama: hasil yang PASTI vs yang BELUM PASTI</div>
+              <div class="tr-info-item">
+                <span class="tr-info-k tr-up">Hasil nyata (realized)</span> — untung/rugi dari sinyal yang <b>SUDAH selesai</b> (sudah kena TP, kena SL, atau habis waktu). Angkanya <b>sudah pasti</b> dan tidak berubah lagi.
+                <span class="tr-info-analogy">📦 Ibarat pedagang: ini barang yang <b>SUDAH terjual</b> — untungnya sudah masuk kantong.</span>
+              </div>
+              <div class="tr-info-item">
+                <span class="tr-info-k">Floating (posisi berjalan)</span> — untung/rugi sinyal yang <b>MASIH jalan</b> (belum tutup). Nilainya masih naik-turun ikut harga, jadi <b>belum tentu jadi</b>.
+                <span class="tr-info-analogy">📦 Ibarat pedagang: ini barang yang <b>MASIH dipajang</b> — harganya bisa berubah, belum tentu segitu hasilnya.</span>
+              </div>
+              <div class="tr-info-item">Kenapa dipisah? Supaya kamu tahu mana yang <b>"uang sudah di kantong"</b> dan mana yang <b>"masih di atas kertas"</b>.</div>
 
-              <div class="tr-info-sec">3) Kartu KPI</div>
-              <div class="tr-info-item"><span class="tr-info-k">WIN RATE</span> — dari rekomendasi yang <b>sudah selesai</b>, berapa persen yang <b>menang</b> (kena target). Contoh 35% = 8 menang dari 23 selesai.</div>
-              <div class="tr-info-item"><span class="tr-info-k">NET RETURN</span> — <b>hasil nyata</b> (menang dikurangi kalah) dari rekomendasi yang <b>diterbitkan</b> dalam periode. Sudah dikurangi cutloss.</div>
-              <div class="tr-info-item"><span class="tr-info-k">FLOATING BERJALAN</span> — untung/rugi seluruh posisi yang <b>masih aktif</b> sekarang (belum tutup).</div>
-              <div class="tr-info-item"><span class="tr-info-k">PROFIT TERTINGGI</span> — rekomendasi paling <b>cuan</b> di periode. <span class="tr-info-k">CUTLOSS TERENDAH</span> — rekomendasi paling <b>rugi</b>.</div>
-              <div class="tr-info-item"><span class="tr-info-k">TOTAL REKOMENDASI</span> — jumlah semua rekomendasi (aktif + riwayat + menunggu + lari).</div>
+              <div class="tr-info-sec">2) Angka besar di header</div>
+              <div class="tr-info-item">
+                <span class="tr-info-k">TOTAL RETURN</span> — foto <b>kondisi lengkap saat ini</b> = hasil nyata + floating digabung.
+                <span class="tr-info-eg">Firm ini: <b id="tiTotal">—</b> = <b id="tiReal">—</b> (yang sudah pasti) + <b id="tiFloat">—</b> (yang masih berjalan). Karena ada bagian yang belum final, total ini <b>masih bisa berubah</b>.</span>
+              </div>
+              <div class="tr-info-item">
+                <span class="tr-info-k">📊 Dibukukan periode ini</span> — bayangkan kamu <b>ikut SEMUA sinyal</b> yang selesai di periode ini, tiap sinyal modalnya <b>terpisah</b>, lalu semua persen hasilnya <b>dijumlahkan</b>.
+                <span class="tr-info-eg">Firm ini: <b id="tiDib">—</b> dari <b id="tiDibN">—</b> sinyal selesai. <span class="tr-info-warn">Ini BUKAN berarti modalmu jadi segitu!</span> Ini cuma penjumlahan persen dari banyak sinyal berbeda. Makin banyak sinyal, makin besar angkanya. Gunanya lihat <b>seberapa produktif</b> pelatih, bukan "modalku jadi berapa kali lipat".</span>
+              </div>
 
-              <div class="tr-info-sec">4) Mode Eksekusi (baris bawah)</div>
-              <div class="tr-info-item"><span class="tr-info-k">RATA²</span> — rata-rata untung per rekomendasi (Net ÷ jumlah trade). Paling adil untuk <b>menilai kualitas</b> per-call. <span class="tr-info-k">TRADE TERCATAT</span> — jumlah rek yang masuk hitungan.</div>
-              <div class="tr-info-item"><span class="tr-info-k">Beli di Entry</span> — anggap beli tepat di harga entry (sabar antri; rek yang harganya keburu lari di-skip). <span class="tr-info-k">Beli HAKA</span> — beli di harga open saat rilis (bisa kena gap, akurasi lebih rendah).</div>
-              <div class="tr-info-item"><span class="tr-info-k">TP1</span> — exit di target pertama (aman). <span class="tr-info-k">TP2</span> — tahan sampai target kedua (lebih agresif; kalau sempat kena TP1 lalu balik, dicatat TP1).</div>
+              <div class="tr-info-sec">3) Kartu KPI = rapor pelatih</div>
+              <div class="tr-info-item">
+                <span class="tr-info-k">WIN RATE</span> — nilai rapornya. Dari sinyal yang sudah selesai, berapa persen yang <b>menang</b> (kena target)?
+                <span class="tr-info-eg">Firm ini: <b id="tiWr">—</b> = <b id="tiWrWin">—</b> sinyal menang dari <b id="tiWrTot">—</b> sinyal selesai. Makin tinggi = makin sering benar.</span>
+              </div>
+              <div class="tr-info-item"><span class="tr-info-k">NET RETURN</span> — untung <b>bersih yang sudah pasti</b> (yang menang dikurangi yang rugi) dari sinyal yang <b>diterbitkan</b> di periode ini. Firm ini: <b id="tiNet" class="tr-info-k">—</b>.</div>
+              <div class="tr-info-item"><span class="tr-info-k">FLOATING BERJALAN</span> — untung/rugi sementara dari sinyal yang <b>masih jalan sekarang</b>. Firm ini: <b id="tiFl2" class="tr-info-k">—</b> (belum final).</div>
+              <div class="tr-info-item"><span class="tr-info-k">PROFIT TERTINGGI</span> = sinyal paling <b>cuan</b>, <span class="tr-info-k">CUTLOSS TERENDAH</span> = sinyal paling <b>rugi</b> di periode ini. Buat lihat "sebaik apa yang terbaik, seburuk apa yang terburuk".</div>
+              <div class="tr-info-item"><span class="tr-info-k">TOTAL REKOMENDASI</span> — jumlah semua sinyal: yang masih aktif + sudah selesai + masih menunggu harga + yang kelewatan (harga keburu lari).</div>
 
-              <div class="tr-info-sec">5) Yang sering bikin bingung</div>
-              <div class="tr-info-item"><b>NET RETURN</b> vs <b>Dibukukan periode ini</b>: NET = rek yang <b>DIBUKA</b> di periode ini; Dibukukan = rek yang <b>TUTUP</b> di periode ini. Beda basis tanggal, jadi angkanya bisa beda jauh.</div>
-              <div class="tr-info-item"><b>Hasil nyata</b> = sudah pasti · <b>Floating</b> = masih berjalan, belum tentu jadi.</div>
+              <div class="tr-info-sec">4) Mode Eksekusi = "cara mainnya"</div>
+              <div class="tr-info-item">
+                <span class="tr-info-k">RATA²</span> — rata-rata untung <b>per satu sinyal</b> (NET ÷ jumlah sinyal). Ini <b>ukuran paling adil</b> untuk menilai kualitas.
+                <span class="tr-info-eg">Jawab pertanyaan: <b>"Sekali aku ikut sinyal pelatih ini, rata-rata dapat berapa persen?"</b> Firm ini: <b id="tiRata">—</b> per sinyal.</span>
+              </div>
+              <div class="tr-info-item"><span class="tr-info-k">Beli di Entry</span> = <b>sabar antri</b> di harga yang ditentukan (kalau harga tak pernah turun ke situ, sinyal dilewati). <span class="tr-info-k">Beli HAKA</span> = <b>langsung sambar</b> di harga pembukaan (lebih cepat masuk, tapi sering kena "loncatan harga/gap" jadi hasil bisa meleset).</div>
+              <div class="tr-info-item"><span class="tr-info-k">TP1</span> = jual di <b>target pertama</b> (aman, cepat cuan). <span class="tr-info-k">TP2</span> = <b>tahan</b> sampai target kedua (untung lebih besar, tapi lebih berisiko harga balik turun).</div>
+
+              <div class="tr-info-sec">5) Paling sering ketuker — baca ini!</div>
+              <div class="tr-info-item">
+                <span class="tr-info-k">NET RETURN</span> vs <span class="tr-info-k">📊 Dibukukan periode ini</span>
+                <span class="tr-info-analogy">🌱 Ibarat bertani: <b>NET</b> = benih yang kamu <b>TANAM</b> bulan ini. <b>Dibukukan</b> = yang kamu <b>PANEN</b> bulan ini (walau benihnya ditanam bulan lalu). Beda "kapan dihitung", jadi wajar angkanya beda jauh.</span>
+              </div>
+              <div class="tr-info-item"><span class="tr-info-k tr-up">Hasil nyata</span> = sudah pasti (sudah terjual). &nbsp;·&nbsp; <span class="tr-info-k">Floating</span> = masih berjalan, belum tentu jadi (masih dipajang).</div>
 
             </div>
           </div>
@@ -8774,8 +8805,53 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Popup "Arti Semua Angka" (dibuka dari ⓘ header Total Return) ──
+  // Isi contoh angka DINAMIS: ambil dari firm yg sedang dibuka + periode &
+  // mode aktif. Buka di Sucor → angka Sucor; di Maybank → angka Maybank.
+  function _fillInfoModalNumbers(){
+    var f = _currentFirm;
+    var fnEl = $id('tiFirm'); if(fnEl) fnEl.textContent = f ? firmShort(f.name) : 'firm ini';
+    var setP = function(id, v){
+      var el = $id(id); if(!el) return;
+      el.classList.remove('tr-up','tr-dn');
+      if(v == null || !Number.isFinite(+v)){ el.textContent = '—'; return; }
+      el.textContent = fmtPct(+v);
+      el.classList.add(+v >= 0 ? 'tr-up' : 'tr-dn');
+    };
+    var setT = function(id, txt){ var el = $id(id); if(el) el.textContent = txt; };
+    if(!f){
+      ['tiTotal','tiReal','tiFloat','tiDib','tiNet','tiFl2','tiRata'].forEach(function(id){ setP(id, null); });
+      setT('tiDibN','—'); setT('tiWr','—'); setT('tiWrWin','—'); setT('tiWrTot','—');
+      return;
+    }
+    var st = computeModeStats(f, _entryMode, _exitMode);
+    var _fl = computeActiveFloatingSum(f, _entryMode);
+    var realized = st.total ? +st.net : 0;
+    var floating = (_fl && _fl.count) ? +_fl.sum : 0;
+    var hasAny = (st.total > 0) || (_fl && _fl.count > 0);
+    // Dibukukan (basis exitDate, ikut mode & periode)
+    var dibNet = 0, dibN = 0;
+    (f.recsHistory || []).forEach(function(r){
+      if(!r || !r.exitDate) return;
+      if(_dateFilter && (r.exitDate < _dateFilter.start || r.exitDate > _dateFilter.end)) return;
+      var p = getRecPnl(r, _entryMode, _exitMode);
+      if(p == null) return;
+      dibNet += p; dibN++;
+    });
+    setP('tiTotal', hasAny ? (realized + floating) : null);
+    setP('tiReal',  st.total ? realized : 0);
+    setP('tiFloat', (_fl && _fl.count) ? floating : 0);
+    setP('tiDib',   dibN > 0 ? dibNet : null);
+    setT('tiDibN',  String(dibN));
+    setT('tiWr',    st.wr == null ? '—' : (st.wr + '%'));
+    setT('tiWrWin', String(st.wins || 0));
+    setT('tiWrTot', String(st.total || 0));
+    setP('tiNet',   st.total ? st.net : null);
+    setP('tiFl2',   (_fl && _fl.count) ? floating : null);
+    setP('tiRata',  st.total ? st.avg : null);
+  }
   function openInfoModal(){
     var m = $id('trPfInfoModal'); if(!m) return;
+    try { _fillInfoModalNumbers(); } catch(_){}
     m.classList.add('open'); m.setAttribute('aria-hidden','false');
     try{ document.body.style.overflow = 'hidden'; }catch(_){}
   }
