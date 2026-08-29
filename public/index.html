@@ -14593,14 +14593,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return ((+price - entry) / entry) * 100 * (isBuy ? 1 : -1);
   }
 
-  function computeFirmStats(firm, target){
+  function computeFirmStats(firm, target, dateFilter){
     // Delegasi ke MESIN UTAMA (window.TrackerStats) supaya konsisten
     // dgn sidebar & Analis panel. Default entry mode = 'entry' (skip
     // rec yg tak sentuh entry) sesuai aturan default winrate user.
-    // Target = 'tp1' | 'tp2' — controlled by tombol Basis × Target
-    // di panel Rekomendasi Terbaru.
+    // Target = 'tp1' | 'tp2' — controlled by tombol Basis × Target.
+    // dateFilter = {start,end} (openDate) — diteruskan supaya winrate/net/
+    // TP1/TP2 di ranking Per Firm IDENTIK dgn halaman Analis (yg juga
+    // filter 30 hari terakhir by openDate). Tanpa ini ranking = all-time
+    // → angka beda dgn Analis.
     if(window.TrackerStats && window.TrackerStats.compute){
-      var s = window.TrackerStats.compute(firm, {entry:'entry', exit:target});
+      var s = window.TrackerStats.compute(firm, {entry:'entry', exit:target, dateFilter:dateFilter||null});
       return { trades:s.trades, wins:s.wins, winrate:s.winrate||0, net:s.net };
     }
     // Fallback defensif (script belum load) — return kosong biar tidak
@@ -15481,7 +15484,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function renderLatestFirms(el, data){
     var firmsRaw = Object.values(data.byFirm || {});
     var firmsStats = firmsRaw
-      .map(function(f){ return { firm: f, stats: computeFirmStats(f, _ovTarget) }; })
+      .map(function(f){ return { firm: f, stats: computeFirmStats(f, _ovTarget, _tovTickDateFilter) }; })
       .filter(function(x){ return x.stats.trades >= MIN_TRADES_FOR_RANK; });
 
     var cnt = $('trOvLatestCount');
