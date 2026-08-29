@@ -8401,7 +8401,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Setiap rec pakai base sesuai entry mode (entry/haka) via getModeFloating.
   // Rec yg base-nya tak tersedia (mis. entry mode + belum sentuh entry) di-skip.
   function computeActiveFloatingSum(firm, entryMode){
-    var recs = (firm && firm.recsActive || []).filter(_recInDateFilter);
+    // Floating = SEMUA posisi yang masih terbuka (TIDAK difilter tanggal).
+    // Posisi yg dibuka >30 hari lalu tapi masih berjalan tetap punya floating
+    // nyata sekarang, jadi ikut dihitung. Konsisten dgn Overview (Opsi A) —
+    // dua halaman kini pakai definisi floating yg sama: seluruh buku berjalan.
+    var recs = (firm && firm.recsActive || []);
     var sum = 0, count = 0;
     recs.forEach(function(r){
       var fl = getModeFloating(r, entryMode);
@@ -13321,10 +13325,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function _firmActiveFloatingSum(firm){
     var actives = (firm && firm.recsActive) || [];
     var sum = 0, count = 0;
+    var liveFn = window.__TR_getModeFloating;
     for (var i = 0; i < actives.length; i++){
       var ar = actives[i];
       if (!ar) continue;
-      var flt = +ar.floatingPct;
+      // Hitung LIVE dari harga SEKARANG (mode 'entry') supaya se-fresh &
+      // IDENTIK dgn kartu FLOATING di menu Analis. Sebelumnya pakai
+      // ar.floatingPct (snapshot backend, bisa basi beberapa jam → angka
+      // beda dgn Analis). Fallback ke floatingPct backend kalau helper
+      // live belum siap atau harga live tak tersedia untuk ticker itu.
+      var flt = liveFn ? liveFn(ar, 'entry') : null;
+      if (!Number.isFinite(flt)) flt = +ar.floatingPct;
       if (!Number.isFinite(flt)) continue;
       sum += flt; count++;
     }
