@@ -3597,6 +3597,11 @@ body.tr-profile-open #tr-view-profile{display:block}
 /* Total Return di kanan header firm — realized + floating (all-in). */
 .tr-p-totret{flex-shrink:0;margin-left:auto;text-align:right;padding-left:14px;align-self:center}
 .tr-p-totret-k{font-size:9.5px;font-weight:800;letter-spacing:.6px;color:var(--text3);text-transform:uppercase}
+.tr-p-totret{cursor:help}
+.tr-help{display:inline-block;font-size:9px;opacity:.6;font-weight:700;vertical-align:top}
+/* Kartu KPI & note dgn atribut title → beri cursor help sbg petunjuk bisa di-hover. */
+.tr-kpi[title]{cursor:help}
+.tr-chart-rank-note[title]{cursor:help}
 .tr-p-totret-v{font-size:24px;font-weight:800;letter-spacing:-.6px;line-height:1.05;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--text)}
 .tr-p-totret-v.tr-up{color:var(--green)}
 .tr-p-totret-v.tr-dn{color:var(--red)}
@@ -6571,7 +6576,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <div class="tr-card-headline">
         <div class="tr-card-titleblock">
           <div class="tr-card-title" id="trChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
-          <div class="tr-card-desc">Return kumulatif <b>realized</b> tiap sekuritas · ⚡ floating posisi berjalan ditampilkan terpisah · klik peringkat untuk highlight</div>
+          <div class="tr-card-desc">Peringkat berdasar <b>hasil nyata</b> (return dari rekomendasi yang sudah selesai). ⚡ = <b>floating</b> (posisi masih berjalan, belum tentu jadi). Klik nama untuk sorot.</div>
         </div>
         <div class="tr-card-header-controls">
           <!-- Period selector: 30D / Bulan Ini + dropdown Bulan + Tahun.
@@ -6630,7 +6635,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
       <div class="tr-chart-rank">
         <div class="tr-chart-rank-head">Peringkat vs IHSG</div>
-        <div class="tr-chart-rank-note">Angka utama = return realized · ⚡ = floating berjalan (unrealized)</div>
+        <div class="tr-chart-rank-note" title="Angka besar = HASIL NYATA (untung/rugi dari rekomendasi yang sudah selesai, sudah pasti). ⚡ = FLOATING (posisi masih berjalan, belum tutup — masih bisa berubah).">Angka = hasil nyata (sudah selesai) · ⚡ = posisi berjalan</div>
         <div class="tr-chart-rank-list" id="trChartRankList">
           <!-- Skeleton rows utk sidebar Peringkat saat data belum siap. -->
           <div class="tr-chart-rank-skel" aria-hidden="true">
@@ -7492,30 +7497,30 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <!-- TOTAL RETURN (kanan header): realized (TP1 + upside TP2 − CL)
                  + floating berjalan. Angka "all-in" performa firm. Update via
                  renderKpi (ikut mode & periode aktif). -->
-            <div class="tr-p-totret" id="trPfTotRet">
-              <div class="tr-p-totret-k">TOTAL RETURN</div>
+            <div class="tr-p-totret" id="trPfTotRet" title="TOTAL RETURN = hasil yang sudah PASTI (realized, dari rekomendasi yang sudah selesai) + nilai posisi yang MASIH berjalan (floating). Floating masih bisa naik/turun ikut harga, jadi angka ini belum final.">
+              <div class="tr-p-totret-k">TOTAL RETURN <span class="tr-help">ⓘ</span></div>
               <div class="tr-p-totret-v" id="trPfTotRetV">—</div>
-              <div class="tr-p-totret-s" id="trPfTotRetSub">realized + floating</div>
+              <div class="tr-p-totret-s" id="trPfTotRetSub">hasil selesai + posisi berjalan</div>
             </div>
           </div>
           <div class="tr-p-sectors" id="trPfSectors"></div>
         </div>
 
         <div class="tr-kpi-row">
-          <div class="tr-kpi hi">
+          <div class="tr-kpi hi" title="Dari rekomendasi yang SUDAH selesai: berapa persen yang berhasil kena target (menang). Contoh 64% = dari 14 selesai, 9 menang.">
             <div class="k">WIN RATE</div>
             <div class="v" id="trPfKpiWr">0%</div>
             <div class="s tr-neu" id="trPfKpiWrSub">— dari — rekomendasi selesai</div>
           </div>
-          <div class="tr-kpi">
+          <div class="tr-kpi" title="HASIL NYATA: total untung/rugi dari rekomendasi yang SUDAH selesai (menang dikurangi kalah). Angka ini sudah pasti — tidak berubah lagi.">
             <div class="k">NET RETURN</div>
             <div class="v" id="trPfKpiNet">+0%</div>
-            <div class="s tr-neu" id="trPfKpiNetSub">Kumulatif realized · mode aktif</div>
+            <div class="s tr-neu" id="trPfKpiNetSub">Hasil nyata (sudah selesai) · mode aktif</div>
           </div>
-          <div class="tr-kpi">
+          <div class="tr-kpi" title="POSISI BERJALAN: nilai untung/rugi dari rekomendasi yang MASIH aktif (belum tutup). Masih bisa naik/turun ikut harga — belum tentu jadi.">
             <div class="k">FLOATING BERJALAN</div>
             <div class="v" id="trPfKpiFloat">—</div>
-            <div class="s tr-neu" id="trPfKpiFloatSub">Akumulasi rec aktif · realtime</div>
+            <div class="s tr-neu" id="trPfKpiFloatSub">Posisi masih berjalan · realtime</div>
           </div>
           <div class="tr-kpi">
             <div class="k">PROFIT TERTINGGI</div>
@@ -8547,7 +8552,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if(!st.total){ netEl.textContent='—'; netEl.className='v'; }
       else { netEl.textContent=fmtPct(st.net); netEl.className='v '+(st.net>=0?'tr-up':'tr-dn'); }
     }
-    $id('trPfKpiNetSub').textContent = 'Kumulatif realized · '+comboLabel();
+    $id('trPfKpiNetSub').textContent = 'Hasil nyata (sudah selesai) · '+comboLabel();
 
     // FLOATING BERJALAN — akumulasi floating dari rec aktif (state TRIGGERED)
     var _fl = computeActiveFloatingSum(firm, _entryMode);
@@ -8611,8 +8616,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
         var _tot = _realized + _float;
         _totV.textContent = fmtPct(_tot, 2);
         _totV.className = 'tr-p-totret-v ' + (_tot >= 0 ? 'tr-up' : 'tr-dn');
-        if(_totS) _totS.textContent = 'realized ' + (st.total ? fmtPct(st.net) : '—')
-                    + ' · floating ' + (_fl && _fl.count ? fmtPct(_fl.sum) : '—');
+        if(_totS) _totS.textContent = 'hasil selesai ' + (st.total ? fmtPct(st.net) : '—')
+                    + ' · posisi berjalan ' + (_fl && _fl.count ? fmtPct(_fl.sum) : '—');
       }
     }
 
