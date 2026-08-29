@@ -3594,6 +3594,18 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-p-name{font-size:17px;font-weight:800;letter-spacing:-.3px}
 .tr-p-vbadge{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,.14);color:var(--green);font-size:9.5px;font-weight:700;font-family:'IBM Plex Mono',monospace;padding:2.5px 7px;border-radius:6px;letter-spacing:.3px}
 .tr-p-firm{font-size:12px;color:var(--text3);margin-top:2px}
+/* Total Return di kanan header firm — realized + floating (all-in). */
+.tr-p-totret{flex-shrink:0;margin-left:auto;text-align:right;padding-left:14px;align-self:center}
+.tr-p-totret-k{font-size:9.5px;font-weight:800;letter-spacing:.6px;color:var(--text3);text-transform:uppercase}
+.tr-p-totret-v{font-size:24px;font-weight:800;letter-spacing:-.6px;line-height:1.05;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--text)}
+.tr-p-totret-v.tr-up{color:var(--green)}
+.tr-p-totret-v.tr-dn{color:var(--red)}
+.tr-p-totret-s{font-size:10px;color:var(--text3);margin-top:3px;white-space:nowrap}
+@media(max-width:560px){
+  .tr-ptop{flex-wrap:wrap}
+  .tr-p-totret{margin-left:0;padding-left:0;text-align:left;width:100%;margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
+  .tr-p-totret-v{font-size:20px}
+}
 .tr-p-certs{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
 .tr-p-cert{font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:600;padding:4px 9px;border-radius:7px;background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
 .tr-p-cert.primary{background:rgba(124,58,237,.16);color:var(--accent2);border-color:transparent}
@@ -7465,6 +7477,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
               </div>
               <div class="tr-p-firm" id="trPfMeta">—</div>
             </div>
+            <!-- TOTAL RETURN (kanan header): realized (TP1 + upside TP2 − CL)
+                 + floating berjalan. Angka "all-in" performa firm. Update via
+                 renderKpi (ikut mode & periode aktif). -->
+            <div class="tr-p-totret" id="trPfTotRet">
+              <div class="tr-p-totret-k">TOTAL RETURN</div>
+              <div class="tr-p-totret-v" id="trPfTotRetV">—</div>
+              <div class="tr-p-totret-s" id="trPfTotRetSub">realized + floating</div>
+            </div>
           </div>
           <div class="tr-p-sectors" id="trPfSectors"></div>
         </div>
@@ -8562,6 +8582,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
       worstSub.textContent = st.worstRec
         ? ('⚠ '+(st.worstRec.ticker||'—')+' · '+fmtShortDate(st.worstRec.openDate))
         : 'Belum ada trade untuk mode ini';
+    }
+
+    // ── TOTAL RETURN (header kanan) — angka ALL-IN performa firm ──
+    // = realized (mode aktif: TP1 + upside TP2 kalau hit, sudah dikurangi CL)
+    //   + floating berjalan (Σ posisi aktif). st.net sudah realized net,
+    //   _fl.sum sudah floating. Ikut mode & periode aktif (30 hari default).
+    var _totV = $id('trPfTotRetV'), _totS = $id('trPfTotRetSub');
+    if(_totV){
+      var _realized = st.total ? +st.net : 0;
+      var _float = (_fl && _fl.count) ? +_fl.sum : 0;
+      var _hasAny = (st.total > 0) || (_fl && _fl.count > 0);
+      if(!_hasAny){
+        _totV.textContent = '—'; _totV.className = 'tr-p-totret-v';
+        if(_totS) _totS.textContent = 'realized + floating';
+      } else {
+        var _tot = _realized + _float;
+        _totV.textContent = fmtPct(_tot, 2);
+        _totV.className = 'tr-p-totret-v ' + (_tot >= 0 ? 'tr-up' : 'tr-dn');
+        if(_totS) _totS.textContent = 'realized ' + (st.total ? fmtPct(st.net) : '—')
+                    + ' · floating ' + (_fl && _fl.count ? fmtPct(_fl.sum) : '—');
+      }
     }
 
     $id('trPfKpiTotal').textContent = String((actN + histN + pendN + missN) || 0);
