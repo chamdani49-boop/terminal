@@ -5174,7 +5174,7 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   max-height:520px;overflow-y:auto;padding-right:2px
 }
 .tr-ov-firm-row{
-  display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;
+  display:grid;grid-template-columns:32px minmax(0,1fr) auto auto auto;
   gap:10px;align-items:center;padding:9px 11px;
   background:var(--bg2);border:1px solid var(--border);border-radius:10px;
   cursor:pointer;transition:border-color .15s,transform .12s,background .15s
@@ -5213,9 +5213,18 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 }
 .tr-ov-firm-primary.up{color:var(--green)}
 .tr-ov-firm-primary.dn{color:var(--red)}
+/* Kolom Total Kumulatif (penjumlahan aritmatika return semua rec selesai). */
+.tr-ov-firm-cum{text-align:right;min-width:64px;cursor:help}
+.tr-ov-firm-cum-v{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:800;
+  letter-spacing:-.3px;font-variant-numeric:tabular-nums;line-height:1.1
+}
+.tr-ov-firm-cum-v.up{color:var(--green)}
+.tr-ov-firm-cum-v.dn{color:var(--red)}
+.tr-ov-firm-cum-k{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-top:1px;opacity:.75}
 @media(max-width:640px){
   .tr-ov-firm-filters{padding:8px;gap:8px}
-  .tr-ov-firm-row{grid-template-columns:26px minmax(0,1fr) auto;gap:8px;padding:8px 10px}
+  .tr-ov-firm-row{grid-template-columns:26px minmax(0,1fr) auto auto;gap:8px;padding:8px 10px}
   .tr-ov-firm-secondary{display:none}
   .tr-ov-firm-idx{width:22px;height:22px;font-size:10.5px}
   .tr-ov-firm-name{font-size:12px}
@@ -14611,6 +14620,27 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return { trades:0, wins:0, winrate:0, net:0 };
   }
 
+  // Return KUMULATIF (penjumlahan aritmatika) dari SEMUA rekomendasi yang
+  // SELESAI (tutup) dalam periode — basis exitDate. Ini angka yg sama dgn
+  // garis kumulatif chart Overview & "Dibukukan periode ini" di Analis.
+  // Beda dgn Net (basis openDate) — di sini yg dihitung adalah yg tutup.
+  // Sifatnya arithmetic sum: makin banyak rekomendasi, makin besar; jadi
+  // ini indikator "total perolehan", bukan kualitas per-call.
+  function computeFirmCumulative(firm, target, dateFilter){
+    var recs = (firm && firm.recsHistory) || [];
+    var net = 0, n = 0;
+    for(var i=0;i<recs.length;i++){
+      var r = recs[i];
+      if(!r || !r.exitDate) continue;
+      if(dateFilter && (r.exitDate < dateFilter.start || r.exitDate > dateFilter.end)) continue;
+      var p = (window.TrackerStats && window.TrackerStats.recPnl)
+              ? window.TrackerStats.recPnl(r, {entry:'entry', exit:target}) : null;
+      if(p == null) continue;
+      net += p; n++;
+    }
+    return { net: net, n: n };
+  }
+
   var MIN_TRADES_FOR_RANK = 5;
 
   // updateOvRankings() DIHAPUS — logika ranking sudah dipindah ke
@@ -15484,7 +15514,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function renderLatestFirms(el, data){
     var firmsRaw = Object.values(data.byFirm || {});
     var firmsStats = firmsRaw
-      .map(function(f){ return { firm: f, stats: computeFirmStats(f, _ovTarget, _tovTickDateFilter) }; })
+      .map(function(f){ return { firm: f, stats: computeFirmStats(f, _ovTarget, _tovTickDateFilter),
+                                 cum: computeFirmCumulative(f, _ovTarget, _tovTickDateFilter) }; })
       .filter(function(x){ return x.stats.trades >= MIN_TRADES_FOR_RANK; });
 
     var cnt = $('trOvLatestCount');
@@ -15507,6 +15538,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
     var rows = firmsStats.map(function(x, i){
       var f = x.firm, s = x.stats;
+      var _cumNet = (x.cum && Number.isFinite(+x.cum.net)) ? +x.cum.net : 0;
+      var _cumCls = _cumNet >= 0 ? 'up' : 'dn';
+      var cumHtml = '<div class="tr-ov-firm-cum" title="Total kumulatif: penjumlahan return SEMUA rekomendasi yang SELESAI di periode ini (' + (x.cum? x.cum.n:0) + ' selesai). Angka besar karena semua dijumlah — makin banyak rekomendasi, makin besar. Untuk menilai KUALITAS, lihat Winrate & Net. Ini angka yang sama dengan garis kumulatif di chart Overview.">'
+        + '<div class="tr-ov-firm-cum-v ' + _cumCls + '">' + (_cumNet>=0?'+':'') + _cumNet.toFixed(1) + '%</div>'
+        + '<div class="tr-ov-firm-cum-k">total kumulatif</div>'
+      + '</div>';
       var primaryVal, primaryCls, secondary;
       if(_ovMetric === 'winrate'){
         primaryVal = s.winrate.toFixed(0) + '%';
@@ -15523,6 +15560,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           + '<div class="tr-ov-firm-name">'+esc(firmShortLbl(f.name||'—'))+'</div>'
           + '<div class="tr-ov-firm-sub">'+s.trades+' trade selesai</div>'
         + '</div>'
+        + cumHtml
         + '<div class="tr-ov-firm-secondary">'+secondary+'</div>'
         + '<div class="tr-ov-firm-primary '+primaryCls+'">'+primaryVal+'</div>'
       + '</div>';
