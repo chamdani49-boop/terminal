@@ -8752,32 +8752,42 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var startISO, endISO = todayISO;
     if(_dateFilter){ startISO = _dateFilter.start; endISO = _dateFilter.end; }
     else { var _d0 = new Date(); _d0.setUTCDate(_d0.getUTCDate()-30); startISO = _d0.toISOString().slice(0,10); }
-    // Kumpulkan HARI BURSA sampai endISO, lalu ambil 30 TERAKHIR → jamin
-    // 30 candle (per user: "jadikan 30 candle, setiap hari ada bar").
-    // Batas bawah startISO sengaja tidak dipakai untuk timeline supaya
-    // jumlah bar selalu 30 hari bursa (bukan ~22 hari bursa dari 30 hari
-    // kalender). Cohort rec tetap difilter periode via _recInDateFilter.
+    // Batas bawah timeline: MAKSIMAL 31 HARI KALENDER ke belakang dari endISO
+    // (per user: "cukupkan 31 hari saja, jgn lebih"). Kalau periode aktif
+    // lebih sempit (mis. Bulan Ini / custom range pendek), hormati start-nya
+    // (pakai tanggal yang lebih baru). Ini mencegah chart membentang jauh
+    // (dulu 30 hari bursa = ~42 hari kalender).
+    var _floorISO = startISO || '';
+    try {
+      var _capD = new Date(endISO + 'T00:00:00Z');
+      _capD.setUTCDate(_capD.getUTCDate() - 31);
+      var _capISO = _capD.toISOString().slice(0,10);
+      if(!_floorISO || _capISO > _floorISO) _floorISO = _capISO;
+    } catch(_){}
+    // Kumpulkan HARI BURSA dalam [_floorISO, endISO]. Cohort rec tetap
+    // difilter periode via _recInDateFilter.
     var dateSet = {};
     if(ohlcAll && ohlcAll.tickers){
       cohort.forEach(function(r){
         var e = ohlcAll.tickers[r.ticker]; if(!e || !e.candles) return;
         for(var k=0;k<e.candles.length;k++){
           var ds = new Date(e.candles[k][0]*1000).toISOString().slice(0,10);
-          if(ds <= endISO) dateSet[ds] = 1;
+          if(ds >= _floorISO && ds <= endISO) dateSet[ds] = 1;
         }
       });
     }
     if(!Object.keys(dateSet).length){
       var dd = getData();
       var ih = (dd && dd.ihsg && (dd.ihsg.seriesFull || dd.ihsg.series30d)) || [];
-      ih.forEach(function(p){ if(p && p.date && p.date<=endISO) dateSet[p.date]=1; });
+      ih.forEach(function(p){ if(p && p.date && p.date>=_floorISO && p.date<=endISO) dateSet[p.date]=1; });
     }
     if(!Object.keys(dateSet).length){
-      cohort.forEach(function(r){ if(r.exitDate && r.exitDate<=endISO) dateSet[r.exitDate]=1; });
+      cohort.forEach(function(r){ if(r.exitDate && r.exitDate>=_floorISO && r.exitDate<=endISO) dateSet[r.exitDate]=1; });
     }
     var timeline = Object.keys(dateSet).sort();
     if(!timeline.length) return [];
-    if(timeline.length > 30) timeline = timeline.slice(timeline.length-30);
+    // Safety cap: maksimal 31 bar (hari bursa) — konsisten "jgn lebih dari 31 hari".
+    if(timeline.length > 31) timeline = timeline.slice(timeline.length-31);
     var lastIdx = timeline.length - 1;
 
     // 2) Precompute close per ticker di sepanjang timeline (forward-fill).
