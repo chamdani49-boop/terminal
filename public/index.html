@@ -3802,6 +3802,12 @@ body.tr-profile-open .tr-subpane{display:none !important}
    .pl-chart-host di Pasar Live). Widget bikin iframe internal, kita force
    full width/height via override selector di dalam .tr-anl-tv-wrap. */
 .tr-anl-chartcard .tr-card-h{align-items:flex-start}
+/* Tombol "Buka di TradingView" — buka web TradingView penuh (tab baru) untuk
+   ticker aktif. Pola sama dgn .tvlink di Pasar Live (plOpenTV), tapi styling
+   tombol pill agar pas di header kartu chart. */
+.tr-anl-tv-open{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:6px 11px;font-size:11.5px;font-weight:700;line-height:1;color:var(--text2);background:var(--bg2);border:1px solid var(--border);border-radius:8px;cursor:pointer;white-space:nowrap;text-decoration:none;transition:border-color .15s,color .15s,background .15s}
+.tr-anl-tv-open:hover{border-color:var(--accent);color:var(--accent)}
+.tr-anl-tv-open .tr-anl-tv-open-ico{font-size:13px;font-weight:800}
 /* Chart TradingView: tinggi 100% dari grid cell (align-items:stretch di
    .tr-anl-chart-row) → otomatis paskan dgn tinggi widget di kanan.
    min-height sbg fallback kalau widget belum ada data. User req: 'chart
@@ -6906,6 +6912,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-card-title"><span class="tr-ico" aria-hidden="true">📊</span> Chart Candlestick (TradingView)</div>
           <div class="tr-card-desc">Chart interaktif TradingView. Klik salah satu baris rekomendasi di bawah untuk lihat peta entry/TP/SL di pop-up.</div>
         </div>
+        <!-- Buka web TradingView penuh (tab baru) untuk ticker aktif — pola
+             sama dgn plOpenTV di Pasar Live. Di web penuh, kalau user login,
+             indikator akun pribadinya ikut tampil. -->
+        <button type="button" class="tr-anl-tv-open" id="trAnlOpenTV" onclick="if(window.__TR_openTV)window.__TR_openTV()" title="Buka chart saham ini di TradingView (tab baru)">
+          <span class="tr-anl-tv-open-ico" aria-hidden="true">↗</span> Buka di TradingView
+        </button>
       </div>
       <div class="tr-anl-chart-row">
         <!-- Host untuk TradingView widget (script embed, di-inject via JS) -->
@@ -16802,6 +16814,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
     };
     // Delay awal biar tab-switch selesai animasi & scroll settle.
     setTimeout(function(){ tryPick(20); }, 50);
+  };
+
+  // Buka web TradingView penuh (tab baru) untuk ticker yg lagi aktif di
+  // Analisis — pola sama dgn plOpenTV di Pasar Live. Widget embed di kartu
+  // selalu anonim/EOD; web penuh memakai sesi login user (indikator pribadi
+  // tampil) & data sesuai entitlement akunnya.
+  window.__TR_openTV = function(){
+    var code = String(_current || '').toUpperCase();
+    if (!code) return;
+    // Mirror plTvSymbol: IHSG → IDX:COMPOSITE, selainnya IDX:<kode>.
+    var sym = (code === 'IHSG') ? 'IDX:COMPOSITE' : 'IDX:' + code;
+    var url = 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(sym);
+    window.open(url, '_blank', 'noopener');
   };
 
   // ── Entry point: dipanggil saat tracker.json siap ────────────────
