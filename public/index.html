@@ -3427,6 +3427,16 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-mode-modal-body{font-size:12.5px;line-height:1.65;color:var(--text2)}
 .tr-pf-mode-modal-body b{color:var(--text)}
 .tr-pf-mode-modal-body .m-sub{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);color:var(--text3);font-size:11.5px}
+/* Tombol ⓘ clickable di header Total Return → buka popup penjelasan angka. */
+.tr-p-info-btn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:var(--text2);font-size:10px;font-weight:800;line-height:1;cursor:pointer;padding:0;vertical-align:middle;transition:background .15s,color .15s,transform .12s;font-family:inherit}
+.tr-p-info-btn:hover{background:var(--accent);color:#fff;transform:scale(1.12)}
+/* Isi popup penjelasan angka — list rapi, term diberi warna. */
+.tr-pf-info-body{max-height:70vh;overflow-y:auto}
+.tr-pf-info-body .tr-info-note{font-size:12px;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:12px;line-height:1.55}
+.tr-pf-info-body .tr-info-sec{font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--accent);margin:14px 0 6px}
+.tr-pf-info-body .tr-info-item{font-size:12.5px;line-height:1.6;color:var(--text2);margin-bottom:8px;padding-left:10px;border-left:2px solid var(--border)}
+.tr-pf-info-body .tr-info-k{font-weight:800;color:var(--text)}
+.tr-pf-info-body .tr-info-k.tr-up{color:var(--green)}
 
 /* ── Master-detail layout (tab Analis: kiri list sekuritas, kanan detail firm) ── */
 .tr-mdet{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:flex-start}
@@ -7517,8 +7527,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <!-- TOTAL RETURN (kanan header): realized (TP1 + upside TP2 − CL)
                  + floating berjalan. Angka "all-in" performa firm. Update via
                  renderKpi (ikut mode & periode aktif). -->
-            <div class="tr-p-totret" id="trPfTotRet" title="TOTAL RETURN = hasil yang sudah PASTI (realized, dari rekomendasi yang sudah selesai) + nilai posisi yang MASIH berjalan (floating). Floating masih bisa naik/turun ikut harga, jadi angka ini belum final.">
-              <div class="tr-p-totret-k">TOTAL RETURN <span class="tr-help">ⓘ</span></div>
+            <div class="tr-p-totret" id="trPfTotRet">
+              <div class="tr-p-totret-k">TOTAL RETURN <button type="button" class="tr-p-info-btn" id="trPfInfoBtn" aria-label="Penjelasan semua angka" title="Klik untuk penjelasan semua angka di halaman ini">ⓘ</button></div>
               <div class="tr-p-totret-v" id="trPfTotRetV">—</div>
               <div class="tr-p-totret-s" id="trPfTotRetSub">hasil selesai + posisi berjalan</div>
             </div>
@@ -7710,6 +7720,46 @@ body.is-mobile-device.force-desktop .pl-col-main{
               <button type="button" class="tr-pf-mode-modal-close" id="trPfModeModalClose" aria-label="Tutup keterangan">✕</button>
             </div>
             <div class="tr-pf-mode-modal-body" id="trPfModeModalBody">—</div>
+          </div>
+        </div>
+
+        <!-- Popup PENJELASAN SEMUA ANGKA — dibuka dari ⓘ di header Total Return. -->
+        <div id="trPfInfoModal" class="tr-pf-mode-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="trPfInfoModalTitle">
+          <div class="tr-pf-mode-modal-backdrop" data-info-close="1"></div>
+          <div class="tr-pf-mode-modal-card">
+            <div class="tr-pf-mode-modal-head">
+              <div class="tr-pf-mode-modal-title" id="trPfInfoModalTitle">📊 Arti Semua Angka</div>
+              <button type="button" class="tr-pf-mode-modal-close" id="trPfInfoModalClose" aria-label="Tutup penjelasan">✕</button>
+            </div>
+            <div class="tr-pf-mode-modal-body tr-pf-info-body">
+
+              <div class="tr-info-note">Panduan singkat biar tidak bingung membedakan angka di halaman ini. Semua angka mengikuti <b>periode</b> &amp; <b>mode</b> yang dipilih di atas (mis. "30 Hari Terakhir · Beli di Entry → TP1").</div>
+
+              <div class="tr-info-sec">1) Dua konsep dasar</div>
+              <div class="tr-info-item"><span class="tr-info-k tr-up">Hasil nyata (realized)</span> — untung/rugi dari rekomendasi yang <b>SUDAH selesai</b> (sudah kena TP, kena SL, atau habis waktu). Angka ini <b>sudah pasti</b>, tidak berubah lagi.</div>
+              <div class="tr-info-item"><span class="tr-info-k" style="color:var(--text2)">Floating (posisi berjalan)</span> — untung/rugi posisi yang <b>MASIH aktif</b> (belum tutup). Masih bisa naik/turun ikut harga — <b>belum tentu jadi</b>.</div>
+
+              <div class="tr-info-sec">2) Angka di header</div>
+              <div class="tr-info-item"><span class="tr-info-k">TOTAL RETURN</span> — gabungan <b>hasil nyata + floating</b>. Gambaran "kondisi lengkap saat ini". Contoh: +9,24% = +7,31% (hasil selesai) + +1,93% (posisi berjalan). Karena ada floating, angka ini <b>belum final</b>.</div>
+              <div class="tr-info-item"><span class="tr-info-k">📊 Dibukukan periode ini</span> — <b>penjumlahan</b> return SEMUA rekomendasi yang <b>selesai (tutup)</b> dalam periode ini. Ini <b>arithmetic sum</b>: makin banyak rekomendasi, makin besar. Cocok untuk lihat "total perolehan", <b>bukan</b> return dompet. (Angka yang sama dipakai untuk peringkat di menu Overview.)</div>
+
+              <div class="tr-info-sec">3) Kartu KPI</div>
+              <div class="tr-info-item"><span class="tr-info-k">WIN RATE</span> — dari rekomendasi yang <b>sudah selesai</b>, berapa persen yang <b>menang</b> (kena target). Contoh 35% = 8 menang dari 23 selesai.</div>
+              <div class="tr-info-item"><span class="tr-info-k">NET RETURN</span> — <b>hasil nyata</b> (menang dikurangi kalah) dari rekomendasi yang <b>diterbitkan</b> dalam periode. Sudah dikurangi cutloss.</div>
+              <div class="tr-info-item"><span class="tr-info-k">FLOATING BERJALAN</span> — untung/rugi seluruh posisi yang <b>masih aktif</b> sekarang (belum tutup).</div>
+              <div class="tr-info-item"><span class="tr-info-k">PROFIT TERTINGGI</span> — rekomendasi paling <b>cuan</b> di periode. <span class="tr-info-k">CUTLOSS TERENDAH</span> — rekomendasi paling <b>rugi</b>.</div>
+              <div class="tr-info-item"><span class="tr-info-k">TOTAL REKOMENDASI</span> — jumlah semua rekomendasi (aktif + riwayat + menunggu + lari).</div>
+
+              <div class="tr-info-sec">4) Mode Eksekusi (baris bawah)</div>
+              <div class="tr-info-item"><span class="tr-info-k">RATA²</span> — rata-rata untung per rekomendasi (Net ÷ jumlah trade). Paling adil untuk <b>menilai kualitas</b> per-call. <span class="tr-info-k">TRADE TERCATAT</span> — jumlah rek yang masuk hitungan.</div>
+              <div class="tr-info-item"><span class="tr-info-k">Beli di Entry</span> — anggap beli tepat di harga entry (sabar antri; rek yang harganya keburu lari di-skip). <span class="tr-info-k">Beli HAKA</span> — beli di harga open saat rilis (bisa kena gap, akurasi lebih rendah).</div>
+              <div class="tr-info-item"><span class="tr-info-k">TP1</span> — exit di target pertama (aman). <span class="tr-info-k">TP2</span> — tahan sampai target kedua (lebih agresif; kalau sempat kena TP1 lalu balik, dicatat TP1).</div>
+
+              <div class="tr-info-sec">5) Yang sering bikin bingung</div>
+              <div class="tr-info-item"><b>NET RETURN</b> vs <b>Dibukukan periode ini</b>: NET = rek yang <b>DIBUKA</b> di periode ini; Dibukukan = rek yang <b>TUTUP</b> di periode ini. Beda basis tanggal, jadi angkanya bisa beda jauh.</div>
+              <div class="tr-info-item"><b>Hasil nyata</b> = sudah pasti · <b>Floating</b> = masih berjalan, belum tentu jadi.</div>
+
+            </div>
           </div>
         </div>
 
@@ -8722,6 +8772,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
     modal.setAttribute('aria-hidden','true');
     try{ document.body.style.overflow = ''; }catch(_){}
   }
+
+  // ── Popup "Arti Semua Angka" (dibuka dari ⓘ header Total Return) ──
+  function openInfoModal(){
+    var m = $id('trPfInfoModal'); if(!m) return;
+    m.classList.add('open'); m.setAttribute('aria-hidden','false');
+    try{ document.body.style.overflow = 'hidden'; }catch(_){}
+  }
+  function closeInfoModal(){
+    var m = $id('trPfInfoModal'); if(!m) return;
+    m.classList.remove('open'); m.setAttribute('aria-hidden','true');
+    try{ document.body.style.overflow = ''; }catch(_){}
+  }
+  document.addEventListener('click', function(e){
+    var t = e.target; if(!t || !t.closest) return;
+    if(t.closest('#trPfInfoBtn')){ e.preventDefault(); e.stopPropagation(); openInfoModal(); return; }
+    if(t.closest('#trPfInfoModalClose') || t.closest('#trPfInfoModal [data-info-close]')){ e.preventDefault(); closeInfoModal(); return; }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){ var m = $id('trPfInfoModal'); if(m && m.classList.contains('open')) closeInfoModal(); }
+  });
 
   // NOTE: renderCumChart / _renderNavChart / _renderArithmeticChart
   // dihapus (2026-07-25) — chart NAV Reksadana Virtual dihilangkan
