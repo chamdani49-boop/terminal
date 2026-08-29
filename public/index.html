@@ -14700,16 +14700,25 @@ body.is-mobile-device.force-desktop .pl-col-main{
       return;
     }
 
-    // 3) Bin per tanggal (harian) — min→max range kontinu.
+    // 3) Bin per tanggal (harian). Tampilkan HANYA 30 hari terakhir (berakhir
+    //    di tgl rekomendasi TERBARU) — bukan seluruh rentang min→max. Tanpa
+    //    ini, 1-2 rec lama (outlier, mis. 15 Jul '25) bikin bar melar setahun
+    //    padahal mayoritas hari kosong.
     allDates.sort();
     var minStr = allDates[0], maxStr = allDates[allDates.length-1];
     var minD = new Date(minStr + 'T00:00:00Z');
     var maxD = new Date(maxStr + 'T00:00:00Z');
+    // Window mulai = 30 hari sebelum tgl terbaru (inklusif), tapi jangan lebih
+    // awal dari data paling awal (kalau data < 30 hari, mulai dari data awal).
+    var WINDOW_DAYS = 30;
+    var winStart = new Date(maxD.getTime());
+    winStart.setUTCDate(winStart.getUTCDate() - (WINDOW_DAYS - 1));
+    var startD = (winStart.getTime() > minD.getTime()) ? winStart : minD;
     var monthShort = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
     var dBuckets = {};
     allDates.forEach(function(s){ dBuckets[s] = (dBuckets[s]||0)+1; });
     var labels = [], series = [], isoList = [];
-    var cur = new Date(minD.getTime());
+    var cur = new Date(startD.getTime());
     while(cur.getTime() <= maxD.getTime()){
       var iso = cur.getUTCFullYear() + '-' + String(cur.getUTCMonth()+1).padStart(2,'0') + '-' + String(cur.getUTCDate()).padStart(2,'0');
       isoList.push(iso);
@@ -14717,17 +14726,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
       series.push(dBuckets[iso] || 0);
       cur.setUTCDate(cur.getUTCDate() + 1);
     }
+    var startStr = isoList.length ? isoList[0] : maxStr;
 
-    // Update sub-label panel: kasih tahu user rentang aktual dari kolom L
+    // Update sub-label panel: rentang yg DITAMPILKAN (30 hari terakhir) +
+    // jumlah hari aktif DALAM window itu.
     var trendPanel = canvas.closest('.tr-ov-panel');
     var trendSub = trendPanel ? trendPanel.querySelector('.tr-ov-panel-sub') : null;
     if(trendSub){
       var fmtRange = function(iso){
         var p = iso.split('-'); return p[2] + ' ' + monthShort[+p[1]-1] + " '" + p[0].slice(-2);
       };
-      var uniqDays = Object.keys(dBuckets).length;
+      var uniqDays = Object.keys(dBuckets).filter(function(k){ return k >= startStr; }).length;
       trendSub.textContent = uniqDays + ' hari aktif · '
-        + fmtRange(minStr) + ' → ' + fmtRange(maxStr);
+        + fmtRange(startStr) + ' → ' + fmtRange(maxStr);
     }
 
     if(_trOvActTrend){ try{ _trOvActTrend.destroy(); }catch(_){} _trOvActTrend = null; }
