@@ -9315,12 +9315,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var range = _pfComputePeriodRange(period);
     if(range){
       _dateFilter = { start: range.start, end: range.end };
-      // Snap kalender ke bulan awal range supaya user langsung lihat
-      // rentang yg lagi aktif ter-highlight di grid (utk open selanjutnya).
+      // Snap kalender ke bulan AKHIR range (bulan terbaru/terkini) supaya
+      // saat popup dibuka user langsung lihat bulan terkini — mis. preset
+      // "30 Hari Terakhir" (30 Jul → 29 Agu) buka di Agustus, bukan Juli.
       // NOTE: renderCalendar() pakai _calView.y / _calView.m (bukan .year/.month),
       // jadi gunakan naming yg sama supaya render tidak throw Invalid Date.
-      var startDate = _parseISO(range.start);
-      if(startDate) _calView = { y: startDate.getFullYear(), m: startDate.getMonth() };
+      var anchorDate = _parseISO(range.end) || _parseISO(range.start);
+      if(anchorDate) _calView = { y: anchorDate.getFullYear(), m: anchorDate.getMonth() };
     } else {
       _dateFilter = null;
     }
@@ -9621,7 +9622,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // Auto-focus ke bulan dari filter/pending atau bulan rec terakhir
     if(!_calView){
       var target;
-      var anchor = (_calPending && _calPending.start) || (_dateFilter && _dateFilter.start);
+      // Anchor ke AKHIR range/filter (bulan terkini), fallback ke start.
+      var anchor = (_calPending && (_calPending.end || _calPending.start))
+                || (_dateFilter && (_dateFilter.end || _dateFilter.start));
       if(anchor){
         target = _parseISO(anchor);
       } else if(_currentFirm){
@@ -14936,9 +14939,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(!_tovTickDaySet) _tovTickBuildDayIndex();
     // Init pending dari filter aktif
     _tovTickCalPending = _tovTickDateFilter ? { start:_tovTickDateFilter.start, end:_tovTickDateFilter.end } : null;
-    // Init month berdasar filter aktif atau tgl terbaru
+    // Init month berdasar AKHIR filter aktif (bulan terkini), fallback tgl terbaru
     if(_tovTickDateFilter){
-      var p = _tovTickDateFilter.start.split('-');
+      var p = (_tovTickDateFilter.end || _tovTickDateFilter.start).split('-');
       _tovTickCalYM = { year:+p[0], month:+p[1]-1 };
     } else {
       _tovTickInitMonth();
