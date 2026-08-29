@@ -3067,6 +3067,18 @@ body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 }
 .tr-chart-rank-row .pct.up{color:var(--green)}
 .tr-chart-rank-row .pct.dn{color:var(--red)}
+/* Kolom kanan: realized (utama) + floating berjalan (sub kecil).
+   Di-stack vertikal, rata kanan, supaya keduanya jelas terpisah. */
+.tr-chart-rank-row .pctwrap{
+  display:flex;flex-direction:column;align-items:flex-end;gap:1px;
+  flex-shrink:0;line-height:1.1;
+}
+.tr-chart-rank-row .pctfloat{
+  font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;
+  font-variant-numeric:tabular-nums;opacity:.72;letter-spacing:-.2px;
+}
+.tr-chart-rank-row .pctfloat.up{color:var(--green)}
+.tr-chart-rank-row .pctfloat.dn{color:var(--red)}
 /* IHSG chip di header — clickable utk clear highlight chart. */
 .tr-ihsg-chip{cursor:pointer;transition:border-color .12s, background .12s}
 .tr-ihsg-chip:hover{border-color:var(--accent);background:var(--card)}
@@ -6541,7 +6553,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <div class="tr-card-headline">
         <div class="tr-card-titleblock">
           <div class="tr-card-title" id="trChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Performa 30 Hari</div>
-          <div class="tr-card-desc">Perbandingan return kumulatif semua sekuritas · klik peringkat untuk highlight</div>
+          <div class="tr-card-desc">Return kumulatif <b>realized</b> tiap sekuritas · ⚡ floating posisi berjalan ditampilkan terpisah · klik peringkat untuk highlight</div>
         </div>
         <div class="tr-card-header-controls">
           <!-- Period selector: 30D / Bulan Ini + dropdown Bulan + Tahun.
@@ -6600,7 +6612,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       </div>
       <div class="tr-chart-rank">
         <div class="tr-chart-rank-head">Peringkat vs IHSG</div>
-        <div class="tr-chart-rank-note">+ = outperform · − = underperform vs IHSG</div>
+        <div class="tr-chart-rank-note">Angka utama = return realized · ⚡ = floating berjalan (unrealized)</div>
         <div class="tr-chart-rank-list" id="trChartRankList">
           <!-- Skeleton rows utk sidebar Peringkat saat data belum siap. -->
           <div class="tr-chart-rank-skel" aria-hidden="true">
@@ -13278,45 +13290,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
       pnlByDate[r.exitDate] = (pnlByDate[r.exitDate] || 0) + (+pnl || 0);
     });
 
-    // ── FLOATING RETURN: include unrealized dari posisi AKTIF ──
+    // ── REALIZED-ONLY (floating DIPISAH) ──────────────────────────────
     //
-    // Rec di firm.recsActive = posisi entry sudah tersentuh & masih live.
-    // Backend hitung rec.floatingPct = (lastPrice - entry) / entry × 100
-    // (buy) atau kebalikannya (sell). lastPrice update via live overlay
-    // (candle intraday).
+    // DULU: sum floatingPct semua posisi aktif ditumpuk ke titik terakhir
+    // timeline → garis "menendang" naik di ujung, dan angka peringkat jadi
+    // campuran realized + floating (mis. Sucor +332% = +97% realized +235%
+    // floating). Ini bikin user bingung: label "30 Hari" tapi angkanya
+    // mencampur unrealized dari SEMUA posisi terbuka (yg tak difilter 30 hari).
     //
-    // Kita masukkan sum floating pct ke bucket TGL TERAKHIR di timeline
-    // — bukan bikin bucket per-hari-terpisah (kita tidak punya history
-    // harga harian live). Efek visual: cumulative line "menendang" naik/
-    // turun di titik terakhir sesuai kondisi live saat ini. Same-day
-    // active positions memang tidak ada pnlByDate sebelumnya, jadi
-    // kelihatan sbg lonjakan di ujung — sesuai maksud "as-of-now" snapshot
-    // yg diminta user.
-    //
-    // Guard 1: hanya untuk period yg END-nya = today. Untuk periode
-    // historikal (Juni 2026, tahun 2025, dst), floating tidak relevan
-    // karena chart tsb representasi snapshot masa lalu. lastDate check
-    // via === todayISO handle ini.
-    //
-    // Guard 2: skip pending/missed — belum ambil posisi, tidak ada
-    // realized nor unrealized. Hanya recsActive (didTouchEntry=true &
-    // masih running) yg dihitung.
-    var lastDate = timeline[timeline.length - 1];
-    if (lastDate){
-      var todayISO = '';
-      try { todayISO = new Date().toISOString().slice(0, 10); } catch(_){}
-      if (lastDate === todayISO){
-        var actives = (firm && firm.recsActive) || [];
-        for (var ai = 0; ai < actives.length; ai++){
-          var ar = actives[ai];
-          if (!ar) continue;
-          var flt = +ar.floatingPct;
-          if (!Number.isFinite(flt)) continue;
-          pnlByDate[lastDate] = (pnlByDate[lastDate] || 0) + flt;
-        }
-      }
-    }
-
+    // SEKARANG: fungsi ini HANYA menghitung realized cumulative (rec yang
+    // benar-benar sudah tutup, exitDate ∈ timeline). Floating dihitung
+    // terpisah via _firmActiveFloatingSum() dan ditampilkan sebagai sub-label
+    // "posisi berjalan" di sidebar peringkat — konsisten dgn perlakuan kartu
+    // FLOATING di menu Analis (realized ≠ floating, tidak dijumlah jadi satu).
     var cum = 0;
     var out = [];
     for (var i = 0; i < timeline.length; i++){
@@ -13325,6 +13311,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
       out.push(+cum.toFixed(2));
     }
     return out;
+  }
+
+  // ── FLOATING BERJALAN per firm (mark-to-market posisi aktif) ──────────
+  // Σ floatingPct dari SEMUA rec aktif (didTouchEntry=true, masih running).
+  // Ini "buku berjalan" firm saat ini — unrealized, belum tentu jadi.
+  // Ditampilkan TERPISAH dari angka realized di sidebar peringkat supaya
+  // user tidak keliru menganggap ini hasil nyata. Return { sum, count }.
+  function _firmActiveFloatingSum(firm){
+    var actives = (firm && firm.recsActive) || [];
+    var sum = 0, count = 0;
+    for (var i = 0; i < actives.length; i++){
+      var ar = actives[i];
+      if (!ar) continue;
+      var flt = +ar.floatingPct;
+      if (!Number.isFinite(flt)) continue;
+      sum += flt; count++;
+    }
+    return { sum: +sum.toFixed(2), count: count };
   }
 
   // ── IHSG chip di header chart ──
@@ -13550,6 +13554,16 @@ body.is-mobile-device.force-desktop .pl-col-main{
         .replace(/\s+/g, ' ')
         .trim();
       var fid = esc(x.firm.id || '');
+      // Floating berjalan (unrealized) — sub-label kecil di bawah angka
+      // realized. Dipisah tegas supaya user paham ini "posisi masih
+      // terbuka", bukan hasil nyata. Sembunyikan kalau tidak ada posisi aktif.
+      var fv = +x.floatPct || 0;
+      var fc = x.floatCount || 0;
+      var floatHtml = fc > 0
+        ? '<span class="pctfloat ' + (fv >= 0 ? 'up' : 'dn') + '"'
+          + ' title="Floating berjalan: Σ ' + fc + ' posisi aktif (unrealized, belum tentu jadi)">'
+          + '⚡' + (fv >= 0 ? '+' : '') + fv.toFixed(1) + '%</span>'
+        : '';
       return '<div class="tr-chart-rank-row' + (isActive ? ' active' : '') + '"'
         + ' role="button" tabindex="0"'
         + ' data-firm-id="' + fid + '"'
@@ -13560,7 +13574,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
         + '<span class="nm" data-action="nav" data-firm-id="' + fid + '"'
         + ' title="Buka detail ' + esc(x.firm.name || '') + ' di tab Analis">'
         + esc(shortName) + '</span>'
-        + '<span class="pct ' + pctCls + '">' + pctStr + '</span>'
+        + '<span class="pctwrap">'
+          + '<span class="pct ' + pctCls + '">' + pctStr + '</span>'
+          + floatHtml
+        + '</span>'
       + '</div>';
     }).join('');
   }
@@ -13776,8 +13793,15 @@ body.is-mobile-device.force-desktop .pl-col-main{
       .map(function(x){
         var series = _computeFirmDailyEquity(x.firm, timeline);
         var lastPct = series.length ? series[series.length - 1] : 0;
-        return { firm: x.firm, stats: x.stats, series: series, lastPct: +lastPct || 0 };
+        // Floating dihitung terpisah (buku berjalan) — HANYA relevan untuk
+        // periode yg berakhir hari ini (30D/MTD/tahun berjalan). Periode
+        // historikal (bulan/tahun lalu) → floating tidak ditampilkan.
+        var flt = _isLive ? _firmActiveFloatingSum(x.firm) : { sum: 0, count: 0 };
+        return { firm: x.firm, stats: x.stats, series: series, lastPct: +lastPct || 0,
+                 floatPct: flt.sum, floatCount: flt.count };
       })
+      // Peringkat diurutkan by REALIZED return (lastPct) — kualitas hasil
+      // nyata, bukan digelembungkan floating posisi terbuka.
       .sort(function(a, b){ return b.lastPct - a.lastPct; });
 
     // Assign warna palette by SORTED rank position — jadi warna line
