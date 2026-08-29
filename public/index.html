@@ -2742,7 +2742,14 @@ body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu):hover{
   cursor:pointer;
 }
 body.scope-tracker .bottom-nav-item:not(.tr-menu){opacity:.55}
-body.scope-tracker .search-wrap{display:none !important}
+/* Sembunyikan HANYA search header global (redirect ke Valuasi/Consensus yg
+   gak boleh diakses user scope=tracker). Search INTERNAL menu Tracker —
+   "Pilih Saham" (.tr-anl-searchwrap) di sub-menu Analis & "Cari sekuritas"
+   (.tr-mdet-search) di sub-menu Analisis — HARUS tetap tampil karena bagian
+   dari fitur Tracker yg memang dibeli user. Sebelumnya selector .search-wrap
+   polos ikut menyembunyikan kedua search internal ini (bug). */
+body.scope-tracker .search-wrap-desktop,
+body.scope-tracker .search-wrap-mobile{display:none !important}
 /* Tab Tracker tetap dominan */
 body.scope-tracker .nav-tabs .nav-tab.tr-menu{font-weight:700}
 
