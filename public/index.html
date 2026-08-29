@@ -3594,6 +3594,11 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-p-name{font-size:17px;font-weight:800;letter-spacing:-.3px}
 .tr-p-vbadge{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,.14);color:var(--green);font-size:9.5px;font-weight:700;font-family:'IBM Plex Mono',monospace;padding:2.5px 7px;border-radius:6px;letter-spacing:.3px}
 .tr-p-firm{font-size:12px;color:var(--text3);margin-top:2px}
+/* Return "dibukukan periode ini" (basis exitDate, mirror Overview) — kecil. */
+.tr-p-realized{font-size:11px;color:var(--text3);margin-top:4px;cursor:help}
+.tr-p-realized b.tr-up{color:var(--green)}
+.tr-p-realized b.tr-dn{color:var(--red)}
+.tr-p-realized .tr-p-realized-x{opacity:.65}
 /* Total Return di kanan header firm — realized + floating (all-in). */
 .tr-p-totret{flex-shrink:0;margin-left:auto;text-align:right;padding-left:14px;align-self:center}
 .tr-p-totret-k{font-size:9.5px;font-weight:800;letter-spacing:.6px;color:var(--text3);text-transform:uppercase}
@@ -7493,6 +7498,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
                 <span class="tr-p-vbadge" id="trPfVBadge">✓ TERVERIFIKASI</span>
               </div>
               <div class="tr-p-firm" id="trPfMeta">—</div>
+              <!-- Return dari rekomendasi yang SELESAI (tutup) dalam periode —
+                   basis tanggal-selesai (exitDate), angka yg dipakai peringkat
+                   Overview. Beda dgn NET card (basis rekomendasi DIBUKA). Kecil. -->
+              <div class="tr-p-realized" id="trPfRealizedPeriod" style="display:none"
+                   title="Total hasil dari rekomendasi yang TUTUP (selesai) dalam periode ini — basis tanggal selesai. Ini angka yang dipakai untuk peringkat di menu Overview. Beda dengan NET RETURN yang berbasis kapan rekomendasi DITERBITKAN."></div>
             </div>
             <!-- TOTAL RETURN (kanan header): realized (TP1 + upside TP2 − CL)
                  + floating berjalan. Angka "all-in" performa firm. Update via
@@ -8618,6 +8628,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
         _totV.className = 'tr-p-totret-v ' + (_tot >= 0 ? 'tr-up' : 'tr-dn');
         if(_totS) _totS.textContent = 'hasil selesai ' + (st.total ? fmtPct(st.net) : '—')
                     + ' · posisi berjalan ' + (_fl && _fl.count ? fmtPct(_fl.sum) : '—');
+      }
+    }
+
+    // ── Return "DIBUKUKAN periode ini" (basis exitDate) — mirror angka
+    //    peringkat Overview. Ditampilkan kecil di header. Beda dgn NET card
+    //    (basis openDate). Ikut mode & periode aktif. ──
+    var _rpEl = $id('trPfRealizedPeriod');
+    if(_rpEl){
+      var _rpNet = 0, _rpN = 0;
+      (firm.recsHistory||[]).forEach(function(r){
+        if(!r || !r.exitDate) return;
+        if(_dateFilter && (r.exitDate < _dateFilter.start || r.exitDate > _dateFilter.end)) return;
+        var p = getRecPnl(r, _entryMode, _exitMode);
+        if(p == null) return;
+        _rpNet += p; _rpN++;
+      });
+      if(_rpN > 0){
+        _rpEl.style.display = '';
+        _rpEl.innerHTML = '📊 Dibukukan periode ini: <b class="' + (_rpNet>=0?'tr-up':'tr-dn') + '">'
+          + fmtPct(_rpNet) + '</b> <span class="tr-p-realized-x">(' + _rpN + ' selesai)</span>';
+      } else {
+        _rpEl.style.display = 'none';
       }
     }
 
