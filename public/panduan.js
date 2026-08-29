@@ -468,7 +468,7 @@
     P({ page: 'tracker', target: S('#tr-subtabs'), title: 'Menu Tracker', body: 'Tracker memantau performa rekomendasi trading analis vs IHSG. Ada 5 sub-tab: Overview, Live, Analisis, Analis, Performa.' });
     P({ page: 'tracker', target: T('Performa 30 Hari'), title: 'Performa 30 Hari', body: 'Grafik return kumulatif semua analis (garis warna) vs IHSG (garis merah) 30 hari terakhir. Sumbu Y (%) di sebelah kanan. Ada preset periode: 30D, Bulan Ini, Bulan\u25be, Tahun\u25be.' });
     P({ page: 'tracker', target: T('Distribusi Hasil'), title: 'Distribusi Hasil', body: 'Bar visual: berapa banyak rekomendasi yang hit TP1 / TP2, kena SL, atau expired.' });
-    P({ page: 'tracker', target: T('Saham Paling Aktif'), title: 'Saham Paling Aktif', body: 'Top saham dengan rekomendasi terbanyak. Tombol \uD83D\uDCC5 di header buat filter tanggal.' });
+    P({ page: 'tracker', target: T('Saham Paling Banyak di Rekom'), title: 'Saham Paling Banyak di Rekom', body: 'Top saham dengan rekomendasi terbanyak. Tombol \uD83D\uDCC5 di header buat filter tanggal.' });
     P({ page: 'tracker', target: T('Rekomendasi Terbaru'), title: 'Feed Rekomendasi Terbaru', body: 'Daftar rekomendasi terbaru. Setiap baris punya 3 zona klik: (1) kode saham \u2192 tab Analisis, (2) nama sekuritas \u2192 halaman profile firm, (3) area lain \u2192 popup detail rekomendasi.' });
 
     // Sub-tab: Live
