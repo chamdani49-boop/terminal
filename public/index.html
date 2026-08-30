@@ -3393,6 +3393,39 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-chart-wm{position:absolute;top:4px;right:8px;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;letter-spacing:2px;color:var(--text3);opacity:.45;pointer-events:none;user-select:none}
 .tr-pf-chart-wm[hidden]{display:none}
 
+/* Mini sticky identitas broker di halaman Analis — muncul saat user scroll
+   ke bawah (kartu profil sudah lewat), pin tepat di bawah ticker berjalan.
+   Kecil, tidak lebar: kotak kode broker + nama sekuritas. */
+.tr-pf-ministicky{
+  position:fixed;left:50%;transform:translateX(-50%);
+  z-index:88;                       /* di bawah ticker(90)+header(100), di atas konten */
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:11px;padding:5px 13px 5px 6px;
+  box-shadow:0 8px 22px rgba(0,0,0,.20);
+  max-width:min(84vw,320px);cursor:pointer;
+  animation:trMiniPop .16s ease-out;
+}
+.tr-pf-ministicky[hidden]{display:none}
+@keyframes trMiniPop{from{opacity:0;transform:translate(-50%,-6px)}to{opacity:1;transform:translate(-50%,0)}}
+.tr-pf-mini-av{
+  flex:0 0 auto;width:30px;height:30px;border-radius:8px;
+  background:var(--grad);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:12px;letter-spacing:.5px;
+  box-shadow:0 3px 10px rgba(124,58,237,.30);
+}
+.tr-pf-mini-av.brk-foreign{color:var(--red)}
+.tr-pf-mini-name{
+  font-size:12.5px;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+@media(max-width:520px){
+  .tr-pf-mini-av{width:26px;height:26px;font-size:11px}
+  .tr-pf-mini-name{font-size:11.5px}
+  .tr-pf-ministicky{padding:4px 11px 4px 5px}
+}
+
 /* ── Return Calendar (kalender return harian) ──
    Grid 7-kolom, tiap sel = tanggal + total net % semua trade yg CLOSE
    hari itu. Hijau = profit, merah = loss. Chip atas = total net % bulan
@@ -8197,6 +8230,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Bulan yg ditampilkan di return calendar {y, m(0-11)}. Null=belum init
   // (renderReturnCalendar akan set ke bulan data terbaru / today).
   var _retCalView  = null;
+  // Mini sticky identitas broker (kode + nama) — muncul saat scroll di
+  // halaman Analis. Element dibuat lazy di body, observer pantau kartu hero.
+  var _miniStickyEl = null;
+  var _heroObserver = null;
 
   // ── Live price/change helper — priority chain mirror dashboard ──
   // change_pct di data.json = FRACTION (0.0199 = 1.99%), harus ×100 utk display.
@@ -8742,6 +8779,86 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if(code){ wm.textContent = code; wm.hidden = false; }
       else { wm.hidden = true; }
     }
+  }
+
+  // ── Mini sticky identitas broker (halaman Analis) ─────────────────
+  // Saat user scroll ke bawah dan kartu profil (hero) sudah lewat ke atas,
+  // munculkan pill kecil berisi kotak kode broker + nama sekuritas, pin
+  // tepat di bawah ticker berjalan. Biar konteks "ini broker mana" tetap
+  // kelihatan walau sudah scroll jauh. Element dibuat sekali di <body>
+  // (fixed) supaya tidak keclip overflow/transform panel.
+  function _ensureMiniSticky(){
+    if(_miniStickyEl) return _miniStickyEl;
+    var el = document.createElement('div');
+    el.className = 'tr-pf-ministicky';
+    el.id = 'trPfMiniSticky';
+    el.hidden = true;
+    el.setAttribute('title', 'Kembali ke atas profil sekuritas');
+    el.innerHTML = '<span class="tr-pf-mini-av" id="trPfMiniAv"></span><span class="tr-pf-mini-name" id="trPfMiniName"></span>';
+    // Klik → scroll balik ke kartu profil.
+    el.addEventListener('click', function(){
+      var hero = document.querySelector('#trMdetPanel .tr-pcard');
+      var target = hero || document.getElementById('trMdetDetail');
+      if(target){ try{ target.scrollIntoView({ behavior:'smooth', block:'start' }); }catch(_){ target.scrollIntoView(); } }
+    });
+    document.body.appendChild(el);
+    _miniStickyEl = el;
+    return el;
+  }
+  // Pin top = tepat di bawah ticker berjalan (header + ticker keduanya
+  // sticky, jadi bottom-nya stabil). Fallback ke top-bar kalau ticker tak ada.
+  function _positionMiniSticky(){
+    if(!_miniStickyEl || _miniStickyEl.hidden) return;
+    var top = 8;
+    var tk = document.getElementById('stockTicker');
+    if(tk){ top = Math.max(0, tk.getBoundingClientRect().bottom); }
+    else { var tb = document.querySelector('.top-bar'); if(tb) top = tb.getBoundingClientRect().bottom; }
+    _miniStickyEl.style.top = (top + 6) + 'px';
+  }
+  function _updateMiniStickyContent(firm){
+    _ensureMiniSticky();
+    var bk = (window.BrokerCodes && window.BrokerCodes.avatar) ? window.BrokerCodes.avatar(firm && firm.name) : null;
+    var av = $id('trPfMiniAv'), nm = $id('trPfMiniName');
+    if(av){
+      av.textContent = bk ? bk.text : initials(firm && firm.name);
+      av.classList.toggle('brk-foreign', !!(bk && bk.foreign));
+    }
+    if(nm){ nm.textContent = firmShort(firm && firm.name); }
+  }
+  function _showMiniSticky(show){
+    _ensureMiniSticky();
+    if(show){ if(_miniStickyEl.hidden){ _miniStickyEl.hidden = false; } _positionMiniSticky(); }
+    else { _miniStickyEl.hidden = true; }
+  }
+  // Callback observer hero: tampilkan mini saat hero TIDAK lagi terlihat
+  // (sudah ter-scroll ke atas di balik ticker). Guard: hanya saat firm
+  // aktif + panel & pane Analis benar-benar tampil (kalau tab lain / page
+  // lain, IO ikut fire karena hero jadi display:none → mini disembunyikan).
+  function _heroIoCb(entries){
+    var e = entries && entries[0];
+    var pane = document.getElementById('tr-view-analis');
+    var paneVisible = pane && pane.offsetParent !== null;
+    var panel = document.getElementById('trMdetPanel');
+    var panelVisible = panel && panel.style.display !== 'none';
+    if(!_currentFirm || !paneVisible || !panelVisible){ _showMiniSticky(false); return; }
+    _showMiniSticky(!(e && e.isIntersecting));
+  }
+  function _setupHeroObserver(){
+    var hero = document.querySelector('#trMdetPanel .tr-pcard');
+    if(!hero || typeof IntersectionObserver === 'undefined') return;
+    var off = 0;
+    var tk = document.getElementById('stockTicker');
+    if(tk){ off = Math.max(0, tk.getBoundingClientRect().bottom); }
+    else { var tb = document.querySelector('.top-bar'); if(tb) off = tb.getBoundingClientRect().bottom; }
+    if(_heroObserver){ try{ _heroObserver.disconnect(); }catch(_){} _heroObserver = null; }
+    try{
+      _heroObserver = new IntersectionObserver(_heroIoCb, {
+        root: null,
+        rootMargin: '-' + Math.round(off) + 'px 0px 0px 0px',
+        threshold: 0
+      });
+      _heroObserver.observe(hero);
+    }catch(_){}
   }
 
   function renderKpi(firm){
@@ -10563,6 +10680,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(hint) hint.style.display = 'none';
     if(panel) panel.style.display = '';
 
+    // Mini sticky identitas broker: isi konten + pasang observer hero.
+    _updateMiniStickyContent(firm);
+    _showMiniSticky(false);           // mulai tersembunyi (hero masih terlihat)
+    _setupHeroObserver();
+
     // Notify sidebar to sync active state (dispatched below)
     try{
       var ev = new CustomEvent('tr-firm-open', { detail: { firm: firm } });
@@ -10777,7 +10899,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Resize → redraw canvas day chart (kalau panel visible)
   window.addEventListener('resize', function(){
     var panel = document.getElementById('trMdetPanel');
-    if(panel && panel.style.display !== 'none') scheduleDayChartRedraw();
+    if(panel && panel.style.display !== 'none'){
+      scheduleDayChartRedraw();
+      // Ticker/header height bisa berubah → re-hitung offset observer + posisi mini.
+      _setupHeroObserver();
+      _positionMiniSticky();
+    }
   });
 
   // Change handler utk dropdown Bulan + Tahun period selector — <select>
