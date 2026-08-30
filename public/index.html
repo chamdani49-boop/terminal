@@ -7754,7 +7754,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
               </div>
               <div class="cal-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div>
               <div class="tr-retcal-grid" id="trPfRetCalGrid"></div>
-              <div class="tr-retcal-note">ⓘ Angka di tiap tanggal = total net % semua trade yang <b>CLOSE</b> hari itu (hijau profit / merah loss). Chip atas = total net % bulan yang tampil. Ikut mode eksekusi di atas. Pakai ‹ › untuk ganti bulan.</div>
+              <div class="tr-retcal-note">ⓘ Angka di tiap tanggal = total net % trade yang <b>tutup (close)</b> hari itu — hijau profit, merah loss. Chip atas = total net % bulan yang tampil. Hanya menghitung rekomendasi dalam <b>periode &amp; mode</b> yang aktif di atas — jadi kalau net semua bulan dalam periode dijumlahkan, hasilnya = <b>NET</b> di kartu ringkasan. Net = penjumlahan % tiap trade (bukan pertumbuhan modal). Pakai ‹ › untuk ganti bulan.</div>
             </div>
           </div>
         </div><!-- /tr-pf-charts-row -->
@@ -9388,7 +9388,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Navigasi via ‹ › (bulan), bukan lewat filter periode di atas — kalender
   // punya state bulan sendiri (_retCalView) supaya user bebas jelajah bulan.
   function _retCalBuildData(firm){
-    var recs = (firm && firm.recsHistory) || [];
+    // Cohort SAMA dgn KPI & chart: rec history yg openDate-nya masuk periode
+    // aktif (_recInDateFilter). Ini yg bikin angka konsisten — jumlah trade &
+    // net di kalender jadi bagian dari periode yg sama (bukan seluruh histori),
+    // sehingga jumlah semua bulan dalam periode = NET di kartu KPI.
+    var recs = ((firm && firm.recsHistory) || []).filter(_recInDateFilter);
     var byDate = {};                 // 'YYYY-MM-DD' -> {net, trades, wins, losses}
     var minD = null, maxD = null;
     for(var i=0;i<recs.length;i++){
@@ -9738,6 +9742,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       _dateFilter = null;
     }
     _calPending = null;                 // clear pending selection kalendar
+    _retCalView = null;                 // re-anchor return calendar ke bulan periode baru
     _pfSyncPeriodUI();
     updateDateBtnLabel();
     updateCalOkState();                 // sync OK button disabled state
