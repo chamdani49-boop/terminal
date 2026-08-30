@@ -3401,7 +3401,9 @@ body.tr-profile-open #tr-view-profile{display:block}
 .retcal-day{position:relative;aspect-ratio:1/1;border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:'IBM Plex Mono',monospace;padding:2px;background:var(--bg2);cursor:default;min-height:0;overflow:hidden}
 .retcal-day.blank{background:transparent;border-color:transparent}
 .retcal-day .d{font-size:11px;font-weight:700;color:var(--text2);line-height:1}
-.retcal-day .p{font-size:9px;font-weight:800;line-height:1;white-space:nowrap}
+.retcal-day .p{font-size:9px;font-weight:800;line-height:1;white-space:nowrap;color:var(--text3)}
+.retcal-day.flat{background:var(--bg2);border-color:var(--border)}
+.retcal-day.flat .d,.retcal-day.flat .p{color:var(--text3)}
 .retcal-day.win{background:rgba(16,185,129,.13);border-color:rgba(16,185,129,.32)}
 .retcal-day.win .d,.retcal-day.win .p{color:var(--green)}
 .retcal-day.loss{background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.32)}
@@ -7754,7 +7756,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
               </div>
               <div class="cal-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div>
               <div class="tr-retcal-grid" id="trPfRetCalGrid"></div>
-              <div class="tr-retcal-note">ⓘ Angka di tiap tanggal = total net % trade yang <b>tutup (close)</b> hari itu — hijau profit, merah loss. Chip atas = total net % bulan yang tampil. Hanya menghitung rekomendasi dalam <b>periode &amp; mode</b> yang aktif di atas — jadi kalau net semua bulan dalam periode dijumlahkan, hasilnya = <b>NET</b> di kartu ringkasan. Net = penjumlahan % tiap trade (bukan pertumbuhan modal). Pakai ‹ › untuk ganti bulan.</div>
+              <div class="tr-retcal-note">ⓘ <b>Sama dengan grafik — cuma beda tampilan.</b> Angka tiap tanggal = pergerakan <b>mark-to-market</b> hari itu (realized terkunci + floating posisi aktif), persis setinggi bar di grafik. Hijau = naik, merah = turun. Chip atas = total bulan yang tampil; jumlah semua hari = garis kumulatif di grafik. Ikut periode &amp; mode di atas. Pakai ‹ › untuk ganti bulan.</div>
             </div>
           </div>
         </div><!-- /tr-pf-charts-row -->
@@ -9375,43 +9377,57 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   // ── Return Calendar (kalender return harian) ─────────────────────
   //
-  // Alternatif tampilan chart Performa: grid kalender, tiap sel tanggal =
-  // TOTAL NET % semua trade (rec) yg CLOSE di tanggal itu (basis exitDate).
-  // Hijau kalau net positif, merah kalau negatif. Chip atas = total net %
-  // bulan yg sedang tampil + jumlah trade. Nilai per-trade pakai getRecPnl
-  // (TP1 lock aware) sesuai mode eksekusi (entry/haka × tp1/tp2) yg aktif.
+  // Tampilan ALTERNATIF dari chart Performa — HANYA beda visual. Sumber
+  // data & trigger PERSIS SAMA: computeFirmDailyEquity(firm, entry, exit),
+  // fungsi yg juga dipakai renderDayChart. Jadi angka di kalender identik
+  // dgn bar di grafik — user tinggal pilih mau lihat bentuk grafik atau
+  // kalender, angkanya tidak berubah (biar tidak bingung).
   //
-  // BEDA dgn renderDayChart: chart pakai mark-to-market harian (termasuk
-  // floating posisi aktif); kalender ini pakai REALIZED per hari-close saja
-  // — lebih lugas "hari ini tutup berapa trade, net-nya berapa".
-  //
-  // Navigasi via ‹ › (bulan), bukan lewat filter periode di atas — kalender
-  // punya state bulan sendiri (_retCalView) supaya user bebas jelajah bulan.
+  //   • Sel tiap tanggal = dayPnl (pergerakan mark-to-market hari itu:
+  //     realized terkunci + floating posisi aktif) = tinggi bar di grafik.
+  //   • Chip bulan = jumlah dayPnl bulan yg tampil. Jumlah semua hari deret
+  //     = nilai kumulatif terakhir (garis di grafik).
+  //   • Cohort, periode & mode ikut computeFirmDailyEquity (via _dateFilter
+  //     + _entryMode/_exitMode) — otomatis sinkron dgn chart & KPI.
   function _retCalBuildData(firm){
-    // Cohort SAMA dgn KPI & chart: rec history yg openDate-nya masuk periode
-    // aktif (_recInDateFilter). Ini yg bikin angka konsisten — jumlah trade &
-    // net di kalender jadi bagian dari periode yg sama (bukan seluruh histori),
-    // sehingga jumlah semua bulan dalam periode = NET di kartu KPI.
-    var recs = ((firm && firm.recsHistory) || []).filter(_recInDateFilter);
-    var byDate = {};                 // 'YYYY-MM-DD' -> {net, trades, wins, losses}
+    // Ambil DERET HARIAN yg sama persis dgn chart (satu sumber kebenaran).
+    var series = (typeof computeFirmDailyEquity === 'function')
+      ? computeFirmDailyEquity(firm, _entryMode, _exitMode) : [];
+    var byDate = {};                 // 'YYYY-MM-DD' -> {net(=dayPnl), trades, wins, losses, cumulative, floating}
     var minD = null, maxD = null;
-    for(var i=0;i<recs.length;i++){
-      var r = recs[i];
-      if(!r || !r.exitDate) continue;
-      var p = getRecPnl(r, _entryMode, _exitMode);   // null kalau tak eligible mode ini
-      if(p == null || !Number.isFinite(p)) continue;
-      var k = r.exitDate;
-      var b = byDate[k] || (byDate[k] = { net:0, trades:0, wins:0, losses:0 });
-      b.net += p; b.trades++;
-      if(p > 0) b.wins++; else if(p < 0) b.losses++;
-      if(!minD || k < minD) minD = k;
-      if(!maxD || k > maxD) maxD = k;
+    for(var i=0;i<series.length;i++){
+      var s = series[i];
+      if(!s || !s.date) continue;
+      byDate[s.date] = {
+        net: +s.dayPnl || 0,
+        trades: s.trades || 0,
+        wins: s.wins || 0,
+        losses: s.losses || 0,
+        cumulative: +s.cumulative || 0,
+        floating: +s.floating || 0,
+        floatingCount: s.floatingCount || 0
+      };
+      if(!minD || s.date < minD) minD = s.date;
+      if(!maxD || s.date > maxD) maxD = s.date;
     }
     return { byDate: byDate, minD: minD, maxD: maxD };
   }
 
   function renderReturnCalendar(firm){
     var grid = $id('trPfRetCalGrid'); if(!grid || !firm) return;
+
+    // Muat OHLC (1x, cached) supaya floating harian == chart. Kalau belum
+    // siap: render dulu (realized-only), lalu re-render penuh saat OHLC tiba.
+    // Mirror persis logika di renderDayChart biar dua view identik.
+    if (window.__OHLC_loadAll && !(_ohlcMtmAll && _ohlcMtmAll.__ok)) {
+      window.__OHLC_loadAll().then(function(all){
+        if (all && all.__ok) {
+          _ohlcMtmAll = all;
+          if (_currentFirm && firm && _currentFirm.id === firm.id && _pfChartView === 'calendar') renderReturnCalendar(firm);
+        }
+      });
+    }
+
     var data = _retCalBuildData(firm);
 
     // Init bulan tampilan: prioritas tgl akhir filter aktif → tgl trade
@@ -9428,20 +9444,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var titleEl = $id('trPfRetCalTitle');
     if(titleEl){ titleEl.textContent = new Date(y, m, 1).toLocaleDateString('id-ID', { month:'long', year:'numeric' }); }
 
-    // Chip: total net % + jumlah trade untuk bulan yg tampil.
-    var monthNet = 0, monthTrades = 0;
+    // Chip: total pergerakan (Σ dayPnl) + jumlah trade tutup untuk bulan
+    // yg tampil. Basis SAMA dgn bar grafik (dayPnl).
+    var monthNet = 0, monthTrades = 0, monthDays = 0;
     var prefix = y + '-' + String(m+1).padStart(2,'0') + '-';
     Object.keys(data.byDate).forEach(function(k){
-      if(k.indexOf(prefix) === 0){ monthNet += data.byDate[k].net; monthTrades += data.byDate[k].trades; }
+      if(k.indexOf(prefix) === 0){ monthNet += data.byDate[k].net; monthTrades += data.byDate[k].trades; monthDays++; }
     });
     var chip = $id('trPfRetCalChip');
     if(chip){
       var sign = monthNet >= 0 ? '+' : '';
-      chip.textContent = monthTrades > 0
+      chip.textContent = monthDays > 0
         ? (sign + monthNet.toFixed(1) + '% · ' + monthTrades + ' TRADE')
-        : 'Belum ada trade selesai bulan ini';
-      chip.classList.toggle('up', monthTrades > 0 && monthNet >= 0);
-      chip.classList.toggle('dn', monthTrades > 0 && monthNet < 0);
+        : 'Belum ada data bulan ini';
+      chip.classList.toggle('up', monthDays > 0 && monthNet >= 0);
+      chip.classList.toggle('dn', monthDays > 0 && monthNet < 0);
     }
 
     // Build grid: leading blank (hari bulan lain) + hari-hari bulan ini,
@@ -9461,14 +9478,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
       var cls = ['retcal-day'];
       if(_isSameDay(cd, today)) cls.push('today');
       var pctHtml = '';
+      var tip = iso;
       if(info){
-        cls.push(info.net >= 0 ? 'win' : 'loss');
+        var flat = Math.abs(info.net) < 0.05;   // hari bursa tanpa pergerakan berarti
+        if(flat) cls.push('flat');
+        else cls.push(info.net >= 0 ? 'win' : 'loss');
         var s = info.net >= 0 ? '+' : '';
         pctHtml = '<span class="p">' + s + info.net.toFixed(1) + '%</span>';
+        tip = iso + ' · ' + s + info.net.toFixed(1) + '% (pergerakan hari ini)';
+        if(info.trades > 0) tip += ' · ' + info.trades + ' trade tutup (' + info.wins + 'W/' + info.losses + 'L)';
+        if(info.floatingCount > 0) tip += ' · ' + info.floatingCount + ' posisi aktif, floating ' + (info.floating>=0?'+':'') + info.floating.toFixed(2) + '%';
       }
-      var tip = info
-        ? (iso + ' · ' + (info.net>=0?'+':'') + info.net.toFixed(1) + '% · ' + info.trades + ' trade (' + info.wins + 'W/' + info.losses + 'L)')
-        : iso;
       return '<div class="' + cls.join(' ') + '" title="' + tip + '"><span class="d">' + cd.getDate() + '</span>' + pctHtml + '</div>';
     }).join('');
 
