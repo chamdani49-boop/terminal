@@ -8492,6 +8492,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       text3:  (s.getPropertyValue('--text3')||'').trim()||'#6e6890',
       grid:   (s.getPropertyValue('--border')||'').trim()||'#2a2856',
       tick:   (s.getPropertyValue('--text2')||'').trim()||'#a09cc3',
+      text:   (s.getPropertyValue('--text')||'').trim()||'#f4f2ff',
       tooltipBg:(s.getPropertyValue('--card')||'').trim()||'#1a1840'
     };
   }
@@ -9281,6 +9282,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
             backgroundColor: c.tooltipBg,
             borderColor: c.grid,
             borderWidth: 1,
+            // Warna teks eksplisit — TANPA ini Chart.js default ke putih,
+            // jadi di light mode (tooltipBg = --card putih) teks tak terbaca.
+            titleColor: c.text,
+            bodyColor: c.text,
+            footerColor: c.tick,
             callbacks: {
               title: function(items){
                 if(!items || !items.length) return '';
@@ -10823,6 +10829,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       text3: s.getPropertyValue('--text3').trim() || '#6e6890',
       grid: s.getPropertyValue('--border').trim() || '#2a2856',
       tick: s.getPropertyValue('--text2').trim() || '#a09cc3',
+      text: s.getPropertyValue('--text').trim() || '#f4f2ff',
       tooltipBg: s.getPropertyValue('--card').trim() || '#1a1840',
     };
   }
@@ -10845,7 +10852,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         responsive:true, maintainAspectRatio:false,
         plugins:{
           legend:{display:false},
-          tooltip:{ mode:'index', intersect:false, backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1,
+          tooltip:{ mode:'index', intersect:false, backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1, titleColor:c.text, bodyColor:c.text,
             callbacks:{ label:function(it){ var y=it.parsed.y; return it.dataset.label+': '+(y>=0?'+':'')+y+'%'; } } }
         },
         scales:{
@@ -11165,6 +11172,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       text3: s.getPropertyValue('--text3').trim() || '#6e6890',
       grid: s.getPropertyValue('--border').trim() || '#2a2856',
       tick: s.getPropertyValue('--text2').trim() || '#a09cc3',
+      text: s.getPropertyValue('--text').trim() || '#f4f2ff',
       tooltipBg: s.getPropertyValue('--card').trim() || '#1a1840'
     };
   }
@@ -11191,7 +11199,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       options:{
         responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false},
-          tooltip:{ mode:'index', intersect:false, backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1,
+          tooltip:{ mode:'index', intersect:false, backgroundColor:c.tooltipBg, borderColor:c.grid, borderWidth:1, titleColor:c.text, bodyColor:c.text,
             callbacks:{ label:function(it){ var y=it.parsed.y; return it.dataset.label+': '+(y>=0?'+':'')+y+'%'; } } }
         },
         scales:{
