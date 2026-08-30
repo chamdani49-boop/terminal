@@ -3384,6 +3384,14 @@ body.tr-profile-open #tr-view-profile{display:block}
 .tr-pf-viewseg-btn:hover:not(.active){color:var(--text)}
 .tr-pf-viewseg-btn.active{background:var(--grad);color:#fff;box-shadow:0 2px 8px rgba(124,58,237,.3)}
 .tr-pf-chartview[hidden]{display:none}
+/* Kode broker IDX di card grafik — biar screenshot chart bisa dikenali
+   ini milik broker mana (cukup kode 2 huruf, bukan nama sekuritas). */
+.tr-pf-chart-broker{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:800;letter-spacing:1px;padding:2px 9px;border-radius:6px;background:rgba(124,58,237,.14);border:1px solid rgba(124,58,237,.35);color:var(--accent);margin-bottom:6px;line-height:1.4}
+.tr-pf-chart-broker.brk-foreign{color:var(--red);background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35)}
+.tr-pf-chart-broker[hidden]{display:none}
+.tr-pf-daychart-wrap{position:relative}
+.tr-pf-chart-wm{position:absolute;top:4px;right:8px;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;letter-spacing:2px;color:var(--text3);opacity:.45;pointer-events:none;user-select:none}
+.tr-pf-chart-wm[hidden]{display:none}
 
 /* ── Return Calendar (kalender return harian) ──
    Grid 7-kolom, tiap sel = tanggal + total net % semua trade yg CLOSE
@@ -7721,6 +7729,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="tr-card" style="margin-top:14px">
             <div class="tr-card-h tr-pf-chart-head">
               <div class="tr-pf-chart-head-l">
+                <!-- Kode broker IDX (2 huruf) — supaya kalau chart di-
+                     screenshot & di-share, orang tahu ini broker mana.
+                     Diisi oleh _setChartBroker() saat firm dibuka. -->
+                <span class="tr-pf-chart-broker" id="trPfChartBroker" hidden></span>
                 <!-- Title di-update dinamis oleh renderDayChart berdasar
                      _pfPeriod aktif: "30 Hari Terakhir", "Januari 2026",
                      "Tahun 2026", dst. -->
@@ -7736,7 +7748,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
             </div>
             <!-- View CHART: bar harian + garis kumulatif -->
             <div class="tr-pf-chartview" id="trPfChartView">
-              <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
+              <div class="tr-pf-daychart-wrap"><span class="tr-pf-chart-wm" id="trPfChartWm" hidden></span><canvas id="trPfDayChart"></canvas></div>
               <div class="tr-legend">
                 <span><span class="tr-lg-dot" style="background:var(--green)"></span>Bar hijau/merah: P/L Sekuritas</span>
                 <span><span class="tr-lg-dot" style="background:var(--text3)"></span>Bar abu: Return IHSG</span>
@@ -8669,6 +8681,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
       _av.textContent = _bk ? _bk.text : initials(firm.name);
       _av.classList.toggle('brk-foreign', !!(_bk && _bk.foreign));
     }
+    // Kode broker di card grafik (badge header + watermark chart).
+    _setChartBroker(firm);
     $id('trPfName').textContent = firmShort(firm.name);
     var vb = $id('trPfVBadge'); if(vb) vb.style.display = firm.verified ? '' : 'none';
     var analystCount = (firm.analysts||[]).length;
@@ -8701,6 +8715,34 @@ body.is-mobile-device.force-desktop .pl-col-main{
     }
   }
   function comboLabel(){ return MODE_LABEL[_entryMode] + ' → ' + MODE_LABEL[_exitMode]; }
+
+  // Set kode broker IDX (2 huruf) di card grafik: badge di header + watermark
+  // tipis di pojok chart. Tujuannya kalau user screenshot & share grafik,
+  // orang lain tahu ini milik broker mana — CUKUP KODE, bukan nama sekuritas.
+  // Broker asing → merah (class brk-foreign). Kalau firm tak match daftar
+  // broker (kode tak diketahui), badge & watermark disembunyikan (jangan
+  // tampilkan inisial nama supaya tidak menyesatkan seolah itu kode broker).
+  function _setChartBroker(firm){
+    var bk = (window.BrokerCodes && window.BrokerCodes.avatar) ? window.BrokerCodes.avatar(firm && firm.name) : null;
+    var code = (bk && bk.matched) ? bk.text : null;
+    var foreign = !!(bk && bk.foreign);
+    var badge = $id('trPfChartBroker');
+    if(badge){
+      if(code){
+        badge.innerHTML = '<span class="tr-ico" aria-hidden="true">🏷</span> ' + esc(code);
+        badge.classList.toggle('brk-foreign', foreign);
+        badge.title = 'Kode broker IDX: ' + code;
+        badge.hidden = false;
+      } else {
+        badge.hidden = true;
+      }
+    }
+    var wm = $id('trPfChartWm');
+    if(wm){
+      if(code){ wm.textContent = code; wm.hidden = false; }
+      else { wm.hidden = true; }
+    }
+  }
 
   function renderKpi(firm){
     var st = computeModeStats(firm, _entryMode, _exitMode);
