@@ -3432,10 +3432,6 @@ body.tr-profile-open #tr-view-profile{display:block}
    yg sedang tampil + jumlah trade. Nav ‹ › ganti bulan. */
 .tr-pf-retcal[hidden]{display:none}
 .tr-pf-retcal{padding-top:4px}
-.tr-retcal-chip-row{display:flex;justify-content:center;margin-bottom:10px}
-.tr-retcal-chip{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;padding:5px 14px;border-radius:20px;background:var(--bg2);border:1px solid var(--border);letter-spacing:.3px;color:var(--text2)}
-.tr-retcal-chip.up{color:var(--green);border-color:rgba(16,185,129,.4)}
-.tr-retcal-chip.dn{color:var(--red);border-color:rgba(239,68,68,.4)}
 .tr-retcal-navrow{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px}
 .tr-retcal-title{font-weight:800;font-size:14px;letter-spacing:-.1px;min-width:120px;text-align:center}
 .tr-retcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
@@ -7791,9 +7787,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
             <!-- View KALENDER: return harian per tanggal (di-render oleh
                  renderReturnCalendar). Hidden sampai user toggle. -->
             <div class="tr-pf-retcal" id="trPfRetCal" hidden>
-              <div class="tr-retcal-chip-row">
-                <span class="tr-retcal-chip" id="trPfRetCalChip">—</span>
-              </div>
               <div class="tr-retcal-navrow">
                 <button type="button" class="cal-nav-btn" id="trPfRetCalPrev" aria-label="Bulan sebelumnya" title="Bulan sebelumnya">‹</button>
                 <div class="tr-retcal-title" id="trPfRetCalTitle">—</div>
@@ -7801,7 +7794,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
               </div>
               <div class="cal-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div>
               <div class="tr-retcal-grid" id="trPfRetCalGrid"></div>
-              <div class="tr-retcal-note">ⓘ <b>Sama dengan grafik — cuma beda tampilan.</b> Angka tiap tanggal = pergerakan <b>mark-to-market</b> hari itu (realized terkunci + floating posisi aktif), persis setinggi bar di grafik. Hijau = naik, merah = turun. Chip atas = total bulan yang tampil; jumlah semua hari = garis kumulatif di grafik. Ikut periode &amp; mode di atas. Pakai ‹ › untuk ganti bulan.</div>
+              <div class="tr-retcal-note">ⓘ <b>Sama dengan grafik — cuma beda tampilan.</b> Angka tiap tanggal = <b>return harian</b> (pergerakan mark-to-market hari itu: realized terkunci + floating posisi aktif), persis setinggi bar di grafik. Hijau = naik, merah = turun. Ikut periode &amp; mode di atas. Pakai ‹ › untuk ganti bulan.</div>
             </div>
           </div>
         </div><!-- /tr-pf-charts-row -->
@@ -9603,22 +9596,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var titleEl = $id('trPfRetCalTitle');
     if(titleEl){ titleEl.textContent = new Date(y, m, 1).toLocaleDateString('id-ID', { month:'long', year:'numeric' }); }
 
-    // Chip: total pergerakan (Σ dayPnl) + jumlah trade tutup untuk bulan
-    // yg tampil. Basis SAMA dgn bar grafik (dayPnl).
-    var monthNet = 0, monthTrades = 0, monthDays = 0;
-    var prefix = y + '-' + String(m+1).padStart(2,'0') + '-';
-    Object.keys(data.byDate).forEach(function(k){
-      if(k.indexOf(prefix) === 0){ monthNet += data.byDate[k].net; monthTrades += data.byDate[k].trades; monthDays++; }
-    });
-    var chip = $id('trPfRetCalChip');
-    if(chip){
-      var sign = monthNet >= 0 ? '+' : '';
-      chip.textContent = monthDays > 0
-        ? (sign + monthNet.toFixed(1) + '% · ' + monthTrades + ' TRADE')
-        : 'Belum ada data bulan ini';
-      chip.classList.toggle('up', monthDays > 0 && monthNet >= 0);
-      chip.classList.toggle('dn', monthDays > 0 && monthNet < 0);
-    }
+    // (Chip ringkasan net/trade dihapus per request user — kalender cukup
+    // menampilkan return HARIAN saja, sama seperti bar di grafik.)
 
     // Build grid: leading blank (hari bulan lain) + hari-hari bulan ini,
     // isi sampai kelipatan 7 (baris penuh). Hari bulan lain = sel kosong.
