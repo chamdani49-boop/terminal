@@ -3374,6 +3374,46 @@ body.tr-profile-open #tr-view-profile{display:block}
 .cal-backdrop{position:fixed;inset:0;z-index:1040;background:transparent}
 .cal-backdrop[hidden]{display:none}
 
+/* ── Toggle Chart vs Kalender (di header card Grafik Performa Analis) ──
+   Segmented control kecil di kanan header. Klik → switch view chart
+   (bar+line) ⇄ kalender return harian. */
+.tr-pf-chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.tr-pf-chart-head-l{min-width:0;flex:1 1 auto}
+.tr-pf-viewseg{display:inline-flex;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:2px;gap:2px;flex:0 0 auto}
+.tr-pf-viewseg-btn{background:transparent;border:0;color:var(--text2);font-family:inherit;font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:7px;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;line-height:1}
+.tr-pf-viewseg-btn:hover:not(.active){color:var(--text)}
+.tr-pf-viewseg-btn.active{background:var(--grad);color:#fff;box-shadow:0 2px 8px rgba(124,58,237,.3)}
+.tr-pf-chartview[hidden]{display:none}
+
+/* ── Return Calendar (kalender return harian) ──
+   Grid 7-kolom, tiap sel = tanggal + total net % semua trade yg CLOSE
+   hari itu. Hijau = profit, merah = loss. Chip atas = total net % bulan
+   yg sedang tampil + jumlah trade. Nav ‹ › ganti bulan. */
+.tr-pf-retcal[hidden]{display:none}
+.tr-pf-retcal{padding-top:4px}
+.tr-retcal-chip-row{display:flex;justify-content:center;margin-bottom:10px}
+.tr-retcal-chip{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;padding:5px 14px;border-radius:20px;background:var(--bg2);border:1px solid var(--border);letter-spacing:.3px;color:var(--text2)}
+.tr-retcal-chip.up{color:var(--green);border-color:rgba(16,185,129,.4)}
+.tr-retcal-chip.dn{color:var(--red);border-color:rgba(239,68,68,.4)}
+.tr-retcal-navrow{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px}
+.tr-retcal-title{font-weight:800;font-size:14px;letter-spacing:-.1px;min-width:120px;text-align:center}
+.tr-retcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.retcal-day{position:relative;aspect-ratio:1/1;border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:'IBM Plex Mono',monospace;padding:2px;background:var(--bg2);cursor:default;min-height:0;overflow:hidden}
+.retcal-day.blank{background:transparent;border-color:transparent}
+.retcal-day .d{font-size:11px;font-weight:700;color:var(--text2);line-height:1}
+.retcal-day .p{font-size:9px;font-weight:800;line-height:1;white-space:nowrap}
+.retcal-day.win{background:rgba(16,185,129,.13);border-color:rgba(16,185,129,.32)}
+.retcal-day.win .d,.retcal-day.win .p{color:var(--green)}
+.retcal-day.loss{background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.32)}
+.retcal-day.loss .d,.retcal-day.loss .p{color:var(--red)}
+.retcal-day.today{outline:1px dashed rgba(124,58,237,.6);outline-offset:-1px}
+.tr-retcal-note{margin-top:10px;font-size:10.5px;color:var(--text3);line-height:1.5;border-top:1px dashed var(--border);padding-top:8px}
+@media(max-width:520px){
+  .retcal-day .d{font-size:10px}
+  .retcal-day .p{font-size:8px}
+  .tr-retcal-grid{gap:3px}
+}
+
 /* Big P&L / Floating / Distance % di top-right kartu rec (sebelum BUY badge).
    Tanpa background/border — cukup angka besar berwarna. Menggantikan chip
    Floating/Potensi/Distance di inline row (yg sekarang cuma price+% suffix). */
@@ -7677,20 +7717,44 @@ body.is-mobile-device.force-desktop .pl-col-main{
              Mengikuti mode aktif yg dipilih di #trPfSeg atas. -->
         <div class="tr-pf-charts-row">
           <div class="tr-card" style="margin-top:14px">
-            <div class="tr-card-h">
-              <div>
+            <div class="tr-card-h tr-pf-chart-head">
+              <div class="tr-pf-chart-head-l">
                 <!-- Title di-update dinamis oleh renderDayChart berdasar
                      _pfPeriod aktif: "30 Hari Terakhir", "Januari 2026",
                      "Tahun 2026", dst. -->
                 <div class="tr-card-title" id="trPfDayChartTitle"><span class="tr-ico" aria-hidden="true">📈</span> Grafik Performa Analis · 30 Hari Terakhir</div>
                 <div class="tr-card-desc">Mark-to-market <b>harian</b>: tiap hari bursa = realized terkunci (TP1/TP2 hit → dikunci) + floating posisi aktif dari harga close hari itu. Bar = pergerakan hari itu, garis = kumulatif — ikut mode eksekusi di atas.</div>
               </div>
+              <!-- Toggle tampilan: Chart (bar+line) ⇄ Kalender (return harian).
+                   Klik → setChartView(). State di _pfChartView. -->
+              <div class="tr-pf-viewseg" id="trPfViewSeg" role="tablist" aria-label="Tampilan performa">
+                <button type="button" class="tr-pf-viewseg-btn active" data-pf-view="chart" role="tab" aria-selected="true"><span class="tr-ico" aria-hidden="true">📈</span> Chart</button>
+                <button type="button" class="tr-pf-viewseg-btn" data-pf-view="calendar" role="tab" aria-selected="false"><span class="tr-ico" aria-hidden="true">📅</span> Kalender</button>
+              </div>
             </div>
-            <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
-            <div class="tr-legend">
-              <span><span class="tr-lg-dot" style="background:var(--green)"></span>Bar hijau/merah: P/L Sekuritas</span>
-              <span><span class="tr-lg-dot" style="background:var(--text3)"></span>Bar abu: Return IHSG</span>
-              <span><span class="tr-lg-dot" style="background:var(--blue)"></span>Garis: Kumulatif Sekuritas</span>
+            <!-- View CHART: bar harian + garis kumulatif -->
+            <div class="tr-pf-chartview" id="trPfChartView">
+              <div class="tr-pf-daychart-wrap"><canvas id="trPfDayChart"></canvas></div>
+              <div class="tr-legend">
+                <span><span class="tr-lg-dot" style="background:var(--green)"></span>Bar hijau/merah: P/L Sekuritas</span>
+                <span><span class="tr-lg-dot" style="background:var(--text3)"></span>Bar abu: Return IHSG</span>
+                <span><span class="tr-lg-dot" style="background:var(--blue)"></span>Garis: Kumulatif Sekuritas</span>
+              </div>
+            </div>
+            <!-- View KALENDER: return harian per tanggal (di-render oleh
+                 renderReturnCalendar). Hidden sampai user toggle. -->
+            <div class="tr-pf-retcal" id="trPfRetCal" hidden>
+              <div class="tr-retcal-chip-row">
+                <span class="tr-retcal-chip" id="trPfRetCalChip">—</span>
+              </div>
+              <div class="tr-retcal-navrow">
+                <button type="button" class="cal-nav-btn" id="trPfRetCalPrev" aria-label="Bulan sebelumnya" title="Bulan sebelumnya">‹</button>
+                <div class="tr-retcal-title" id="trPfRetCalTitle">—</div>
+                <button type="button" class="cal-nav-btn" id="trPfRetCalNext" aria-label="Bulan berikutnya" title="Bulan berikutnya">›</button>
+              </div>
+              <div class="cal-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div>
+              <div class="tr-retcal-grid" id="trPfRetCalGrid"></div>
+              <div class="tr-retcal-note">ⓘ Angka di tiap tanggal = total net % semua trade yang <b>CLOSE</b> hari itu (hijau profit / merah loss). Chip atas = total net % bulan yang tampil. Ikut mode eksekusi di atas. Pakai ‹ › untuk ganti bulan.</div>
             </div>
           </div>
         </div><!-- /tr-pf-charts-row -->
@@ -8113,6 +8177,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _dayChart    = null;  // Chart.js instance utk renderDayChart (grouped bar + line).
   var _ohlcMtmAll  = null;  // payload ohlc.json (cache) utk mark-to-market floating harian chart.
   var _rafHandle   = null;
+  // Toggle tampilan card Grafik Performa Analis: 'chart' (bar+line) atau
+  // 'calendar' (return harian per tanggal). Reset ke 'chart' tiap buka firm.
+  var _pfChartView = 'chart';
+  // Bulan yg ditampilkan di return calendar {y, m(0-11)}. Null=belum init
+  // (renderReturnCalendar akan set ke bulan data terbaru / today).
+  var _retCalView  = null;
 
   // ── Live price/change helper — priority chain mirror dashboard ──
   // change_pct di data.json = FRACTION (0.0199 = 1.99%), harus ×100 utk display.
@@ -9297,6 +9367,144 @@ body.is-mobile-device.force-desktop .pl-col-main{
     });
   }
 
+  // ── Return Calendar (kalender return harian) ─────────────────────
+  //
+  // Alternatif tampilan chart Performa: grid kalender, tiap sel tanggal =
+  // TOTAL NET % semua trade (rec) yg CLOSE di tanggal itu (basis exitDate).
+  // Hijau kalau net positif, merah kalau negatif. Chip atas = total net %
+  // bulan yg sedang tampil + jumlah trade. Nilai per-trade pakai getRecPnl
+  // (TP1 lock aware) sesuai mode eksekusi (entry/haka × tp1/tp2) yg aktif.
+  //
+  // BEDA dgn renderDayChart: chart pakai mark-to-market harian (termasuk
+  // floating posisi aktif); kalender ini pakai REALIZED per hari-close saja
+  // — lebih lugas "hari ini tutup berapa trade, net-nya berapa".
+  //
+  // Navigasi via ‹ › (bulan), bukan lewat filter periode di atas — kalender
+  // punya state bulan sendiri (_retCalView) supaya user bebas jelajah bulan.
+  function _retCalBuildData(firm){
+    var recs = (firm && firm.recsHistory) || [];
+    var byDate = {};                 // 'YYYY-MM-DD' -> {net, trades, wins, losses}
+    var minD = null, maxD = null;
+    for(var i=0;i<recs.length;i++){
+      var r = recs[i];
+      if(!r || !r.exitDate) continue;
+      var p = getRecPnl(r, _entryMode, _exitMode);   // null kalau tak eligible mode ini
+      if(p == null || !Number.isFinite(p)) continue;
+      var k = r.exitDate;
+      var b = byDate[k] || (byDate[k] = { net:0, trades:0, wins:0, losses:0 });
+      b.net += p; b.trades++;
+      if(p > 0) b.wins++; else if(p < 0) b.losses++;
+      if(!minD || k < minD) minD = k;
+      if(!maxD || k > maxD) maxD = k;
+    }
+    return { byDate: byDate, minD: minD, maxD: maxD };
+  }
+
+  function renderReturnCalendar(firm){
+    var grid = $id('trPfRetCalGrid'); if(!grid || !firm) return;
+    var data = _retCalBuildData(firm);
+
+    // Init bulan tampilan: prioritas tgl akhir filter aktif → tgl trade
+    // terakhir → bulan berjalan. Supaya buka kalender langsung ke bulan
+    // yg relevan (bukan kosong).
+    if(!_retCalView){
+      var anchorISO = (_dateFilter && _dateFilter.end) || data.maxD || (new Date()).toISOString().slice(0,10);
+      var ad = _parseISO(anchorISO) || new Date();
+      _retCalView = { y: ad.getFullYear(), m: ad.getMonth() };
+    }
+    var y = _retCalView.y, m = _retCalView.m;
+
+    // Title bulan (Indonesia).
+    var titleEl = $id('trPfRetCalTitle');
+    if(titleEl){ titleEl.textContent = new Date(y, m, 1).toLocaleDateString('id-ID', { month:'long', year:'numeric' }); }
+
+    // Chip: total net % + jumlah trade untuk bulan yg tampil.
+    var monthNet = 0, monthTrades = 0;
+    var prefix = y + '-' + String(m+1).padStart(2,'0') + '-';
+    Object.keys(data.byDate).forEach(function(k){
+      if(k.indexOf(prefix) === 0){ monthNet += data.byDate[k].net; monthTrades += data.byDate[k].trades; }
+    });
+    var chip = $id('trPfRetCalChip');
+    if(chip){
+      var sign = monthNet >= 0 ? '+' : '';
+      chip.textContent = monthTrades > 0
+        ? (sign + monthNet.toFixed(1) + '% · ' + monthTrades + ' TRADE')
+        : 'Belum ada trade selesai bulan ini';
+      chip.classList.toggle('up', monthTrades > 0 && monthNet >= 0);
+      chip.classList.toggle('dn', monthTrades > 0 && monthNet < 0);
+    }
+
+    // Build grid: leading blank (hari bulan lain) + hari-hari bulan ini,
+    // isi sampai kelipatan 7 (baris penuh). Hari bulan lain = sel kosong.
+    var startWeekday = new Date(y, m, 1).getDay();       // 0=Min..6=Sab
+    var daysInMonth  = new Date(y, m+1, 0).getDate();
+    var today = new Date();
+    var cells = [];
+    for(var b0=0;b0<startWeekday;b0++){ cells.push(null); }        // blank leading
+    for(var dd=1;dd<=daysInMonth;dd++){ cells.push(new Date(y, m, dd)); }
+    while(cells.length % 7 !== 0){ cells.push(null); }             // blank trailing
+
+    grid.innerHTML = cells.map(function(cd){
+      if(!cd) return '<div class="retcal-day blank"></div>';
+      var iso = _fmtISO(cd);
+      var info = data.byDate[iso];
+      var cls = ['retcal-day'];
+      if(_isSameDay(cd, today)) cls.push('today');
+      var pctHtml = '';
+      if(info){
+        cls.push(info.net >= 0 ? 'win' : 'loss');
+        var s = info.net >= 0 ? '+' : '';
+        pctHtml = '<span class="p">' + s + info.net.toFixed(1) + '%</span>';
+      }
+      var tip = info
+        ? (iso + ' · ' + (info.net>=0?'+':'') + info.net.toFixed(1) + '% · ' + info.trades + ' trade (' + info.wins + 'W/' + info.losses + 'L)')
+        : iso;
+      return '<div class="' + cls.join(' ') + '" title="' + tip + '"><span class="d">' + cd.getDate() + '</span>' + pctHtml + '</div>';
+    }).join('');
+
+    // Nav bounds: disable ‹ kalau tak ada trade sebelum bulan ini,
+    // › kalau tak ada trade sesudahnya.
+    var prevBtn = $id('trPfRetCalPrev');
+    if(prevBtn){ var firstThis = new Date(y, m, 1); prevBtn.disabled = !data.minD || _parseISO(data.minD) >= firstThis; }
+    var nextBtn = $id('trPfRetCalNext');
+    if(nextBtn){ var lastThis = new Date(y, m+1, 0); nextBtn.disabled = !data.maxD || _parseISO(data.maxD) <= lastThis; }
+  }
+
+  function navRetCalMonth(delta){
+    if(!_retCalView) return;
+    var y = _retCalView.y, m = _retCalView.m + delta;
+    if(m < 0){ m = 11; y--; } else if(m > 11){ m = 0; y++; }
+    _retCalView = { y: y, m: m };
+    renderReturnCalendar(_currentFirm);
+  }
+
+  // Sync UI toggle (tombol active + visibility 2 view) ke _pfChartView.
+  // Tidak me-render — cuma atur tampilan DOM. Dipakai saat buka firm.
+  function _syncChartViewUI(){
+    var seg = $id('trPfViewSeg');
+    if(seg){
+      var btns = seg.querySelectorAll('.tr-pf-viewseg-btn');
+      for(var i=0;i<btns.length;i++){
+        var on = btns[i].getAttribute('data-pf-view') === _pfChartView;
+        btns[i].classList.toggle('active', on);
+        btns[i].setAttribute('aria-selected', on ? 'true' : 'false');
+      }
+    }
+    var cv = $id('trPfChartView'); if(cv) cv.hidden = (_pfChartView !== 'chart');
+    var cal = $id('trPfRetCal');   if(cal) cal.hidden = (_pfChartView !== 'calendar');
+  }
+
+  // Switch view chart ⇄ calendar (dipanggil dari toggle). Set state, sync
+  // UI, lalu render view yg aktif.
+  function setChartView(view){
+    if(view !== 'chart' && view !== 'calendar') return;
+    if(!_currentFirm) return;
+    _pfChartView = view;
+    _syncChartViewUI();
+    if(view === 'calendar') renderReturnCalendar(_currentFirm);
+    else renderDayChart(_currentFirm);
+  }
+
   // ── Rec list ────────────────────────────────────────
   // NOTE: rec MENUNGGU ENTRY yg sudah lewat batas 10 hari dari openDate
   // ditandai dgn label KADALUARSA (merah). Backend juga transisi ke
@@ -10237,6 +10445,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     _entryMode   = 'entry';
     _exitMode    = 'tp1';
     _currentTab  = 'all';        // default tab jadi 'Semua' (bukan 'Aktif')
+    _pfChartView = 'chart';      // default view = chart (bukan kalender)
+    _retCalView  = null;         // reset bulan kalender → re-init saat render
 
     populateHero(firm);
 
@@ -10261,6 +10471,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     _pfPopulateYearDropdown(firm);
     _pfSyncPeriodUI();
     updateDateBtnLabel();
+    // Sync toggle view (chart aktif, kalender hidden) untuk firm baru.
+    _syncChartViewUI();
 
     // Render KPI & mode stats DENGAN filter 30D yg sudah diset di atas.
     renderKpi(firm);
@@ -10320,7 +10532,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(!_currentFirm) return;
     renderKpi(_currentFirm);
     renderModeStats(_currentFirm);
-    renderDayChart(_currentFirm);
+    // Render view aktif saja (chart atau kalender). Keduanya turunan dari
+    // mode eksekusi + date filter yg sama, jadi ganti mode/periode otomatis
+    // mengalir ke view manapun yg sedang tampil.
+    if(_pfChartView === 'calendar') renderReturnCalendar(_currentFirm);
+    else renderDayChart(_currentFirm);
     renderRecList(_currentFirm, _currentTab);
   }
   // Ganti Metode Entry. User rule: default exit ke TP1 setiap ganti entry.
@@ -10393,6 +10609,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if(segEntry){ var em = segEntry.getAttribute('data-entry-mode'); if(em){ switchEntryMode(em); } return; }
     var segExit  = t.closest('#trPfSegExit .tr-pf-seg-btn');
     if(segExit){ var xm = segExit.getAttribute('data-exit-mode'); if(xm){ switchExitMode(xm); } return; }
+
+    // 2b) Toggle tampilan Chart ⇄ Kalender return harian.
+    var viewBtn = t.closest('#trPfViewSeg .tr-pf-viewseg-btn');
+    if(viewBtn){ e.preventDefault(); var pv = viewBtn.getAttribute('data-pf-view'); if(pv){ setChartView(pv); } return; }
+    // 2c) Navigasi bulan di return calendar.
+    if(t.closest('#trPfRetCalPrev')){ e.preventDefault(); navRetCalMonth(-1); return; }
+    if(t.closest('#trPfRetCalNext')){ e.preventDefault(); navRetCalMonth(+1); return; }
 
     // 3) Tab filter rec list (Semua/Aktif/Menunggu/TP1/TP2)
     var tab = t.closest('#trPfTabs .tr-tab');
