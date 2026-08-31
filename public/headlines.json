@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-08-31T02:45:41+00:00",
+"generated_at": "2026-08-31T03:00:52+00:00",
 "count": 80,
 "items": [
 {
@@ -177,10 +177,22 @@
 "ts": 1788131726
 },
 {
+"title": "Cermati Proyeksi Pergerakan IHSG Hari Ini (31/8)",
+"link": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPbzVDcmxMTzYyZkdGTjI2N1J5ekNDcFZrd0VQc0NreW5MUHM2aEYtU1ROQ1VYbTA0WV8tMEhCRl9JLUN6elc5aTAxT0lnMll2cXA1SVJqM0tpNm9WUmlkRHVOdDRXVWd5Y2o5SmhzdEtELXRqV2N1MlN3UVR2Nlh4dEc4UWtITEFQ0gGAAUFVX3lxTFBRRENaVmJNOERiR2ZnVWNzbDZHd1hBZVVfMmx0d0oyWUF4UjJ2NVJNRWxWSzJpOElRUERmNUtzSUtJMDNPZ0M5Vmc5aDJoMnZ3eFptUGlRdEZKZGwwNW0wOUxkYmhyMS16NVhLUFcxNjZJdWtFX3NNaDBPZ3pkbHB6?oc=5",
+"source": "Kontan",
+"ts": 1788131452
+},
+{
 "title": "Stock Futures Cenderung Mendatar, Saham Teknologi Pimpin Kinerja Wall Street Sepanjang Agustus",
 "link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxNWkhqYl9YYUFKaVlVUC1Ga21idFZuMnpjY2JtVTZUeTR0N21uQ295ajJoSXFtMFNQMjZoRENiQnlQV0ZSQjlQdFV3ZjYyQXVaVXhUNHlLUy0taVo1SDBsQ1FfTUVVSGZQeE1aUVUtcThHMFFOVEF3RC1haU5fM0RKbDVqX2x3RC1WU2RRdlZHcjJWVWtYakt2bU9neEF4Y0oyWFBaWlNXdWEzNzRBa2M5ejMyLUhCX0k?oc=5",
 "source": "Stockwatch",
 "ts": 1788131402
+},
+{
+"title": "Aset Tebal, Laba PEHA Melonjak 542 Persen Semester I",
+"link": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxNb1dVN0hRTDNSdHUzSVdUZWlWekxRUFlwcTZiUkJPOEhjN1ZtWGdLZkZxTWRLSmY5cXRsMFJaTFR6bEU3ay1IajlTMU5hdlhvM1dqOG5Xd0FPSEhKU1FpUmJQMUw1djhlSGxZZGw5MUtEaFltTU9hd2FqQllGNDJFR09tM3B5cmtGMVpz?oc=5",
+"source": "EmitenNews",
+"ts": 1788130800
 },
 {
 "title": "Rasio Klaim Mengancam Laba Asuransi",
@@ -253,6 +265,12 @@
 "link": "https://news.google.com/rss/articles/CBMiRkFVX3lxTE9iblJSc3RCQ19nMXVwc2xTVUtnSDhPaThpYW12QUVQenNFWU5YdC1QSmZLd3dEa0hpRTVXem4tdElkWEdtV1E?oc=5",
 "source": "EmitenTrust",
 "ts": 1788116237
+},
+{
+"title": "Tag: bandara sam ratulangi",
+"link": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE85STFIZEZaX1p0ejBSTkZ1azVHdmtnM1hKSi1tQ25jX3EwWEpwUkdPeUYxaDBQaTMwanZrLXpfeHVnWkZLekV0cUw5RUJjaHNkMkRzN0JsQ3N4bWd3d3h3a2Z6RUstZw?oc=5",
+"source": "InvestorTrust",
+"ts": 1788110713
 },
 {
 "title": "Menilik Pendar Kinerja Emiten EMAS, ANTM hingga ARCI hingga Akhir 2026",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxOaEN5c1lXWkVSREtsd2JBTVRWZ1JOblU5bnUyS0dHd29BcFlWSWtKbGxUU1VURU1qZGJVTVktQ2doUFk0OEZCdWxFSmRfb21CSGYyYldKcEJISHJ5emV5aE1vYzROTWNmSV9jSVdBUGFqYlRzanhkaEF1bHRDMzJnYmRCbFlZNG5YT2l5d3NGejRxbDVIamlvT0xXN2c?oc=5",
 "source": "EmitenNews",
 "ts": 1788088020
-},
-{
-"title": "RI Bersiap! Pengumuman MSCI, Inflasi-Kondisi Manufaktur Jadi Sorotan",
-"link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxOOTZ5ZWc4LTlodzN1cnZadjhXZ2hocTlmTjdBeTE1LU01VjBFS2xEZGtxNE9CZGFvRFlXYVNnRDMtQzhEdXpzbmVucldqWWx6bkpNcjRYMHNNaXZsY3hXNnJCZDU3eHNnWTI2aEtJS2dyOVNJN1lLcndxanRGUWF1MmFidmtQNnlRbk1wTldDWklLbU9RZ19jM0dRUGNiZEJlQ1E2bUZoVjFKUXY5azJWM0ZJTllFb2JNZWlHSXdocE9JbkY1UEtQcEpzQQ?oc=5",
-"source": "CNBC Indonesia",
-"ts": 1788086708
-},
-{
-"title": "Di Balik Langkah Sandiaga Uno Terjun ke Bisnis MUTU",
-"link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPazVIck1IYXZsY1NZNnV1LU1RZkNhZGZ0WVJtSXpYYzczSjQ3SEg3VFc2SUp0aFQydGJZSXROOEc4a2dIZFVNMG4yQUFnVGpZZV93VmVBTVVjdHhQWHdsbXlsTHNBd0F1bGhMd3c3bVN5RkkzaFZKQXk1QmVneFdPdEtwYXlEeTJ2YkowWGtzaUZCVzVxUEJLaGxPdVNaMkxHNVFsczZZNA?oc=5",
-"source": "Bisnis.com",
-"ts": 1788085320
-},
-{
-"title": "Berita grab indonesia Terkini dan Terbaru Hari Ini",
-"link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE56TmFYS2xYMV9mOS1TaUZtYlZuQmRXUmdTcmdOckNCaW4td3Q3T2F6dDY5bFUtQU9ibVhlNlRsVldvNTFvdFZwU2I1aVpMdVVmNHBLcm1QYnMzYUVGczB0bXdfYU9PX1U?oc=5",
-"source": "Bisnis.com",
-"ts": 1788085264
 }
 ]
 }
