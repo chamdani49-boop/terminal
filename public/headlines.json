@@ -1,7 +1,13 @@
 {
-"generated_at": "2026-09-05T06:30:46+00:00",
+"generated_at": "2026-09-05T06:45:43+00:00",
 "count": 80,
 "items": [
+{
+"title": "EmitenTrust",
+"link": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9FTjFqcnlxZGdlU0Y3Qm81eGd5U3pBTFVadEZOTDVESlY3bGtrSnJ3U2tEZUVuR0FnQWJubDBKQm1sQXdROWtjMVh0RDlCZlp5c3VwRmc2amQ0UQ?oc=5",
+"source": "EmitenTrust",
+"ts": 1788584529
+},
 {
 "title": "BEI Masih Menanti POJK Demutualisasi",
 "link": "https://news.google.com/rss/articles/CBMifEFVX3lxTE9BZFZmVmZtNmZNaHQwcFBrYzhKdGJLcVY5Z3p4a1g5ZUZhNzd6OVNENW9BWm5hTkNEMHVCWXl2aGlpY0E5TEI4V1djd1h5Y2RRa1c4RUhoOGlvQUlhR2FIQUwyQml1U3RGUEs4bHBYSEtRem0xNW9JalBqb1LSAXRBVV95cUxPMVhaSkhVUXd6ZWN6R0ZLSk10U0VfcjlNQ0k2dmVKaTF0VTV1MHNCY1dsTUZTS1hsdkJTQ1Ffc1NOQXBOT1ZRQzBFTmwtemFlTmhNR3ZEaVdoZXUyU3FZaFUya0dkMUhobjRXR3NSWmlkN0JBSA?oc=5",
@@ -169,12 +175,6 @@
 "link": "https://news.google.com/rss/articles/CBMiY0FVX3lxTFBzT2J0aHhLN3JQenVNbVIzUkxLTF9JUmxwRGF0dXRCUTg2b0RtNHVqNk1CWnp0MHRlSnpCSVpkcHZpcGVYcFhZQUNINzF0ZnhLMnZVMHJRV2tKNEpuSmY5dEtVMA?oc=5",
 "source": "Kabar Bursa",
 "ts": 1788545170
-},
-{
-"title": "EmitenTrust",
-"link": "https://news.google.com/rss/articles/CBMiR0FVX3lxTE14eFhES3ZHa0hRT2lEQlltR1dLcnNEbDlLYVYxLUtNOFF5TWQ4djBWcWdEY2gySDNSd0VhOHI1RFFBWmREYXJF?oc=5",
-"source": "EmitenTrust",
-"ts": 1788544406
 },
 {
 "title": "Tag: safe",
@@ -405,6 +405,12 @@
 "ts": 1788513300
 },
 {
+"title": "OJK dan Kemenkes Gandeng Asuransi-Rumah Sakit Perkuat Ekosistem Asuransi Kesehatan",
+"link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQQUx3QklGZVFqem9kMzlxelFaSEhSbDNXYzVVWUhBZXV2dmM0bVNFOWo0WkViUFdrbzVRSm5VZDBCMDFrR0hmanRWUC1DWVRVTjBBbXlyeXZUOWQzaU92LTJOTk50SW1leG5NNkRjQlg1akxhUWgzbUdDcjBTTUFoaElzbWlZUzZ4MkFXemRhYWxPbXc2RU0zaTM4YzVWVHBVZW9HamE4a0RCM0NUSnlvWkhYaUNodw?oc=5",
+"source": "Kabar Bursa",
+"ts": 1788512852
+},
+{
 "title": "Asippindo: ARISE Bisa Bantu Industri Penjaminan Petakan Risiko Bencana",
 "link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxQdGZyb0haSHdXdUxybzFRZHRTai1USVJHV0ppdXZuNmp4aTRkZmdTVHhEcWJYaGh2Y1hiZHBkQXB1RXVHNGppTDgydm9PdDB2dllnOVNYZEhnYkhZNGJRbjRla2RMV0YtOG9ycldNRURXamhSZy1NdUZiUjN6MHJoeERfUmNJNkR0elZ4d0RRVF94WVVpWnJQdWEzSHJlWEFWMk82XzhKMNIBoAFBVV95cUxNcjBXbjhNMk40SS0waTQxTWRhdDBrbjltdk01U2h1aFNtNVFMaURNdlNjQ1Z2S0FZMFRSYzRENEVlekgtTnh0Ylc5NDFXNHpjM1lDNjFzZV85SXQ3RDZNMjdQcjljV3ppZTZ4ekpjNDhFZ1JJXzhQWDE3SzZIemxXOXVsaE5rNU5iRXFrY3hvU3AzSUYzU3B6S3VQVElzdE9j?oc=5",
 "source": "Kontan",
@@ -475,12 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMikwFBVV95cUxOYld6NUF2cEJjMHFQaWIxVU9fc2hyX3dUYTNWT0pybUJVbEo4d2Qydmx0RUlDUTNlQmI1U2JMY0JGajIwOHpUSTYwZHpSZEN1STBsZmpWNHBaS3lIVTFTa01CQl8wOHd5UHpXeWJaTWlxQWlDNlF0X1NVSHNLOHJoamJzMnpnQTk1Qm9tcDhKMWpXUFXSAYwBQVVfeXFMT2hlbzBhaWJkQURWb0NQQ3BQZ2QwRGk1VlpUWUE1WEtBdTQ4b25MTzRyV1l5NmRpZXlEZmgxNTJiT0UtSzRyRmxLZ250NVU2R0lpRlN6QWx3WlVfdWtmeGRvSjFRWTlrOHpIakkweTl6YmF2QU5TTTVwcDZTUkdNQ2Nhbm4yUkF2b1Vlb2M?oc=5",
 "source": "Kontan",
 "ts": 1788508377
-},
-{
-"title": "Sudah miliki porsi 27,78%, CUAN kini sasar posisi pengendali SINI",
-"link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNUGkzN0piUVFSUHg2WkRGZHY0b2ozT1M2Yl90di1BaHB5eVVscEp4S3YzNk5BbXRrWm1LTVRBZjZPYjhZMlFXRUN3QUx2U0JiX0U1cGpob2pTRG9DN01feUZjOV9FcVdxUXdRd2xTU2pIRmNXZXpON2JRT2Q2Mm0xcW1zdXBQZmNZUHZXbW1oTWwzQ3lRbHdaaXNNSjZlUFlVYV9EV0hkWGdubkU?oc=5",
-"source": "IDN Financials",
-"ts": 1788507900
 }
 ]
 }
