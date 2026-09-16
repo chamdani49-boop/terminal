@@ -1,7 +1,19 @@
 {
-"generated_at": "2026-09-16T23:00:58+00:00",
+"generated_at": "2026-09-16T23:15:42+00:00",
 "count": 80,
 "items": [
+{
+"title": "Ruang Fiskal Daerah Masih Tertekan Berat",
+"link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9ONjAxM3V3RU9wbnpHNXZRdWlDcnZpMFByQnEwMG1aczEzaVNaOThKeHotRDVvakZ4dkxSS2pWVW9wYWtIZ04yZE0yUjJ4Qm1BSlRuUXJCRDJRaHhEaGNRVXRGTlpEbEVwZjMzYnJSLVFhVGNESURUYjJQVjNGRjQ?oc=5",
+"source": "Kontan",
+"ts": 1789599620
+},
+{
+"title": "Jurus Total Bangun Persada (TOTL) Menyiasati Kenaikan Biaya",
+"link": "https://news.google.com/rss/articles/CBMilgFBVV95cUxNMmRNYmY1amo1LUhlVG03cHAzT2tlSzBqVEtWUnVCVlZ4VThRVVZKdk5pSlo3OUZhanktb0RPVWwwUGtldWlZNENpMGtVN1Vkc3RoeTNERXlKX1AxcWRCZmpVaUF3UWJSd0d0T0M5bl8ybFVMQnRSd0RYNGp4VS1qQkk0SHkyVTQzV1JmOWJyWUxNNnFrLWc?oc=5",
+"source": "Kontan",
+"ts": 1789599610
+},
 {
 "title": "Nilai Simpanan LKM Masih Mengembang",
 "link": "https://news.google.com/rss/articles/CBMieEFVX3lxTE5yMXBSMTZlTkh0aDNyRFdvTGo3eWV1cTRMZDdvbEh4T1FiUndUeDRmdXBOV21kOG9wcnc0Q1ZxRDg2bkRtNjJTOEE2NVJWbl9mWXlfSFVyVDgyM1lCMzhXYl9jaWlrdUpfcGNFZ2tfNWk0QVlZaTVwZg?oc=5",
@@ -19,6 +31,12 @@
 "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOMWFoUHFSZ0ZfaDBhT3RqZjdKMVg1NkR6cWpNeTNmdWp0M09VMWRya3c3NzlGakdwMG40czRUdGlWQ2tWamtkS2VoS05jd1M0WlN5V0I3NlJ1YW11OHdSNzBZR3BHOVlCN2NYUW14N0FhLXdyX3JENlQxdzBzQldxRjlLeFZNOTRrWGNOeUJ6bmozQzZDc0w2aTJnOGlZcmJjaVBBTdIBnAFBVV95cUxOUXhxX2RYYm8wSzFudy1GeV96SGt1V2tQb3B5STg5YmVQQ194T1A2ZU5KaXlRY0tmd3pFWWdPSUEySGw0WFNYRHJFRkFQNGk3Tmlxd1BJUHNLbWZYMXF2QUtCRmxzQlIzaGpfVjQtX2kxUHZFUlhRS0loMXhwQ0RuTE9RR0JlbkRQT2FjWVpLdmhKcHZyVXZtaTlfSTU?oc=5",
 "source": "Kontan",
 "ts": 1789596330
+},
+{
+"title": "IHSG Masih Rawan Terkoreksi, Simak Analisa Saham AMMN, MBMA, hingga PGEO",
+"link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQbGI0R1pVNklzSUNwOEE5aXVPMDVCUnhwM2lFY0YxUHZ2V0FBamI2ZkdfekQ0NHVUbFNWWVdZX25QWDAyejVxZnpVSEJMRDN1ZlE0M2huUHg1cFBPWkFkVDNhNmpxSXl6NGJPQkpibFM2TWtzeXpZQU12MllpcUhRREdCSU42ZjA1RFkxNzVrVDRIYWpQcUtiVlpNMjFfSWpkZUVmQUVTSUVHd3Fk0gGyAUFVX3lxTE9rMGJfTVBvanhkemd4aDVNQ0I5NUpvVHBSQlJPdGRoZUJNbFZEYjgzTWtDcGhyWTRuS3ZTbWZiQkRUZnpta1ZmcHl5NHI0LWYzeFVVc0wydTQ3R1NCeFhCc3k3VGlDeFVDdXVfNnZxaDloOHhTMFVzaXpILWV0eXFhbXZsOWliVkZBbzJRNU1wTzhuSFBhelRoWEw1QVVVc0ViMDZhMEdkMmduQ01udGRmX0E?oc=5",
+"source": "IDX Channel",
+"ts": 1789596300
 },
 {
 "title": "Makin Selektif, Modal Ventura Masuk Fase Konsolidasi",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNQl9QOUxLd2tRWTQ4cFBBdTI5c2MtTS1FWUVxZFlrR0twcWloeFhVa2ZHLUxkWF9KckxDM08tZHdtU1VFcXNCLUlfX3BXdS1Ic0Y4dW95U3R0em04ODFGSVcxLW1iM2x6YTVtbXVud3lUN0pxTWljalMwbGdYUHNqNkpSOU1QM1Z3ZG4xX3dMekFZeGJKbzBlTU1oSW5vVmJTVExyV01qRER5bjY2cXVuRG1mZEJ4cnQxSVhpWDdWczh0U1ZlS3RSNdIBzgFBVV95cUxOaUd5aXVYU3ZHT3lYbFI4TzlTSnRtd2FuNzNmRFp3OHBOU2lnVVM2aU9YZUdxeXBPay1hOWN5NUNRXzJuR2pRV21FQXd0YTlYeHZENzR5dDB0OXBMQXlrMTFnNWpyeHMxbkhVcl9ZNTlfbm9qLS1XcjljWDlEdV9LUWdVVTFkUFdRbTZNUUNpSGVyOWZFZ3NaSGVoMndYeTQ2UnZWejZfU25wcnY2SERKRXlVeEpPNDRHRGZ4dXNJWU5NZUN0MThlakM3ZDhfQQ?oc=5",
 "source": "Katadata",
 "ts": 1789541340
-},
-{
-"title": "RKAB Anak Usaha Bayan Resources (BYAN) Belum Terbit, ESDM Ungkap Sebabnya - Bisnis.com",
-"link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOaGFVYnMzM1J4Y05TaHFvVC1ra3E3aGR1cDJlelR4cVRNT0w5dWZYYVNXeTVVLXZGSUNHTlNZQjUyck9DSEhIaEt5SmNON3h1bUJnMnUtTklFX0dPLXZGNVAzNzRZSkpPd1JnWnB6OWJfbjNoLU9HdnZwYlFHZnVKRkRuejZoLWw0Qkl5czU1cGdSdXpNb21rM2ZuRWpSa3RyMnY1QkVuZHMtUkdWUjZBY3ZFbmpIb3RSRTl5akhyQQ?oc=5",
-"source": "Bisnis.com",
-"ts": 1789539981
-},
-{
-"title": "RKAB Anak Usaha Bayan Resources (BYAN) Belum Terbit, ESDM Ungkap Sebabnya",
-"link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOaGFVYnMzM1J4Y05TaHFvVC1ra3E3aGR1cDJlelR4cVRNT0w5dWZYYVNXeTVVLXZGSUNHTlNZQjUyck9DSEhIaEt5SmNON3h1bUJnMnUtTklFX0dPLXZGNVAzNzRZSkpPd1JnWnB6OWJfbjNoLU9HdnZwYlFHZnVKRkRuejZoLWw0Qkl5czU1cGdSdXpNb21rM2ZuRWpSa3RyMnY1QkVuZHMtUkdWUjZBY3ZFbmpIb3RSRTl5akhyQQ?oc=5",
-"source": "Bisnis.com",
-"ts": 1789539981
-},
-{
-"title": "Bumi Serpong Damai (BSDE) Bayar Kupon Surat Utang, Cek Rinciannya",
-"link": "https://news.google.com/rss/articles/CBMinwFBVV95cUxNMlBXZXNveFkyZWhqNUVLVlBsWlJzWXBzZDRFTjhWNEUwU0Y4bDhQV09nb1ROUGhDLUVzLTZtZUpwZy1lWmFkczJZeXZqNWZ3RlFrbEZJYzlaQlZWY3FWdkJxSGJJaTBjbGZlaEh2RG1OQ3lhNmo5eGQ5LVJIUWZvUkh5a1ZhRF9ub0s5Y2szX0tqODZCYVVWeGlCZXU5NjTSAZcBQVVfeXFMUHpPZnNwVGRWdUlyU0ltYndjYjdoeEZvMnlHQkFicjJwcEtFX0RpYXZSUzh6Zk9rajNKVFhNbC1RNEhGX3RFY0owNmFuQ0ZETXdKYUF4SmJRMkNMVlZvTFp4cUxXWmEwRHFKQ0lEU1h3SGRybmVDWU9WaUhNZHlBMjd0M044VWhSXzMtdDg3bG5jSTA0VjJUbw?oc=5",
-"source": "Kontan",
-"ts": 1789539961
 }
 ]
 }
