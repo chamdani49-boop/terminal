@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-09-19T05:30:50+00:00",
+"generated_at": "2026-09-19T05:45:42+00:00",
 "count": 80,
 "items": [
 {
@@ -45,6 +45,12 @@
 "ts": 1789777544
 },
 {
+"title": "Prabowo: Pendidikan SD hingga Universitas Negeri Harus Gratis - Nasional",
+"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxOVUhtNnE2UzlNWWlRZjNZOGg1VDBudlZpSlFNUzhvRGNBeG5iTjMwZFZaekZUdDQ2ZU11b2tWN2FpMC1sT1IzU3lyR1MteWk4MzRjNnZwbUd2UkxTQWs1ZjJRMGVfdTMxd09Xb2VQQmpnUHZkT1ljdmJjaG9MandadU11MzY4dDhObVc1NEJmX0ltdGdEQkF0MWlGcnBLTzlMMHZ2ZnJ0cVBQMDRxRzJhRW5B?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1789776923
+},
+{
 "title": "IHSG Koreksi 1,42% Sepekan, Ini Proyeksi Level IHSG dan Sentimen Penggeraknya",
 "link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNNzRHZGFLQkI1RE5YaTc0Tjg3ZHY1S0xIbEpSNXpZWm1SSXZOYUxqbzRUN2l0Njc5VUtvM2dQclp6TzdLa1E0N2w2NVlrR3JlMjFnWmRqOFNOWXZtMUlhWEFjcWxJVGhNNk5EMF9ZelJ3cVd6NDFHTWJsalRFbkpQenM3eng4RWtRc1FvcThpUnNzQ2lkVHdmWWNxcGtUbmdXRVZSRWhneHY4THpBVE9Z?oc=5",
 "source": "Kontan",
@@ -70,6 +76,12 @@
 },
 {
 "title": "Kiat Unilever (UNVR) Integrasikan Keberlanjutan ke Bisnis - Bisnis.com",
+"link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNeHFwcGlURGtwVlRsU1h1QnN2elo4Xzl2OWlodk0yeGtyaDZ3MlE3cl9SZno0RXlac1ZYdFBhMUNCWk1LNDc0eTV1M2F4YnBJWUk5cy1NbGFta0EwcDI1NWRneXU3VW5MY1liazBsTHNIY2tlQ3VnY1ZIVExYbUNVTlRUcU1wR2VBUlNRcmxmdFJxQl9LdUpzRUdxWF83Z1QtSUMySUJpdXF1M1k?oc=5",
+"source": "Bisnis.com",
+"ts": 1789775690
+},
+{
+"title": "Kiat Unilever (UNVR) Integrasikan Keberlanjutan ke Bisnis",
 "link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNeHFwcGlURGtwVlRsU1h1QnN2elo4Xzl2OWlodk0yeGtyaDZ3MlE3cl9SZno0RXlac1ZYdFBhMUNCWk1LNDc0eTV1M2F4YnBJWUk5cy1NbGFta0EwcDI1NWRneXU3VW5MY1liazBsTHNIY2tlQ3VnY1ZIVExYbUNVTlRUcU1wR2VBUlNRcmxmdFJxQl9LdUpzRUdxWF83Z1QtSUMySUJpdXF1M1k?oc=5",
 "source": "Bisnis.com",
 "ts": 1789775690
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMifkFVX3lxTE5URlYxX1JEVEVMLTZCR0VRMzBtOEo0Y1NOR19FMkdwX1F0Q3B2U0o1cmVQSjZLYkhFU29YMnNqUTBhSXIyU21rQUdzSGRFbjdKbUdfQVFSOWpjRVF2bmpERjhscXZ2dWVsdXdtRllRNTAzZDExNFJRblNZaTdBUQ?oc=5",
 "source": "Stockwatch",
 "ts": 1789724626
-},
-{
-"title": "Tertekan ke Zona Merah, BUMI Diproyeksikan Lanjut Melemah",
-"link": "https://news.google.com/rss/articles/CBMioAFBVV95cUxQSmdNTzBtRWtHTU9HR1hXMVdEYjVaY1ZwN2lSMTJWT2s3MEdxWlo0TjZYSnZQeWtPdUZ0NFl4VjQxTjhuQXhRT25BMlRPUkkzOXdWejBvNEMxLXFVaVNBdjBrU2lBZGxqRGpDQUVFTkE4Q0p0ajdwc2xMSG9WVFhEeWd0aXdxcVVncmFpRWtySGE3a2J4Tk1CWWcwOHlISTBw?oc=5",
-"source": "Kabar Bursa",
-"ts": 1789724460
-},
-{
-"title": "Peremajaan Kapal Giuseppe Garibaldi Gandeng PT PAL dan Leonardo - Nasional",
-"link": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxQcjRuS2F3bC1FS0REaEJzRWtzZXdzZVU1bnYtcmZqTVVRUV9RZ1lqVm5iSXJUZERJdXk4cXdfUTRleFlpRExzNXpfR2t4SVpMQTY4dHRzcXdOZDdxTDA4aXl2YnkweERNdHotdUphWlFhTW1KYnVUeGFyV1kyRGFvT2ZuZXU4Si0wREtHQVFyZmo2c3IxUDBWd3NqamV3VW1xQldUSm5jX241ZmNsYUZ6SVJjUUEySnVB?oc=5",
-"source": "Bloomberg Technoz",
-"ts": 1789724400
 }
 ]
 }
