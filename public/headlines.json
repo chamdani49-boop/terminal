@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-09-21T13:00:53+00:00",
+"generated_at": "2026-09-21T13:16:18+00:00",
 "count": 80,
 "items": [
 {
@@ -7,6 +7,12 @@
 "link": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxQbDVyUDFWMFhJaTU2cHlaX1EzUjhCREVCQUlmSWpkVjk3Q19BSmFGZjNEX04zOVhpa3JXbnNVc2JmRl9PSVdvSjJRVTBqYmNGa1plaXZaODhqdkJxdS1id3VWSVZ2cnJ4TENuZDZ1VnJEWHVSMlk2dGw1T21PNDNqME9HbzdJd0NPaDdFVGkwYzdHU1FZYUVCMkJSNnlOcFZyVUp6dk94ZmNTVnBBN0NvYnlyRXRtNXBEcXJGdlRsQ3p4SmV6djI0Ny1veFpnVmpDN1Z3OA?oc=5",
 "source": "InvestorTrust",
 "ts": 1789994940
+},
+{
+"title": "DJP Bantah Akan Tarik Pajak dari Pemilik Kontrakan dan Properti Sewa pada 2027",
+"link": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNM2FsUHZFbFk2eHBSYU8tNFJYbmd1WjFHSWQ0emotQjgwV2ZTbkZDallIcDJ3WFN1TzE1MzcxSV96VnpQYWFEdUpPY202NzNqakF5Nzh2LTNYc0hPN3FqbElzaWdaTENhUmpLejVYZnViX1V2bHV1M09GR29GUHBqNFVWd2NDNWpNbkJSR2RtQmU2N2NKT1g5eFByVnlYZkJmcGFwUVRsVzNmcUFaY2lfQUxlRU9iZzdlU1BB?oc=5",
+"source": "InvestorTrust",
+"ts": 1789994880
 },
 {
 "title": "Strategi BNI Sekuritas Genjot Bisnis Investasi",
@@ -27,10 +33,46 @@
 "ts": 1789993555
 },
 {
+"title": "Dari CBRE ke TRUK, Begini Jejak Kepemilikan Trio Suganto-Suminto-Suwito",
+"link": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNTzFjdk5xMjEzWXBWRVB4ZmItU1laNTdBZnl1OFpwYy1UbTBpX1RPT3l2WWNTcU5wRFlhTTVfblZXX2w2S3BJb2lRMXNZVkRuaE5BQUJWN0pSbWRvSldocGhudmplMnpDNXRUazdSTUZJMFZIV2pzNnozaE4zekgzNEo3V2FGZ1YtWWFRMVg5cnE0TjRXNWJ0Q1BzWEVTenQwR0E4Q2dqWkhKUdIBogFBVV95cUxQSnhMMzlwT3lJWW1DS3Nod2NtNjRBNkNwUEdibVpyc3Q1ZFRjbFpVM3VpWXNsVGZUM3dsYWpWTkNrZ3NEVHp6T3I0NVg3V2cyZXJ4Rzc3dHlidDI1amI0RXl1Y1d2S0tkRnNxc3RRQWZZTzJvRzJwMUJ2bDhPWTY2LU1BWDdpVXRxOEF1eTcxb2Qwei1laHJRTDBJN0p0eWlyc0E?oc=5",
+"source": "Kontan",
+"ts": 1789990103
+},
+{
+"title": "IHSG Diproyeksi Kembali Terkoreksi Selasa (22/9), Cermati Saham Pilihan Analis",
+"link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPUHlxM093SkwwUUw3dk9zcEdLZXBnZHpfcGpBNWZlTjNNdUd3Nm9Ed2dJMnBDMzl0WjFpZXRpUElfX3V1YXYwM21EMVA1QVVQdFZMQ3dvLURXQlQ2X3FpVTFtTkcwaFZHeW83T3B1dHZzYS1XTm5zNEE2c2tqTWxwX0NWcTBRWmdsM0UxbFlPTjhmVXhRcEtUVXQza2xHMHI0TGpCeUlUSU0yaEExNFZV0gGnAUFVX3lxTFA1OHlJWU9VVWF5ZHZRUHYtQ195cjliZ3RaSFBVdzJldk4zMk1qMTdvSlZLQ09qUXBSRkJ0blJfcjd5OXo1dVphQmxaa1R4enhFTm0wNmtRTWxuYWpWemJTQnZKbHUtcnVlWHdOYV91NjAtaTJqVHpyeG9RbjBDNTFXVE80cTBIa0pkUWdVR2ZuU1pZLWVFenE4LU9rc2loeDA5NWFfWkVj?oc=5",
+"source": "Kontan",
+"ts": 1789989912
+},
+{
 "title": "Capex Tinggi Jadi Tantangan ISAT, Monetisasi Ekspansi Diproyeksi Mulai 2027",
 "link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQY1NYYmFkb2tZdGYtMDhxWGpVcGd3cEVaR01lM29VVi1wS1lJRE5FRjRUQXc4SVNuTG5Ud2lmalBSZjlIOWJwUXdBNFp5MlZGejh4a2RjVE5PZWx2bEpzSDVGa3AtNkFKX2RPTzA0Vm9RYUMyZW1CZXNJZGNEd21OM2V3S0VPTjlUTUxaSGNnUElsVmRvSHpCcnFtME9zX0c5VVVRWXdGeS04c2ZFUy1Z0gGnAUFVX3lxTE9GWXF0TUMwNENPZXNOM0VVdUozalhFazYwbTN5dVUwLTZmR0tjUlg1dTRfREF5U2tvMDRRcWhSVURXb0RIN2huVFdyZndFdVdVZ3FibnRJV3VuT0Z6R19aWEZ0cGpTZm5aWEt2Tmc0WnEwNHM0Nl9QWVJpTDcwVU83MUI5R19JNjczejllem1DQzdDckdIbmphc1JGVHd3SDVBRy1ITlpN?oc=5",
 "source": "Kontan",
 "ts": 1789989787
+},
+{
+"title": "Untuk Alasan yang Sama, Direktur GMFI Ini Kembali Tambah Sahamnya",
+"link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxOOU9rUGJZMTBCMjc3TFFYQTVaekhqTnphTmsxQmRheWlsWjlmaWhjZ0JoN3J0RlZtdDlwM1B6eC1zQmoyY3Y1WjVNRUthaTdtQ0cyYmY2Rjl5TE9PakhVblBBU3FpNnp1ZzNRQTBHZzlfeHlFQWFkWnltT2VhdjZ3MmM3RkJYbWFPWEZObXE1VzhEYXJnZUNLT3owQ3U?oc=5",
+"source": "EmitenNews",
+"ts": 1789988460
+},
+{
+"title": "Valas Utama Tertekan Dolar, Cemati Prospek JPY, EUR, dan GBP",
+"link": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNLWdINTJtd1k2UWhCX0M2OVllU0xqR1Yzay1sdjVLWGE3cXAza05ZNWlmTkRaSm9SajQ5LV9MaWNNMWJVb0xFbS1SU0F1d1c0RU9JUFNfdTNEU2hwVC1DVHN5Wml4M3dPQnVBcjVKUFo3RlFfcUFSMkdXMjNnazZvSi12WVUwSzZ6dFpSdXRKMVNTbWxreF9TYtIBkAFBVV95cUxNZjhyRmhxTVhHNDNvRzRuRTY0VS0td0dRN2tJaTJlbE9jUEdhSUhBc0JnYks0enVBV21zN3VFU0RVbF8wZnQ4b0tRckJzTHB4SnNrclB5dUlwZGM3Q3hHMEwxclZNNVNXRnFwZ1FTa1FCbUQwM1ZURWhhZGZXRUZaRFoxN2hFR3FZMWxJRnVxUUg?oc=5",
+"source": "Kontan",
+"ts": 1789988270
+},
+{
+"title": "Cek Rekomendasi Saham ERAA, TOWR, dan SILO untuk Perdagangan Selasa (22/9/2026)",
+"link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPRUpTS1lnNVM4ajMwWjNDWmR5Z2NqYW9xdC1vb29qdUcyY0RQcXBSRVdMcHRLQklUU09HM2l2dmNqS3ByZFVkRHpyeTk0VjU1WEdLQUNYajhGQlVlTFlIN0x4Y2NRbXFUaVdwVGlqc0lDTUFCTFg4T25COEh6U3prY2x5TGd5Mk5NeWJJazkwcmJpT0FZUEgyNm5naTF0T1pDaTRra1REWUJZa01ibWfSAaYBQVVfeXFMTlpmU21JZ1dWbmVka2ZQd0pVSU9hMFFpczJBV1VyOUI4b2lQa3hLbUctMmQ1T3BZQmpJZ0hzQURLMXV4S2haVzJiWlRXbWZOYWVWR1RScEJZS19ucTVfN3RvT25xTzg2b0Z3by11TktUS1RPckRhOVBWWDFUQmFJTmtKd3cwYWhHLW1rWW5Cb01tZWhkb0FubnplMGJSN1dUY2lPNUd4UQ?oc=5",
+"source": "Kontan",
+"ts": 1789988068
+},
+{
+"title": "Usai Transaksi Saham dengan Haji Isam, RKAB Tiga Anak Usaha Bayan (BYAN) Terbit",
+"link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNUERoYUJZYmRsYy1zNXdjUGprc3VzaXVtUkhrNERBUjFvNDlGY09FbDhqNXdmZnNXaVUyRmNabXlXUk1WZUFJUDZmYVpqTDBjOGE0eEcwRHY1ZFhCTElhb2pJWFRqRmNXTC1LQlhrWEVJN0ZQblpuVkR3S09uSmZxUmxWYmpyUlpqdlcxZ3pXNUdPSUt6Z3QzeGc3M3VXaFNWVkVTWF9ReDBod3lmS01JX0J6SUZxQdIBuwFBVV95cUxOdnhnaTRBZFJ5T3BhNVE3c3VWREM4WjVtSFBHZWNiUDljUWtDX0VWM3ltcGliZEc0WE51cG1JWF9iRGxhbDZHMnpPRnB1UG9XbVo5N09ySG1QRndNNFFpcWg3dDR4Vy1IRHJOaVNWeGFYZUZlY3ZFemc5TXV4MnRGb0NZUGxMNnBEb1M3bEZVS2pMV3hLQmZmc2VrV0JzZm9naVpMd18wY25zUmUtOFFVT29KMVpvbjIzNVJB?oc=5",
+"source": "IDX Channel",
+"ts": 1789988040
 },
 {
 "title": "Eks CEO Henan Putihrai borong saham FORE, kini kuasai 6%",
@@ -55,6 +97,12 @@
 "link": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNZ3F4OGxLcEFVdUxuNE9ITDNUVGlFWnhZaTB5cjBRRlRHdFBJTDZfNHJHa1UzbUFLYWpGbkxJWExaX0FDYVUxdGhnNnlYSFQ4Um5FZEItV2tzeHpQTmxHSS1rSnp1U0d2U1g0Q3lMVmVMR1hhV1JDNDZodzItVWlaMzJWUWZGV1RjOFJ3c3R4TWx0Nzc1R2MxRVNUNVZ4ZUdO0gGYAUFVX3lxTFAydXkyWWJKbEtsQUQ0WEF1cUVQU0RfV1lNa3lNMEFfUGFYQXNvYUJBQnZ0LW1QSkNoVTcxclBEbkpOcVhVTlB3dVhCQzFCQTh0dWFMNGtNb2MwNnBldXprZ0szMVJNQnRZcnNVRW1xZjRqOGc4SVdOWnA0aUNtV2xZSFR6WlEzZlRDdU4xclJDaEZKTGJ1S3Ew?oc=5",
 "source": "Kontan",
 "ts": 1789986663
+},
+{
+"title": "OJK Terbitkan POJK 13/2026, Bursa Efek Siap Masuk Era Demutualisasi dan Kepemilikan Saham",
+"link": "https://news.google.com/rss/articles/CBMisAFBVV95cUxOemF4T2ZOWEpxU19ObFBPd093LWNXWERaZ1lXeGtoRnVZbUdDMWxXRWwyMWprZW9RNm9Cd296X3BvcENHYmtEMWFtdmE0cGo5QVphUXVQcTNRVTg0VXZ0ZTJVT1RZRURrZ0ptV01naU1yT1N4Sm9mUHJxM3RjNU4wRXhtV256SEZ2ZEMxcDlwZW0zaHNmUjNBcmw1bjBrSi0wc0xiQ0d1V1p1bkJCbkhoVQ?oc=5",
+"source": "Stockwatch",
+"ts": 1789986020
 },
 {
 "title": "Alasan Pengusaha Tekstil Bilang Usulan UMP 2027 Naik 9,5% Masuk Akal",
@@ -87,10 +135,22 @@
 "ts": 1789985309
 },
 {
+"title": "Hexindo Adiperkasa (HEXA) Tebar Dividen US$11,19 Juta, Cek Jadwalnya",
+"link": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNNnFWbHY5NHo4VS15cGVUQ09iYnhFRFFsY1dwREpDVnVEOFFtYVlpY3IyNkZzNUx2TGtmYVlsWXItZE40cXE0OGNLUURlMEMwcUJvM2VuWkNiaHA5bEZBQzZlTFdKMDZwMmI0ZDFkdmp4TEN1QlFWbXVwOVNKQURGYWgtZm1LUDVVZU1XT0Rma08xWERiVGREdmh2b1U4UzFy0gGYAUFVX3lxTE00M1JwNk5CRW5zNjdRWkxsamRaUUI2Q0JRNVZDTlVaOGhrbFk3SEJ4R0hxOXQ3a05INEVqUlJ5dnpNN0tud21CcUF1cFIxSm15R2NuMWpLd2lDOFNrOEY2OVcyeWhrSkhORXJnYld4YlZlekRyNVllaVpxVlFneUhwdnRuWXhfTjBIU3pNa2FjQ1hERml3QkFR?oc=5",
+"source": "Kontan",
+"ts": 1789984942
+},
+{
 "title": "BEI Sesuaikan Ketentuan Batasan Harga Terendah dan Auto Rejection, Ini Rinciannya",
 "link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxQMDNMU2xlb2Rwa05nNV9sYVo4WVdWbWVETF9aSmUwWUdmY0pKSldzcndieHc1d0lkRHFCSFl3VDE0ZzR5RXVQN0NFV1dMSXNDSE1vZHFyeXJQTmFmUjRsZlZzM2R3Z3BnWldsQzc2Z2ZzR3RCa3hTWGFzaDBCNy16TjdpamZoUHRRdmFTS0ozRE1mZ2JyYWc2ZnpmbmhoSWNJU21ic001eXFZbFpMNlM0ZmloMXFtekHSAa8BQVVfeXFMT3JtcXlSVmhqbndQclRZSGVJbTVLREl0SWtMQkFqZkJvTnZmVlozZHVfOUJLOXUtNkRMUVBwWnNCNkVTUkRsOUZoYmVKc1hsSkhSc1lhNzVYMXZ4WGdJZHVUUHdCNVcySHFENTlhZkNPdzRVNlBwV0ROcWQyeEt5Wm1scDdLRnFRY3ptZUkxX3JUQzdlWjNpU0VmQlprbWZsWUxmZUsyWnZ1SF9hVk53bw?oc=5",
 "source": "Kontan",
 "ts": 1789984761
+},
+{
+"title": "Persetujuan RKAB 3 Anak Usaha BYAN Bawa Katalis Positif, Ini Saran untuk Investor",
+"link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxQTThJak5QNnZZN01WdmhCWlY3bmQySkZTZm00SldWSU9mcE4tMzN4QTFVaHc0aGtqQlZYd085VmpYNW0yeEZuOXJENC1RWWFOOFRmNzZjMjlFNDFfMF9naFdZeXItYVg0OXhyTXFlM2tQcHNkU2tVZ1JWR1VKYWdMMjhrdkVPc3ctamtoWjZRWGxJSXBFZUw3ZDNYdHAtcWVUV2xOejdnTkRjZWEwS1Z1UHF1QlRZZUXSAa8BQVVfeXFMTTJDTFJDbW5XMXpEcWlMeU5ReS0zWXNlUTE1OFRzQ3d4dkJ1c0tHMWZDdXRucTcyNjNtbWozVGFqWFlHNUp1SWpMQ29OaENFZWhCYUVESFR6ZHBLeFF4OGM5S2hNODVaNC1pTFdOOHJ0X3Y3bEtRcktTVi1QWFVKYkhvdDdOQVVFOV9BbmVPZlRoeW9DdWdrLUY5MUpUeHJVMjlNRFBvNXBzUkkxaTVCbw?oc=5",
+"source": "Kontan",
+"ts": 1789984659
 },
 {
 "title": "8 Sektor Saham Turun, Infrastruktur Paling Bawah (Senin, 21 September 2026)",
@@ -237,6 +297,12 @@
 "ts": 1789979941
 },
 {
+"title": "UBS AG TAMBAH KEPEMILIKAN SAHAM CPIN.",
+"link": "https://news.google.com/rss/articles/CBMimwFBVV95cUxQYVV6QkVoNFJ2RkxLN2dYYTYwQ3UyR2ZEYnNQRTVjUG9xSnNwVXdiY3JmQ3lyTXFiUXZKSko1M3lpVFcxbVpwSGNyaF9CSkJsZDF3RExFZzZPQ05qMWVoVUhmYko3NktWSDltZjM1N3hsZklHVHk5c1lUb2F0MHVxSzBHc21tcEJZZnpLdjY1VGNYNVBLbkNRRUJxSQ?oc=5",
+"source": "IQPlus",
+"ts": 1789979760
+},
+{
 "title": "Defisit APBN Baru 0,93 Persen, Ekonom Ingatkan Ada Risiko Besar",
 "link": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPbVJaZm9jX1BWS21OWi11OTAzNHI0dFA5UlVvaU45YkpGVWRJa3dGck93djlQWDBPYlZvUUFKUGpqdTVlSmN6b0dnV3otdzlkYVlxd2xGaTZjV3JfUXN3SWdEbWI4YzJLYVJlQy0yelBDNUtWVVBKMmxuc1hnMDFuN3k5VXhiREYwUVlDRFV3MmVYeE5QcUU2WXRB?oc=5",
 "source": "Kabar Bursa",
@@ -313,6 +379,12 @@
 "link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxOMkpBQmNYOWV3SnNRNHBLVEhhR1NPODJIamJJamE1QVZUaE9WNFdQazMzYkxfS2RWeEF5RXdRWGxfbGJIXzFfalBva0RYMkZBLWpKYjN3VkdZX3h3b2FFekc2WWdmTTUtbmNSZEJfdXRKcjQ4b2NfNXA1YzRNaXA0cUNNTHJ6akRwUlBtdUd3SlRJaXBOSDZpNzJnRzdDbU5TR2Y4YjY1dzdvQ1FpUWE5aFVaWjQycEhXNmh1d0lB?oc=5",
 "source": "Bisnis.com",
 "ts": 1789977300
+},
+{
+"title": "EKONOM DORONG PENGUATAN ATURAN MAIN INSTRUMEN FISKAL.",
+"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPT1JDZ1ZvZ3Y3QnlQS294NXAwQ01wWjFCX21GQWhpNWU0MkEtVDNIS2IzVWV2ZEtCaFZxdk53dTA3bE5NaGxTLWpJSEpvYmp1UFZVWkdfdDZZUy13SzJlRlVEXzV2VjJNX1RaZFNWbGtBak5qS3drbjNNanFIZkNEcmxzamYxV1VpaWxIbUZ2T1lhNlFzUktLUnNlM21uTHUtcUExUHkzZ21lS1U3eXFaRjN3?oc=5",
+"source": "IQPlus",
+"ts": 1789977240
 },
 {
 "title": "Bos Emiten Kabel Laut (KETR) Tampung Saham Divestasi Pengendali Rp9,6M",
@@ -393,94 +465,22 @@
 "ts": 1789975800
 },
 {
+"title": "OJK : KREDIT HIMBARA TERSEBAR KE BERBAGAI SEGMEN TAK HANYA BUMN.",
+"link": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxQVEZQQmdwam9jdGgzU0dmOGtrTHYxQVpqYXZGRFpRRjMtbjdjSlcxM3FGQ2k5Y3dVTVNQMVhETTJiX3hpcGRyUG16QnUwMFZ0VmVrVzV5NW9JdlVoRWNKa3BLQlJKX1ZQVGh4Z0czSHFkYkZWNmxOWjdRTlpfQm0ybWxGYWhYc1RreVgxVDBnMXd5UWdONmM1RlhWeGNLU2JjLWRLX1Bsd0FBS1BZR3lITVZsNV9faGhVNDZkS3JQcTY?oc=5",
+"source": "IQPlus",
+"ts": 1789975680
+},
+{
+"title": "BAHAS INVESTASI HINGGA TEKNOLOGI, RI-BULGARIA PERKUAT KERJA SAMA INDUSTRI.",
+"link": "https://news.google.com/rss/articles/CBMizgFBVV95cUxOX2hveU9qc3oydC0xNmhZV0RSZG5TdnYyLVdrZDc3blVOWWp0RFZtRzloVmo4NUtRTHNETWw5Zm9lM1ktWkVVbjlhVm55eWdxdFUzQTFwUkRQcWhoRnpLY1lJaWlsOFlmSUhGcGxoVllwb0RJRndNRk1ZUFpfQlVUYXNCUzk2YTlfOTh1b1NzT0F1b1FyRWN3cE42V3EtaWluZ3R3Q29UU3pZbDVUZmRCWEpkTS1fU1JDUHJUWGJsaGtfVU14UzVOdk9OV3hIQQ?oc=5",
+"source": "IQPlus",
+"ts": 1789975380
+},
+{
 "title": "Suahasil Bantah Batalkan Rotasi Pejabat Era Purbaya, Ini Faktanya",
 "link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxNdzBhUmdzOGRLQkxCRzVxNlhIS1lYWFFOejN3Y2haSHJWb0dsRElKQkpONXBqam9icV9aTEY0NTcxdE1rUjZYVEdmbXBOLWd0VUtMYzRaZ0g5WkN1VnRRb3RvNlFtc0MtMzlIcWkxZ2xtSExQU0s1UjhXekk0MXM0MVdrWi0yVzk3c1VVMXNRdFdrWE95RzFHZjMteUJQQTlzLU1sQzB5OEtQZk10ck9BdU9FYWg4ZmM?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1789974600
-},
-{
-"title": "ESDM Tambah RKAB Batu Bara 3 Entitas Bayan (BYAN) 15—20 Juta Ton - Energi",
-"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxQZllJRUllUTlxamVJajFudThmU25fZnBLVEZRRkdWNHVJR2czTE9kd0RKVGF0NWV5RDZMYlYzZHZ4MjRaVXI2Wk1XMTRObFNKWm5ZUjJwYnVscV9vQURMYkFBVWhOWXBQWEd5cnUtNFlCMTJaOE9HY0JDVDJlcGRJX1hDaTFyWFlPUXIxcmh0Z3pvVy1OOFJuYTBSNzRmdXhzSVpfNlZiOXFQRzQ1Si1RZjhNQ1E?oc=5",
-"source": "Bloomberg Technoz",
-"ts": 1789974300
-},
-{
-"title": "Laba TPIA Anjlok 77,5% saat Pendapatan Cetak Rekor Semester I 2026",
-"link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNMlBhbXVIRURNVEhkYnhFcGRhRDdsV3FiZ3FnV01ibkxPZkJja0Z4QmNhWnYxd1ZUcHVwSXNsbXFwVWtoUjV3anlzQmFVZGRaQVp1Znp2VlFDYVlycXl6aVVZMG1DQmNHUFoxbk9LcDlKS09pZzNkaXlTUWcyQ2lUVmgtczNub1d0cUNHbHZCZEVNRjhfQWpueVpxUm83b1l6ZW82MUJCMU93bTNLM1RzU2JLS1kyMDRqRy1HNlpKQlRLbFdV?oc=5",
-"source": "Katadata",
-"ts": 1789973818
-},
-{
-"title": "Pendapatan dan Laba Bersih BULL Cetak Rekor pada Semester I 2026",
-"link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxPcmdrRmktWkxCeU1Qbjg1dWFuYW1Bcjhqd0hudkJBbk9QZXhWZ1kzNlFaTGpCWm8zXzhiX2ljZUc2bktuUFJGSkhJaVY3VVVvdEVTaUZnQmNMZHptRExzM2JqNEZMdERfeTBoak1pdzA2b2VQQUxjb25lMERfWTRqNHlsdGtWRWZIZi1qODhUZS10UE1GVGE2bXRiWU04aTYtN01YYy1YMlVjWV9EcVlob2lOaFQ5MjdtWHBzR0Y3QThnVjRT?oc=5",
-"source": "Katadata",
-"ts": 1789973746
-},
-{
-"title": "BEI Soroti Gejolak Saham KOPI, Mitra Energi Buka Suara",
-"link": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNQ1JHMnJ1LXFZOVpGbUJEdlczRzJYQ0ctdWRsYzI4T3RWRDNPYm9GM1QxVzRaZi10T0xmQzluMVdZb2xVXzVvNEJvRmxVUkRPd05lQ0Jac3dhLWNJa1RVdzNmNWtTTTdNczFpU3RNdG5nWk9JbVc4UGJFMzE3VzhtQmN3?oc=5",
-"source": "Stockwatch",
-"ts": 1789973356
-},
-{
-"title": "El Nino Intai Kredit Bank, OJK Soroti Ancaman NPL Tinggi Sektor Ini",
-"link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOZ1VuUHo4WVBEOGdpVmFDTWpQUnFLQS1hcktwb3lqUEhGXzVubTV3aVdpTFZDelgxQWNmOC1QeTdMbTVFaWh6V2ZQRWNjNWRRSUt2YzFfTG5QQVRxUDVQSHdKWkhWVkUtTXFEWEFvOXp2b3ZEODNhLTQ0MWdFempmYTJRemY3NDV0WENnTzRiczk4NEN1TFZpZG5mWGpyU0dDSWVvNXMybWtOTjQzejlLV0RpWE0yNlk5V0xVTzdTXzNmMjBVLWdF0gHMAUFVX3lxTFBuR1hlYTc1OURmWk9vNGZJMWczM2VMUTEzdTRYdHJ5WHZ0cnBENjBma1A3NU1PcS1KVHF6YjlGd09CMk5YLWdBdElCRUhSdzBYUlhrQ2s3NFFEVDJpd2pjMGNiSFZZUkFJd0tNZG53eGlBMEFiM3ZQY25ibVJIUVhLRWExanV0Y0tvMkUtMXRxc1VTMW11V1dOeHhtcVNpN002SF84cW85TTBQX0Fta3RCc1VkbHk2c0tONnN1b3hVNU5ybVFJZ053Vm9YRw?oc=5",
-"source": "CNBC Indonesia",
-"ts": 1789973100
-},
-{
-"title": "Danantara hingga Perseorangan Bisa Beli Saham BEI di Atas 5%, Apa Syaratnya?",
-"link": "https://news.google.com/rss/articles/CBMiygFBVV95cUxNRFR6OFhmYVBtbERyNGtkb2ZHWEVqQ1lNQWt4QUVjZjdYUTlrNFV6YXhTbm5YQjdGQnJUWElUMUJRXzAwRGUzNDFBanFGQ3VOakgycHY3VHJpX3gwNzdfLU1zMHVGNW9VTG9wUWlkNHUxVTlTWXllNWV5OHVfYXZBR1RvYnFSRjkzYjUyWkl3VklZSllPMHRZd193d0tPVW5MSTFZRlRNeDBLMjJVTGZJendndGVrTkNNQ0NvLXp1SE5haWRpN2ZpZ1pB0gHKAUFVX3lxTE1EVHo4WGZhUG1sRHI0a2RvZkdYRWpDWU1Ba3hBRWNmN1hROWs0VXpheFNublhCN0ZCclRYSVQxQlFfMDBEZTM0MUFqcUZDdU5qSDJwdjdUcmlfeDA3N18tTXMwdUY1b1VMb3BRaWQ0dTFVOVNZeWU1ZXk4dV9hdkFHVG9icVJGOTNiNTJaSXdWSVlKWU8wdFl3X3d3S09VbkxJMVlGVE14MEsyMlVMZkl6d2d0ZWtOQ01DQ28tenVITmFpZGk3ZmlnWkE?oc=5",
-"source": "Katadata",
-"ts": 1789972680
-},
-{
-"title": "Deretan Portofolio Bisnis Haji Isam: dari Sawit, Pertambangan hingga Transportasi - Bisnis.com",
-"link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxNN3pobndyZ3B4X3JaRVhQNFB5bmh4WXJDc29BUldteHZFOWEwTFBrdjBSMUd6Z3J2VTVZallSbGJ2NW9naDVTeGtMLWJFNjNnY0c0ejJtcERKNUFuWlZ6NmNiaTVScEJVa1BMYkd3VFVybTl1WEQ0V0ZKU3k3YVY5UkdhS2g4WTJhdlRBTFhQMVdqX2otLUwwUE1mWWlIMVgwaUNLWktCemxuci1uYzhIeFNMbGsyRml6UUhkVlM5eWt2QllLOEFHa1lKQQ?oc=5",
-"source": "Bisnis.com",
-"ts": 1789972504
-},
-{
-"title": "Deretan Portofolio Bisnis Haji Isam: dari Sawit, Pertambangan hingga Transportasi",
-"link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxNN3pobndyZ3B4X3JaRVhQNFB5bmh4WXJDc29BUldteHZFOWEwTFBrdjBSMUd6Z3J2VTVZallSbGJ2NW9naDVTeGtMLWJFNjNnY0c0ejJtcERKNUFuWlZ6NmNiaTVScEJVa1BMYkd3VFVybTl1WEQ0V0ZKU3k3YVY5UkdhS2g4WTJhdlRBTFhQMVdqX2otLUwwUE1mWWlIMVgwaUNLWktCemxuci1uYzhIeFNMbGsyRml6UUhkVlM5eWt2QllLOEFHa1lKQQ?oc=5",
-"source": "Bisnis.com",
-"ts": 1789972504
-},
-{
-"title": "Saham Perbankan Paling Banyak Dijual Asing dalam Sepekan (14-18 September 2026)",
-"link": "https://news.google.com/rss/articles/CBMizAFBVV95cUxQc3FUUzkwVGljYi0wbnhRMm9aM2E0SFRVM0RGeW5KS19ONU5aaVJwRnFxZmRjbnM1TkY5aUotVTJ2TzlkZ0NJWjVkeGw3bXRnc3pWWU14bkU5Z3NBaEVkVzhiRXR6OEJ3RGR4emdMLWdKWF9uRkM2cFRFLUZtd2FQX1F2QzF2cGR0NGcycl8tanlGSG9YZ01TSnFWbnRwVUdOekpaVXdHSF9mQkpXMXQyQWMxWGhZOTdWT1R3aWFCMnZETkVBOU5Od1k0RnE?oc=5",
-"source": "Katadata",
-"ts": 1789972500
-},
-{
-"title": "POJK Demutualisasi BEI Terbit, Atur Kepemilikan Saham hingga Keanggotaan Bursa",
-"link": "https://news.google.com/rss/articles/CBMizwFBVV95cUxQVjhYNU5sWFl3bGlpazhUZE9LMF9ZcTBDS0NIeDVYTTJMMC1EcURDTVdSY3c0OHlQQThsLUtJVnRGTFRMVEZRaGhVZ3hkTFlDVHFRdmlFTFZseUNqUU9QLXFWMUZiTC1sN3Fxa2pHM24xb0dsNXN0QUZaLXhVVEJ2ODBrbWhIckdST0RTMXczSHRVYUNxVjR3NjQ1RE00VGNycS1TQjFhYWVIdXc2UXVmUjQyRzNIR2tSRUdhYWI0eHFVN0h0ZEFMRWR3d2JFTjDSAc8BQVVfeXFMUFY4WDVObFhZd2xpaWs4VGRPSzBfWXEwQ0tDSHg1WE0yTDAtRHFEQ01XUmN3NDh5UEE4bC1LSVZ0RkxUTFRGUWhoVWd4ZExZQ1RxUXZpRUxWbHlDalFPUC1xVjFGYkwtbDdxcWtqRzNuMW9HbDVzdEFGWi14VVRCdjgwa21oSHJHUk9EUzF3M0h0VWFDcVY0dzY0NURNNFRjcnEtU0IxYWFlSHV3NlF1ZlI0MkczSEdrUkVHYWFiNHhxVTdIdGRBTEVkd3diRU4w?oc=5",
-"source": "Katadata",
-"ts": 1789972500
-},
-{
-"title": "PHK Massal Mengintai Industri Keramik Imbas Pasokan Gas Seret",
-"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNZkhjMTlaUVBaVnlfTzBFX3MxdzRDVzVoeDIzRjVyRmcwSDVNdEdSeUhiN3cxSksySmY2SkRGbWNFNUlQV0pZQnd2WkItdUsyTHZhemEtLTktM245VkpGTHM1eHkxemwycW8xblJ4N2F2OEcyRHp3NjVVWUR3ZW9GVkIwQ19RYWhTVUItZWNoSDZCYkJ6ZGtOSXRQREpfYTYtcFFWU0ZUdlFITGNQUGlVdlpRLTY?oc=5",
-"source": "Bisnis.com",
-"ts": 1789972474
-},
-{
-"title": "PHK Massal Mengintai Industri Keramik Imbas Pasokan Gas Seret - Bisnis.com",
-"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNZkhjMTlaUVBaVnlfTzBFX3MxdzRDVzVoeDIzRjVyRmcwSDVNdEdSeUhiN3cxSksySmY2SkRGbWNFNUlQV0pZQnd2WkItdUsyTHZhemEtLTktM245VkpGTHM1eHkxemwycW8xblJ4N2F2OEcyRHp3NjVVWUR3ZW9GVkIwQ19RYWhTVUItZWNoSDZCYkJ6ZGtOSXRQREpfYTYtcFFWU0ZUdlFITGNQUGlVdlpRLTY?oc=5",
-"source": "Bisnis.com",
-"ts": 1789972474
-},
-{
-"title": "Bahlil Segera Eksekusi Rencana Prabowo Produksi Bensin dari Batu Bara - Bisnis.com",
-"link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxOQk1RbDBmR3F2Q3BwN0YwUWRtTVRQN0NVcEJYUUY0Uk5JQVJ4b3BDNzNPX0JRcmc3UHVZcEhfUmRXS1Iya3lpdV9yV1cyd1RDbW9Ub2VIZHFvZzhzVnRsa2kyYzJ3Z1A3SklSQk9paVpsUkdNSEtzRC1UMmNMUUFXTExJQmFNNkU0Y25Hc1RUTnQyb1ppcURuRElEbk1xekxJMVFBQ0ZUWDF4cFlpZlFLZFczcW1JT2JBZFBOZlhR?oc=5",
-"source": "Bisnis.com",
-"ts": 1789972299
-},
-{
-"title": "Bahlil Segera Eksekusi Rencana Prabowo Produksi Bensin dari Batu Bara",
-"link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxOQk1RbDBmR3F2Q3BwN0YwUWRtTVRQN0NVcEJYUUY0Uk5JQVJ4b3BDNzNPX0JRcmc3UHVZcEhfUmRXS1Iya3lpdV9yV1cyd1RDbW9Ub2VIZHFvZzhzVnRsa2kyYzJ3Z1A3SklSQk9paVpsUkdNSEtzRC1UMmNMUUFXTExJQmFNNkU0Y25Hc1RUTnQyb1ppcURuRElEbk1xekxJMVFBQ0ZUWDF4cFlpZlFLZFczcW1JT2JBZFBOZlhR?oc=5",
-"source": "Bisnis.com",
-"ts": 1789972299
 }
 ]
 }
