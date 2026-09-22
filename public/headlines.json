@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-09-22T14:00:58+00:00",
+"generated_at": "2026-09-22T14:15:43+00:00",
 "count": 80,
 "items": [
 {
@@ -85,6 +85,12 @@
 "link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxNeUVMZmVyaERiNHdaZlczQVNhYk9JS3pyVm92Q3JZZG0xSzI3dktvUjN0T3l6R19SemUtcE94Q0FVV2FGbkFobTRyMFhBVlJCUUd1dGw5bjZKYTRpZG5NVGNvMEdEY1pqUWZkQnU4eWF0Qkx3TUFkTVJLQzFkdTIydXl1Vjg4MW9hWUtkQ3k4NW9hZmZ0eHFNYkFQVi1vQnI2Y1R5aU90VdIBnwFBVV95cUxNZUFJWW0yU3E1dUx6YWJkQUJpTGZfb3kwQnRsU216a0ZPMDl4N0VmNU5TMkNfS0FfYVh6OVU0NEtfay1fczBISVE1eUNxekw2NzdDcExMbFgzbmtBQnZUVHJxdkJ0NnFnbnp1M2FLSlBTLUZOMzFaMVRlUGFnTUF1OUR6ZE5qMC1hbTA5WjR3NmxmeXZvQ25LcjJRYThtODQ?oc=5",
 "source": "Kontan",
 "ts": 1790072222
+},
+{
+"title": "EmitenTrust",
+"link": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE12ZnVmd3dLbHc2NlZ5cDc5c3lSU2dydXJDM2VVcVVaa2JKSjIxN21kNnlzSDJxb3J6M3RHLUQ4RTdPVEU2QmJrdEkyMk5iRFE?oc=5",
+"source": "EmitenTrust",
+"ts": 1790071880
 },
 {
 "title": "10 Sektor Saham Turun, Energi Jatuh Paling Dalam (Selasa, 22 September 2026)",
@@ -285,12 +291,6 @@
 "ts": 1790063820
 },
 {
-"title": "EmitenTrust",
-"link": "https://news.google.com/rss/articles/CBMiR0FVX3lxTE5TSjI4NGZfSzFDVVF0QVZtd0Z3bEdfbzhwclNrS2JfSFZ3M2ZHZzd2d1ZQbE9ZSlgxOURDeXRmVl9NSXIycFEw?oc=5",
-"source": "EmitenTrust",
-"ts": 1790063525
-},
-{
 "title": "Siapkan Kapasitas 1 GW, TelkomGroup dan Danantara Geber Infrastruktur AI Data Center",
 "link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxOMDdyN3Y1cHBKaS1CcnZ1eHMyOWx0YTIxYzZTY2UxWDBKUFN0cEMydmRkRzY5SUwtNUJPWU5pNzBGeWlhdTRBTWFUaTc1NjBua0ZWVGItUzd6VkhJdlhTeGNfR3g4dV9QTU4tTDdRYjR2d0R6dG02ZzFaaC1FME1BN3QyTEs3MHhEQWgyRnlLTm9pV0ljV1R0RjU2ME82eklYWTZFYXhjemFVa0lwN2JMWTFTd2dlRWg3VTAtU19OcGJRYTNE?oc=5",
 "source": "Kabar Bursa",
@@ -319,6 +319,12 @@
 "link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQQUt2bzlkUDNKcVhJRmVnRmgxTkJ6UWpwWjBpV3M0cmlndVVQbG9xVGo4M25TOVRFaW82R3dXdmphY0IwRjV1c1Q2MGJDOWNqdW5YRVBtc3RYM2dJMjB6RHAzQ1hmWmpTLWd4cjNJazFoRW1VcjlsWjR5dmM2QzczRXRLOWlMSlljRjBBWDQyMVE3cEdHQkFTMlYwSG5zeHNPRkp5aUVYcWR3TE5FOTgteGdMWUV0TTRpR0F6MWxINS1ka0t6aU9J0gHMAUFVX3lxTFBZbVFzVGV1NEowZ1pPcXI3NlgzNmVrZFpUQXZSQTVhZTkweHZlZ2I2SGtyMFczUkNYb3MzM2VPXzlNdS1LMTBWRU13aFJRSjZzUExwVU5TOXE2U001UVZLcHVHbVVzY1lRTHJUR1IzZ2tqQXhMZFY5ZnhnSG1qSWRhSnc5SFU1bllyRjlBNnc4OTFWbEhtWFBBZEMtWHBsd09MVGswb1ZYRjlMaWtLLVdncE91YnNwRmthdXNFYmxqYjZnX2Q4WGx2RHVEcg?oc=5",
 "source": "CNBC Indonesia",
 "ts": 1790062243
+},
+{
+"title": "Perluas Ekspansi, Futura Energi (FUTR) Rambah Sektor Energi Terbarukan dan Infrastruktur Air Minum",
+"link": "https://news.google.com/rss/articles/CBMizwFBVV95cUxNWi1MUmhydWlfQ3lDWE1oREFEUzEwZGZyOWVYTUlJMmRRUEtfRDdNRkVsMjhDZUZFQ0ZOZldqMXFUYWZYbklqLUlUc1RKUi1XUWc1c3JYM2xkVHVMQWwzckpaM0s2UjlVU0F6Zkp2aTU2TXdqbTlUNXZ6aTJaajA1blNlSGdKTGkzZmZ3azQ5aVpiYXF1SUZmYVp6UjNRc0k4NEM5WThXQmpSX0hPWkNURmwxbUJ2cS1pWWtVLUJqenhEd1k5NWhwOWsyVGtTdTTSAdQBQVVfeXFMT0VsV3ROQ0VyTHFUT1pqMlBxZEZ1YjZUeVhMWmxvcGF6TTJNWno4THpCdnpqX3VLX2tRSDRTaEt2cmZZMlBXSlNrcnBLcC1QZk9mTUJHV2F5TXdnUjdkeFowMXQyd2pWX0hMQ09DempjZExROUYtNjFuelJiWTA0NXhGNXBxd0VrZ19qc1JnUHN5aHRpTWotT3Nod2FVdDlONGFjY2tVQVNMdG8ySlhSV1JpWG5ScVlWanhZOWNyaFJWUnRrTFgzc2xqYzQtTjVZcHpzd2c?oc=5",
+"source": "IDX Channel",
+"ts": 1790061900
 },
 {
 "title": "Emiten Properti BSDE, CTRA, PWON Tersengat Risiko Reforma Agraria, Apa Sebabnya?",
@@ -472,12 +478,6 @@
 },
 {
 "title": "Aktivitas Menurun, Status Gunung Anak Krakatau Turun jadi Waspada",
-"link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOWXRWTHNyOGtONVVFVjJFZnBPc2hydlVXbE51RDlWVjFRVmNkQktMUzVKR2RHYlNUWG5jRUh6U0FkVHc5d0tSS01HZzQtbHA1VlAzUlU4NUdGMzIzc05Wek9pVFJrd0FlWDRiUU1kNUdTbk5JbnVnV0dtT1ZuQy1QN3dsdUZ2NEdmcFhHNmh2RFc1bjVVZTVBTVVfSFJjbXRDaEFVVmtXOExQcnpuNFg2bnJZRjFpRFU?oc=5",
-"source": "Bisnis.com",
-"ts": 1790048100
-},
-{
-"title": "Aktivitas Menurun, Status Gunung Anak Krakatau Turun jadi Waspada - Bisnis.com",
 "link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOWXRWTHNyOGtONVVFVjJFZnBPc2hydlVXbE51RDlWVjFRVmNkQktMUzVKR2RHYlNUWG5jRUh6U0FkVHc5d0tSS01HZzQtbHA1VlAzUlU4NUdGMzIzc05Wek9pVFJrd0FlWDRiUU1kNUdTbk5JbnVnV0dtT1ZuQy1QN3dsdUZ2NEdmcFhHNmh2RFc1bjVVZTVBTVVfSFJjbXRDaEFVVmtXOExQcnpuNFg2bnJZRjFpRFU?oc=5",
 "source": "Bisnis.com",
 "ts": 1790048100
