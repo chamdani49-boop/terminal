@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-09-23T18:45:41+00:00",
+"generated_at": "2026-09-23T19:01:03+00:00",
 "count": 80,
 "items": [
 {
@@ -17,6 +17,12 @@
 {
 "title": "Sorot Dugaan KPR BTN Fiktif di Karawang, Ini Respons OJK",
 "link": "https://news.google.com/rss/articles/CBMihAFBVV95cUxNaC0tdHlGaVVPZm5mWHBtQ0ZfOFAwOHRQMWw3ZnJTczEzTURyLWdnel9PZUQwc0hqQzlka2w2V2UyWlEyT2ZHVjRYaFFSYWJ0eG1GM2JBdmJRdGxPSUV3LVd6RzVkT0VqMHpGX2huWWloYy1GcTMwUmpBRUJHaEItNlVvUV8?oc=5",
+"source": "Stockwatch",
+"ts": 1790173978
+},
+{
+"title": "Risiko Kredit Bayangi Himbara, OJK Soroti Kepastian Pembayaran dan Tata Kelola Kredit",
+"link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQYkk2UEpaeEQxTDQzSUltc3NZdFB4TlhuaFZxR1NYYUw0RF94UWVoQ1gyZkEzc1gyOE1XN1FqemYwaGdDb3dQRG9kUjA1Ym1WRnZWSm5EYW11RzlWYlJZQ0JKZDMyc0VQRGxJNW5rTFNJS1g2M1B0LVdOQk8tMGdST2prUGdnRldtUXVtdDFxOVU5QlJhaEZ5dmJCTTFpZ2JCSFZ1Tkk3eXpHX0U?oc=5",
 "source": "Stockwatch",
 "ts": 1790173978
 },
@@ -43,12 +49,6 @@
 "link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxNdVpRdG1SQjRzUHVkTlVUR3BlcmZRaEY1VDM0SWtEYnpVaFVTcEtNQlFJaWpIX2d4QzRiVzZPbEZmMWdVZUhkMnhJMldmTWNBZlVCNEZfUlZLWlVkYkV4QmhHak9TZFkzYW9UTXprS2RPaUY5Tlp6ZFBzU1N3Tld1WTBfMDFIMWsyWVJfbHhTVnNacHczeE1QU3JXREtjNy1xN3JEVEZDeFhiV3pRWUN2RG5R0gG3AUFVX3lxTE5mUW5Rd2VnX3NxTi0zdHdyLW9Fc2VtMWdUSDBXcDROZHdMek1fWnJYX2NWWnlZUmZUbXRhSUNndnM2UnFoNUJhdEZ6YXUySjVrOGJNbW5URDB0dXlWUE9vWEJrVEJRS3NOWHNaN0lYVS1FS1paOXpGNUc3WU9vWWw1ekFBVDdsMHRUbmQzUHNlbWJpbVAwUkxreW1weFM3cGxwTU9Bd3JyRXhWckNGQzlnQldYQk5KSQ?oc=5",
 "source": "CNBC Indonesia",
 "ts": 1790170905
-},
-{
-"title": "Risiko Kredit Bayangi Himbara, OJK Soroti Kepastian Pembayaran dan Tata Kelola Kredit",
-"link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQYkk2UEpaeEQxTDQzSUltc3NZdFB4TlhuaFZxR1NYYUw0RF94UWVoQ1gyZkEzc1gyOE1XN1FqemYwaGdDb3dQRG9kUjA1Ym1WRnZWSm5EYW11RzlWYlJZQ0JKZDMyc0VQRGxJNW5rTFNJS1g2M1B0LVdOQk8tMGdST2prUGdnRldtUXVtdDFxOVU5QlJhaEZ5dmJCTTFpZ2JCSFZ1Tkk3eXpHX0U?oc=5",
-"source": "Stockwatch",
-"ts": 1790168362
 },
 {
 "title": "Begini Arah Pasar Saham Usai Bank Indonesia Pertahankan Suku Bunga 5,75%",
@@ -411,6 +411,12 @@
 "ts": 1790147955
 },
 {
+"title": "HSBC Masuk, Apexindo (APEX) Siapkan 218 Juta Saham Baru",
+"link": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQX3B2REVQSmlrX1BrdFFXNDlvMWNtWWhyV2pNTGJIR0VCOXVfUHFIdXh5NWtMYkZmWWdOZHllbllTYV9ONld5ZDhkekVrQjN5WVBCNFd6d3pBd1hrbWNEQ2FpZ0FLT1pvTVBzQTVtSGxjd3pGLTlNM3hNV0lDQUJlNWwzZzFJNTY2QU9lXw?oc=5",
+"source": "EmitenNews",
+"ts": 1790147880
+},
+{
 "title": "Alastair McLeod jual saham BYAN dalam dua transaksi, segini nilainya",
 "link": "https://news.google.com/rss/articles/CBMisAFBVV95cUxObF9Bd2dnb2dtdUpmZjYySHFhb0tacmp6VGpvZUR0d01oVjhyWk9wbDFTZjJ0NkEwOFdEQ21VTkJXenVvMlFEU3dCWjc2cUhtUTlwOTBLMy0wTGZURFZEeUVSZUNsbkJsdXF0ZTctSXNmTk5Yd3UxaGhjdC1hOGV4QUlaelYwZE5mQ3JPVVpJQjFiYXJvQnA0NFBXanBkaXdBSHJaUngtYS1mdi1DNGJhVw?oc=5",
 "source": "IDN Financials",
@@ -475,12 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPZ3Rmb21Va0R3WmZzWjNyUEdMREJXSlNkeDJYOU9WaERKN2V1OFdwSDFvYk13OWFIV284dmRFUE5YTmpER2RLNkFSOTJxTlFkTDhYMndBbnNPUGVTcEhFdHpoV0xmUG9JOEZ1OFRKSHVKMTI3OGhCNGJVSmF6SGZfRGpGWE1kazZkOWx3ZWNJOUp2Wl9ydFBaYU1GaDlmTjlpU3pvMXB0VTJ5b1pXLXVv?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1790144400
-},
-{
-"title": "IHSG Naik 0,64 Persen di Midday, Asing Borong MDKA-TINS, ASII Ikut Menguat",
-"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNT1VTS0RqbzBkRklQbG04RTFoTzhtc2RmUUx1ZFpObjZJZ3l6VlhLa0MxMFBDcTNsZHlUQmI1cWpSVExnbFlZNTViOEI5enpqWTRuY1kyUmIzbFlkS2VUdE56R0R5VjBIQlh5d1dYUVg2TkdBOHdhdXItQXVTSHQ5czU2QjI3MFZUbl9aMTBDT2hveGQ3Z2Ixb2JCeEdndnh0RGhxaDRjQVduVGEzYzk1Q1RGZVU?oc=5",
-"source": "Kabar Bursa",
-"ts": 1790144040
 }
 ]
 }
