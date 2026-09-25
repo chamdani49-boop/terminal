@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-09-25T11:30:46+00:00",
+"generated_at": "2026-09-25T11:45:40+00:00",
 "count": 80,
 "items": [
 {
@@ -117,10 +117,22 @@
 "ts": 1790323440
 },
 {
+"title": "EmitenTrust",
+"link": "https://news.google.com/rss/articles/CBMiTkFVX3lxTFBpVkV0cnVfYnlvX0xXaU5ZNGlETldEendsczZlOG1MbGhTQ3d5UFZVVUdRQ1VDRTZrSXVod2pmekh6YU9DLUlmQk02enA3QQ?oc=5",
+"source": "EmitenTrust",
+"ts": 1790323377
+},
+{
 "title": "Kemenperin Perketat Impor Truk, Gaikindo Soroti Standar Euro 4",
 "link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxQWHhvaFZhUm9hSFVQQUY2ZnQxOE1xdmhtcnlCeHNuYllaRXBBTEpSNUlTdnpEUEpaTkZydzdwY3BXM3hiRnRXWFFSSHFsZERhVXNubzNITmw4RFhySTRudHBoeU4yNFMwbG0zSlQ1ME1GdkVVeTV2WGFYMWYzR21NUkIzS0J3NzdpcHVyVzlQUU9pZHk5SzZZT2hxN3DSAZYBQVVfeXFMTmFfd1FaX096MDZSNDRtX1dZR2RLcXh2dXBZcGw2T2ZfZjFjdXZ1T0dwc3JQNW1td0x0eEFNZUhQOGFVSFBVREZWeHdUZGpuZTFTZ3NlRW5NSDFXaUVLUjJIYWVyNVdCWHVVbmVRUzUwbE5vdzU1cWlOb1ZocVFNUmJnRDdKUG1HQnZTN0ZjYVFienFyQWh3?oc=5",
 "source": "Kontan",
 "ts": 1790323090
+},
+{
+"title": "SBR015 Mulai Ditawarkan Senin (28/9/2026), Minat Investor Diperkirakan Tetap Tinggi",
+"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPazExZmJRbUdRWVVId1JLU0FJSFlCZVBrNFFjdnN2bXFtOHBQam4xUXVhVzVQRzU4S3Q5US10RjhOQ2Jpb0lEVm1WU1QwM1hXNFIwOWp4MXBYVGRBRVJ5SGVNdmtSRFZqLUtlRTVTa3JjWVZtN1k0QzlzVnh5TTE4cEswRHY1R3VnYnNERC05dmhqUllqWnFwQ3MxaTkzbEpDeTR5UEFBY1I5ZHQzYWl4bHdaZXjSAawBQVVfeXFMTWtMLTFDeW4wVDhySllhSVhjSmJHaXRiVzlaZFR3TDdiTVJIMmE1NHJ2bHR1d2FhUDNhZFM4VDROeHp4TkZxdUtXV3VQSWhOTnl3eUhoc2hkUTFjMm1QSnpicnJWcHplN0pRVGNlTVBaUDBxTHVKU1hjWVhsN0dhZHdTU29MaFAxeXlKREZ4YmYxejM0VUlLbmZvNUV1clFWa0dfYzRPM2ctV3N6OQ?oc=5",
+"source": "Kontan",
+"ts": 1790322959
 },
 {
 "title": "Cara Beli Saham Google di Indonesia",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxPRTlCTk9jckN3UHpNbl9JbDQ5X3lSZ1FudGNURHJBd0ZNeVpKb3NSVUdJT1Z6ZTdPd21DU1c5X1RKbDE2ZFBjQjVuSDRMbTBqdlY4c3o4dXRoWi1OUTl1SWNUOUwxcFRPT2hHV1hjTWNmdVVZZGJ5N1g3U1NaVF81cUhRdzRDQlRBbGZQN1J1R2VxdFNlVU1yUFdrN0pscjllek1nVGMyWW5sQUMtaEhfcEFXX1VIQ0NBdFFhSGlR0gHDAUFVX3lxTFBWcy1TWWU1czZLaFZoMUtPNklrUGFVUFhBRXo1NGp1TGwxZ1JRYlphY2pxVTdYQUNzakdzNE5PUmUtT0RabDduZ04tcXhuNEVWcEplQ09BbDVzRXRTaF96WF9CdUlDTWpESWtWWDMtbU5IZjRhQ3NYVUpiaFA1NjhJWlp3Wm9GQzJwU1B4bGl3YUowb1EwNzBaVUVab29TSzh5ZlpTbzBrQjlUYzhYRTN6NDJKanpWRGlLZTUzc2dVcjYzUQ?oc=5",
 "source": "IDX Channel",
 "ts": 1790294820
-},
-{
-"title": "Di Tengah Booming Data Center, Saham DCII Masih Tertekan",
-"link": "https://news.google.com/rss/articles/CBMikwFBVV95cUxQb2Q4VWVOcDV0Q1ZpUnJic2pXaG1SczN5S2lEdE1qYmJXUGVnUUZZNWliTTIxcmRsVWJybjZpVExfaFlOT3NIcFQ4NFRERWFwcm81MmVVbEE2bWhmV01ZLVlVOHJlbFJpZzBoeXlvcFMxSzM2bzN5TERYZ1BPRGVtVy12OHFXQjVSYk1ZX0lCYWdETXM?oc=5",
-"source": "Kontan",
-"ts": 1790293985
-},
-{
-"title": "Holding IDSurvey Tangkap Peluang Independent Assurance di Sektor Mineral dan Batu Bara - Bisnis.com",
-"link": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxOMDVEMXpTWmtqOFBXUHFrZDlFS21uX2lMTWNoVzV3V1IyaGZPY1dFZ1FEbVFlSnI1NndKSk4tWGJvVXFhbk5rSS1FdURqQmZJeDdLQXFkbDRza1d1YW8ycHY4bmZKQXZ4Tk12SktpVzBoV18tNmVHcFNwWnJrZktjVjdtVHpHakxqQkNMcG42MU5EbkNscl91emJpSDMwdWFRMDU4NFpSOWEzNFB3MWtCdk1mWVJ3N0VzZ2ZJRTQ3YmI0N0t6VE10N2JsaEZWRmYwT25XZQ?oc=5",
-"source": "Bisnis.com",
-"ts": 1790293622
 }
 ]
 }
