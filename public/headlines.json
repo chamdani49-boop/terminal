@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-09-26T22:10:42+00:00",
+"generated_at": "2026-09-26T22:15:41+00:00",
 "count": 80,
 "items": [
 {
@@ -55,6 +55,12 @@
 "link": "https://news.google.com/rss/articles/CBMihwFBVV95cUxQME5GYTcyRDR5dzNFcjdMTkY1WG1VV2dxLWtzcmh6SXF0SHJoaTBXellXSVNuSXgzQzJnSFBWTjlqcmhsTnRUUHpMdjBncER1NzNGMFFCRGpIY25nZ1MyRmZpLUdWQmN2cm4tMjRyNkI2UF9NMTlacjNySHhqb1FZcFJpNm5xd0E?oc=5",
 "source": "EmitenNews",
 "ts": 1790423940
+},
+{
+"title": "Serangan Siber Tembus 1,52 Miliar Kasus, Luhut Dorong Penguatan SDM dan AI",
+"link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQRXAxMHpzS2J3R3IxWkFIcmtWRGVRa2ZkeTdXdldRNjkwRDBjZFhWcGxWQTl5b3NMRGtPa0lyU0tKanFTSWxnUFJXOTItLW1scTBURlFXU2lZZy1STVZPWk5EYTBuT20yVmFQTVhvRWdRVm5FclI3T2Q2cnRPQzhxZUNEaEFYc1JjNm84c3dqZjVYOEFSNU14czNJX0pSMDk1NDdfLUdOY1BGWW5pZEI0NS12VnNfaDQxd3paamZPaGx3bVlU?oc=5",
+"source": "Bisnis.com",
+"ts": 1790422833
 },
 {
 "title": "IHSG Diprediksi Sideways, Ini Level Support dan Resistance yang Perlu Dicermati",
@@ -187,6 +193,12 @@
 "link": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1XM3RIcXdaNFZuYTNac2xOWDNRM0gxT1hVU0xRZlVFMGdKUkpFX2hCYkphdURsX0VxN3dpS2dWdnVaY2xqT0lrcS1XVFJuaWUzWUF0d1lVYlRyYWxITHlv?oc=5",
 "source": "InvestorTrust",
 "ts": 1790400179
+},
+{
+"title": "\"email%20publik\"",
+"link": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE5TVWQ5MFJ1WDl4NjVlN25ZdFhKZGk4WXJrQWwwd2JxTEk5UUpuVTBlODRpUFF2NDNPcU9PdkJfRmVvZFFLU0JCMldQWWluY09XVmpqYWZtOA?oc=5",
+"source": "InvestorTrust",
+"ts": 1790398415
 },
 {
 "title": "Melejit 830 Persen, MBMA Raup Laba USD54,43 Juta",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMipgFBVV95cUxNZjBjOElSbnNxZ29KVGN1RXZxYzVxcWgzS1ZfQzdKei1nblZhczlaY3RvaWw3VWRNemoyeDhWN1JhN3BabWVTRFp4TkN3dTNHNmhRXzZiZmV5NDJkdkhLaGxjVm52ZEFxNUwwN3lKcUk5MGZVbnJmZDlMS0VjTkFMdnVucHpCSG1JaDdvTHFPQjBQeTROWlpKZ25iVEQxRkhRWC1rVXF30gGeAUFVX3lxTE45ZVgwaV81dEdwdXVGb2hvV05TU1A5bkNUa2ZVVU94Slg0Vlc5NGZHQmZnUTluSmRsVW5FQm5oUUd2c0VUNFdNMy0tcGFNTzRfdGY0M1hJMmNXSzRzVkctd204MDFRbXc3Zi12RFBMcG5zdVRISTRUNVdNa3B5aVhoMXdGUm5KWnR3WXFRU3NqS1J0bm5SeFVFMmR5bkxR?oc=5",
 "source": "Kontan",
 "ts": 1790343596
-},
-{
-"title": "Kekayaan menipis, Tahir kembali jual saham MPRO",
-"link": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPVGZEN3pCbEJwR1drTGtfV0ZEMko2QUxBczZjdGZIbENBTWV6cXZzR1pSMTJyWW52N3RzTW9qcjBadHJ2aHBTWHFjelhKOE9ldlY3N1JpYmhnUW1mc3Q1RVhUNnZpbzhKcnZDOGNKX1FEdjRrSUVIaFFubXF5NEk0TGJlel9HS1otbHkybkRjR1c3MzdB?oc=5",
-"source": "IDN Financials",
-"ts": 1790341800
-},
-{
-"title": "PT Ceria Nugraha Indotama jadi Tersangka Korupsi Nikel di Sultra",
-"link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxPYmNmU0lUc2lOSktKVzlRbHJ0SEU2SENZVi16VzQ3T083ZEM2cUl4clFrUmRzeUxVenNyR0lwTFdpbGdJUGhESEtLREJ3QTdWRGNMZkQtM0pmOWprM2RwNGlyZXFsdTFITHZXbWR6am5ZRlYzNHlpR1d4M284aVJSaHd2YTNyWFR0a3pHSGhLSkRpUC1DOU14VTBWVXZHeENlWVRvejNwYzBDQTJadHhWdmdiRVdybnM?oc=5",
-"source": "Bloomberg Technoz",
-"ts": 1790341200
 }
 ]
 }
