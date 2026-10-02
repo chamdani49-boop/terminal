@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-10-02T00:45:39+00:00",
+"generated_at": "2026-10-02T01:00:53+00:00",
 "count": 80,
 "items": [
 {
@@ -25,6 +25,18 @@
 "link": "https://news.google.com/rss/articles/CBMinwFBVV95cUxNVXhTRmNoLTlibDdvdWVYQXBKRUZIVGhubmVMZG5vc3lRdDc5UF80WjhxSDBVY3hXZl9sbzl3Q2M4NkR1clRWZnFHWTZLa05nY2ZySWdmSlh6MUtFd0U4ZWYwc3FMUnQxMHk5MmxxeDhFRkVUOFpEYWlJNEZOTEl1dE9NRzl3Tm42NVI0NWozRkpJQ1dqUzFDUnJFZVVJNjg?oc=5",
 "source": "Kabar Bursa",
 "ts": 1790895720
+},
+{
+"title": "Peningkatan Aktivitas Pelabuhan Kerek Bisnis Logistik",
+"link": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOamFPWERNdnF5dE1ld1l4VmNYZzc0U1hrQlA4UENqbTNlaF83Ylp5bmxfaTBqRkwzNC1HWlNUMWFiN3Nzb3Jvekp1R1pkRnZwUmM0Tmhnd0h2TlhCbGJEMDB2OW5uMXMta1JBQnQxZFRqSTRkdDd3U1Bvc01KZFhiOElsZWJNc3dSaVAwempyYUg?oc=5",
+"source": "Kontan",
+"ts": 1790895617
+},
+{
+"title": "Literasi Digital Jadi Kunci Pengembangan Bisnis Pengusaha Perempuan",
+"link": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxOUWROZkY4QUhmYmRCXzhjQmhCaFZDUnJyNXN0d00yY2paejc5UURGYXU3LWNfX215TFMwT2RiNXFtVXNhWkRyNmtnOXlYNW56VVMtajNIa1JvaDdfWXp2V0ZQUlV0ZVRuRF9GN1AyTmhKWUNjU1UzS0Fua29XUmFUdGxGNTRfaVZqT0pfY2dlNXY0TkRWQUpSTmlabjRSTFFZWkxNX1I3LWYyeW9leHROWlBFX3FnR3N4bUJYampMZHkwdw?oc=5",
+"source": "Bisnis.com",
+"ts": 1790894940
 },
 {
 "title": "Selalu Waspada, Hari Ini Tekanan Terhadap IHSG Masih Kuat",
@@ -375,6 +387,12 @@
 "ts": 1790844000
 },
 {
+"title": "Bos BEI Tanggapi Dana Asing Lanjut Keluar dari Saham Indonesia",
+"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOWmhtbnlqZGxWdlRQcU5GZklhRU50OENuZGtaR2R4RVAxcW4wbHE3b2NYUEdQZXkyajh0M1hsM283V3l6Q2FkNVNwbWtMbnhDbUk5Y3QzOEQ2Unh0RWhzVkpCVE1jUXRzSzVUODk1dWRaQ1ZFdzNDVTVSaVpxMmllTUNZMER1T2owWkMtUmlXTDFwYUdwUWQwN2wwYmJpRHU1bFZqMk05QTJWNUpKYV9HX0NtNXY?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1790843915
+},
+{
 "title": "INFOGRAFIS Minyak Melambung, AS-Iran Belum Akur",
 "link": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQMlU4NTQzSFdXdG1vMGh5bjh2MWdrbkpXU2JmaF9DUzc1WnhRMktpRzhRLTNzcWdBZzhWcVNidXVlU0VacGFmSUhvazBfTzIzUFJoc2NZUTFDWlNHMjNFZnF3Y2szYmh2UjUzM0d6U1FhblJCZE9PLWE4U2xRRlNaaW1peHo0eWFFSVgyNw?oc=5",
 "source": "Kabar Bursa",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOSlB6UVlTcC1qQkJxMC11aFA5NS1lVk9hMTdjcEQ5LXgxUnlzRU1qQk9pYUpoUkE0YURJVE10b2lJS0xFRFhHOTljX1VqZXdsaElkUUppX2J3eTg2VGdXMWMydDlUeHFCc3cybkxPcm5rcjJzelJkeV8talRNSVIzR01maWZYZDlBWFBuMWswM0pyQ3lLSzBuYXJxc3BRbm5NbUNmblNNc1RsMTFCOHRGTmhkSFBiR2ZieUNId0VldkY?oc=5",
 "source": "Bisnis.com",
 "ts": 1790840648
-},
-{
-"title": "Bahlil Dilantik jadi Menko Hilirisasi dan Transisi Energi, Ini Profilnya",
-"link": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOSlB6UVlTcC1qQkJxMC11aFA5NS1lVk9hMTdjcEQ5LXgxUnlzRU1qQk9pYUpoUkE0YURJVE10b2lJS0xFRFhHOTljX1VqZXdsaElkUUppX2J3eTg2VGdXMWMydDlUeHFCc3cybkxPcm5rcjJzelJkeV8talRNSVIzR01maWZYZDlBWFBuMWswM0pyQ3lLSzBuYXJxc3BRbm5NbUNmblNNc1RsMTFCOHRGTmhkSFBiR2ZieUNId0VldkY?oc=5",
-"source": "Bisnis.com",
-"ts": 1790840648
-},
-{
-"title": "BEI Catat 50 Investor Buka Rekening Short Selling Hari Ini",
-"link": "https://news.google.com/rss/articles/CBMingFBVV95cUxNemg5MjdXdkhNdXl5bFEza0Jnb1cwSTd3d2ZnZktuMi1MWnJpcWlLeXhQVjFKSFZ4d3Z5eTA0d1BETHBIamQwY0hqZEg4aWpYUnVXRnJzZlhDUXBQdXh0R0d6dkhzVlMtQmxVb3RJLVg5M3huRndpQ1NQbk1lVkthcVBjN1B6V1BicjI3emxtb3NueFJWdFVLOFBhRU00UdIBowFBVV95cUxQaDdZbUZsUXlmVWJSdlhCTHpheVNKRW1MdDBEZ2Fmb1RyeHQ4TlVWRUZoRzdaWXRjWEZpVkNseXJuU2Nwb09yWUVPNXZPa1hUOU5aYmJvQUJKVGlJOGU2dVF5c1dYQWtkZVlDaTdKNGFDblNBOFFIRUFKQ3c0MTdhVWV2OURiUEFSU0tEUVlNWnlTSG9BSTFaOTR2YVNFSnQ1d3lF?oc=5",
-"source": "IDX Channel",
-"ts": 1790840520
-},
-{
-"title": "Breaking News! IHSG Sempat Anjlok 1% Lebih Kala Ada Reshuffle Kabinet",
-"link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNelc2US0weTY4cU5MaS1ITVF6YVdOWDV4NEJxS3I0UVpBWEV1WjRrTnZpWnQtWEF4VHRTeHRqWHhkRDJRQlNaNVVvVzJEMWxVTTBaMWFpRklNYlY2eXZWbFRhMng4SXZxcXptS2M2NVNQaDRBNGZfOGRKWlFmczNubUVoQW1xdVpwZjZNMmV5MGNSUTZ1cEVWQTlrU2lTMUJPZ3FYeFpjdHg1VnpnUk5hR1lOclRUQl9KYmpNSlZQcmZxU2pC0gHKAUFVX3lxTE5sZHNNY1JzLVNnVHBQWHhqVDJuTzdEWHV4R0dRWWJQbHB3b0QyUngzM0pwVXVySGNmQzVTZmZqTWJsS0xzM291MVB0aUpoNjJ4UTEtcGo3Z1VSR0NWRUJkbGJoYUpMaHVRXy1RbnBHSkpGcHE3U0ZDbGljOHZ6bHhZZ0Q2b2xsYi1HODRURVRYTXFZbEx2WVQtOHFKZll4T2t3YnpPRUszcFFER1hLVVAyM2pMUFp3elRtLTBxejJDLTBjWmlybEJHNEE?oc=5",
-"source": "CNBC Indonesia",
-"ts": 1790840441
 }
 ]
 }
