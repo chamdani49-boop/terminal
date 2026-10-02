@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-10-02T10:00:51+00:00",
+"generated_at": "2026-10-02T10:15:43+00:00",
 "count": 80,
 "items": [
 {
@@ -16,6 +16,12 @@
 },
 {
 "title": "IHSG Naik Tipis ke Level 6.036 (Jumat, 2 Oktober 2026)",
+"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQNG0waGFfeGRieUNRRDZGelZsN01Zcl9KNHFCRDV3SFVXVS11c0w0WlMyaHNybEQ0Mk1Rd3RadXZ0N21XQTIxTk51LUJlYkNLcFZwcTF2LUh5bDZmN2N2cHZ4eUdmT0dOdXQxMkFtTHFMMUg1NDZsbjA5Nm1uWlJRM3lsQmwyTmYyQ0FUaEdxY19NVDE4YXNCaGlHbVNxZTNFWFFYd2FWeGRFdUtYeGFVbzh3?oc=5",
+"source": "Katadata",
+"ts": 1790934350
+},
+{
+"title": "IHSG Naik Tipis ke Level 6.036 (Jumat, 2 Oktober 2026) | Pusat Data Ekonomi dan Bisnis Indonesia",
 "link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQNG0waGFfeGRieUNRRDZGelZsN01Zcl9KNHFCRDV3SFVXVS11c0w0WlMyaHNybEQ0Mk1Rd3RadXZ0N21XQTIxTk51LUJlYkNLcFZwcTF2LUh5bDZmN2N2cHZ4eUdmT0dOdXQxMkFtTHFMMUg1NDZsbjA5Nm1uWlJRM3lsQmwyTmYyQ0FUaEdxY19NVDE4YXNCaGlHbVNxZTNFWFFYd2FWeGRFdUtYeGFVbzh3?oc=5",
 "source": "Katadata",
 "ts": 1790934350
@@ -127,6 +133,12 @@
 "link": "https://news.google.com/rss/articles/CBMijAFBVV95cUxOMjUwRU9mS3pQRzFKTURQTnZsWXdJQUJEUjhhV0thTTJ0LVpPSFRhLW1hRzNoNFNaYWhtYlJMV1RXbjdJa1RSY2hSWTF6cDRtMHBMMmZ6RHdGbFBBVE9oQnZKTXdzYVRnbF9RS3FtbjBBWGRNZ3hpSEJEYVZOel9rWkdhLUhqaEFvbm93Nw?oc=5",
 "source": "Stockwatch",
 "ts": 1790921916
+},
+{
+"title": "Kemenkeu Batal Akusisi PNM & Lepas Geo Dipa: Presiden Tak Setuju",
+"link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQMnpMRDZQMm95c2duMjlUUTlNdXB4ZXd5X25ZSnFuUDcyaExlQnYwSi10M01WYjBEazlQZ0Q4SUJkQjdLZTg4UDN3bnlSX2RLU09vanhIWEZvYTJWMGRITlA2YTh0UUVyUjd1Rk1UQlo2MkxOcThvdThONjhFNmRVaXdleFFVN1MxY0pfcUVVQWVQN1pGYXh0ZlB5NHdIVEJnZTRoWEZ4bldsa2oxZF9UVUZ0cw?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1790921400
 },
 {
 "title": "Jadi Menteri Perindustrian, Sarmuji Minta Tak Diberi Penghormatan Berlebih",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxPWW5kZ0NtTGtMeV80Y0dJZjQ0MTc2VmpLdFM1eFhyNzEzaHE3bXVMWGlXM01GcmxXU3dYaThkUjUySnVpSW1KWXZrNHlsbHloaE5UOHREbmc2c1JXWWhnWnNsbFZBMU50VW51cmpjOGE3UDNnV1d3SzJQWC1LUHlPUy0zMktKZjVSWTlCQ3pmNGl3dEJBbjk2RlhCT0JabDBVRFN0Y20xb1dKRlhH0gGyAUFVX3lxTFAzaEhWWlNiUWVjYk1VVWthdmZySm51bzM5NHdRVGNTU0RBS2tHbGtsc2FuX3RBLVFZdXZVVWZZdkZ0RzVldjJaMDlDd2hKN1dLblZpdldwWUJ3OHQxQlFWVDVicVZWWnBtNlo1V0N2a3dPWEdaenkyNllMOTVsVldPR2ppSDZudFJEeUlDWEVGNnNVbnEyUGdham13V1BUakhkUHhxeEJOZVUxNFZHOHNmMlE?oc=5",
 "source": "IDX Channel",
 "ts": 1790894220
-},
-{
-"title": "Marketplace Mulai Tarik Pajak Pedagang",
-"link": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1hTXYydld1Qk9BSXBvaUpzUkNvcGdHSGh0b0ttakpwa203aVI0WE0xa0RVWnpRX3VYaWloamlUdkM4bC14MmRWMGhBaVNTM1VvYlF2djRNM1VaVUk3U0I1WjdiV3J4anBiSktIUGtHaXE0WVZUcGNacmtOdXk?oc=5",
-"source": "Kontan",
-"ts": 1790893848
-},
-{
-"title": "Kredit Bank Kian Bernas Berkat Agunan DHE Valas",
-"link": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPZmlPdEV3X1hSSUd3MUZjYWVEcjZ6RzBydFpyNUhJMXoycTdHampFM1dya2ZJQlNGQ1NSZGcyYlR1U2czLVJhckZKVE4zMzZpLTlxUXVOLWFLTWlhd1pkRWplcWN2VmxHTGhMamlrSTBrNG90RFBuN0cwQmZHZGZ2YmktbmkzZDRo?oc=5",
-"source": "Kontan",
-"ts": 1790892918
 }
 ]
 }
