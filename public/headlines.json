@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-10-04T06:30:43+00:00",
+"generated_at": "2026-10-04T06:45:38+00:00",
 "count": 80,
 "items": [
 {
@@ -61,6 +61,12 @@
 "link": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxPZS1MSGhBc3M4cG9KVjdicnVmVE5DR25uVWQ5SkZEWTUxZ3hHdWg3bUhLMTRYMmhoN05WWEVVeWpyMm4ydGlDQWVfaFgzd2NtU3o4d2RENDhIa0RHTGRBdFc3amtFYzZVUzdkMW1OeEplVkhxNGtXWlRjM0xGMGt2MDlTR0d2Z0RSWG9tYndkSk5CVUhjVjFnN0F1NGhSdGQ2SFRxbGJubm9OS3dCYU50R1ExS1k0enowMUZGMXNMWmk?oc=5",
 "source": "Bisnis.com",
 "ts": 1791081314
+},
+{
+"title": "Houthi Hantam Riyadh, Fasilitas Aramco Jadi Sasaran Balas Dendam ke Saudi",
+"link": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxOY2xDQ3h4SkJZZFVOTUdEcGFtMFh5enA4Zk1EOExxYlhidjVVMUlmaWhFamUxR3MzX2kyamZXb2ZSS1p4czVONFp4aDhqMFQ2bDJ5dk03cjdlcHVuZ1kybzd3OXNacTFwblh3NE5HWHNpcndiNUdTRi1yNGtHTWRURnNCRnhsSDhEeWw3ZTFZbVU3aFRtalRtaTVoVEd6OXdHVmVKUzktNmU?oc=5",
+"source": "Kabar Bursa",
+"ts": 1791080399
 },
 {
 "title": "Menkeu Australia ke Jepang, Bahas Peluang Investasi dan Pembiayaan Strategis",
@@ -465,22 +471,16 @@
 "ts": 1791002700
 },
 {
-"title": "ASII tebar dividen interim Rp3,9 triliun di tengah buyback Rp8 triliun",
-"link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPME9wZkhFbDByTHpadVdtMzdWVkd2dXJ0d3JOT0djQjBLUFBwa2RvUXNlVXdxbFpLUXdGMXhnR0xKdlRmT1kwYUYtWXR2clkyTWlkRDNyWVdBWlZaY0RLR0lZRWlXMHNWdEJVVXo4VWpXdFV6YmlpdVo0UGV6OFRiT01BTGNvR2ZmMFdTQlhYZ21XNzAybTh2RUxwMllzYTlCLV9zenZVVXYyQlJ0SEFFUkZRUVM?oc=5",
-"source": "IDN Financials",
-"ts": 1791000000
+"title": "EPAC Dapat Pinjaman Rp3,7 Miliar dari Pemegang Saham, Dananya Untuk Ini",
+"link": "https://news.google.com/rss/articles/CBMilwFBVV95cUxOSXI0bl9oNkZRS3FWNGVWRldPTG44MklUbXZRUm5zOUFsMnJfSHYwMExRcFVLQnJuMF8wQTdUaHhrSDVRTGl4dTRacFRkTzZEeWpFMDlSbUVVVkxrcjBiQ0pua3VXTE9oZkUybjd4cVp0WEJMc0JPRmpMY1Z4X3NjVDNNSDhZV3U0ZUIzUUVFTG1tRUlYX3Rn?oc=5",
+"source": "Stockwatch",
+"ts": 1791002457
 },
 {
-"title": "Siapa Saja Kementerian Teknis di Bawah Koordinasi Kemenko Hilirisasi?",
-"link": "https://news.google.com/rss/articles/CBMipgFBVV95cUxOcVlvVTFsMl9IalVUc2NSdTBrQy1kZFdKRlB0eDNtYkV2Szc3QUJfV2tzOEZmb3d0eXZnN1pZNFFiUVpiY0RCYzZvRHVjREZUaHJXTFd6RklNa0trYjVpaTZUMksyTVkwVlVlWlJybDg1SmE5Z0R1dHl4T0FQVXVZcmZOVTQ3UjlyN2ZCWFZuY3ZySzMtemRRWF9mR1ZsWjVmXzNTaEZn0gGfAUFVX3lxTE9rdjlaM21qeDdYWkRTbGdPTHJQZlFtR01RSk1lcmRFSUttNHdfQ1d1RnJNNzdwWTZYaXQ0NU1VQlFxQnNQOU1JRGFmeVc1R2V4WkxTaER0eGQtWGdKXzFMdWpfRUViT0dablAzR3ZMNGNPN2s5dVZWVzhVQ1JUOEhONGhMbjhaSGpDVnhlYWJnREJrTVpiRVQ1bnVOMTZmcw?oc=5",
-"source": "Kontan",
-"ts": 1790998227
-},
-{
-"title": "Jajaran 10 Emiten Paling Rugi Sepekan, Ada FORU hingga NETV",
-"link": "https://news.google.com/rss/articles/CBMingFBVV95cUxPcGpXeW41dW1pa1hyZU1BUWlzX1k1MVpHSE4zcWhVVjZUdWkyY3NiekY3SURPVjlUWTlZRUZROXNzcm1VcHlVNWxhbHd6UWF5c2sycG9KQTU1Q08yRkJMOVdIbHhmSVd0QUZtSl9yOXlIRmJhMVlBdmxkLVdoNjdYbEVFMEhnVy16MExIXy1ILTduOVJ6akVWSDZ1UWtLd9IBowFBVV95cUxORjhDaWMtV05KOUpZcnAwTkxlQVdnWWl0WDR3bnhYVUN4WlBYTWEwR1F1QTB0OVNVS2M1Sk9ZTHNGYXRRMHB6WFRwUnRtN0RESWhERUllWFlodktKSUtVa3R0UjI3LXgxcEtmemg1QWZLMjRtRkxGWDUxZ2Q5NmpUTVNkUmVaenJWbzE0b0RmaFVRai1qeDRlOG9CU1BXMG9BWDJB?oc=5",
-"source": "IDX Channel",
-"ts": 1790997000
+"title": "Perdagangan Sepekan: Volume Transaksi Saham BEI Melonjak 72,51% - Market",
+"link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPLUpXOWZzbjJNdVk4eEQ3TWhVb0QwVWpBekM1cWlqakZ6R3BkcDNRZmZlQmdiTnktc2dSTGpYUGRkSGphTmxhUm5TeUV1dTRsbDhPb1dmN01KWVZ5OGg4MG0wNHctSDJZaHJmZzRVTWQwNGR5d2M5OGVqREZtZkx2MlNhVDhNWkNiTEJiTzcyRVJ1QlBKMkIzeXlVc3hqZ3c1aHRoaEYtTzhMUUF6b01CVmZLcw?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1791001800
 }
 ]
 }
