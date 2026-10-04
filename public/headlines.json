@@ -1,7 +1,13 @@
 {
-"generated_at": "2026-10-04T21:00:52+00:00",
+"generated_at": "2026-10-04T21:15:47+00:00",
 "count": 80,
 "items": [
+{
+"title": "Survei KONTAN: Pebisnis Lebih Optimis Memasuki Akhir Tahun",
+"link": "https://news.google.com/rss/articles/CBMimAFBVV95cUxPcFJBR1R3WFBwQV90dHIxVEdoeldDVzZyWHpIa2hsSi1jbFFpT1NmVWNxemNTSnlVZS05LVUyNEhtR3ZHOHZzX0JfR0xDMTRscXNxTXdfZmV6VjY0VzJPN1ROSUUwUy0xTm51OExZQmVLRXZTcDRlSnFCemZ3S2hnNm9majZTbWFBbkJRei1rcTl1QUxpYS03cg?oc=5",
+"source": "Kontan",
+"ts": 1791147618
+},
 {
 "title": "Short Selling BEI, Intip Saham-Saham Potensi Agresif Incaran Investor",
 "link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxNWm56YS02ODdFTDFjbnd4Vzc4VHllSUw5cW04NU1xYVI3VWdyUE9lV1NhSG8zdzBKTXZxbWZrS1MweEtBSFI3V3R4NVl4NXF2Sm9HT0ZSNzVjajl0UXZ2VUhjWXkxSG8tY3V6MXNiX3FqcTZGcjJMZnNrdXhKRjQ4aldFaGFjQ0xFU3BweFpGZkhwSF9YZ2JqdDdHczlrYmJNUlRZYVNULUxaVmk3d3Rrb0dlOEp3d0hUQklqaEln?oc=5",
@@ -21,6 +27,12 @@
 "ts": 1791133727
 },
 {
+"title": "Harga Bitcoin Bertahan di Kisaran 85.000 USD, SEC Beri Lampu Hijau Produk Leverage Baru",
+"link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPNnBrYnl4c3hhdk9obmlLRWxiVkpnRVRZV1IyRU9QRGN3NTI4eEtmNTZBR1N3Vnp5eF92YXZQS3haWmRGQVNkZWZzX0F3bTFkcE1SUWlEazEzcHJYN0xLRHV6M2hTX2VFYm9mMlFMZHJTRXBZdU52LXRaR1g2U05MX29mcHp6UUNCWkpJTFZDM1dOczlwclZqcjg1bEN0M1RlazdQeVVOZkJldVlCTXc?oc=5",
+"source": "Stockwatch",
+"ts": 1791130895
+},
+{
 "title": "Harga Emas Dunia Tertekan, Perak dan Platinum Ikut Melemah",
 "link": "https://news.google.com/rss/articles/CBMihwFBVV95cUxQOXlWVnJSX3VDWTh5cXE3UkF4WnVGN0N1UHB4ZTNUcElRSFhfM2RFcjdmeXgycTE5ZVFMQUlHd19YSnEtOUlPYVNWdnVlbHRKeHhDZ1Qyc1ZRNGxpUEYzUFZFdnFvX2tWdTdhdWtKYmJLeEhOS29nS1JYR0xfdFozZjFvTjBCT1k?oc=5",
 "source": "Stockwatch",
@@ -31,12 +43,6 @@
 "link": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQR2FRd2QwVUMtS3VIOWplWkJ4Y1JxTE1fbXRvTGQ2WV80SnUwUXYzTjJ5WjliRnk1ODBPV2JPbHRxN1RfSmJGV1FnQV9HbmlnUmZwc1RDbVZvNTg4N01xSnB4SWNETWVxZ1JONlNBNWRjTDBJaGk4TVIxaVNkdks2VW1WUjRyQjdYbVpTLUFiVDU4d2daMnFjbXFZUjdQRFU?oc=5",
 "source": "Stockwatch",
 "ts": 1791126346
-},
-{
-"title": "Harga Bitcoin Bertahan di Kisaran 85.000 USD, SEC Beri Lampu Hijau Produk Leverage Baru",
-"link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPNnBrYnl4c3hhdk9obmlLRWxiVkpnRVRZV1IyRU9QRGN3NTI4eEtmNTZBR1N3Vnp5eF92YXZQS3haWmRGQVNkZWZzX0F3bTFkcE1SUWlEazEzcHJYN0xLRHV6M2hTX2VFYm9mMlFMZHJTRXBZdU52LXRaR1g2U05MX29mcHp6UUNCWkpJTFZDM1dOczlwclZqcjg1bEN0M1RlazdQeVVOZkJldVlCTXc?oc=5",
-"source": "Stockwatch",
-"ts": 1791126000
 },
 {
 "title": "Harga TBS Sawit Sumut 30 September-6 Oktober Turun Jadi Rp3.801 per Kg",
@@ -475,12 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPUXFGYUg2enBFLUJHX2pCak1YbXBmeVBRNFFOU1hIMkRnV0xuWklZdDByS3lZYlpsWVo3OTVPREtJS2lVREhSc0FvalVreUJMbEVSWjhjSXA3bENCdlV2WDRDWDVlbEtHMDJaZHBLM0NwelVMcVR1ZkQ2WUtibGFYOWZRNzJtMDNhTldlNFdRdmtneXUzemRxcndXbFZtclE?oc=5",
 "source": "CNBC Indonesia",
 "ts": 1791074700
-},
-{
-"title": "UEA Sebut Serangan di Kokpit FlyDubai sebagai Tindakan Terorisme",
-"link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxPT1VVd2lzS2FURkhiYmlySDJxalNzdUh5akhTVXdHYWthODlmWjdRbTcwRWZHc0tMTGUzQzR0RXlkcGRrRDZjeHFzWmxHX0ItMG1BY20xSE5fRjhEUnN4Y1c1bkpyMkZhY0lpMEtWWWhCTVFnY2lBdGpFTGt3TThUZjJiaEZ5UFJlSXVrb2FZUHlSc0toeGQ0MF82cmptOTB5cUU0SFNTZXVTd2Y5SVExZndQX1poOHc?oc=5",
-"source": "Bloomberg Technoz",
-"ts": 1791072000
 }
 ]
 }
