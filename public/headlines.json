@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-10-10T13:00:47+00:00",
+"generated_at": "2026-10-10T13:15:41+00:00",
 "count": 80,
 "items": [
 {
@@ -25,6 +25,12 @@
 "link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxONmdFSm1Zek9FVTNfUmVXS2hSXy1Bck9uNlJJT19VakZYRUlhOENoT3RqbDdYVE15aGNrXy1idUJnSkp6ZV84UVQ3Uzh0VmkwRnB0N0FCN0FUd2QtZ3h6d2NGUDFqaXNQSDhkckhRSWVuTm9QYmQ1bDl3LWVJdDJiRS03ZFVTZFBmN1NYa1NoZC04Y0pLOFNvbXQ1T1Y3RUh3UDRtcHlvS2ZUQm5vWDJpQWp6bEtMWUxRWjlfLU0xZ3kwZEs4a1HSAcsBQVVfeXFMTWxxRXB6ZTZXQnd1SEpZVE44dWMySm5razVpWVFMSWlRb0owdUhUbVpiN1ozLXUxVGZyM3ViZ2prQkpaSUg1b1JPR0xPSGJIQWdWdmNRRktSTmNiakMwVmlpZTdDekxic0p2cHBZVzg2cG05WVZieTl2OU5rVVE4T1FCNlpIT3BDRUZobElYV2pmZlNJbGhCalFVaXJTaGxESGpxSzVQSmlKUWY0bUVpaVJSNDljRUNudWdCcXR3YlRfeXpaeTg0ZFJqeWc?oc=5",
 "source": "Katadata",
 "ts": 1791617820
+},
+{
+"title": "BEI Catat 9 Perusahaan dalam Pipeline IPO, Sektor Ini Mendominasi",
+"link": "https://news.google.com/rss/articles/CBMikAFBVV95cUxQekFKaEtwUVBza0JZSlFnbHZRQVltRUlIN1ZQeEo1SlE0SElaZEExcV9EWm9SbS00UVBhYzZlY3RYV25TYnplS1UzcS1iX0N0cXl2N3RnckpYX19vcHp5dktCem42dFpQbFlkdlJfNURGQXhxTTUyaFFpR19zNlE5UUNONUVkRWt1YUhMUWxmT2I?oc=5",
+"source": "Stockwatch",
+"ts": 1791617156
 },
 {
 "title": "BTN (BBTN) Ekspansi Bisnis di Bali, Perluas Transaksi ke Sektor Pariwisata",
@@ -61,6 +67,12 @@
 "link": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxPWG9qcUZrdmxlZkpZc284Mk41SlNsT0ozMzU3aTZMbC1wYWt3alMyQVNWMzFycVloYnBTZDhQMzBCbDdmbWd2clV5dzVGdWpjSlVqcmstaVdFN1dfdkJaWTdZZHhVUjRiVXFscDVpZFkzWEtkUzVoampiRE5lVWNFNF8yZUtMcm1BMUU5NlpWSmJVWk5TaDgwdFI0TDNsM0tfWTgwWlBiT1p2ZWhkbVc5SWItY2M5NjdQMGtKU2VhSnZlQdIBxwFBVV95cUxQQnMwcTJPTGhUa1hrSXlqZ1IwYi1ickQ1V01FQnNDNnNpTFRzVG5RR2REV05lWVBNeXBCNWhZV2FHZlN4dlZ4ZWVVc0NvVllzbFM0YUVzQWxkTmtIV0hJZGFpNUh6TzJYTlMtWGV2X0hNek9yeldPbDl6RENwWmYwSGdqQzJRdEFHUmxlSkxnb0pwaUJTRnNQR0lfZ0xILVhnMlJ2Ym1fMmpLMm9GZmF1U0FXMmYweDhWRldBTDVxdmFHM1VYQVEw?oc=5",
 "source": "Katadata",
 "ts": 1791605460
+},
+{
+"title": "Aktivitas Gunung Anak Krakatau Naik ke Level Siaga",
+"link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOOFZNczdja2g3ZkZRR3FraXdwZWJKS0VvVTlNVVVZRGphOTdCbTN0c3JxUkFMY2lXS0x1NmRxWExuZGt6cm5oVDl4djQ2OFV5WlM3b3JOdWVweHk3S0tzejFFVHA3azZ0dlJ0S0U2WEFoaG5iMFdKWFpqVHpQeGk2TzJ5UFpieTVybVN0ZkR1N0xRUDFQWF80VXFfWEp4eEd4LUVvSg?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1791603000
 },
 {
 "title": "Rapor Saham Sepekan: IHSG Menguat, Nilai Transaksi BEI Melejit 28,52%",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxNY0JhcUlPYjJTWHZLcW5vNHNfdDV1WVZOTHhXRDlNVW5fYU9QTGlub210SjVLR19wVjdwcFNmbXRKbzJRRHV0UVhuNWhhXzBvalhBMmgzQl9xVENRMmhxSHRKN1pEeUR3MlVRWGFMd1dWYTFSQno0ZURaZ19FM05SczZVemthZy13MWlWRUQ1LTd1dXVyRGFxbXNqTzl6T2U4WEx3OUVOTWh6YnUycWQ5RG5IQUx2VHgyRldwN3JpTXpQQQ?oc=5",
 "source": "Katadata",
 "ts": 1791538951
-},
-{
-"title": "Askrindo Gandeng Kadin Jakarta Utara untuk Perluas Layanan Penjaminan",
-"link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxNOXNGT2pGZ0NzNWk2OXZ1NlBEV1dfSWtMWjhQOXRmUHQ0dkV4cjJtTlBmaXBxMlpyREcxRUJBa3AtS1pmQVR3NGljekFmVkNzNi03VVVzYXpFcmowMjMteHhYTks2WGFfUkZsQkhtNUhFaW5DWUVGM0pTMWE3Q2NRZUY3d005b0RlNEtJSDZ4VGt3a3Y2NklTdjBlcnN2a0ItSE9pS2xfMNIBoAFBVV95cUxQdlkzZmhtZTlUaGpZMDB2ZEdEOVhOMmxTTEdNVmo3MjV0WGs5cHYzcEhldDd1NTVUM3Q2b3g1REViSFdPMTZXSmZ1bFJ0QTNNR25LQUdMcUxUNkZKdkJJeHU2cmwzT3NOUHM1RzZCWS12VDdTOWp5ZjVSRHVEZEtLWG83MXFVZTFCYlZCOGJQblh0M0hqcktCYUdTTUp4b3pB?oc=5",
-"source": "Kontan",
-"ts": 1791538884
-},
-{
-"title": "Tag: kmvirgo transport 8",
-"link": "https://news.google.com/rss/articles/CBMiY0FVX3lxTFBxaWx0TjF0c2FzM2dZV2pGR3Q5UzVWT0J6NXBWZllUcEt4ZElsMUozV0lSZTFFQmZlazJncDhlQlNoQjA2clJEVThTVExCRXhJMDJILUVzSXRHQVBZMkpnSC03bw?oc=5",
-"source": "InvestorTrust",
-"ts": 1791538758
 }
 ]
 }
