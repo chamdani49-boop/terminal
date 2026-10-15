@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-10-15T02:30:44+00:00",
+"generated_at": "2026-10-15T02:45:41+00:00",
 "count": 80,
 "items": [
 {
@@ -61,6 +61,18 @@
 "link": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxPa0hZZ0pKaWo0RGxtVXR2TWlhU2VxLXRYQVBxY2lxazNFeWZxc2J2RUhicktQemJOY3NLQmc3NWEzdlZQN3MzclFSUUU3MzRCdUQxcGlremFnS1d6VGUzSng5VWtqYnZCdjdXcVkyLWxsRWlzWW9nTVY3SW16bFVDVEVISVVlZTBveDNhVFhMUDdsQmpNRWU5cFpsQklVUkZ5SEdMbmJwcUd6eDNXLWNlYU8wYVFjRWFVWlZUQ3FsNGxPYzJDa05PN0FTal9UVHZmeFA4?oc=5",
 "source": "Bisnis.com",
 "ts": 1792025400
+},
+{
+"title": "Suroso Isnandar Gantikan Darmawan Prasodjo, Apa Tantangan Dirut Baru PLN?",
+"link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxQM3RLVXB6MG5zSFowaUFWQ0xXSnJjT0lUeUFVLWF1d3dBZlA3NzExQkI3Zlo1eFVCbmxoak5INF9hU3RnZUE1N21KS1FGdTdyQ0FrOUpCam5pZGpkVGx3eFY1YXF4RUdQTFVkMG5UNG93M1ZROGtHTHBGZVJaaWxsdHhOU25YaFRMZFMxSHFlZ2RUWEZ2OWR5NUIxMU1KTXMteEd1MVE4Yw?oc=5",
+"source": "Kabar Bursa",
+"ts": 1792025100
+},
+{
+"title": "Inflasi AS lampaui perkiraan, IHSG waspadai level ini",
+"link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNb2tMSDgyZExjU0J1dGMxWXNfeDV4Q05iQ2R3bE11aGF4aTQ1XzgtbVllOXBXaGJiQUpaWHRMTnI4dkU2QlVrVHhaMGJ0c3ZoLVVUWW43RlZSVjNjTzltZzBUYXNtTVlYbTlqekJuRXk0QjFWY0xTejBXVlhiVlJ5OGpoTV9qM3RQcXdCdGNFUi1TZ3VKdXFRdjFXOWs?oc=5",
+"source": "IDN Financials",
+"ts": 1792024800
 },
 {
 "title": "Kontan Harian - 15 Oktober 2026",
@@ -181,6 +193,12 @@
 "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTFAtX3FsVUNvN3NYYnBfUmV5TTFEVTdMb1R4ZG9MRXZyWU5CMjFyUFVWaDJ3c3FJX1J0dTF1azQ3N1hvSzIwZWQtREgxUVVqakRRMVZIR0w3M3A3TlU5OENhenlNcGhxZEN2NE9tUl95dHNuWlh3NTJ4NjNOUmxfTHc?oc=5",
 "source": "Kontan",
 "ts": 1792016457
+},
+{
+"title": "Waspadai Koreksi IHSG Hari Ini, Simak Analisa Saham ADMR, BRMS, hingga ENRG",
+"link": "https://news.google.com/rss/articles/CBMisAFBVV95cUxOclhUbDF1MmhrMXBFWGE5RHdsWVhzTGFIQ040TTYxQ254Q01KaTFtc1pES3hoOVF4ZXRwaVNydHV3R0lLM1JkWUtkSTZ4MVlLQjVIVW9mLTYtbUpmZlJtN2pUOHhBSzhIa2NNemtaQzRVcF96NFBvRkRhWTc0OXlGMFdKbWhCRjJ5Zk4yX054M2ZGd3pPZmpqQWtrVU5nb3ktcEVhakl1d0RMdjJXUGN5NtIBtgFBVV95cUxON0F5M18yZUlUNGpDc2J3SEcydjVURjFPQWo2M0l1SW80S2NESV9FcDBOc2ZZc1c0QmFhUEFXWUdBV19jMElwa1h5YnA0RnZydlJJYnBBNTNNbldxazdQTG1FMW5qY3ItOGl4YTRLTC1CbGRnTXBHUFdBVm9JbWU1QkRGRktKekNWY1lGdnZGZ0NiTGNpM1ZZWFVCWWhHcmRVZjlpbk53d21KVncxWjFBQndlS1pPQQ?oc=5",
+"source": "IDX Channel",
+"ts": 1792015500
 },
 {
 "title": "Mampukah IHSG Menguat Tembus 6.000 pada Hari Ini?",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMizwFBVV95cUxPdXJRd2MtVldORU1BbjBPTnNISE01eVBITnJZMDh1N0Z0WTJGYy1uTklPREozbnJDNjc4YU1QdVBUZUJqbkhEMWdXN09NdFFBaUxwUlh2T3ZkMHBmWF9sNkpHbGxSMnREWF9iTjdjYVg3eE5SNVpSTFZGSUhPS0d6ZnY0WG5ZNmtIS1V0cU5tU05UVjloUk9MVDZCN3NQWk16QmlFaGZUUGZ5ZnRrZXo0ZTBFb1IzdklLTGtoYjhXNEhmai1RaVFtd05rNXlGVk0?oc=5",
 "source": "Katadata",
 "ts": 1791971741
-},
-{
-"title": "IHSG Naik Tipis saat Bursa Kawasan Asia Melemah (Rabu, 14 Oktober 2026)",
-"link": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQOG9CSWpMZ0hVX1k1ZkktYkI1cm5Zd0JNUHl4MERkUFl1LXJPVGRBZGw0WDFqa05qQlFOZEdiajQxR1J4VHpuSFBuRXZlVHI1NFdfU2RsWE5tTjM0M05kaWRFTzVEaWlsVEt4UUhlMFRnMmJvd2RSVGE5c1dCQjEycUxtMzlWNEhTY3dza2J3dWFsSXNWc3VUTmZTaXpvMlgwakwwVEthMF9zaXItVzFOTVFDSHFRRTRMdTVWOEI0Wm1RUVpxLWpqZ2RR?oc=5",
-"source": "Katadata",
-"ts": 1791971680
-},
-{
-"title": "IHSG Edges Up as Asian Markets Weaken (Wednesday, October 14, 2026)",
-"link": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQNlNjbWFOOVFlSGlBcjNhcEYyY0pkcVBObXRnT0czUEVHMXlRVlM3ZW16RngxeFpKZzU3Sk1ieUtkTGlEcExBbzYyZ3RSUFVPdG1kQUFodnZzVHdCUHhnQThnMDZvejRRYnNCTnBUVFJmelhyZVBaQVpzOUdocm1URVM1SzNZWHRTNHFOMHVjb1M1U2tKSjE3d3RWcV9jQVcxalVBSjVvVHJmTWxGd3ZJZUFVSWFMU1oxRll1Tk9PbWJ5OTlDejJSR1h3?oc=5",
-"source": "Katadata",
-"ts": 1791971680
-},
-{
-"title": "Ombudsman Soroti Antrean BBM di 11 Provinsi, Desak Evaluasi Distribusi",
-"link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPTUU2T1M4eVFMaXJCeDNXMktnX1J4Z3lwcUhBRHFKd1JWdWVSSmhkSk1tLWszZ3ZxVmxxWjdZeDBudGo3VnBZWDQzSld1ZTM2a2hyRXRtVUVzY28wU0FWX1JySDNHWnR5Nk1CRXJCWjhuZWdYQVFEY0k0TVVlTTlwb0pwZDZWbTBBdzlzeUI3RDd5QVVJd2JSNDFSY2xacjNiUzRja3hQRdIBoAFBVV95cUxNX2ZmWnkzRHlGbVlXdmRPT3JwRlFkWE90Nk5IWC02czNQZUtvQ0ZmS1B5ZmVLY3hYa0pXcXF4aHZmNFpsVzdNUFcyRzc3MzlwRnk5UFZLb19LTTBLLWxrRDNCclhGNlRGbVoteng2cGpaRGNyLXo4WWw3U3VNb2Q2RE5uYk9jeHJIUUZpd3hmWkc3WG02QndWOW5URXJ6bzBQ?oc=5",
-"source": "Kontan",
-"ts": 1791970926
 }
 ]
 }
