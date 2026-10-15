@@ -16,7 +16,13 @@ on:
     # dan beban paling tinggi tepat di awal jam (menit :00). Menggeser
     # jadwal menjauh dari :00 = rekomendasi resmi GitHub agar run lebih
     # andal benar-benar tereksekusi.
-    - cron: '7,22,37,52 * * * *'
+    #
+    # Jam aktif: HANYA 06:00–22:00 WIB (di luar itu berhenti, hemat run).
+    # cron GitHub Actions pakai UTC, WIB = UTC + 7, jadi:
+    #   06:00 WIB = 23:00 UTC (hari sebelumnya)
+    #   22:00 WIB = 15:00 UTC
+    # → jam UTC aktif = 0-15,23 (run pertama ~06:07 WIB, terakhir ~22:52 WIB).
+    - cron: '7,22,37,52 0-15,23 * * *'
   workflow_dispatch:
 
 permissions:
