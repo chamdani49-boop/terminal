@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-10-16T22:15:42+00:00",
+"generated_at": "2026-10-16T22:30:47+00:00",
 "count": 80,
 "items": [
 {
@@ -13,6 +13,12 @@
 "link": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPYjlFZXFGa1c0RXJyUUQtLTlCX3RObG82NjQ4YkR2SlFjdUJYbzdJMk15ZjhDbG5kNktVX0RRTkVJdXhDV1ExSGNCLURyOTZSakNTUzJtY2FfdTUtanRab2d4TVdJT3FKNFZSUVVhRlhIYzRLNnpjRWY3aVFtYXlZal9lRzZYTFlm?oc=5",
 "source": "Kontan",
 "ts": 1792186209
+},
+{
+"title": "CIMB Niaga (BNGA) Perkuat Kolaborasi Bisnis Korporasi - Bisnis Indonesia e-Paper",
+"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQckRIektDTXJtVE00SF9fZWNyZUw3UEUxR1FtMWx2V0JiUUktOVV3Nng1QXhVYWQwWnUyalJRZmZITlhSN0lDY2xITDZvV0ZjR25UdkFZT1dXUDY2X3kzajNmeHQ2LWgtTnRabzlvZVNHcklJZDF5Wm1wck9pSUtjN21SU1ZvY2hHOGNGRHdJY2J4WlFKU2FDOE5yX1cxbHpBSmxNVWY1ejdNT3F1bHRZbF93?oc=5",
+"source": "Bisnis.com",
+"ts": 1792177200
 },
 {
 "title": "Berita pajak kekayaan Terkini dan Terbaru Hari Ini",
@@ -357,6 +363,12 @@
 "ts": 1792140300
 },
 {
+"title": "Masuk Watchlist S&P pada 2027, BEI Janji Perkuat Transparansi Pasar",
+"link": "https://news.google.com/rss/articles/CBMikwFBVV95cUxOWUZtYkc2a1ZkQ05MdGRnZDAyTWQzbWFsVkpOR3dkS0ItLWE0NFp5YXNKSkZxSm13ZXNYSnRPWGkxUWE4Ui1TOThfSlBFM3hCTnczejdBcTUyOUV4S2dVdkc4emtRVUFIVVFxeEI0RW1nMGdxQXF2eUl5dnVlRFFmaHZBTFNvdWpJdU83TC0xdE55UkU?oc=5",
+"source": "EmitenTrust",
+"ts": 1792140246
+},
+{
 "title": "Bank Mandiri Tegaskan Pemberian Kredit ke Jhonlin Sesuai Ketentuan OJK",
 "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxNRk1sYWFPbGJ3MFAtbG95NkxHU003emhiZ2N1NWN3WjhUaDBqV0hMR3c0ZFF6VTY1TEo4bVhPR2p1LVJ6RGpCbkhzR1huMUZ6OW01dU1FZDl5bG9xb3Izbks2Zkc1OVlLNlg3Tjc0WFRTT1dGUS1EREswd3dndV9oRjAwTHprc3hlTkd5TnItT2JiZTdoTGpjTGZ3Uk9DVVAxYnU3Mw?oc=5",
 "source": "EmitenNews",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQYmNFSm5UMkg2aXJtdEtOelJFcVNJWE82dTdUYkRuNUpYUG1FSldmLVk0ODFLQU1hU0w3WERNNVkzQWFKTTNDdHZPbzhvV1J3N0IxZ29UNVBJQ1BJa1h0NXpqZDd0Z1EwNmtpZUxnU0pFaVRwNGREeHdrMjdQdEo0dHJTMjZLdVQ4dDBmSEhQMmU0VENiN09OVUtoSkRQbmFuLUpCSHJrRFlkZjd4YnkxaVc0amtHQzNRaG1MVtIBtAFBVV95cUxOVVplZUZLQndNY1VpMkVDQTh5b2NaVFk1NThSZUc1SG02dUplZVdtdEpGb2ZKMEFicXFMYkpBOG93MWJ0Y1hNdVZkN2p4ZXFBRTE2Z3dxM19sX09OUHRyc0tubEcycTBuUVZoZ3VJY294eDN2LVRDVmo3QV9meURIWnhkREROUGUtcUtqVjJDUTlpMWI0bzlUWVlzcjVab2s5YUhmaW44LVY2dTNIMHc4NHJUT3I?oc=5",
 "source": "Kontan",
 "ts": 1792137894
-},
-{
-"title": "Pemerintah Respons Usulan MSCI soal Turunkan Status Pasar Saham RI ke Standalone Market",
-"link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQMWpMV1pZNl9Td3hYLVJVaHRGclJ2UDdScEVObUQ0WW5GVVcxU0VKSUNoWDJmdmhUdUtVRlFKRW9tbWRhWnBLWWd3b1E2ODd4OVJFTHNTQmxqRU1lTGtBaTFVUzRBZFJXYmpkSW9WUFdidDc2UE1HYWU0TnAzaXY1N2QweWNXZGJtek9MRXhIUkVsdVhneGkzTHpDRjJBTFFHSUdBY2ZOUjBaaTQ2NmdpWnZXWnhIREEtM1l4VTc3NXlISlRt0gHKAUFVX3lxTE51Tkp3ZDlCWVN4OXhfVUZuUG5LSjV4VmFVeVF2ZU9uSl9ieEZ3elU5bkUyWTlQRjYwd0Q5dDBJbXU0RnZWRDdVZnpiMGdTa1dLbUVQNzB1N2VaSGFIMFNEN0hxM0tSbVRoMnBJa1g5YlNJMnpuWEFJaDVNX1lYTDJuaEVkaXI2S01kbjJ3MTc1MDNFR0hZVTVLelJ0WHlrek9DZ0pGdVBTVTR4TkdUeXo2WTU4ZUVPVURRdlk4Y2R5QWJaSThIenp2c1E?oc=5",
-"source": "IDX Channel",
-"ts": 1792137780
-},
-{
-"title": "Mayoritas bursa Asia menguat, Indonesia anjlok terdalam sejak 1998",
-"link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOdjZKSWlheG0wSkNneWFncnlPcFNua3NkM1JaREVqY3NjWllHWXp3OVI4MlFxWVRmTmV5NHBNejdhbzduSVdlY1pNd3JFOGZMUWZiWnBWM0UxV1hwN3ZRQ2VvdmlCVGJldk81TmpkTG5QSVF3THc2d1NNUG1yUHo0SEFvSDFCblJCTloxUXNia0hyUnpfSFNBV3hqbXRXRWpvMm5qRUlYMWphVUhLZVE?oc=5",
-"source": "IDN Financials",
-"ts": 1792137610
 }
 ]
 }
