@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-10-18T13:30:46+00:00",
+"generated_at": "2026-10-18T13:45:38+00:00",
 "count": 80,
 "items": [
 {
@@ -10,9 +10,9 @@
 },
 {
 "title": "EmitenTrust",
-"link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE5MVTZOTjd4TmUzd0lRY3RqNGJ2eGVPeXQzeU5fdDR2Y0EyNi0wUGk4NTM4QVZaTk5CTUMwVHF2aWd4MHhuVVBwdXE1TU5YRTlpdFNReW9hcEtFdXFmQmx2TA?oc=5",
+"link": "https://news.google.com/rss/articles/CBMicEFVX3lxTE5CN2pybFVHUWZpRTQ2d1NwbnRCUG5vLUduSnVieExleUF6ZDc0UEFGbXd6T2pZWkNuaC1NWGJoWE5RUkNHSEZqWEVUd19aRkhGYzdXS0ZHMWgyQ0JCdDAybkZBeVQ2RzcwRjRjRGtvRVE?oc=5",
 "source": "EmitenTrust",
-"ts": 1792320915
+"ts": 1792321104
 },
 {
 "title": "OJK-BEI Kumpulkan Analis-MI Bahas Kondisi Pasar Saham",
@@ -97,6 +97,12 @@
 "link": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNNWNfYXphVGpJZ01BM2dBbjVESjJMYkRWRW9rZEsyMU5wbHBKODVxbWY5LU9MbWc3b0s5RlpQREZob2NHMXJTQ0pRNTd4eTZDblZ1SmVMcjNILTRWMl9zeC15Q3BZMU5yWWZQTnNGTVhnWmxnOUhlVnJyd2dsT2VDLU1ERHMwazV3dkRPRS0wTDhpOHp3T3diYmo1VjBPQzNFeU5Ja21zZWZCdWxMU0xTanRlTVJ4enY5VnhPVjRzTDNFZVHSAcgBQVVfeXFMTkZObExfSXdnc2x6M2dFbzFXOFRpV1VXelVuT2xSTWNRcEJCbXVfS25SZEg1MHh4TGNXZ0dGQ1RHajNidVBjb1RsdXkzZ2l2Nld6YTY3OGNSQWtZZ0RScnpHZWFkR1JtVWVFYTdVTjcybE1GV2lTODNaay02aWJFTGxMMUtRZFNVWUpmOC1YRnhacm55SE40Q2Q4d1BFSW8wQTdKVTNjQ25Xa0ZlMEF4WTc3WndHalFzU2FCSkVkQUhSRlZ1d1VVREs?oc=5",
 "source": "Katadata",
 "ts": 1792308960
+},
+{
+"title": "Vonis Dua Bos Sritex (SRIL) Ditunda, Hakim Belum Siap",
+"link": "https://news.google.com/rss/articles/CBMif0FVX3lxTFB1NHJZZWlmQkpQZk1GZE1pbnJYcFlDWGxzcmhJZGF6cm40RjhnRkkwMHc2R0MtTzFEaEZFT0FvMnBPSlprQlJtRDV0R1RQSTNvSFowNWtLNjNDUXFsYVBmdFRkalNLdHJhbWpUWTBPNVk3XzFSYVJoUWRxZ2hXbTQ?oc=5",
+"source": "EmitenTrust",
+"ts": 1792308453
 },
 {
 "title": "BPK Temukan Dua Perusahaan Tak Layak Terima Tax Holiday",
@@ -219,6 +225,12 @@
 "ts": 1792293348
 },
 {
+"title": "Langgar Aturan Bursa, OJK Sanksi Pratama Capital dan Direksinya",
+"link": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPU25WN0lVdmF3YUJZdENrcGh6WjZRZkRLVzRjRFRwcEtXcW4xVVdqQ3N4TDVJMGVlOU5BYjZpYjRZZlB6NS1IYUxDSkJrdjZvc1p5ZkprWFhvT3oxbDJmVVN1WnNORnl1V2N4cVdNQ2l3VXowNkROaDVIcFVXaGYta0cwX0VUS0Yzb2NOV3lNWTlUbmdFcndSSlJR?oc=5",
+"source": "EmitenNews",
+"ts": 1792292820
+},
+{
 "title": "Akkuyu - Berita",
 "link": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1TMHJYNTZOcFZMR2hqQWk4cHExcDNYWl9jUXFJdy13QmJSN0Zid1R6ODNMMlpTZjF4cXRXa0hiRlg5MmNBemNCOElkNlI5aFp6WnktMVBXdzEyZGtBUE44?oc=5",
 "source": "IDN Financials",
@@ -289,6 +301,12 @@
 "link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNdllEekU2SzNSVlZrQ0Q3SzM1TkVrQ21XTmxPa3Bkc29tak91Q0JZeGlnTmxsZ21pSEs3YXlqeURlZGl2ekZ6a3k4bFNWTzY2ZEEtdm5MOHRHTVY2R3FTNlRzVmx1NkN6UkktNjA4RGdOd1g5V0V3MHRoR04tN0tXcnlRQloyN2RSMkxJVGVmaEJnd2JrNThiSjZITU83UkIyTVBWRm94eHVLaDFHbWw3S0JrN29IMlRySktnSVFJVDEzMUpV?oc=5",
 "source": "Bisnis.com",
 "ts": 1792283122
+},
+{
+"title": "BABY Tetapkan Harga Right Issue, Saham ARA Hari Ini",
+"link": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOMmotOHpPVkNmN1ZfTERIU0I4di0zR2ZaMFJwdDVJbHIxZVdtbV9qRUNMNFZUUjFnRU9fekFFRHJzaDNibmtEV2oyNzgtbEdXcDFpWG5uQ2Y1b1hPX2ZubHNQNXBFVUhSMFh5MV9vWTlvYlk3TDFHaVJsNXNZMEwzMTF4QWlDMjRH?oc=5",
+"source": "EmitenTrust",
+"ts": 1792282978
 },
 {
 "title": "Berita bakauheni Terkini dan Terbaru Hari Ini",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMioAFBVV95cUxQV2c4cFhTRTFLV0RKWWZKVXl6RGp1d0UzbE1YeTQ1ZHI2RzNXbE1nTmNEQUktMEpwc1VJbnJGMGg3TnEwV2Z6MVh2Z05YQVVTZndfS1cxbHJTZnRaVklkd3lFQkVybGN6RzZlYXU2cjBibEczTlVySF9OdHdBckJUNW1ROUM5UklKblpxMkRTLUFNajFkLVJGRnFJUFpjdGdG?oc=5",
 "source": "EmitenTrust",
 "ts": 1792235722
-},
-{
-"title": "Terjawab Sudah Alasan Tuyul Ogah Curi Uang di Bank",
-"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxNMEc2NUM4V2kzNm5jRm5CWVg3bjNUT19ZOWl3aTV1eG5GZF9IR3pVT2luR1cycEl0cEhEQW9RaHczcmlBYVBwQ25ieHdMamVnNEZGSDRwT1AwN0JleUwwWmJ4NkF6THIxaTVRNDZHNGxwdjBwdUNuSTc4TUw5SlBuc3ctN0JaZGlkUmhDSTdIdWYzSU5WTFh0aEFVYnhOaG03NWlnWEVMTEZoZnh0dU9OajNB0gG3AUFVX3lxTE5mdXR5VS1aY3VtLXhlREtHM2twYXZXTTgzek1vNEk4bEhteWdHakxUNUZ0YjRUbHRmMVdnRVJ6ZS1FSVo2YTRQUGIwM0swTlhZV3NTT0hIc1ZWV1JEUGF6cFdycDNiQ3dxal9XUG9YVGM3UGxDNVNUd2dnNjF1UHVnZlhvMU5SODBqdWVBclZhVFY0bDZUUVVTdGowZDBlTjFNYWRvY2JTbE9paEt1N3RLd3hHc3pzRQ?oc=5",
-"source": "CNBC Indonesia",
-"ts": 1792235400
-},
-{
-"title": "BREN dan CUAN Respons Sanksi Denda dari OJK, Janji Penuhi Ketentuan Pasar Modal",
-"link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxQMjN4aHRBb1RsRGg2cXptM1h2SGVZeHdsakVUU0NyTVZHWmpSNkU1NlZqbDFZeXpQTmF2TjJKZWlUSmpUZVlBN1ptOHNJQklsNGdKTkZRUk5CcVVlSjJRSmpXZV9KLXV5cVpSY0s2bnJ0Z3drUkljUWptX3RnWUZ2UGdPMVhHMjNGYUlsUEhMbGhJYzl4QnNFYm0wRkI0M0ZWTkE0UlAzSmZvQm9KZ3B1NjgycmV2QjVpUy01WWRSSElOVHJUV2ZRS1RYa9IB0AFBVV95cUxPYUplQUxNNDJSZVY4OUdOcVRPTEltNzFXWm5oUHFzMTZ1RzdCT0lTVjFWZWpCajM3ekhTUE9pYkFQdm5wRzNMYXQwQmh3dXNKRUxMU2VteTlrVjJ1TVBDUjhIY0tIVHpuMWY0NnoyaFVlQzRrMGl1MzZ2SDNfNVdUaEcyeFI1Q21BcEZBT1hpQ1I0SXZESWVLYmdaTjFVQVdUQlRTcG9QS0M2bmVXOGdoa1ZfUWVKMmt4QlNPeVRManEwMndXb1R6VWtRQzZnM2F4?oc=5",
-"source": "Katadata",
-"ts": 1792233360
-},
-{
-"title": "OJK jatuhkan denda, manajemen BREN dan CUAN buka suara",
-"link": "https://news.google.com/rss/articles/CBMingFBVV95cUxONzJ2ZmhxU0NqSGl2RlFkVXo4RlNzdXRGY296Y0FlS3NLd3l0OFZpMWpDQ1MzZi1nbEdQbDdDQ1pZTzdPUVdHMUJWZ3d4dERTZzBhWUdtRl9qd3FTMHFEeGJFdXBnRk0yb3NYZGNORDhYZ0NjUG9MLWdtY3M5c2FYRnV0RWk2WDZkVWxaNnF4dUM5LTFYUlV2dl9MV3N5UQ?oc=5",
-"source": "IDN Financials",
-"ts": 1792232400
 }
 ]
 }
