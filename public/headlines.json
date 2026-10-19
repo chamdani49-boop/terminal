@@ -1,7 +1,13 @@
 {
-"generated_at": "2026-10-19T09:30:46+00:00",
+"generated_at": "2026-10-19T09:45:44+00:00",
 "count": 80,
 "items": [
+{
+"title": "IHSG Rontok 3,64%, Ada Transaksi Crossing Jumbo Rp 4,06 T di Saham Hashim (WIFI)",
+"link": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxOQ3FDcW1ScUtYMkFPZW9RN0FGX2dzLVhNQVlOZ3JRVV9Jb05EZEVVZ0ljcUJDbVJRcEMtSDUtdFhrNWhIcGdxTmtuaHFBLW1VMU9WVHJzT0VodmNsenVxQVplM0J0OC1XVHdCZHVscm90MlN3QVZmSjFLbVc2ZXN2X21vVHk0bGk2dzdhbS1VMVlFYXM0V3lMbjBzXzBnU3NTVDFFLVVNS3MtLWdhRTB1NFBFd0trbnctWDNST1lzdkxVcWF4VGQ5cNIBzgFBVV95cUxOTFJRMTJ1RmVNcFB6NGtGYjNIOUk4dlBwdGFwX1FtNjE4eHNDbkxpUFZ5NE9MVXpuTEJ0MWVXdE0xQXdRX2pnQnVUM0w1dy1iWHR6N0EtdWlUS3VnRl9UdklKdWJaczR4ODhzdFBQWkVVeWtCTmxfZUhTVWtLNURsdWExd0dXeEJtTnRpN0RwUlFWMEdRTEtENk56NDVPZktBUDJnSTh3T1hEaFNpbGRvVVBRZFdsZllWQnZfYnZ5VVZJVDU0VWNidzFmMkVDZw?oc=5",
+"source": "Katadata",
+"ts": 1792401840
+},
 {
 "title": "Samuel Sekuritas Cairkan Repo Saham RLCO, Kepemilikan Turun Jadi 4,58%",
 "link": "https://news.google.com/rss/articles/CBMilAFBVV95cUxNa09wQjEyUHpDRFRqN2ZXZ3FheW9FakM0QzZSN2piUkxxZlJmSllIZXhpbmZPaUZzNFFfRFFWbTVIaFFxQUlVd2JacmFWTEFOYkUtekNUSGtyT3pFWDlXc0pmVHotbHBMZ0hCZTkzSE5vWUNnYlRQem8zMTBmLS1FTGxwV1pLUkJkams0VTBYaG9lRDJ2?oc=5",
@@ -51,10 +57,22 @@
 "ts": 1792395929
 },
 {
+"title": "BEI bertemu MSCI via daring, bahas apa saja?",
+"link": "https://news.google.com/rss/articles/CBMijwFBVV95cUxPazAtMkNjSFM0NWVrREw0UDNsb0lsME9KVmFuUDF0OUNVT0p3bXZiQmRwZW9yZnplZEJXdVBEQmZzUDMzbDFiRXA3d0RoN3o4Uy1LUlVfd0RiVmRDQmEyTTNWSndhdTRvdHNWR1FuRUltVnEzWC0ydVJUZEhkTGtSRjFxNW9iOHpLUllzMDZzRQ?oc=5",
+"source": "IDN Financials",
+"ts": 1792395600
+},
+{
 "title": "INFOGRAFIS IHSG Anjlok Terdalam Sejak Krisis 1998",
 "link": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOQTUxVVA4U1ZwRmRtS2FSZFNRd1l6UXVSQU8wQkV5T29GVFhLRXVWZ0FBRWt4VHd2S200TkhnelJXOC1wOXMxMWJJUmh6RmtEVG80a25sSDQ2ZUdGVDlsTlMwTjhaTm83LTF4Z2ZiMWVmeldEUzVkSVViSGZMREd1U21YV2FGUHZxZ3dEX003QlM?oc=5",
 "source": "Kabar Bursa",
 "ts": 1792394340
+},
+{
+"title": "Emiten Prajogo BRPT, TPIA, BREN, CUAN Rancang Buyback, Total Rp3,5 Triliun - Bisnis.com",
+"link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxQQTBudFlCNHFNYmF1ZVdrQjdfelJ1NEh4eF90cUpPemZiUzJLbzQ1SkxKV2NLZUIxMGl0Nk9UQW1EYVVGWDJQX2NINmYxMDBURHlHN2JNLWUyN2VUcU1WbVg0c0VQamk5eDR0UnYtTUYxMERLVHRjaHhKZDBRQm9oTDRHdFpDRjBYUzEyOWZfNkJ5T2dJOHlnV0Jyckc0ZE4yNXFpMVdub0t2XzJUd2VfVk9BSkhEangwNzNmS2t3?oc=5",
+"source": "Bisnis.com",
+"ts": 1792393406
 },
 {
 "title": "DSSA buka suara soal sanksi manipulasi saham Rp1,5 triliun",
@@ -157,6 +175,12 @@
 "link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPamRKS2F4c0xtYldGZ0p2cXRWOURoYlgzckhqQTlvMC03LTlqTkFPNFBFOWMtNTJhaUpHMUJZbFBJV0x6MFN4Q3N5NzZwRGxfMEpRZmtRSzNvSm1pUVVlX2JKbWU3TlBwVGphMnFncmxCRFEzWUFWbGhudmExLW9Ca3NmWmRIZzlEeWMxMF9rTmZDY2xOSEtYYURQOGJUVFhKQ21xc1BjOGhkaFlOUmc?oc=5",
 "source": "IDN Financials",
 "ts": 1792387800
+},
+{
+"title": "BEI Resmi Turunkan Batas ARB Saham Menjadi 7%, Berlaku hingga Akhir 2026",
+"link": "https://news.google.com/rss/articles/CBMimAFBVV95cUxPcnBHRmpIdTlaeWdjTVlzRnZfSXJFMFV2QzVXTXNTaEFVbzdTSVgyQmw1QmI1cENzNUlKdXd2eFhPdDl2eEdmQl8wdm9WRTNkYnJzSy1qcFc4dG9scElsRkc2bjFBalI3TkFxa0lRY2M5eVp4VzA3TW9FOEVnUkV4YjNYdVZfNUxDR2k5Z0lrZEw2dDNPZU1uTg?oc=5",
+"source": "Stockwatch",
+"ts": 1792387585
 },
 {
 "title": "DSSA Akhirnya Buka Suara usai OJK Jatuhkan Sanksi Denda",
@@ -297,6 +321,12 @@
 "ts": 1792381440
 },
 {
+"title": "Obligasi SMRA Rp468 Miliar Jatuh Tempo, BEI Stop Perdagangan Mulai Hari Ini",
+"link": "https://news.google.com/rss/articles/CBMingFBVV95cUxQd2JOVzA1aXdKbElSajd2dHp6LU5VeUxrVGJhbWUwYnptVGV0aEpkTmZGLW5qMmloQnZYX21RZU9lLS1TcnpITV9iR196WllZMGkzRlhYNnJXdXp5UzdDZVgxUWFzcHBRR2lFRWR5c3RhU2pUajhzbjRGaFkzQzBhTG94R1Jub0RQRDFCc3BORTlHODJkSUNnWDNVN1RKUQ?oc=5",
+"source": "Stockwatch",
+"ts": 1792381385
+},
+{
 "title": "BCA (BBCA) Gelar Buyback setelah Saham ARB 2 Hari Beruntun",
 "link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOZ0JNZ0hzcXlOZUFITUNiY25iajRxUUhzaV9uVkViVlExTDVUZm5LYW45TEpfZW4tcUEzb0ttcTFqaG1FMUQzQlQwX284czBXLUJfclFCbHN4STFUZ19aam9iUV91UDhIQ1lDNy11dHhRN2hSOGV3SVhlcjJYbDk2MnloeXlIWHRfd3RMN2diMFBnajRoZzl3TnFENjhFTVBlNUpvS1o2MGhlV2hGbXfSAbMBQVVfeXFMTXpLVjRucnRMTjR0MmI4UTVkY0dIZU1nSzVfRUxnRWMzMThhU0U0Zm54QzVfLU9CSzNkNlR5dWc5YVc2X3RWaVJjMnFjNGFYZk9FTkVxUDYzaXFTYWFQTUxDMVptcHNCSk93d3JBSzNpUk1EaktjRWlpT1VRZlVzb25qNHJYYUxyVGo5bkJNbFF2YTV3cGVsVktxbjFyVVE3Qm1KVW9QVEJoVlQ1UmVpOWh0dUE?oc=5",
 "source": "Katadata",
@@ -309,6 +339,12 @@
 "ts": 1792381370
 },
 {
+"title": "5 Poin Penting Agar Bursa Saham RI Tidak Sejajar dengan Zimbabwe - Market",
+"link": "https://news.google.com/rss/articles/CBMiugFBVV95cUxQajV6dnpmT2tNUVZWT1JmQm03S2psR2hXSlNTdHdTSXpIekNRYlM2WW1vMlhPRG9rWUYxd1NYMG5LN3pQZEJfSzhlZUZOTk82VVNfWkc5LXVxOVY2TkxmYkFjVXJkV2lFU3dTSWxURTMyYnZPVDdlTjNaMnlZaFByUWpRT1ZCZHN5QlUzbXUwcUg1VlVaTTFQNXhpSlJOSHZmYmFwdjRvNlFuMWhIV1gtWkFUUlNuMkpBMWc?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1792381200
+},
+{
 "title": "BI-Rate Diramal Tetap 5,75% pada Oktober 2026, Tapi Peluang Kenaikan Terbuka",
 "link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxPLUFkazlRNlRRT0lDYUxCMnFZeFlPMUZDTGVTNjRneElJWVpqNHpheW5VcUQweFFGZXFpblRmeWM5OFd0akxUU1NzaWNXWDFBYzNKcUViamIyYmNjMld2S1RXMklYLXhMNmY4QjZBb29PNTZCd3VtZHFJVzF2aTRmTzhidTVfV3c5RmZXN1FxUHBTeXBLZVBjX21hZm40NFBVV0V1c3M1U0I2Tnh40gGmAUFVX3lxTE9SXzdLbFFuVXZ3dTlQUmV3M3FQdzhnSEVLcl92RDgybm01Ums2dlZMNDlxWHVjYzJETzM3N1pvMjkzS2JMY2YtbXNPclBZbWxHSndnUlRiMHdMNG9nMy1jbkhXb0FHRlltdWxRLXhDSUR0Uk05Y21vcURmcVdCRnlxb1pFUVNsVTZZVE40OFhvQ1dLOFNJRmIyeHF3NkxfR1NFRGtLZmc?oc=5",
 "source": "Kontan",
@@ -319,12 +355,6 @@
 "link": "https://news.google.com/rss/articles/CBMijAFBVV95cUxNVzMyOHpnQ3R4MUJmOWtVZ3hUVnJraGpDckhJVFNpZWpXbXluLUtsQTN4VTNCd21GRHJGVG9LdzNXMzdQNGdVdGFaTGVlMXJlanBzejdRdHF3c0hfZlJIWjVnNUVhQWQ2WFNQb1RwNjhzVWFoNjR5OWpMQ3ZTa3QyZjE0ZF9MaVJyRGlOSQ?oc=5",
 "source": "Kontan",
 "ts": 1792380645
-},
-{
-"title": "Obligasi SMRA Rp468 Miliar Jatuh Tempo, BEI Stop Perdagangan Mulai Hari Ini",
-"link": "https://news.google.com/rss/articles/CBMingFBVV95cUxQd2JOVzA1aXdKbElSajd2dHp6LU5VeUxrVGJhbWUwYnptVGV0aEpkTmZGLW5qMmloQnZYX21RZU9lLS1TcnpITV9iR196WllZMGkzRlhYNnJXdXp5UzdDZVgxUWFzcHBRR2lFRWR5c3RhU2pUajhzbjRGaFkzQzBhTG94R1Jub0RQRDFCc3BORTlHODJkSUNnWDNVN1RKUQ?oc=5",
-"source": "Stockwatch",
-"ts": 1792380584
 },
 {
 "title": "BSI (BRIS) Gandeng 16 Bank untuk Transaksi Hedging Syariah dan SiPA",
@@ -451,36 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxPOWdLQ1psOV9senNYTlNJUGZxc2NRN3lTVk82UGFRbzFEOXYwd3Z3eno2eDNZci1xNlYyU0NtQjRldEY4MVRqanJpTklUZlBGbFhmZ1FNUGs4LTlHMWVlZlVqN2Q3WnVTZEkxenlIQmdhMVhWSThJVDljNUdwakRjaFRBNWI1VjUwOXJjaWtrLXRtODVPdy15TmxlM2lXRE1FajhoM0I1cHNQN1RLdVNKd3pOOU1nSFZ3TmpKYnItVdIBxAFBVV95cUxQYW80eXBJamNvU1RPN0xUNllYM0dicGJyeldNbGdSYkdQMFB2QkxNZWFFcEEzZ3BQU3MxLUlBWXpOWlNfWGZjUUxmOWlWR2JDQkJ4al83bEJ2aVA4WkNvYkMzamdSZm5zdjNZckdWY3J6UFFPQmVWVjN5LXRPZFQ1bzhXMXBEemRWNllXdTlEZUJsOXJXeGZfYWU4M21TSGNseWpCYlJVSWNiUWhxckR2SUwtWlYzSURBdnBzVEJTVU8zRWhT?oc=5",
 "source": "IDX Channel",
 "ts": 1792377480
-},
-{
-"title": "DSSA Umumkan Buyback Rp1 Triliun, Susul BREN-CUAN",
-"link": "https://news.google.com/rss/articles/CBMiggFBVV95cUxONnJzZldhQVhYT0tNZEFSREJmb2YtakRWVlUzOWJnaUxPaVZqZnRpSGMyc08tMVBUVEtDWXV2Q01oQk5iQ0h4bDJYb3FlbmQ3bFZCSHY2bndDaXVsYjRHOFZsdGRYRWdzNURwTnQyd0lsZ0xEdUptaXYza2ZxWC0yaDRB?oc=5",
-"source": "EmitenNews",
-"ts": 1792377480
-},
-{
-"title": "Harga Naik Terus, BEI Suspensi Champion Pacific (IGAR)",
-"link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPbFNkNHpFR3dlcXNHUTZxRjdmcU96VHhTOXlScFhIVW40MkFQb1dwb1pFelc2VVZNakt6T2RsZl82LU9SbmpKQU9wNkFzYlVwTGQyZXZxcWRIbEt3ZzluS3E3SmRvWEdSZWFYQURwOFR6UlQ1dFM5b2FUQ1VlaEFjYmdjOUVIUFFUdmhkVE9zM1I0Vy1OMkxwaWhvOW9DTEx0bGt0bF9VcVk5N2ZjcVR0c004ZHRvd9IBuwFBVV95cUxOWnJRZG1WSGdiU2hRaTlrU0VCMVdBRzR3ak4yRnlBaC1XcUtBVlFBYjdpMGxPLVJHXzhJZWJyd1NiRVpPWVI2anJCbEJIOGRKUXNXTExQTEplQjFoS3ozUjNEUG5FcFg2dHVuTV9EWHZjMzdDOGJhZXBiLXVMem9TY0RqZDY1SVVWMGtyb0tJVlhwek1oUVRtNFVoMEYySEVMdUw2S3N1WEMtT3JfUDVwc2Q2Z1BtNjdVTE1V?oc=5",
-"source": "CNBC Indonesia",
-"ts": 1792377298
-},
-{
-"title": "DSSA, BREN, CUAN, dan BRPT Siapkan Buyback Saham Rp3,5 Triliun, Ini Rinciannya",
-"link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPMUhfOEdtd0c5SWxiWUpCRWxwUlF4Vl8xQWhLRTAyMkQtWkc2UWdDVm5zMS00bjRBci14UGQ2dUtWLWZxTW5OZXlJNk1TTVFWSnNKbkV2TnJTWFlyYXNYVElyQlZxaC04RkJ6eHNCOUJ4QVg2S2hDcWxmUHYwRDVKQzF0WFlTcFppc0k1RzI2enk3UnhCNE5JVFlvVVRYaVRlblVfUHhtZVBLcVVGZ09LODctQQ?oc=5",
-"source": "InvestorTrust",
-"ts": 1792377000
-},
-{
-"title": "IHSG Dibuka Anjlok ke Level 4.900-an, Saham BBCA Rontok 6,86% Sentuh ARB",
-"link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOOFlqaWlyMVM0bjNUSTRJUW5Hdm9ET1YtNHBGYWpnRnNOWjJKUHFxR1dycXFGamllS1puTC0zMVA4SXRkYmE2NEg3QkZMN1hLZUl2ZjU4TE9DM3Ntc2l5YzlzUG9hZlFCTGdrS2tmRmM0LVlzOXZhOHpieWZKTDhlRUQwT3lDcXRtRU9pQVNLZ1M3YkZPOVF1b28wZC1NRnE0Njdtay1HVlpSMExkcHg5VDdzNGdYeHNtbWxWdm90UdIBxAFBVV95cUxQRGI4YS1IdXhtMmRnTXl3TlVkTGw2NExUNDVyblJVNm1zSFNwTjZhWHJhZ0x5aWhEai03V1lzRWYwVzFtZ3RkcWdTN241SUFPUWRiRTRVcGxPbzE2MkM2WFlvM1A4cGI2OE1yVWNURU03MzRXNnZjT2psUExHVmF3SXRMNzhxNlJQYVVqb1czRllWNEJXOVNRQ25BX0ZCSVFGcXdyVWs0TFFZdlJYNWQ2dmFOajZRODBteFItLVhHVjFjX2dQ?oc=5",
-"source": "Katadata",
-"ts": 1792376940
-},
-{
-"title": "BREN Umumkan Buyback Rp1 T Usai Disorot OJK Soal Penjatahan IPO",
-"link": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxOaXRyWnVrWndyaENpOGlZcHY1ZkthNkJoaHlITlRTZUdIdmhEUGpUTC03RnZ6RzA3NWxGUWlFSW8tOVY2ekt5dWNJbmFhdnNQQUJEQzFtanpqV19Nb3A3YVdzOGlvYmVaQ1l0ZVQ5YVlxcmNOWFQxS3Uxbk1FVDB4cm0wOE5UeTNDTzEwSERRSTlOV0VYN0I2NXVGYUJjYmkwN1F1MDhYOHFTdE5Vbm00TlpKNk95bmJKTl9ONGRIaXFwa2_SAcgBQVVfeXFMTlhhcno0ajEzTE96ZXZFbkJqamFidVRWMHE4Sl9SOFktRDUxbnpUYkpyMUFEWGxVTlhmc1RfWFVYVVVaMXA3QkNwcUhpRS1LcXR1c3YydFdwNU05VF9xV01kWi1KeTlJeGlja0xOcVRZcU4xRmhISkRaWlRsbTZhT3p1ZlIwemd3VGxHQUtVdDR1ZG1tY2pNWkNLS19xWVkwbzJKeFVTZXlxTFQ1alVGTWFyZUNKbEt5bjhvSmpUU0JYZzg0RmREXzk?oc=5",
-"source": "CNBC Indonesia",
-"ts": 1792376731
 }
 ]
 }
