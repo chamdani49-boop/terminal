@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-10-24T11:30:46+00:00",
+"generated_at": "2026-10-24T11:45:38+00:00",
 "count": 80,
 "items": [
 {
@@ -7,6 +7,12 @@
 "link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxPVlFZVUw4My14YkE2U3NUejMxUnZvOUduZ2FjU1pTOWtIX1BpbTl5OVZTcC16WUl3dlZVQU9RTDFESlpRN09FZXBPNG9jWDJWQ2pDc2hBbHdBci1zVHF3SjducUN1cjg5SkV3MGdJNktwM3VTVm1DYXE1NTdJWm5sU21vZi1CWDVyM0tmb2lpeHNHMkJ1OC1CanlHYXRnUmNKdUgzbERRbEVzYkcxWkdhbVJuUUpIbHM?oc=5",
 "source": "Kontan",
 "ts": 1792839652
+},
+{
+"title": "Berita Terbaru",
+"link": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE5NNm5rZVhxcGlQbGZQRjc2VmtyZU9oZ25CREVEUXE1YmRvQUZUb1ZrcDRHalhvMnpvREZ0TWJNWW5nYUVGNWVhX3JWMDNuYzRSeVgyS3BWVkxvalNLMWtfNDk3Qjk?oc=5",
+"source": "Kabar Bursa",
+"ts": 1792838226
 },
 {
 "title": "Krisis BBM Dunia Diproyeksi Lanjut 2027: Fase Kritikal bagi RI",
@@ -31,6 +37,12 @@
 "link": "https://news.google.com/rss/articles/CBMickFVX3lxTE1SbUF6a3hGQWhtVnA2VW42dXJOTnVYUkVWT0pGNk1VQjNtVk9rS2tzMV9kYzRsUmJaeER0dnRTQVM4d1hYZzVvZVl2S2xvWHNHNndGdEd3OTRYdmJ2elU0aEZLQk5KZDREdGV0NGpvVHpYdw?oc=5",
 "source": "Kontan",
 "ts": 1792824777
+},
+{
+"title": "9 Perusahaan Antre IPO, 3 di Antaranya Aset Skala Besar, Cek Daftarnya",
+"link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNLXpxdi1xVlNMVnVvNUJJZ0s3YlRER0g0bEV5TkV3dkExTzA3QVhlOWlWbm4yc2EyWVdqSm9qZVBDWnZrSnFod0Y0d21WZ09tQm5hQ1REZm11M0hFX0tzTDY0MUpTc09RZ3ZvMjA2Q3U3Vy1NYWRpSXY0YlpZQ3pDRjNCQTB6eGU4ejNOd2pHRzBiQW9VX2VNdDdhVTg?oc=5",
+"source": "EmitenNews",
+"ts": 1792823460
 },
 {
 "title": "Energi Mega (ENRG) Resmi Catatkan Obligasi Rp500 Miliar di BEI",
@@ -466,18 +478,6 @@
 },
 {
 "title": "IHSG Ditutup Naik 0,95% ke Level 5.439 (Jumat, 23 Oktober 2026)",
-"link": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOM2kzYmgxOEdnTkxtNU5zNWdjMFRYalk0MktuUTJ0NFZycmtESHNqd2VOUEx3V2pyQzJUUjdpSjZTNy1oQnl6OG9RQWxWZ2RHbS0ybm5DNzdicGRoNXd5OFljUl96TFZKX3c1bkMtUDlhOVZKQXdESE84NkdkRTJSVTFZclB6WXRXNkRMMmk2OEczdU53SFRCbTlzUUFTWi1CWUtkVGpFNk1Nb1VNNkkxWGQwWGtTRlNlUG1r?oc=5",
-"source": "Katadata",
-"ts": 1792752761
-},
-{
-"title": "IHSG Closes 0.95% Higher at the 5,439 Level (Friday, October 23, 2026)",
-"link": "https://news.google.com/rss/articles/CBMiygFBVV95cUxPVkRlRDd1SzdmWUpuSDFwS1ZXLUZDMzdMaXlXUXNyUURZMjBKTmxCakFPMWlCVExLcUxlNUF2U0w5TUZpN3lvYWw1eVRpM0FtMjhWcGl6VUJvNUdTbkRzX3pHX0pTNEVNU0RveFducUthV1dtRzVySVNZQlA1aWJ3a0ZCRXBUdTBzOTNFZkdPMGN0b3BzRGVqdEJDQTUzZGxNTmhFdFltbFZkRWNBTmJTaVRSSS0wYkRjdVBobGozNFBCbUoweEVrMWVB?oc=5",
-"source": "Katadata",
-"ts": 1792752761
-},
-{
-"title": "IHSG Ditutup Naik 0,95% ke Level 5.439 (Jumat, 23 Oktober 2026) | Pusat Data Ekonomi dan Bisnis Indonesia",
 "link": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOM2kzYmgxOEdnTkxtNU5zNWdjMFRYalk0MktuUTJ0NFZycmtESHNqd2VOUEx3V2pyQzJUUjdpSjZTNy1oQnl6OG9RQWxWZ2RHbS0ybm5DNzdicGRoNXd5OFljUl96TFZKX3c1bkMtUDlhOVZKQXdESE84NkdkRTJSVTFZclB6WXRXNkRMMmk2OEczdU53SFRCbTlzUUFTWi1CWUtkVGpFNk1Nb1VNNkkxWGQwWGtTRlNlUG1r?oc=5",
 "source": "Katadata",
 "ts": 1792752761
