@@ -202,7 +202,7 @@ def parse_sheet(name, grid):
                         ttm[key] = val
                         break
     code_in_sheet = grid.get((1, 3))
-    q_label = "Q2 2026"          # Dipaksa jadi Q2 2026
+    q_label = grid.get((1, 4))   # sel D1 = penanda kuartal tahun berjalan (Q1/Q2/Q3)
 
     # ── TTM dari LAPORAN KEUANGAN kuartalan (Σ 4 kuartal terakhir, kolom D-G) ──
     #   Bagian ini punya header kuartal (mis. "Q1 2026 | Q4 2025 | Q3 2025 | Q2 2025")
