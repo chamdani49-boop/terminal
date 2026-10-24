@@ -153,34 +153,6 @@ def read_workbook(path):
     return sheets, read_sheet
 
 
-def _grid_year(v):
-    """Ambil tahun dari sel tanggal (teks '30/06/2026' atau serial Excel 46203)."""
-    if v is None:
-        return None
-    s = str(v).strip()
-    m = re.search(r'(20\d{2})', s)
-    if m:
-        return int(m.group(1))
-    try:
-        n = float(s)
-        if 20000 < n < 80000:
-            return (datetime.date(1899, 12, 30) + datetime.timedelta(days=int(n))).year
-    except ValueError:
-        pass
-    return None
-
-
-def derive_ttm_period(grid, quarters, annual):
-    """Kuartal terakhir yg ADA datanya + tahunnya (dari tanggal laporan, baris 3)."""
-    for qn in ('Q4', 'Q3', 'Q2', 'Q1'):
-        q = quarters.get(qn) or {}
-        if any(q.get(f) not in (None, 0) for f in ('total_revenue', 'net_income', 'total_equity')):
-            y = _grid_year(grid.get((3, QUARTER_COLS[qn])))
-            if y is None and annual:
-                y = max(int(k) for k in annual) + 1      # fallback terakhir
-            return qn, y
-    return None, None
-  
 def parse_sheet(name, grid):
     col_period = {col: clean_period_label(grid.get((LABEL_ROW, col))) for col in range(9, 27)}
     quarters, annualized, annual = {}, {}, {}
@@ -209,9 +181,6 @@ def parse_sheet(name, grid):
     #      NI      : "Net Income - TTM (Qx)" | "Net Income (TTM)"
     #      Revenue : "Revenue - TTM (Qx)"    | "Revenue (TTM)"
     #      ROE     : "Return on Equity (TTM)"  (fraksi → ×100 saat dipakai)
-      # Buang tahun annual yang SEMUA datanya kosong (kolom placeholder, mis. "2026" kosong)
-    annual = {y: f for y, f in annual.items() if any(v is not None for v in f.values())}
-    ttm_q, ttm_year = derive_ttm_period(grid, quarters, annual)
     def _ttm_metric(lbl):
         if re.match(r'^EPS - TTM \(Q[1-4]\)$', lbl) or lbl == 'Current EPS (TTM)':
             return 'eps'
@@ -291,9 +260,6 @@ def parse_sheet(name, grid):
         'annual': annual,
         'ttm': ttm,                 # TTM riil (Key Stats): eps/net_income/total_revenue/roe
         'ttm_is': ttm_is,           # TTM dari laporan keuangan (Σ D-G): revenue, ni_parent, ni_total
-              'ttm_quarter': ttm_q,                                   # 'Q2'
-        'ttm_year': ttm_year,                                   # 2026
-        'ttm_label': f'TTM {ttm_q} {ttm_year}' if ttm_q and ttm_year else None,   # 'TTM Q2 2026'
     }
 
 
@@ -559,7 +525,7 @@ def eps_growth_5y_ttm(stock, eps_ttm, n=5):
                    key=lambda p: p[0], reverse=True)
     if not pairs:
         return None
-    ttm_year = stock.get('ttm_year') or (pairs[0][0] + 1)                     # tahun berjalan = annual terbaru + 1
+    ttm_year = pairs[0][0] + 1                     # tahun berjalan = annual terbaru + 1
     base_year, base_eps = pairs[min(n, len(pairs)) - 1]   # tahun ke-n (atau tertua tersedia)
     if base_eps is None or base_eps <= 0:
         return None
@@ -1008,7 +974,7 @@ def fill_holiday_prices(stock, monthly, live_price=None, yearly=None):
 
     # 2) KUARTAL (D..G) — hanya yang sel-nya 'Libur' (ada data). Pakai history bulan
     #    tutup kuartal (3/6/9/12) tahun berjalan = (tahun annual terbaru + 1).
-    running = stock.get('ttm_year') or ((max(int(y) for y in stock['annual']) + 1) if stock.get('annual') else None)
+    running = (max(int(y) for y in stock['annual']) + 1) if stock.get('annual') else None
     libur = stock.get('q_price_libur', {})
     for qn, fields in (stock.get('quarters') or {}).items():
         if fields.get('price') is None and libur.get(qn) and running is not None:
