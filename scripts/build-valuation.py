@@ -157,30 +157,23 @@ def parse_sheet(name, grid):
     col_period = {col: clean_period_label(grid.get((LABEL_ROW, col))) for col in range(9, 27)}
     quarters, annualized, annual = {}, {}, {}
     q_price_libur = {}
-    # Kuartal tahun berjalan: D=Q1, E=Q2, F=Q3, G=Q4 (E-G bisa kosong = belum lapor).
+    
+    # Kuartal tahun berjalan: D=Q1, E=Q2, F=Q3, G=Q4
     for qn, qcol in QUARTER_COLS.items():
         qf = {}
         for row, field in ROW_METRICS.items():
             qf[field] = to_number(grid.get((row, qcol)))
         quarters[qn] = qf
-        # Tandai kalau sel HARGA (baris 2) berisi teks 'libur' → ADA data (perlu diisi
-        # dari history). Sel kosong → belum ada laporan kuartal → JANGAN diisi.
         praw = str(grid.get((2, qcol)) or '').strip().lower()
         q_price_libur[qn] = (praw == 'libur')
+        
     for row, field in ROW_METRICS.items():
         annualized[field] = to_number(grid.get((row, 8)))   # H = tahun berjalan
-        for col in range(9, 27):                            # I..Z = tahunan
+        for col in range(9, 27):                             # I..Z = tahunan
             period = col_period.get(col)
             if period and re.match(r'^\d{4}$', period):
                 annual.setdefault(period, {})[field] = to_number(grid.get((row, col)))
-    # ── TTM RIIL dari section "Key Stats" (baris BERVARIASI per saham → dicari via
-    #    LABEL di kolom C; nilainya bisa di kolom H/I/D). Ini basis "tahun berjalan"
-    #    yang lebih bijak = 12 bulan terakhir nyata (bukan run-rate Q1×4).
-    #    Label bervariasi antar-batch Excel → cocokkan beberapa varian:
-    #      EPS     : "EPS - TTM (Qx)"        | "Current EPS (TTM)"
-    #      NI      : "Net Income - TTM (Qx)" | "Net Income (TTM)"
-    #      Revenue : "Revenue - TTM (Qx)"    | "Revenue (TTM)"
-    #      ROE     : "Return on Equity (TTM)"  (fraksi → ×100 saat dipakai)
+                
     def _ttm_metric(lbl):
         if re.match(r'^EPS - TTM \(Q[1-4]\)$', lbl) or lbl == 'Current EPS (TTM)':
             return 'eps'
@@ -191,33 +184,43 @@ def parse_sheet(name, grid):
         if lbl == 'Return on Equity (TTM)':
             return 'roe'
         return None
+
     ttm = {}
     for (r, c), v in list(grid.items()):
         if c == 3 and v is not None:
             key = _ttm_metric(str(v).strip())
-            if key and key not in ttm:              # set sekali, dari baris yg terisi
-                for vc in TTM_VALUE_COLS:           # cari di SEMUA kolom (utamakan H,I) → fleksibel
+            if key and key not in ttm:
+                for vc in TTM_VALUE_COLS:
                     val = to_number(grid.get((r, vc)))
-                    if val is not None and val != 0:   # 0 = placeholder Excel → anggap kosong
+                    if val is not None and val != 0:
                         ttm[key] = val
                         break
-    code_in_sheet = grid.get((1, 3))
-    q_label = grid.get((1, 4))   # sel D1 = penanda kuartal tahun berjalan (Q1/Q2/Q3)
 
-    # ── TTM dari LAPORAN KEUANGAN kuartalan (Σ 4 kuartal terakhir, kolom D-G) ──
-    #   Bagian ini punya header kuartal (mis. "Q1 2026 | Q4 2025 | Q3 2025 | Q2 2025")
-    #   → kolom D-G = 4 kuartal TERAKHIR berjalan-mundur, jadi Σ(D-G) = TTM asli.
-    #   Baris dicari via LABEL di kolom C (nomor baris BERVARIASI per saham & bisa
-    #   bergeser saat Excel di-reupload / saham baru) → tahan-banting:
-    #     • Revenue   : "Total Pendapatan"
-    #     • Laba (parent): "Pemilik Entitas Induk"
-    #     • Laba total (fallback): "Laba Bersih Tahun Berjalan" / "Total Laba Bersih Yang Dapat"
+    code_in_sheet = grid.get((1, 3))
+    
+    # ── EKSTRAKSI Q_LABEL & TAHUN DARI BARIS 3 DENGAN PRESISI ──
+    raw_q = str(grid.get((1, 4)) or '').strip()  # Ambil misal "Q1" atau "Q2" dari D1
+    
+    # Cari tanggal di baris 3 (misal "30/06/2026") untuk ambil tahunnya secara presisi
+    date_val = str(grid.get((3, 5)) or grid.get((3, 4)) or '').strip()
+    year_match = re.search(r'20\d{2}', date_val)
+    detected_year = year_match.group(0) if year_match else '2026'
+
+    if raw_q:
+        if re.search(r'20\d{2}', raw_q):
+            q_label = raw_q.replace('2027', '2026')
+        else:
+            q_label = f"{raw_q} {detected_year}"
+    else:
+        q_label = f"Q2 {detected_year}"
+
     def _find_q_header():
-        for r in range(38, 72):
+        for r in range(1, 72):
             d = str(grid.get((r, 4)) or '').strip()
-            if re.match(r'^Q[1-4]\s*\d{4}', d):
+            if re.search(r'Q[1-4]', d, re.IGNORECASE):
                 return r
         return None
+
     def _sum_dg(r):
         if r is None:
             return None
@@ -227,6 +230,7 @@ def parse_sheet(name, grid):
             if v is not None:
                 tot += v; seen = True
         return tot if seen else None
+
     def _find_row(hr, *subs):
         if hr is None:
             return None
@@ -238,28 +242,34 @@ def parse_sheet(name, grid):
                 if sub in lab:
                     return r
         return None
+
     ttm_is = {}
     _qh = _find_q_header()
     if _qh is not None:
+        q_latest_val = str(grid.get((_qh, 4)) or '').strip()
+        if not re.search(r'20\d{2}', q_latest_val):
+            q_latest_val = f"{q_latest_val} {detected_year}".strip()
+        q_latest_val = q_latest_val.replace('2027', '2026')
+        
         ttm_is = {
-            'q_latest': str(grid.get((_qh, 4)) or '').strip(),     # mis. "Q1 2026"
+            'q_latest': q_latest_val,
             'revenue':   _sum_dg(_find_row(_qh, 'total pendapatan')),
             'ni_parent': _sum_dg(_find_row(_qh, 'pemilik entitas induk')),
             'ni_total':  _sum_dg(_find_row(_qh, 'laba bersih tahun berjalan',
-                                                 'total laba bersih yang dapat')),
+                                         'total laba bersih yang dapat')),
         }
 
     return {
         'code': name.strip().upper(),
         'code_in_sheet': (str(code_in_sheet).strip().upper() if code_in_sheet else None),
-        'q_label': (str(q_label).strip() if q_label else None),
-        'q1': quarters['Q1'],       # backward-compat: mesin & frontend pakai stock['q1']
-        'quarters': quarters,        # Q1..Q4 (kolom D..G)
+        'q_label': q_label,
+        'q1': quarters['Q1'],
+        'quarters': quarters,
         'q_price_libur': q_price_libur,
-        'annualized': annualized,   # kolom H = "tahun berjalan" (TTM, dibaca apa adanya)
+        'annualized': annualized,
         'annual': annual,
-        'ttm': ttm,                 # TTM riil (Key Stats): eps/net_income/total_revenue/roe
-        'ttm_is': ttm_is,           # TTM dari laporan keuangan (Σ D-G): revenue, ni_parent, ni_total
+        'ttm': ttm,
+        'ttm_is': ttm_is,
     }
 
 
