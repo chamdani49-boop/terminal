@@ -202,22 +202,25 @@ def parse_sheet(name, grid):
                         ttm[key] = val
                         break
     code_in_sheet = grid.get((1, 3))
-    q_label = "Q2 2026"
+    
+    # ── LOGIKA TAHUN DINAMIS (Otomatis dari Baris 3 atau Sistem) ──
+    date_val = str(grid.get((3, 5)) or grid.get((3, 4)) or '').strip()
+    year_match = re.search(r'20\d{2}', date_val)
+    # Ambil tahun dari tanggal Excel, atau fallback ke tahun sistem saat ini (2026)
+    dynamic_year = year_match.group(0) if year_match else str(datetime.datetime.now().year)
 
-    # ── TTM dari LAPORAN KEUANGAN kuartalan (Σ 4 kuartal terakhir, kolom D-G) ──
-    #   Bagian ini punya header kuartal (mis. "Q1 2026 | Q4 2025 | Q3 2025 | Q2 2025")
-    #   → kolom D-G = 4 kuartal TERAKHIR berjalan-mundur, jadi Σ(D-G) = TTM asli.
-    #   Baris dicari via LABEL di kolom C (nomor baris BERVARIASI per saham & bisa
-    #   bergeser saat Excel di-reupload / saham baru) → tahan-banting:
-    #     • Revenue   : "Total Pendapatan"
-    #     • Laba (parent): "Pemilik Entitas Induk"
-    #     • Laba total (fallback): "Laba Bersih Tahun Berjalan" / "Total Laba Bersih Yang Dapat"
+    raw_q = str(grid.get((1, 4)) or '').strip()
+    q_match = re.search(r'(Q[1-4])', raw_q, re.IGNORECASE)
+    q_str = q_match.group(1).upper() if q_match else 'Q2'
+    q_label = f"{q_str} {dynamic_year}"
+
     def _find_q_header():
         for r in range(38, 72):
             d = str(grid.get((r, 4)) or '').strip()
-            if re.match(r'^Q[1-4]\s*\d{4}', d):
+            if re.match(r'Q[1-4]', d, re.IGNORECASE):
                 return r
         return None
+
     def _sum_dg(r):
         if r is None:
             return None
@@ -227,6 +230,7 @@ def parse_sheet(name, grid):
             if v is not None:
                 tot += v; seen = True
         return tot if seen else None
+
     def _find_row(hr, *subs):
         if hr is None:
             return None
@@ -238,30 +242,37 @@ def parse_sheet(name, grid):
                 if sub in lab:
                     return r
         return None
+
     ttm_is = {}
     _qh = _find_q_header()
     if _qh is not None:
+        raw_q_latest = str(grid.get((_qh, 4)) or '').strip()
+        # Jika header tabel mengandung 2027, otomatis ubah ke tahun dinamis yang benar
+        if not re.search(r'20\d{2}', raw_q_latest):
+            q_latest_val = f"{raw_q_latest} {dynamic_year}".strip()
+        else:
+            q_latest_val = raw_q_latest.replace('2027', dynamic_year)
+
         ttm_is = {
-            'q_latest': str(grid.get((_qh, 4)) or '').strip(),     # mis. "Q1 2026"
+            'q_latest': q_latest_val,   # Dinamis mengikuti tahun laporan / sistem
             'revenue':   _sum_dg(_find_row(_qh, 'total pendapatan')),
             'ni_parent': _sum_dg(_find_row(_qh, 'pemilik entitas induk')),
             'ni_total':  _sum_dg(_find_row(_qh, 'laba bersih tahun berjalan',
-                                                 'total laba bersih yang dapat')),
+                                         'total laba bersih yang dapat')),
         }
 
     return {
         'code': name.strip().upper(),
         'code_in_sheet': (str(code_in_sheet).strip().upper() if code_in_sheet else None),
-        'q_label': (str(q_label).strip() if q_label else None),
-        'q1': quarters['Q1'],       # backward-compat: mesin & frontend pakai stock['q1']
-        'quarters': quarters,        # Q1..Q4 (kolom D..G)
+        'q_label': q_label,
+        'q1': quarters['Q1'],
+        'quarters': quarters,
         'q_price_libur': q_price_libur,
-        'annualized': annualized,   # kolom H = "tahun berjalan" (TTM, dibaca apa adanya)
+        'annualized': annualized,
         'annual': annual,
-        'ttm': ttm,                 # TTM riil (Key Stats): eps/net_income/total_revenue/roe
-        'ttm_is': ttm_is,           # TTM dari laporan keuangan (Σ D-G): revenue, ni_parent, ni_total
+        'ttm': ttm,
+        'ttm_is': ttm_is,
     }
-
 
 # ════════════════════════════ MESIN VALUASI ═════════════════════════════════
 def latest_annual(stock, field):
