@@ -29220,23 +29220,15 @@ body.vl-maxing{overflow:hidden}
   // Label titik TTM utk chart: "TTM <kuartal sheet> <tahun>".
   // Kuartal diambil dari valuation.json (sel D1 Excel: Q1/Q2/Q3); fallback 'Q1'.
   // Tahun = fiscalYear+1 (mis. 2025 → 2026), fallback tahun kalender.
-  function vlTtmLabel(s){
-    let q = (s && s.q_label) ? String(s.q_label).trim() : '';
-    if(!q) q = 'Q1';
-    if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
-    const fy = ujFiscalYear();
-    const yr = ok(fy) ? fy+1 : new Date().getFullYear();
-    return q.toUpperCase()+"'"+String(yr).slice(2);
-  }
-  // Versi panjang khusus header tabel Fundamental: "TTM Q1 2026" (logika sama spt vlTtmLabel).
-  function vlTtmLabelFull(s){
-    let q = (s && s.q_label) ? String(s.q_label).trim() : '';
-    if(!q) q = 'Q1';
-    if(!/^q/i.test(q)){ const n=q.replace(/[^0-9]/g,''); q = 'Q'+(n||'1'); }
-    const fy = ujFiscalYear();
-    const yr = ok(fy) ? fy+1 : new Date().getFullYear();
-    return 'TTM '+q.toUpperCase()+' '+yr;
-  }
+ function vlTtmLabel(s){
+  const qk = vlLatestQuarter(s);               // 'Q1'..'Q4' sesuai kolom terisi
+  const fy = ujFiscalYear();
+  const yr = ok(fy) ? fy+1 : new Date().getFullYear();
+  return qk.toUpperCase()+"'"+String(yr).slice(2);
+}
+function vlTtmLabelFull(s){
+  return vlQLabelFull(s, vlLatestQuarter(s));  // "TTM Q2 2026"
+}
   // Tooltip utk chart ber-garis harga: di titik "Q" (TTM), JUDUL popup =
   // "Last Price (live)" — bukan "Q.. TTM .." — karena nilai harga = harga live terakhir.
   function vlTipPrice(qLbl){
@@ -30089,7 +30081,7 @@ body.vl-maxing{overflow:hidden}
     const livePrice=effLast(stock).price;
     const ann=stock.annualized||{};
     if(ann && Object.keys(ann).length){
-      const qLabel=(stock.q_label||'Q1')+' TTM';
+      const qLabel = vlLatestQuarter(stock) + ' TTM';
       labels.push(qLabel);
       hargaData.push(ok(livePrice)&&livePrice>0 ? livePrice : null);
 
