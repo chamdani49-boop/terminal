@@ -31273,8 +31273,15 @@ body.vl-maxing{overflow:hidden}
     const ph=state.priceHist||[]; const r=ph.find(x=>x && x.label===label);
     return r ? r[state.code] : null;
   }
-  // Tahun fiskal terbaru yg punya snapshot 10/31 (deadline Q3).
+    // Tahun fiskal terbaru = tahun annual terbaru dari data laporan keuangan emiten aktif
+  // (bukan dari price_history, karena baris bulan berjalan bisa berlabel 10/31/<tahun ini>).
   function ujFiscalYear(){
+    const s = curStock();
+    if(s){
+      const ys = annualYears(s);
+      if(ys.length) return parseInt(ys[ys.length-1], 10);
+    }
+    // fallback lama (hanya bila data emiten belum termuat)
     const ph=state.priceHist||[]; let yr=null;
     ph.forEach(r=>{ const m=/^10\/31\/(\d{4})$/.exec((r&&r.label)||''); if(m){ const y=+m[1]; if(yr==null||y>yr) yr=y; } });
     if(yr==null) ph.forEach(r=>{ const m=/\/(\d{4})$/.exec((r&&r.label)||''); if(m){ const y=+m[1]; if(yr==null||y>yr) yr=y; } });
