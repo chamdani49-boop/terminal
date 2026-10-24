@@ -202,7 +202,7 @@ def parse_sheet(name, grid):
                         ttm[key] = val
                         break
     code_in_sheet = grid.get((1, 3))
-    q_label = grid.get((1, 4))   # sel D1 = penanda kuartal tahun berjalan (Q1/Q2/Q3)
+    q_label = "Q2 2026"
 
     # ── TTM dari LAPORAN KEUANGAN kuartalan (Σ 4 kuartal terakhir, kolom D-G) ──
     #   Bagian ini punya header kuartal (mis. "Q1 2026 | Q4 2025 | Q3 2025 | Q2 2025")
@@ -525,7 +525,7 @@ def eps_growth_5y_ttm(stock, eps_ttm, n=5):
                    key=lambda p: p[0], reverse=True)
     if not pairs:
         return None
-    ttm_year = pairs[0][0] + 1                     # tahun berjalan = annual terbaru + 1
+    ttm_year = pairs[0][0]                     # tahun berjalan = annual terbaru
     base_year, base_eps = pairs[min(n, len(pairs)) - 1]   # tahun ke-n (atau tertua tersedia)
     if base_eps is None or base_eps <= 0:
         return None
