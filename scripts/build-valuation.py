@@ -525,7 +525,7 @@ def eps_growth_5y_ttm(stock, eps_ttm, n=5):
                    key=lambda p: p[0], reverse=True)
     if not pairs:
         return None
-    ttm_year = pairs[0][0] + 1                     # tahun berjalan = annual terbaru + 1
+    ttm_year = pairs[0][0]                     # tahun berjalan = annual terbaru + 1
     base_year, base_eps = pairs[min(n, len(pairs)) - 1]   # tahun ke-n (atau tertua tersedia)
     if base_eps is None or base_eps <= 0:
         return None
