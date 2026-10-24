@@ -246,19 +246,15 @@ def parse_sheet(name, grid):
     ttm_is = {}
     _qh = _find_q_header()
     if _qh is not None:
-        raw_q_latest = str(grid.get((_qh, 4)) or '').strip()
-        # Jika header tabel mengandung 2027, otomatis ubah ke tahun dinamis yang benar
-        if not re.search(r'20\d{2}', raw_q_latest):
-            q_latest_val = f"{raw_q_latest} {dynamic_year}".strip()
-        else:
-            q_latest_val = raw_q_latest.replace('2027', dynamic_year)
+        # Selalu paksa menggunakan kuartal terbaru + dynamic_year yang bersih
+        q_latest_val = f"{q_str} {dynamic_year}".strip()
 
         ttm_is = {
-            'q_latest': q_latest_val,   # Dinamis mengikuti tahun laporan / sistem
+            'q_latest': q_latest_val,  # Dijamin ikut tahun dinamis (2026)
             'revenue':   _sum_dg(_find_row(_qh, 'total pendapatan')),
             'ni_parent': _sum_dg(_find_row(_qh, 'pemilik entitas induk')),
             'ni_total':  _sum_dg(_find_row(_qh, 'laba bersih tahun berjalan',
-                                         'total laba bersih yang dapat')),
+                                           'total laba bersih yang dapat')),
         }
 
     return {
