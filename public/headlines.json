@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-10-29T09:00:51+00:00",
+"generated_at": "2026-10-29T09:15:42+00:00",
 "count": 80,
 "items": [
 {
@@ -57,6 +57,12 @@
 "ts": 1793258231
 },
 {
+"title": "Berita Terbaru",
+"link": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE44VzFlNjhSNGpaSkVpQU5xVlR4MnZ2REw1aUQzMk1UeFQ3cmhMN2JMbGdpNU5fOVVMWUJOM0xfWEVabXN6aEcxVVpnN2t5Z1BpaGszcTFMcVlxSVJNNE52V21FZVk?oc=5",
+"source": "Kabar Bursa",
+"ts": 1793257819
+},
+{
 "title": "Masih Bertahan di MSCI, Emiten Grup Bakrie Cetak Laba Turun di Q3 2026",
 "link": "https://news.google.com/rss/articles/CBMiowFBVV95cUxQSVpvcTdMYUVFeC1pRE5icTdwc0Q4OFRaVlNkaUgxT1I0d1UzUGhCanVDM29DNDBoLWpNMUcySElUVEVuSVBYb3pNZXl2SzZoZnBzOUZsRTMwUnFrVW5qMExMRjVwZzBSa0F3cC1CTWNJTUx3MTVvSkNyT3NTbVJwOEVtMl9oaWJZWHhjejBJYzRJaEFmb2VyWl9DbDljMzk0cEpr?oc=5",
 "source": "EmitenNews",
@@ -93,6 +99,12 @@
 "ts": 1793253729
 },
 {
+"title": "Bareskrim Tetapkan 20 Korporasi jadi Tersangka Karhutla, Ini Daftarnya",
+"link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxPVmZ3TjY5M3VZS25MRm9ZaHBpUFZrektyNFhTeVQwTXo1NHBiNFI2S1dpdURHeXdYczZzU2s1NVlzVFB5amp3S3UwLUY4NUNNNnlDaXdLTnRtaWlkdGxPT0F2QldyeTJyQ0RvRzljd0MyaHQwQmRINW9QdGhaZVp5dFhGSTdaYk1QX3I0eDg0MW1JZFBTcHJ0SlJVTHNvX3ZQbDdwQnJxVWplbGI5QlFsVW5tQklIOXpFb0NGOUdn?oc=5",
+"source": "Bisnis.com",
+"ts": 1793252843
+},
+{
 "title": "Laba AGII Melonjak 79% Jadi Rp114,30 Miliar per September 2026, Ini Penopangnya",
 "link": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNejlFYXZwbHVWQ2hjOG56TW5GeWFpUVhaSFFKdzFzR20yRWVVTUpDYkllYjZ0WVAtanRfWURJeWVMTDZLTmZSYVo2R2Zxc0RDbGlzNHV1VEo2dDRWbjU0M2xUTG5XNUhNajh6dklWRUJNVF8yV2UtcTdSZHR4LVlLdjlVZUhWM243M0NJU0dqWHF0SDkzTjRISnlac0lhQTBq?oc=5",
 "source": "Stockwatch",
@@ -103,6 +115,12 @@
 "link": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNb2JwUnZGRmtLR0ZGOFFTVldKcmFKODIxUWRLdjZOd2RxWGFOQk5MeDF3RkxXTlY2NExEMnFUYnB0OEpYWHZTN2VyM2ZyckR6SktkQlRNN3V3N2hoaVRVOEdUWV9CSXFVZFQ1VEZwQVJSUVpBcTVCZkhnLU5wVGFySmxSOW40RG1XaDdOZ2s4VGVubTExT1ZzTkNKVktRTjVaN3BrSVotTU1Ddw?oc=5",
 "source": "IDN Financials",
 "ts": 1793251200
+},
+{
+"title": "Ada 61 Demo di Jakarta Hari Ini, Ada dari Mahasiswa Trisakti di Istana",
+"link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxQbkg5MEZubUVncUlZM0p5QjBjVjFzQ2tvZi1xblRtX0pnRWdoVGNuSXFUTmpaYlR5UHV1SHczSlUwTTZaS2ptVFpiQlF4YVRYa3FRdGZrM3BsMTdUSDZqb1hNc04yWHNtdjlQVnVKMnNINm1LMjR5Y29VdmlRdFM3aElLQ1BPSTFPTmpYSEU3T2NaNWFmeUsyY3RBN2N5bXlRQVlycUZrNnQ5endLX1VDQ3EydXRocEZHT240OUFB?oc=5",
+"source": "Bisnis.com",
+"ts": 1793251193
 },
 {
 "title": "Rupiah Terlemah Sepanjang Sejarah, IHSG dan Saham Bank Tertekan",
@@ -253,6 +271,12 @@
 "link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNX1IwVy04SmFZN09GUkh1Q0VDemU3a2o2MWk4SG53aENyeVFVcEN2SW5vRlRTUlhZNE5tRDFwZjhZdzhabGN3T01RU0g4c00yQUVuTV9MZDZDYmFLcVYtNHZ0elJldklEV096TUZZZ1ZVSzFDT0lud3RzVUZXVHRqMkVEbFlBMWNtNkZqYTBlMlZMQi1NYW1WMzdsYTQ1Yi1qRkF1U05xOEo3Y0hBM3c?oc=5",
 "source": "Kontan",
 "ts": 1793238113
+},
+{
+"title": "Datapublished Embed: IHSG Ditutup Naik 0,31% ke Level 5.282 (Rabu, 28 Oktober 2026)",
+"link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPeXVsb3plWVNHXzBoQ2tYbDRyRzFtVnZOOUlDUm90YmJGWi1kdVd3LWZfUE9hQ09faERRa2k3T3hhQldETElFZlljeVJha2pIOGQxXzFVdnpNeDRYYlJhOVFub3QycFE4cjRoRFNJYnUzWnN2dzAwVmYxSzlyXzZwUXdnU3ByU0c2Tjd5czA4akhUc1hyNkhiN19NZnRXeHNud2tNZE9CMmlaNExMVkR3?oc=5",
+"source": "Katadata",
+"ts": 1793237344
 },
 {
 "title": "Emiten Prajogo (TPIA) Buyback Rp2 Triliun via BCA Sekuritas",
@@ -457,30 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxPcFFZdnVWMlM3U0wyamhPb3ZQZkhEY01OclYwckVyNmI0MGI0TGZValVyYXJCTlBSZHhFODlqeURGVjRBTHRFOE4tZUZ6RW5XdF9qRmdlQzRxMEpRLUJnZS1VRHdYUEhEa3V3TVVyekpUVlM3c0RfQURfODNsWDMtTlJqZkpiNDBiZDBya0RSWmIyNkVNLURjQUg4bTBtOThyTzYzMQ?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1793224821
-},
-{
-"title": "IHSG Rebound, Bisa Lanjut Naik? Simak Level Kunci dan Saham Pilihan Hari Ini (29/10)",
-"link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQT29YaE5RWDR3LWI4Q0taOVdyYlliOGN1blhJWFlPN1AzSGR6Vk5LTTNRMWh5WUcydXN0aUMyTm5lN1RVQ1NsaDU4LXNPaHYyRGhBbFBwREVlVW9rbXFRSU9TOE5TMEJSRE02UGQ1bm5ndklZTkZfdDY2MWVETmJ1NkIwa0JrT2o5UFVjdmw0XzRoNk9vakhpN3owd2xFRHJEa2ZYQVB1T01oeGtYb1dseTF2QQ?oc=5",
-"source": "Kontan",
-"ts": 1793224230
-},
-{
-"title": "Hitung Cermat Asuransi Mobil Listik",
-"link": "https://news.google.com/rss/articles/CBMieEFVX3lxTFByZElYVG45UGh0UnJqcmNuYTNFZ3A5WTF1ZnNBb05PU3lEaS1oM2hWZFN0R2N2MG9SUlVrRERMbmhKdHdQZ0lnVXhxYWtCUTdtanlmLUdJc2FkYkxpQV9rSEdSYXlJb3dtYWlGZ2l3bVJFNUsxNFBwVA?oc=5",
-"source": "Kontan",
-"ts": 1793223028
-},
-{
-"title": "Impor Gula Rafinasi 2027 Belum Diputuskan",
-"link": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQYnB6b2RqdmRfQWc4dFRpeGJsMDZtcVpiZmhOWUVrbjdMMjVoSFJEaDlKLXM5UkZjWUl5T1Y1SHNGMVRVN2UtSDBLUGFkSHNkazRhNFl5em9qamdtWW8waUk4WEdBdjdVUkpGR2lOd29lcjdyZ0NYUjBHWlFDMVMycA?oc=5",
-"source": "Kontan",
-"ts": 1793223026
-},
-{
-"title": "Babak Baru Pasar Modal RI saat Saham BEI Tak Lagi Eksklusif",
-"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPalpNOEdieHlIWEtjRzFEdmJJbldtV1NFU0VydjdCV3Z1RUtxaEhKckVuY01QVktIaHZaY1NrSDdjc3E4N3hUZ0swaWY3T3NLY1BaTV9RS084TlVpTUE4VURaMzhoNGV2MHVpN0lPaVVuZWJ1MDhxOWhaQ2ROWE9hRlI5cW1EcFF1ZkNGOFQyYXozNlNGeW9ncm9JVC0zWkVwNkw3eTR0cXFKY29KdDVyUmVB?oc=5",
-"source": "Bisnis.com",
-"ts": 1793223000
 }
 ]
 }
