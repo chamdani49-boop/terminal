@@ -1,7 +1,13 @@
 {
-"generated_at": "2026-10-30T01:19:27+00:00",
+"generated_at": "2026-10-30T01:30:51+00:00",
 "count": 80,
 "items": [
+{
+"title": "Rumor Merger BCA-DBS Ditepis, BlackRock dkk Tetap Akumulasi Saham BBCA",
+"link": "https://news.google.com/rss/articles/CBMipgFBVV95cUxNUUtTdHNxc09uenUwbjZNM1FCbkptdlcyZWlOTzVhNkJvNU9NR0xLM3FyT2FZMTNKSGxlb1JQZHZiSjdPX2JmODJIc01PcjlzSDFNV3Z6RmVfRTNTbzE5Q3BHUEFVb3QxemhsWGxxaW5KV2kxU1JkN1dOUVc3cTl6aDRmNDhQYkJGY1ZZYVZRMXZWUDRRTWVaV3FOX2dPNWFnS0hQZVp3?oc=5",
+"source": "Kontan",
+"ts": 1793323076
+},
 {
 "title": "Investor Membutuhkan Jaminan Kepastian",
 "link": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1SWUJIVnFUNnNOdnoyWlM2cGxnX2VCc2JrYjFIX3Rxcm96UFBZR1JHSVU3OHUtOWZpMHUyenFQY2lwQURLWmcwLWFBbml3OVpYVG95SmNNT1pjSDBsV2NyV00tUEE3LTA0eENSNllCR0hxVUd2azRZVV9JdHY?oc=5",
@@ -25,6 +31,12 @@
 "link": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNSFAxOGhpdFVZWW02WVI4ZE5VY1NLcHdiWkV0dDJMdnFZUGV2Y3JSX3RXZ0trRUFCVDdCZzNRNGxQU3dfdDRURXdINWpBZ2xLTWpHSU05clB1bVcyY1JTa3AzdzBnQjhEUVoxYkloNzNIYXlUd2Q2bVBTa3ZjdkgtYko0TnRrbktqUFIxc0Jjb0VUM0pXUE9OdFJ1TEg3aFNScFdBN0RlZlJPZw?oc=5",
 "source": "Kontan",
 "ts": 1793320875
+},
+{
+"title": "Rupiah Melemah, Minyak Melonjak, Defisit APBN Berisiko Tembus 3% - Market",
+"link": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQTUFnMkE5bTVPcWFfcFZQcFY0R0hWR05henJlMzV0bzJmaTJOR2N0WDlEeTlyalU3N1hieTBMQkhqYkZrUjFfTDhJdENDaDF1LXNEajBsMkthOWdfU2F4bWl6UldJcGE0N3J3NThuNzEwU25uVXhQTkxnSFlJcnhIMXc2UUdvMWxScnI2NzZrUTZKUkVOQzZQcklVS2FpUl9OWjZUYXEwemhlWDhna0pmODJSMA?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1793319991
 },
 {
 "title": "Bank Pecut Kredit Agar Bisnis Tak Menciut",
@@ -211,6 +223,12 @@
 "link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNODJUUXVoY2pWc0htZGx3NUtaMDZhbF9VWjlSakNsMVJzQXQtVU16QnVvYlVYQWl5RGRfcDdXVDQ0ZGNEUXhoNmJlMW1YSTFFVUZkd01FTFdIOXhwelQyTUF1MC1kXzRiWm1kYkRVTlZfMGhQLXJwNFBiZ3lETW9GeGdBdEpyLWlGaHVOa2ctSnZrbDhRSUQ2R3dJcVlNel9zYWEtdF9WZ3Y1ZEli?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1793280600
+},
+{
+"title": "Sinarmas AM Borong 4 Penghargaan Best Sharia Awards 2026",
+"link": "https://news.google.com/rss/articles/CBMingFBVV95cUxPWkwwM2hGRDAwWTVTd2RXbTVBd1Q5b0JxdTBSbGs4ZjcxdnZ2ck55Y2FVMlF4ODhSdjBhaFR2dXZpb28wZVZvQ1Nic3R3SHJ1M3RBRGNoa3VvS3Nwcy0tYV84TkRVVVpRMFBtTWY1Q1p3aWVlUE0xSlF1SzZEX3VIaW1JcWdBeFk4UkZMMGZiSlZhbTNTd1E1TEZnYktNdw?oc=5",
+"source": "InvestorTrust",
+"ts": 1793279880
 },
 {
 "title": "Init-6 Venture Telah Biayai Empat Perusahaan Startup hingga Saat Ini, Ini Bisnisnya",
@@ -463,24 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMi7AFBVV95cUxQaVdmNk9fRk5vbXBMWTV2NjVXaXNYTE4tRThGNXpUVm1Dc1pEeHVmOW9lSGJJa0lxZlNyM3BFWkNZZHNwNWdmcEgtcXROVUdhWXQyOVhhMmJhRHFjSWpkYmRUczcwcTlKRGtkNzR3b29meC03djhyUmV6TlZNOGpHLUlKUUU4ZjhxU2p2X056dnJ5Mm1PanNUOG9wREc1X2R4RkJkcnZybDUyRV9lOEs5ZFI3UjhxeDZ1a21uYkJZX0hmQm1JMWNQOXpuX01MLWlQcHQ4YWVNMmZTUmFCY0RDNkpfSDZ1NGduNE9LLQ?oc=5",
 "source": "InvestorTrust",
 "ts": 1793265240
-},
-{
-"title": "Kena sanksi OJK, Supra Sekuritas borong saham apa sebulan terakhir?",
-"link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPMTN1azRlLXFBczJjN2NrTkdfeFlLZnQzUFJLUmt4c2xGNDdKWUp1YmdJNFpUcEt0ZXVGU01kTEc4VjV0aF9PcEdSLWRHZ1pzQlNsanJrWFFuMGtvcEw4M3lKR0QxODBTOU5vWXFkd2NId0VUSVBleVhXSlBkS3FrUHgzWWw2RXIxQVRBT1Y2V1VkQ0dqQmZGUkprUEhJOF92MHRCcF9NWGxGS2Z6eUE?oc=5",
-"source": "IDN Financials",
-"ts": 1793264400
-},
-{
-"title": "Investor Ini Borong 5 Persen Saham TRUK, Siapa?",
-"link": "https://news.google.com/rss/articles/CBMijAFBVV95cUxNTk9QMjU4UzRyRHRIdFRvekt6RWZxOW0yYlRvaGFxZHdNOXdDd3R5RExJeHU5SndRM3NkdUxXWXFqdGtrZ2tBTWY0RDk0VXVrdTBySmw5Q0ZvbW4wajZ5ZTVzWmhHUGloNXN2dFB0MThxQVdNUUd3b1MyRGlTMTU0d3c4VlJOOXpaNHVTa9IBkgFBVV95cUxPaGtibVlxd2E3UnpWWWVlMTBhMUtGaWF3dEhGajRoaEt3RVkyTmF2TjR5UlFLWEM2bF9JSzlyWEVNOUFvbmtkXy00ZS15c3ktcnY1ZTRELTdCd3p3OURzLTJXSF9Zc1BFbVdHTTV5YmZkTFZncTJWNXpXOVdCT051dTY3TzdkRFJVNDlvZW9sZm1BUQ?oc=5",
-"source": "IDX Channel",
-"ts": 1793264400
-},
-{
-"title": "Tata Ribuan Aplikasi Pelayanan Publik, Kemenkomdigi Dorong Ekosistem Digital Terpadu",
-"link": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQUC1aNnhfTXdpOW85Z0Q3YTQzckRxSTRVRFVrYVNoWVZfUXBIY1ZETXEyRVMwck5LZTVyVEEwQVYxcXFOTkdGV1EwQ2hBcDNhMV9wejB2RUhOOGstRzZOZGs3M0hMd0JfU3pMUF9ERG5jVzQzNkVXSXVzT2MzSF9IWXhWb0N1VWZLU3BrczVpVGEwSHZPQ2QtVUxxSjM4YWR3eHprb3BSTF84Q1FlNE80UjJURGdObnVxM2Ixdkd5OTFuUQ?oc=5",
-"source": "InvestorTrust",
-"ts": 1793264220
 }
 ]
 }
