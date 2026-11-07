@@ -19,6 +19,7 @@ import { getActiveSubscription, getReferralInfo, getUserById, markGuideSeen, get
 import { getBillingConfig, publicBilling } from './lib/billing.js';
 import { rateLimit, reportAbuse, trackDevice } from './lib/abuse.js';
 import { TOS_VERSION, hasAcceptedCurrent, saveConsent } from './lib/legal.js';
+import { getWhatsapp, saveWhatsapp, normalizeWhatsapp } from './lib/contact.js';
 
 // Path yang butuh langganan aktif saat gating menyala.
 // /tracker.json butuh scope IN ('tracker','full'), path lain butuh 'full'.
@@ -220,6 +221,12 @@ async function handleApi(request, env, url, ctx) {
     }
     let tosAccepted = true;
     try { tosAccepted = await hasAcceptedCurrent(env, session.uid); } catch { tosAccepted = true; }
+    // Nomor WhatsApp (diminta di pop up Ketentuan). FAIL-OPEN: D1 error → tidak diminta.
+    let whatsapp = null, whatsappMissing = false;
+    if (env.DB) {
+      try { whatsapp = await getWhatsapp(env, session.uid); whatsappMissing = !whatsapp; }
+      catch { whatsapp = null; whatsappMissing = false; }
+    }
     let guideSeen = false;
     try { const u = await getUserById(env, session.uid); guideSeen = !!(u && u.guide_seen); } catch { guideSeen = false; }
     // Status popup PWA per akun. FAIL-SAFE: bila migration 0010 blm
@@ -235,6 +242,8 @@ async function handleApi(request, env, url, ctx) {
       subscription: sub,
       tos_version: TOS_VERSION,
       tos_accepted: tosAccepted,
+      whatsapp,                  // "62812..." atau null
+      whatsapp_missing: whatsappMissing,  // true → pop up Ketentuan minta nomor WA
       guide_seen: guideSeen,    // panduan tur sudah dilihat (per email/akun)
       pwa,                       // { should_prompt, is_installed } — per email/akun
     });
@@ -301,6 +310,15 @@ async function handleApi(request, env, url, ctx) {
     if (!session) return json({ error: 'unauthenticated' }, 401);
     try {
       const ip = request.headers.get('CF-Connecting-IP') || '';
+      // Body opsional { whatsapp }. Bila dikirim → wajib valid & disimpan.
+      // (Pemanggilan lama dgn body '{}' tetap jalan: hanya simpan consent.)
+      let body = {};
+      try { body = await request.json(); } catch { body = {}; }
+      if (body && body.whatsapp !== undefined) {
+        const wa = normalizeWhatsapp(body.whatsapp);
+        if (!wa) return json({ error: 'Nomor WhatsApp tidak valid. Contoh: 081234567890' }, 400);
+        await saveWhatsapp(env, session.uid, wa);
+      }
       const r = await saveConsent(env, session.uid, ip);
       return json({ ok: !!r.ok, version: TOS_VERSION });
     } catch (e) {

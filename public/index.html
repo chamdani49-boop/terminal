@@ -20309,7 +20309,13 @@ async function _ensureAccess() {
     try { _renderAccount(j); } catch (_) {}
     try { _loadReferralStat(); } catch (_) {}
     try {
-      if (!j.tos_accepted && window.__esConsentGate) {
+      if (j.whatsapp_missing && window.__esConsentGate) {
+        // Belum ada nomor WhatsApp (user baru / user lama) → pop up Ketentuan
+        // wajib tampil (berisi kolom WA). tos_accepted=false supaya panduan &
+        // popup PWA menunggu sampai pop up ini selesai.
+        j.tos_accepted = false;
+        window.__esConsentGate();
+      } else if (!j.tos_accepted && window.__esConsentGate) {
         if (window.__esTosAcceptedLocally && window.__esTosAcceptedLocally(j.email, j.tos_version)) {
           // Browser ini sudah pernah setuju (email+versi sama) tapi server
           // melaporkan belum → heal DIAM-DIAM (re-simpan consent) tanpa
@@ -31772,6 +31778,13 @@ document.addEventListener('keydown', (e) => {
 .tosg-hint{font-size:11.5px;color:#b45309;margin-bottom:10px;display:flex;align-items:center;gap:6px;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
 .tosg-hint.done{color:#15803d}
 .tosg-err{font-size:12px;color:#b91c1c;margin-bottom:10px;display:none;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.tosg-wa{display:block;margin-bottom:12px;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.tosg-wa-lbl{display:block;font-size:12.5px;font-weight:700;color:#1f2430;margin-bottom:6px}
+.tosg-wa-lbl small{font-weight:500;color:#6b7280}
+.tosg-wa input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #c9cad6;border-radius:8px;background:#fff;color:#111;font-family:inherit;font-size:16px;outline:none}
+.tosg-wa input:focus{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.15)}
+.tosg-wa input.bad{border-color:#dc2626}
+.tosg-wa-msg{display:none;font-size:11.5px;color:#b91c1c;margin-top:5px}
 .tosg-btn{width:100%;background:linear-gradient(135deg,#6d28d9,#2563eb);color:#fff;font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:15px;font-weight:800;padding:13px;border:none;border-radius:8px;cursor:pointer}
 .tosg-btn:disabled{opacity:.45;cursor:not-allowed}
 /* ── Versi HP: rata KIRI (bukan justify) supaya jarak antar kata tidak melebar/loncat-loncat ── */
@@ -31812,7 +31825,7 @@ document.addEventListener('keydown', (e) => {
 
       <h3>4. Data &amp; Privasi</h3>
       <ul>
-        <li>Kami mengumpulkan: email (dari login Google) dan alamat IP (untuk keamanan).</li>
+        <li>Kami mengumpulkan: email (dari login Google), nomor WhatsApp (untuk informasi layanan &amp; bantuan akun), dan alamat IP (untuk keamanan).</li>
         <li>Data dipakai untuk autentikasi, keamanan, dan menjalankan layanan.</li>
         <li>Kami <b>tidak menjual</b> data pribadimu ke pihak ketiga.</li>
       </ul>
@@ -31831,6 +31844,11 @@ document.addEventListener('keydown', (e) => {
     <div class="tosg-foot">
       <div class="tosg-hint" id="tosgHint">⬆️ Gulir sampai bawah untuk melanjutkan…</div>
       <div class="tosg-err" id="tosgErr"></div>
+      <label class="tosg-wa" for="tosgWa">
+        <span class="tosg-wa-lbl">Nomor WhatsApp aktif <small>(wajib)</small></span>
+        <input type="tel" id="tosgWa" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Contoh: 081234567890">
+        <span class="tosg-wa-msg" id="tosgWaMsg">Nomor WhatsApp tidak valid. Contoh: 081234567890</span>
+      </label>
       <label class="tosg-chk"><input type="checkbox" id="tosgChk" disabled> Saya telah membaca seluruh dokumen dan <b>menyetujui</b> Ketentuan Layanan &amp; Kebijakan Privasi.</label>
       <button class="tosg-btn" id="tosgBtn" disabled>Setuju &amp; Lanjutkan</button>
     </div>
@@ -31841,9 +31859,20 @@ document.addEventListener('keydown', (e) => {
 (function(){
   var shown=false, scrolledEnd=false;
   function el(id){return document.getElementById(id);}
+  // Normalisasi nomor WA (cermin normalizeWhatsapp di src/lib/contact.js).
+  function normWa(raw){
+    var d=String(raw||'').replace(/[^\d]/g,'');
+    if(!d) return null;
+    if(d.indexOf('00')===0) d=d.slice(2);
+    else if(d.charAt(0)==='0') d='62'+d.slice(1);
+    else if(d.charAt(0)==='8') d='62'+d;
+    if(d.indexOf('62')===0) return /^628\d{7,12}$/.test(d)?d:null;
+    return /^[1-9]\d{8,14}$/.test(d)?d:null;
+  }
+  function waOk(){ var w=el('tosgWa'); return !!(w && normWa(w.value)); }
   function update(){
     var chk=el('tosgChk'), btn=el('tosgBtn');
-    btn.disabled=!(scrolledEnd && chk.checked);
+    btn.disabled=!(scrolledEnd && chk.checked && waOk());
   }
   // Guard klien: ingat persetujuan per (email + versi) di localStorage supaya
   // popup TIDAK muncul lagi di browser ini walau server sesekali melaporkan
@@ -31878,18 +31907,28 @@ document.addEventListener('keydown', (e) => {
     // Kalau konten tidak perlu di-scroll (layar besar), langsung anggap selesai.
     setTimeout(function(){ if(body.scrollHeight <= body.clientHeight + 8) markEnd(); }, 60);
     chk.addEventListener('change', update);
+    var wa=el('tosgWa'), waMsg=el('tosgWaMsg');
+    function showWaErr(){
+      var bad=!!wa.value.trim() && !waOk();
+      wa.classList.toggle('bad', bad);
+      waMsg.style.display=bad?'block':'none';
+    }
+    try{ var pw=window.__ES_PROFILE && window.__ES_PROFILE.whatsapp; if(pw) wa.value='+'+pw; }catch(_){}
+    wa.addEventListener('input', function(){ if(waOk()) showWaErr(); update(); });
+    wa.addEventListener('blur', showWaErr);
     btn.addEventListener('click', async function(){
+      if(!waOk()){ showWaErr(); wa.focus(); return; }
       err.style.display='none';
       btn.disabled=true; var label=btn.textContent; btn.textContent='Menyimpan…';
       try{
-        var r=await fetch('/api/accept-terms',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+        var r=await fetch('/api/accept-terms',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({whatsapp:normWa(wa.value)})});
         var d=await r.json().catch(function(){return {};});
         if(!r.ok || !d.ok) throw new Error(d.error||('HTTP '+r.status));
         ov.classList.remove('open');
         try{ document.body.style.overflow=''; }catch(_){}
         // Beri tahu panduan bahwa consent sudah disetujui → panduan boleh muncul
         // sekarang (menghindari popup privasi & panduan tampil bersamaan).
-        try{ if(window.__ES_PROFILE) window.__ES_PROFILE.tos_accepted=true; }catch(_){}
+        try{ if(window.__ES_PROFILE){ window.__ES_PROFILE.tos_accepted=true; window.__ES_PROFILE.whatsapp=normWa(wa.value); window.__ES_PROFILE.whatsapp_missing=false; } }catch(_){}
         // Ingat di browser ini (per email+versi) supaya tidak muncul lagi walau
         // server sesekali melaporkan belum-setuju (race baca D1 / sesi baru).
         try{ if(window.__ES_PROFILE) window.__esMarkTosAcceptedLocally(window.__ES_PROFILE.email, window.__ES_PROFILE.tos_version); }catch(_){}

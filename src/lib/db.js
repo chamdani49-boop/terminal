@@ -3,6 +3,7 @@
 // Semua fungsi melempar error jika env.DB belum di-binding.
 // ─────────────────────────────────────────────────────────────────────────
 import { randomId, now } from './util.js';
+import { ensureContactTable } from './contact.js';
 
 function db(env) {
   if (!env.DB) throw new Error('D1 (env.DB) belum di-binding. Lihat docs/AUTH_SETUP.md');
@@ -273,20 +274,26 @@ export async function listUsersWithSub(env) {
   // last_seen = aktivitas terakhir user (MAX seen_at di account_ips, dicatat saat
   // buka dashboard/data.json). Subquery dibungkus fallback: bila tabel account_ips
   // belum ada (anti-abuse belum pernah jalan), pakai query tanpa last_seen.
-  const sql = (withSeen) => `
+  // whatsapp = nomor WA dari tabel user_contacts (diisi user di pop up Ketentuan).
+  const sql = (withSeen, withWa) => `
     SELECT u.id, u.email, u.name, u.created_at,
            s.plan AS plan, s.status AS sub_status, s.expires_at AS expires_at,
            s.source AS source, s.mayar_txn_id AS txn, s.scope AS scope${withSeen ? `,
-           (SELECT MAX(a.seen_at) FROM account_ips a WHERE a.user_id = u.id) AS last_seen` : ''}
+           (SELECT MAX(a.seen_at) FROM account_ips a WHERE a.user_id = u.id) AS last_seen` : ''}${withWa ? `,
+           (SELECT c.whatsapp FROM user_contacts c WHERE c.user_id = u.id) AS whatsapp` : ''}
     FROM users u
     LEFT JOIN subscriptions s ON s.id = (
       SELECT id FROM subscriptions WHERE user_id = u.id ORDER BY expires_at DESC LIMIT 1
     )
     ORDER BY u.created_at DESC
   `;
-  let results;
-  try { ({ results } = await db(env).prepare(sql(true)).all()); }
-  catch { ({ results } = await db(env).prepare(sql(false)).all()); }
+  try { await ensureContactTable(env); } catch { /* fallback di bawah */ }
+  let results, lastErr;
+  for (const [seen, wa] of [[true, true], [false, true], [true, false], [false, false]]) {
+    try { ({ results } = await db(env).prepare(sql(seen, wa)).all()); lastErr = null; break; }
+    catch (e) { lastErr = e; }
+  }
+  if (lastErr) throw lastErr;
   const t = now();
   return (results || []).map((r) => {
     let status = 'no_sub';
@@ -296,6 +303,7 @@ export async function listUsersWithSub(env) {
     return {
       email: r.email,
       nama: r.name || '-',
+      whatsapp: r.whatsapp || null,    // "62812..." atau null (belum mengisi)
       paket: r.plan || '-',
       scope: r.scope || null,          // 'full' | 'tracker' | null (user belum langganan)
       berakhir: r.expires_at || null,

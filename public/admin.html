@@ -100,6 +100,10 @@ tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{background:var(--bg2)}
 .u-email{font-weight:600}
 .u-name{color:var(--text2)}
+.u-wa{white-space:nowrap;font-size:13px}
+.u-wa a{color:var(--green,#059669);font-weight:600;text-decoration:none}
+.u-wa a:hover{text-decoration:underline}
+.u-wa .wa-none{color:var(--text3)}
 .u-seen{font-size:13px;color:var(--text2);white-space:nowrap}
 .u-seen .seen-never{color:var(--text3);font-style:italic}
 .u-seen .seen-stale{color:var(--red,#e11d48);font-weight:600}
@@ -422,7 +426,7 @@ tbody tr:hover{background:var(--bg2)}
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <div class="search"><span class="ico">🔍</span><input id="searchInp" type="text" placeholder="Cari email atau nama…"></div>
+    <div class="search"><span class="ico">🔍</span><input id="searchInp" type="text" placeholder="Cari email, nama, atau WhatsApp…"></div>
     <select class="filter" id="filterSel">
       <option value="all">Semua status</option>
       <option value="aktif">Aktif</option>
@@ -445,7 +449,7 @@ tbody tr:hover{background:var(--bg2)}
       <table>
         <thead>
           <tr>
-            <th style="width:46px;text-align:right">No</th><th>Email</th><th>Nama</th><th>Paket</th><th>Berakhir</th><th>Status</th><th>Terakhir Aktif</th><th>Aksi</th>
+            <th style="width:46px;text-align:right">No</th><th>Email</th><th>WhatsApp</th><th>Nama</th><th>Paket</th><th>Berakhir</th><th>Status</th><th>Terakhir Aktif</th><th>Aksi</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -638,7 +642,7 @@ async function loadUsers(){
     if(r.ok){
       var d=await r.json();
       if(d&&d.users){
-        USERS=d.users.map(function(u){return {email:u.email,nama:u.nama,paket:u.paket||'-',scope:u.scope||null,berakhir:u.berakhir,last_seen:u.last_seen||null,status:u.status,is_admin:u.is_admin,source:u.source||null,paid:!!u.paid};});
+        USERS=d.users.map(function(u){return {email:u.email,whatsapp:u.whatsapp||null,nama:u.nama,paket:u.paket||'-',scope:u.scope||null,berakhir:u.berakhir,last_seen:u.last_seen||null,status:u.status,is_admin:u.is_admin,source:u.source||null,paid:!!u.paid};});
         LIVE=true;
         document.getElementById('demoNote').style.display='none';
       }
@@ -696,7 +700,8 @@ function filteredRows(){
   var f=document.getElementById('filterSel').value;
   var af=document.getElementById('activitySel').value;
   return USERS.filter(function(u){
-    var matchQ=!q || u.email.toLowerCase().includes(q) || (u.nama||'').toLowerCase().includes(q);
+    var qd=q.replace(/[^0-9]/g,'');
+    var matchQ=!q || u.email.toLowerCase().includes(q) || (u.nama||'').toLowerCase().includes(q) || (qd.length>=4 && !!u.whatsapp && (u.whatsapp.includes(qd) || ('0'+u.whatsapp.slice(2)).includes(qd)));
     var matchF=f==='all' || u.status===f;
     var matchA;
     if(af==='all') matchA=true;
@@ -737,6 +742,7 @@ function render(){
     tr.innerHTML=
       '<td class="mono" style="color:var(--text3);text-align:right">'+(start+i+1)+'</td>'+
       '<td class="u-email">'+u.email+'</td>'+
+      '<td class="u-wa">'+(u.whatsapp?'<a href="https://wa.me/'+encodeURIComponent(u.whatsapp)+'" target="_blank" rel="noopener" title="Chat via WhatsApp">'+fmtWa(u.whatsapp)+'</a>':'<span class="wa-none">—</span>')+'</td>'+
       '<td class="u-name">'+(u.nama||'—')+'</td>'+
       '<td><span class="pill '+planCls+'">'+(PLAN_LABEL[u.paket]||u.paket)+'</span>'+scopeBadge+'</td>'+
       '<td class="mono">'+(u.is_admin?'∞ Tanpa Batas':fmtDate(u.berakhir))+'</td>'+
@@ -795,15 +801,22 @@ function seenPlain(v){
   if(isNaN(sec)) return 'Belum pernah';
   return new Date(sec*1000).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
 }
+// Tampilan nomor WA: "6281234567890" → "+62 812-3456-7890" (berspasi → Excel baca sbg teks).
+function fmtWa(d){
+  d=String(d||''); if(!d) return '';
+  if(d.indexOf('62')===0){ var r=d.slice(2); return '+62 '+r.slice(0,3)+'-'+r.slice(3,7)+(r.length>7?'-'+r.slice(7):''); }
+  return '+'+d;
+}
 function csvCell(v){ v=(v==null?'':String(v)); return /[",\n\r;]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
 function downloadCsv(){
   var rows=filteredRows();
   if(!rows.length){ alert('Tidak ada data untuk diunduh (sesuai filter saat ini).'); return; }
-  var header=['Email','Username','Status','Paket','Berakhir','Terakhir Aktif'];
+  var header=['Email','WhatsApp','Username','Status','Paket','Berakhir','Terakhir Aktif'];
   var lines=[header.map(csvCell).join(',')];
   rows.forEach(function(u){
     lines.push([
       csvCell(u.email),
+      csvCell(u.whatsapp?fmtWa(u.whatsapp):''),
       csvCell(u.nama||''),
       csvCell(u.status),
       csvCell(PLAN_LABEL[u.paket]||u.paket||''),
