@@ -14,10 +14,12 @@
   // type: 'click' → klik elemen selector · 'scroll' → scroll ke elemen
   var MENU = [
     { page: 'pasar', label: 'Pasar Live', ico: '📡', subs: [
-      { label: 'Market Chart',   type: 'scroll', sel: '#plWinChartA' },
-      { label: 'Heatmap Sektor', type: 'scroll', sel: '#plWinHeatmap' },
-      { label: 'Seasonality',    type: 'scroll', sel: '#plWinSeas' },
-      { label: 'Headlines',      type: 'scroll', sel: '#plWinNews' }
+      // pre = klik dulu tombol tampilan "Terminal" (panel-panel ini ada di sana)
+      { label: 'Market Chart',   type: 'scroll', sel: '#plWinChartA',  pre: '#plSubTerminal' },
+      { label: 'Heatmap Sektor', type: 'scroll', sel: '#plWinHeatmap', pre: '#plSubTerminal' },
+      { label: 'Seasonality',    type: 'scroll', sel: '#plWinSeas',    pre: '#plSubTerminal' },
+      { label: 'Headlines',      type: 'scroll', sel: '#plWinNews',    pre: '#plSubTerminal' },
+      { label: 'Screening',      type: 'click',  sel: '#plSubScreening' }
     ]},
     { page: 'dashboard', label: 'Dashboard', ico: '📊', subs: [
       { label: 'Statistik Deskriptif', type: 'scroll', sel: '#statsCard' },
@@ -113,12 +115,16 @@
     setTimeout(function () {
       // Halaman terkunci (mis. scope-tracker) → overlay preview yg tampil; stop.
       if (!pageActive(g.page)) return;
+      if (sub.pre) {
+        var preEl = document.querySelector(sub.pre);
+        if (preEl && !preEl.classList.contains('on')) preEl.click();
+      }
       var el = document.querySelector(sub.sel);
       if (!el) return;
       if (sub.type === 'click') {
         el.click();
         if (sub.sel.indexOf('btn-sim-open') < 0) {
-          var bar = el.closest('.vl-tabs, .cv-nav-bar, #tr-subtabs') || el;
+          var bar = el.closest('.vl-tabs, .cv-nav-bar, #tr-subtabs, .pl-head') || el;
           scrollToEl(bar);
         }
       } else {
