@@ -65,6 +65,9 @@
 /tracker-stats.js
   Cache-Control: no-cache, must-revalidate
 
+/smartmoney.js
+  Cache-Control: no-cache, must-revalidate
+
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
