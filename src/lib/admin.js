@@ -9,6 +9,7 @@ import {
 } from './db.js';
 import { getBillingConfig, saveBillingConfig } from './billing.js';
 import { recentFlags, flagSummary, sendTelegram, sendTelegramPhoto, deviceSummary, autosuspendEnabled } from './abuse.js';
+import { handleSmartMoneyApi } from './smartmoney.js';
 
 export function isAdmin(env, email) {
   if (!email) return false;
@@ -177,6 +178,11 @@ export async function handleAdminApi(request, env, url) {
     } catch (e) {
       return json({ error: e.message || 'Gagal' }, 400);
     }
+  }
+
+  // ── Smart Money (data broker & insider dari bucket R2 `smartmoney`) ──
+  if (path === '/api/admin/smartmoney' || path === '/api/admin/smartmoney/index') {
+    return handleSmartMoneyApi(request, env, url);
   }
 
   return json({ error: 'Not found' }, 404);

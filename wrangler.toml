@@ -64,3 +64,11 @@ ABUSE_AUTOSUSPEND = "false"
 binding = "DB"
 database_name = "terminal-db"
 database_id = "d943f1cd-77fc-4929-87d4-0e526357968b"
+
+# ── Bucket R2 Smart Money (private, khusus admin) ──
+# Diisi dari laptop oleh upload_smartmoney.py (repo wraping-target-price).
+# Dibaca Worker lewat /api/admin/smartmoney (src/lib/smartmoney.js).
+# Terpisah dari D1 → kalau bucket kosong/penuh, login & billing tidak terdampak.
+[[r2_buckets]]
+binding = "SMARTMONEY"
+bucket_name = "smartmoney"
