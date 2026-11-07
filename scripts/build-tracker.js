@@ -887,9 +887,19 @@ function _firmSpaceless(name) {
 //     Menangani ejaan concat tanpa capital yg tokenizer tidak bisa split.
 //     Contoh: 'Indopremier' spaceless = 'INDOPREMIER',
 //             'INDO PREMIER' spaceless = 'INDOPREMIER' → MATCH.
+// Alias brand → nama resmi IDX. Dipakai bila nama di Sheet adalah brand /
+// aplikasi milik sekuritas (bukan nama sekuritasnya). Key = signature
+// spaceless (UPPERCASE, tanpa token generik), value = nama di broker-codes.js.
+//   SimInvest = aplikasi trading milik Sinarmas Sekuritas → digabung.
+const _FIRM_BRAND_ALIASES = new Map([
+  ['SIMINVEST', 'SINARMAS SEKURITAS'],
+]);
+
 function matchCanonicalFirm(inputName) {
   const inputTokens = _firmSignatureTokens(inputName);
   if (!inputTokens.length) return null;
+  const _alias = _FIRM_BRAND_ALIASES.get(inputTokens.join(''));
+  if (_alias) return _alias;
   const inputSig = new Set(inputTokens);
 
   const canonicals = _getCanonicalSigs();
