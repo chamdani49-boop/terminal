@@ -265,7 +265,7 @@ a{color:inherit;text-decoration:none}
 body.is-mobile-device .view-toggle{display:inline-flex}
 
 /* ── ACCOUNT WIDGET (avatar bulat + dropdown) ── */
-.acct-wrap{position:relative;margin-left:4px;display:none}
+.acct-wrap{position:relative;display:none;flex-shrink:0}
 .acct-btn{
   width:36px;height:36px;border-radius:50%;border:none;
   background:var(--grad);color:#fff;cursor:pointer;font-size:14px;font-weight:700;
@@ -274,7 +274,7 @@ body.is-mobile-device .view-toggle{display:inline-flex}
 }
 .acct-btn:hover{transform:scale(1.08);box-shadow:0 0 0 3px rgba(109,40,217,.18)}
 .acct-tip{
-  position:absolute;top:calc(100% + 8px);right:0;white-space:nowrap;
+  position:absolute;top:calc(100% + 8px);left:0;white-space:nowrap;
   background:var(--text);color:var(--card);font-size:11px;font-weight:600;
   padding:5px 10px;border-radius:6px;opacity:0;pointer-events:none;
   transform:translateY(-4px);transition:opacity .15s, transform .15s;z-index:300;
@@ -282,9 +282,11 @@ body.is-mobile-device .view-toggle{display:inline-flex}
 .acct-wrap:hover .acct-tip{opacity:.95;transform:translateY(0)}
 .acct-wrap.menu-open .acct-tip{display:none}
 .acct-menu{
-  position:absolute;top:calc(100% + 8px);right:0;width:248px;
+  position:absolute;top:calc(100% + 8px);left:0;width:min(320px, calc(100vw - 24px));
   background:var(--card);border:1px solid var(--border);border-radius:12px;
   box-shadow:var(--shadow-card-lg);padding:14px;display:none;z-index:300;
+  max-height:calc(100vh - var(--header-h) - 24px);max-height:calc(100dvh - var(--header-h) - 24px);
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
 }
 .acct-menu.open{display:block}
 .acct-head{display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:8px;border-bottom:1px solid var(--border)}
@@ -300,6 +302,26 @@ body.is-mobile-device .view-toggle{display:inline-flex}
 .acct-action{display:block;text-align:center;margin-top:8px;padding:9px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;border:1px solid var(--border);color:var(--text);transition:background .15s,border-color .15s,color .15s}
 .acct-action:hover{background:var(--bg2);border-color:var(--accent);color:var(--accent)}
 .acct-action.danger:hover{border-color:#dc2626;color:#dc2626}
+/* Menu navigasi di dropdown avatar (diisi public/acct-nav.js) */
+.acct-nav{padding-bottom:10px;margin-bottom:8px;border-bottom:1px solid var(--border)}
+.acct-nav:empty{display:none}
+.acct-nav-title{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.acct-nav-group{padding:4px 0}
+.acct-nav-group + .acct-nav-group{border-top:1px dashed var(--border)}
+.acct-nav-page{display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;border:none;border-radius:8px;background:none;color:var(--text);font-family:inherit;font-size:13px;font-weight:700;text-align:left;cursor:pointer;transition:background .15s,color .15s}
+.acct-nav-page:hover{background:var(--bg2);color:var(--accent)}
+.acct-nav-group.is-active .acct-nav-page{color:var(--accent)}
+.acct-nav-ico{width:18px;text-align:center;flex-shrink:0}
+.acct-nav-subs{display:flex;flex-wrap:wrap;gap:5px;padding:2px 4px 4px 34px}
+.acct-nav-sub{padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-pill);background:var(--bg2);color:var(--text2);font-family:inherit;font-size:11.5px;font-weight:600;line-height:1.2;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+.acct-nav-sub:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:640px){
+  /* Sisakan ruang untuk bottom-nav fixed di HP */
+  .acct-menu{max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px)}
+  .acct-nav-page{padding:9px 8px;font-size:13.5px}
+  .acct-nav-sub{padding:7px 11px;font-size:12px}
+  .acct-nav-subs{padding-left:30px}
+}
 
 /* ── STOCK TICKER (running sideways, mirror of rupiah-monitor pattern) ── */
 .stock-ticker{
@@ -5966,6 +5988,28 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
 <!-- TOP BAR -->
 <header class="top-bar">
+  <div class="acct-wrap" id="acctWrap">
+    <button class="acct-btn" id="acctBtn" type="button" aria-label="Akun"><span id="acctInitial">·</span></button>
+    <div class="acct-tip" id="acctTip"></div>
+    <div class="acct-menu" id="acctMenu">
+      <div class="acct-head">
+        <div class="acct-avatar" id="acctAvatar">·</div>
+        <div class="acct-id">
+          <div class="acct-name" id="acctName">—</div>
+          <div class="acct-email" id="acctEmail">—</div>
+        </div>
+        <button type="button" class="info-btn" style="margin-left:auto" aria-label="Panduan menu sesuai gaya" title="Menu sesuai tujuan (invest / swing / trading)" onclick="showInfoModal('🧭 Menu Sesuai Tujuanmu','Pilih menu sesuai gaya kamu:<br><br>&bull; Untuk <strong>investasi</strong> (jangka panjang) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Valuasi</strong>.<br><br>&bull; Untuk <strong>swing</strong> (jangka menengah) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Dashboard</strong>.<br><br>&bull; Untuk <strong>trading</strong> (jangka pendek) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Tracker</strong>.')">?</button>
+      </div>
+      <div class="acct-nav" id="acctNav" aria-label="Menu navigasi"></div>
+      <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
+      <div class="acct-row" id="acctRefRow" style="display:none"><span class="acct-label">Ajak teman</span><span class="acct-val" id="acctRef">—</span></div>
+      <div class="acct-row"><span class="acct-label">Paket</span><span class="acct-val" id="acctPlan">—</span></div>
+      <div class="acct-row" id="acctExpiryRow"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
+      <a class="acct-action" id="acctAdminLink" href="/admin" style="display:none">⚙️ Dashboard Admin</a>
+      <a class="acct-action" href="/billing">↻ Perpanjang / Billing</a>
+      <a class="acct-action danger" href="/api/auth/logout">⎋ Logout</a>
+    </div>
+  </div>
   <div class="logo">Economstock Terminal</div>
   <div class="search-wrap search-wrap-desktop">
     <span class="ico">⌕</span>
@@ -5998,27 +6042,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
     <span id="themeIcon">☀</span>
   </button>
-  <div class="acct-wrap" id="acctWrap">
-    <button class="acct-btn" id="acctBtn" type="button" aria-label="Akun"><span id="acctInitial">·</span></button>
-    <div class="acct-tip" id="acctTip"></div>
-    <div class="acct-menu" id="acctMenu">
-      <div class="acct-head">
-        <div class="acct-avatar" id="acctAvatar">·</div>
-        <div class="acct-id">
-          <div class="acct-name" id="acctName">—</div>
-          <div class="acct-email" id="acctEmail">—</div>
-        </div>
-        <button type="button" class="info-btn" style="margin-left:auto" aria-label="Panduan menu sesuai gaya" title="Menu sesuai tujuan (invest / swing / trading)" onclick="showInfoModal('🧭 Menu Sesuai Tujuanmu','Pilih menu sesuai gaya kamu:<br><br>&bull; Untuk <strong>investasi</strong> (jangka panjang) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Valuasi</strong>.<br><br>&bull; Untuk <strong>swing</strong> (jangka menengah) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Dashboard</strong>.<br><br>&bull; Untuk <strong>trading</strong> (jangka pendek) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Tracker</strong>.')">?</button>
-      </div>
-      <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
-      <div class="acct-row" id="acctRefRow" style="display:none"><span class="acct-label">Ajak teman</span><span class="acct-val" id="acctRef">—</span></div>
-      <div class="acct-row"><span class="acct-label">Paket</span><span class="acct-val" id="acctPlan">—</span></div>
-      <div class="acct-row" id="acctExpiryRow"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
-      <a class="acct-action" id="acctAdminLink" href="/admin" style="display:none">⚙️ Dashboard Admin</a>
-      <a class="acct-action" href="/billing">↻ Perpanjang / Billing</a>
-      <a class="acct-action danger" href="/api/auth/logout">⎋ Logout</a>
-    </div>
-  </div>
 </header>
 
 <!-- STOCK TICKER (running sideways — click an item to load its detail) -->
@@ -32244,6 +32267,7 @@ document.addEventListener('keydown', (e) => {
 </script>
 
 <script src="/panduan.js" defer></script>
+<script src="/acct-nav.js" defer></script>
 <script src="/pwa-install.js" defer></script>
 </body>
 </html>
