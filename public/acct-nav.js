@@ -139,9 +139,14 @@
     var html = '<div class="acct-nav-title">Menu</div>';
     MENU.forEach(function (g, gi) {
       html += '<div class="acct-nav-group" data-page="' + esc(g.page) + '">' +
-        '<button type="button" class="acct-nav-page" data-g="' + gi + '">' +
-          '<span class="acct-nav-ico" aria-hidden="true">' + g.ico + '</span>' + esc(g.label) +
-        '</button><div class="acct-nav-subs">';
+        '<div class="acct-nav-head">' +
+          '<button type="button" class="acct-nav-page" data-g="' + gi + '">' +
+            '<span class="acct-nav-ico" aria-hidden="true">' + g.ico + '</span>' + esc(g.label) +
+          '</button>' +
+          '<button type="button" class="acct-nav-tgl" data-tgl="' + esc(g.page) + '" aria-expanded="false" ' +
+            'aria-label="Tampilkan/sembunyikan sub-menu ' + esc(g.label) + '" title="Tampilkan/sembunyikan sub-menu">' +
+            '<span class="acct-nav-chev" aria-hidden="true"></span></button>' +
+        '</div><div class="acct-nav-subs">';
       g.subs.forEach(function (s, si) {
         html += '<button type="button" class="acct-nav-sub" data-g="' + gi + '" data-s="' + si + '">' + esc(s.label) + '</button>';
       });
@@ -150,6 +155,15 @@
     box.innerHTML = html;
 
     box.addEventListener('click', function (e) {
+      var t = e.target.closest && e.target.closest('button[data-tgl]');
+      if (t) {
+        e.preventDefault();
+        e.stopPropagation();
+        var pg = t.getAttribute('data-tgl');
+        var grp = t.closest('.acct-nav-group');
+        setOpen(pg, !(grp && grp.classList.contains('open')));
+        return;
+      }
       var b = e.target.closest && e.target.closest('button[data-g]');
       if (!b) return;
       e.preventDefault();
@@ -159,10 +173,30 @@
     });
   }
 
+  // Status buka/tutup sub-menu per halaman (diingat di browser).
+  // Belum pernah diatur → default: hanya grup halaman yang sedang aktif terbuka.
+  var OPEN_KEY = 'es_nav_open';
+  function loadOpen() {
+    try { return JSON.parse(localStorage.getItem(OPEN_KEY) || '{}') || {}; } catch (_) { return {}; }
+  }
+  function setOpen(page, open) {
+    var st = loadOpen();
+    st[page] = !!open;
+    try { localStorage.setItem(OPEN_KEY, JSON.stringify(st)); } catch (_) {}
+    syncActive();
+  }
+
   function syncActive() {
+    var st = loadOpen();
     var groups = document.querySelectorAll('#acctNav .acct-nav-group');
     for (var i = 0; i < groups.length; i++) {
-      groups[i].classList.toggle('is-active', pageActive(groups[i].getAttribute('data-page')));
+      var pg = groups[i].getAttribute('data-page');
+      var act = pageActive(pg);
+      var open = (pg in st) ? !!st[pg] : act;
+      groups[i].classList.toggle('is-active', act);
+      groups[i].classList.toggle('open', open);
+      var tg = groups[i].querySelector('.acct-nav-tgl');
+      if (tg) tg.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
   }
 
