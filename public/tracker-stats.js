@@ -170,9 +170,12 @@
 
     for (var i = 0; i < recs.length; i++) {
       var r = recs[i];
-      // Optional date filter (Analis panel: user pick range di UI).
+      // Optional date filter (periode). BASIS = exitDate: hitung rekomendasi
+      // yang SELESAI di periode itu. Satu aturan untuk semua panel Tracker
+      // (Overview Peringkat vs IHSG, Overview Per Firm, Analis KPI) supaya
+      // "return Oktober" sama persis di mana pun dilihat.
       if (dateFilter) {
-        var d = r && r.openDate;
+        var d = r && r.exitDate;
         if (!d || d < dateFilter.start || d > dateFilter.end) continue;
       }
       var pnl = recPnl(r, { entry: entryMode, exit: exitMode });

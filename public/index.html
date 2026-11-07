@@ -8901,7 +8901,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       if(!st.total){ netEl.textContent='—'; netEl.className='v'; }
       else { netEl.textContent=fmtPct(st.net); netEl.className='v '+(st.net>=0?'tr-up':'tr-dn'); }
     }
-    $id('trPfKpiNetSub').textContent = 'Hasil nyata (sudah selesai) · '+comboLabel();
+    $id('trPfKpiNetSub').textContent = 'Hasil nyata (selesai di periode ini) · '+comboLabel();
 
     // FLOATING BERJALAN — akumulasi floating dari rec aktif (state TRIGGERED)
     var _fl = computeActiveFloatingSum(firm, _entryMode);
@@ -8970,11 +8970,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
       }
     }
 
-    // ── Return "DIBUKUKAN periode ini" (basis exitDate) — mirror angka
-    //    peringkat Overview. Ditampilkan kecil di header. Beda dgn NET card
-    //    (basis openDate). Ikut mode & periode aktif. ──
+    // ── Return "DIBUKUKAN periode ini" — DULU basis exitDate (beda dgn NET
+    //    yg basis openDate). Sekarang NET sudah basis exitDate (mesin utama),
+    //    jadi angka ini identik dgn NET → baris disembunyikan (redundan). ──
     var _rpEl = $id('trPfRealizedPeriod');
-    if(_rpEl){
+    if(_rpEl) _rpEl.style.display = 'none';
+    if(false){
       var _rpNet = 0, _rpN = 0;
       (firm.recsHistory||[]).forEach(function(r){
         if(!r || !r.exitDate) return;
@@ -14016,16 +14017,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // Group rec pnl by exitDate → hitung sum per hari, lalu cum-sum.
     var pnlByDate = {};
     hist.forEach(function(r){
+      // MESIN UTAMA (TrackerStats.recPnl, entry×tp1) — rec yg di-skip mesin
+      // (mis. harga tak pernah sentuh entry) JUGA di-skip di sini, supaya
+      // angka peringkat IDENTIK dgn NET RETURN halaman Analis.
       var pnl = (window.TrackerStats && window.TrackerStats.recPnl)
                 ? window.TrackerStats.recPnl(r, {entry:'entry', exit:'tp1'})
-                : null;
-      // Fallback TP1 lock aware (SL_TRAIL → full TP1 return) via
-      // pnlEffective, sebelum fallback ke backend pnlPct partial.
-      if (pnl == null) {
-        var _pe = window.__TR_pnlEffective ? window.__TR_pnlEffective(r) : null;
-        pnl = Number.isFinite(_pe) ? _pe : (+r.pnlPct || 0);
-      }
-      pnlByDate[r.exitDate] = (pnlByDate[r.exitDate] || 0) + (+pnl || 0);
+                : (window.__TR_pnlEffective ? window.__TR_pnlEffective(r) : null);
+      if (!Number.isFinite(pnl)) return;
+      pnlByDate[r.exitDate] = (pnlByDate[r.exitDate] || 0) + (+pnl);
     });
 
     // ── REALIZED-ONLY (floating DIPISAH) ──────────────────────────────
@@ -15191,7 +15190,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // dgn sidebar & Analis panel. Default entry mode = 'entry' (skip
     // rec yg tak sentuh entry) sesuai aturan default winrate user.
     // Target = 'tp1' | 'tp2' — controlled by tombol Basis × Target.
-    // dateFilter = {start,end} (openDate) — diteruskan supaya winrate/net/
+    // dateFilter = {start,end} (basis exitDate di mesin) — diteruskan supaya winrate/net/
     // TP1/TP2 di ranking Per Firm IDENTIK dgn halaman Analis (yg juga
     // filter 30 hari terakhir by openDate). Tanpa ini ranking = all-time
     // → angka beda dgn Analis.
