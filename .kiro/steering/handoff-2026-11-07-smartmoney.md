@@ -19,6 +19,15 @@ Skor Smart Money 0-100 (45% bandar, 30% asing, 25% insider 6 bln), Radar 16 saha
 Big Dist–Big Acc, tabel net/gross, tanggal & rentang), Broker Distribution (sankey SVG), Insider
 (grafik + marker beli/jual, buy record, per bulan/tahun, tabel IDX/KSEI), glosarium.
 
+## Revisi: dipecah jadi 2 halaman
+- Bar lengket (`#smmBar`, kode saham + sub-tab) → **Broker Activity** (`#smmPgBroker`) dan
+  **Insider** (`#smmPgInsider`). Pilihan terakhir disimpan di `localStorage.smm_sub`.
+- Halaman tersembunyi ditandai `_dirty` dan baru dirender saat dibuka (grafik butuh ukuran nyata).
+- `#page-smartmoney` memakai `overflow-x:clip` karena `overflow:hidden` bawaan `.page` mematikan sticky.
+- HP: tabel insider diganti kartu (`.smm-icards`), kolom lot Broker Action disembunyikan ≤480px,
+  sankey 5 broker per sisi. Tab nav jadi ikon saja di layar <1280px.
+- Header situs (nav-tabs) sudah overflow di tablet ±820px sejak sebelum menu ini; belum disentuh (area inti).
+
 ## Data
 Semua dummy deterministik dari `generate(code)` (seed = kode saham, tanggal akhir `END_DATE`).
 Saat data asli siap: ganti `generate()` dengan fetch ke endpoint `/api/admin/...` (gating di server),
