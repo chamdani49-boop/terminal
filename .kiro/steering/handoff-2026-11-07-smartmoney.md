@@ -43,3 +43,16 @@ pertahankan bentuk objek `{days, ohlc, value, off, brokers[{bv,sv,bl,sl,f,type}]
 - Frontend: `getData(code)` = data asli kalau ada, selain itu `generate()` dummy (badge "Data dummy").
   Panjang data per saham dinamis (`g.nP`, `g.nF`, `g.end`). Tanpa kolom asing → filter investor dimatikan.
   Saham tanpa data broker → halaman Broker menampilkan kotak kosong.
+
+## Revisi: halaman 3 "Kepemilikan" + pencarian saham / broker / nama
+- Sub-tab ke-3 `#smmPgHolder`: sinyal kepemilikan (jumlah pemegang vs porsi ritel), pergerakan
+  pemegang >1% per bulan (bar 100% + sparkline 12 bln), komposisi KSEI per kategori (Semua/Lokal/Asing),
+  tren 12 bln (Lokal vs Asing / per kategori), pemegang terkini + direksi/komisaris + UBO,
+  jumlah pemegang (24 bln), dewan & profil perusahaan.
+- Data: R2 `holder/{KODE}.json` (Worker ikut mengirim `holder`). Format di komentar `adaptHolder()`.
+  Saham dummy memakai `genHolder()`.
+- Kotak cari: kode saham → buka saham; kode broker 2 huruf → profil broker lintas saham
+  (`#smmBkProfile`); nama → profil orang lintas saham (`#smmPersonCard`). Filter aktif tampil di
+  `#smmActive` dan tetap berlaku saat pindah saham.
+- Upload: `upload_smartmoney.py` folder `smartmoney/holder/` (Excel 1 sheet per jenis: pergerakan,
+  komposisi, pemegang, dewan, ubo, jumlah_pemegang, profil). `--template` membuat file contoh.

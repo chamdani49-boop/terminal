@@ -8,6 +8,7 @@
 //   index.json          → { updated, codes: [...] }  daftar saham yang punya data
 //   broker/{KODE}.json  → data broker harian per saham
 //   insider/{KODE}.json → transaksi orang dalam per saham
+//   holder/{KODE}.json  → kepemilikan (pemegang >1%, komposisi KSEI, jumlah pemegang, profil)
 //
 // Terpisah dari D1 (user/billing) dan dari repo GitHub: kalau bucket kosong
 // atau error, hanya menu Smart Money yang terdampak (frontend jatuh ke data
@@ -39,9 +40,10 @@ export async function handleSmartMoneyApi(request, env, url) {
 
   const code = String(url.searchParams.get('code') || '').trim().toUpperCase();
   if (!/^[A-Z0-9]{2,6}$/.test(code)) return badRequest('Kode saham tidak valid');
-  const [broker, insider] = await Promise.all([
+  const [broker, insider, holder] = await Promise.all([
     readJson(env, `broker/${code}.json`),
     readJson(env, `insider/${code}.json`),
+    readJson(env, `holder/${code}.json`),
   ]);
-  return json({ ok: true, code, broker, insider }, 200, NO_STORE);
+  return json({ ok: true, code, broker, insider, holder }, 200, NO_STORE);
 }
