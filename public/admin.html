@@ -1048,6 +1048,12 @@ var _refLoaded=false;
 function refStatusLabel(s){
   return s==='aktif'?'🟢 Aktif':s==='expired'?'🟡 Kedaluwarsa':s==='suspended'?'⛔ Suspended':'⚪ Belum langganan';
 }
+// Label paket berbayar: "Tracker 1 Bln" / "Full 3 Bln" / "Full 6 Bln" / "Full 12 Bln".
+function refPlanLabel(plan,scope){
+  if(!plan) return '';
+  var m={'1bulan':'1 Bln','3bulan':'3 Bln','6bulan':'6 Bln','tahunan':'12 Bln'}[plan]||plan;
+  return (scope==='tracker'?'Tracker ':'Full ')+m;
+}
 function _escR(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 async function loadReferrals(){
   var rows=document.getElementById('refRows'), empty=document.getElementById('refEmpty'), badge=document.getElementById('refBadge');
@@ -1062,7 +1068,7 @@ async function loadReferrals(){
       var detail=g.referees.map(function(e){
         return '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--border)">'+
                  '<span>'+_escR(e.email)+(e.nama&&e.nama!=='-'?' <span style="color:var(--text3)">('+_escR(e.nama)+')</span>':'')+'</span>'+
-                 '<span style="white-space:nowrap">'+(e.subscribed?'✅ Berlangganan':'⚪ Belum')+' · <span style="color:var(--text3)">'+refStatusLabel(e.status)+'</span></span>'+
+                 '<span style="white-space:nowrap">'+(e.subscribed?'✅ Berlangganan'+(e.plan?' <b style="color:var(--accent)">'+_escR(refPlanLabel(e.plan,e.scope))+'</b>':''):'⚪ Belum')+' · <span style="color:var(--text3)">'+refStatusLabel(e.status)+'</span></span>'+
                '</div>';
       }).join('');
       return '<tr class="ref-row" data-i="'+i+'" style="cursor:pointer">'+

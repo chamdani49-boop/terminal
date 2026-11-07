@@ -318,16 +318,25 @@ export async function listUsersWithSub(env) {
 // CATATAN: murni tampilan; TIDAK mengubah logika reward yang sudah ada.
 export async function listReferralsGrouped(env) {
   const t = now();
-  let results;
-  try {
-    ({ results } = await db(env).prepare(`
+  const BASE_SELECT = `
       SELECT r.referrer_id, r.created_at,
              ru.email AS referrer_email, ru.referral_code AS code,
              eu.email AS referee_email, eu.name AS referee_name,
              s.status AS sub_status, s.expires_at AS expires_at,
              (SELECT COUNT(*) FROM subscriptions ps
                 WHERE ps.user_id = r.referee_id AND ps.source = 'mayar'
-                  AND ps.mayar_txn_id IS NOT NULL) AS paid_count
+                  AND ps.mayar_txn_id IS NOT NULL) AS paid_count`;
+  // Paket langganan BERBAYAR terakhir (Mayar) → plan (durasi) + scope (tracker/full).
+  const PAID_PLAN_SELECT = `,
+             (SELECT pp.plan FROM subscriptions pp
+                WHERE pp.user_id = r.referee_id AND pp.source = 'mayar'
+                  AND pp.mayar_txn_id IS NOT NULL
+                ORDER BY pp.expires_at DESC LIMIT 1) AS paid_plan,
+             (SELECT pp.scope FROM subscriptions pp
+                WHERE pp.user_id = r.referee_id AND pp.source = 'mayar'
+                  AND pp.mayar_txn_id IS NOT NULL
+                ORDER BY pp.expires_at DESC LIMIT 1) AS paid_scope`;
+  const FROM_REST = `
       FROM referrals r
       JOIN users ru ON ru.id = r.referrer_id
       JOIN users eu ON eu.id = r.referee_id
@@ -335,8 +344,16 @@ export async function listReferralsGrouped(env) {
         SELECT id FROM subscriptions WHERE user_id = r.referee_id ORDER BY expires_at DESC LIMIT 1
       )
       ORDER BY ru.email ASC, r.created_at DESC
-    `).all());
-  } catch { return []; }
+    `;
+  let results;
+  try {
+    ({ results } = await db(env).prepare(BASE_SELECT + PAID_PLAN_SELECT + FROM_REST).all());
+  } catch {
+    // Fallback (mis. kolom scope belum ada): query lama tanpa rincian paket.
+    try {
+      ({ results } = await db(env).prepare(BASE_SELECT + FROM_REST).all());
+    } catch { return []; }
+  }
 
   const map = new Map();
   for (const r of (results || [])) {
@@ -352,7 +369,11 @@ export async function listReferralsGrouped(env) {
     const g = map.get(key);
     g.count += 1;
     if (subscribed) g.subscribed += 1;
-    g.referees.push({ email: r.referee_email, nama: r.referee_name || '-', status, subscribed });
+    g.referees.push({
+      email: r.referee_email, nama: r.referee_name || '-', status, subscribed,
+      plan: subscribed ? (r.paid_plan || null) : null,
+      scope: subscribed ? (r.paid_scope || 'full') : null,
+    });
   }
   // Urutkan: pengajak dgn ajakan terbanyak dulu, lalu yg paling banyak berlangganan.
   return Array.from(map.values()).sort((a, b) => (b.count - a.count) || (b.subscribed - a.subscribed));
