@@ -326,9 +326,22 @@ body.is-mobile-device .view-toggle{display:inline-flex}
 @media(max-width:640px){
   /* Sisakan ruang untuk bottom-nav fixed di HP */
   .acct-menu{max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px)}
-  .acct-nav-page{padding:9px 8px;font-size:13.5px}
-  .acct-nav-sub{padding:7px 11px;font-size:12px}
-  .acct-nav-subs{padding-left:30px}
+  /* HP / layar kecil: dropdown lebih ramping (lebar, padding, ukuran item) */
+  .acct-menu{width:min(250px, calc(100vw - 24px));padding:10px;border-radius:10px}
+  .acct-head{gap:8px;padding-bottom:8px;margin-bottom:6px}
+  .acct-avatar{width:32px;height:32px;font-size:13px}
+  .acct-name{font-size:12px}
+  .acct-email{font-size:10.5px}
+  .acct-nav{padding-bottom:6px;margin-bottom:6px}
+  .acct-nav-title{font-size:9.5px;margin-bottom:2px}
+  .acct-nav-group{padding:1px 0}
+  .acct-nav-page{padding:6px 6px;font-size:12.5px;gap:6px}
+  .acct-nav-ico{width:16px;font-size:12px}
+  .acct-nav-tgl{width:26px;height:26px}
+  .acct-nav-subs{gap:3px;padding:1px 2px 5px 26px}
+  .acct-nav-sub{padding:4px 9px;font-size:11px}
+  .acct-row{font-size:11px;padding:3px 0}
+  .acct-action{margin-top:6px;padding:7px;font-size:11.5px}
 }
 
 /* ── STOCK TICKER (running sideways, mirror of rupiah-monitor pattern) ── */
