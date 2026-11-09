@@ -1,0 +1,55 @@
+name: Refresh logo emiten
+
+# ═══════════════════════════════════════════════════════════════════════
+# Unduh ulang logo emiten ke public/logos/<KODE>.png + public/logos/index.json
+# (scripts/fetch-logos.js). Dibaca public/stock-logos.js untuk menampilkan
+# logo di samping kode saham. Hanya file yang berubah yang di-commit.
+#
+# Cadence BULANAN: logo jarang berubah; emiten baru (IPO) ikut terambil
+# karena daftar kode dibaca dari public/data.json → stock_info.
+# ═══════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    - cron: '0 19 1 * *'       # tgl 1 tiap bulan, 19:00 UTC (02:00 WIB)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-logos
+  cancel-in-progress: false
+
+jobs:
+  refresh-logos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch logos
+        run: node scripts/fetch-logos.js
+
+      - name: Commit & push if changed
+        run: |
+          git add public/logos
+          if git diff --cached --quiet; then
+            echo "⏭  Tidak ada perubahan — skip commit."
+            exit 0
+          fi
+          git config user.name  "logos[bot]"
+          git config user.email "logos@economstock.local"
+          git commit -m "logos: refresh $(date -u +%FT%TZ)"
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            if git push; then pushed=true; break; fi
+            git pull --rebase --autostash origin main || true
+            sleep $(( (RANDOM % 5) + 2 ))
+          done
+          [ "$pushed" = "true" ] || { echo "FATAL: push gagal"; exit 1; }
