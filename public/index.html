@@ -5818,9 +5818,25 @@ table.scr-tbl tbody tr:hover td.scr-c-code{background:var(--bg2)}
 .scr-modal-card .scr-li{display:flex;gap:8px;font-size:13px;line-height:1.5;color:var(--text2);margin-bottom:6px}
 .scr-modal-card .scr-li b{flex-shrink:0}
 .scr-modal-card .scr-note{font-size:11.5px;color:var(--text3);margin-top:8px}
+/* Preset screener: dropdown metode + kotak kriteria */
+#scrPreset{max-width:260px}
+.scr-preset-info{padding:10px 14px;border-bottom:1px solid var(--border);background:var(--card)}
+.scr-preset-info[hidden]{display:none}
+.scr-pi-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text)}
+.scr-pi-count{font-size:11px;font-weight:700;color:var(--accent);background:rgba(109,40,217,.1);padding:2px 8px;border-radius:var(--radius-pill)}
+.scr-pi-head .scr-iq{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--text3);color:var(--text3);font-size:10px;font-weight:800;font-style:normal;line-height:1}
+.scr-pi-head .scr-iq:hover{border-color:var(--accent);color:var(--accent)}
+.scr-pi-crit{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.scr-pi-crit span{font-size:11px;font-weight:600;color:var(--text2);background:var(--bg2);border:1px solid var(--border);padding:3px 9px;border-radius:var(--radius-pill);line-height:1.35}
+table.scr-tbl thead th.scr-c-preset{color:var(--accent)}
 @media(max-width:640px){
   table.scr-tbl th,table.scr-tbl td{padding:6px 7px;font-size:11.5px}
   .scr-search{width:140px}
+  .scr-filters{width:100%;margin-left:0}
+  .scr-filters .scr-sel{flex:1 1 calc(50% - 4px);max-width:none}
+  .scr-filters .scr-search{flex:1 1 100%;width:auto;max-width:none}
+  .scr-preset-info{padding:9px 10px}
+  .scr-pi-crit span{font-size:10.5px}
   .scr-toolbar{padding:10px;gap:8px}
   .pl-submenu-btn{padding:6px 12px;font-size:12px}
 }
@@ -6214,10 +6230,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
         <span class="scr-head-sub" id="scrHeadSub">Ide saham — semua emiten IDX · klik baris untuk detail valuasi</span>
       </div>
       <div class="scr-filters">
+        <select class="scr-sel" id="scrPreset" onchange="plScrSetPreset()" aria-label="Metode screening">
+          <option value="">Semua metode</option>
+          <option value="fisher">Kenneth Fisher · Price to Sales</option>
+          <option value="buffett">Buffettology · Sustainable Growth</option>
+          <option value="lynch">Peter Lynch · Growth (PEG)</option>
+          <option value="netnet">Ben Graham · Net-Net</option>
+          <option value="dcf">DCF</option>
+          <option value="ddm">DDM</option>
+          <option value="graham">Graham Number</option>
+        </select>
         <select class="scr-sel" id="scrSector" onchange="plScrRender()" aria-label="Filter sektor"><option value="">Semua sektor</option></select>
         <input type="text" class="scr-search" id="scrSearch" placeholder="🔍 Cari kode / nama…" autocomplete="off" enterkeyhint="search" oninput="plScrRender()" aria-label="Cari saham">
       </div>
     </div>
+    <div class="scr-preset-info" id="scrPresetInfo" hidden></div>
     <div class="scr-table-wrap" id="scrTableWrap">
       <div class="scr-loading">Memuat data screening…</div>
     </div>
@@ -21945,7 +21972,133 @@ function plScrRow(code) {
     consVal: _scrConsVal(cs),
     target,
     upDw: (Number.isFinite(target) && Number.isFinite(price) && price > 0) ? (target / price - 1) : null,
+    ..._scrPresetMetrics(sc, price, perNow),
   };
+}
+
+// ── metrik untuk preset screener (Fisher / Buffettology / Lynch / Net-Net /
+//    DCF / DDM / Graham Number). Semua yang bergantung harga pakai harga LIVE.
+function _scrPresetMetrics(sc, price, perNow) {
+  const fin = v => Number.isFinite(v);
+  const hasPx = fin(price) && price > 0;
+  const up = fair => (fin(fair) && fair > 0 && hasPx) ? fair / price - 1 : null;
+  const psr = (fin(sc.sps) && sc.sps > 0 && hasPx) ? price / sc.sps : null;
+  const roe = fin(sc.roe) ? sc.roe / 100 : null;                 // fraksi
+  const roeAvg = fin(sc.roe_avg_5y) ? sc.roe_avg_5y / 100 : null;
+  const dpr = fin(sc.dpr) ? Math.max(0, Math.min(1, sc.dpr)) : 0;
+  const sgr = fin(roe) ? roe * (1 - dpr) : null;                 // ROE × (1 − payout)
+  const g = fin(sc.eps_growth_5y) ? sc.eps_growth_5y : null;
+  const peg = (fin(perNow) && fin(g) && g > 0) ? perNow / (g * 100) : null;
+  const gn = (fin(sc.eps) && sc.eps > 0 && fin(sc.bvps) && sc.bvps > 0) ? Math.sqrt(22.5 * sc.eps * sc.bvps) : null;
+  const nc = fin(sc.net_cash_ps) ? sc.net_cash_ps : null;
+  return {
+    isFin: !!sc.is_financial,
+    epsPos5: !!sc.eps_pos_5y,
+    dataOk: !!sc.data_ok,        // rasio sumber konsisten dgn harga (bukan anomali satuan)
+    psrOk: !!sc.psr_ok,          // penjualan/kas satu mata uang dgn harga (bukan lapor USD)
+    dcfWacc: fin(sc.dcf_wacc) ? sc.dcf_wacc : null,
+    psr,
+    npm: fin(sc.npm) ? sc.npm : null,
+    de: fin(sc.de) ? sc.de : null,
+    debtNi: fin(sc.debt_ni) ? sc.debt_ni : null,
+    salesG: fin(sc.sps_growth_5y) ? sc.sps_growth_5y : null,
+    roe, roeAvg, sgr, peg,
+    netCash: nc,
+    ncRatio: (fin(nc) && nc > 0 && hasPx) ? price / nc : null,   // Harga ÷ kas bersih/lembar
+    gn, gnUp: up(gn),
+    dcfFair: fin(sc.dcf_fair) ? sc.dcf_fair : null, dcfUp: up(sc.dcf_fair),
+    ddmFair: fin(sc.ddm_fair) ? sc.ddm_fair : null, ddmUp: up(sc.ddm_fair),
+  };
+}
+
+// ── PRESET SCREENER ──
+// test(r) → true bila saham lolos semua kriteria. cols = kolom tambahan yg
+// disisipkan setelah Market Cap. sort = urutan default saat preset dipilih.
+const SCR_RISK_FREE = 0.068;   // sama dgn ASSUMPTIONS.risk_free di build-valuation.py
+// Semua preset hanya meloloskan saham dengan data fundamental konsisten
+// (dataOk). Preset yg memakai penjualan/kas/FCF juga mensyaratkan psrOk,
+// karena emiten pelapor USD punya angka penjualan & kas yg tidak sebanding
+// dengan harga Rupiah.
+const SCR_PRESETS = {
+  fisher: {
+    label: 'Kenneth Fisher · Price to Sales',
+    crit: ['PSR ≤ 0,75', 'Net margin ≥ 5%', 'Utang/Ekuitas ≤ 40%', 'Non-keuangan'],
+    cols: ['psr', 'npm', 'de', 'salesG'],
+    sort: { key: 'psr', dir: 'asc' },
+    test: r => r.dataOk && r.psrOk && !r.isFin && r.psr > 0 && r.psr <= 0.75 && r.npm >= 0.05 && Number.isFinite(r.de) && r.de <= 0.4,
+  },
+  buffett: {
+    label: 'Buffettology · Sustainable Growth',
+    crit: ['ROE rata-rata 5 th ≥ 15%', 'ROE terakhir ≥ 15%', 'EPS positif 5 th berturut', 'EPS tumbuh (CAGR 5 th > 0)', 'Sustainable growth ≥ 10%', 'Utang ≤ 5× laba (non-bank)'],
+    cols: ['sgr', 'roeAvg', 'roe', 'debtNi'],
+    sort: { key: 'sgr', dir: 'desc' },
+    test: r => r.dataOk && r.roeAvg >= 0.15 && r.roe >= 0.15 && r.epsPos5 && r.epsg > 0 && r.sgr >= 0.10
+      && (r.isFin || (Number.isFinite(r.debtNi) && r.debtNi <= 5)),
+  },
+  lynch: {
+    label: 'Peter Lynch · Growth (PEG)',
+    crit: ['EPS CAGR 5 th 15%–50%', 'PEG ≤ 1', 'Utang/Ekuitas ≤ 80% (non-bank)'],
+    cols: ['peg', 'epsg', 'de'],
+    sort: { key: 'peg', dir: 'asc' },
+    test: r => r.dataOk && r.epsg >= 0.15 && r.epsg <= 0.5 && r.peg > 0 && r.peg <= 1
+      && (r.isFin || (Number.isFinite(r.de) && r.de <= 0.8)),
+  },
+  netnet: {
+    label: 'Ben Graham · Net-Net',
+    crit: ['Harga ≤ kas bersih per saham', 'Kas bersih = kas − total utang', 'Non-keuangan'],
+    cols: ['netCash', 'ncRatio'],
+    sort: { key: 'ncRatio', dir: 'asc' },
+    test: r => r.dataOk && r.psrOk && !r.isFin && r.netCash > 0 && r.ncRatio > 0 && r.ncRatio <= 1,
+  },
+  dcf: {
+    label: 'DCF · Discounted Cash Flow',
+    crit: ['Harga ≤ 70% nilai wajar DCF (margin of safety ≥ 30%)', 'WACC ≥ 6,8% (bunga bebas risiko)', 'Non-keuangan'],
+    cols: ['dcfFair', 'dcfUp'],
+    sort: { key: 'dcfUp', dir: 'desc' },
+    test: r => r.dataOk && r.psrOk && r.dcfWacc >= SCR_RISK_FREE && r.dcfFair > 0 && Number.isFinite(r.price) && r.price <= 0.7 * r.dcfFair,
+  },
+  ddm: {
+    label: 'DDM · Dividend Discount Model',
+    crit: ['Bagi dividen', 'Harga ≤ 70% nilai wajar DDM (margin of safety ≥ 30%)'],
+    cols: ['ddmFair', 'ddmUp'],
+    sort: { key: 'ddmUp', dir: 'desc' },
+    test: r => r.dataOk && r.ddmFair > 0 && Number.isFinite(r.price) && r.price <= 0.7 * r.ddmFair,
+  },
+  graham: {
+    label: 'Graham Number',
+    crit: ['EPS & nilai buku positif', 'Harga ≤ Graham Number = √(22,5 × EPS × BVPS)'],
+    cols: ['gn', 'gnUp'],
+    sort: { key: 'gnUp', dir: 'desc' },
+    test: r => r.dataOk && r.gn > 0 && Number.isFinite(r.price) && r.price <= r.gn,
+  },
+};
+
+function _scrPresetKey() {
+  const el = document.getElementById('scrPreset');
+  const k = el ? el.value : '';
+  return SCR_PRESETS[k] ? k : '';
+}
+
+function plScrSetPreset() {
+  const p = SCR_PRESETS[_scrPresetKey()];
+  _scrSort = p ? { ...p.sort } : { key: 'upDw', dir: 'desc' };
+  _scrPage = 0;
+  plScrRender();
+}
+
+const SCR_DATA_NOTE = '<p class="scr-note">Saham dengan data fundamental tidak konsisten (mis. satuan saham/harga di sumber berbeda, atau laporan keuangan dalam USD untuk metode berbasis penjualan/kas) otomatis tidak diloloskan.</p>';
+
+function _scrRenderPresetInfo(key, count) {
+  const box = document.getElementById('scrPresetInfo');
+  if (!box) return;
+  const p = SCR_PRESETS[key];
+  if (!p) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML =
+    `<div class="scr-pi-head"><b>${p.label}</b>` +
+      `<span class="scr-pi-count">${count} saham lolos</span>` +
+      `<i class="scr-iq" role="button" tabindex="0" onclick="plScrInfo('preset_${key}')" title="Penjelasan metode">i</i></div>` +
+    `<div class="scr-pi-crit">${p.crit.map(c => `<span>${c}</span>`).join('')}</div>`;
 }
 
 // ── definisi kolom: label, render sel (nilai + heatmap), info key ──
@@ -21974,7 +22127,26 @@ const SCR_COLDEFS = {
   consVal:  { label: 'ConsVal', info: 'consVal', cell: r => ({ html: Number.isFinite(r.consVal) ? r.consVal.toFixed(2) : _scrNA(), style: _scrHeatHighGood(r.consVal, 2.5, 4.6) }) },
   target:   { label: '12M Target', info: 'target', cell: r => ({ html: _scrPrice(r.target) }) },
   upDw:     { label: 'UpDw', info: 'upDw', cell: r => ({ html: _scrPct(r.upDw), style: _scrHeatSigned(r.upDw, 0.5) }) },
+  // ── kolom preset screener (muncul hanya saat preset dipilih) ──
+  psr:     { label: 'PSR', info: 'psr', cell: r => ({ html: _scrRatioX(r.psr, 2), style: _scrHeatLowGood(r.psr, 0.3, 3) }) },
+  npm:     { label: 'Net Margin', info: 'npm', cell: r => ({ html: _scrPct(r.npm), style: _scrHeatSigned(r.npm, 0.25) }) },
+  de:      { label: 'Utang/Ekuitas', info: 'de', cell: r => ({ html: r.isFin ? '<span class="scr-na">bank</span>' : _scrPct(r.de, 0) }) },
+  salesG:  { label: 'Sales CAGR 5th', info: 'salesG', cell: r => ({ html: _scrPct(r.salesG, 0), style: _scrHeatSigned(r.salesG, 0.3) }) },
+  sgr:     { label: 'Sust. Growth', info: 'sgr', cell: r => ({ html: _scrPct(r.sgr), style: _scrHeatHighGood(r.sgr, 0, 0.3) }) },
+  roeAvg:  { label: 'ROE avg 5th', info: 'roeAvg', cell: r => ({ html: _scrPct(r.roeAvg), style: _scrHeatHighGood(r.roeAvg, 0, 0.3) }) },
+  roe:     { label: 'ROE', info: 'roe', cell: r => ({ html: _scrPct(r.roe), style: _scrHeatHighGood(r.roe, 0, 0.3) }) },
+  debtNi:  { label: 'Utang/Laba', info: 'debtNi', cell: r => ({ html: r.isFin ? '<span class="scr-na">bank</span>' : (Number.isFinite(r.debtNi) ? r.debtNi.toFixed(1) + '×' : _scrNA()) }) },
+  peg:     { label: 'PEG', info: 'peg', cell: r => ({ html: _scrRatioX(r.peg, 2), style: _scrHeatLowGood(r.peg, 0.2, 2) }) },
+  netCash: { label: 'Kas Bersih/Lbr', info: 'netCash', cell: r => ({ html: _scrInt(r.netCash) }) },
+  ncRatio: { label: 'Harga/Kas Bersih', info: 'ncRatio', cell: r => ({ html: _scrRatioX(r.ncRatio, 2), style: _scrHeatLowGood(r.ncRatio, 0.2, 2) }) },
+  dcfFair: { label: 'Wajar DCF', info: 'dcfFair', cell: r => ({ html: _scrPrice(r.dcfFair) }) },
+  dcfUp:   { label: 'Upside DCF', info: 'dcfFair', cell: r => ({ html: _scrPct(r.dcfUp), style: _scrHeatSigned(r.dcfUp, 1) }) },
+  ddmFair: { label: 'Wajar DDM', info: 'ddmFair', cell: r => ({ html: _scrPrice(r.ddmFair) }) },
+  ddmUp:   { label: 'Upside DDM', info: 'ddmFair', cell: r => ({ html: _scrPct(r.ddmUp), style: _scrHeatSigned(r.ddmUp, 1) }) },
+  gn:      { label: 'Graham Number', info: 'gn', cell: r => ({ html: _scrPrice(r.gn) }) },
+  gnUp:    { label: 'Upside GN', info: 'gn', cell: r => ({ html: _scrPct(r.gnUp), style: _scrHeatSigned(r.gnUp, 1) }) },
 };
+function _scrRatioX(v, dec) { return Number.isFinite(v) ? v.toFixed(dec == null ? 1 : dec) + '×' : _scrNA(); }
 
 function _scrFmtDate(iso) {
   // 2025-08-13 → 13 Agu '25
@@ -22041,6 +22213,11 @@ function plScrRender() {
   const sec = secEl ? secEl.value : '';
   const q = qEl ? qEl.value.trim().toUpperCase() : '';
   if (sec) rows = rows.filter(r => r.sector === sec);
+  // preset screener (Fisher / Buffettology / Lynch / Net-Net / DCF / DDM / Graham Number)
+  const presetKey = _scrPresetKey();
+  const preset = SCR_PRESETS[presetKey];
+  if (preset) rows = rows.filter(preset.test);
+  _scrRenderPresetInfo(presetKey, rows.length);
   if (q) rows = rows.filter(r => r.code.includes(q) || (r.name && r.name.toUpperCase().includes(q)));
 
   // 3) sort (null selalu di bawah)
@@ -22062,7 +22239,13 @@ function plScrRender() {
   const start = _scrPage * SCR_PAGE_SIZE;
   const pageRows = rows.slice(start, start + SCR_PAGE_SIZE);
 
-  const cols = SCR_COLUMNS;
+  // kolom preset disisipkan setelah Market Cap (tanpa duplikat kolom default)
+  let cols = SCR_COLUMNS;
+  if (preset) {
+    const extra = preset.cols.filter(c => !SCR_COLUMNS.includes(c));
+    const at = SCR_COLUMNS.indexOf('marketCap') + 1;
+    cols = [...SCR_COLUMNS.slice(0, at), ...extra, ...SCR_COLUMNS.slice(at)];
+  }
   // indikator sort: setiap kolom yang bisa diurutkan tampil ⇅ (redup);
   // kolom aktif tampil ▲/▼ terang.
   const arrow = key => {
@@ -22076,7 +22259,8 @@ function plScrRender() {
     const d = SCR_COLDEFS[key];
     const iq = d.info ? `<i class="scr-iq" onclick="event.stopPropagation();plScrInfo('${d.info}')">i</i>` : '';
     const onsort = d.sortable === false ? '' : ` onclick="plScrSort('${key}')"`;
-    return `<th class="${d.cls || ''}"${onsort}>${d.label}${arrow(key)}${iq}</th>`;
+    const pc = preset && preset.cols.includes(key) ? ' scr-c-preset' : '';
+    return `<th class="${(d.cls || '') + pc}"${onsort}>${d.label}${arrow(key)}${iq}</th>`;
   }).join('') + '</tr>';
 
   // body
@@ -22086,7 +22270,8 @@ function plScrRender() {
       if (key === 'no') return `<td class="scr-c-no">${start + i + 1}</td>`;
       if (key === 'code') return `<td class="scr-c-code" title="${(r.name || '').replace(/"/g, '')}">${r.code}</td>`;
       const c = d.cell ? d.cell(r) : { html: _scrNA() };
-      return `<td class="${d.cls || ''}"${c.style ? ` style="${c.style}"` : ''}>${c.html}</td>`;
+      const pc = preset && preset.cols.includes(key) ? ' scr-c-preset' : '';
+      return `<td class="${(d.cls || '') + pc}"${c.style ? ` style="${c.style}"` : ''}>${c.html}</td>`;
     }).join('');
     return `<tr onclick="plScrOpen('${r.code}')">${tds}</tr>`;
   }).join('');
@@ -22171,9 +22356,78 @@ const SCR_INFO = {
     '<p>Potensi naik/turun ke target analis: (Target ÷ Harga − 1).</p>',
     '<div class="scr-li"><b>Positif</b><span>harga masih di bawah target (potensi naik, hijau).</span></div>',
     '<div class="scr-li"><b>Negatif</b><span>harga sudah di atas target (merah).</span></div>'] },
+  // ── kolom preset screener ──
+  psr: { t: 'PSR (Price to Sales Ratio)', b: [
+    '<p>Harga ÷ Penjualan per Saham (pendapatan tahun buku terakhir). Berapa kali penjualan dihargai pasar.</p>',
+    '<div class="scr-li"><b>&lt; 0,75</b><span>murah menurut Kenneth Fisher ("super stock").</span></div>',
+    '<div class="scr-li"><b>&gt; 3</b><span>mahal; Fisher menyarankan dihindari.</span></div>'] },
+  npm: { t: 'Net Margin', b: ['<p>Laba bersih ÷ Pendapatan (tahun buku terakhir). Persentase penjualan yang menjadi laba.</p>'] },
+  de: { t: 'Utang / Ekuitas', b: [
+    '<p>Total utang berbunga ÷ ekuitas (tahun buku terakhir). Makin rendah makin aman.</p>',
+    '<p class="scr-note">Untuk bank/lembaga keuangan rasio ini tidak relevan (dana nasabah bukan utang biasa), jadi ditandai "bank".</p>'] },
+  salesG: { t: 'Sales CAGR 5 Tahun', b: ['<p>Pertumbuhan penjualan per saham rata-rata per tahun selama 5 tahun.</p>'] },
+  sgr: { t: 'Sustainable Growth Rate', b: [
+    '<p>Pertumbuhan yang bisa dibiayai sendiri oleh laba ditahan: <b>ROE × (1 − Payout Ratio)</b>.</p>',
+    '<p class="scr-note">Konsep dari buku Buffettology (Mary Buffett): perusahaan berkualitas punya ROE tinggi dan menahan laba untuk tumbuh.</p>'] },
+  roeAvg: { t: 'ROE Rata-rata 5 Tahun', b: ['<p>Rata-rata Return on Equity 5 tahun buku terakhir. Menunjukkan konsistensi profitabilitas.</p>'] },
+  roe: { t: 'ROE (Return on Equity)', b: ['<p>Laba bersih ÷ Ekuitas tahun buku terakhir.</p>'] },
+  debtNi: { t: 'Utang / Laba Bersih', b: [
+    '<p>Total utang ÷ laba bersih tahunan = berapa tahun laba dibutuhkan untuk melunasi utang.</p>',
+    '<p class="scr-note">Buffettology: idealnya utang bisa dilunasi ≤ 5 tahun dari laba.</p>'] },
+  peg: { t: 'PEG Ratio', b: [
+    '<p><b>PER ÷ pertumbuhan EPS (%)</b>. PER memakai harga live, pertumbuhan = CAGR EPS 5 tahun.</p>',
+    '<div class="scr-li"><b>&lt; 1</b><span>harga wajar/murah dibanding pertumbuhannya (Peter Lynch).</span></div>',
+    '<div class="scr-li"><b>&lt; 0,5</b><span>sangat menarik.</span></div>'] },
+  netCash: { t: 'Kas Bersih per Saham', b: [
+    '<p>(Kas − Total Utang) ÷ Jumlah Saham, Rp per lembar.</p>',
+    '<p class="scr-note">Pendekatan konservatif untuk NCAV Graham, karena data aset lancar & total liabilitas belum tersedia.</p>'] },
+  ncRatio: { t: 'Harga / Kas Bersih', b: ['<p>Harga ÷ Kas Bersih per Saham. ≤ 1 berarti harga saham di bawah kas bersih perusahaan.</p>'] },
+  dcfFair: { t: 'Nilai Wajar DCF', b: [
+    '<p>Discounted Cash Flow 2 tahap: FCF diproyeksikan 5 tahun lalu nilai terminal (Gordon), didiskonto dengan WACC, dikurangi utang bersih, dibagi jumlah saham.</p>',
+    '<p class="scr-note">Sama dengan nilai DCF di halaman Valuasi. Tidak berlaku untuk bank. Asumsi pertumbuhan FCF masih default 8%/tahun.</p>'] },
+  ddmFair: { t: 'Nilai Wajar DDM', b: [
+    '<p>Dividend Discount Model 2 tahap: dividen tahun terakhir tumbuh sebesar ROE × (1 − payout) selama 5 tahun lalu nilai terminal, didiskonto dengan cost of equity.</p>',
+    '<p class="scr-note">Hanya untuk saham yang membagi dividen. Sama dengan nilai DDM di halaman Valuasi.</p>'] },
+  gn: { t: 'Graham Number', b: [
+    '<p><b>√(22,5 × EPS × BVPS)</b>. Batas harga maksimum yang masih wajar menurut Benjamin Graham (PER 15 × PBV 1,5).</p>',
+    '<p class="scr-note">Upside GN = Graham Number ÷ Harga − 1.</p>'] },
+  // ── penjelasan preset (tombol i di kotak kriteria) ──
+  preset_fisher: { t: 'Kenneth Fisher · Price to Sales', b: [
+    '<p>Kenneth Fisher (<i>Super Stocks</i>, 1984) menilai saham dari penjualan, bukan laba, karena laba bisa turun sementara sedangkan penjualan lebih stabil.</p>',
+    '<div class="scr-li"><b>PSR ≤ 0,75</b><span>harga murah dibanding penjualan.</span></div>',
+    '<div class="scr-li"><b>Net margin ≥ 5%</b><span>penjualan benar-benar menghasilkan laba.</span></div>',
+    '<div class="scr-li"><b>Utang/Ekuitas ≤ 40%</b><span>neraca sehat.</span></div>',
+    '<p class="scr-note">Bank dikecualikan karena PSR tidak relevan untuk lembaga keuangan.</p>'] },
+  preset_buffett: { t: 'Buffettology · Sustainable Growth', b: [
+    '<p>Mencari bisnis berkualitas ala Warren Buffett (<i>Buffettology</i>, Mary Buffett): untung konsisten, ROE tinggi, mampu tumbuh dari laba sendiri, utang rendah.</p>',
+    '<div class="scr-li"><b>ROE ≥ 15%</b><span>rata-rata 5 tahun dan tahun terakhir.</span></div>',
+    '<div class="scr-li"><b>EPS positif</b><span>5 tahun berturut-turut dan tumbuh (CAGR &gt; 0).</span></div>',
+    '<div class="scr-li"><b>Sustainable growth ≥ 10%</b><span>ROE × (1 − payout).</span></div>',
+    '<div class="scr-li"><b>Utang ≤ 5× laba</b><span>bisa dilunasi dari laba ≤ 5 tahun (bank dikecualikan dari syarat ini).</span></div>'] },
+  preset_lynch: { t: 'Peter Lynch · Growth Screener', b: [
+    '<p>Peter Lynch (<i>One Up on Wall Street</i>) mencari "fast grower" yang harganya belum mahal dibanding pertumbuhannya.</p>',
+    '<div class="scr-li"><b>EPS CAGR 15–50%</b><span>tumbuh cepat tapi masih berkelanjutan.</span></div>',
+    '<div class="scr-li"><b>PEG ≤ 1</b><span>PER tidak melebihi angka pertumbuhan.</span></div>',
+    '<div class="scr-li"><b>Utang/Ekuitas ≤ 80%</b><span>tidak terlalu bergantung utang (bank dikecualikan).</span></div>'] },
+  preset_netnet: { t: 'Ben Graham · Net-Net', b: [
+    '<p>Benjamin Graham membeli saham yang harganya di bawah nilai likuidasi bersih (NCAV = aset lancar − total liabilitas).</p>',
+    '<p>Data aset lancar dan total liabilitas belum tersedia, jadi dipakai versi yang <b>lebih ketat</b>: <b>harga ≤ (kas − total utang) per saham</b>. Saham yang lolos dihargai di bawah uang tunai bersihnya.</p>',
+    '<p class="scr-note">Bank dikecualikan. Cek juga kualitas bisnis: saham net-net sering murah karena sedang bermasalah.</p>'] },
+  preset_dcf: { t: 'DCF · Discounted Cash Flow', b: [
+    '<p>Nilai wajar = arus kas bebas masa depan yang didiskonto ke hari ini.</p>',
+    '<div class="scr-li"><b>Lolos</b><span>harga ≤ 70% nilai wajar (margin of safety ≥ 30%).</span></div>',
+    '<div class="scr-li"><b>WACC ≥ 6,8%</b><span>tingkat diskonto di bawah bunga bebas risiko membuat nilai wajar membengkak, jadi tidak diloloskan.</span></div>',
+    '<p class="scr-note">Asumsi pertumbuhan FCF default 8%/tahun, jadi hasilnya perlu dicek ulang di halaman Valuasi. Bank dan emiten pelapor USD tidak dihitung.</p>'] },
+  preset_ddm: { t: 'DDM · Dividend Discount Model', b: [
+    '<p>Nilai wajar = semua dividen masa depan yang didiskonto ke hari ini. Cocok untuk saham pembagi dividen yang stabil, termasuk bank.</p>',
+    '<div class="scr-li"><b>Lolos</b><span>harga ≤ 70% nilai wajar DDM (margin of safety ≥ 30%).</span></div>'] },
+  preset_graham: { t: 'Graham Number', b: [
+    '<p>Harga maksimum yang dibayar investor defensif menurut Benjamin Graham: √(22,5 × EPS × BVPS).</p>',
+    '<div class="scr-li"><b>Lolos</b><span>harga live ≤ Graham Number, dengan EPS dan nilai buku positif.</span></div>'] },
 };
 function plScrInfo(key) {
   const info = SCR_INFO[key];
+  if (info && key.indexOf('preset_') === 0 && info.b[info.b.length - 1] !== SCR_DATA_NOTE) info.b.push(SCR_DATA_NOTE);
   const md = document.getElementById('scrInfoModal');
   const body = document.getElementById('scrInfoBody');
   if (!info || !md || !body) return;
