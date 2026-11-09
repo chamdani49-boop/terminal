@@ -21995,6 +21995,9 @@ function _scrPresetMetrics(sc, price, perNow) {
     isFin: !!sc.is_financial,
     epsPos5: !!sc.eps_pos_5y,
     dataOk: !!sc.data_ok,        // rasio sumber konsisten dgn harga (bukan anomali satuan)
+    // Data tahunan maksimal 2 tahun ke belakang (2026 → minimal 2024). Data
+    // lebih tua (mis. DUCK 2019) tidak diloloskan di semua preset.
+    fresh: Number.isFinite(sc.last_year) && sc.last_year >= new Date().getFullYear() - SCR_MAX_DATA_AGE,
     psrOk: !!sc.psr_ok,          // penjualan/kas satu mata uang dgn harga (bukan lapor USD)
     dcfWacc: fin(sc.dcf_wacc) ? sc.dcf_wacc : null,
     psr,
@@ -22014,6 +22017,7 @@ function _scrPresetMetrics(sc, price, perNow) {
 // ── PRESET SCREENER ──
 // test(r) → true bila saham lolos semua kriteria. cols = kolom tambahan yg
 // disisipkan setelah Market Cap. sort = urutan default saat preset dipilih.
+const SCR_MAX_DATA_AGE = 2;    // tahun; laporan tahunan lebih tua dari ini tidak diloloskan preset
 const SCR_RISK_FREE = 0.068;   // sama dgn ASSUMPTIONS.risk_free di build-valuation.py
 // Semua preset hanya meloloskan saham dengan data fundamental konsisten
 // (dataOk). Preset yg memakai penjualan/kas/FCF juga mensyaratkan psrOk,
@@ -22086,7 +22090,7 @@ function plScrSetPreset() {
   plScrRender();
 }
 
-const SCR_DATA_NOTE = '<p class="scr-note">Saham dengan data fundamental tidak konsisten (mis. satuan saham/harga di sumber berbeda, atau laporan keuangan dalam USD untuk metode berbasis penjualan/kas) otomatis tidak diloloskan.</p>';
+const SCR_DATA_NOTE = '<p class="scr-note">Saham dengan laporan tahunan lebih tua dari 2 tahun, atau data fundamental tidak konsisten (mis. satuan saham/harga di sumber berbeda, atau laporan keuangan dalam USD untuk metode berbasis penjualan/kas) otomatis tidak diloloskan.</p>';
 
 function _scrRenderPresetInfo(key, count) {
   const box = document.getElementById('scrPresetInfo');
@@ -22098,7 +22102,8 @@ function _scrRenderPresetInfo(key, count) {
     `<div class="scr-pi-head"><b>${p.label}</b>` +
       `<span class="scr-pi-count">${count} saham lolos</span>` +
       `<i class="scr-iq" role="button" tabindex="0" onclick="plScrInfo('preset_${key}')" title="Penjelasan metode">i</i></div>` +
-    `<div class="scr-pi-crit">${p.crit.map(c => `<span>${c}</span>`).join('')}</div>`;
+    `<div class="scr-pi-crit">${p.crit.map(c => `<span>${c}</span>`).join('')}` +
+      `<span>Laporan tahunan ≥ ${new Date().getFullYear() - SCR_MAX_DATA_AGE}</span></div>`;
 }
 
 // ── definisi kolom: label, render sel (nilai + heatmap), info key ──
@@ -22216,7 +22221,7 @@ function plScrRender() {
   // preset screener (Fisher / Buffettology / Lynch / Net-Net / DCF / DDM / Graham Number)
   const presetKey = _scrPresetKey();
   const preset = SCR_PRESETS[presetKey];
-  if (preset) rows = rows.filter(preset.test);
+  if (preset) rows = rows.filter(r => r.fresh && preset.test(r));
   _scrRenderPresetInfo(presetKey, rows.length);
   if (q) rows = rows.filter(r => r.code.includes(q) || (r.name && r.name.toUpperCase().includes(q)));
 
