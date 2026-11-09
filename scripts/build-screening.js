@@ -107,6 +107,52 @@ function psrConsistent(a) {
   return a.price > 0 && a.sps > 0 && a.psr > 0 && near(a.price / a.sps, a.psr);
 }
 
+/** Kuartal terbaru yang terisi (dideteksi dari ekuitas, sama dgn vlFilledQuarters). */
+function latestQuarter(v) {
+  const q = v.quarters || {};
+  let last = null;
+  for (const k of ['Q1', 'Q2', 'Q3', 'Q4']) {
+    const o = q[k];
+    if (o && (Number.isFinite(o.total_equity) || Number.isFinite(o.bvps))) last = o;
+  }
+  return last;
+}
+
+/**
+ * Basis TTM terbaru untuk preset screener. Laba/penjualan/ROE/growth memakai
+ * input TTM model Valuasi (valuation.five_year.inputs — sama dgn basis TTM di
+ * halaman Valuasi); neraca (kas, utang, ekuitas) dari kuartal terbaru.
+ * null bila emiten tidak punya data TTM.
+ */
+function ttmBlock(v, a) {
+  const inp = (v.valuation && v.valuation.five_year && v.valuation.five_year.inputs) || null;
+  const label = (v.ttm_is && v.ttm_is.q_latest) || null;      // mis. "Q2 2026"
+  if (!inp || !label || !Number.isFinite(inp.eps)) return null;
+  const year = parseInt(String(label).split(' ')[1], 10);
+  const qb = latestQuarter(v) || {};
+  const shares = Number.isFinite(qb.shares) && qb.shares > 0 ? qb.shares : a.shares;
+  const debt = Number.isFinite(qb.total_debt) ? qb.total_debt : null;
+  const ni = Number.isFinite(inp.eps) && shares > 0 ? inp.eps * shares : null;
+  // Konsistensi neraca kuartal: harga kuartal ÷ BVPS ≈ PBV sumber.
+  const qOk = !(qb.bvps > 0 && qb.pbv > 0 && qb.price > 0) || near(qb.price / qb.bvps, qb.pbv);
+  return {
+    label,
+    year: Number.isFinite(year) ? year : null,
+    eps: rnd(inp.eps, 2),
+    sps: rnd(inp.sps, 2),
+    bvps: rnd(inp.bvps, 2),
+    roe: rnd(Number.isFinite(inp.roe_annual) ? inp.roe_annual * 100 : null, 2),   // persen
+    eps_growth_5y: rnd(inp.eps_growth_5y, 4),
+    sps_growth_5y: rnd(inp.sps_growth_5y, 4),
+    dpr: rnd(inp.dpr, 4),
+    npm: rnd(div(inp.eps, inp.sps, true), 4),
+    de: rnd(div(debt, qb.total_equity, true), 3),
+    debt_ni: rnd(div(debt, ni, true), 2),
+    net_cash_ps: (Number.isFinite(qb.cash) && Number.isFinite(debt)) ? rnd(div(qb.cash - debt, shares, true), 0) : null,
+    data_ok: qOk,
+  };
+}
+
 function lastNYears(annual, n) {
   return Object.keys(annual || {})
     .map((y) => parseInt(y, 10))
@@ -208,6 +254,7 @@ function main() {
       // Cek kualitas data (dipakai preset screener supaya data anomali tidak lolos)
       data_ok: dataConsistent(a),
       psr_ok: psrConsistent(a),
+      ttm: ttmBlock(v, a),
     };
     ok++;
   }
