@@ -21998,13 +21998,19 @@ function plScrRow(code) {
 // ═══════ PRESET SCREENER (Fisher / Buffettology / Lynch / Net-Net / DCF /
 //         DDM / Graham Number) — kriteria bisa diubah & basis Tahunan/TTM ═══════
 const SCR_RISK_FREE = 0.068;   // sama dgn ASSUMPTIONS.risk_free di build-valuation.py
-const SCR_CFG_KEY = 'scrPresetCfg_v1';
+const SCR_CFG_KEY = 'scrPresetCfg_v2';   // v2: default Fisher/Buffettology/Lynch = aturan Stockbit
 let _scrCfg = (function () {
   try { const j = JSON.parse(localStorage.getItem(SCR_CFG_KEY) || 'null'); if (j && typeof j === 'object') return j; } catch (_) {}
   return {};
 })();
 if (!_scrCfg.params) _scrCfg.params = {};
-if (_scrCfg.basis !== 'ttm') _scrCfg.basis = 'annual';
+if (!_scrCfg.basisBy) _scrCfg.basisBy = {};
+// Basis per preset: pilihan user, atau default preset (Fisher/Buffett/Lynch = TTM).
+function _scrBasisOf(key) {
+  const b = _scrCfg.basisBy[key] || (SCR_PRESETS[key] && SCR_PRESETS[key].basis) || 'annual';
+  return b === 'ttm' ? 'ttm' : 'annual';
+}
+let _scrCurBasis = 'annual';   // basis preset aktif, di-set plScrRender sebelum bangun baris
 function _scrSaveCfg() { try { localStorage.setItem(SCR_CFG_KEY, JSON.stringify(_scrCfg)); } catch (_) {} }
 
 // ── metrik preset. Basis 'annual' = laporan tahunan terakhir; 'ttm' = TTM
@@ -22012,7 +22018,7 @@ function _scrSaveCfg() { try { localStorage.setItem(SCR_CFG_KEY, JSON.stringify(
 //    terbaru). Semua yang bergantung harga pakai harga LIVE.
 function _scrPresetMetrics(sc, price) {
   const fin = v => Number.isFinite(v);
-  const ttm = _scrCfg.basis === 'ttm';
+  const ttm = _scrCurBasis === 'ttm';
   const t = sc.ttm || null;
   const b = ttm ? (t ? { ...sc, ...t } : null) : sc;      // TTM tanpa data → tidak dinilai
   const hasPx = fin(price) && price > 0;
@@ -22043,7 +22049,20 @@ function _scrPresetMetrics(sc, price) {
     sgr: fin(roe) ? roe * (1 - dpr) : null,                        // ROE × (1 − payout)
     pg: g,
     perB: per,
-    peg: (fin(per) && fin(g) && g > 0) ? per / (g * 100) : null,
+    epsB: fin(b.eps) ? b.eps : null,
+    // PEG = PER (basis) ÷ pertumbuhan EPS YoY tahunan (%) — sama dgn screener Stockbit
+    peg: (fin(per) && fin(sc.eps_yoy) && sc.eps_yoy > 0) ? per / (sc.eps_yoy * 100) : null,
+    epsYoy: fin(sc.eps_yoy) ? sc.eps_yoy : null,          // selalu tahunan
+    epsCagr3: fin(sc.eps_cagr_3y) ? sc.eps_cagr_3y : null, // selalu tahunan
+    streak: fin(sc.eps_pos_streak) ? sc.eps_pos_streak : null,   // th berturut EPS > 0
+    growStreak: fin(sc.eps_streak) ? sc.eps_streak : null,       // th berturut EPS naik
+    npmAvg: fin(sc.npm_avg_5y) ? sc.npm_avg_5y : null,
+    // ROCE dari pelapor USD tidak andal (satuan sumber tercampur) → null = tidak dinilai
+    roceAvg: (sc.psr_ok && fin(sc.roce_avg_5y)) ? sc.roce_avg_5y : null,
+    fcfQ: ttm ? (fin(t.fcf_q_b) ? t.fcf_q_b : null) : (fin(sc.fcf_b) ? sc.fcf_b : null),   // miliar Rp
+    fcfT: fin(b.fcf_b) ? b.fcf_b : null,
+    ey: (fin(b.eps) && hasPx) ? b.eps / price : null,      // earnings yield
+    bvps: fin(b.bvps) ? b.bvps : null,
     netCash: nc,
     ncRatio: (fin(nc) && nc > 0 && hasPx) ? price / nc : null,     // Harga ÷ kas bersih/lembar
     gn, gnUp: up(gn),
@@ -22060,59 +22079,84 @@ function _scrPresetMetrics(sc, price) {
 const _on = v => v !== null && v !== undefined;
 const _fin = Number.isFinite;
 const SCR_PRESETS = {
+  // Default 3 preset di bawah = aturan screener Stockbit (Fisher, Buffettology,
+  // Peter Lynch). Kriteria versi lama masih tersedia tapi mati secara default.
   fisher: {
     label: 'Kenneth Fisher · Price to Sales',
+    basis: 'ttm',
     crit: [
-      { id: 'psrMax', pre: 'PSR ≤', def: 0.75, step: 0.05, suf: '×' },
-      { id: 'npmMin', pre: 'Net margin ≥', def: 5, step: 1, suf: '%' },
-      { id: 'deMax', pre: 'Utang/Ekuitas ≤', def: 40, step: 5, suf: '%' },
-      { id: 'salesGMin', pre: 'Sales CAGR 5 th ≥', def: 15, step: 1, suf: '%', off: true },
-      { id: 'nonFin', text: 'Non-keuangan', bool: true },
+      { id: 'psrMax', pre: 'PSR (basis) <', def: 0.75, step: 0.05, suf: '×' },
+      { id: 'fcfQMin', pre: 'FCF kuartal >', def: 0, step: 10, suf: 'M Rp' },
+      { id: 'eps3Min', pre: 'EPS CAGR 3 th >', def: 15, step: 1, suf: '%' },
+      { id: 'npmAvgMin', pre: 'Net margin rata-rata 5 th >', def: 5, step: 1, suf: '%' },
+      { id: 'deMax', pre: 'Utang/Ekuitas (basis) <', def: 0.4, step: 0.05, suf: '×' },
+      { id: 'npmMin', pre: 'Net margin (basis) ≥', def: 5, step: 1, suf: '%', off: true },
+      { id: 'nonFin', text: 'Non-keuangan', bool: true, off: true },
     ],
-    cols: ['psr', 'npm', 'de', 'salesG'],
-    sort: { key: 'psr', dir: 'asc' },
+    cols: ['psr', 'fcfQ', 'epsCagr3', 'npmAvg', 'de'],
+    sort: { key: 'psr', dir: 'desc' },
     test: (r, P) => r.psrOk && r.psr > 0
-      && (!_on(P.psrMax) || r.psr <= P.psrMax)
+      && (!_on(P.psrMax) || r.psr < P.psrMax)
+      && (!_on(P.fcfQMin) || (_fin(r.fcfQ) && r.fcfQ > P.fcfQMin))
+      && (!_on(P.eps3Min) || (_fin(r.epsCagr3) && r.epsCagr3 > P.eps3Min / 100))
+      && (!_on(P.npmAvgMin) || (_fin(r.npmAvg) && r.npmAvg > P.npmAvgMin / 100))
+      && (!_on(P.deMax) || (_fin(r.de) && r.de < P.deMax))
       && (!_on(P.npmMin) || (_fin(r.npm) && r.npm >= P.npmMin / 100))
-      && (!_on(P.deMax) || r.isFin || (_fin(r.de) && r.de <= P.deMax / 100))
-      && (!_on(P.salesGMin) || (_fin(r.salesG) && r.salesG >= P.salesGMin / 100))
       && (!P.nonFin || !r.isFin),
   },
   buffett: {
     label: 'Buffettology · Sustainable Growth',
+    basis: 'ttm',
     crit: [
       { id: 'roeAvgMin', pre: 'ROE rata-rata 5 th ≥', def: 15, step: 1, suf: '%' },
-      { id: 'roeMin', pre: 'ROE terakhir ≥', def: 15, step: 1, suf: '%' },
-      { id: 'epsPos', text: 'EPS positif 5 th berturut', bool: true },
-      { id: 'epsGMin', pre: 'EPS CAGR 5 th >', def: 0, step: 1, suf: '%' },
-      { id: 'sgrMin', pre: 'Sustainable growth ≥', def: 10, step: 1, suf: '%' },
-      { id: 'debtNiMax', pre: 'Utang ≤', def: 5, step: 0.5, suf: '× laba (non-bank)' },
+      { id: 'streakMin', pre: 'EPS positif berturut ≥', def: 4, step: 1, suf: 'th' },
+      { id: 'growMin', pre: 'EPS naik berturut ≥', def: 2, step: 1, suf: 'th', off: true },
+      { id: 'fcfTMin', pre: 'FCF (basis) >', def: 0, step: 10, suf: 'M Rp' },
+      { id: 'debtNiMax', pre: 'Utang (basis) <', def: 5, step: 0.5, suf: '× laba bersih' },
+      { id: 'eyMin', pre: 'Earnings yield (basis) >', def: 3, step: 0.5, suf: '%' },
+      { id: 'roceAvgMin', pre: 'ROCE rata-rata 5 th ≥', def: 12, step: 1, suf: '%' },
+      { id: 'bvPos', text: 'Nilai buku (basis) > 0', bool: true },
+      { id: 'roeMin', pre: 'ROE (basis) ≥', def: 15, step: 1, suf: '%', off: true },
+      { id: 'epsPos', text: 'EPS positif 5 th berturut', bool: true, off: true },
+      { id: 'sgrMin', pre: 'Sustainable growth ≥', def: 10, step: 1, suf: '%', off: true },
     ],
-    cols: ['sgr', 'roeAvg', 'roe', 'debtNi'],
-    sort: { key: 'sgr', dir: 'desc' },
+    cols: ['roeAvg', 'streak', 'fcfT', 'debtNi', 'ey', 'roceAvg', 'sgr'],
+    sort: { key: 'roeAvg', dir: 'desc' },
     test: (r, P) =>
       (!_on(P.roeAvgMin) || (_fin(r.roeAvg) && r.roeAvg >= P.roeAvgMin / 100))
+      && (!_on(P.streakMin) || (_fin(r.streak) && r.streak >= P.streakMin))
+      && (!_on(P.fcfTMin) || (_fin(r.fcfT) && r.fcfT > P.fcfTMin))
+      && (!_on(P.debtNiMax) || (_fin(r.debtNi) && r.debtNi < P.debtNiMax))
+      && (!_on(P.eyMin) || (_fin(r.ey) && r.ey > P.eyMin / 100))
+      && (!_on(P.growMin) || (_fin(r.growStreak) && r.growStreak >= P.growMin))
+      && (!_on(P.roceAvgMin) || !r.psrOk || (_fin(r.roceAvg) && r.roceAvg >= P.roceAvgMin / 100))
+      && (!P.bvPos || r.bvps > 0)
       && (!_on(P.roeMin) || (_fin(r.roe) && r.roe >= P.roeMin / 100))
       && (!P.epsPos || r.epsPos5)
-      && (!_on(P.epsGMin) || (_fin(r.pg) && r.pg > P.epsGMin / 100))
-      && (!_on(P.sgrMin) || (_fin(r.sgr) && r.sgr >= P.sgrMin / 100))
-      && (!_on(P.debtNiMax) || r.isFin || (_fin(r.debtNi) && r.debtNi <= P.debtNiMax)),
+      && (!_on(P.sgrMin) || (_fin(r.sgr) && r.sgr >= P.sgrMin / 100)),
   },
   lynch: {
     label: 'Peter Lynch · Growth (PEG)',
+    basis: 'ttm',
     crit: [
-      { id: 'gMin', pre: 'EPS CAGR 5 th ≥', def: 15, step: 1, suf: '%' },
-      { id: 'gMax', pre: 'EPS CAGR 5 th ≤', def: 50, step: 5, suf: '%' },
-      { id: 'pegMax', pre: 'PEG ≤', def: 1, step: 0.1, suf: '' },
-      { id: 'deMax', pre: 'Utang/Ekuitas ≤', def: 80, step: 5, suf: '% (non-bank)' },
+      { id: 'mcapMax', pre: 'Market cap <', def: 15, step: 1, suf: 'T' },
+      { id: 'peMedX', pre: 'PER (basis) <', def: 1, step: 0.1, suf: '× median PER IHSG', med: 'pe' },
+      { id: 'yoyMin', pre: 'EPS YoY tahunan >', def: 15, step: 1, suf: '%' },
+      { id: 'yoyMax', pre: 'EPS YoY tahunan <', def: 30, step: 1, suf: '%' },
+      { id: 'pegMax', pre: 'PEG <', def: 1, step: 0.1, suf: '' },
+      { id: 'deMedX', pre: 'Utang/Ekuitas (basis) <', def: 1, step: 0.1, suf: '× median', med: 'de' },
+      { id: 'peMin', pre: 'PER (basis) >', def: 1, step: 0.5, suf: '×' },
     ],
-    cols: ['peg', 'perB', 'pg', 'de'],
-    sort: { key: 'peg', dir: 'asc' },
-    test: (r, P) => r.peg > 0
-      && (!_on(P.gMin) || r.pg >= P.gMin / 100)
-      && (!_on(P.gMax) || r.pg <= P.gMax / 100)
-      && (!_on(P.pegMax) || r.peg <= P.pegMax)
-      && (!_on(P.deMax) || r.isFin || (_fin(r.de) && r.de <= P.deMax / 100)),
+    cols: ['perB', 'epsYoy', 'peg', 'de'],
+    sort: { key: 'marketCap', dir: 'desc' },
+    test: (r, P, M) => r.peg > 0
+      && (!_on(P.mcapMax) || (_fin(r.marketCap) && r.marketCap < P.mcapMax * 1e12))
+      && (!_on(P.peMedX) || (_fin(r.perB) && _fin(M.pe) && r.perB < P.peMedX * M.pe))
+      && (!_on(P.yoyMin) || (_fin(r.epsYoy) && r.epsYoy > P.yoyMin / 100))
+      && (!_on(P.yoyMax) || (_fin(r.epsYoy) && r.epsYoy < P.yoyMax / 100))
+      && (!_on(P.pegMax) || r.peg < P.pegMax)
+      && (!_on(P.deMedX) || (_fin(r.de) && _fin(M.de) && r.de < P.deMedX * M.de))
+      && (!_on(P.peMin) || (_fin(r.perB) && r.perB > P.peMin)),
   },
   netnet: {
     label: 'Ben Graham · Net-Net',
@@ -22181,10 +22225,26 @@ function _scrParams(key) {
   return P;
 }
 
-function _scrPresetPass(key, P) {
+// Median universe (semua saham dgn data valid) — dipakai aturan "× median".
+//   pe: median PER basis (EPS ≠ 0, termasuk negatif — seperti "IHSG PE Ratio TTM (Median)" Stockbit)
+//   de: median Utang/Ekuitas basis
+let _scrMedians = { pe: null, de: null };
+function _scrMedian(a) {
+  a = a.filter(Number.isFinite).sort((x, y) => x - y);
+  if (!a.length) return null;
+  const m = a.length >> 1;
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+}
+function _scrPresetPass(key, P, rows) {
   const p = SCR_PRESETS[key];
   const minYear = _on(P.maxAge) ? new Date().getFullYear() - P.maxAge : -Infinity;
-  return r => r.hasBasis && r.dataOk && _fin(r.periodYear) && r.periodYear >= minYear && p.test(r, P);
+  const valid = (rows || []).filter(r => r.hasBasis && r.dataOk);
+  _scrMedians = {
+    pe: _scrMedian(valid.map(r => (_fin(r.price) && _fin(r.epsB) && r.epsB !== 0) ? r.price / r.epsB : null)),
+    de: _scrMedian(valid.map(r => r.de)),
+  };
+  const M = _scrMedians;
+  return r => r.hasBasis && r.dataOk && _fin(r.periodYear) && r.periodYear >= minYear && p.test(r, P, M);
 }
 
 function _scrPresetKey() {
@@ -22203,7 +22263,9 @@ function plScrSetPreset() {
 }
 
 function plScrSetBasis(basis) {
-  _scrCfg.basis = basis === 'ttm' ? 'ttm' : 'annual';
+  const k = _scrPresetKey();
+  if (!k) return;
+  _scrCfg.basisBy[k] = basis === 'ttm' ? 'ttm' : 'annual';
   _scrSaveCfg();
   _scrPage = 0;
   plScrRender();
@@ -22231,6 +22293,7 @@ function plScrCritChange(key, id) {
 
 function plScrCritReset(key) {
   delete _scrCfg.params[key];
+  delete _scrCfg.basisBy[key];
   _scrSaveCfg();
   _scrPresetBoxFor = '';
   _scrPage = 0;
@@ -22256,7 +22319,7 @@ function _scrCritChip(key, c, P) {
   const val = off ? (((_scrCfg.params[key] || {})[c.id] || {}).v ?? c.def) : P[c.id];
   return `<label class="scr-crit${off ? ' off' : ''}" data-crit="${c.id}">${cb}<span>${c.pre}</span>` +
     `<input type="number" inputmode="decimal" step="${c.step}" value="${val}" ${off ? 'disabled' : ''} oninput="plScrCritChange('${key}','${c.id}')" aria-label="${c.pre}">` +
-    (c.suf ? `<span>${c.suf}</span>` : '') + `</label>`;
+    (c.suf ? `<span>${c.suf}</span>` : '') + (c.med ? `<span class="scr-med" data-med="${c.med}"></span>` : '') + `</label>`;
 }
 
 // Kotak kriteria: dibangun ulang hanya saat preset/basis berganti (supaya
@@ -22267,11 +22330,11 @@ function _scrRenderPresetInfo(key, count) {
   const p = SCR_PRESETS[key];
   if (!p) { box.hidden = true; box.innerHTML = ''; _scrPresetBoxFor = ''; return; }
   box.hidden = false;
-  const sig = key + '|' + _scrCfg.basis;
+  const sig = key + '|' + _scrBasisOf(key);
   if (_scrPresetBoxFor !== sig) {
     _scrPresetBoxFor = sig;
     const P = _scrParams(key);
-    const ttm = _scrCfg.basis === 'ttm';
+    const ttm = _scrBasisOf(key) === 'ttm';
     const tl = _scrTtmLabel();
     box.innerHTML =
       `<div class="scr-pi-head"><b>${p.label}</b>` +
@@ -22288,6 +22351,10 @@ function _scrRenderPresetInfo(key, count) {
   }
   const cEl = document.getElementById('scrPiCount');
   if (cEl) cEl.textContent = `${count} saham lolos`;
+  box.querySelectorAll('[data-med]').forEach(el => {
+    const v = _scrMedians[el.getAttribute('data-med')];
+    el.textContent = Number.isFinite(v) ? `= ${v.toFixed(2).replace('.', ',')}` : '';
+  });
 }
 
 // ── definisi kolom: label, render sel (nilai + heatmap), info key ──
@@ -22317,6 +22384,14 @@ const SCR_COLDEFS = {
   target:   { label: '12M Target', info: 'target', cell: r => ({ html: _scrPrice(r.target) }) },
   upDw:     { label: 'UpDw', info: 'upDw', cell: r => ({ html: _scrPct(r.upDw), style: _scrHeatSigned(r.upDw, 0.5) }) },
   // ── kolom preset screener (muncul hanya saat preset dipilih) ──
+  fcfQ:    { label: 'FCF kuartal', info: 'fcfQ', cell: r => ({ html: _scrBn(r.fcfQ), style: _scrHeatSigned(r.fcfQ, 1e9) }) },
+  fcfT:    { label: 'FCF (basis)', info: 'fcfT', cell: r => ({ html: _scrBn(r.fcfT), style: _scrHeatSigned(r.fcfT, 1e9) }) },
+  epsCagr3:{ label: 'EPS CAGR 3th', info: 'epsCagr3', cell: r => ({ html: _scrPct(r.epsCagr3), style: _scrHeatSigned(r.epsCagr3, 0.3) }) },
+  epsYoy:  { label: 'EPS YoY', info: 'epsYoy', cell: r => ({ html: _scrPct(r.epsYoy), style: _scrHeatSigned(r.epsYoy, 0.4) }) },
+  streak:  { label: 'EPS positif (th)', info: 'streak', cell: r => ({ html: Number.isFinite(r.streak) ? String(r.streak) : _scrNA(), style: _scrHeatHighGood(r.streak, 0, 6) }) },
+  npmAvg:  { label: 'NPM avg 5th', info: 'npmAvg', cell: r => ({ html: _scrPct(r.npmAvg), style: _scrHeatSigned(r.npmAvg, 0.25) }) },
+  roceAvg: { label: 'ROCE avg 5th', info: 'roceAvg', cell: r => ({ html: _scrPct(r.roceAvg), style: _scrHeatHighGood(r.roceAvg, 0, 0.3) }) },
+  ey:      { label: 'Earnings Yield', info: 'ey', cell: r => ({ html: _scrPct(r.ey), style: _scrHeatHighGood(r.ey, 0, 0.15) }) },
   period:  { label: 'Periode', sortable: false, info: 'period', cell: r => ({ html: r.period ? `<span class="scr-period">${r.period}</span>` : _scrNA() }) },
   perB:    { label: 'PER basis', info: 'perB', cell: r => ({ html: _scrRatioX(r.perB, 1), style: _scrHeatLowGood(r.perB, 8, 30) }) },
   pg:      { label: 'EPS CAGR 5th', info: 'pg', cell: r => ({ html: _scrPct(r.pg, 0), style: _scrHeatSigned(r.pg, 0.3) }) },
@@ -22338,6 +22413,13 @@ const SCR_COLDEFS = {
   gn:      { label: 'Graham Number', info: 'gn', cell: r => ({ html: _scrPrice(r.gn) }) },
   gnUp:    { label: 'Upside GN', info: 'gn', cell: r => ({ html: _scrPct(r.gnUp), style: _scrHeatSigned(r.gnUp, 1) }) },
 };
+// Miliar Rp → "1.234 M" / "2,5 T"
+function _scrBn(v) {
+  if (!Number.isFinite(v)) return _scrNA();
+  const a = Math.abs(v);
+  if (a >= 1000) return (v / 1000).toLocaleString('id-ID', { maximumFractionDigits: a >= 1e4 ? 0 : 1 }) + ' T';
+  return v.toLocaleString('id-ID', { maximumFractionDigits: a >= 10 ? 0 : 1 }) + ' M';
+}
 function _scrRatioX(v, dec) { return Number.isFinite(v) ? v.toFixed(dec == null ? 1 : dec) + '×' : _scrNA(); }
 
 function _scrFmtDate(iso) {
@@ -22397,7 +22479,9 @@ function plScrRender() {
 
   // 1) bangun semua baris
   _scrSetPxRows();   // siapkan basis YTD (Des thn lalu) & MoM (bln lalu) utk hitung live
+  { const pk = _scrPresetKey(); _scrCurBasis = pk ? _scrBasisOf(pk) : 'annual'; }
   let rows = Object.keys(_scrData.stocks).map(plScrRow);
+  const allRows = rows;   // universe penuh (utk median IHSG), sebelum filter sektor/cari
 
   // 2) filter sektor + cari
   const secEl = document.getElementById('scrSector');
@@ -22408,7 +22492,7 @@ function plScrRender() {
   // preset screener (Fisher / Buffettology / Lynch / Net-Net / DCF / DDM / Graham Number)
   const presetKey = _scrPresetKey();
   const preset = SCR_PRESETS[presetKey];
-  if (preset) rows = rows.filter(_scrPresetPass(presetKey, _scrParams(presetKey)));
+  if (preset) rows = rows.filter(_scrPresetPass(presetKey, _scrParams(presetKey), allRows));
   _scrRenderPresetInfo(presetKey, rows.length);
   if (q) rows = rows.filter(r => r.code.includes(q) || (r.name && r.name.toUpperCase().includes(q)));
 
@@ -22568,7 +22652,7 @@ const SCR_INFO = {
     '<p>Total utang ÷ laba bersih tahunan = berapa tahun laba dibutuhkan untuk melunasi utang.</p>',
     '<p class="scr-note">Buffettology: idealnya utang bisa dilunasi ≤ 5 tahun dari laba.</p>'] },
   peg: { t: 'PEG Ratio', b: [
-    '<p><b>PER ÷ pertumbuhan EPS (%)</b>. PER memakai harga live, pertumbuhan = CAGR EPS 5 tahun.</p>',
+    '<p><b>PER ÷ pertumbuhan EPS YoY tahunan (%)</b>. PER memakai harga live dan EPS sesuai basis (default TTM), sama seperti screener Stockbit.</p>',
     '<div class="scr-li"><b>&lt; 1</b><span>harga wajar/murah dibanding pertumbuhannya (Peter Lynch).</span></div>',
     '<div class="scr-li"><b>&lt; 0,5</b><span>sangat menarik.</span></div>'] },
   netCash: { t: 'Kas Bersih per Saham', b: [
@@ -22591,24 +22675,43 @@ const SCR_INFO = {
   pg: { t: 'EPS CAGR 5 Tahun (basis terpilih)', b: [
     '<p>Pertumbuhan EPS rata-rata per tahun selama 5 tahun.</p>',
     '<p class="scr-note">Basis TTM: dari EPS TTM terbaru ke EPS 5 tahun sebelumnya (sama dengan halaman Valuasi).</p>'] },
+  fcfQ: { t: 'FCF Kuartal', b: ['<p>Arus kas bebas kuartal terbaru (basis TTM) atau tahun buku terakhir (basis Tahunan), dalam miliar (M) / triliun (T) rupiah.</p>'] },
+  fcfT: { t: 'FCF (basis)', b: ['<p>Arus kas bebas sesuai basis. TTM ≈ jumlah kuartal tahun berjalan yang disetahunkan (sama dengan halaman Valuasi); Tahunan = tahun buku terakhir.</p>'] },
+  epsCagr3: { t: 'EPS CAGR 3 Tahun', b: ['<p>Pertumbuhan EPS rata-rata per tahun selama 3 tahun buku terakhir.</p>'] },
+  epsYoy: { t: 'EPS YoY Tahunan', b: ['<p>Pertumbuhan EPS tahun buku terakhir dibanding tahun sebelumnya.</p>'] },
+  streak: { t: 'EPS Positif Berturut-turut', b: ['<p>Jumlah tahun buku berturut-turut (sampai tahun terakhir) dengan EPS positif. Sama dengan "EPS Growth Streak" di Stockbit.</p>', '<p class="scr-note">Kriteria "EPS naik berturut" (EPS lebih tinggi dari tahun sebelumnya) tersedia sebagai opsi tambahan.</p>'] },
+  npmAvg: { t: 'Net Margin Rata-rata 5 Tahun', b: ['<p>Rata-rata laba bersih ÷ pendapatan selama 5 tahun buku terakhir.</p>'] },
+  roceAvg: { t: 'ROCE Rata-rata 5 Tahun', b: [
+    '<p>Return on Capital Employed rata-rata 5 tahun buku.</p>',
+    '<p class="scr-note">Pendekatan: (laba sebelum pajak + beban bunga) ÷ (ekuitas + total utang), karena EBIT dan total aset tidak tersedia di data sumber.</p>'] },
+  ey: { t: 'Earnings Yield', b: ['<p>EPS (basis) ÷ harga live. Kebalikan dari PER: 3% setara PER ≈ 33.</p>'] },
   // ── penjelasan preset (tombol i di kotak kriteria) ──
   preset_fisher: { t: 'Kenneth Fisher · Price to Sales', b: [
-    '<p>Kenneth Fisher (<i>Super Stocks</i>, 1984) menilai saham dari penjualan, bukan laba, karena laba bisa turun sementara sedangkan penjualan lebih stabil.</p>',
-    '<div class="scr-li"><b>PSR ≤ 0,75</b><span>harga murah dibanding penjualan.</span></div>',
-    '<div class="scr-li"><b>Net margin ≥ 5%</b><span>penjualan benar-benar menghasilkan laba.</span></div>',
-    '<div class="scr-li"><b>Utang/Ekuitas ≤ 40%</b><span>neraca sehat.</span></div>',
-    '<p class="scr-note">Bank dikecualikan karena PSR tidak relevan untuk lembaga keuangan.</p>'] },
+    '<p>Kenneth Fisher (<i>Super Stocks</i>, 1984) menilai saham dari penjualan, bukan laba. Default kriteria mengikuti screener Stockbit:</p>',
+    '<div class="scr-li"><b>PSR (TTM) &lt; 0,75</b><span>harga murah dibanding penjualan.</span></div>',
+    '<div class="scr-li"><b>FCF kuartal &gt; 0</b><span>menghasilkan kas bebas.</span></div>',
+    '<div class="scr-li"><b>EPS CAGR 3 th &gt; 15%</b><span>laba tumbuh cepat.</span></div>',
+    '<div class="scr-li"><b>Net margin rata-rata 5 th &gt; 5%</b><span>penjualan menghasilkan laba secara konsisten.</span></div>',
+    '<div class="scr-li"><b>Utang/Ekuitas (kuartal) &lt; 0,4</b><span>neraca sehat.</span></div>'] },
   preset_buffett: { t: 'Buffettology · Sustainable Growth', b: [
-    '<p>Mencari bisnis berkualitas ala Warren Buffett (<i>Buffettology</i>, Mary Buffett): untung konsisten, ROE tinggi, mampu tumbuh dari laba sendiri, utang rendah.</p>',
-    '<div class="scr-li"><b>ROE ≥ 15%</b><span>rata-rata 5 tahun dan tahun terakhir.</span></div>',
-    '<div class="scr-li"><b>EPS positif</b><span>5 tahun berturut-turut dan tumbuh (CAGR &gt; 0).</span></div>',
-    '<div class="scr-li"><b>Sustainable growth ≥ 10%</b><span>ROE × (1 − payout).</span></div>',
-    '<div class="scr-li"><b>Utang ≤ 5× laba</b><span>bisa dilunasi dari laba ≤ 5 tahun (bank dikecualikan dari syarat ini).</span></div>'] },
+    '<p>Bisnis berkualitas ala Warren Buffett (<i>Buffettology</i>, Mary Buffett). Default kriteria mengikuti screener Stockbit:</p>',
+    '<div class="scr-li"><b>ROE rata-rata 5 th ≥ 15%</b><span>profitabilitas tinggi dan konsisten.</span></div>',
+    '<div class="scr-li"><b>EPS positif ≥ 4 th berturut</b><span>selalu untung.</span></div>',
+    '<div class="scr-li"><b>FCF (TTM) &gt; 0</b><span>menghasilkan kas bebas.</span></div>',
+    '<div class="scr-li"><b>Utang &lt; 5× laba bersih (TTM)</b><span>utang bisa dilunasi dari laba &lt; 5 tahun.</span></div>',
+    '<div class="scr-li"><b>Earnings yield (TTM) &gt; 3%</b><span>harga tidak terlalu mahal.</span></div>',
+    '<div class="scr-li"><b>ROCE rata-rata 5 th ≥ 12%</b><span>modal dipakai secara efisien (tidak dinilai untuk emiten pelapor USD).</span></div>',
+    '<div class="scr-li"><b>Nilai buku &gt; 0</b><span>ekuitas positif.</span></div>',
+    '<p class="scr-note">Stockbit memakai utang jangka panjang; di sini total utang (lebih ketat). Syarat volume rata-rata 100 hari ≥ 1.000 lembar tidak dipakai karena data volume tidak tersedia.</p>'] },
   preset_lynch: { t: 'Peter Lynch · Growth Screener', b: [
-    '<p>Peter Lynch (<i>One Up on Wall Street</i>) mencari "fast grower" yang harganya belum mahal dibanding pertumbuhannya.</p>',
-    '<div class="scr-li"><b>EPS CAGR 15–50%</b><span>tumbuh cepat tapi masih berkelanjutan.</span></div>',
-    '<div class="scr-li"><b>PEG ≤ 1</b><span>PER tidak melebihi angka pertumbuhan.</span></div>',
-    '<div class="scr-li"><b>Utang/Ekuitas ≤ 80%</b><span>tidak terlalu bergantung utang (bank dikecualikan).</span></div>'] },
+    '<p>Peter Lynch (<i>One Up on Wall Street</i>) mencari "fast grower" yang harganya belum mahal. Default kriteria mengikuti screener Stockbit:</p>',
+    '<div class="scr-li"><b>Market cap &lt; 15 T</b><span>perusahaan kecil–menengah.</span></div>',
+    '<div class="scr-li"><b>PER (TTM) &lt; median PER IHSG</b><span>lebih murah dari saham pada umumnya.</span></div>',
+    '<div class="scr-li"><b>EPS YoY 15%–30%</b><span>tumbuh cepat tapi masih wajar.</span></div>',
+    '<div class="scr-li"><b>PEG &lt; 1</b><span>PER lebih kecil dari angka pertumbuhan.</span></div>',
+    '<div class="scr-li"><b>Utang &lt; median</b><span>utang di bawah rata-rata pasar.</span></div>',
+    '<div class="scr-li"><b>PER &gt; 1</b><span>membuang PER tidak wajar.</span></div>',
+    '<p class="scr-note">Stockbit memakai Total Utang ÷ Total Aset; di sini Utang ÷ Ekuitas (kuartal), karena total aset tidak tersedia di data sumber. Median dihitung dari semua saham IDX dengan data valid.</p>'] },
   preset_netnet: { t: 'Ben Graham · Net-Net', b: [
     '<p>Benjamin Graham membeli saham yang harganya di bawah nilai likuidasi bersih (NCAV = aset lancar − total liabilitas).</p>',
     '<p>Data aset lancar dan total liabilitas belum tersedia, jadi dipakai versi yang <b>lebih ketat</b>: <b>harga ≤ (kas − total utang) per saham</b>. Saham yang lolos dihargai di bawah uang tunai bersihnya.</p>',

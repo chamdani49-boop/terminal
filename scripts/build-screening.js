@@ -135,9 +135,24 @@ function ttmBlock(v, a) {
   const ni = Number.isFinite(inp.eps) && shares > 0 ? inp.eps * shares : null;
   // Konsistensi neraca kuartal: harga kuartal ÷ BVPS ≈ PBV sumber.
   const qOk = !(qb.bvps > 0 && qb.pbv > 0 && qb.price > 0) || near(qb.price / qb.bvps, qb.pbv);
+  // FCF: kuartal terbaru (standalone) & TTM ≈ Σ kuartal terisi × 4/n (sama dgn
+  // vlAnnualizeFlow di halaman Valuasi). Miliar Rp.
+  const qs = ['Q1', 'Q2', 'Q3', 'Q4'].map((k) => (v.quarters || {})[k])
+    .filter((o) => o && (Number.isFinite(o.total_equity) || Number.isFinite(o.bvps)));
+  const fq = qs.map((o) => o.fcf).filter((x) => Number.isFinite(x));
+  const fcfQ = Number.isFinite(qb.fcf) ? qb.fcf : null;
+  const fcfT = fq.length === qs.length && fq.length ? fq.reduce((s2, x) => s2 + x, 0) * 4 / fq.length : null;
+  // EPS CAGR 3 th basis TTM: EPS TTM vs EPS annual 3 th sebelum tahun berjalan.
+  const ly = latestAnnualYear(v.annual);
+  const base3 = ly ? (v.annual[String(parseInt(ly, 10) - 2)] || {}).eps : null;
+  const cagr3 = (inp.eps > 0 && base3 > 0) ? Math.pow(inp.eps / base3, 1 / 3) - 1 : null;
   return {
     label,
     year: Number.isFinite(year) ? year : null,
+    fcf_q_b: rnd(fcfQ != null ? fcfQ / 1e9 : null, 2),
+    fcf_b: rnd(fcfT != null ? fcfT / 1e9 : null, 2),
+    eps_cagr_3y: rnd(cagr3, 4),
+    eps_yoy: rnd(inp.eps_growth_annual, 4),
     eps: rnd(inp.eps, 2),
     sps: rnd(inp.sps, 2),
     bvps: rnd(inp.bvps, 2),
@@ -151,6 +166,71 @@ function ttmBlock(v, a) {
     net_cash_ps: (Number.isFinite(qb.cash) && Number.isFinite(debt)) ? rnd(div(qb.cash - debt, shares, true), 0) : null,
     data_ok: qOk,
   };
+}
+
+function epsAt(annual, y) { const o = annual[String(y)]; return o && Number.isFinite(o.eps) ? o.eps : null; }
+
+/** CAGR EPS n tahun berakhir di tahun ly (kedua ujung harus positif). */
+function epsCagr(annual, ly, n) {
+  if (!ly) return null;
+  const e1 = epsAt(annual, ly), e0 = epsAt(annual, parseInt(ly, 10) - n);
+  return (e1 > 0 && e0 > 0) ? Math.pow(e1 / e0, 1 / n) - 1 : null;
+}
+
+/** Pertumbuhan EPS tahun terakhir vs tahun sebelumnya (penyebut positif). */
+function epsYoY(annual, ly) {
+  if (!ly) return null;
+  const e1 = epsAt(annual, ly), e0 = epsAt(annual, parseInt(ly, 10) - 1);
+  return (Number.isFinite(e1) && e0 > 0) ? e1 / e0 - 1 : null;
+}
+
+/** Jumlah tahun berturut-turut (berakhir di tahun terakhir) EPS naik dari tahun sebelumnya. */
+function epsStreak(annual) {
+  const ys = lastNYears(annual, 30);
+  let n = 0;
+  for (let i = ys.length - 1; i > 0; i--) {
+    const e1 = epsAt(annual, ys[i]), e0 = epsAt(annual, ys[i - 1]);
+    if (Number.isFinite(e1) && Number.isFinite(e0) && e1 > e0 && parseInt(ys[i], 10) - parseInt(ys[i - 1], 10) === 1) n++;
+    else break;
+  }
+  return n;
+}
+
+/** Jumlah tahun berturut-turut (berakhir di tahun terakhir) dengan EPS > 0. */
+function epsPosStreak(annual) {
+  const ys = lastNYears(annual, 30);
+  let n = 0;
+  for (let i = ys.length - 1; i >= 0; i--) {
+    const e = epsAt(annual, ys[i]);
+    if (!(Number.isFinite(e) && e > 0)) break;
+    if (i < ys.length - 1 && parseInt(ys[i + 1], 10) - parseInt(ys[i], 10) !== 1) break;
+    n++;
+  }
+  return n;
+}
+
+/** Rata-rata (num ÷ den) N tahun terakhir; null bila data < N tahun. */
+function avgRatioLastN(annual, num, den, n) {
+  const vals = lastNYears(annual, n).map((y) => {
+    const o = annual[y] || {};
+    return (Number.isFinite(o[num]) && o[den] > 0) ? o[num] / o[den] : null;
+  }).filter((x) => x != null);
+  return vals.length < n ? null : vals.reduce((s2, x) => s2 + x, 0) / vals.length;
+}
+
+/**
+ * Rata-rata ROCE N tahun. ROCE ≈ (laba sebelum pajak + |beban bunga|) ÷
+ * (ekuitas + total utang). Pendekatan karena EBIT & total aset tidak ada di sumber.
+ */
+function avgRoceLastN(annual, n) {
+  const vals = lastNYears(annual, n).map((y) => {
+    const o = annual[y] || {};
+    if (!Number.isFinite(o.pretax_income) || !Number.isFinite(o.total_equity)) return null;
+    const ce = o.total_equity + (Number.isFinite(o.total_debt) ? o.total_debt : 0);
+    if (!(ce > 0)) return null;
+    return (o.pretax_income + Math.abs(Number.isFinite(o.interest_expense) ? o.interest_expense : 0)) / ce;
+  }).filter((x) => x != null);
+  return vals.length < n ? null : vals.reduce((s2, x) => s2 + x, 0) / vals.length;
 }
 
 function lastNYears(annual, n) {
@@ -247,6 +327,14 @@ function main() {
       net_cash_ps: (Number.isFinite(a.cash) && Number.isFinite(a.total_debt))
         ? rnd(div(a.cash - a.total_debt, a.shares, true), 0) : null,
       eps_pos_5y: allPositiveLastN(annual, 'eps', 5),
+      // Aturan ala Stockbit (basis tahunan):
+      eps_cagr_3y: rnd(epsCagr(annual, ly, 3), 4),          // CAGR EPS 3 th
+      eps_yoy: rnd(epsYoY(annual, ly), 4),                  // EPS tahun terakhir vs sebelumnya
+      eps_streak: epsStreak(annual),                        // th berturut EPS naik
+      eps_pos_streak: epsPosStreak(annual),                 // th berturut EPS > 0 (= "EPS Growth Streak" Stockbit)
+      npm_avg_5y: rnd(avgRatioLastN(annual, 'net_income', 'total_revenue', 5), 4),
+      roce_avg_5y: rnd(avgRoceLastN(annual, 5), 4),         // ≈ (laba sblm pajak + bunga) ÷ (ekuitas + utang)
+      fcf_b: rnd(Number.isFinite(a.fcf) ? a.fcf / 1e9 : null, 2),   // FCF tahunan, miliar Rp
       is_financial: !!(val.is_financial),
       dcf_fair: rnd(fairValue(val.dcf), 0),
       dcf_wacc: rnd(val.dcf && val.dcf.applicable ? val.dcf.wacc : null, 4),
