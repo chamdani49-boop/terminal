@@ -181,7 +181,7 @@ export async function handleAdminApi(request, env, url) {
   }
 
   // ── Smart Money (data broker & insider dari bucket R2 `smartmoney`) ──
-  if (path === '/api/admin/smartmoney' || path === '/api/admin/smartmoney/index') {
+  if (path === '/api/admin/smartmoney' || path === '/api/admin/smartmoney/index' || path === '/api/admin/smartmoney/screener') {
     return handleSmartMoneyApi(request, env, url);
   }
 

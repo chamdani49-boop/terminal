@@ -2452,7 +2452,7 @@
   }
   // ── Screener (sub-tab 4) dimuat dinamis supaya file ini tidak membengkak.
   // Naikkan SCR_V setiap kali smartmoney-screener.js diubah (cache-busting).
-  var SCR_V = '20261110a', _scrP = null;
+  var SCR_V = '20261110b', _scrP = null;
   function ensureScreener() {
     if (window.SmartMoneyScreener) return Promise.resolve();
     if (_scrP) return _scrP;

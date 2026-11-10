@@ -55,3 +55,18 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
 - `.smm-ins-mid`: Buy record · Kualitas timing · Analisis (3 kolom), Per bulan/tahun lebar penuh.
   641-900px: 2 kolom, Analisis lebar penuh. Tiap kotak punya ringkasan `.smm-ins-foot` rata bawah.
 - Kualitas timing + rata-rata 1/6 bln setelah beli, 1 bln setelah jual, harga rata-rata beli.
+
+## Revisi 3: data asli seluruh pasar lewat 1 file ringkasan
+- `scripts/build-smartmoney-screener.js --dir <folder smartmoney> [--upload]` merangkum
+  `broker/`, `insider/`, `holder/` per saham → `screener/summary.json` (format di header skrip,
+  nilai Rp dalam satuan Rp1 jt, ±9 KB per saham). `--upload` menjalankan
+  `npx wrangler r2 object put smartmoney/screener/summary.json --remote`.
+  Jalankan SETELAH `upload_smartmoney.py` (repo private) setiap kali data diperbarui.
+- Endpoint admin `GET /api/admin/smartmoney/screener` (src/lib/smartmoney.js) mengalirkan file itu
+  apa adanya; tidak ada file → `{ok:true, summary:null}` → Screener tetap dummy.
+- Frontend: `loadSummary()` → `applySummary()` untuk semua saham di file; `loadRealAll()` (per saham,
+  maks 150) hanya untuk kode di index.json yang TIDAK ada di ringkasan.
+- Batasan ringkasan: net harian per broker hanya 21 hari terakhir (cukup untuk Daily Flow, assoc
+  broker 1M, kalender per broker bulan berjalan); total 6 bulan per broker utuh. Block Absorption
+  belum punya data asli (butuh data pasar nego).
+- `SCR_V` = 20261110b.
