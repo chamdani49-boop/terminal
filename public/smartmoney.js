@@ -546,6 +546,29 @@
     '.smm-filters .smm-seg button{flex-shrink:0;min-width:48px}',
     '.smm-pg{display:flex;flex-direction:column;gap:16px}',
     '.smm-pg[hidden]{display:none!important}',
+    '.smm-flowrow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(330px,1fr);gap:16px;align-items:stretch}',
+    '.smm-calcard{display:flex;flex-direction:column;gap:8px}',
+    '.smm-calcard:empty{display:none}',
+    '.smm-calhead{display:flex;align-items:center;justify-content:space-between;gap:8px}',
+    '.smm-calm{font-size:16px;font-weight:800;color:var(--text)}',
+    '.smm-calnav{width:34px;height:34px;padding:0;font-size:18px;line-height:1}.smm-calnav:disabled{opacity:.3;cursor:default}',
+    '.smm-calgrp{width:100%}',
+    '.smm-calkpi{display:grid;grid-template-columns:1fr 1fr;gap:8px}',
+    '.smm-calkpi div{background:var(--bg2);border-radius:10px;padding:6px 10px;font-size:11px;color:var(--text3)}',
+    '.smm-calkpi b{display:block;font-family:"IBM Plex Mono",monospace;font-size:13.5px;color:var(--text);margin-top:2px}',
+    '.smm-cal{flex:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:auto;grid-auto-rows:minmax(58px,1fr);gap:5px}',
+    '.smm-ch{text-align:center;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.04em;align-self:end;padding-bottom:2px}',
+    '.smm-cc{position:relative;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;gap:1px;padding:5px 6px;border-radius:8px;border:1px solid var(--border2);background:var(--bg2);font:inherit;text-align:right;min-width:0;overflow:hidden}',
+    'button.smm-cc{cursor:pointer;transition:transform .1s,box-shadow .15s}button.smm-cc:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.18)}',
+    '.smm-cc .dn{position:absolute;left:6px;top:4px;font-size:10px;color:var(--text3);font-family:"IBM Plex Mono",monospace}',
+    '.smm-cc .nv{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:800;white-space:nowrap}',
+    '.smm-cc .lt,.smm-cc .av{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}',
+    '.smm-cc.g{background:color-mix(in srgb,#16a34a calc(var(--a) * 70%),var(--bg2));border-color:color-mix(in srgb,#22c55e calc(var(--a) * 80%),var(--border2))}',
+    '.smm-cc.r{background:color-mix(in srgb,#dc2626 calc(var(--a) * 70%),var(--bg2));border-color:color-mix(in srgb,#ef4444 calc(var(--a) * 80%),var(--border2))}',
+    '.smm-cc.g .nv{color:#15803d}.smm-cc.r .nv{color:#b91c1c}',
+    '[data-theme="dark"] .smm-cc.g .nv{color:#4ade80}[data-theme="dark"] .smm-cc.r .nv{color:#f87171}[data-theme="dark"] .smm-cc .lt,[data-theme="dark"] .smm-cc .av{color:#cbd5e1}',
+    '.smm-cc.out{opacity:.3;background:transparent}.smm-cc.off{opacity:.55;align-items:center;justify-content:center}.smm-cc.off small{font-size:9.5px;color:var(--text3)}.smm-cc.fut{opacity:.25;border-style:dashed}',
+    '.smm-cc.sel{outline:2px solid var(--accent);outline-offset:1px}',
     '#page-smartmoney[data-smm-sub="screener"] #smmQuick,#page-smartmoney[data-smm-sub="screener"] #smmActive{display:none!important}',
     '.smm-empty{display:none;text-align:center;padding:28px 16px;font-size:13px;color:var(--text2);line-height:1.7}',
     '.smm-pg.is-empty>.smm-empty{display:block}',
@@ -698,6 +721,7 @@
       '.smm-sum{grid-template-columns:repeat(3,minmax(0,1fr))}.smm-sum .smm-verdict{grid-column:1/-1}',
       '.smm-ins-sum{grid-template-columns:repeat(3,minmax(0,1fr))}.smm-ins-sum .smm-verdict{grid-column:1/-1}',
       '.smm-grid{grid-template-columns:1fr}',
+      '.smm-flowrow{grid-template-columns:1fr}.smm-cal{grid-auto-rows:minmax(66px,auto)}',
       '.smm-ins-row{grid-template-columns:minmax(0,1fr) 280px}',
       '.smm-hocols{display:flex;flex-direction:column}.smm-hocol{display:contents}',
       '#smmHoCompCard{order:1}#smmHoChartCard{order:2}#smmHoHoldersCard{order:3}#smmHoCountCard{order:4}#smmHoBoard{order:5}#smmHoCompany{order:6}',
@@ -723,6 +747,7 @@
       '.smm-kpi .v{font-size:17px}.smm-kpi p{font-size:11px}',
       '.smm-verdict{flex-direction:row;align-items:center;gap:10px}.smm-gauge{width:110px}.smm-verdict .big{font-size:17px}.smm-verdict ul{font-size:11px}',
       '.smm-chart{height:320px}.smm-ins-chart{height:220px}',
+      '.smm-cal{gap:4px;grid-auto-rows:minmax(56px,auto)}.smm-cc{padding:4px}.smm-cc .nv{font-size:10.5px}.smm-cc .av{display:none}.smm-cc .lt{font-size:9px}',
       '.smm-legend{font-size:10.5px;min-height:44px;padding:5px 8px}',
       '.smm-radar-cols{grid-template-columns:1fr}',
       '.smm-rrow,.smm-rhead{grid-template-columns:50px 1fr 78px 56px}',
@@ -1093,6 +1118,7 @@
     actEnd: N_FLOW - 1, actWin: 1, actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
     skMetric: 'value', skFocus: null,
     insSrc: 'ALL', insAct: 'ALL', insName: null, insRange: '2Y', insHl: null,
+    cal: { grp: 'sm', ym: null, end: null },
     broker: null, person: null, personAll: false, hoMonth: null, hoSide: 'all', hoChart: 'lf'
   };
   var root = null, flowChart = null, flowSeries = {}, insChart = null, insSeries = null;
@@ -1171,6 +1197,8 @@
         '<section class="smm-card smm-profile" id="smmBkProfile" hidden></section>' +
         '<section class="smm-sum" id="smmSummary"></section>' +
 
+        // Broker Flow (lebar) + Kalender flow harian (samping)
+        '<div class="smm-flowrow">' +
         '<section class="smm-card" id="smmFlowCard">' +
           '<div class="smm-h3">Broker Flow <small id="smmFlowSub"></small>' + tip('Garis = total beli dikurangi jual (net) tiap broker, dijumlah dari awal periode. Garis naik = broker terus menimbun. Garis turun = broker terus melepas. Bandingkan dengan harga (sumbu kanan).') + '</div>' +
           '<div class="smm-toolbar">' +
@@ -1182,6 +1210,8 @@
           '<div class="smm-chips" id="smmChips"></div>' +
           '<div class="smm-insight" id="smmFlowInsight"></div>' +
         '</section>' +
+        '<section class="smm-card smm-calcard" id="smmCalCard"></section>' +
+        '</div>' +
 
         '<div class="smm-grid">' +
           '<section class="smm-card" id="smmActionCard">' +
@@ -1642,10 +1672,73 @@
       '<div>Total transaksi<b>' + fmtVal(tv, true) + '</b></div>' +
       '<div>Net asing<b class="' + signCls(fNet) + '">' + (fNet == null ? '-' : fmtVal(fNet, true)) + '</b></div>' +
       '<div>Harga<b class="' + signCls(chg) + '">' + nf(c.close) + ' (' + fmtPct(chg) + ')</b></div>';
+    renderCal();
   }
 
   // ─────────────────────────── Sankey ───────────────────────────
   var _skLinks = [];
+  // ─────────────────────────── Kalender flow harian ───────────────────────────
+  // Heatmap net per hari bursa dalam 1 bulan. Kelompok: smart money (non-ritel), ritel, asing, atau 1 broker.
+  // Ketuk tanggal → Broker Action & Distribution pindah ke hari itu (S.actEnd).
+  var RETAIL = { YP: 1, XL: 1, PD: 1, XC: 1, KK: 1, CP: 1, EP: 1 };
+  var CAL_MON = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  function calDay(g, grp, t) {
+    var B = 0, Sv = 0, BL = 0, SL = 0;
+    g.brokers.forEach(function (b) {
+      var inv = grp === 'F' ? 'F' : S.inv;
+      if (grp === 'sm' && RETAIL[b.code]) return;
+      if (grp === 'rt' && !RETAIL[b.code]) return;
+      if (grp.indexOf('b:') === 0 && 'b:' + b.code !== grp) return;
+      if (grp === 'F' && !g.hasForeign && b.type !== 'F') return;
+      var fac = grp === 'F' && !g.hasForeign ? 1 : invFac(b, inv);
+      B += series(b, inv, 'bv')[t] * fac; Sv += series(b, inv, 'sv')[t] * fac;
+      BL += series(b, inv, 'bl')[t] * fac; SL += series(b, inv, 'sl')[t] * fac;
+    });
+    var v = B - Sv;
+    return { v: v, l: BL - SL, avg: v >= 0 ? (BL ? B / (BL * 100) : 0) : (SL ? Sv / (SL * 100) : 0) };
+  }
+  function renderCal() {
+    var box = document.getElementById('smmCalCard'); if (!box) return;
+    var g = G(); if (!g.hasBroker || !g.nF) { box.innerHTML = ''; return; }
+    var C = S.cal, dIdx = {}, months = [];
+    for (var t = 0; t < g.nF; t++) { var d = g.days[g.off + t]; dIdx[d] = t; var ym = d.slice(0, 7); if (months.indexOf(ym) < 0) months.push(ym); }
+    var endYm = g.days[g.off + S.actEnd].slice(0, 7);
+    if (C.end !== S.actEnd) { C.ym = endYm; C.end = S.actEnd; }      // ikut tanggal Broker Action
+    if (!C.ym || months.indexOf(C.ym) < 0) C.ym = months[months.length - 1];
+    var groups = [['sm', 'Smart money (non-ritel)'], ['rt', 'Ritel']];
+    if (g.hasForeign) groups.push(['F', 'Investor asing']);
+    g.brokers.slice().sort(function (a, b) { var ga = 0, gb = 0; for (var k = 0; k < g.nF; k++) { ga += a.bv[k] + a.sv[k]; gb += b.bv[k] + b.sv[k]; } return gb - ga; })
+      .slice(0, 30).forEach(function (b) { groups.push(['b:' + b.code, b.code + ' · ' + b.name]); });
+    if (!groups.some(function (x) { return x[0] === C.grp; })) C.grp = 'sm';
+    var p = C.ym.split('-'), Y = +p[0], M = +p[1] - 1, mi = months.indexOf(C.ym);
+    var rows = [], mx = 0, tot = 0, nb = 0, ns = 0;
+    Object.keys(dIdx).forEach(function (d) { if (d.slice(0, 7) !== C.ym) return; var x = calDay(g, C.grp, dIdx[d]); x.d = d; x.t = dIdx[d]; rows.push(x); mx = Math.max(mx, Math.abs(x.v)); tot += x.v; if (x.v > 0) nb++; else if (x.v < 0) ns++; });
+    var by = {}; rows.forEach(function (x) { by[x.d] = x; });
+    var first = new Date(Date.UTC(Y, M, 1)), last = new Date(Date.UTC(Y, M + 1, 0));
+    var dd = new Date(first); while (dd.getUTCDay() !== 1) dd.setUTCDate(dd.getUTCDate() - 1);
+    var end = new Date(last); while (end.getUTCDay() !== 5) end.setUTCDate(end.getUTCDate() + (end.getUTCDay() === 6 ? -1 : end.getUTCDay() === 0 ? -2 : 1));
+    var lastData = g.days[g.off + g.nF - 1], r = actRange(), cells = '';
+    for (; dd <= end; dd.setUTCDate(dd.getUTCDate() + 1)) {
+      var w = dd.getUTCDay(); if (w === 0 || w === 6) continue;
+      var iso = dd.toISOString().slice(0, 10), x = by[iso], dn = '<span class="dn">' + dd.getUTCDate() + '</span>';
+      if (dd.getUTCMonth() !== M) { cells += '<div class="smm-cc out">' + dn + '</div>'; continue; }
+      if (!x) { cells += '<div class="smm-cc off' + (iso > lastData ? ' fut' : '') + '">' + dn + (iso > lastData ? '' : '<small>Libur</small>') + '</div>'; continue; }
+      var a = mx ? Math.abs(x.v) / mx : 0, sel = x.t >= r[0] && x.t <= r[1];
+      cells += '<button class="smm-cc ' + (x.v > 0 ? 'g' : x.v < 0 ? 'r' : '') + (sel ? ' sel' : '') + '" style="--a:' + (0.12 + a * 0.7).toFixed(2) + '" data-act="calday" data-v="' + x.t + '" ' +
+        'data-smm-tip="' + esc(fmtDate(iso, true) + ' · net ' + fmtVal(x.v, true) + ' · ' + fmtLot(x.l) + ' lot · avg ' + nf(x.avg) + ' · ketuk untuk lihat di Broker Action') + '">' + dn +
+        '<b class="nv">' + (x.v > 0 ? '↗' : x.v < 0 ? '↘' : '') + fmtVal(Math.abs(x.v)) + '</b><small class="lt">' + fmtLot(Math.abs(x.l)) + ' Lot</small><small class="av">Avg ' + nf(x.avg) + '</small></button>';
+    }
+    box.innerHTML =
+      '<div class="smm-h3">📅 Kalender flow ' + tip('Net beli dikurangi jual per hari bursa untuk kelompok terpilih. Hijau = net beli, merah = net jual, makin pekat makin besar. Ketuk tanggal untuk melihat pembeli & penjual hari itu di Broker Action dan Distribution.') + '</div>' +
+      '<div class="smm-calhead">' +
+        '<button class="smm-btn smm-calnav" data-act="calmon" data-v="-1" ' + (mi <= 0 ? 'disabled' : '') + ' aria-label="Bulan sebelumnya">‹</button>' +
+        '<b class="smm-calm">' + CAL_MON[M] + ' ' + Y + '</b>' +
+        '<button class="smm-btn smm-calnav" data-act="calmon" data-v="1" ' + (mi >= months.length - 1 ? 'disabled' : '') + ' aria-label="Bulan berikutnya">›</button>' +
+      '</div>' +
+      '<select class="smm-sel smm-calgrp" id="smmCalGrp" aria-label="Kelompok broker">' + groups.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === C.grp ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select>' +
+      '<div class="smm-calkpi"><div>Net bulan ini<b class="' + signCls(tot) + '">' + fmtVal(tot, true) + '</b></div><div>Hari beli / jual<b><span class="smm-up">' + nb + '</span> / <span class="smm-dn">' + ns + '</span></b></div></div>' +
+      '<div class="smm-cal">' + ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'].map(function (x) { return '<div class="smm-ch">' + x + '</div>'; }).join('') + cells + '</div>';
+  }
   function renderSankey() {
     var box = document.getElementById('smmSankey');
     var g = G(), r = actRange(), rows = aggregate(g, r[0], r[1], S.inv);
@@ -2453,7 +2546,7 @@
   }
   // ── Screener (sub-tab 4) dimuat dinamis supaya file ini tidak membengkak.
   // Naikkan SCR_V setiap kali smartmoney-screener.js diubah (cache-busting).
-  var SCR_V = '20261110c', _scrP = null;
+  var SCR_V = '20261110d', _scrP = null;
   function ensureScreener() {
     if (window.SmartMoneyScreener) return Promise.resolve();
     if (_scrP) return _scrP;
@@ -2573,6 +2666,8 @@
       case 'addopen': e.stopPropagation(); document.getElementById('smmAddMenu').classList.toggle('open'); break;
       case 'chipadd': addChip(v); break;
       case 'dprev': if (S.actEnd > 0) { S.actEnd--; S.skFocus = null; renderAction(); renderSankey(); } break;
+      case 'calday': S.actEnd = +v; S.skFocus = null; renderAction(); renderSankey(); { var ab = document.getElementById('smmActionCard'); if (ab && window.innerWidth < 1100) ab.scrollIntoView({ block: 'start', behavior: 'smooth' }); } break;
+      case 'calmon': { var cp = S.cal.ym.split('-'), cd = new Date(Date.UTC(+cp[0], +cp[1] - 1 + +v, 1)); S.cal.ym = cd.toISOString().slice(0, 7); renderCal(); } break;
       case 'dnext': if (S.actEnd < G().nF - 1) { S.actEnd++; S.skFocus = null; renderAction(); renderSankey(); } break;
       case 'actsort':
         var side = el.getAttribute('data-side'), key = el.getAttribute('data-key');
@@ -2605,6 +2700,7 @@
       if (idx < 0) idx = 0;
       S.actEnd = idx; S.skFocus = null; renderAction(); renderSankey();
     }
+    else if (id === 'smmCalGrp') { S.cal.grp = e.target.value; renderCal(); }
     else if (id === 'smmInsAct') { S.insAct = e.target.value; renderInsider(); }
   }
 

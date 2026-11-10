@@ -76,3 +76,11 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   ritel / broker terpilih, `buildCalChart()` dengan lightweight-charts), kanan kalender (1 fr).
   ≤1099px ditumpuk. Grafik menampilkan bulan terpilih + 2 bulan sebelumnya; klik grafik memilih
   tanggal di kalender, tanggal terpilih diberi panah. `SCR_V` = 20261110c.
+
+## Revisi 5: Kalender pindah ke Broker Activity
+- Tampilan Kalender DIHAPUS dari Screener (sekarang 6 tampilan). Kalender flow ada di
+  `smartmoney.js`: `.smm-flowrow` = Broker Flow (1,6 fr) + `#smmCalCard` (1 fr), ≤1099px ditumpuk.
+- `renderCal()` dipanggil di akhir `renderAction()`. Data dari `getData()` (sama dengan grafik),
+  ikut filter investor (`S.inv`). Kelompok: smart money (non-`RETAIL`), ritel, asing, atau 1 broker.
+- Ketuk tanggal (`data-act="calday"`) → `S.actEnd` → Broker Action & Distribution pindah ke hari itu;
+  bulan kalender mengikuti `S.actEnd` (‹ › untuk pindah bulan manual). `SCR_V` = 20261110d.

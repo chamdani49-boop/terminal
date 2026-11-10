@@ -4,14 +4,13 @@
  * Sub-tab ke-4 menu Smart Money. Dimuat dinamis oleh smartmoney.js
  * (lihat ensureScreener) saat sub-tab "Screener" pertama kali dibuka.
  *
- * 7 tampilan:
+ * 6 tampilan (kalender flow ada di Broker Activity, smartmoney.js):
  *   1. Today        — sinyal terbaru + akurasi setup preset (backtest 3 bln)
  *   2. Gems         — skor gabungan harian + preset bullish / risiko
  *   3. Accumulation — posisi broker 6 bulan (floor, PnL, trapped) + flow 10 hari
  *   4. Smart Money  — smart money nampung ritel & P&L smart money
  *   5. Broker&Holder— associate broker, pemegang >5%, insider lintas saham
  *   6. Foreign      — intensitas arus asing + radar top 20
- *   7. Kalender     — heatmap net harian per bulan (per saham / broker)
  *
  * SUMBER DATA
  *   - Harga & teknikal (RSI, Stoch, 20d high) = ASLI dari /ohlc.json.
@@ -548,8 +547,7 @@
     { k: 'accum', ico: 'layers', label: 'Accumulation', sub: 'Posisi broker 6 bln' },
     { k: 'smart', ico: 'funnel', label: 'Smart Money', sub: 'Nampung ritel & P&L' },
     { k: 'bh', ico: 'users', label: 'Broker & Holder', sub: 'Associate, >5%, insider' },
-    { k: 'foreign', ico: 'globe', label: 'Foreign', sub: 'Intensitas & radar' },
-    { k: 'cal', ico: 'cal', label: 'Kalender', sub: 'Flow harian per bulan' }
+    { k: 'foreign', ico: 'globe', label: 'Foreign', sub: 'Intensitas & radar' }
   ];
   var V = {
     view: 'today', asOf: 0, guide: {}, acc: null,
@@ -557,8 +555,7 @@
     accum: { mode: 'pos', trend: 'acc', top: 5, market: 'reg', minLose: 0, minLoss: 0, maxDays: 0, minNet: 0, preset: '', q: '', sort: 'net', dir: -1, limit: 10 },
     smart: { mode: 'retail', a: null, b: null, rng: '1W', q: '', sort: 'sm', dir: -1, pl: 'all', limit: 50 },
     bh: { mode: 'assoc', per: '1W', hper: '3M', flip: false, q: '', lim: { a: 10, d: 10 } },
-    foreign: { mode: 'int', side: 'acc', preset: 'all', per: '30D', liq: 0, ksei: 'all', show: 50, q: '', sort: 'score', dir: -1 },
-    cal: { code: null, grp: 'sm', metric: 'value', ym: null, sel: null }
+    foreign: { mode: 'int', side: 'acc', preset: 'all', per: '30D', liq: 0, ksei: 'all', show: 50, q: '', sort: 'score', dir: -1 }
   };
   function T0() { return U.n - 1 - V.asOf; }
 
@@ -681,11 +678,6 @@
       title: 'Foreign Flow', ico: 'globe', desc: 'Seberapa kuat, konsisten, dan cepat arus dana asing di tiap saham.',
       how: [['sliders', 'Pilih Akumulasi / Distribusi, periode, lalu preset (Senyap, KSEI, Akselerasi, dll).'], ['target', 'Skor 0-100 = intensitas (40%), konsistensi (25%), akselerasi (20%), konfirmasi KSEI (15%).'], ['radar', 'Radar Top 20 memetakan saham: kanan = intensitas tinggi, atas = konsisten.'], ['ext', 'Ketuk saham untuk detail.']],
       why: [['globe', 'Asing sering menjadi penggerak utama saham big cap.'], ['moon', 'Preset Senyap menemukan akumulasi asing di saham kecil-menengah sebelum harga bergerak.'], ['shield', 'Konfirmasi KSEI menyaring arus semu (misalnya crossing) karena kepemilikan asing benar-benar naik.']]
-    },
-    cal: {
-      title: 'Kalender Flow', ico: 'cal', desc: 'Heatmap net beli/jual harian dalam satu bulan.',
-      how: [['search', 'Ketik kode saham, lalu pilih kelompok: smart money, asing, ritel, atau satu broker.'], ['cal', 'Tiap kotak = 1 hari bursa. Hijau = net beli, merah = net jual, makin pekat makin besar.'], ['left', 'Pindah bulan dengan ‹ › atau ketuk batang bulan di ringkasan 6 bulan.'], ['info', 'Ketuk kotak tanggal untuk melihat pembeli & penjual terbesar hari itu.']],
-      why: [['flow', 'Konsistensi akumulasi terlihat sekilas, tanpa membaca tabel.'], ['star', 'Mengenali kebiasaan bandar, misalnya rutin beli di awal bulan.'], ['bar', 'Membandingkan kekuatan arus antarbulan dengan cepat.']]
     }
   };
   function vhead(k, right) {
@@ -1352,173 +1344,9 @@
     return '<div class="sx-radar-wrap"><div class="sx-box">' + svg + '<p class="sx-note">Ukuran lingkaran = besar net asing. Garis kuning = akselerasi ≥ 2×. Ketuk lingkaran untuk membuka saham.</p></div><div class="sx-box">' + '<h5 class="sx-sub">' + ic('radar') + 'Peringkat skor</h5>' + list + '</div></div>';
   }
 
-  // ─────────────────────────── 7. KALENDER ───────────────────────────
-  function calGroups(m) {
-    var g = [['sm', 'Smart money (non-ritel)'], ['f', 'Investor asing'], ['rt', 'Ritel']];
-    m.brokers.slice().sort(function (a, b) { return Math.abs(b.w.bv - b.w.sv) - Math.abs(a.w.bv - a.w.sv); }).forEach(function (b) { g.push(['b:' + b.code, 'Broker ' + b.code + ' · ' + b.name]); });
-    return g;
-  }
-  function calDay(m, grp, t) {
-    var c = m.c[t];
-    if (grp.indexOf('b:') === 0) {
-      var b = m.brokers.filter(function (x) { return x.code === grp.slice(2); })[0];
-      var v = b ? b.nv[t] : 0;
-      return { v: v, l: c ? v / (c * 100) : 0, avg: c, avgLbl: 'Close' };
-    }
-    var K = grp === 'f' ? 'f' : grp === 'rt' ? 'rt' : 'sm';
-    var B = m[K + 'B'][t], S = m[K + 'S'][t], BL = m[K + 'BL'][t], SL = m[K + 'SL'][t], net = B - S;
-    return { v: net, l: BL - SL, avg: net >= 0 ? (BL ? B / (BL * 100) : 0) : (SL ? S / (SL * 100) : 0), avgLbl: 'Avg' };
-  }
-  // Garis kumulatif untuk grafik di samping kalender
-  function calLines(m, grp) {
-    var L = [{ k: 'sm', label: 'Smart money', color: '#8b5cf6' }, { k: 'f', label: 'Asing', color: '#ef4444' }, { k: 'rt', label: 'Ritel', color: '#14b8a6' }];
-    if (grp.indexOf('b:') === 0) L.push({ k: grp, label: 'Broker ' + grp.slice(2), color: '#f59e0b' });
-    L.forEach(function (x) { x.on = x.k === grp || (grp.indexOf('b:') === 0 && x.k === 'sm'); });
-    return L;
-  }
-  var _calChart = null;
-  function buildCalChart() {
-    var el = host.querySelector('#sxCalChart');
-    if (_calChart) { try { _calChart.remove(); } catch (_) {} _calChart = null; }
-    if (!el || typeof LightweightCharts === 'undefined') { if (el) el.innerHTML = '<div class="sx-empty">Grafik belum tersedia.</div>'; return; }
-    var st = V.cal, m = U.by[st.code], ax = U.axis, cs = getComputedStyle(document.documentElement);
-    function cv(n, d) { return (cs.getPropertyValue(n) || '').trim() || d; }
-    var text = cv('--text2', '#888'), grid = cv('--border2', 'rgba(128,128,128,.15)'), up = cv('--green', '#22c55e'), dn = cv('--red', '#ef4444');
-    _calChart = LightweightCharts.createChart(el, {
-      autoSize: true,
-      layout: { background: { type: 'solid', color: 'transparent' }, textColor: text, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, attributionLogo: false },
-      grid: { vertLines: { color: grid }, horzLines: { color: grid } },
-      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.08 } },
-      leftPriceScale: { visible: true, borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.08 } },
-      timeScale: { borderVisible: false, rightOffset: 2 },
-      crosshair: { mode: 0 },
-      handleScroll: { vertTouchDrag: false }
-    });
-    var candles = [], days = [];
-    for (var t = m.first; t < m.n; t++) { if (!m.tr[t]) continue; days.push(t); candles.push({ time: ax[t], open: m.o[t], high: m.h[t], low: m.l[t], close: m.c[t] }); }
-    var cand = _calChart.addCandlestickSeries({ upColor: up, downColor: dn, borderUpColor: up, borderDownColor: dn, wickUpColor: up, wickDownColor: dn, priceScaleId: 'right', priceLineVisible: false, priceFormat: { type: 'custom', minMove: 1, formatter: function (v) { return px(v); } } });
-    cand.setData(candles);
-    var fmt = { type: 'custom', formatter: function (v) { return fv(v); } }, series = {}, cum = {};
-    calLines(m, st.grp).forEach(function (L) {
-      var arr = L.k === 'sm' ? m.sm : L.k === 'f' ? m.fn : L.k === 'rt' ? m.rt : null, b = null;
-      if (!arr) { b = m.brokers.filter(function (x) { return 'b:' + x.code === L.k; })[0]; arr = b ? b.nv : []; }
-      var c = 0, data = [], map = {};
-      days.forEach(function (t2) { c += arr[t2] || 0; data.push({ time: ax[t2], value: c }); map[ax[t2]] = { day: arr[t2] || 0, cum: c }; });
-      cum[L.k] = map;
-      var sr = _calChart.addLineSeries({ color: L.color, lineWidth: L.on ? 3 : 1.5, priceScaleId: 'left', priceFormat: fmt, lastValueVisible: L.on, priceLineVisible: false, crosshairMarkerVisible: true });
-      sr.applyOptions({ lineStyle: L.on ? 0 : 0 });
-      if (!L.on) sr.applyOptions({ color: L.color + '99' });
-      sr.setData(data); series[L.k] = sr;
-    });
-    if (st.sel != null && m.tr[st.sel]) cand.setMarkers([{ time: ax[st.sel], position: 'aboveBar', color: cv('--accent', '#8b5cf6'), shape: 'arrowDown', text: dShort(ax[st.sel]) }]);
-    // tampilkan bulan terpilih + 2 bulan sebelumnya supaya konteks terlihat
-    var p = st.ym.split('-'), from = new Date(Date.UTC(+p[0], +p[1] - 3, 1)).toISOString().slice(0, 10), to = new Date(Date.UTC(+p[0], +p[1], 0)).toISOString().slice(0, 10);
-    var f0 = candles.filter(function (x) { return x.time >= from; })[0], t0 = candles.filter(function (x) { return x.time <= to; }).pop();
-    if (f0 && t0) { try { _calChart.timeScale().setVisibleRange({ from: f0.time, to: t0.time }); } catch (_) { _calChart.timeScale().fitContent(); } }
-    else _calChart.timeScale().fitContent();
-    var lines = calLines(m, st.grp), byT = {}; candles.forEach(function (x) { byT[x.time] = x; });
-    function legend(key) {
-      var lg = host.querySelector('#sxCalLeg'); if (!lg) return;
-      if (!key || !byT[key]) key = candles.length ? candles[candles.length - 1].time : null;
-      if (!key) { lg.innerHTML = ''; return; }
-      var c = byT[key], prev = candles[candles.indexOf(c) - 1], ch = prev ? (c.close / prev.close - 1) * 100 : 0;
-      lg.innerHTML = '<div class="d"><b>' + esc(dShort(key)) + '</b> <span>O ' + px(c.open) + '</span> <span>H ' + px(c.high) + '</span> <span>L ' + px(c.low) + '</span> <span>C <b class="' + sc(ch) + '">' + px(c.close) + '</b> <em class="' + sc(ch) + '">' + fp(ch) + '</em></span></div>' +
-        '<div class="r">' + lines.map(function (L) { var x = cum[L.k][key] || { day: 0, cum: 0 }; return '<span><i style="background:' + L.color + '"></i>' + esc(L.label) + ' <b class="' + sc(x.day) + '">' + fv(x.day) + '</b> <small>Σ ' + fv(x.cum) + '</small></span>'; }).join('') + '</div>';
-    }
-    legend(null);
-    _calChart.subscribeCrosshairMove(function (prm) { legend(prm && prm.time ? (typeof prm.time === 'string' ? prm.time : null) : null); });
-    _calChart.subscribeClick(function (prm) {
-      var key = prm && typeof prm.time === 'string' ? prm.time : null; if (!key || U.idx[key] === undefined) return;
-      V.cal.ym = key.slice(0, 7); V.cal.sel = U.idx[key]; rerenderKeepScroll();
-    });
-  }
-  function viewCal() {
-    var st = V.cal;
-    if (!st.code || !U.by[st.code]) st.code = U.by[A.code()] ? A.code() : (U.by.BBCA ? 'BBCA' : U.list[0].code);
-    var m = U.by[st.code], ax = U.axis, months = [];
-    ax.forEach(function (d, i) { if (i >= m.first) { var ym = d.slice(0, 7); if (months.indexOf(ym) < 0) months.push(ym); } });
-    if (!st.ym || months.indexOf(st.ym) < 0) st.ym = months[months.length - 1];
-    var groups = calGroups(m);
-    if (!groups.some(function (g) { return g[0] === st.grp; })) st.grp = 'sm';
-    var mi = months.indexOf(st.ym), p = st.ym.split('-'), Y = +p[0], M = +p[1] - 1;
-    var dayIdx = {}; ax.forEach(function (d, i) { if (d.slice(0, 7) === st.ym) dayIdx[d] = i; });
-    var cells = [], mx = 0, tot = 0, totL = 0, nb = 0, ns = 0, best = null, worst = null;
-    Object.keys(dayIdx).forEach(function (d) {
-      var x = calDay(m, st.grp, dayIdx[d]); var v = st.metric === 'lot' ? x.l : x.v;
-      if (Math.abs(v) > mx) mx = Math.abs(v); tot += x.v; totL += x.l; if (x.v > 0) nb++; else if (x.v < 0) ns++;
-      if (!best || x.v > best.v) best = { v: x.v, d: d }; if (!worst || x.v < worst.v) worst = { v: x.v, d: d };
-    });
-    var first = new Date(Date.UTC(Y, M, 1)), last = new Date(Date.UTC(Y, M + 1, 0));
-    var start = new Date(first); while (start.getUTCDay() !== 1) start.setUTCDate(start.getUTCDate() - 1);
-    var end = new Date(last); while (end.getUTCDay() !== 5) { end.setUTCDate(end.getUTCDate() + (end.getUTCDay() === 6 ? -1 : end.getUTCDay() === 0 ? -2 : 1)); }
-    for (var dd = new Date(start); dd <= end; dd.setUTCDate(dd.getUTCDate() + 1)) {
-      var w = dd.getUTCDay(); if (w === 0 || w === 6) continue;
-      var di = dd.toISOString().slice(0, 10), inM = dd.getUTCMonth() === M, ti = dayIdx[di];
-      if (!inM) { cells.push('<div class="sx-cc out"><span class="dn">' + dd.getUTCDate() + '</span></div>'); continue; }
-      if (ti === undefined || !m.val[ti]) { cells.push('<div class="sx-cc off' + (ti === undefined && di > ax[ax.length - 1] ? ' fut' : '') + '"><span class="dn">' + dd.getUTCDate() + '</span><small>' + (ti === undefined ? (di > ax[ax.length - 1] ? '' : 'Libur') : 'No trade') + '</small></div>'); continue; }
-      var x = calDay(m, st.grp, ti), vv = st.metric === 'lot' ? x.l : x.v, a = mx ? Math.abs(vv) / mx : 0;
-      cells.push('<button class="sx-cc ' + (x.v > 0 ? 'g' : x.v < 0 ? 'r' : '') + (st.sel === ti ? ' sel' : '') + '" style="--a:' + (0.12 + a * 0.7).toFixed(2) + '" data-sx="ccell" data-v="' + ti + '">' +
-        '<span class="dn">' + dd.getUTCDate() + '</span>' +
-        '<b class="nv">' + (x.v > 0 ? '↗' : x.v < 0 ? '↘' : '') + (st.metric === 'lot' ? fl(Math.abs(x.l)) : fv(Math.abs(x.v))) + '</b>' +
-        '<small class="lt">' + (st.metric === 'lot' ? fv(Math.abs(x.v)) : fl(Math.abs(x.l)) + ' Lot') + '</small>' +
-        '<small class="av">' + x.avgLbl + ' ' + px(x.avg) + '</small></button>');
-    }
-    // ringkasan 6 bulan
-    var strip = months.slice(-6).map(function (ym) {
-      var s = 0; ax.forEach(function (d, i) { if (d.slice(0, 7) === ym) s += calDay(m, st.grp, i).v; });
-      return { ym: ym, s: s };
-    });
-    var smx = 0; strip.forEach(function (x) { smx = Math.max(smx, Math.abs(x.s)); });
-    var detail = '';
-    if (st.sel != null && ax[st.sel] && ax[st.sel].slice(0, 7) === st.ym) {
-      var t = st.sel, nets = m.brokers.map(function (b) { return { b: b, v: b.nv[t] }; }).sort(function (a, b) { return b.v - a.v; });
-      var xb = calDay(m, st.grp, t), chg = t > 0 ? (m.c[t] / m.c[t - 1] - 1) * 100 : 0;
-      detail = '<div class="sx-box sx-cdet"><div class="sx-bh"><h4>' + ic('cal') + esc(dLong(ax[t])) + '</h4><button class="sx-x" data-sx="ccell" data-v="' + t + '" aria-label="Tutup">' + ic('x') + '</button></div>' +
-        '<div class="sx-ckpi"><div><small>Net</small><b class="' + sc(xb.v) + '">' + fv(xb.v, true) + '</b></div><div><small>Net lot</small><b class="' + sc(xb.l) + '">' + fl(xb.l) + '</b></div><div><small>' + xb.avgLbl + '</small><b>' + px(xb.avg) + '</b></div><div><small>Close</small><b>' + px(m.c[t]) + ' <em class="' + sc(chg) + '">' + fp(chg) + '</em></b></div></div>' +
-        '<div class="sx-cols2 tight"><div><h6 class="sx-up">' + ic('up') + 'Pembeli terbesar</h6>' + nets.filter(function (x) { return x.v > 0; }).slice(0, 5).map(function (x) { return '<div class="sx-kvr">' + bk(x.b.code, x.b.type, x.b.name) + '<span class="sx-up mono">' + fv(x.v) + '</span></div>'; }).join('') + '</div>' +
-        '<div><h6 class="sx-dn">' + ic('down') + 'Penjual terbesar</h6>' + nets.filter(function (x) { return x.v < 0; }).reverse().slice(0, 5).map(function (x) { return '<div class="sx-kvr">' + bk(x.b.code, x.b.type, x.b.name) + '<span class="sx-dn mono">' + fv(x.v) + '</span></div>'; }).join('') + '</div></div></div>';
-    }
-    var codes = U.list.map(function (x) { return x.code; });
-    return vhead('cal') +
-      '<div class="sx-bar">' +
-        '<label class="sx-search">' + ic('search') + '<input id="sxCalCode" list="sxCalList" value="' + esc(st.code) + '" maxlength="6" autocomplete="off" enterkeyhint="go" aria-label="Kode saham"></label>' +
-        '<datalist id="sxCalList">' + codes.map(function (c) { return '<option value="' + c + '">'; }).join('') + '</datalist>' +
-        '<select class="sx-sel" id="sxCalGrp" aria-label="Kelompok broker">' + groups.map(function (g) { return '<option value="' + esc(g[0]) + '"' + (g[0] === st.grp ? ' selected' : '') + '>' + esc(g[1]) + '</option>'; }).join('') + '</select>' +
-        seg('cmetric', [['value', 'Value'], ['lot', 'Lot']], st.metric, 'sm') +
-        '<span class="sx-grow"></span><button class="sx-prof" data-sx="open" data-v="' + esc(m.code) + '">' + ic('bar') + 'Broker Activity</button>' +
-      '</div>' +
-      '<div class="sx-cal-split">' +
-      '<section class="sx-box sx-cflow">' +
-        '<div class="sx-bh"><h4>' + ic('flow') + 'Broker Flow <small class="sx-mute" style="text-transform:none;letter-spacing:0">' + esc(m.code) + ' · kumulatif net vs harga</small></h4>' +
-          tip('Candle = harga harian (sumbu kanan). Garis = jumlah net beli dikurangi jual yang terus dijumlahkan sejak awal data (sumbu kiri). Garis naik = terus menimbun. Ketuk grafik untuk memilih tanggal di kalender.') + '</div>' +
-        '<div class="sx-cleg" id="sxCalLeg"></div>' +
-        '<div class="sx-cchart" id="sxCalChart"></div>' +
-        '<div class="sx-ckeys">' + calLines(m, st.grp).map(function (x) { return '<span><i style="background:' + x.color + '"></i>' + esc(x.label) + '</span>'; }).join('') + '</div>' +
-      '</section>' +
-      '<div class="sx-cside">' +
-      '<div class="sx-cal-top">' +
-        '<div class="sx-mnav"><button class="sx-ib" data-sx="cmon" data-v="-1" ' + (mi <= 0 ? 'disabled' : '') + ' aria-label="Bulan sebelumnya">' + ic('left') + '</button>' +
-          '<h3>' + MONTHS[M] + ' ' + Y + ' <small>' + esc(m.code) + '</small></h3>' +
-          '<button class="sx-ib" data-sx="cmon" data-v="1" ' + (mi >= months.length - 1 ? 'disabled' : '') + ' aria-label="Bulan berikutnya">' + ic('right') + '</button></div>' +
-        '<div class="sx-ckpi">' +
-          '<div><small>Net bulan ini</small><b class="' + sc(tot) + '">' + fv(tot, true) + '</b></div>' +
-          '<div><small>Net lot</small><b class="' + sc(totL) + '">' + fl(totL) + '</b></div>' +
-          '<div><small>Hari beli / jual</small><b><span class="sx-up">' + nb + '</span> / <span class="sx-dn">' + ns + '</span></b></div>' +
-          '<div><small>Beli terbesar</small><b class="sx-up">' + (best && best.v > 0 ? fv(best.v) + ' <em>' + dObj(best.d).getUTCDate() + ' ' + MON[M] + '</em>' : '-') + '</b></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="sx-calwrap"><div class="sx-cal">' + ['MON', 'TUE', 'WED', 'THU', 'FRI'].map(function (x, i) { return '<div class="sx-ch"><span class="l">' + x + '</span><span class="s">' + ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'][i] + '</span></div>'; }).join('') + cells.join('') + '</div></div>' +
-      '</div></div>' +
-      detail +
-      '<div class="sx-box"><h5 class="sx-sub">' + ic('bar') + 'Ringkasan 6 bulan <small class="sx-mute">ketuk untuk pindah bulan</small></h5><div class="sx-mstrip">' +
-        strip.map(function (x) { var hpx = smx ? Math.abs(x.s) / smx * 100 : 0, p2 = x.ym.split('-'); return '<button class="' + (x.ym === st.ym ? 'on' : '') + '" data-sx="cym" data-v="' + x.ym + '"><span class="bw"><i class="' + (x.s >= 0 ? 'g' : 'r') + '" style="height:' + Math.max(4, hpx) + '%"></i></span><b class="' + sc(x.s) + '">' + fv(x.s) + '</b><small>' + MON[+p2[1] - 1] + ' ' + p2[0].slice(2) + '</small></button>'; }).join('') +
-      '</div></div>' +
-      '<p class="sx-note">' + (m.realBroker ? 'Data broker asli (R2).' : 'Arus broker saham ini masih dummy; harga asli dari ohlc.json.') + ' Avg = harga rata-rata beli (hari net beli) atau jual (hari net jual) kelompok terpilih.</p>';
-  }
-
   // ─────────────────────────── Render & event ───────────────────────────
   var BODY = { gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
-  var VIEW = { today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign, cal: viewCal };
+  var VIEW = { today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign };
   function shell() {
     return '<div class="sx">' +
       '<div class="sx-top">' +
@@ -1566,10 +1394,8 @@
     if (V.guide[V.view] === undefined) { V.guide[V.view] = load('sx_seen_' + V.view) ? null : 'how'; store('sx_seen_' + V.view, '1'); }
     srcNote();
     try {
-      if (_calChart && V.view !== 'cal') { try { _calChart.remove(); } catch (_) {} _calChart = null; }
       el.innerHTML = VIEW[V.view]();
       renderBody();
-      if (V.view === 'cal') buildCalChart();
     } catch (e) {
       console.error('[screener]', e);
       el.innerHTML = empty('Terjadi kesalahan saat menampilkan data. ' + esc(e.message));
@@ -1624,10 +1450,6 @@
       case 'fpre': Fx.preset = v; break;
       case 'fper': Fx.per = v; break;
       case 'fsort': if (Fx.sort === v) Fx.dir = -Fx.dir; else { Fx.sort = v; Fx.dir = -1; } renderBody(); return;
-      case 'cmetric': C.metric = v; break;
-      case 'cmon': var p = C.ym.split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1 + +v, 1)); C.ym = d.toISOString().slice(0, 7); C.sel = null; break;
-      case 'cym': C.ym = v; C.sel = null; break;
-      case 'ccell': C.sel = C.sel === +v ? null : +v; rerenderKeepScroll(); if (C.sel != null) { var dt = host.querySelector('.sx-cdet'); if (dt && mq('(max-width:640px)')) dt.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } return;
       default: return;
     }
     rerenderKeepScroll();
@@ -1647,16 +1469,9 @@
       case 'sxFLiq': Fx.liq = +v || 0; renderBody(); return;
       case 'sxFKsei': Fx.ksei = v; renderBody(); return;
       case 'sxFShow': Fx.show = +v || 50; renderBody(); return;
-      case 'sxCalCode': setCalCode(v); return;
-      case 'sxCalGrp': V.cal.grp = v; rerenderKeepScroll(); return;
       default: return;
     }
     Ac.limit = 10; renderBody();
-  }
-  function setCalCode(v) {
-    v = String(v || '').trim().toUpperCase();
-    if (!U.by[v]) { A.toast('Kode tidak ditemukan: ' + v); return; }
-    V.cal.code = v; V.cal.ym = null; V.cal.sel = null; V.cal.grp = 'sm'; rerenderKeepScroll();
   }
   var _qt = null;
   function onInput(e) {
@@ -1665,7 +1480,6 @@
     V[map[id]].q = e.target.value.trim();
     clearTimeout(_qt); _qt = setTimeout(renderBody, 160);
   }
-  function onKey(e) { if (e.key === 'Enter' && e.target.id === 'sxCalCode') { e.preventDefault(); setCalCode(e.target.value); } }
 
   // ─────────────────────────── CSS ───────────────────────────
   var CSS = [
@@ -1925,49 +1739,8 @@
     '.sx-rlist button{display:grid;grid-template-columns:22px 1fr auto 74px;gap:8px;align-items:center;width:100%;font:inherit;font-size:12px;padding:6px 4px;border:0;border-bottom:1px dashed var(--border2);background:none;cursor:pointer;text-align:left}',
     '.sx-rlist button:hover{background:var(--bg2)}.sx-rlist .i{color:var(--text3);font-size:11px}.sx-rlist b{font-family:"IBM Plex Mono",monospace;color:var(--accent)}.sx-rlist .mono{text-align:right}',
     /* calendar */
-    '.sx-cal-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}',
-    '.sx-cal-split{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;align-items:stretch}',
-    '.sx-cside{display:flex;flex-direction:column;gap:10px;min-width:0}',
-    '.sx-cside .sx-ckpi{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none;width:100%}',
-    '.sx-cside .sx-mnav{width:100%;justify-content:space-between}.sx-cside .sx-mnav h3{min-width:0}',
-    '.sx-cside .sx-calwrap{flex:1}',
-    '.sx-cside .sx-cc{min-height:74px;padding:6px}.sx-cside .sx-cc .nv{font-size:12.5px}',
-    '.sx-cflow{display:flex;flex-direction:column;gap:8px;min-width:0}',
-    '.sx-cflow .sx-bh{margin-bottom:0}.sx-cflow .sx-bh h4 small{font-weight:600}',
-    '.sx-cleg{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:50px;padding:6px 10px;border-radius:10px;background:var(--bg2);border:1px solid var(--border2);font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--text2)}',
-    '.sx-cleg .d,.sx-cleg .r{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}.sx-cleg .d b{color:var(--text)}.sx-cleg em{font-style:normal}',
-    '.sx-cleg i,.sx-ckeys i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}.sx-cleg small{color:var(--text3)}',
-    '.sx-cchart{position:relative;flex:1 1 auto;min-height:380px}',
-    '.sx-ckeys{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text2)}',
-    '.sx-mnav{display:flex;align-items:center;gap:10px}.sx-mnav h3{font-size:20px;font-weight:800;color:var(--text);min-width:170px;text-align:center}.sx-mnav h3 small{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent);margin-left:4px}',
-    '.sx-ckpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;flex:1;max-width:640px}',
-    '.sx-ckpi div{background:var(--bg2);border-radius:10px;padding:7px 10px;min-width:0}.sx-ckpi small{display:block;font-size:10.5px;color:var(--text3);font-weight:700}',
-    '.sx-ckpi b{display:block;font-family:"IBM Plex Mono",monospace;font-size:13.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}.sx-ckpi b em{font-style:normal;font-size:11px;color:var(--text3)}',
-    '.sx-calwrap{background:var(--card);border-radius:var(--radius);padding:10px;border:1px solid var(--border);box-shadow:var(--shadow-card)}',
-    '.sx-cal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}',
-    '.sx-ch{text-align:center;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text3);padding:4px 0 6px}.sx-ch .s{display:none}',
-    '.sx-cc{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-height:86px;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--bg2);font:inherit;text-align:right;min-width:0;overflow:hidden}',
-    'button.sx-cc{cursor:pointer;transition:transform .1s,box-shadow .15s}button.sx-cc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.18)}',
-    '.sx-cc .dn{position:absolute;left:8px;top:6px;font-size:11px;color:var(--text3);font-family:"IBM Plex Mono",monospace}',
-    '.sx-cc .nv{margin-top:14px;font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:800;white-space:nowrap}',
-    '.sx-cc .lt,.sx-cc .av{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}',
-    '.sx-cc.g{background:color-mix(in srgb,#16a34a calc(var(--a) * 70%),var(--bg2));border-color:color-mix(in srgb,#22c55e calc(var(--a) * 80%),var(--border2))}.sx-cc.g .nv{color:#22c55e}',
-    '.sx-cc.r{background:color-mix(in srgb,#dc2626 calc(var(--a) * 70%),var(--bg2));border-color:color-mix(in srgb,#ef4444 calc(var(--a) * 80%),var(--border2))}.sx-cc.r .nv{color:#f87171}',
-    '[data-theme="dark"] .sx-cc.g .nv{color:#4ade80}[data-theme="dark"] .sx-cc .lt,[data-theme="dark"] .sx-cc .av{color:#cbd5e1}',
-    ':root:not([data-theme="dark"]) .sx-cc.g .nv{color:#15803d}:root:not([data-theme="dark"]) .sx-cc.r .nv{color:#b91c1c}',
-    '.sx-cc.out{opacity:.35;background:transparent}.sx-cc.off{opacity:.6;justify-content:center;align-items:center}.sx-cc.off small{font-size:10.5px;color:var(--text3)}.sx-cc.fut{opacity:.3;border-style:dashed}',
-    '.sx-cc.sel{outline:2px solid var(--accent);outline-offset:1px}',
-    '.sx-cdet .sx-ckpi{max-width:none}',
-    '.sx-cols2 h6{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin:0 0 6px}',
-    '.sx-kvr{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--border2);font-size:12px}',
-    '.sx-mstrip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}',
-    '.sx-mstrip button{display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit;padding:8px 4px;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);cursor:pointer;min-width:0}',
-    '.sx-mstrip button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card))}',
-    '.sx-mstrip .bw{display:flex;align-items:flex-end;height:44px;width:18px}.sx-mstrip .bw i{display:block;width:100%;border-radius:3px}.sx-mstrip .bw i.g{background:var(--green)}.sx-mstrip .bw i.r{background:var(--red)}',
-    '.sx-mstrip b{font-family:"IBM Plex Mono",monospace;font-size:11px;white-space:nowrap}.sx-mstrip small{font-size:10.5px;color:var(--text3)}',
     /* ── Tablet ── */
     '@media (max-width:1099px){',
-      '.sx-cal-split{grid-template-columns:1fr}.sx-cchart{min-height:320px}',
       '.sx-acc-grid{grid-template-columns:1fr}',
       '.sx-side{position:static;max-height:none;order:-1}',
       '.sx-side summary{display:flex}',
@@ -2016,20 +1789,8 @@
       '.sx-lab{flex:1 1 auto}.sx-lab .sx-sel{flex:1}',
       '.sx-rlist{grid-template-columns:1fr}',
       '.sx-radar text{font-size:17px}.sx-radar .lb{font-size:19px}.sx-radar .ql{font-size:14px}.sx-radar .ax{font-size:16px}',
-      '.sx-mnav{width:100%;justify-content:space-between}.sx-mnav h3{font-size:17px;min-width:0}',
-      '.sx-ckpi{grid-template-columns:1fr 1fr;max-width:none;width:100%}',
-      '#sxCalGrp{flex:1 1 60%}',
-      '.sx-calwrap{padding:6px}.sx-cal{gap:4px}',
-      '.sx-cchart{min-height:260px}.sx-cleg{font-size:10.5px}.sx-cside .sx-cc{min-height:64px;padding:5px 4px}',
-      '.sx-ch .l{display:none}.sx-ch .s{display:inline}',
-      '.sx-cc{min-height:64px;padding:5px 4px 5px;border-radius:7px}',
-      '.sx-cc .dn{left:5px;top:3px;font-size:10px}',
-      '.sx-cc .nv{margin-top:12px;font-size:11px}',
-      '.sx-cc .lt{font-size:9px}.sx-cc .av{display:none}',
-      '.sx-mstrip{grid-template-columns:repeat(3,minmax(0,1fr))}',
     '}',
     '@media (max-width:380px){',
-      '.sx-cc .nv{font-size:10px;letter-spacing:-.02em}.sx-cc .lt{display:none}.sx-cc{min-height:52px}',
       '.sx-side-in{grid-template-columns:1fr}',
       '.sx-kpis b{font-size:15px}',
     '}'
@@ -2046,7 +1807,6 @@
       host.addEventListener('click', onClick);
       host.addEventListener('change', onChange);
       host.addEventListener('input', onInput);
-      host.addEventListener('keydown', onKey);
       host.querySelector('#sxTabs').addEventListener('scroll', arrows, { passive: true });
       var rt, wasMob = mq('(max-width:1099px)');
       window.addEventListener('resize', function () {
@@ -2057,18 +1817,11 @@
           if (mob !== wasMob) { wasMob = mob; if (V.view === 'accum' && U && !host.hidden) renderView(); }
         }, 200);
       });
-      new MutationObserver(function () { if (U && V.view === 'cal' && !host.hidden) buildCalChart(); })
-        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
       _bound = true;
     }
     renderView();
   }
-  // Saham aktif di bar atas berubah → kalender ikut (true = tetap di Screener)
-  function codeChanged(code) {
-    if (V.view !== 'cal' || !U || !U.by[code]) return false;
-    V.cal.code = code; V.cal.ym = null; V.cal.sel = null; V.cal.grp = 'sm';
-    if (host && !host.hidden) renderView();
-    return true;
-  }
+  // Kalender pindah ke Broker Activity; Screener tidak perlu mengikuti saham aktif.
+  function codeChanged() { return false; }
   window.SmartMoneyScreener = { show: show, codeChanged: codeChanged };
 })();
