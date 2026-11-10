@@ -416,7 +416,7 @@
     /* grid */
     '.smm-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(360px,1fr);gap:16px;align-items:start}',
     '.smm-chart{position:relative;height:420px;margin-top:8px}',
-    '.smm-legend{position:absolute;left:8px;top:6px;z-index:3;font-size:11px;background:color-mix(in srgb,var(--card) 85%,transparent);border:1px solid var(--border2);border-radius:8px;padding:6px 8px;pointer-events:none;display:flex;flex-direction:column;gap:2px;max-width:70%}',
+    '.smm-legend{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:48px;margin-top:8px;font-size:11.5px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:6px 10px}',
     '.smm-legend .d{font-weight:800;color:var(--text)}',
     '.smm-legend .row{display:flex;gap:10px;flex-wrap:wrap}',
     '.smm-legend .row span{white-space:nowrap}',
@@ -723,7 +723,7 @@
       '.smm-kpi .v{font-size:17px}.smm-kpi p{font-size:11px}',
       '.smm-verdict{flex-direction:row;align-items:center;gap:10px}.smm-gauge{width:110px}.smm-verdict .big{font-size:17px}.smm-verdict ul{font-size:11px}',
       '.smm-chart{height:320px}.smm-ins-chart{height:220px}',
-      '.smm-legend{font-size:10px;max-width:88%;padding:4px 6px}',
+      '.smm-legend{font-size:10.5px;min-height:44px;padding:5px 8px}',
       '.smm-radar-cols{grid-template-columns:1fr}',
       '.smm-rrow,.smm-rhead{grid-template-columns:50px 1fr 78px 56px}',
       '.smm-ins-mid{grid-template-columns:1fr!important}',
@@ -1177,7 +1177,8 @@
             '<div class="smm-seg" id="smmMetric"><button data-act="metric" data-v="value">Value</button><button data-act="metric" data-v="volume">Volume</button></div>' +
             '<div class="smm-seg smm-pricetog" id="smmPriceMode"><button data-act="pmode" data-v="candle">Candle</button><button data-act="pmode" data-v="line">Garis</button></div>' +
           '</div>' +
-          '<div class="smm-chart" id="smmFlowChart"><div class="smm-legend" id="smmFlowLegend"></div></div>' +
+          '<div class="smm-legend" id="smmFlowLegend" aria-live="polite"></div>' +
+          '<div class="smm-chart" id="smmFlowChart"></div>' +
           '<div class="smm-chips" id="smmChips"></div>' +
           '<div class="smm-insight" id="smmFlowInsight"></div>' +
         '</section>' +
