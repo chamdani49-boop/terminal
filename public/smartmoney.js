@@ -367,9 +367,6 @@
     '.smm-sel{padding:6px 10px;border-radius:10px;appearance:auto}',
     '.smm-seg{display:inline-flex;gap:4px;flex-wrap:wrap}',
     '.smm-seg button.on{background:var(--green-bg);color:var(--green);border-color:var(--green)}',
-    '.smm-quick{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}',
-    '.smm-quick button{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer}',
-    '.smm-quick button.on,.smm-quick button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}',
     '.smm-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}',
     '.smm-toolbar .lbl{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.05em}',
     '.smm-h3{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px}',
@@ -539,13 +536,22 @@
     '.smm-subtabs .s{display:none}',
     '.smm-scroll{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}',
     '.smm-scroll::-webkit-scrollbar{display:none}',
-    '.smm-quick{justify-content:flex-start;gap:6px;padding:2px 0}',
-    '.smm-quick button{flex-shrink:0;padding:5px 10px;font-size:12px;border-radius:8px}',
     '.smm-filters{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}',
     '.smm-filters .smm-seg{gap:4px}',
     '.smm-filters .smm-seg button{flex-shrink:0;min-width:48px}',
     '.smm-pg{display:flex;flex-direction:column;gap:16px}',
     '.smm-pg[hidden]{display:none!important}',
+    '.smm-searchwrap{position:relative;display:flex;min-width:0}',
+    '#smmDrop{position:absolute;top:calc(100% + 6px);left:0;width:max(100%,380px);max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:320px;overflow-y:auto;z-index:300;display:none;box-shadow:var(--shadow-card-lg);text-align:left}',
+    '#smmDrop.open{display:block}',
+    '#smmDrop .search-item{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s}',
+    '#smmDrop .search-item:hover{background:var(--bg2)}',
+    '#smmDrop .search-item .code{font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:14px;color:var(--accent);width:60px;flex-shrink:0}',
+    '#smmDrop .search-item .sname{font-size:13px;color:var(--text);font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}',
+    '#smmDrop .search-item .sector{font-size:11px;color:var(--text2);margin-left:auto;flex-shrink:0;background:var(--bg2);padding:3px 10px;border-radius:999px;font-weight:600}',
+    '#smmDrop .search-item .sector:empty{display:none}',
+    '.smm-drop-h{padding:8px 14px 4px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);border-top:1px solid var(--border2)}',
+    '@media (max-width:640px){#smmDrop{width:100%}#smmDrop .search-item .sector{display:none}}',
     '.smm-flowrow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(330px,1fr);gap:16px;align-items:stretch}',
     '.smm-calcard{display:flex;flex-direction:column;gap:8px}',
     '.smm-calcard:empty{display:none}',
@@ -569,7 +575,7 @@
     '[data-theme="dark"] .smm-cc.g .nv{color:#4ade80}[data-theme="dark"] .smm-cc.r .nv{color:#f87171}[data-theme="dark"] .smm-cc .lt,[data-theme="dark"] .smm-cc .av{color:#cbd5e1}',
     '.smm-cc.out{opacity:.3;background:transparent}.smm-cc.off{opacity:.55;align-items:center;justify-content:center}.smm-cc.off small{font-size:9.5px;color:var(--text3)}.smm-cc.fut{opacity:.25;border-style:dashed}',
     '.smm-cc.sel{outline:2px solid var(--accent);outline-offset:1px}',
-    '#page-smartmoney[data-smm-sub="screener"] #smmQuick,#page-smartmoney[data-smm-sub="screener"] #smmActive{display:none!important}',
+    '#page-smartmoney[data-smm-sub="screener"] #smmActive{display:none!important}',
     '.smm-empty{display:none;text-align:center;padding:28px 16px;font-size:13px;color:var(--text2);line-height:1.7}',
     '.smm-pg.is-empty>.smm-empty{display:block}',
     '.smm-pg.is-empty>*:not(.smm-empty):not(#smmRadarCard){display:none!important}',
@@ -758,7 +764,7 @@
       '.smm-totals{grid-template-columns:1fr 1fr 1fr;gap:6px}.smm-totals b{font-size:11px}',
       '.smm-seg button,.smm-btn,.smm-sel{min-height:34px}',
       '.smm-h3{font-size:15px;flex-wrap:wrap}.smm-h3 small{flex-basis:100%;order:3}',
-      '.smm-bar{flex-wrap:wrap}.smm-bar-pick{flex:1 1 100%}.smm-input.smm-search{flex:1;width:auto;min-width:0}',
+      '.smm-bar{flex-wrap:wrap}.smm-bar-pick{flex:1 1 100%}.smm-searchwrap{flex:1}.smm-input.smm-search{flex:1;width:auto;min-width:0}',
       '.smm-subtabs{flex:1 1 100%;display:flex}.smm-subtabs button{flex:1}',
       '.smm-bkkpi{grid-template-columns:1fr 1fr}',
       '.smm-dvhead,.smm-dvrow{grid-template-columns:50px minmax(0,1fr) 78px}.smm-dvrow .hm2,.smm-dvhead .hm2{display:none}',
@@ -1170,8 +1176,7 @@
       // Bar lengket: pilih saham + pindah halaman
       '<div class="smm-bar" id="smmBar">' +
         '<div class="smm-bar-pick">' +
-          '<input class="smm-input smm-search" id="smmCode" list="smmCodes" maxlength="80" autocomplete="off" placeholder="Saham, broker, atau nama" aria-label="Cari kode saham, kode broker, atau nama insider" enterkeyhint="search">' +
-          '<datalist id="smmCodes">' + codes.slice(0, 1200).map(function (c) { return '<option value="' + esc(c) + '">'; }).join('') + '</datalist>' +
+          '<div class="smm-searchwrap"><input class="smm-input smm-search" id="smmCode" maxlength="80" autocomplete="off" placeholder="Saham, broker, atau nama" aria-label="Cari kode saham, kode broker, atau nama insider" enterkeyhint="search"><div class="search-drop smm-drop" id="smmDrop" role="listbox"></div></div>' +
           '<button class="smm-btn primary" data-act="load">Cari</button>' +
         '</div>' +
         '<div class="smm-subtabs" role="tablist">' +
@@ -1182,7 +1187,6 @@
         '</div>' +
       '</div>' +
       '<div class="smm-active" id="smmActive" hidden></div>' +
-      '<div class="smm-scroll smm-quick" id="smmQuick">' + UNIVERSE.map(function (c) { return '<button data-act="quick" data-v="' + c + '">' + c + '</button>'; }).join('') + '</div>' +
 
       // ═════════ HALAMAN 1: BROKER ACTIVITY ═════════
       '<div class="smm-pg" id="smmPgBroker">' +
@@ -2340,16 +2344,37 @@
     });
     return Object.keys(set).sort();
   }
-  function rebuildSuggest() {
-    var dl = document.getElementById('smmCodes'); if (!dl) return;
-    var stocks = [];
-    try { if (typeof DATA !== 'undefined' && DATA && DATA.stock_list) stocks = DATA.stock_list.map(function (s) { return s.code; }); } catch (_) {}
-    allCodes().forEach(function (c) { if (stocks.indexOf(c) < 0) stocks.unshift(c); });
-    var html = stocks.slice(0, 1200).map(function (c) { return '<option value="' + esc(c) + '">'; }).join('') +
-      brokerList().map(function (b) { return '<option value="' + esc(b.code + ' · ' + titleCase(b.name)) + '">'; }).join('') +
-      knownNames().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
-    dl.innerHTML = html;
+  function rebuildSuggest() {}   // saran dibuat langsung saat mengetik (lihat suggestSearch)
+  // Saran pencarian: sama seperti kolom cari di Dashboard (kode/nama saham, maks 12,
+  // kode · nama · sektor), ditambah kode broker dan nama orang dalam yang cocok.
+  function stockList() {
+    var list = [];
+    try { if (typeof DATA !== 'undefined' && DATA && DATA.stock_list) list = DATA.stock_list; } catch (_) {}
+    if (!list.length) list = allCodes().map(function (c) { return { code: c, name: c, sector: '' }; });
+    return list;
   }
+  function suggestSearch(raw) {
+    var drop = document.getElementById('smmDrop'); if (!drop) return;
+    var q = String(raw || '').trim().toUpperCase();
+    if (!q) { drop.classList.remove('open'); drop.innerHTML = ''; return; }
+    var st = stockList().filter(function (x) { return x.code.indexOf(q) >= 0 || String(x.name || '').toUpperCase().indexOf(q) >= 0; })
+      .sort(function (a, b) { return (a.code.indexOf(q) === 0 ? 0 : 1) - (b.code.indexOf(q) === 0 ? 0 : 1); }).slice(0, 12);
+    var bks = q.length >= 2 ? brokerList().filter(function (b) { return b.code === q || (q.length >= 3 && String(b.name).toUpperCase().indexOf(q) >= 0); }).slice(0, 4) : [];
+    var N = normName(q), ppl = q.length >= 3 ? knownNames().filter(function (n) { return n.indexOf(N) >= 0; }).slice(0, 4) : [];
+    var html = st.map(function (x) {
+      return '<div class="search-item" role="option" data-sk="s" data-v="' + esc(x.code) + '"><span class="code">' + esc(x.code) + '</span><span class="sname">' + esc(x.name || '') + '</span><span class="sector">' + esc(x.sector || '') + '</span></div>';
+    }).join('');
+    if (bks.length) html += '<div class="smm-drop-h">Broker</div>' + bks.map(function (b) {
+      return '<div class="search-item" role="option" data-sk="b" data-v="' + esc(b.code) + '"><span class="code">' + esc(b.code) + '</span><span class="sname">' + esc(titleCase(b.name)) + '</span><span class="sector">' + (b.foreign ? 'Asing' : 'Lokal') + '</span></div>';
+    }).join('');
+    if (ppl.length) html += '<div class="smm-drop-h">Orang dalam / pemegang</div>' + ppl.map(function (n) {
+      return '<div class="search-item" role="option" data-sk="p" data-v="' + esc(n) + '"><span class="sname">👤 ' + esc(n) + '</span></div>';
+    }).join('');
+    drop.innerHTML = html;
+    drop.classList.toggle('open', !!html);
+  }
+  function closeSuggest() { var d = document.getElementById('smmDrop'); if (d) d.classList.remove('open'); }
+
   function doSearch(q) {
     q = String(q || '').trim();
     if (!q) return;
@@ -2362,6 +2387,11 @@
     if (/^[A-Z0-9]{4,6}$/.test(up) && known.indexOf(up) >= 0) { openCodeFromSearch(up); return; }
     var N = normName(q), names2 = knownNames();
     var hit = names2.filter(function (n) { return n === N; })[0] || names2.filter(function (n) { return n.indexOf(N) >= 0; })[0];
+    var exactName = names2.filter(function (n) { return n === N; })[0];
+    if (exactName) { setPerson(exactName); return; }
+    // seperti Dashboard: kode/nama saham yang mengandung teks yang diketik → saham pertama
+    var sm = stockList().filter(function (x) { return x.code.indexOf(up) >= 0 || String(x.name || '').toUpperCase().indexOf(up) >= 0; })[0];
+    if (sm) { openCodeFromSearch(sm.code); return; }
     if (hit) { setPerson(hit); return; }
     if (/^[A-Z0-9]{2,6}$/.test(up)) { openCodeFromSearch(up); return; }
     toast('Tidak ditemukan: ' + q);
@@ -2504,7 +2534,6 @@
   function syncControls() {
     syncSeg('smmPeriod', S.period); syncSeg('smmMetric', S.metric); syncSeg('smmPriceMode', S.priceMode);
     syncSeg('smmSkMetric', S.skMetric); syncSeg('smmInsSrc', S.insSrc); syncSeg('smmInsRange', S.insRange);
-    syncSeg('smmQuick', S.code);
     root.querySelectorAll('.smm-subtabs button').forEach(function (b) { var on = b.getAttribute('data-v') === S.sub; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
     document.getElementById('smmCode').value = S.code;
     document.getElementById('smmInv').value = S.inv;
@@ -2517,12 +2546,6 @@
     var inv = document.getElementById('smmInv');
     inv.disabled = !g.hasForeign;
     inv.title = g.hasForeign ? '' : 'Data porsi asing belum tersedia untuk saham ini';
-    var q = document.getElementById('smmQuick'), list = universe();
-    if (q && q.getAttribute('data-list') !== list.join(',')) {
-      q.setAttribute('data-list', list.join(','));
-      q.innerHTML = list.map(function (c) { return '<button data-act="quick" data-v="' + esc(c) + '">' + esc(c) + '</button>'; }).join('');
-      syncSeg('smmQuick', S.code);
-    }
   }
   function renderFlowAll() { renderChips(); buildFlow(); renderFlowInsight(); }
   // Halaman yang tersembunyi ditandai "kotor" dan baru dirender saat dibuka,
@@ -2646,7 +2669,7 @@
     var act = el.getAttribute('data-act'), v = el.getAttribute('data-v');
     switch (act) {
       case 'sub': setSub(v); break;
-      case 'load': doSearch(document.getElementById('smmCode').value); break;
+      case 'load': closeSuggest(); doSearch(document.getElementById('smmCode').value); break;
       case 'person': e.stopPropagation(); setPerson(v); break;
       case 'gobroker': if (S.broker) setBroker(S.broker); break;
       case 'goperson': if (S.person) setPerson(S.person); break;
@@ -2656,7 +2679,6 @@
       case 'homonth': S.hoMonth = v; renderHolder(); break;
       case 'hoside': S.hoSide = v; renderHoComp(getHolder(S.code)); break;
       case 'hochart': S.hochart = v; S.hoChart = v; renderHoChart(getHolder(S.code)); break;
-      case 'quick': setCode(v); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
       case 'period': S.period = v; syncControls(); renderBrokerProfile(); if (G().hasBroker) { renderSummary(); renderFlowAll(); } renderRadar(); break;
       case 'metric': S.metric = v; syncControls(); buildFlow(); renderFlowInsight(); break;
       case 'pmode': S.priceMode = v; syncControls(); renderChips(); buildFlow(); break;
@@ -2780,7 +2802,21 @@
     document.addEventListener('click', function (e) {
       if (!root.contains(e.target)) { var m = document.getElementById('smmAddMenu'); if (m) m.classList.remove('open'); }
     });
-    document.getElementById('smmCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(e.target.value); });
+    var codeIn = document.getElementById('smmCode'), drop = document.getElementById('smmDrop');
+    codeIn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); closeSuggest(); doSearch(e.target.value); codeIn.blur(); }
+      else if (e.key === 'Escape') closeSuggest();
+    });
+    codeIn.addEventListener('input', function (e) { suggestSearch(e.target.value); });
+    drop.addEventListener('mousedown', function (e) { e.preventDefault(); });   // jaga fokus input sampai klik selesai
+    drop.addEventListener('click', function (e) {
+      var it = e.target.closest('.search-item[data-sk]'); if (!it) return;
+      e.stopPropagation();
+      var k = it.getAttribute('data-sk'), v = it.getAttribute('data-v');
+      closeSuggest(); codeIn.blur();
+      if (k === 's') openCodeFromSearch(v); else if (k === 'b') setBroker(v); else setPerson(v);
+    });
+    document.addEventListener('click', function (e) { if (!e.target.closest('.smm-searchwrap')) closeSuggest(); });
     document.getElementById('smmCode').addEventListener('focus', function (e) { e.target.select(); });
     // Ganti tema → bangun ulang grafik dengan warna baru
     new MutationObserver(function () { if (!_built) return; if (S.sub === 'broker') { buildFlow(); renderSankey(); } else if (S.sub !== 'screener') buildInsChart(); })

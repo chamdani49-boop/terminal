@@ -84,3 +84,10 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   ikut filter investor (`S.inv`). Kelompok: smart money (non-`RETAIL`), ritel, asing, atau 1 broker.
 - Ketuk tanggal (`data-act="calday"`) → `S.actEnd` → Broker Action & Distribution pindah ke hari itu;
   bulan kalender mengikuti `S.actEnd` (‹ › untuk pindah bulan manual). `SCR_V` = 20261110d.
+
+## Revisi 6: baris kode saham dihapus, saran pencarian seperti Dashboard
+- `#smmQuick` (deret tombol kode saham) beserta CSS & handler `quick` dihapus.
+- `<datalist id="smmCodes">` diganti dropdown `#smmDrop` di `.smm-searchwrap` (`suggestSearch()`):
+  sama dengan `buildSearchIndex()` di index.html (DATA.stock_list, cocok kode/nama, maks 12,
+  kode · nama · sektor), plus bagian Broker dan Orang dalam. Enter: kode persis → broker → nama
+  persis → saham pertama yang cocok (seperti Dashboard) → nama mirip. index.html tidak diubah.
