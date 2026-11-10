@@ -721,6 +721,101 @@
     '.smm-kv{display:grid;grid-template-columns:140px 1fr;gap:10px;padding:7px 0;font-size:12px;border-bottom:1px solid var(--border2)}',
     '.smm-kv span:first-child{color:var(--text2)}.smm-kv span:last-child{text-align:right;font-weight:700;line-height:1.6}',
     '.smm-kv .smm-name{text-align:right}',
+    /* ── Kepemilikan v2 ── */
+    '.smm-pill{display:inline-flex;align-items:center;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;white-space:nowrap;background:var(--bg2);color:var(--text3)}',
+    '.smm-pill.u{background:var(--green-bg);color:var(--green)}.smm-pill.d{background:var(--red-bg);color:var(--red)}',
+    '.smm-hov{display:flex;gap:14px;align-items:flex-start}',
+    '.smm-hov-ico{font-size:30px;line-height:1;width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--card) 70%,transparent);border:1px solid var(--border2);flex-shrink:0}',
+    '.smm-hov-b{min-width:0;flex:1}',
+    '.smm-hof{list-style:none;margin:10px 0 6px;padding:0;display:flex;flex-direction:column;gap:5px}',
+    '.smm-hof li{display:grid;grid-template-columns:20px 70px 1fr auto;gap:8px;align-items:center;font-size:12px;padding:5px 8px;border-radius:9px;background:color-mix(in srgb,var(--card) 60%,transparent)}',
+    '.smm-hof li i{font-style:normal;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:var(--bg3);color:var(--text2)}',
+    '.smm-hof li.g i{background:var(--green-bg);color:var(--green)}.smm-hof li.b i{background:var(--yellow-bg);color:var(--yellow)}',
+    '.smm-hof li span{color:var(--text2)}.smm-hof li b{font-family:"IBM Plex Mono",monospace;color:var(--text)}',
+    '.smm-kpi .smm-pill,.smm-hof .smm-pill{align-self:flex-start;justify-self:end}',
+    '.smm-hok .sp{margin:8px 0 2px}.smm-hok .sp svg{width:100%;height:30px}',
+    '.smm-hok-r{display:flex;align-items:center;gap:10px;margin-top:8px}.smm-hok-r .v{margin:0}.smm-hok-r .v.sm{font-size:17px}.smm-hok-r small{display:block;font-size:11px}',
+    '.smm-ring{flex-shrink:0}',
+    '.smm-hobar{height:28px;border-radius:10px}',
+    '.smm-hleg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--text2);margin:8px 0 4px}',
+    '.smm-hleg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}.smm-hleg b{color:var(--text);font-family:"IBM Plex Mono",monospace}',
+    '.smm-hchips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}',
+    '.smm-hchips .c{font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--bg2);color:var(--text2)}',
+    '.smm-hchips .c.u{background:var(--green-bg);color:var(--green)}.smm-hchips .c.d{background:var(--red-bg);color:var(--red)}.smm-hchips .c.p{background:var(--yellow-bg);color:var(--yellow)}.smm-hchips .c.x{background:var(--red-bg);color:var(--red);opacity:.8}.smm-hchips .c.n{font-weight:600}',
+    '.smm-hms{display:flex;flex-direction:column;gap:6px;margin-top:6px}',
+    '.smm-hm{display:grid;grid-template-columns:30px minmax(0,1fr) 120px 100px;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;border:1px solid var(--border2);background:var(--bg2);border-left:4px solid var(--c)}',
+    '.smm-hm.up{background:linear-gradient(90deg,var(--green-bg),var(--bg2) 55%)}.smm-hm.dn{background:linear-gradient(90deg,var(--red-bg),var(--bg2) 55%)}.smm-hm.gone{opacity:.7;border-style:dashed}',
+    '.smm-hm .rk{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--c)}',
+    '.smm-hm .t{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px}',
+    '.smm-hm .pb{height:6px;border-radius:3px;background:var(--bg3);margin:6px 0 5px;overflow:hidden}.smm-hm .pb i{display:block;height:100%;border-radius:3px;background:var(--c)}',
+    '.smm-hm .mt{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--text3);font-family:"IBM Plex Mono",monospace}.smm-hm .mt em{font-style:normal}',
+    '.smm-hm .pc{display:flex;flex-direction:column;align-items:flex-end;gap:3px}.smm-hm .pc b{font-family:"IBM Plex Mono",monospace;font-size:17px;color:var(--text)}.smm-hm .pc small{font-size:10.5px;color:var(--text3)}',
+    '.smm-hm .sk{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.smm-hm .sk small{font-size:9.5px;color:var(--text3)}',
+    '.smm-htot{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin-top:8px;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--accent) 10%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);font-size:12px;font-family:"IBM Plex Mono",monospace;color:var(--text2)}',
+    '.smm-htot>b:first-child{font-family:inherit;color:var(--text);margin-right:auto}.smm-htot span b{color:var(--accent);font-size:14px}',
+    '.smm-hcomp{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:center;margin:4px 0 12px}',
+    '.smm-donut .c1{font-size:11px;font-weight:800;fill:var(--text);font-family:"IBM Plex Mono",monospace}.smm-donut .c2{font-size:7px;fill:var(--text3)}',
+    '.smm-donut circle[data-smm-tip]{cursor:default;transition:stroke-width .15s}.smm-donut circle[data-smm-tip]:hover{stroke-width:17}',
+    '.smm-hcomp .lg{display:flex;flex-direction:column;gap:4px;min-width:0}',
+    '.smm-hcomp .r{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;gap:8px;align-items:center;font-size:12px;padding:4px 6px;border-radius:8px}',
+    '.smm-hcomp .r:hover{background:var(--bg2)}.smm-hcomp .r i{width:10px;height:10px;border-radius:3px}',
+    '.smm-hcomp .r .l{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}.smm-hcomp .r .l small{margin-left:6px;color:var(--text3);font-family:"IBM Plex Mono",monospace;font-size:10.5px}',
+    '.smm-hcomp .r b{font-family:"IBM Plex Mono",monospace}',
+    '.smm-vs{padding:10px 12px;border-radius:12px;background:var(--bg2);margin-bottom:8px}',
+    '.smm-vs .hd,.smm-vs .ft{display:flex;justify-content:space-between;gap:8px;font-size:12px}.smm-vs .hd{font-weight:700;color:var(--text)}',
+    '.smm-vs .ft{font-size:11px;color:var(--text3);font-family:"IBM Plex Mono",monospace}',
+    '.smm-vs .br{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0;gap:2px}.smm-vs .br i{display:block;height:100%}',
+    '.smm-hl{display:block;width:100%;height:auto;overflow:visible}',
+    '.smm-hl .gl{stroke:var(--border2);stroke-dasharray:3 4;vector-effect:non-scaling-stroke}',
+    '.smm-hl text{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:var(--text3)}.smm-hl .lv{font-weight:800;font-size:11px}',
+    '.smm-hct{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin:4px 0 6px}.smm-hct small{font-size:11px}',
+    '.smm-hct2{font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 2px}',
+    '.smm-hd{display:flex;gap:3px;align-items:stretch;background:linear-gradient(transparent calc(50% - .5px),var(--border) calc(50% - .5px),var(--border) calc(50% + .5px),transparent calc(50% + .5px))}',
+    '.smm-hd span{flex:1;position:relative;cursor:default}.smm-hd i{position:absolute;left:12%;right:12%;border-radius:2px}',
+    '.smm-hd i.u{bottom:50%;background:var(--green)}.smm-hd i.d{top:50%;background:var(--red)}.smm-hd i.z{top:calc(50% - .5px);background:var(--text3)}',
+    '.smm-hmon{display:flex;gap:3px;font-size:9.5px;color:var(--text3);margin-top:3px}.smm-hmon span{flex:1;text-align:center}',
+    '.smm-hcats{display:flex;flex-direction:column;gap:4px}',
+    '.smm-hcats .r{display:grid;grid-template-columns:minmax(0,1fr) 110px 62px 74px;gap:10px;align-items:center;padding:6px 8px;border-radius:9px;background:var(--bg2);font-size:12px}',
+    '.smm-hcats .r .l{display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.smm-hcats .r .l i{width:10px;height:10px;border-radius:3px;flex-shrink:0}',
+    '.smm-hcats .r b{text-align:right;font-family:"IBM Plex Mono",monospace}.smm-hcats .r .smm-pill{justify-self:end}.smm-hcats .r svg{width:110px}',
+    '.smm-hmap{display:flex;height:34px;border-radius:10px;overflow:hidden;gap:2px;background:var(--bg2);margin-bottom:4px}.smm-hmap i{display:block;height:100%;min-width:2px}',
+    '.smm-hhead2{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:var(--text);margin-bottom:6px}.smm-hhead2 span:last-child{font-size:10.5px;color:var(--text3);font-weight:700}',
+    '.smm-hh{padding:7px 0;border-bottom:1px dashed var(--border2)}',
+    '.smm-hh .t{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:12.5px;float:left;max-width:62%}',
+    '.smm-hh .v{display:flex;justify-content:flex-end;gap:14px;font-size:12px;align-items:baseline}.smm-hh .v span{color:var(--text3);font-size:11px}',
+    '.smm-hh .pb{clear:both;height:5px;border-radius:3px;background:var(--bg3);margin-top:6px;overflow:hidden}.smm-hh .pb i{display:block;height:100%;background:var(--c);border-radius:3px}',
+    '.smm-hp{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--border2)}',
+    '.smm-hp .t{display:flex;flex-direction:column;min-width:0;font-size:12.5px}.smm-hp .t small{font-size:10.5px;color:var(--text3)}',
+    '.smm-hp .v{display:flex;flex-direction:column;align-items:flex-end;font-size:11px;color:var(--text3)}.smm-hp .v b{font-size:12.5px;color:var(--text)}',
+    '.av{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;background:var(--bg3);color:var(--text)}',
+    '.av.dir{background:rgba(52,211,153,.18);color:#059669}.av.kom{background:rgba(196,181,253,.22);color:#7c3aed}',
+    '[data-theme="dark"] .av.dir{color:#6ee7b7}[data-theme="dark"] .av.kom{color:#c4b5fd}',
+    '.smm-chain{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--border2);font-size:12px}',
+    '.smm-chain .nd{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:var(--bg2);border:1px solid var(--border2);min-width:0}',
+    '.smm-chain .nd i{font-style:normal}.smm-chain .nd small{display:block;font-size:10px;color:var(--text3);margin-left:4px}',
+    '.smm-chain .nd.s{background:color-mix(in srgb,var(--accent) 12%,var(--card));border-color:color-mix(in srgb,var(--accent) 40%,transparent)}.smm-chain .nd.s em{font-style:normal;font-family:"IBM Plex Mono",monospace;font-weight:800;color:var(--accent)}',
+    '.smm-chain .ar{color:var(--text3);font-weight:800}',
+    '.smm-ckv{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.smm-ckv span{font-size:11.5px;padding:4px 10px;border-radius:999px;background:var(--bg2);color:var(--text2)}.smm-ckv b{font-family:"IBM Plex Mono",monospace}',
+    '.smm-cbig{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
+    '.smm-clist2{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;max-height:none}',
+    '.smm-crow2{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;font-size:11.5px;padding:6px 8px;border-radius:8px;background:var(--bg2)}.smm-crow2 span{color:var(--text2)}',
+    '.smm-h3 small{font-size:11px;font-weight:600;color:var(--text3)}',
+    '.smm-brole{padding:8px 0;border-bottom:1px dashed var(--border2)}.smm-brole>small{display:block;font-size:10.5px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}',
+    '.smm-brole>div{display:flex;flex-wrap:wrap;gap:6px}',
+    '.smm-bp{display:inline-flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:999px;background:var(--bg2);border:1px solid var(--border2);font-size:12.5px}.smm-bp .av{width:26px;height:26px;font-size:10px}',
+    '.smm-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}',
+    '.smm-tiles .tl{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--bg2);border:1px solid var(--border2);min-width:0}',
+    '.smm-tiles .tl>i,.smm-tiles .tl>svg{grid-row:1/3;font-style:normal;font-size:20px}',
+    '.smm-tiles .tl span{font-size:10.5px;color:var(--text3);font-weight:700}.smm-tiles .tl b{font-size:13px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.smm-uw{margin-top:10px}.smm-uw>small{display:block;font-size:10.5px;color:var(--text3);font-weight:700;margin-bottom:6px}',
+    '.smm-uw>div{display:flex;flex-wrap:wrap;gap:6px}.smm-uw span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:8px;background:var(--bg2);border:1px solid var(--border2);color:var(--text)}',
+    '@media (max-width:640px){',
+      '.smm-hm{grid-template-columns:26px minmax(0,1fr) auto;gap:8px;padding:9px 10px}.smm-hm .sk{display:none}.smm-hm .pc b{font-size:15px}',
+      '.smm-hcomp{grid-template-columns:1fr;justify-items:center}.smm-hcomp .lg{width:100%}',
+      '.smm-hcats .r{grid-template-columns:minmax(0,1fr) 54px auto}.smm-hcats .r svg{display:none}',
+      '.smm-hov{flex-direction:column}.smm-hof li{grid-template-columns:20px 64px 1fr auto}',
+      '.smm-clist2{grid-template-columns:1fr}.smm-tiles{grid-template-columns:1fr 1fr}.smm-hh .t{max-width:58%}',
+    '}',
     /* Tablet */
     '@media (max-width:1099px){',
       '.smm-input.smm-search{width:200px}',
@@ -1316,8 +1411,8 @@
           '<div class="smm-h3">Pergerakan pemegang &gt; 1% <small id="smmHoMoveSub"></small>' + tip('Daftar pemegang saham di atas 1% per akhir bulan (data KSEI). Δ MoM = perubahan porsi dibanding bulan sebelumnya, dalam poin persen (pp). Klik nama untuk melihat jejaknya di saham lain.') + '</div>' +
           '<div class="smm-scroll smm-seg smm-months-seg" id="smmHoMoveMonths"></div>' +
           '<div class="smm-hobar" id="smmHoBar"></div>' +
-          '<p class="smm-desc" id="smmHoMoveTxt" style="margin:8px 0"></p>' +
-          '<div class="smm-tbl-wrap"><table class="smm-tbl smm-hotbl" id="smmHoMoveTbl"></table></div>' +
+          '<div id="smmHoMoveTxt"></div>' +
+          '<div id="smmHoMoveTbl"></div>' +
         '</section>' +
         // Dua kolom yang tingginya disamakan; kartu terakhir tiap kolom mengisi sisa ruang (tanpa bolong)
         '<div class="smm-hocols">' +
@@ -2127,6 +2222,71 @@
     renderHoSum(H); renderHoMove(H); renderHoComp(H); renderHoChart(H); renderHoHolders(H); renderHoCount(H); renderHoProfile(H);
   }
 
+  // ─────────────────────────── Kepemilikan: helper visual ───────────────────────────
+  // Grafik garis/area kecil (SVG). pts = [{ l: label, v: nilai, tip: teks }]. Skala diperbesar ke
+  // rentang data (bukan 0-100) supaya perubahan kecil terlihat.
+  function hoLine(pts, o) {
+    o = o || {};
+    var W = o.w || 520, Hh = o.h || 150, P = { l: 8, r: o.yw || 54, t: 12, b: o.xl === false ? 6 : 20 };
+    if (!pts.length) return '';
+    var vs = pts.map(function (p) { return p.v; }), mn = Math.min.apply(null, vs), mx = Math.max.apply(null, vs);
+    var pad = (mx - mn) * 0.18 || Math.abs(mx) * 0.02 || 1; mn -= pad; mx += pad;
+    var iw = W - P.l - P.r, ih = Hh - P.t - P.b, n = pts.length;
+    function X(i) { return P.l + (n === 1 ? iw / 2 : i / (n - 1) * iw); }
+    function Y(v) { return P.t + (1 - (v - mn) / (mx - mn)) * ih; }
+    var col = o.color || 'var(--accent)', id = 'g' + Math.random().toString(36).slice(2, 8);
+    var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.v).toFixed(1); }).join(' ');
+    var area = line + ' L' + X(n - 1).toFixed(1) + ' ' + (P.t + ih) + ' L' + X(0).toFixed(1) + ' ' + (P.t + ih) + ' Z';
+    var grid = '', fmt = o.fmt || function (v) { return nf(v, 2); };
+    var ly = Y(pts[pts.length - 1].v);
+    for (var g = 0; g <= 2; g++) { var gv = mn + (mx - mn) * (g / 2), gy = Y(gv); if (Math.abs(gy - (ly - 7)) < 13) { grid += '<line x1="' + P.l + '" x2="' + (W - P.r) + '" y1="' + gy.toFixed(1) + '" y2="' + gy.toFixed(1) + '" class="gl"/>'; continue; } grid += '<line x1="' + P.l + '" x2="' + (W - P.r) + '" y1="' + gy.toFixed(1) + '" y2="' + gy.toFixed(1) + '" class="gl"/><text x="' + (W - P.r + 6) + '" y="' + (gy + 3.5).toFixed(1) + '" class="yl">' + esc(fmt(gv)) + '</text>'; }
+    var xl = '';
+    if (o.xl !== false) [0, Math.floor((n - 1) / 2), n - 1].filter(function (v, i, a) { return a.indexOf(v) === i; }).forEach(function (i) {
+      xl += '<text x="' + X(i).toFixed(1) + '" y="' + (Hh - 4) + '" class="xl" text-anchor="' + (i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle') + '">' + esc(pts[i].l) + '</text>';
+    });
+    var hit = pts.map(function (p, i) {
+      var x0 = i ? (X(i - 1) + X(i)) / 2 : P.l, x1 = i < n - 1 ? (X(i) + X(i + 1)) / 2 : W - P.r;
+      return '<rect x="' + x0.toFixed(1) + '" y="' + P.t + '" width="' + Math.max(1, x1 - x0).toFixed(1) + '" height="' + ih + '" fill="transparent" data-smm-tip="' + esc(p.tip || (p.l + ': ' + fmt(p.v))) + '"/>';
+    }).join('');
+    var lp = pts[n - 1];
+    return '<svg class="smm-hl" viewBox="0 0 ' + W + ' ' + Hh + '" role="img">' +
+      '<defs><linearGradient id="' + id + '" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="' + col + '" stop-opacity=".35"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs>' +
+      grid + '<path d="' + area + '" fill="url(#' + id + ')"/><path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2.2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>' +
+      pts.map(function (p, i) { return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.v).toFixed(1) + '" r="' + (i === n - 1 ? 4 : 2.4) + '" fill="' + (i === n - 1 ? col : 'var(--card)') + '" stroke="' + col + '" stroke-width="1.6" vector-effect="non-scaling-stroke"/>'; }).join('') +
+      '<text x="' + (W - P.r + 6) + '" y="' + (Y(lp.v) - 7).toFixed(1) + '" class="lv" style="fill:' + col + '">' + esc(fmt(lp.v)) + '</text>' +
+      xl + hit + '</svg>';
+  }
+  // Batang perubahan (positif ke atas hijau, negatif ke bawah merah) di sekitar garis nol.
+  function hoDeltas(ds, tips, h) {
+    var mx = Math.max.apply(null, ds.map(function (d) { return Math.abs(d); })) || 1;
+    return '<div class="smm-hd" style="height:' + (h || 54) + 'px">' + ds.map(function (d, i) {
+      var p = Math.abs(d) / mx * 50;
+      return '<span data-smm-tip="' + esc(tips[i]) + '"><i class="' + (d > 0 ? 'u' : d < 0 ? 'd' : 'z') + '" style="height:' + Math.max(d ? 3 : 1, p).toFixed(1) + '%"></i></span>';
+    }).join('') + '</div>';
+  }
+  function hoDonut(segs, size, center, sub) {
+    var R = 42, C = 2 * Math.PI * R, tot = segs.reduce(function (a, s) { return a + s.v; }, 0) || 1, off = 0;
+    var arcs = segs.map(function (s) {
+      var len = s.v / tot * C, a = '<circle r="' + R + '" cx="50" cy="50" fill="none" stroke="' + s.c + '" stroke-width="14" stroke-dasharray="' + Math.max(0, len - 0.6).toFixed(2) + ' ' + C.toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" data-smm-tip="' + esc(s.l + ': ' + nf(s.v / tot * 100, 2) + '%') + '"/>';
+      off += len; return a;
+    }).join('');
+    return '<svg class="smm-donut" viewBox="0 0 100 100" width="' + size + '" height="' + size + '"><g transform="rotate(-90 50 50)"><circle r="' + R + '" cx="50" cy="50" fill="none" stroke="var(--bg3)" stroke-width="14"/>' + arcs + '</g>' +
+      '<text x="50" y="48" text-anchor="middle" class="c1">' + esc(center) + '</text><text x="50" y="62" text-anchor="middle" class="c2">' + esc(sub || '') + '</text></svg>';
+  }
+  function hoRing(pct, col) {
+    var R = 15, C = 2 * Math.PI * R, v = clamp(pct, 0, 100) / 100 * C;
+    return '<svg class="smm-ring" viewBox="0 0 40 40" width="40" height="40"><circle r="' + R + '" cx="20" cy="20" fill="none" stroke="var(--bg3)" stroke-width="5"/>' +
+      '<circle r="' + R + '" cx="20" cy="20" fill="none" stroke="' + (col || 'var(--accent)') + '" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + v.toFixed(2) + ' ' + C.toFixed(2) + '" transform="rotate(-90 20 20)"/></svg>';
+  }
+  function hoPill(d, dec, unit) {
+    dec = dec == null ? 2 : dec;
+    if (d == null || !isFinite(d)) return '<span class="smm-pill n">baru</span>';
+    if (Math.abs(d) < Math.pow(10, -dec) / 2) return '<span class="smm-pill n">tetap</span>';
+    return '<span class="smm-pill ' + (d > 0 ? 'u' : 'd') + '">' + (d > 0 ? '▲ ' : '▼ ') + nf(Math.abs(d), dec) + (unit == null ? ' pp' : unit) + '</span>';
+  }
+  function initials(n) { var w = String(n || '').replace(/^(PT|BAPAK|IBU)\s+/i, '').split(/\s+/).filter(Boolean); return ((w[0] || '?').charAt(0) + (w[1] ? w[1].charAt(0) : '')).toUpperCase(); }
+  function hoIsPublic(n) { return /^MASYARAKAT|^SAHAM TREASURY|^TREASURY/i.test(n); }
+
   function renderHoSum(H) {
     var m = H.months, last = m[m.length - 1], m3 = m[Math.max(0, m.length - 4)];
     var c1 = last && H.comp[last] ? compStats(H.comp[last]) : null, c3 = m3 && H.comp[m3] ? compStats(H.comp[m3]) : null;
@@ -2135,24 +2295,30 @@
     var retD = c1 && c3 ? c1.retPct - c3.retPct : 0, fD = c1 && c3 ? c1.fPct - c3.fPct : 0;
     var big = last && H.mv[last] ? H.mv[last].reduce(function (a, x) { return a + x.pct; }, 0) : 0;
     var ff = H.profile && H.profile.freeFloat != null ? H.profile.freeFloat : Math.max(0, 100 - big);
-    var k, head, desc;
-    if (cChg3 < -2 && retD <= 0.05) { k = 'a'; head = 'Saham sedang dikumpulkan'; desc = 'Jumlah pemegang turun ' + nf(Math.abs(cChg3), 1) + '% dalam 3 bulan dan porsi ritel tidak naik. Barang berpindah dari banyak tangan kecil ke lebih sedikit pemain besar.'; }
-    else if (cChg3 > 2 && retD >= -0.05) { k = 'd'; head = 'Saham menyebar ke ritel'; desc = 'Jumlah pemegang naik ' + nf(cChg3, 1) + '% dalam 3 bulan dan porsi ritel ikut naik. Waspada distribusi dari pemain besar ke ritel.'; }
-    else { k = 'n'; head = 'Kepemilikan relatif stabil'; desc = 'Belum ada perpindahan besar antara ritel dan pemain besar dalam 3 bulan terakhir.'; }
-    var bullets = [];
-    if (c1) bullets.push((fD > 0.05 ? '✅' : fD < -0.05 ? '⚠️' : '➖') + ' Asing ' + nf(c1.fPct, 2) + '% (' + (fD >= 0 ? '+' : '−') + nf(Math.abs(fD), 2) + ' pp / 3 bln)');
-    if (c1) bullets.push((retD < -0.05 ? '✅' : retD > 0.05 ? '⚠️' : '➖') + ' Ritel ' + nf(c1.retPct, 2) + '% (' + (retD >= 0 ? '+' : '−') + nf(Math.abs(retD), 2) + ' pp / 3 bln)');
-    if (cl) bullets.push((cChg3 < 0 ? '✅' : cChg3 > 0 ? '⚠️' : '➖') + ' Pemegang ' + nf(cl.count) + ' (' + fmtPct(cChg3) + ' / 3 bln)');
+    var k, head, desc, ico;
+    if (cChg3 < -2 && retD <= 0.05) { k = 'a'; ico = '🧲'; head = 'Saham sedang dikumpulkan'; desc = 'Jumlah pemegang turun ' + nf(Math.abs(cChg3), 1) + '% dalam 3 bulan dan porsi ritel tidak naik. Barang berpindah dari banyak tangan kecil ke lebih sedikit pemain besar.'; }
+    else if (cChg3 > 2 && retD >= -0.05) { k = 'd'; ico = '📤'; head = 'Saham menyebar ke ritel'; desc = 'Jumlah pemegang naik ' + nf(cChg3, 1) + '% dalam 3 bulan dan porsi ritel ikut naik. Waspada distribusi dari pemain besar ke ritel.'; }
+    else { k = 'n'; ico = '⚖️'; head = 'Kepemilikan relatif stabil'; desc = 'Belum ada perpindahan besar antara ritel dan pemain besar dalam 3 bulan terakhir.'; }
+    function chk(v, good) { return v === 0 || Math.abs(v) < 0.05 ? ['n', '➖'] : (good ? ['g', '✓'] : ['b', '!']); }
+    var facts = [];
+    if (c1) { var a1 = chk(fD, fD > 0); facts.push('<li class="' + a1[0] + '"><i>' + a1[1] + '</i><span>Asing</span><b>' + nf(c1.fPct, 2) + '%</b>' + hoPill(fD) + '</li>'); }
+    if (c1) { var a2 = chk(retD, retD < 0); facts.push('<li class="' + a2[0] + '"><i>' + a2[1] + '</i><span>Ritel</span><b>' + nf(c1.retPct, 2) + '%</b>' + hoPill(retD) + '</li>'); }
+    if (cl) { var a3 = chk(cChg3, cChg3 < 0); facts.push('<li class="' + a3[0] + '"><i>' + a3[1] + '</i><span>Pemegang</span><b>' + nf(cl.count) + '</b>' + hoPill(cChg3, 1, '%') + '</li>'); }
+    var fSeries = m.slice(-12).filter(function (x) { return H.comp[x]; }).map(function (x) { return compStats(H.comp[x]).fPct; });
+    var cSeries = cn.slice(-12).map(function (x) { return x.count; });
     document.getElementById('smmHoSum').innerHTML =
-      '<div class="smm-card smm-verdict k-' + k + '"><div><h4>Sinyal kepemilikan · ' + esc(S.code) + (last ? ' · ' + monthLabel(last, true) : '') + '</h4>' +
-        '<div class="big">' + head + '</div><p>' + desc + '</p><ul>' + bullets.map(function (b) { return '<li>' + b + '</li>'; }).join('') + '</ul></div>' +
+      '<div class="smm-card smm-verdict smm-hov k-' + k + '"><div class="smm-hov-ico">' + ico + '</div><div class="smm-hov-b"><h4>Sinyal kepemilikan · ' + esc(S.code) + (last ? ' · ' + monthLabel(last, true) : '') + '</h4>' +
+        '<div class="big">' + head + '</div><p>' + desc + '</p><ul class="smm-hof">' + facts.join('') + '</ul><small class="smm-mute">Perubahan dibanding 3 bulan lalu.</small></div>' +
         '<span style="position:absolute;top:10px;right:10px">' + tip('Logika sederhana: jumlah pemegang turun + porsi ritel turun = barang dikumpulkan (akumulasi). Jumlah pemegang naik + ritel naik = barang dibagikan ke ritel (distribusi). Sumber data: KSEI bulanan.') + '</span></div>' +
-      '<div class="smm-card smm-kpi"><h4>🌏 Kepemilikan asing ' + tip('Porsi saham scripless yang dipegang investor asing (data KSEI akhir bulan).') + '</h4>' +
-        '<div class="v">' + (c1 ? nf(c1.fPct, 2) + '%' : '-') + '</div><p>' + (c1 ? ppTxt(fD) + ' dibanding 3 bulan lalu. Lokal ' + nf(c1.lPct, 2) + '%.' : 'Belum ada data komposisi.') + '</p></div>' +
-      '<div class="smm-card smm-kpi"><h4>👥 Jumlah pemegang ' + tip('Jumlah investor yang memegang saham ini per akhir bulan.') + '</h4>' +
-        '<div class="v">' + (cl ? nf(cl.count) : '-') + '</div><p>' + (cl && cp ? '<span class="' + signCls(cl.count - cp.count) + '">' + (cl.count >= cp.count ? '+' : '−') + nf(Math.abs(cl.count - cp.count)) + '</span> dari bulan lalu · ' + fmtPct(cChg3) + ' / 3 bln' : '') + '</p></div>' +
-      '<div class="smm-card smm-kpi"><h4>🎯 Konsentrasi ' + tip('Total porsi pemegang di atas 1%. Free float = porsi yang beredar di publik.') + '</h4>' +
-        '<div class="v">' + nf(big, 2) + '%</div><p>dipegang pemegang &gt;1%. Free float <b>' + nf(ff, 2) + '%</b>.</p></div>';
+      '<div class="smm-card smm-kpi smm-hok"><h4>🌏 Kepemilikan asing ' + tip('Porsi saham scripless yang dipegang investor asing (data KSEI akhir bulan).') + '</h4>' +
+        '<div class="v">' + (c1 ? nf(c1.fPct, 2) + '%' : '-') + '</div>' + (c1 ? hoPill(fD) + ' <small class="smm-mute">3 bln</small>' : '') +
+        '<div class="sp">' + spark(fSeries, 140, 30) + '</div><p>' + (c1 ? 'Lokal ' + nf(c1.lPct, 2) + '%. Garis = tren 12 bulan.' : 'Belum ada data komposisi.') + '</p></div>' +
+      '<div class="smm-card smm-kpi smm-hok"><h4>👥 Jumlah pemegang ' + tip('Jumlah investor yang memegang saham ini per akhir bulan. Turun = saham terkumpul di lebih sedikit tangan.') + '</h4>' +
+        '<div class="v">' + (cl ? nf(cl.count) : '-') + '</div>' + (cl && cp ? hoPill(cl.count - cp.count, 0, '') + ' <small class="smm-mute">dari bulan lalu</small>' : '') +
+        '<div class="sp">' + spark(cSeries, 140, 30) + '</div><p>' + (cl ? fmtPct(cChg3) + ' dalam 3 bulan.' : '') + '</p></div>' +
+      '<div class="smm-card smm-kpi smm-hok"><h4>🎯 Konsentrasi ' + tip('Total porsi pemegang di atas 1%. Free float = porsi yang beredar di publik. Konsentrasi tinggi + free float kecil = harga lebih mudah digerakkan.') + '</h4>' +
+        '<div class="smm-hok-r">' + hoRing(big, '#7c3aed') + '<div><div class="v">' + nf(big, 2) + '%</div><small class="smm-mute">dipegang pemegang &gt;1%</small></div></div>' +
+        '<div class="smm-hok-r">' + hoRing(ff, '#10b981') + '<div><div class="v sm">' + nf(ff, 2) + '%</div><small class="smm-mute">free float (publik)</small></div></div></div>';
   }
 
   function monthChips(H, act) {
@@ -2167,41 +2333,47 @@
     var prev = {}; (pm ? H.mv[pm] || [] : []).forEach(function (x) { prev[x.name] = x; });
     var curNames = {}; cur.forEach(function (x) { curNames[x.name] = 1; });
     var gone = pm ? (H.mv[pm] || []).filter(function (x) { return !curNames[x.name]; }) : [];
-    var px = H.price || 0;
-    var up = 0, dn = 0, nw = 0;
-    var tot = { pct: 0, val: 0, sh: 0, sl: 0, sc: 0 };
-    // bar kepemilikan 100%
-    var bar = '', left = 100;
+    var px = H.price || 0, up = 0, dn = 0, nw = 0, tot = { pct: 0, val: 0, sh: 0, sl: 0, sc: 0 };
+    var maxP = cur.length ? cur[0].pct : 1;
+    var bar = '', left = 100, legend = '';
     cur.forEach(function (x, k) {
-      left -= x.pct;
-      bar += '<i style="width:' + x.pct.toFixed(3) + '%;background:' + HO_COLORS[k % HO_COLORS.length] + '" data-smm-tip="' + esc(x.name + ': ' + nf(x.pct, 2) + '%') + '"></i>';
+      var c = HO_COLORS[k % HO_COLORS.length]; left -= x.pct;
+      bar += '<i style="width:' + x.pct.toFixed(3) + '%;background:' + c + '" data-smm-tip="' + esc(x.name + ': ' + nf(x.pct, 2) + '%') + '"></i>';
+      if (k < 6) legend += '<span><i style="background:' + c + '"></i>' + esc(x.name.length > 26 ? x.name.slice(0, 24) + '…' : x.name) + ' <b>' + nf(x.pct, 1) + '%</b></span>';
     });
-    if (left > 0) bar += '<i style="width:' + left.toFixed(3) + '%;background:var(--bg4)" data-smm-tip="' + esc('Publik & pemegang < 1%: ' + nf(left, 2) + '%') + '"></i>';
+    if (left > 0) { bar += '<i style="width:' + left.toFixed(3) + '%;background:var(--bg4)" data-smm-tip="' + esc('Publik & pemegang < 1%: ' + nf(left, 2) + '%') + '"></i>'; legend += '<span><i style="background:var(--bg4)"></i>Publik &amp; &lt;1% <b>' + nf(left, 1) + '%</b></span>'; }
     var rows = cur.map(function (x, k) {
-      var p = prev[x.name], d = p ? x.pct - p.pct : null, dSl = p ? x.scripless - p.scripless : 0;
+      var p = prev[x.name], d = p ? x.pct - p.pct : null, dSl = p ? x.scripless - p.scripless : 0, c = HO_COLORS[k % HO_COLORS.length];
       if (!p && pm) nw++; else if (d > 0.0005) up++; else if (d < -0.0005) dn++;
       var hist = H.months.slice(-12).map(function (mm) { var r = (H.mv[mm] || []).filter(function (y) { return y.name === x.name; })[0]; return r ? r.pct : 0; });
       var val = x.shares * px;
       tot.pct += x.pct; tot.val += val; tot.sh += x.shares; tot.sl += x.scripless; tot.sc += x.scrip;
-      return '<tr><td class="nmcol"><span class="smm-dot" style="background:' + HO_COLORS[k % HO_COLORS.length] + '"></span>' + personBtn(x.name, !p && pm ? ' <span class="smm-new">BARU</span>' : '') + '</td>' +
-        '<td>' + (d == null ? '-' : ppTxt(d, 2)) + '</td>' +
-        '<td>' + (p && Math.abs(d) > 0.0005 ? '<span class="smm-mute">' + nf(p.pct, 2) + '% → </span>' : '') + '<b>' + nf(x.pct, 2) + '%</b></td>' +
-        '<td>' + (px ? fmtVal(val) : '-') + '</td>' +
-        '<td class="hm">' + nf(x.shares) + '</td>' +
-        '<td class="hm">' + nf(x.scripless) + (p && dSl ? '<span class="sm ' + signCls(dSl) + '">' + (dSl > 0 ? '+' : '−') + nf(Math.abs(dSl)) + '</span>' : '') + '</td>' +
-        '<td class="hm">' + nf(x.scrip) + '</td>' +
-        '<td class="hm tx">' + esc(x.type) + '</td>' +
-        '<td>' + spark(hist, 70, 22) + '</td></tr>';
+      return '<div class="smm-hm' + (d != null && d > 0.0005 ? ' up' : d != null && d < -0.0005 ? ' dn' : '') + '" style="--c:' + c + '">' +
+        '<span class="rk">' + (k + 1) + '</span>' +
+        '<div class="mn"><div class="t">' + personBtn(x.name) + (!p && pm ? ' <span class="smm-new">BARU</span>' : '') + ' <span class="smm-tag">' + esc(x.type) + '</span></div>' +
+          '<div class="pb"><i style="width:' + (x.pct / maxP * 100).toFixed(2) + '%"></i></div>' +
+          '<div class="mt"><span>' + nf(x.shares) + ' lembar</span>' + (px ? '<span>≈ ' + fmtVal(val, true) + '</span>' : '') +
+            '<span>Scripless ' + nf(x.scripless) + (p && dSl ? ' <em class="' + signCls(dSl) + '">' + (dSl > 0 ? '+' : '−') + nf(Math.abs(dSl)) + '</em>' : '') + '</span><span>Scrip ' + nf(x.scrip) + '</span></div></div>' +
+        '<div class="pc"><b>' + nf(x.pct, 2) + '%</b>' + (pm ? hoPill(d) : '') + (p && Math.abs(d) > 0.0005 ? '<small>dari ' + nf(p.pct, 2) + '%</small>' : '') + '</div>' +
+        '<div class="sk">' + spark(hist, 92, 30) + '<small>12 bln</small></div></div>';
     }).join('');
-    var head = '<thead><tr><th>Nama</th><th>Δ MoM</th><th>Kepemilikan</th><th>Nilai (Rp)</th><th class="hm">Total lembar</th><th class="hm">Scripless</th><th class="hm">Scrip</th><th class="hm">Tipe</th><th>Tren 12 bln</th></tr></thead>';
-    var foot = '<tfoot><tr><td>TOTAL</td><td></td><td><b>' + nf(tot.pct, 2) + '%</b></td><td>' + (px ? fmtVal(tot.val) : '-') + '</td><td class="hm">' + fmtLot(tot.sh) + '</td><td class="hm">' + fmtLot(tot.sl) + '</td><td class="hm">' + fmtLot(tot.sc) + '</td><td class="hm"></td><td></td></tr></tfoot>';
-    var sum = m ? 'Bulan ' + monthLabel(m, true) + ': ' + (up ? '<b class="smm-up">' + up + ' menambah</b>' : '0 menambah') + ', ' + (dn ? '<b class="smm-dn">' + dn + ' mengurangi</b>' : '0 mengurangi') +
-      (nw ? ', <b>' + nw + ' masuk daftar</b>' : '') + (gone.length ? ', <b class="smm-dn">' + gone.length + ' keluar daftar</b> (' + gone.map(function (x) { return esc(x.name); }).join(', ') + ')' : '') + '.' : '';
+    var goneRows = gone.map(function (x) {
+      return '<div class="smm-hm gone" style="--c:var(--text3)"><span class="rk">×</span><div class="mn"><div class="t">' + personBtn(x.name) + ' <span class="smm-tag">' + esc(x.type) + '</span></div><div class="mt"><span>Bulan lalu ' + nf(x.shares) + ' lembar</span></div></div>' +
+        '<div class="pc"><b>&lt;1%</b><span class="smm-pill d">keluar daftar</span><small>dari ' + nf(x.pct, 2) + '%</small></div><div class="sk"></div></div>';
+    }).join('');
+    var chips = m ? '<div class="smm-hchips">' +
+      '<span class="c u">▲ ' + up + ' menambah</span><span class="c d">▼ ' + dn + ' mengurangi</span>' +
+      (nw ? '<span class="c p">＋ ' + nw + ' masuk daftar</span>' : '') + (gone.length ? '<span class="c x">× ' + gone.length + ' keluar daftar</span>' : '') +
+      '<span class="c n">Bulan ' + monthLabel(m, true) + (pm ? ' vs ' + monthLabel(pm, true) : '') + '</span></div>' : '';
     document.getElementById('smmHoMoveMonths').innerHTML = monthChips(H, 'homonth');
     document.getElementById('smmHoMoveSub').textContent = '· ' + S.code + ' · update ' + fmtDate(H.updated || lastDay(m || H.months[0]));
     document.getElementById('smmHoBar').innerHTML = bar;
-    document.getElementById('smmHoMoveTxt').innerHTML = sum;
-    document.getElementById('smmHoMoveTbl').innerHTML = cur.length ? head + '<tbody>' + rows + '</tbody>' + foot : '<tbody><tr><td style="text-align:center;padding:16px;color:var(--text3)">Belum ada data pemegang &gt;1% bulan ini.</td></tr></tbody>';
+    document.getElementById('smmHoMoveTxt').innerHTML = (legend ? '<div class="smm-hleg">' + legend + '</div>' : '') + chips;
+    document.getElementById('smmHoMoveTbl').innerHTML = cur.length ?
+      '<div class="smm-hms">' + rows + goneRows + '</div>' +
+      '<div class="smm-htot"><b>TOTAL pemegang &gt;1%</b><span><b>' + nf(tot.pct, 2) + '%</b></span>' + (px ? '<span>≈ ' + fmtVal(tot.val, true) + '</span>' : '') +
+        '<span>' + fmtLot(tot.sh) + ' lembar</span><span>Scripless ' + fmtLot(tot.sl) + '</span><span>Scrip ' + fmtLot(tot.sc) + '</span></div>'
+      : '<div class="smm-desc" style="text-align:center;padding:16px">Belum ada data pemegang &gt;1% bulan ini.</div>';
   }
 
   function renderHoComp(H) {
@@ -2213,113 +2385,135 @@
     if (!c) { box.innerHTML = '<div class="smm-desc" style="padding:12px">Belum ada data komposisi bulan ini.</div>'; return; }
     var st = compStats(c), sc = sideCats(c, S.hoSide), pc = pm && H.comp[pm] ? sideCats(H.comp[pm], S.hoSide) : null;
     var tot = sc.total, ret = sc.cats.ID || 0, inst = tot - ret;
-    var all = st.scripless + st.scrip;
     var cats = CATS.map(function (k) { return { k: k, v: sc.cats[k.k] || 0, p: tot ? (sc.cats[k.k] || 0) / tot * 100 : 0, pp: pc && pc.total ? (pc.cats[k.k] || 0) / pc.total * 100 : null }; })
       .filter(function (x) { return x.v > 0; }).sort(function (a, b) { return b.v - a.v; });
-    function split(a, b, la, lb, ca, cb, va, vb) {
-      var s = a + b || 1;
-      return '<div class="smm-split"><div class="hd"><span>' + la + ' <b style="color:' + ca + '">' + nf(a / s * 100, 2) + '%</b></span><span>' + lb + ' <b style="color:' + cb + '">' + nf(b / s * 100, 2) + '%</b></span></div>' +
-        '<div class="br"><i style="width:' + (a / s * 100).toFixed(2) + '%;background:' + ca + '"></i><i style="width:' + (b / s * 100).toFixed(2) + '%;background:' + cb + '"></i></div>' +
-        '<div class="ft"><span>' + fmtLot(va) + '</span><span>' + fmtLot(vb) + '</span></div></div>';
+    function vs(ia, la, a, ca, ib, lb, b, cb) {
+      var s = a + b || 1, pa = a / s * 100;
+      return '<div class="smm-vs"><div class="hd"><span>' + ia + ' ' + la + '</span><span>' + lb + ' ' + ib + '</span></div>' +
+        '<div class="br"><i style="width:' + pa.toFixed(2) + '%;background:' + ca + '"></i><i style="width:' + (100 - pa).toFixed(2) + '%;background:' + cb + '"></i></div>' +
+        '<div class="ft"><span><b style="color:' + ca + '">' + nf(pa, 2) + '%</b> · ' + fmtLot(a) + '</span><span>' + fmtLot(b) + ' · <b style="color:' + cb + '">' + nf(100 - pa, 2) + '%</b></span></div></div>';
     }
+    var sideLbl = S.hoSide === 'local' ? 'lokal' : S.hoSide === 'foreign' ? 'asing' : 'scripless';
+    var first = S.hoSide === 'all' ? vs('📄', 'Scrip', st.scrip, '#60a5fa', '💾', 'Scripless', st.scripless, '#8b5cf6')
+      : vs(S.hoSide === 'local' ? '🇮🇩' : '🌏', S.hoSide === 'local' ? 'Lokal' : 'Asing', S.hoSide === 'local' ? st.local : st.foreign, S.hoSide === 'local' ? '#7c3aed' : '#ef4444',
+        S.hoSide === 'local' ? '🌏' : '🇮🇩', S.hoSide === 'local' ? 'Asing' : 'Lokal', S.hoSide === 'local' ? st.foreign : st.local, S.hoSide === 'local' ? '#ef4444' : '#7c3aed');
+    var rp = ret / (tot || 1) * 100;
     box.innerHTML =
-      '<div class="smm-comp-top"><span>Total saham ' + (S.hoSide === 'local' ? 'lokal' : S.hoSide === 'foreign' ? 'asing' : 'scripless') + '</span><b>' + fmtLot(tot) + '</b></div>' +
-      '<div class="smm-comp-splits">' +
-        (S.hoSide === 'all' ? split(st.scrip, st.scripless, 'Scrip', 'Scripless', '#60a5fa', '#8b5cf6', st.scrip, st.scripless) : split(S.hoSide === 'local' ? st.local : st.foreign, S.hoSide === 'local' ? st.foreign : st.local, S.hoSide === 'local' ? 'Lokal' : 'Asing', S.hoSide === 'local' ? 'Asing' : 'Lokal', S.hoSide === 'local' ? '#7c3aed' : '#ef4444', S.hoSide === 'local' ? '#ef4444' : '#7c3aed', S.hoSide === 'local' ? st.local : st.foreign, S.hoSide === 'local' ? st.foreign : st.local)) +
-        split(ret, inst, 'Ritel', 'Institusi', '#84cc16', '#10b981', ret, inst) +
+      '<div class="smm-hcomp">' +
+        '<div class="dn">' + hoDonut(cats.map(function (x) { return { v: x.v, c: x.k.color, l: x.k.label }; }), 150, fmtLot(tot), 'saham ' + sideLbl) + '</div>' +
+        '<div class="lg">' + cats.map(function (x) {
+          var d = x.pp == null ? null : x.p - x.pp;
+          return '<div class="r" data-smm-tip="' + esc(x.k.label + ': ' + nf(x.v) + ' lembar (' + nf(x.p, 2) + '%)' + (x.pp != null ? ' · bulan lalu ' + nf(x.pp, 2) + '%' : '')) + '">' +
+            '<i style="background:' + x.k.color + '"></i><span class="l">' + x.k.label + '<small>' + fmtLot(x.v) + '</small></span><b>' + nf(x.p, 2) + '%</b>' + (pc ? hoPill(d) : '') + '</div>';
+        }).join('') + '</div>' +
       '</div>' +
-      '<div class="smm-cats">' + cats.map(function (x) {
-        var d = x.pp == null ? null : x.p - x.pp;
-        return '<div class="smm-cat" data-smm-tip="' + esc(x.k.label + ': ' + nf(x.v) + ' lembar (' + nf(x.p, 2) + '%)') + '"><div class="hd"><span><i style="background:' + x.k.color + '"></i>' + x.k.label + ' <small>' + fmtLot(x.v) + '</small></span>' +
-          '<span>' + (x.pp != null ? '<span class="smm-mute">' + nf(x.pp, 2) + '% → </span>' : '') + '<b class="' + (d == null ? '' : signCls(d)) + '">' + nf(x.p, 2) + '%</b></span></div>' +
-          '<div class="br"><i style="width:' + x.p.toFixed(2) + '%;background:' + x.k.color + '"></i></div></div>';
-      }).join('') + '</div>' +
-      '<div class="smm-insight">💡 ' + (ret / (tot || 1) * 100 < 10 ? 'Saham ini didominasi <b>institusi</b> (' + nf(inst / (tot || 1) * 100, 1) + '%). Pergerakan harga lebih ditentukan pemain besar.' : 'Porsi <b>ritel</b> cukup besar (' + nf(ret / (tot || 1) * 100, 1) + '%). Harga lebih mudah bergejolak karena banyak investor kecil.') + '</div>';
-    void all;
+      first + vs('👤', 'Ritel', ret, '#84cc16', '🏦', 'Institusi', inst, '#10b981') +
+      '<div class="smm-insight">💡 ' + (rp < 10 ? 'Saham ini didominasi <b>institusi</b> (' + nf(100 - rp, 1) + '%). Pergerakan harga lebih ditentukan pemain besar.' : 'Porsi <b>ritel</b> cukup besar (' + nf(rp, 1) + '%). Harga lebih mudah bergejolak karena banyak investor kecil.') + '</div>';
   }
 
   function renderHoChart(H) {
-    var ms = H.months.slice(-12), box = document.getElementById('smmHoChart');
+    var ms = H.months.slice(-12).filter(function (m) { return H.comp[m]; }), box = document.getElementById('smmHoChart');
     syncSeg('smmHoChartMode', S.hoChart);
-    var last = ms.length ? compStats(H.comp[ms[ms.length - 1]] || { local: {}, foreign: {} }) : null;
-    document.getElementById('smmHoChartKpi').innerHTML = last ? '<div><span>Lokal</span><b style="color:#7c3aed">' + nf(last.lPct, 2) + '%</b></div><div><span>Asing</span><b style="color:#ef4444">' + nf(last.fPct, 2) + '%</b></div>' : '';
-    if (!ms.length) { box.innerHTML = '<div class="smm-desc">Belum ada data.</div>'; return; }
-    var cols = ms.map(function (m) {
-      var c = H.comp[m]; if (!c) return '<div class="col"><div class="stk"></div><span>' + monthLabel(m) + '</span></div>';
-      var segs;
-      if (S.hoChart === 'lf') {
-        var st = compStats(c);
-        segs = [{ v: st.fPct, c: '#ef4444', l: 'Asing' }, { v: st.lPct, c: '#7c3aed', l: 'Lokal' }];
-      } else {
-        var sc = sideCats(c, 'all');
-        segs = CATS.slice().reverse().map(function (k) { return { v: sc.total ? (sc.cats[k.k] || 0) / sc.total * 100 : 0, c: k.color, l: k.label }; });
-      }
-      return '<div class="col" data-smm-tip="' + esc(monthLabel(m, true) + ' · ' + segs.slice().reverse().filter(function (s) { return s.v > 0.05; }).map(function (s) { return s.l + ' ' + nf(s.v, 2) + '%'; }).join(' · ')) + '">' +
-        '<div class="stk">' + segs.map(function (s) { return '<i style="height:' + s.v.toFixed(2) + '%;background:' + s.c + '"></i>'; }).join('') + '</div><span>' + monthLabel(m) + '</span></div>';
-    }).join('');
-    var legend = S.hoChart === 'lf' ? '<span><i style="background:#7c3aed"></i>Lokal</span><span><i style="background:#ef4444"></i>Asing</span>' :
-      CATS.map(function (k) { return '<span><i style="background:' + k.color + '"></i>' + k.label + '</span>'; }).join('');
-    box.innerHTML = '<div class="smm-stack"><div class="ax"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="cols">' + cols + '</div></div><div class="smm-sk-legend">' + legend + '</div>';
+    var kpi = document.getElementById('smmHoChartKpi');
+    if (!ms.length) { kpi.innerHTML = ''; box.innerHTML = '<div class="smm-desc">Belum ada data.</div>'; return; }
+    var stats = ms.map(function (m) { return compStats(H.comp[m]); }), last = stats[stats.length - 1], first = stats[0];
+    var fD = last.fPct - first.fPct;
+    kpi.innerHTML = '<div><span>🇮🇩 Lokal</span><b style="color:#7c3aed">' + nf(last.lPct, 2) + '%</b></div><div><span>🌏 Asing</span><b style="color:#ef4444">' + nf(last.fPct, 2) + '%</b></div>';
+    if (S.hoChart === 'lf') {
+      var pts = ms.map(function (m, k) { return { l: monthLabel(m), v: stats[k].fPct, tip: monthLabel(m, true) + ' · Asing ' + nf(stats[k].fPct, 2) + '% · Lokal ' + nf(stats[k].lPct, 2) + '%' }; });
+      var ds = stats.map(function (s, k) { return k ? s.fPct - stats[k - 1].fPct : 0; });
+      box.innerHTML = '<div class="smm-hct"><b>Porsi asing</b> ' + hoPill(fD) + ' <small class="smm-mute">dalam ' + ms.length + ' bulan · skala diperbesar agar perubahan kecil terlihat</small></div>' +
+        hoLine(pts, { color: '#ef4444', fmt: function (v) { return nf(v, 2) + '%'; }, h: 160 }) +
+        '<div class="smm-hct2">Perubahan asing per bulan (pp)</div>' +
+        hoDeltas(ds, ms.map(function (m, k) { return monthLabel(m, true) + ': ' + (ds[k] >= 0 ? '+' : '−') + nf(Math.abs(ds[k]), 3) + ' pp'; }), 46) +
+        '<div class="smm-hmon">' + ms.map(function (m) { return '<span>' + monthLabel(m).split(' ')[0] + '</span>'; }).join('') + '</div>';
+    } else {
+      var rows = CATS.map(function (k) {
+        var vals = ms.map(function (m) { var sc = sideCats(H.comp[m], 'all'); return sc.total ? (sc.cats[k.k] || 0) / sc.total * 100 : 0; });
+        return { k: k, vals: vals, cur: vals[vals.length - 1], d: vals[vals.length - 1] - vals[0] };
+      }).filter(function (x) { return x.vals.some(function (v) { return v > 0; }); }).sort(function (a, b) { return b.cur - a.cur; });
+      box.innerHTML = '<div class="smm-hct"><b>Tiap kategori</b> <small class="smm-mute">porsi kini, tren ' + ms.length + ' bulan, dan perubahan sejak ' + monthLabel(ms[0], true) + '</small></div>' +
+        '<div class="smm-hcats">' + rows.map(function (x) {
+          return '<div class="r" data-smm-tip="' + esc(x.k.label + ': ' + ms.map(function (m, j) { return monthLabel(m) + ' ' + nf(x.vals[j], 2) + '%'; }).join(' · ')) + '">' +
+            '<span class="l"><i style="background:' + x.k.color + '"></i>' + x.k.label + '</span>' + spark(x.vals, 110, 26) + '<b>' + nf(x.cur, 2) + '%</b>' + hoPill(x.d) + '</div>';
+        }).join('') + '</div>';
+    }
   }
 
   function renderHoHolders(H) {
     var tagCls = function (t) { return /Pengendali/i.test(t) ? 'ctl' : /Treasury/i.test(t) ? 'trs' : ''; };
+    var maxP = H.holders.reduce(function (a, x) { return Math.max(a, x.pct); }, 0) || 1;
+    var map = '', ci = 0, rest = 100;
     var hs = H.holders.map(function (x) {
-      return '<div class="smm-hrow"><span>' + (/^MASYARAKAT|^SAHAM TREASURY/.test(x.name) ? '<span class="smm-plain">' + esc(x.name) + '</span>' : personBtn(x.name)) + (x.tag ? ' <span class="smm-tag ' + tagCls(x.tag) + '">' + esc(x.tag) + '</span>' : '') + '</span>' +
-        '<span class="mono-n">' + fmtLot(x.shares) + '</span><b class="mono-n">' + pctTxt(x.pct) + '</b></div>';
+      var pub = hoIsPublic(x.name), c = pub ? 'var(--text3)' : HO_COLORS[ci++ % HO_COLORS.length];
+      rest -= x.pct;
+      map += '<i style="width:' + Math.max(0, x.pct).toFixed(3) + '%;background:' + c + (pub ? ';opacity:.45' : '') + '" data-smm-tip="' + esc(x.name + ': ' + pctTxt(x.pct)) + '"></i>';
+      return '<div class="smm-hh" style="--c:' + c + '"><div class="t">' + (pub ? '<span class="smm-plain">' + esc(x.name) + '</span>' : personBtn(x.name)) + (x.tag ? ' <span class="smm-tag ' + tagCls(x.tag) + '">' + esc(x.tag) + '</span>' : '') + '</div>' +
+        '<div class="v"><span class="mono-n">' + fmtLot(x.shares) + '</span><b class="mono-n">' + pctTxt(x.pct) + '</b></div>' +
+        '<div class="pb"><i style="width:' + (x.pct / maxP * 100).toFixed(2) + '%"></i></div></div>';
     }).join('');
+    if (rest > 0.05 && H.holders.length) map += '<i style="width:' + rest.toFixed(3) + '%;background:var(--bg4)" data-smm-tip="' + esc('Lainnya: ' + nf(rest, 2) + '%') + '"></i>';
     var bd = H.board.slice().sort(function (a, b) { return b.shares - a.shares; }).map(function (x) {
-      return '<div class="smm-hrow"><span>' + personBtn(x.name) + ' <span class="smm-tag ' + (x.board === 'komisaris' ? 'kom' : 'dir') + '">' + (x.board === 'komisaris' ? 'Komisaris' : 'Direksi') + '</span></span>' +
-        '<span class="mono-n">' + (x.shares ? fmtLot(x.shares) : '-') + '</span><b class="mono-n">' + (x.shares ? pctTxt(x.pct) : '-') + '</b></div>';
+      var kom = x.board === 'komisaris';
+      return '<div class="smm-hp"><span class="av ' + (kom ? 'kom' : 'dir') + '">' + esc(initials(x.name)) + '</span><div class="t">' + personBtn(x.name) + '<small>' + esc(x.role || (kom ? 'Komisaris' : 'Direksi')) + '</small></div>' +
+        '<div class="v"><span class="mono-n">' + (x.shares ? fmtLot(x.shares) + ' lbr' : 'tidak memegang') + '</span><b class="mono-n">' + (x.shares ? pctTxt(x.pct) : '-') + '</b></div></div>';
     }).join('');
     var ub = H.ubo.map(function (x) {
-      return '<div class="smm-ubo"><div>' + personBtn(x.name) + '</div><div class="via"><span>└ via ' + esc(x.via) + (x.vehicle ? ' <small>(' + esc(x.vehicle) + ')</small>' : '') + '</span><b class="mono-n">' + nf(x.pct, 2) + '%</b></div></div>';
+      return '<div class="smm-chain"><span class="nd p"><i>👤</i>' + personBtn(x.name) + '</span><span class="ar">→</span><span class="nd v"><i>🏢</i>' + esc(x.via || '-') + (x.vehicle ? '<small>' + esc(x.vehicle) + '</small>' : '') + '</span><span class="ar">→</span><span class="nd s"><b>' + esc(S.code) + '</b><em>' + nf(x.pct, 2) + '%</em></span></div>';
     }).join('');
     document.getElementById('smmHoHolders').innerHTML =
-      '<div class="smm-hsec"><div class="smm-hhead"><span>Pemegang saham</span><span>Lembar</span><span>Porsi</span></div>' + (hs || '<div class="smm-desc">-</div>') + '</div>' +
-      '<div class="smm-hsec"><div class="smm-hhead"><span>Direksi & Komisaris</span><span>Lembar</span><span>Porsi</span></div>' + (bd || '<div class="smm-desc">-</div>') + '</div>' +
-      '<div class="smm-hsec"><div class="smm-hhead"><span>Pemilik Manfaat Akhir (UBO) ' + tip('Ultimate Beneficial Owner: orang yang pada akhirnya menguasai saham lewat perusahaan perantara.') + '</span><span></span><span>Porsi</span></div>' + (ub || '<div class="smm-desc">Belum ada data UBO.</div>') + '</div>';
+      (map ? '<div class="smm-hmap">' + map + '</div><small class="smm-mute">Peta kepemilikan: lebar warna = porsi saham. Abu-abu = publik.</small>' : '') +
+      '<div class="smm-hsec"><div class="smm-hhead2"><span>🏛️ Pemegang saham</span><span>Lembar · Porsi</span></div>' + (hs || '<div class="smm-desc">-</div>') + '</div>' +
+      '<div class="smm-hsec"><div class="smm-hhead2"><span>👔 Direksi &amp; Komisaris</span><span>Lembar · Porsi</span></div>' + (bd || '<div class="smm-desc">-</div>') + '</div>' +
+      '<div class="smm-hsec"><div class="smm-hhead2"><span>🔗 Pemilik Manfaat Akhir (UBO) ' + tip('Ultimate Beneficial Owner: orang yang pada akhirnya menguasai saham lewat perusahaan perantara.') + '</span><span>Porsi</span></div>' + (ub || '<div class="smm-desc">Belum ada data UBO.</div>') + '</div>';
   }
 
   function renderHoCount(H) {
     var cn = H.count.slice(-24), box = document.getElementById('smmHoCount');
     if (!cn.length) { box.innerHTML = '<div class="smm-desc">Belum ada data jumlah pemegang.</div>'; return; }
-    var vals = cn.map(function (x) { return x.count; }), mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
-    var lo = mn - (mx - mn) * 0.35, rg = mx - lo || 1;
-    var last = cn[cn.length - 1], prev = cn[cn.length - 2];
-    var bars = cn.map(function (x, i) {
-      var d = i ? x.count - cn[i - 1].count : 0, h = (x.count - lo) / rg * 100;
-      return '<i style="height:' + h.toFixed(1) + '%;background:' + (d >= 0 ? 'var(--green)' : 'var(--red)') + '" data-smm-tip="' + esc(fmtDate(x.date, true) + ': ' + nf(x.count) + ' pemegang (' + (d >= 0 ? '+' : '−') + nf(Math.abs(d)) + ')') + '"></i>';
-    }).join('');
-    var list = cn.slice().reverse().slice(0, 12).map(function (x, i, arr) {
+    var last = cn[cn.length - 1], prev = cn[cn.length - 2], d1 = prev ? last.count - prev.count : 0;
+    var y1 = cn[Math.max(0, cn.length - 13)], dy = last.count - y1.count;
+    var ds = cn.map(function (x, i) { return i ? x.count - cn[i - 1].count : 0; });
+    var ups = ds.slice(1).filter(function (d) { return d > 0; }).length, dns = ds.slice(1).filter(function (d) { return d < 0; }).length;
+    var pts = cn.map(function (x, i) { return { l: fmtDate(x.date), v: x.count, tip: fmtDate(x.date, true) + ': ' + nf(x.count) + ' pemegang (' + (ds[i] >= 0 ? '+' : '−') + nf(Math.abs(ds[i])) + ')' }; });
+    var list = cn.slice().reverse().slice(0, 12).map(function (x, i) {
       var p = cn[cn.length - 2 - i], d = p ? x.count - p.count : 0;
-      return '<div class="smm-crow"><span>' + fmtDate(x.date, true) + '</span><span class="mono-n">' + nf(x.count) + ' <span class="' + signCls(d) + '">(' + (d >= 0 ? '+' : '−') + nf(Math.abs(d)) + ')</span></span></div>';
+      return '<div class="smm-crow2"><span>' + fmtDate(x.date, true) + '</span><b class="mono-n">' + nf(x.count) + '</b>' + hoPill(p ? d : 0, 0, '') + '</div>';
     }).join('');
-    var d1 = prev ? last.count - prev.count : 0;
-    box.innerHTML = '<div class="smm-cbig"><b>' + nf(last.count) + '</b> <span class="' + signCls(d1) + '">(' + (d1 >= 0 ? '+' : '−') + nf(Math.abs(d1)) + ')</span> <small>' + fmtDate(last.date, true) + '</small></div>' +
-      '<div class="smm-cbars">' + bars + '</div><div class="smm-cax"><span>' + fmtDate(cn[0].date) + '</span><span>' + fmtDate(last.date) + '</span></div>' +
+    box.innerHTML =
+      '<div class="smm-cbig"><b>' + nf(last.count) + '</b> ' + hoPill(d1, 0, '') + ' <small>' + fmtDate(last.date, true) + '</small></div>' +
+      '<div class="smm-ckv"><span>1 tahun <b class="' + signCls(dy) + '">' + (dy >= 0 ? '+' : '−') + nf(Math.abs(dy)) + '</b></span><span>Bulan naik <b class="smm-up">' + ups + '</b></span><span>Bulan turun <b class="smm-dn">' + dns + '</b></span></div>' +
+      hoLine(pts, { color: '#3b82f6', fmt: function (v) { return fmtLot(v); }, h: 140 }) +
+      '<div class="smm-hct2">Perubahan per bulan</div>' + hoDeltas(ds, pts.map(function (p) { return p.tip; }), 44) +
       '<div class="smm-insight" style="margin-top:8px">💡 Pemegang <b>bertambah</b> biasanya berarti saham menyebar ke ritel. Pemegang <b>berkurang</b> berarti saham terkumpul di lebih sedikit tangan.</div>' +
-      '<div class="smm-clist">' + list + '</div>';
+      '<div class="smm-clist2">' + list + '</div>';
   }
 
   function renderHoProfile(H) {
     var P = H.profile || {};
-    function group(arr) {
+    function group(arr, cls) {
       var by = {}, order = [];
       arr.forEach(function (x) { var k = x.role || '-'; if (!by[k]) { by[k] = []; order.push(k); } by[k].push(x.name); });
-      return order.map(function (k) { return '<div class="smm-kv"><span>' + esc(k) + '</span><span>' + by[k].map(function (n) { return personBtn(n); }).join('<br>') + '</span></div>'; }).join('') || '<div class="smm-desc">-</div>';
+      return order.map(function (k) {
+        return '<div class="smm-brole"><small>' + esc(k) + '</small><div>' + by[k].map(function (n) { return '<span class="smm-bp"><span class="av ' + cls + '">' + esc(initials(n)) + '</span>' + personBtn(n) + '</span>'; }).join('') + '</div></div>';
+      }).join('') || '<div class="smm-desc">-</div>';
     }
     var dir = H.board.filter(function (x) { return x.board === 'direksi'; }), kom = H.board.filter(function (x) { return x.board === 'komisaris'; });
-    var kv = [['Sektor', P.sector], ['Sub sektor', P.subSector], ['Industri', P.industry], ['Sub industri', P.subIndustry],
-      ['Tanggal listing', P.listingDate ? fmtDate(P.listingDate, true) : ''], ['Harga IPO', P.ipoPrice ? nf(P.ipoPrice) : ''],
-      ['Dana IPO', P.ipoAmount ? fmtVal(P.ipoAmount, true) : ''], ['Saham IPO', P.ipoShares ? nf(P.ipoShares) : ''],
-      ['Free float', P.freeFloat != null ? nf(P.freeFloat, 2) + '%' : '']].filter(function (x) { return x[1]; });
+    var tiles = [['🏷️', 'Sektor', P.sector], ['🧩', 'Sub sektor', P.subSector], ['🏭', 'Industri', P.industry], ['🔧', 'Sub industri', P.subIndustry],
+      ['📅', 'Tanggal listing', P.listingDate ? fmtDate(P.listingDate, true) : ''], ['💵', 'Harga IPO', P.ipoPrice ? nf(P.ipoPrice) : ''],
+      ['💰', 'Dana IPO', P.ipoAmount ? fmtVal(P.ipoAmount, true) : ''], ['📦', 'Saham IPO', P.ipoShares ? nf(P.ipoShares) : '']].filter(function (x) { return x[2]; });
+    var px = H.price || 0, ipoRet = P.ipoPrice && px ? (px / P.ipoPrice - 1) * 100 : null;
     document.getElementById('smmHoBoard').innerHTML =
-      '<div class="smm-h3">Dewan Direksi</div>' + group(dir) + '<div class="smm-h3" style="margin-top:14px">Dewan Komisaris</div>' + group(kom);
+      '<div class="smm-h3">👔 Dewan Direksi <small>' + dir.length + ' orang</small></div>' + group(dir, 'dir') +
+      '<div class="smm-h3" style="margin-top:14px">🛡️ Dewan Komisaris <small>' + kom.length + ' orang</small></div>' + group(kom, 'kom');
     document.getElementById('smmHoCompany').innerHTML =
-      '<div class="smm-h3">Profil perusahaan</div>' + kv.map(function (x) { return '<div class="smm-kv"><span>' + x[0] + '</span><span>' + esc(x[1]) + '</span></div>'; }).join('') +
-        (P.underwriters && P.underwriters.length ? '<div class="smm-kv"><span>Penjamin emisi</span><span>' + P.underwriters.map(esc).join('<br>') + '</span></div>' : '') +
-        (kv.length || (P.underwriters && P.underwriters.length) ? '' : '<div class="smm-desc">Profil perusahaan belum tersedia.</div>');
+      '<div class="smm-h3">🏢 Profil perusahaan</div>' +
+      (tiles.length ? '<div class="smm-tiles">' + tiles.map(function (x) { return '<div class="tl"><i>' + x[0] + '</i><span>' + x[1] + '</span><b>' + esc(x[2]) + '</b></div>'; }).join('') + '</div>' : '') +
+      (P.freeFloat != null || ipoRet != null ? '<div class="smm-tiles">' +
+        (P.freeFloat != null ? '<div class="tl wide">' + hoRing(P.freeFloat, '#10b981') + '<span>Free float</span><b>' + nf(P.freeFloat, 2) + '%</b></div>' : '') +
+        (ipoRet != null ? '<div class="tl wide"><i>📈</i><span>Harga kini vs IPO</span><b class="' + signCls(ipoRet) + '">' + nf(px) + ' (' + fmtPct(ipoRet) + ')</b></div>' : '') + '</div>' : '') +
+      (P.underwriters && P.underwriters.length ? '<div class="smm-uw"><small>🤝 Penjamin emisi</small><div>' + P.underwriters.map(function (u) { return '<span>' + esc(u) + '</span>'; }).join('') + '</div></div>' : '') +
+      (tiles.length || (P.underwriters && P.underwriters.length) ? '' : '<div class="smm-desc">Profil perusahaan belum tersedia.</div>');
   }
 
   // ─────────────────────────── Pencarian: saham / broker / nama ───────────────────────────

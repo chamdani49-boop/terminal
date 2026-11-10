@@ -91,3 +91,14 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   sama dengan `buildSearchIndex()` di index.html (DATA.stock_list, cocok kode/nama, maks 12,
   kode · nama · sektor), plus bagian Broker dan Orang dalam. Enter: kode persis → broker → nama
   persis → saham pertama yang cocok (seperti Dashboard) → nama mirip. index.html tidak diubah.
+
+## Revisi 7: visual Kepemilikan v2 (beda dari Stockbit, info tetap lengkap)
+- Helper SVG baru: `hoLine` (garis+area, skala diperbesar), `hoDeltas` (batang perubahan ±),
+  `hoDonut`, `hoRing`, `hoPill` (▲/▼ pp). CSS `.smm-hm`, `.smm-hcomp`, `.smm-hcats`, `.smm-chain`, `.smm-tiles` dll.
+- Pergerakan >1%: tabel → kartu per pemegang (peringkat, bar porsi, Δ pill, lembar/nilai/scripless/scrip,
+  sparkline) + legenda bar + chip ringkasan + baris "keluar daftar". `#smmHoMoveTbl`/`#smmHoMoveTxt` kini div.
+- Komposisi: donut + legenda dengan Δ, meter Scrip/Scripless & Ritel/Institusi.
+- Tren 12 bln: Lokal vs Asing = garis porsi asing + batang perubahan per bulan; Per kategori = baris sparkline.
+- Jumlah pemegang: garis + batang perubahan, ringkasan 1 thn/bulan naik/turun, daftar 2 kolom.
+- Pemegang terkini: peta kepemilikan + bar per pemegang; direksi/komisaris dengan inisial; UBO sebagai rantai.
+- Dewan: chip orang per jabatan. Profil: kartu ikon + free float ring + harga vs IPO + chip penjamin emisi.
