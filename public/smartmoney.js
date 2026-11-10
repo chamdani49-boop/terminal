@@ -562,7 +562,12 @@
     '.smm-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}',
     '.smm-chart{height:440px}',
     '.smm-sk-hint{font-size:12px;color:var(--text3);margin:8px 0 0}',
-    '.smm-ins-chart{height:380px}',
+    '.smm-ins-chart{height:270px}',
+    '.smm-hocols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}',
+    '.smm-hocol{display:flex;flex-direction:column;gap:16px;min-width:0}',
+    '.smm-fill{flex:1 1 auto}',
+    '.smm-ins-mid>.smm-box{display:flex;flex-direction:column}',
+    '.smm-ins-foot{margin-top:auto;padding-top:10px;border-top:1px dashed var(--border2)}',
     '.smm-ins-legend{font-size:12px}',
     '.smm-ins-mid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0}',
     '#smmInsYear{grid-column:span 2}',
@@ -686,7 +691,10 @@
       '.smm-sum{grid-template-columns:repeat(3,minmax(0,1fr))}.smm-sum .smm-verdict{grid-column:1/-1}',
       '.smm-ins-sum{grid-template-columns:repeat(3,minmax(0,1fr))}.smm-ins-sum .smm-verdict{grid-column:1/-1}',
       '.smm-grid{grid-template-columns:1fr}',
-      '.smm-ins-mid{grid-template-columns:repeat(2,minmax(0,1fr))}#smmInsYear{grid-column:1/-1}',
+      '.smm-ins-mid{grid-template-columns:repeat(2,minmax(0,1fr))}#smmInsYear{grid-column:1/-1;order:5}#smmInsAna1{order:4}',
+      '.smm-hocols{display:flex;flex-direction:column}.smm-hocol{display:contents}',
+      '#smmHoCompCard{order:1}#smmHoChartCard{order:2}#smmHoHoldersCard{order:3}#smmHoCountCard{order:4}#smmHoBoard{order:5}#smmHoCompany{order:6}',
+      '.smm-ins-chart{height:250px}',
       '.smm-chart{height:400px}',
     '}',
     /* HP */
@@ -707,7 +715,7 @@
       '.smm-ins-sum .smm-kpi:last-child{grid-column:1/-1}',
       '.smm-kpi .v{font-size:17px}.smm-kpi p{font-size:11px}',
       '.smm-verdict{flex-direction:row;align-items:center;gap:10px}.smm-gauge{width:110px}.smm-verdict .big{font-size:17px}.smm-verdict ul{font-size:11px}',
-      '.smm-chart{height:320px}.smm-ins-chart{height:280px}',
+      '.smm-chart{height:320px}.smm-ins-chart{height:220px}',
       '.smm-legend{font-size:10px;max-width:88%;padding:4px 6px}',
       '.smm-radar-cols{grid-template-columns:1fr}',
       '.smm-rrow,.smm-rhead{grid-template-columns:50px 1fr 78px 56px}',
@@ -1264,25 +1272,29 @@
           '<p class="smm-desc" id="smmHoMoveTxt" style="margin:8px 0"></p>' +
           '<div class="smm-tbl-wrap"><table class="smm-tbl smm-hotbl" id="smmHoMoveTbl"></table></div>' +
         '</section>' +
-        '<div class="smm-grid">' +
+        // Dua kolom yang tingginya disamakan; kartu terakhir tiap kolom mengisi sisa ruang (tanpa bolong)
+        '<div class="smm-hocols">' +
+         '<div class="smm-hocol">' +
           '<section class="smm-card" id="smmHoCompCard">' +
             '<div class="smm-h3">Komposisi pemegang ' + tip('Pembagian saham berdasarkan jenis investor KSEI: korporasi, reksa dana, institusi keuangan, individu, dan lainnya. Ritel = individu, institusi = selain individu.') + '</div>' +
             '<div class="smm-scroll smm-seg smm-months-seg" id="smmHoCompMonths"></div>' +
             '<div class="smm-seg" id="smmHoSide" style="margin:8px 0"><button data-act="hoside" data-v="all">Semua</button><button data-act="hoside" data-v="local">Lokal</button><button data-act="hoside" data-v="foreign">Asing</button></div>' +
             '<div id="smmHoComp"></div>' +
           '</section>' +
+          '<section class="smm-card" id="smmHoHoldersCard"><div class="smm-h3">Pemegang saham terkini</div><div id="smmHoHolders"></div></section>' +
+          '<section class="smm-card smm-fill" id="smmHoBoard"></section>' +
+         '</div>' +
+         '<div class="smm-hocol">' +
           '<section class="smm-card" id="smmHoChartCard">' +
             '<div class="smm-h3">Tren kepemilikan 12 bulan ' + tip('Porsi kepemilikan scripless per akhir bulan. Mode Per kategori memperlihatkan siapa yang menambah atau mengurangi porsi dari bulan ke bulan.') + '</div>' +
             '<div class="smm-toolbar"><div class="smm-seg" id="smmHoChartMode"><button data-act="hochart" data-v="lf">Lokal vs Asing</button><button data-act="hochart" data-v="cat">Per kategori</button></div></div>' +
             '<div class="smm-hokpi" id="smmHoChartKpi"></div>' +
             '<div id="smmHoChart"></div>' +
           '</section>' +
-        '</div>' +
-        '<div class="smm-grid">' +
-          '<section class="smm-card" id="smmHoHoldersCard"><div class="smm-h3">Pemegang saham terkini</div><div id="smmHoHolders"></div></section>' +
           '<section class="smm-card" id="smmHoCountCard"><div class="smm-h3">Jumlah pemegang saham ' + tip('Jumlah investor per akhir bulan. Hijau = bertambah dari bulan sebelumnya, merah = berkurang.') + '</div><div id="smmHoCount"></div></section>' +
+          '<section class="smm-card smm-fill" id="smmHoCompany"></section>' +
+         '</div>' +
         '</div>' +
-        '<div class="smm-grid" id="smmHoProfile"></div>' +
         '<details class="smm-card smm-glossary"><summary>📘 Cara membaca halaman ini</summary><div class="smm-gloss">' +
           '<div><b>Scrip vs scripless</b>Scrip = saham warkat (kertas). Scripless = saham elektronik di KSEI. Data komposisi hanya mencakup scripless.</div>' +
           '<div><b>pp (poin persen)</b>Selisih langsung dua persentase. Dari 2,31% ke 2,33% = naik 0,02 pp.</div>' +
@@ -1852,6 +1864,12 @@
       '<span>Hari dengan jual</span><span>' + Object.keys(sDays).length + '</span>' +
       '<span>Laporan tercatat</span><span>' + all.length + '</span>' +
       '<span>Orang dalam aktif</span><span>' + (S.insName ? 1 : g.insiders.filter(function (p) { return all.some(function (t) { return t.name === p.name; }); }).length) + '</span>' +
+      (function () {
+        var tb = 0, ts = 0; all.forEach(function (t) { if (t.action === 'BUY') tb += t.value; else ts += t.value; });
+        return '<span>Total nilai beli</span><span class="smm-up">' + fmtVal(tb, true) + '</span>' +
+          '<span>Total nilai jual</span><span class="smm-dn">' + fmtVal(ts, true) + '</span>' +
+          '<span>Rata-rata per transaksi</span><span>' + (all.length ? fmtVal((tb + ts) / all.length, true) : '-') + '</span>';
+      })() +
       '</div>';
     document.getElementById('smmInsAna2').innerHTML = '<h5>Kualitas timing</h5><div class="smm-ana">' +
       '<span>Rata-rata 3 bln setelah beli</span><span class="' + signCls(avg3) + '">' + (avg3 == null ? '-' : fmtPct(avg3)) + '</span>' +
@@ -1870,6 +1888,10 @@
           '<span><span class="nm" style="color:var(--accent);font-weight:700">' + esc(p.name) + '</span><span class="smm-role">' + esc(p.role) + '</span><span class="sm" style="display:block;font-size:11px;color:var(--text3)">Kepemilikan ' + nf(p.pct != null ? p.pct : p.hold / g.sharesOut * 100, 2) + '%</span></span>' +
           '<span class="n ' + signCls(net) + '" data-smm-tip="Net beli − jual 12 bulan terakhir">' + (net ? fmtVal(net, true) : '-') + '</span></div>';
       }).join('');
+    var insPct = g.insiders.reduce(function (a2, p) { return a2 + (p.pct != null ? p.pct : p.hold / g.sharesOut * 100); }, 0);
+    document.getElementById('smmInsHolders').innerHTML += '<div class="smm-ana smm-ins-foot">' +
+      '<span>Total kepemilikan orang dalam</span><span>' + nf(insPct, 2) + '%</span>' +
+      '<span>Jumlah orang dalam</span><span>' + g.insiders.length + '</span></div>';
 
     // Ringkasan atas halaman Insider
     var ins = insiderStats(g, g.nP - 126);
@@ -2168,10 +2190,12 @@
       ['Tanggal listing', P.listingDate ? fmtDate(P.listingDate, true) : ''], ['Harga IPO', P.ipoPrice ? nf(P.ipoPrice) : ''],
       ['Dana IPO', P.ipoAmount ? fmtVal(P.ipoAmount, true) : ''], ['Saham IPO', P.ipoShares ? nf(P.ipoShares) : ''],
       ['Free float', P.freeFloat != null ? nf(P.freeFloat, 2) + '%' : '']].filter(function (x) { return x[1]; });
-    document.getElementById('smmHoProfile').innerHTML =
-      '<div class="smm-card"><div class="smm-h3">Dewan Direksi</div>' + group(dir) + '<div class="smm-h3" style="margin-top:14px">Dewan Komisaris</div>' + group(kom) + '</div>' +
-      '<div class="smm-card"><div class="smm-h3">Profil perusahaan</div>' + kv.map(function (x) { return '<div class="smm-kv"><span>' + x[0] + '</span><span>' + esc(x[1]) + '</span></div>'; }).join('') +
-        (P.underwriters && P.underwriters.length ? '<div class="smm-kv"><span>Penjamin emisi</span><span>' + P.underwriters.map(esc).join('<br>') + '</span></div>' : '') + '</div>';
+    document.getElementById('smmHoBoard').innerHTML =
+      '<div class="smm-h3">Dewan Direksi</div>' + group(dir) + '<div class="smm-h3" style="margin-top:14px">Dewan Komisaris</div>' + group(kom);
+    document.getElementById('smmHoCompany').innerHTML =
+      '<div class="smm-h3">Profil perusahaan</div>' + kv.map(function (x) { return '<div class="smm-kv"><span>' + x[0] + '</span><span>' + esc(x[1]) + '</span></div>'; }).join('') +
+        (P.underwriters && P.underwriters.length ? '<div class="smm-kv"><span>Penjamin emisi</span><span>' + P.underwriters.map(esc).join('<br>') + '</span></div>' : '') +
+        (kv.length || (P.underwriters && P.underwriters.length) ? '' : '<div class="smm-desc">Profil perusahaan belum tersedia.</div>');
   }
 
   // ─────────────────────────── Pencarian: saham / broker / nama ───────────────────────────

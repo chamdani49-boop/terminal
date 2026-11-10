@@ -36,3 +36,13 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   index R2 → `applyReal()` dari `/api/admin/smartmoney` (maks 150 saham, 4 paralel), ditandai ●.
 - Ritel = `RETAIL` (YP, XL, PD, XC, KK, CP, EP); smart money = broker lain.
 - Dummy sengaja TIDAK melihat return masa depan, supaya akurasi preset di Today tidak menipu.
+
+## Revisi: tata letak Insider & Kepemilikan (tanpa ruang kosong)
+- Kepemilikan: baris `.smm-grid` diganti `.smm-hocols` (2 kolom flex, tinggi disamakan).
+  Kiri: Komposisi → Pemegang terkini → Dewan (`#smmHoBoard`, `.smm-fill`).
+  Kanan: Tren 12 bln → Jumlah pemegang → Profil (`#smmHoCompany`, `.smm-fill`).
+  Kartu terakhir tiap kolom mengisi sisa tinggi. ≤1099px: satu kolom, urutan via `order`.
+  `renderHoProfile()` sekarang mengisi `#smmHoBoard` dan `#smmHoCompany` (bukan `#smmHoProfile`).
+- Insider: grafik 380→270px (tablet 250, HP 220). Tablet: Analisis pindah sejajar "Orang dalam",
+  Per bulan/tahun lebar penuh di bawah. Analisis + total nilai beli/jual/rata-rata; kotak Orang dalam
+  + total kepemilikan & jumlah orang dalam (rata bawah).
