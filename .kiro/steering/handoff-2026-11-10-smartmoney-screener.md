@@ -46,3 +46,12 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
 - Insider: grafik 380→270px (tablet 250, HP 220). Tablet: Analisis pindah sejajar "Orang dalam",
   Per bulan/tahun lebar penuh di bawah. Analisis + total nilai beli/jual/rata-rata; kotak Orang dalam
   + total kepemilikan & jumlah orang dalam (rata bawah).
+
+## Revisi 2: Insider grafik 2 kolom
+- `.smm-ins-row`: grafik (kolom lebar) + "Orang dalam" (`#smmInsHolders`, 340px; 280px di ≤1099px).
+  Kotak Orang dalam dibungkus `.smm-ins-sidewrap` (position:relative) dan isinya absolute,
+  jadi tingginya MENGIKUTI grafik; daftar panjang (data asli bisa puluhan orang) di-scroll di
+  `.smm-ins-list`. ≤640px: ditumpuk, maks 360px.
+- `.smm-ins-mid`: Buy record · Kualitas timing · Analisis (3 kolom), Per bulan/tahun lebar penuh.
+  641-900px: 2 kolom, Analisis lebar penuh. Tiap kotak punya ringkasan `.smm-ins-foot` rata bawah.
+- Kualitas timing + rata-rata 1/6 bln setelah beli, 1 bln setelah jual, harga rata-rata beli.

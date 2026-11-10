@@ -568,6 +568,13 @@
     '.smm-fill{flex:1 1 auto}',
     '.smm-ins-mid>.smm-box{display:flex;flex-direction:column}',
     '.smm-ins-foot{margin-top:auto;padding-top:10px;border-top:1px dashed var(--border2)}',
+    '.smm-ins-row{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:stretch}',
+    '.smm-ins-sidewrap{position:relative;min-height:240px}',
+    '.smm-ins-side2{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}',
+    '.smm-ins-list{flex:1 1 auto;min-height:0;overflow-y:auto;margin:0 -6px;padding:0 6px;scrollbar-width:thin}',
+    '.smm-ins-mid{grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:stretch}',
+    '#smmInsYear{grid-column:1/-1!important;order:4}',
+    '.smm-ins-mid .smm-desc,.smm-ins-mid .smm-note{margin-top:auto}',
     '.smm-ins-legend{font-size:12px}',
     '.smm-ins-mid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0}',
     '#smmInsYear{grid-column:span 2}',
@@ -691,7 +698,7 @@
       '.smm-sum{grid-template-columns:repeat(3,minmax(0,1fr))}.smm-sum .smm-verdict{grid-column:1/-1}',
       '.smm-ins-sum{grid-template-columns:repeat(3,minmax(0,1fr))}.smm-ins-sum .smm-verdict{grid-column:1/-1}',
       '.smm-grid{grid-template-columns:1fr}',
-      '.smm-ins-mid{grid-template-columns:repeat(2,minmax(0,1fr))}#smmInsYear{grid-column:1/-1;order:5}#smmInsAna1{order:4}',
+      '.smm-ins-row{grid-template-columns:minmax(0,1fr) 280px}',
       '.smm-hocols{display:flex;flex-direction:column}.smm-hocol{display:contents}',
       '#smmHoCompCard{order:1}#smmHoChartCard{order:2}#smmHoHoldersCard{order:3}#smmHoCountCard{order:4}#smmHoBoard{order:5}#smmHoCompany{order:6}',
       '.smm-ins-chart{height:250px}',
@@ -719,7 +726,8 @@
       '.smm-legend{font-size:10px;max-width:88%;padding:4px 6px}',
       '.smm-radar-cols{grid-template-columns:1fr}',
       '.smm-rrow,.smm-rhead{grid-template-columns:50px 1fr 78px 56px}',
-      '.smm-ins-mid{grid-template-columns:1fr}',
+      '.smm-ins-mid{grid-template-columns:1fr!important}',
+      '.smm-ins-row{grid-template-columns:1fr}.smm-ins-sidewrap{min-height:0}.smm-ins-side2{position:static;max-height:360px}',
       '.smm-ins-desk{display:none}.smm-icards{display:flex}',
       '.smm-tbl{font-size:11px}.smm-tbl td,.smm-tbl th{padding:6px 3px}',
       '.smm-totals{grid-template-columns:1fr 1fr 1fr;gap:6px}.smm-totals b{font-size:11px}',
@@ -736,6 +744,7 @@
       '.smm-hhead,.smm-hrow{grid-template-columns:minmax(0,1fr) 64px 64px}',
       '.smm-kv{grid-template-columns:110px 1fr}',
     '}',
+    '@media (min-width:641px) and (max-width:900px){.smm-ins-mid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#smmInsAna1{grid-column:1/-1}}',
     '@media (max-width:480px){.smm-tbl .lot{display:none}.smm-tbl td:nth-child(5){padding-left:6px}}',
     '@media (max-width:360px){.smm-sum,.smm-ins-sum{grid-template-columns:1fr}.smm-verdict{flex-direction:column;align-items:flex-start}}'
   ].join('\n');
@@ -1225,17 +1234,20 @@
         '<section class="smm-card smm-profile" id="smmPersonCard" hidden></section>' +
         '<section class="smm-ins-sum" id="smmInsSum"></section>' +
 
+        // Baris atas: grafik (lebar) + daftar orang dalam setinggi grafik (scroll bila panjang)
+        '<div class="smm-ins-row">' +
         '<section class="smm-card" id="smmInsiderCard">' +
           '<div class="smm-h3">Harga & transaksi orang dalam <small id="smmInsSub"></small>' + tip('Transaksi direksi, komisaris, dan pemegang saham pengendali yang dilaporkan ke IDX / KSEI. Orang dalam paling tahu kondisi perusahaan, jadi pembelian mereka sering dianggap sinyal keyakinan.') + '</div>' +
           '<div class="smm-toolbar" style="margin-bottom:8px"><div class="smm-seg" id="smmInsRange"><button data-act="insrange" data-v="6M">6M</button><button data-act="insrange" data-v="1Y">1Y</button><button data-act="insrange" data-v="2Y">2Y</button></div>' +
           '<span class="lbl smm-ins-legend"><b class="smm-up">▲ Beli</b> <b class="smm-dn">▼ Jual</b> · panah besar = transaksi besar</span></div>' +
           '<div class="smm-ins-chart" id="smmInsChart"></div>' +
         '</section>' +
+          '<div class="smm-ins-sidewrap"><div class="smm-box smm-ins-side2" id="smmInsHolders"></div></div>' +
+        '</div>' +
 
         '<div class="smm-ins-mid">' +
           '<div class="smm-box" id="smmInsRecord"></div>' +
           '<div class="smm-box" id="smmInsAna2"></div>' +
-          '<div class="smm-box" id="smmInsHolders"></div>' +
           '<div class="smm-box" id="smmInsYear"></div>' +
           '<div class="smm-box" id="smmInsAna1"></div>' +
         '</div>' +
@@ -1811,7 +1823,11 @@
       '<div style="font-size:11px;color:var(--text3)">naik 3 bulan kemudian · ' + r3.n + ' transaksi beli</div>' +
       rec.map(function (x) {
         return '<div class="smm-rec-row"><span>' + x.label + '</span><span class="bar"><i style="width:' + (x.pct || 0).toFixed(0) + '%"></i></span><span>' + (x.n ? nf(x.pct) + '% dari ' + x.n : '-') + '</span></div>';
-      }).join('');
+      }).join('') + (function () {
+        var ok = rec.filter(function (x) { return x.n; }), bestH = ok.slice().sort(function (a2, b2) { return b2.pct - a2.pct; })[0];
+        return '<div class="smm-ana smm-ins-foot"><span>Horizon terbaik</span><span>' + (bestH ? esc(bestH.label) + ' · ' + nf(bestH.pct) + '%' : '-') + '</span>' +
+          '<span>Rata-rata semua horizon</span><span>' + (ok.length ? nf(ok.reduce(function (a2, x) { return a2 + x.pct; }, 0) / ok.length) + '%' : '-') + '</span></div>';
+      })();
 
     // Per bulan (12 bulan terakhir) + per tahun
     var end = new Date(g.end + 'T00:00:00Z'), months = [];
@@ -1868,26 +1884,36 @@
         var tb = 0, ts = 0; all.forEach(function (t) { if (t.action === 'BUY') tb += t.value; else ts += t.value; });
         return '<span>Total nilai beli</span><span class="smm-up">' + fmtVal(tb, true) + '</span>' +
           '<span>Total nilai jual</span><span class="smm-dn">' + fmtVal(ts, true) + '</span>' +
-          '<span>Rata-rata per transaksi</span><span>' + (all.length ? fmtVal((tb + ts) / all.length, true) : '-') + '</span>';
+          '<span>Rata-rata per transaksi</span><span>' + (all.length ? fmtVal((tb + ts) / all.length, true) : '-') + '</span>' +
+          '</div><div class="smm-ana smm-ins-foot"><span>Rasio nilai beli : jual</span><span class="' + (tb >= ts ? 'smm-up' : 'smm-dn') + '">' + (ts ? nf(tb / ts, 1) + 'x' : tb ? 'hanya beli' : '-') + '</span>' +
+          '<span>Net beli − jual</span><span class="' + signCls(tb - ts) + '">' + fmtVal(tb - ts, true) + '</span>';
       })() +
       '</div>';
+    function avgAfter(arr, n) { var v = arr.map(function (t) { return retAfter(g, t, n); }).filter(function (x) { return x != null; }); return v.length ? v.reduce(function (a2, x) { return a2 + x; }, 0) / v.length : null; }
+    var avg1 = avgAfter(buys, 21), avg6 = avgAfter(buys, 126), sAvg1 = avgAfter(sells, 21);
+    var bSh = 0, bVal = 0; buys.forEach(function (t) { bSh += t.shares; bVal += t.shares * t.price; });
+    var bAvgPx = bSh ? bVal / bSh : 0, vsAvg = bAvgPx ? (lastPx / bAvgPx - 1) * 100 : null;
     document.getElementById('smmInsAna2').innerHTML = '<h5>Kualitas timing</h5><div class="smm-ana">' +
+      '<span>Rata-rata 1 bln setelah beli</span><span class="' + signCls(avg1) + '">' + (avg1 == null ? '-' : fmtPct(avg1)) + '</span>' +
       '<span>Rata-rata 3 bln setelah beli</span><span class="' + signCls(avg3) + '">' + (avg3 == null ? '-' : fmtPct(avg3)) + '</span>' +
+      '<span>Rata-rata 6 bln setelah beli</span><span class="' + signCls(avg6) + '">' + (avg6 == null ? '-' : fmtPct(avg6)) + '</span>' +
+      '<span>Rata-rata 1 bln setelah jual</span><span class="' + signCls(sAvg1 == null ? 0 : -sAvg1) + '">' + (sAvg1 == null ? '-' : fmtPct(sAvg1)) + '</span>' +
+      '<span>Harga rata-rata beli</span><span>' + (bAvgPx ? nf(bAvgPx) + ' <small class="' + signCls(vsAvg) + '">(' + fmtPct(vsAvg) + ')</small>' : '-') + '</span>' +
       '<span>Beli naik 1 bln kemudian</span><span>' + (rec[1].pct == null ? '-' : nf(rec[1].pct) + '%') + '</span>' +
       '<span>Jual sebelum harga turun</span><span>' + (sFallPct == null ? '-' : nf(sFallPct) + '%') + '</span>' +
       '<span>Beli terbaik</span><span class="' + (best ? signCls(best.r) : '') + '">' + (best ? fmtDate(best.t.date) + ' · ' + fmtPct(best.r) : '-') + '</span>' +
       '<span>Beli terburuk (3 bln)</span><span class="' + (worst ? signCls(worst.r) : '') + '">' + (worst ? fmtDate(worst.t.date) + ' · ' + fmtPct(worst.r) : '-') + '</span>' +
-      '</div><div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5">Return dihitung dari harga transaksi sampai harga penutupan 1 minggu / 1, 3, 6, 12 bulan kemudian.</div>';
+      '</div><div class="smm-ins-foot" style="font-size:11px;color:var(--text3);line-height:1.5">Return dihitung dari harga transaksi sampai harga penutupan 1 minggu / 1, 3, 6, 12 bulan kemudian. Setelah jual: negatif = harga turun (jual tepat waktu). Harga rata-rata beli dibanding harga terakhir.</div>';
 
     // Pemegang (orang dalam)
     var y1 = g.nP - 252;
-    document.getElementById('smmInsHolders').innerHTML = '<h5>Orang dalam <small>klik untuk filter</small></h5>' +
+    document.getElementById('smmInsHolders').innerHTML = '<h5>Orang dalam <small>' + g.insiders.length + ' orang · klik untuk filter</small></h5>' + '<div class="smm-ins-list">' +
       g.insiders.map(function (p) {
         var net = g.trades.filter(function (t) { return t.name === p.name && t.idx >= y1; }).reduce(function (a, t) { return a + (t.action === 'BUY' ? t.value : -t.value); }, 0);
         return '<div class="smm-rrow' + (S.insName === p.name ? ' on' : '') + '" style="grid-template-columns:1fr auto;padding:6px" data-act="insname" data-v="' + esc(p.name) + '">' +
           '<span><span class="nm" style="color:var(--accent);font-weight:700">' + esc(p.name) + '</span><span class="smm-role">' + esc(p.role) + '</span><span class="sm" style="display:block;font-size:11px;color:var(--text3)">Kepemilikan ' + nf(p.pct != null ? p.pct : p.hold / g.sharesOut * 100, 2) + '%</span></span>' +
           '<span class="n ' + signCls(net) + '" data-smm-tip="Net beli − jual 12 bulan terakhir">' + (net ? fmtVal(net, true) : '-') + '</span></div>';
-      }).join('');
+      }).join('') + '</div>';
     var insPct = g.insiders.reduce(function (a2, p) { return a2 + (p.pct != null ? p.pct : p.hold / g.sharesOut * 100); }, 0);
     document.getElementById('smmInsHolders').innerHTML += '<div class="smm-ana smm-ins-foot">' +
       '<span>Total kepemilikan orang dalam</span><span>' + nf(insPct, 2) + '%</span>' +
