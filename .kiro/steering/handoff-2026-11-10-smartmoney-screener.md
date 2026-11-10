@@ -70,3 +70,9 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   broker 1M, kalender per broker bulan berjalan); total 6 bulan per broker utuh. Block Absorption
   belum punya data asli (butuh data pasar nego).
 - `SCR_V` = 20261110b.
+
+## Revisi 4: Kalender + grafik Broker Flow
+- `.sx-cal-split`: kiri grafik (1,6 fr: candle harga + garis kumulatif net smart money / asing /
+  ritel / broker terpilih, `buildCalChart()` dengan lightweight-charts), kanan kalender (1 fr).
+  ≤1099px ditumpuk. Grafik menampilkan bulan terpilih + 2 bulan sebelumnya; klik grafik memilih
+  tanggal di kalender, tanggal terpilih diberi panah. `SCR_V` = 20261110c.

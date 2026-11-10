@@ -1369,6 +1369,69 @@
     var B = m[K + 'B'][t], S = m[K + 'S'][t], BL = m[K + 'BL'][t], SL = m[K + 'SL'][t], net = B - S;
     return { v: net, l: BL - SL, avg: net >= 0 ? (BL ? B / (BL * 100) : 0) : (SL ? S / (SL * 100) : 0), avgLbl: 'Avg' };
   }
+  // Garis kumulatif untuk grafik di samping kalender
+  function calLines(m, grp) {
+    var L = [{ k: 'sm', label: 'Smart money', color: '#8b5cf6' }, { k: 'f', label: 'Asing', color: '#ef4444' }, { k: 'rt', label: 'Ritel', color: '#14b8a6' }];
+    if (grp.indexOf('b:') === 0) L.push({ k: grp, label: 'Broker ' + grp.slice(2), color: '#f59e0b' });
+    L.forEach(function (x) { x.on = x.k === grp || (grp.indexOf('b:') === 0 && x.k === 'sm'); });
+    return L;
+  }
+  var _calChart = null;
+  function buildCalChart() {
+    var el = host.querySelector('#sxCalChart');
+    if (_calChart) { try { _calChart.remove(); } catch (_) {} _calChart = null; }
+    if (!el || typeof LightweightCharts === 'undefined') { if (el) el.innerHTML = '<div class="sx-empty">Grafik belum tersedia.</div>'; return; }
+    var st = V.cal, m = U.by[st.code], ax = U.axis, cs = getComputedStyle(document.documentElement);
+    function cv(n, d) { return (cs.getPropertyValue(n) || '').trim() || d; }
+    var text = cv('--text2', '#888'), grid = cv('--border2', 'rgba(128,128,128,.15)'), up = cv('--green', '#22c55e'), dn = cv('--red', '#ef4444');
+    _calChart = LightweightCharts.createChart(el, {
+      autoSize: true,
+      layout: { background: { type: 'solid', color: 'transparent' }, textColor: text, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, attributionLogo: false },
+      grid: { vertLines: { color: grid }, horzLines: { color: grid } },
+      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.08 } },
+      leftPriceScale: { visible: true, borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.08 } },
+      timeScale: { borderVisible: false, rightOffset: 2 },
+      crosshair: { mode: 0 },
+      handleScroll: { vertTouchDrag: false }
+    });
+    var candles = [], days = [];
+    for (var t = m.first; t < m.n; t++) { if (!m.tr[t]) continue; days.push(t); candles.push({ time: ax[t], open: m.o[t], high: m.h[t], low: m.l[t], close: m.c[t] }); }
+    var cand = _calChart.addCandlestickSeries({ upColor: up, downColor: dn, borderUpColor: up, borderDownColor: dn, wickUpColor: up, wickDownColor: dn, priceScaleId: 'right', priceLineVisible: false, priceFormat: { type: 'custom', minMove: 1, formatter: function (v) { return px(v); } } });
+    cand.setData(candles);
+    var fmt = { type: 'custom', formatter: function (v) { return fv(v); } }, series = {}, cum = {};
+    calLines(m, st.grp).forEach(function (L) {
+      var arr = L.k === 'sm' ? m.sm : L.k === 'f' ? m.fn : L.k === 'rt' ? m.rt : null, b = null;
+      if (!arr) { b = m.brokers.filter(function (x) { return 'b:' + x.code === L.k; })[0]; arr = b ? b.nv : []; }
+      var c = 0, data = [], map = {};
+      days.forEach(function (t2) { c += arr[t2] || 0; data.push({ time: ax[t2], value: c }); map[ax[t2]] = { day: arr[t2] || 0, cum: c }; });
+      cum[L.k] = map;
+      var sr = _calChart.addLineSeries({ color: L.color, lineWidth: L.on ? 3 : 1.5, priceScaleId: 'left', priceFormat: fmt, lastValueVisible: L.on, priceLineVisible: false, crosshairMarkerVisible: true });
+      sr.applyOptions({ lineStyle: L.on ? 0 : 0 });
+      if (!L.on) sr.applyOptions({ color: L.color + '99' });
+      sr.setData(data); series[L.k] = sr;
+    });
+    if (st.sel != null && m.tr[st.sel]) cand.setMarkers([{ time: ax[st.sel], position: 'aboveBar', color: cv('--accent', '#8b5cf6'), shape: 'arrowDown', text: dShort(ax[st.sel]) }]);
+    // tampilkan bulan terpilih + 2 bulan sebelumnya supaya konteks terlihat
+    var p = st.ym.split('-'), from = new Date(Date.UTC(+p[0], +p[1] - 3, 1)).toISOString().slice(0, 10), to = new Date(Date.UTC(+p[0], +p[1], 0)).toISOString().slice(0, 10);
+    var f0 = candles.filter(function (x) { return x.time >= from; })[0], t0 = candles.filter(function (x) { return x.time <= to; }).pop();
+    if (f0 && t0) { try { _calChart.timeScale().setVisibleRange({ from: f0.time, to: t0.time }); } catch (_) { _calChart.timeScale().fitContent(); } }
+    else _calChart.timeScale().fitContent();
+    var lines = calLines(m, st.grp), byT = {}; candles.forEach(function (x) { byT[x.time] = x; });
+    function legend(key) {
+      var lg = host.querySelector('#sxCalLeg'); if (!lg) return;
+      if (!key || !byT[key]) key = candles.length ? candles[candles.length - 1].time : null;
+      if (!key) { lg.innerHTML = ''; return; }
+      var c = byT[key], prev = candles[candles.indexOf(c) - 1], ch = prev ? (c.close / prev.close - 1) * 100 : 0;
+      lg.innerHTML = '<div class="d"><b>' + esc(dShort(key)) + '</b> <span>O ' + px(c.open) + '</span> <span>H ' + px(c.high) + '</span> <span>L ' + px(c.low) + '</span> <span>C <b class="' + sc(ch) + '">' + px(c.close) + '</b> <em class="' + sc(ch) + '">' + fp(ch) + '</em></span></div>' +
+        '<div class="r">' + lines.map(function (L) { var x = cum[L.k][key] || { day: 0, cum: 0 }; return '<span><i style="background:' + L.color + '"></i>' + esc(L.label) + ' <b class="' + sc(x.day) + '">' + fv(x.day) + '</b> <small>Σ ' + fv(x.cum) + '</small></span>'; }).join('') + '</div>';
+    }
+    legend(null);
+    _calChart.subscribeCrosshairMove(function (prm) { legend(prm && prm.time ? (typeof prm.time === 'string' ? prm.time : null) : null); });
+    _calChart.subscribeClick(function (prm) {
+      var key = prm && typeof prm.time === 'string' ? prm.time : null; if (!key || U.idx[key] === undefined) return;
+      V.cal.ym = key.slice(0, 7); V.cal.sel = U.idx[key]; rerenderKeepScroll();
+    });
+  }
   function viewCal() {
     var st = V.cal;
     if (!st.code || !U.by[st.code]) st.code = U.by[A.code()] ? A.code() : (U.by.BBCA ? 'BBCA' : U.list[0].code);
@@ -1424,6 +1487,15 @@
         seg('cmetric', [['value', 'Value'], ['lot', 'Lot']], st.metric, 'sm') +
         '<span class="sx-grow"></span><button class="sx-prof" data-sx="open" data-v="' + esc(m.code) + '">' + ic('bar') + 'Broker Activity</button>' +
       '</div>' +
+      '<div class="sx-cal-split">' +
+      '<section class="sx-box sx-cflow">' +
+        '<div class="sx-bh"><h4>' + ic('flow') + 'Broker Flow <small class="sx-mute" style="text-transform:none;letter-spacing:0">' + esc(m.code) + ' · kumulatif net vs harga</small></h4>' +
+          tip('Candle = harga harian (sumbu kanan). Garis = jumlah net beli dikurangi jual yang terus dijumlahkan sejak awal data (sumbu kiri). Garis naik = terus menimbun. Ketuk grafik untuk memilih tanggal di kalender.') + '</div>' +
+        '<div class="sx-cleg" id="sxCalLeg"></div>' +
+        '<div class="sx-cchart" id="sxCalChart"></div>' +
+        '<div class="sx-ckeys">' + calLines(m, st.grp).map(function (x) { return '<span><i style="background:' + x.color + '"></i>' + esc(x.label) + '</span>'; }).join('') + '</div>' +
+      '</section>' +
+      '<div class="sx-cside">' +
       '<div class="sx-cal-top">' +
         '<div class="sx-mnav"><button class="sx-ib" data-sx="cmon" data-v="-1" ' + (mi <= 0 ? 'disabled' : '') + ' aria-label="Bulan sebelumnya">' + ic('left') + '</button>' +
           '<h3>' + MONTHS[M] + ' ' + Y + ' <small>' + esc(m.code) + '</small></h3>' +
@@ -1436,6 +1508,7 @@
         '</div>' +
       '</div>' +
       '<div class="sx-calwrap"><div class="sx-cal">' + ['MON', 'TUE', 'WED', 'THU', 'FRI'].map(function (x, i) { return '<div class="sx-ch"><span class="l">' + x + '</span><span class="s">' + ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'][i] + '</span></div>'; }).join('') + cells.join('') + '</div></div>' +
+      '</div></div>' +
       detail +
       '<div class="sx-box"><h5 class="sx-sub">' + ic('bar') + 'Ringkasan 6 bulan <small class="sx-mute">ketuk untuk pindah bulan</small></h5><div class="sx-mstrip">' +
         strip.map(function (x) { var hpx = smx ? Math.abs(x.s) / smx * 100 : 0, p2 = x.ym.split('-'); return '<button class="' + (x.ym === st.ym ? 'on' : '') + '" data-sx="cym" data-v="' + x.ym + '"><span class="bw"><i class="' + (x.s >= 0 ? 'g' : 'r') + '" style="height:' + Math.max(4, hpx) + '%"></i></span><b class="' + sc(x.s) + '">' + fv(x.s) + '</b><small>' + MON[+p2[1] - 1] + ' ' + p2[0].slice(2) + '</small></button>'; }).join('') +
@@ -1493,8 +1566,10 @@
     if (V.guide[V.view] === undefined) { V.guide[V.view] = load('sx_seen_' + V.view) ? null : 'how'; store('sx_seen_' + V.view, '1'); }
     srcNote();
     try {
+      if (_calChart && V.view !== 'cal') { try { _calChart.remove(); } catch (_) {} _calChart = null; }
       el.innerHTML = VIEW[V.view]();
       renderBody();
+      if (V.view === 'cal') buildCalChart();
     } catch (e) {
       console.error('[screener]', e);
       el.innerHTML = empty('Terjadi kesalahan saat menampilkan data. ' + esc(e.message));
@@ -1851,6 +1926,19 @@
     '.sx-rlist button:hover{background:var(--bg2)}.sx-rlist .i{color:var(--text3);font-size:11px}.sx-rlist b{font-family:"IBM Plex Mono",monospace;color:var(--accent)}.sx-rlist .mono{text-align:right}',
     /* calendar */
     '.sx-cal-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}',
+    '.sx-cal-split{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;align-items:stretch}',
+    '.sx-cside{display:flex;flex-direction:column;gap:10px;min-width:0}',
+    '.sx-cside .sx-ckpi{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none;width:100%}',
+    '.sx-cside .sx-mnav{width:100%;justify-content:space-between}.sx-cside .sx-mnav h3{min-width:0}',
+    '.sx-cside .sx-calwrap{flex:1}',
+    '.sx-cside .sx-cc{min-height:74px;padding:6px}.sx-cside .sx-cc .nv{font-size:12.5px}',
+    '.sx-cflow{display:flex;flex-direction:column;gap:8px;min-width:0}',
+    '.sx-cflow .sx-bh{margin-bottom:0}.sx-cflow .sx-bh h4 small{font-weight:600}',
+    '.sx-cleg{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:50px;padding:6px 10px;border-radius:10px;background:var(--bg2);border:1px solid var(--border2);font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--text2)}',
+    '.sx-cleg .d,.sx-cleg .r{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}.sx-cleg .d b{color:var(--text)}.sx-cleg em{font-style:normal}',
+    '.sx-cleg i,.sx-ckeys i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}.sx-cleg small{color:var(--text3)}',
+    '.sx-cchart{position:relative;flex:1 1 auto;min-height:380px}',
+    '.sx-ckeys{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text2)}',
     '.sx-mnav{display:flex;align-items:center;gap:10px}.sx-mnav h3{font-size:20px;font-weight:800;color:var(--text);min-width:170px;text-align:center}.sx-mnav h3 small{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent);margin-left:4px}',
     '.sx-ckpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;flex:1;max-width:640px}',
     '.sx-ckpi div{background:var(--bg2);border-radius:10px;padding:7px 10px;min-width:0}.sx-ckpi small{display:block;font-size:10.5px;color:var(--text3);font-weight:700}',
@@ -1879,6 +1967,7 @@
     '.sx-mstrip b{font-family:"IBM Plex Mono",monospace;font-size:11px;white-space:nowrap}.sx-mstrip small{font-size:10.5px;color:var(--text3)}',
     /* ── Tablet ── */
     '@media (max-width:1099px){',
+      '.sx-cal-split{grid-template-columns:1fr}.sx-cchart{min-height:320px}',
       '.sx-acc-grid{grid-template-columns:1fr}',
       '.sx-side{position:static;max-height:none;order:-1}',
       '.sx-side summary{display:flex}',
@@ -1931,6 +2020,7 @@
       '.sx-ckpi{grid-template-columns:1fr 1fr;max-width:none;width:100%}',
       '#sxCalGrp{flex:1 1 60%}',
       '.sx-calwrap{padding:6px}.sx-cal{gap:4px}',
+      '.sx-cchart{min-height:260px}.sx-cleg{font-size:10.5px}.sx-cside .sx-cc{min-height:64px;padding:5px 4px}',
       '.sx-ch .l{display:none}.sx-ch .s{display:inline}',
       '.sx-cc{min-height:64px;padding:5px 4px 5px;border-radius:7px}',
       '.sx-cc .dn{left:5px;top:3px;font-size:10px}',
@@ -1967,6 +2057,8 @@
           if (mob !== wasMob) { wasMob = mob; if (V.view === 'accum' && U && !host.hidden) renderView(); }
         }, 200);
       });
+      new MutationObserver(function () { if (U && V.view === 'cal' && !host.hidden) buildCalChart(); })
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
       _bound = true;
     }
     renderView();
