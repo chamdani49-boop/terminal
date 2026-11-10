@@ -546,6 +546,7 @@
     '.smm-filters .smm-seg button{flex-shrink:0;min-width:48px}',
     '.smm-pg{display:flex;flex-direction:column;gap:16px}',
     '.smm-pg[hidden]{display:none!important}',
+    '#page-smartmoney[data-smm-sub="screener"] #smmQuick,#page-smartmoney[data-smm-sub="screener"] #smmActive{display:none!important}',
     '.smm-empty{display:none;text-align:center;padding:28px 16px;font-size:13px;color:var(--text2);line-height:1.7}',
     '.smm-pg.is-empty>.smm-empty{display:block}',
     '.smm-pg.is-empty>*:not(.smm-empty):not(#smmRadarCard){display:none!important}',
@@ -1134,6 +1135,7 @@
           '<button role="tab" data-act="sub" data-v="broker">📊 <span class="l">Broker Activity</span><span class="s">Broker</span></button>' +
           '<button role="tab" data-act="sub" data-v="insider">🕵️ <span>Insider</span></button>' +
           '<button role="tab" data-act="sub" data-v="holder">🏛️ <span class="l">Kepemilikan</span><span class="s">Pemilik</span></button>' +
+          '<button role="tab" data-act="sub" data-v="screener">🔎 <span class="l">Screener</span><span class="s">Screen</span></button>' +
         '</div>' +
       '</div>' +
       '<div class="smm-active" id="smmActive" hidden></div>' +
@@ -1290,6 +1292,9 @@
           '<div><b>Free float</b>Porsi saham yang beredar bebas di publik. Free float kecil membuat harga lebih mudah digerakkan.</div>' +
         '</div></details>' +
       '</div>' +
+
+      // ═════════ HALAMAN 4: SCREENER (modul terpisah: smartmoney-screener.js) ═════════
+      '<div class="smm-pg" id="smmPgScreener" hidden></div>' +
     '</div>';
   }
 
@@ -2210,12 +2215,22 @@
     // kode saham yang dikenal (daftar saham situs + saham pantauan) → langsung buka
     var known = allCodes().slice();
     try { if (typeof DATA !== 'undefined' && DATA && DATA.stock_list) DATA.stock_list.forEach(function (s) { known.push(s.code); }); } catch (_) {}
-    if (/^[A-Z0-9]{4,6}$/.test(up) && known.indexOf(up) >= 0) { setCode(up); return; }
+    if (/^[A-Z0-9]{4,6}$/.test(up) && known.indexOf(up) >= 0) { openCodeFromSearch(up); return; }
     var N = normName(q), names2 = knownNames();
     var hit = names2.filter(function (n) { return n === N; })[0] || names2.filter(function (n) { return n.indexOf(N) >= 0; })[0];
     if (hit) { setPerson(hit); return; }
-    if (/^[A-Z0-9]{2,6}$/.test(up)) { setCode(up); return; }
+    if (/^[A-Z0-9]{2,6}$/.test(up)) { openCodeFromSearch(up); return; }
     toast('Tidak ditemukan: ' + q);
+  }
+  // Dari Screener: kalender ikut saham baru; tampilan lain pindah ke Broker Activity.
+  function openCodeFromSearch(code) {
+    if (S.sub === 'screener') {
+      var sx = window.SmartMoneyScreener;
+      setCode(code);
+      if (!(sx && sx.codeChanged && sx.codeChanged(code))) setSub('broker');
+      return;
+    }
+    setCode(code);
   }
   function setBroker(code) {
     S.broker = code;
@@ -2385,14 +2400,45 @@
     renderFilters(); rebuildSuggest();
     renderBroker(); renderInsider(); renderHolder();
   }
+  // ── Screener (sub-tab 4) dimuat dinamis supaya file ini tidak membengkak.
+  // Naikkan SCR_V setiap kali smartmoney-screener.js diubah (cache-busting).
+  var SCR_V = '20261110a', _scrP = null;
+  function ensureScreener() {
+    if (window.SmartMoneyScreener) return Promise.resolve();
+    if (_scrP) return _scrP;
+    _scrP = new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = '/smartmoney-screener.js?v=' + SCR_V;
+      s.onload = res; s.onerror = function () { _scrP = null; rej(new Error('gagal memuat screener')); };
+      document.head.appendChild(s);
+    });
+    return _scrP;
+  }
+  var screenerApi = {
+    esc: esc, nf: nf, fmtVal: fmtVal, fmtLot: fmtLot, fmtPct: fmtPct, hashStr: hashStr, rng: rng, gauss: gauss, shuffle: shuffle,
+    tip: tip, toast: toast, bkTag: bkTag, brokerList: brokerList, brokerType: brokerType, titleCase: titleCase,
+    loadOhlc: function () { return loadOhlc(); }, loadReal: loadReal,
+    index: function () { return _index; },
+    code: function () { return S.code; },
+    openStock: function (code) { setCode(code); setSub('broker'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  };
+  function showScreener() {
+    var pg = document.getElementById('smmPgScreener');
+    if (!window.SmartMoneyScreener) pg.innerHTML = '<div class="smm-card" style="text-align:center;padding:40px 16px;color:var(--text2)">Memuat Screener…</div>';
+    ensureScreener().then(function () { if (S.sub === 'screener') window.SmartMoneyScreener.show(pg, screenerApi); })
+      .catch(function () { pg.innerHTML = '<div class="smm-card" style="text-align:center;padding:40px 16px;color:var(--red)">Screener gagal dimuat. Periksa koneksi lalu buka lagi tab ini.</div>'; });
+  }
   function setSub(v, noScroll) {
-    if (v !== 'broker' && v !== 'insider' && v !== 'holder') v = 'broker';
+    if (v !== 'broker' && v !== 'insider' && v !== 'holder' && v !== 'screener') v = 'broker';
     S.sub = v;
     try { localStorage.setItem('smm_sub', v); } catch (_) {}
     document.getElementById('smmPgBroker').hidden = v !== 'broker';
     document.getElementById('smmPgInsider').hidden = v !== 'insider';
     document.getElementById('smmPgHolder').hidden = v !== 'holder';
+    document.getElementById('smmPgScreener').hidden = v !== 'screener';
+    root.setAttribute('data-smm-sub', v);
     syncControls();
+    if (v === 'screener') showScreener();
     if (v === 'broker' && _dirty.broker) renderBroker();
     else if (v === 'broker') renderSankey();
     if (v === 'insider' && _dirty.insider) renderInsider();
@@ -2590,7 +2636,7 @@
     document.getElementById('smmCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(e.target.value); });
     document.getElementById('smmCode').addEventListener('focus', function (e) { e.target.select(); });
     // Ganti tema → bangun ulang grafik dengan warna baru
-    new MutationObserver(function () { if (!_built) return; if (S.sub === 'broker') { buildFlow(); renderSankey(); } else buildInsChart(); })
+    new MutationObserver(function () { if (!_built) return; if (S.sub === 'broker') { buildFlow(); renderSankey(); } else if (S.sub !== 'screener') buildInsChart(); })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     var rt;
     window.addEventListener('resize', function () {
@@ -2607,7 +2653,7 @@
       bind();
       defaultChips();
       _built = true;
-      try { var sv = localStorage.getItem('smm_sub'); S.sub = sv === 'insider' || sv === 'holder' ? sv : 'broker'; } catch (_) {}
+      try { var sv = localStorage.getItem('smm_sub'); S.sub = sv === 'insider' || sv === 'holder' || sv === 'screener' ? sv : 'broker'; } catch (_) {}
       renderAll();
       setSub(S.sub, true);
       // Data asli: index dulu → saham pertama yang punya data → muat radar di belakang
@@ -2653,7 +2699,7 @@
     }
     var an = document.getElementById('acctNav');
     if (an) {
-      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Action', 'broker', '#smmActionCard'], ['Distribusi', 'broker', '#smmSankeyCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard']];
+      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Action', 'broker', '#smmActionCard'], ['Distribusi', 'broker', '#smmSankeyCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
       var grp = document.createElement('div');
       grp.className = 'acct-nav-group'; grp.setAttribute('data-page', 'smartmoney');
       grp.innerHTML = '<button type="button" class="acct-nav-page" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">💰</span>Smart Money</button><div class="acct-nav-subs">' +
