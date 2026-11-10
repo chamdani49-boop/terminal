@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-11-10T00:30:53+00:00",
+"generated_at": "2026-11-10T00:45:45+00:00",
 "count": 80,
 "items": [
 {
@@ -11,6 +11,12 @@
 {
 "title": "IHSG Dibayangi Sentimen Inflasi AS dan MSCI, Saham BBTN dan INCO Direkomendasi",
 "link": "https://news.google.com/rss/articles/CBMiygFBVV95cUxNZktpVGw4SW5oTVIxejdQNEY4WFY4dG5LRVF1eHU1VklqWkVzaDJkSGJHZU42d2NEY0RzdUxveU1mYW5vQ1ZMMll3aHgyT1c1Qk1iZ242bUZRWWl4UWxvSFotVlRQMXluMjNiSFp1U0syWmlQaGdZNzctdHVfSXA4NkdmZ2wyNXdJakN2b1U1QmVwaWMyRHJkelJUcnR3TV9KcHROUnNBUW9DR3YxRmptbkdyV3dDTXJDdXRZSkZVNzdNcU5lYl9LS1d30gHPAUFVX3lxTE12TEVjMkxiSGhGNThzU2s1M05JTDJuWTJGRHN5ZnFOdnJtN0Y2c2VyZndac0hHWU5RRTc5Q20xRWh1RXZ4RUtxSjhWSERabVJINDNtRVJZVDVVb1MycDRLUi1YeF96cFZzYWVXanQxZnlaT0N6WVRmM29VemVETjUxLWptSHRxREItWHdvYXBZQTZ1eEl4TU01ZE1OU2F2bkxEVHpIYWk4U21saTRmRmVjQnExQ2VVZnEzb25nRXh2STFraVRMTkhaVUU3aWV1aw?oc=5",
+"source": "Katadata",
+"ts": 1794268380
+},
+{
+"title": "IHSG Hari Ini Dibayangi Inflasi AS dan MSCI, Saham BBTN dan INCO Direkomendasi",
+"link": "https://news.google.com/rss/articles/CBMiygFBVV95cUxNWUhzeUd2MG5NOVlXQUJOYnFxQW40OXV4VDdoMWN4Q3BXUUk5YTUyc3hfZmtsY0hDZXE2MGZZcnhuM05tbGNmcmVVaVBZWHFHOURiNWl1V0dIYjdOanljLTBpOGR2eFdnX3R2Zm0yR0dlbnhCUVlvWF9iQVBpQ3ctUm5TWW1WUWk4Y2dxOG9uYmRSc2JsZy0yZG9uR0ZfRjI4VnZYWlE4V3BkeHpVRDVFaUtFeHl4cmxBVFhPNGRDY3U5azVrdVNkaHBB0gHPAUFVX3lxTE9zNVNOQTlJNHY5SUxPUm16SDY1ZnVfSjlEVThScjdwR0gxNGE4LWFoU1Rxam11V0FieXh2eVFKNHhhUnhiMDFEQjZOUFNZN3NnLWo5Z29udTdDQlVIRG94Mk1tTEp6NmU2bTFaTTlTUFJFdjFvMllVNExiczlmN0owMHY4YzN3SVdabWlfUU5ReXJGOXQxSlNYNy1BOVo2RC1Xc1FJYzRVSGFxdmJXTGczUVVCVDlrZmpRaWxBQ3ZkSFNrNXJKeDYzQWNhRlZ2VQ?oc=5",
 "source": "Katadata",
 "ts": 1794268380
 },
@@ -229,6 +235,12 @@
 "link": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQbUs3eENIWmZCNUJvLTJpczAwbGQwdjdIYmRPcTdyVW9wTXFPYk4tdVhnTmtoMU5RM2loYUN6bHlXZHp5Y0RvYzhQY0tNNVN5UjZYTHliTHBWcnpvQWdJanB2OW45VEstb1Q0bDhjX21LclNCSWR6V2pQXzdnYnVsd283VHhVa2ZQMjVmdm85eTFRQQ?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1794231600
+},
+{
+"title": "Update! RANS Nyatakan Kerja Sama dengan D’MASIV Berakhir",
+"link": "https://news.google.com/rss/articles/CBMiigFBVV95cUxORDB1VTUxdTh0aWZFWkR4TGwwVWhZNGRnXzI3Rko3TmsxX3pMckR2UU5HY1h2b2dwX20zR3Z3T3c3b1lCbmtUUUlUUnpEeXZmN2V1bTBjTEdQVWM3NTZLUkx5SWZwR01fZ2xJQVpaU3hvU1ZRZlNKWlJ4VlNDNDROeklLX3p1RTRJQ1E?oc=5",
+"source": "EmitenNews",
+"ts": 1794231120
 },
 {
 "title": "BP Jual Bisnis SPBU di Indonesia, Ini Kata Manajemen - Bisnis.com",
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQa0NMTzRFSHZrZDdGa2ktYlJvMVBzRVpXU19KZVd6dzUyUE5FcTluWVIySnlEbVhLQmJJczFZR1R0bW5qMGg3aU9pZ3pQb0JHRmswcUJOdExjc20tWlZGN0ZDRTV1ZXZyOUZXUmVIcEFKb1J6alJUdEd0SlV3cldJRi1mRDBOOF9Pbjlwa242UEUyc0xBODAtZU9fdVJLX01xdkx3MDVXZU9hRHBlZFZ5eXdJakJKVVJlM3RhZA?oc=5",
 "source": "InvestorTrust",
 "ts": 1794211920
-},
-{
-"title": "BRI (BBRI) Buka Peluang Konsolidasi Anak Usaha Seiring Streamlining Danantara",
-"link": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxQN01FSUdwZThzbDhPcEUwMmlUM1hoVElEd0w2WGFUdXlqbXcyU19Fb2s4WmRHN2I3U2hXaFlORXRodkc5LUwtbnZvaTM1c0lmcGVaem5Hd0dhNXJXOUktZEZNSTVYY3UwXzgtS3lQMTFMLU1Ec284cVFRQzhLUmdzcVRhNGtiS0MxOWllU1hhT1YtQXBmVmp4VWdDNno0MUhSQ0pOWTlwS0phbnJUMzVQemNEeDM0eHp1?oc=5",
-"source": "InvestorTrust",
-"ts": 1794211920
-},
-{
-"title": "INFOGRAFIS Trump Redam Ancaman, Brent Turun ke USD97",
-"link": "https://news.google.com/rss/articles/CBMikwFBVV95cUxNSE4tdjQwSGFMQnBsbGxyLXRqRVBCdEkzckZOb3JtMjBrUWFybWdhaG5wT3RFTkdtMlduWEtMX3MyRUs1N1dwQjlSaG9MY2hUUDBwWU16QjRXMTM2cHJZT3Jmckw0NmNES2ZrUFpqZUN0aU1nY0VNZlJ0cGJTeFZReHJSYnJjcFlOREVqd3BZQmF6UjA?oc=5",
-"source": "Kabar Bursa",
-"ts": 1794211800
 }
 ]
 }
