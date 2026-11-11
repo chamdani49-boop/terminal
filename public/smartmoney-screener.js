@@ -15,9 +15,9 @@
  * SUMBER DATA
  *   - Harga & teknikal (RSI, Stoch, 20d high) = ASLI dari /ohlc.json.
  *   - Nama, sektor, kapitalisasi = DATA (data.json) yang sudah dimuat situs.
- *   - Arus broker / asing / ritel / insider / holder = DUMMY deterministik
- *     (seed = kode saham), KECUALI saham yang punya file asli di R2
- *     (/api/admin/smartmoney) → dihitung dari data asli dan diberi tanda.
+ *   - Arus broker / asing / ritel / insider / holder = HANYA data asli R2
+ *     (ringkasan screener/summary.json atau file per saham). Saham tanpa
+ *     data asli tidak masuk daftar yang memakai arus broker. Tidak ada dummy.
  *   - Ritel = broker di RETAIL; smart money = broker lainnya.
  *
  * Modul ini tidak menyentuh menu inti. Semua akses ke internal Smart Money
@@ -128,13 +128,6 @@
     return days.slice(-AXIS_MAX);
   }
 
-  var FIRST = ['Budi', 'Andreas', 'Linda', 'Hendra', 'Sari', 'Rudy', 'Wulan', 'Agus', 'Fransiska', 'Tommy', 'Lukas', 'Maria', 'Daniel', 'Grace', 'Irwan', 'Natalia', 'Steven'];
-  var LAST = ['Santoso', 'Wijaya', 'Halim', 'Gunawan', 'Kusuma', 'Tanujaya', 'Hartono', 'Prasetyo', 'Setiadi', 'Susanto', 'Wibowo', 'Sutanto'];
-  var CORP = ['Graha', 'Nusantara', 'Cahaya', 'Mitra', 'Prima', 'Sentosa', 'Abadi', 'Bumi', 'Samudra', 'Lestari'];
-  var SUFX = ['Investama', 'Capital', 'Holdings', 'Sejahtera', 'Global'];
-  var FUNDS = ['Nusa Growth Fund', 'Archipelago Value Fund', 'Equator Capital Ltd', 'Sunda Strait Partners', 'Garuda Asia Fund', 'Merapi Opportunity Fund'];
-  var ROLES = ['Direktur Utama', 'Direktur', 'Komisaris', 'Komisaris Utama'];
-
   function newArrs(m) {
     var n = m.n;
     ['val', 'smB', 'smS', 'smBL', 'smSL', 'rtB', 'rtS', 'rtBL', 'rtSL', 'fB', 'fS', 'fBL', 'fSL', 'blk', 'kF'].forEach(function (k) { m[k] = new Float64Array(n); });
@@ -176,93 +169,14 @@
     }
   }
 
-  function simulate(m, mEnds) {
-    var r = A.rng(A.hashStr(m.code) ^ 0x7f4a7c15);
-    function G() { return A.gauss(r); }
+  // Tanpa data asli: arus broker/asing/ritel/insider/holder KOSONG (tidak ada dummy).
+  function blank(m) {
     newArrs(m);
-    var n = m.n, c = m.c;
-    var mcap = m.mcap || Math.exp(Math.log(1.5e11) + r() * Math.log(400));
-    if (!m.shares) m.shares = mcap / (c[n - 1] || 1);
-    var V0 = clamp(mcap * Math.exp(Math.log(0.0008) + 0.8 * G()), 3e7, 6e11);
-    var BL = A.brokerList();
-    var ret = BL.filter(function (b) { return RETAIL[b.code]; }), oth = BL.filter(function (b) { return !RETAIL[b.code]; });
-    var picks = A.shuffle(ret, r).slice(0, 4).concat(A.shuffle(oth, r).slice(0, 8));
-    var GS = 0, GSr = 0, KS = 0;
-    picks.forEach(function (p) {
-      var R = !!RETAIL[p.code], t = A.brokerType(p);
-      var b = newBroker(p.code, A.titleCase(p.name), t, R ? 'R' : 'S', t === 'F' && !R, n);
-      b.gs = Math.exp(G() * 0.6) * (R ? 2.2 : 1); b.k = 0.4 + r() * 1.2; b.bias = 0;
-      m.brokers.push(b);
-    });
-    var dom = [];
-    m.brokers.forEach(function (b, i) { if (b.grp === 'S' && b.type !== 'F') dom.push(i); });
-    m.asc = dom.length && r() < 0.85 ? dom[Math.floor(r() * dom.length)] : -1;
-    if (m.asc >= 0) m.brokers[m.asc].k *= 1.6;
-    m.brokers.forEach(function (b) { GS += b.gs; if (b.grp === 'S') KS += b.gs * b.k; else GSr += b.gs; });
-    var wall = m.brokers.filter(function (b) { return b.grp === 'S'; }).sort(function (a, b) { return b.k - a.k; })[0];
-    m.wS = n - Math.min(WIN, n - m.first);
-    m.nBk = 38 + Math.floor(r() * 50);
-    var z = 0, mu = 0, left = 0, nets = new Float64Array(m.brokers.length);
-    for (var t = 0; t < n; t++) {
-      var p = c[t], rt = t > 0 && c[t - 1] > 0 ? c[t] / c[t - 1] - 1 : 0;
-      if (left-- <= 0) { mu = G() * 0.7; left = 8 + Math.floor(r() * 35); }
-      z = 0.7 * z + 0.12 * mu + 0.45 * G() - 1.5 * rt;
-      var vt = m.tr[t] ? V0 * Math.exp(0.45 * G()) * (1 + 6 * Math.abs(rt)) : 0;
-      if (!vt) continue;
-      var intent = vt * 0.1 * Math.tanh(z), tot = 0;
-      m.brokers.forEach(function (b, i) {
-        var gb = vt * b.gs / GS;
-        var nb = b.grp === 'S' ? intent * b.gs * b.k / KS : -intent * b.gs / GSr;
-        b.bias = 0.9 * b.bias + 0.1 * G();
-        nb += gb * (0.3 * G() + 0.12 * b.bias);
-        nets[i] = nb; tot += nb;
-      });
-      for (var i = 0; i < m.brokers.length; i++) {
-        var b = m.brokers[i], gb = vt * b.gs / GS, nb = nets[i] - tot * b.gs / GS;
-        var bv = Math.max(gb * 0.04, gb * 0.5 + nb / 2), sv = Math.max(gb * 0.04, gb * 0.5 - nb / 2);
-        var ba = clamp(p * (1 + 0.004 * G()), m.l[t], m.h[t]) || p, sa = clamp(p * (1 + 0.004 * G()), m.l[t], m.h[t]) || p;
-        addFlow(m, b, t, bv, sv, bv / (ba * 100), sv / (sa * 100));
-        if (i === m.asc) m.ascBv[t] = bv;
-      }
-      if (r() < 0.035) {
-        var bsz = vt * (0.15 + r() * 0.6) * (Math.tanh(z) + 0.35 * G() >= 0 ? 1 : -1);
-        m.blk[t] = bsz;
-        if (t >= m.wS && wall) {
-          if (bsz > 0) { wall.ng.bv += bsz; wall.ng.bl += bsz / (p * 100); }
-          else { wall.ng.sv -= bsz; wall.ng.sl -= bsz / (p * 100); }
-        }
-      }
-    }
-    finishBrokers(m);
-    kseiFrom(m, 5 + r() * 40);
-    m.ff = 0.15 + r() * 0.45;
-
-    // Pemegang > 5% (dummy): perubahan per akhir bulan, 3 bulan terakhir
-    m.h5 = [];
-    var nH = r() < 0.3 ? 1 + Math.floor(r() * 2) : 0;
-    for (var h = 0; h < nH; h++) {
-      var nm = r() < 0.6 ? 'PT ' + CORP[Math.floor(r() * CORP.length)] + ' ' + LAST[Math.floor(r() * LAST.length)] + ' ' + SUFX[Math.floor(r() * SUFX.length)]
-        : FUNDS[Math.floor(r() * FUNDS.length)];
-      var pct = 4.6 + r() * 30;
-      mEnds.slice(-3).forEach(function (ti) {
-        if (r() < 0.3) {
-          var prev = pct; pct = Math.max(0.5, pct + G() * 0.7);
-          if (Math.max(prev, pct) >= 5) m.h5.push({ name: nm, prev: prev, cur: pct, t: ti });
-        }
-      });
-    }
-    // Insider (dummy): 0-2 transaksi 40 hari terakhir
-    m.ins = [];
-    var nI = r() < 0.2 ? 1 + Math.floor(r() * 2) : 0;
-    for (var q = 0; q < nI; q++) {
-      var ti2 = n - 1 - Math.floor(r() * 40);
-      var sh = Math.max(100, Math.round(m.shares * (0.00002 + Math.pow(r(), 3) * 0.002) / 100) * 100);
-      m.ins.push({ name: (FIRST[Math.floor(r() * FIRST.length)] + ' ' + LAST[Math.floor(r() * LAST.length)]).toUpperCase(), role: ROLES[Math.floor(r() * ROLES.length)],
-        act: r() < 0.6 ? 'BUY' : 'SELL', shares: sh, price: c[ti2], value: sh * c[ti2], t: ti2 });
-    }
+    m.wS = m.n - Math.min(WIN, m.n - m.first);
+    m.nBk = 0; m.asc = -1; m.h5 = []; m.ins = []; m.ff = null;
+    kseiFrom(m, 0);
   }
-
-  // Data asli R2 → struktur yang sama dengan simulate()
+  // Data asli R2 per saham → struktur model
   function applyReal(m, g) {
     if (!g) return;
     var idx = U.idx;
@@ -476,7 +390,7 @@
     return -1;
   }
   function presetHit(m, k, t) {
-    if (t < 21 || t - 20 < m.first || !m.val[t]) return false;
+    if (!m.realBroker || t < 21 || t - 20 < m.first || !m.val[t]) return false;
     switch (k) {
       case 'top': return m.score[t] >= 50 && regime(m, t).k === 'acc';
       case 'spike': return spikeAt(m, t) >= 0;
@@ -610,8 +524,8 @@
     var mt = meta[code] || {};
     var m = { code: code, name: mt.name || code, sector: mt.sector || '-', board: mt.board || '', mcap: mt.mcap || 0, shares: mt.shares || 0,
       n: n, first: first, o: o, h: h, l: l, c: c, tr: tr, real: false };
-    simulate(m, U2.mEnds);
-    m.kF0 = m.kF[0];
+    blank(m);
+    m.kF0 = 0;
     derive(m);
     return m;
   }
@@ -721,7 +635,7 @@
     var t = T0(), d = U.axis[t], bt = backtest();
     var acc = 0, dis = 0, fnet = 0, gold = 0;
     U.list.forEach(function (m) {
-      if (!m.val[t]) return;
+      if (!m.realBroker || !m.val[t]) return;
       var rg = regime(m, t); if (rg.k === 'acc') acc++; else if (rg.k === 'dist') dis++;
       fnet += sum(m.Pfn, t - 4, t);
       if (m.score[t] >= 65) gold++;
@@ -763,7 +677,7 @@
 
     var accTbl = V.acc ? '<div class="sx-tw"><table class="sx-tbl sx-acctbl"><thead><tr><th>Preset</th><th>Sinyal</th><th>Hari</th><th>Rata-rata ' + bt.H + 'h</th><th>vs saham lain</th><th>Naik</th><th>Penilaian</th></tr></thead><tbody>' +
       PRESETS.map(function (p) { var s = bt.st[p.k]; return '<tr><td class="l">' + ic(p.ico) + ' ' + esc(p.label) + '</td><td>' + nf(s.cnt) + '</td><td>' + s.days + '</td><td class="' + sc(s.avg) + '">' + fp(s.avg) + '</td><td class="' + sc(s.excess) + '">' + fp(s.excess) + '</td><td>' + nf(s.upPct, 0) + '%</td><td><span class="sx-lbl ' + s.label.k + '">' + s.label.t + '</span></td></tr>'; }).join('') +
-      '</tbody></table></div><p class="sx-note">Backtest ' + bt.H + ' hari bursa ke depan pada setiap hari sinyal selama ±3 bulan. Data arus broker untuk saham tanpa file asli masih dummy, jadi angka ini menguji logika preset, bukan janji hasil.</p>' : '';
+      '</tbody></table></div><p class="sx-note">Backtest ' + bt.H + ' hari bursa ke depan pada setiap hari sinyal selama ±3 bulan. Hanya saham dengan data broker asli yang dihitung. Hasil masa lalu bukan janji hasil.</p>' : '';
 
     return vhead('today') +
       '<div class="sx-daynav">' +
@@ -1382,8 +1296,9 @@
     var el = host.querySelector('#sxSrc'); if (!el || !U) return;
     var nReal = U.list.filter(function (m) { return m.realBroker; }).length;
     el.innerHTML = '<span class="sx-sb ok">' + ic('check') + 'Harga &amp; teknikal asli · ' + nf(U.list.length) + ' saham</span>' +
-      '<span class="sx-sb ' + (nReal ? 'ok' : 'dm') + '">' + ic(nReal ? 'check' : 'info') + (nReal ? nReal + ' saham dengan data broker asli <i class="sx-real">●</i>, sisanya dummy' : 'Arus broker / asing / insider: data dummy') + '</span>' +
-      '<span class="sx-sb">' + ic('cal') + 'Harga ' + esc(dShort(U.axis[U.n - 1])) + (U.summaryAt ? ' · ringkasan broker ' + esc(dShort(String(U.summaryAt).slice(0, 10))) : '') + '</span>';
+      '<span class="sx-sb ' + (nReal ? 'ok' : 'dm') + '">' + ic(nReal ? 'check' : 'info') + (nReal ? nReal + ' saham dengan data broker asli <i class="sx-real">●</i>' : 'Belum ada data broker asli') + '</span>' +
+      '<span class="sx-sb">' + ic('cal') + 'Harga ' + esc(dShort(U.axis[U.n - 1])) + (U.summaryAt ? ' · ringkasan broker ' + esc(dShort(String(U.summaryAt).slice(0, 10))) : '') + '</span>' +
+      (nReal ? '' : '<div class="sx-nodata">' + ic('info') + '<span><b>Belum ada data broker asli.</b> Semua daftar yang memakai arus broker, asing, ritel, insider, atau pemegang saham akan kosong sampai ringkasan diunggah: <code>node scripts/build-smartmoney-screener.js --dir &lt;folder smartmoney&gt; --upload</code>.</span></div>');
   }
   function renderView() {
     if (!host) return;
@@ -1508,6 +1423,7 @@
     '.sx-src{display:flex;gap:6px;flex-wrap:wrap}',
     '.sx-sb{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--bg2);color:var(--text2)}',
     '.sx-sb .sx-ic{width:13px;height:13px}.sx-sb.ok{color:var(--green);background:var(--green-bg)}.sx-sb.dm{color:var(--yellow);background:var(--yellow-bg)}',
+    '.sx-nodata{flex-basis:100%;display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.55;color:var(--text2);padding:10px 12px;border-radius:12px;background:var(--yellow-bg);border:1px solid color-mix(in srgb,var(--yellow) 45%,transparent)}.sx-nodata .sx-ic{color:var(--yellow);margin-top:2px}.sx-nodata b{color:var(--text)}.sx-nodata code{font-size:11.5px;word-break:break-all}',
     '.sx-real{font-style:normal;color:var(--green);font-size:9px;margin-left:3px;vertical-align:2px}',
     '.sx-view{display:flex;flex-direction:column;gap:14px;min-width:0}',
     /* head + guide */

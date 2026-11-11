@@ -102,3 +102,14 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
 - Jumlah pemegang: garis + batang perubahan, ringkasan 1 thn/bulan naik/turun, daftar 2 kolom.
 - Pemegang terkini: peta kepemilikan + bar per pemegang; direksi/komisaris dengan inisial; UBO sebagai rantai.
 - Dewan: chip orang per jabatan. Profil: kartu ikon + free float ring + harga vs IPO + chip penjamin emisi.
+
+## Revisi 8: SEMUA data dummy dihapus
+- smartmoney.js: `generate()`, `genHolder()`, konstanta dummy (FIRST/LAST/CORP/ROLES/FUNDS/SECTORS,
+  END_DATE, N_PRICE, N_FLOW) dihapus. `getData()` → data asli R2 atau `emptyData()` (kosong).
+  Halaman Broker, Insider (baru punya `.smm-empty`), Kepemilikan menampilkan kotak kosong.
+  Fungsi render broker/insider diberi guard `hasBroker` / `hasInsider`. Badge: "Data asli · tgl" /
+  "Memuat data…" / "Belum ada data".
+- smartmoney-screener.js: `simulate()` dihapus → `blank()` (arus nol). `presetHit` & KPI Today hanya
+  menghitung saham `realBroker`. Tanpa data asli muncul banner `.sx-nodata` berisi cara mengunggah.
+  Harga & teknikal tetap asli dari ohlc.json. `SCR_V` = 20261110e.
+- Catatan: kolom "KSEI" di Foreign masih perkiraan dari arus transaksi asing (bukan file KSEI).
