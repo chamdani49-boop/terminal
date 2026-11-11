@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-11-11T14:15:44+00:00",
+"generated_at": "2026-11-11T14:30:56+00:00",
 "count": 80,
 "items": [
 {
@@ -57,8 +57,20 @@
 "ts": 1794394269
 },
 {
+"title": "IHSG Closes Lower Ahead of MSCI Announcement (Wednesday, November 11, 2026)",
+"link": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxNam5PaUQ4VkVqWldsZjduX0tHVmo3TjJyVF9QZkZYNzB0R2xkcUxuTGtFS3g4NEUxSGJBQl9qUVU2VmNNdlBudHAwSHN3d2czelBncFJRdnhDR1dXRmNIRHFFUWlTU3hyeEVmU0tiX3VvUW5DM3diU2xxM1RQT2xVN2NvZTN6MkRPaXdUVm85UURONGJBQnd1Rm54SEU0dDNTQTFra1hYNHpBZUgzV3FFdkVpYng3Qkp4ZjBDSTZGNmZ6bHBwVTFqZk5KQm9USGQxSzBQUw?oc=5",
+"source": "Katadata",
+"ts": 1794394269
+},
+{
 "title": "Besok, DPR Gelar Paripurna Pengajuan HMP Wapres Gibran",
 "link": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNSm1BTUsyby01d1NGSjlvcFhiY3U2NXUxVTFvUnlEeGZDNFRQcUFEVnVDb2QzX3MwTndzRXlKS3lPS3NqOWNCZzcyUnoyQ090Mi1aOUpNcWhqUy1obnpoTER6ZGJ1WEpmdnJmaEt2dFBvSnRQeTZkU2stUXNJaFFRYWxpOXJWU3RpeW5JbHpaUTgxQ2YtLVEtRjBycER0M2VLclZBWUxCQ3o?oc=5",
+"source": "Bloomberg Technoz",
+"ts": 1794393600
+},
+{
+"title": "Besok, DPR Gelar Paripurna Pengajuan HMP Wapres Gibran - Nasional",
+"link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQSXJySTBPTnRWSHMtQXRGQnRCZjFXV3pLQmVmU1FfUmVLNG9iQlI1MzE5MFJRNjRGRWoxVnVvaTFfODl2QVc3VG9IZ21iYVhxWW5jY2FTdGdrRDkwNENsUjExclB0WHVmaHNSa092T0NZZUI0bjc4bVg0WXRrbGxWTXhvZFJNaXp2Zklyd3lWY3htSWtHRUllSms5YmpmakM0Y0s2bENzZjhoVlE?oc=5",
 "source": "Bloomberg Technoz",
 "ts": 1794393600
 },
@@ -469,18 +481,6 @@
 "link": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQLWp1X0RhYVdDek9MN1Q4QnVBd0lGSWtKam13UXNsODZVS0IwU042Y2VtbG14RzNJbUtISkJFNlVfUzBUbFhRMHVua1RTclJOa212ZlgxQ1JFZkZudjU3UDZMdDNOZFB5OFJtenhyN1FuT3phYXR4eHlsTTNzdmphak92d3ZvaE5BQzlCQlRvTjlIVFdvMENnMQ?oc=5",
 "source": "Kabar Bursa",
 "ts": 1794366660
-},
-{
-"title": "Dua Pemegang Saham Sepakat Divestasi, HRME Berpotensi Ganti Pengendali",
-"link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQTzNabG90M3V5eEpLQXV4dFV3dk9ybmJvRXlQQkZoS3pSNFBkV2o3akh5QUFyb09kYjdfTmV1Wm9vRWdTNkprMGtTcGhseThSMGdJT1NLeDdwVzk5STB2Ymg2bG1Ya3hMVk5SOGpxUW91UHJRa1VuNGRlMVI3QlN5aURRNzdvLUh0WUpNWTZaSGxNYXl6T1VXbG1HUXJfaFNIdzVXdzBJb1AtQ2o10gGyAUFVX3lxTFA3RGNuS2dnQVBVbXJteDVnZ1VxSm9NTkd6aWFxMVduU1JDVW56bjJfUHhnZFo4Q2xMX2VwU1RNWGFsTUtTMjlEQ1hxRS1zcHRYTTlXMEpkeEJnN2RXcW9fMC1MQ1JRbzhSMUtUUTNVYVR5VFJ2RGFxZDBBQjBqSmFnWHFWdWNTZEtZOEFqNHV1SDZIVXVjQWFHb1FBanlYY0pOOWdnZURRay1BMHRKZmtOMnc?oc=5",
-"source": "IDX Channel",
-"ts": 1794366660
-},
-{
-"title": "UNTD Pertahankan Direksi dan Komisaris, Stephen Mulyadi Kembali Jadi Direktur Utama",
-"link": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxOVEI2WHZMNTA2UDBPZnI3OGpYSlFEVjFyNDRJd2dhMzQ3TzFuYXdBQXNCQ3FTWHZoSncyclYyYlJqbFdGZnBkWlN1bTI0bzFwc1lKQjdEb292c0xVZVpjME5hX1daRWI2WXBqc0ExWGhNVmREcmJFNFRza0p1aGZrbnBFdjIxeEI5Y0d2V25UWnJCaGhlSE5pRk1CTjROZTZYTFhXQ0tiZ04?oc=5",
-"source": "Stockwatch",
-"ts": 1794366656
 }
 ]
 }
