@@ -131,3 +131,14 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   Titik balik) + SVG net flow kumulatif tiap kubu, bar net per broker. Ikut chip, periode, Value/Volume,
   filter investor. SVG digambar ulang lewat ResizeObserver; layout 2 kolom via container query ≥ 640px.
 - Mode Ringkasan menghapus chart LWC (hemat memori); `buildFlow()` tetap jadi pintu masuk keduanya.
+
+## Revisi 11: Orbit "Siapa lawan X?" + Peta posisi Value × Volume (dilebur)
+- Broker Distribution (`#smmSankeyCard`) punya switch `#smmSkView` Orbit | Aliran (`S.skView`, default orbit).
+  Orbit (`renderOrbit`, `skFocusOf`, `fracWord`): komposisi lawan (Asing / X sendiri / Lokal / BUMN),
+  kalimat otomatis, orbit SVG (klik lingkaran → `skfocus` ke broker lawan), daftar lawan + %, select
+  `#smmSkFocus`. Fokus tetap `S.skFocus` ('b:KODE' / 's:KODE'), sama dengan Sankey.
+- Sankey (`renderSankeyFlow`) kini membagi pita PROPORSIONAL (bobot acak `rng` dihapus) supaya angka
+  Orbit dan Aliran sama. Data bursa tidak mencatat pasangan pembeli-penjual → keduanya diberi label estimasi.
+- Value × Volume dilebur ke Ringkasan Broker Flow: bar "Net value per broker" diganti tabel
+  (Net value, Net lot, Rata², vs harga) + Peta posisi broker (`drawStoryMap`, `storyMapText`, `stVs`).
+  Toggle Value/Volume yang sudah ada dipakai, jadi tidak ada opsi "Keduanya" terpisah.
