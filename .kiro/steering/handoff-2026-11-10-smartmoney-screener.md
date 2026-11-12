@@ -168,3 +168,10 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
 - Gaya order butuh frekuensi transaksi: `adapt()` kini membaca array opsional `bf` / `sf` per broker
   (jumlah transaksi beli/jual per hari). Data R2 sekarang belum punya → kartu menampilkan catatan
   "belum tersedia". Untuk mengaktifkan: tambahkan `bf`/`sf` ke file broker di R2 (pipeline data).
+
+## Revisi 15: kartu Broker Summary & Lawan Transaksi tampak kosong
+- Penyebab: tanggal default = hari terakhir harga (mis. hari ini), sedangkan data broker baru ada sampai
+  hari bursa sebelumnya. Kartu menulis `.smm-empty`, yang di luar halaman kosong ber-`display:none`.
+- Perbaikan: `activeRange(g)` mundur ke hari terakhir yang ada transaksi broker + catatan `.smm-cardnote`
+  ("… belum ada transaksi broker. Ditampilkan hari terakhir …"). Pesan kosong di kartu baru memakai
+  `.smm-cardnote` (selalu terlihat), bukan `.smm-empty`.

@@ -333,6 +333,7 @@
     '.smm-ob-row .n,.smm-ob-row .p{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:700}.smm-ob-row .p{color:var(--text3)}',
     '@container (max-width:380px){.smm-ob-title{font-size:19px}.smm-ob-row{grid-template-columns:62px minmax(0,1fr) 62px 32px;gap:6px;font-size:11px}.smm-ob-top .smm-sel{max-width:none;width:100%}}',
     /* Broker Summary */
+    '.smm-cardnote{font-size:12px;line-height:1.5;color:var(--text2);background:var(--bg2);border:1px dashed var(--border);border-radius:10px;padding:8px 10px}.smm-cardnote b{color:var(--text)}',
     '.smm-bs-meter{position:relative;height:10px;border-radius:5px;margin-top:10px;background:linear-gradient(90deg,var(--st-dis),var(--bg3) 50%,var(--st-acc))}',
     '.smm-bs-meter i{position:absolute;top:-4px;width:4px;height:18px;margin-left:-2px;border-radius:2px;background:var(--text);box-shadow:0 0 0 2px var(--bg2)}',
     '.smm-bs .smm-meter-lbl{margin-top:4px}',
@@ -1656,7 +1657,7 @@
     if (!G().hasBroker) { box.innerHTML = ''; return; }
     var d = flowStoryData(); _story = d;
     if (!d.list.length || d.n < 2) {
-      box.innerHTML = '<div class="smm-empty">Pilih minimal satu broker lewat chip di bawah untuk melihat ringkasan.</div>';
+      box.innerHTML = '<div class="smm-cardnote">Pilih minimal satu broker lewat chip di bawah untuk melihat ringkasan.</div>';
       return;
     }
     var h = flowStoryHead(d), g = d.g;
@@ -1766,6 +1767,21 @@
   // Peta posisi broker (Value × Volume): kanan-kiri = net value, atas-bawah = harga rata-rata,
   // besar bubble = volume. Rata-rata = value ÷ volume → siapa untung / tersangkut terhadap harga sekarang.
   function stVs(x, c1) { return x.avg > 0 ? (x.v >= 0 ? (c1 / x.avg - 1) * 100 : (x.avg / c1 - 1) * 100) : null; }
+  // Rentang tanggal untuk kartu baru: kalau tanggal terpilih belum ada transaksi broker
+  // (mis. harga sudah update tapi data broker belum), pakai hari terakhir yang ada transaksinya.
+  function activeRange(g) {
+    var r = actRange();
+    var has = function (a, b) { return g.brokers.some(function (x) { for (var t = a; t <= b; t++) if (x.bv[t] || x.sv[t]) return true; return false; }); };
+    if (has(r[0], r[1])) return { r: r, moved: false };
+    for (var t = r[0] - 1; t >= 0; t--) if (has(t, t)) return { r: [t, t], moved: true, from: r };
+    return { r: r, moved: false, none: true };
+  }
+  function movedNote(g, ar) {
+    return ar.moved ? '<div class="smm-cardnote">' + esc(rangeText(g, ar.from)) + ' belum ada transaksi broker. Ditampilkan hari terakhir yang ada datanya: <b>' + esc(rangeText(g, ar.r)) + '</b>.</div>' : '';
+  }
+  function emptyNote(g, r) {
+    return '<div class="smm-cardnote">Belum ada transaksi broker pada ' + esc(rangeText(g, r)) + '. Pilih tanggal lain di kalender atau Broker Action.</div>';
+  }
   // ─────────────── Kartu Broker Summary ───────────────
   // Tanggal & mode (Net/Gross) ikut Broker Action. Top 9 pembeli vs top 9 penjual,
   // tarik-tambang berpasangan per peringkat, dan gaya order (lot per transaksi) bila
@@ -1773,12 +1789,12 @@
   function renderBSum() {
     var box = document.getElementById('smmBSum'); if (!box) return;
     if (!G().hasBroker) { box.innerHTML = ''; return; }
-    var g = G(), r = actRange(), rows = aggregate(g, r[0], r[1], S.inv), net = S.actMode === 'net';
+    var g = G(), ar = activeRange(g), r = ar.r, rows = aggregate(g, r[0], r[1], S.inv), net = S.actMode === 'net';
     var B = (net ? rows.filter(function (x) { return x.net > 0; }).map(function (x) { return { x: x, v: x.net }; })
                  : rows.map(function (x) { return { x: x, v: x.bv }; })).filter(function (q) { return q.v > 0; }).sort(function (a, b) { return b.v - a.v; }).slice(0, 9);
     var Sl = (net ? rows.filter(function (x) { return x.net < 0; }).map(function (x) { return { x: x, v: -x.net }; })
                   : rows.map(function (x) { return { x: x, v: x.sv }; })).filter(function (q) { return q.v > 0; }).sort(function (a, b) { return b.v - a.v; }).slice(0, 9);
-    if (!B.length && !Sl.length) { box.innerHTML = '<div class="smm-empty">Tidak ada transaksi broker pada ' + esc(rangeText(g, r)) + '. Pilih tanggal lain di kalender atau Broker Action.</div>'; return; }
+    if (!B.length && !Sl.length) { box.innerHTML = emptyNote(g, r); return; }
     var sb = B.reduce(function (s, q) { return s + q.v; }, 0), ss = Sl.reduce(function (s, q) { return s + q.v; }, 0);
     var diff = sb - ss, sc = sb + ss > 0 ? diff / (sb + ss) : 0, pct = Math.abs(diff) / (Math.max(sb, ss) || 1) * 100;
     var lab, who = diff >= 0 ? 'pembeli' : 'penjual';
@@ -1823,7 +1839,7 @@
     }
     box.innerHTML =
       '<div class="smm-ob-top"><div><div class="smm-ob-kick">' + esc(S.code) + ' · Broker Summary</div><div class="smm-vx-rng">' + esc(rangeText(g, r)) + ' · ' + (net ? 'Net' : 'Gross') + '</div></div>' +
-        '<div class="smm-vx-px"><small>Harga</small><b>' + nf(g.ohlc[g.off + S.actEnd] ? g.ohlc[g.off + S.actEnd].close : 0) + '</b></div></div>' +
+        '<div class="smm-vx-px"><small>Harga</small><b>' + nf(g.ohlc[g.off + r[1]] ? g.ohlc[g.off + r[1]].close : 0) + '</b></div></div>' + movedNote(g, ar) +
       '<div class="smm-ob-box"><div class="smm-st-lbl">Broker action</div>' +
         '<div class="smm-bs-meter"><i style="left:' + ((sc + 1) / 2 * 100).toFixed(1) + '%"></i></div>' +
         '<div class="smm-meter-lbl"><span>Big Dist</span><span>Netral</span><span>Big Acc</span></div>' +
@@ -1854,7 +1870,7 @@
     var box = document.getElementById('smmVxv'); if (!box) return;
     if (!G().hasBroker) { box.innerHTML = ''; return; }
     var d = vxvData(); _vxv = d;
-    if (!d.list.length) { box.innerHTML = '<div class="smm-empty">Pilih minimal satu broker lewat chip di Broker Flow.</div>'; return; }
+    if (!d.list.length) { box.innerHTML = '<div class="smm-cardnote">Pilih minimal satu broker lewat chip di Broker Flow.</div>'; return; }
     var m = S.vxv, showV = m !== 'volume', showL = m !== 'value';
     var mx = d.list.reduce(function (a, x) { return Math.max(a, Math.abs(m === 'volume' ? x.nl : x.nv)); }, 0) || 1;
     var cell = function (x, val, txt) {
@@ -2190,10 +2206,10 @@
   function renderOrbit() {
     var box = document.getElementById('smmOrbit'); if (!box) return;
     if (!G().hasBroker) { box.innerHTML = ''; return; }
-    var g = G(), r = actRange(), rows = aggregate(g, r[0], r[1], S.inv), vk = S.obMetric === 'value';
+    var g = G(), ar = activeRange(g), r = ar.r, rows = aggregate(g, r[0], r[1], S.inv), vk = S.obMetric === 'value';
     var fmt = vk ? fmtVal : function (v) { return fmtLot(v) + ' lot'; };
     var F = obFocusOf(rows);
-    if (!F.me || !(F.me[F.key] > 0)) { box.innerHTML = '<div class="smm-empty">Tidak ada transaksi broker pada ' + esc(rangeText(g, r)) + '. Pilih tanggal lain di kalender atau Broker Action.</div>'; return; }
+    if (!F.me || !(F.me[F.key] > 0)) { box.innerHTML = emptyNote(g, r); return; }
     var X = F.me, mine = X[F.key], buyer = F.side === 'b';
     var T = rows.reduce(function (s, x) { return s + x[F.opp]; }, 0) || 1;
     var parts = rows.filter(function (x) { return x[F.opp] > 0; }).map(function (x) {
@@ -2253,7 +2269,7 @@
     box.innerHTML =
       '<div class="smm-ob-top"><div><div class="smm-ob-kick">' + esc(S.code) + ' · ' + esc(rangeText(g, r)) + '</div>' +
         '<div class="smm-ob-title">' + (buyer ? 'Siapa lawan ' : 'Siapa penampung ') + esc(X.code) + '?</div></div>' +
-        '<select class="smm-sel" id="smmObFocus" aria-label="Pilih broker"><optgroup label="Pembeli">' + opts(vk ? 'bv' : 'bl', 'b') + '</optgroup><optgroup label="Penjual">' + opts(vk ? 'sv' : 'sl', 's') + '</optgroup></select></div>' +
+        '<select class="smm-sel" id="smmObFocus" aria-label="Pilih broker"><optgroup label="Pembeli">' + opts(vk ? 'bv' : 'bl', 'b') + '</optgroup><optgroup label="Penjual">' + opts(vk ? 'sv' : 'sl', 's') + '</optgroup></select></div>' + movedNote(g, ar) +
       '<div class="smm-ob-box"><div class="smm-st-lbl">' + (buyer ? 'Beli ' : 'Jual ') + esc(X.code) + ' ' + esc(fmt(mine)) + ' bertemu siapa</div>' +
         '<div class="smm-ob-bar">' + bar + '</div><div class="smm-ob-leg">' + leg + '</div>' +
         '<div class="smm-ob-head">' + esc(head) + '</div></div>' +
