@@ -221,3 +221,12 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   Data: `GET /api/admin/smartmoney/people` → R2 `people.json` + saham yang sudah dimuat.
 - `scripts/build-smartmoney-screener.js` kini juga menulis `brokers/*.json` (≤250 hari) dan `people.json`
   dan mengunggahnya dengan `--upload`. Route baru di `src/lib/admin.js` & `src/lib/smartmoney.js`.
+
+## Revisi 21: tanggal global (pengganti tombol 1W/1M/3M/6M/YTD/1Y)
+- Tombol `[data-act=gdate]` (#smmGDate) membuka `openDatePick` yang sama. State `S.period` kini kunci preset
+  popup ('3m' default, 'latest', '7d', … , 'custom' + `S.pFrom`/`S.pTo` ISO).
+- `PR(g)` → [t0, t1] per saham (preset dihitung terhadap hari terakhir data broker tiap saham), dipakai
+  semua kartu: skor, Broker Flow (grafik & Ringkasan), chips, insight, Value × Volume, Radar, profil broker.
+  `pxEnd(g,t1)` = harga akhir rentang. `periodText()` mengganti PERIOD_TEXT[S.period].
+- Saat dipilih, rentang global juga di-set ke Broker Summary & Lawan Transaksi (`S.actStart/actEnd`).
+  Kartu itu tetap bisa diubah sendiri lewat tombol tanggalnya; kalender ikut tanggal Broker Summary.
