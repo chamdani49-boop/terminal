@@ -377,12 +377,15 @@
     '.smm-bs-orow .nv{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:11.5px;color:var(--text)}',
     '@container (max-width:360px){.smm-bs-row{grid-template-columns:46px minmax(0,1fr) 38px 38px minmax(0,1fr) 46px;font-size:10.5px}.smm-bs-row .nv{font-size:10px}}',
     /* Broker Flow · Ringkasan */
-    '#smmFlowCard [hidden],#smmSankeyCard [hidden]{display:none!important}',
+    '#smmFlowCard [hidden]{display:none!important}',
     '.smm-st,.smm-vx,.smm-ob,.smm-bs{--st-acc:#0d9488;--st-dis:#ea580c;--st-accb:rgba(13,148,136,.10);--st-disb:rgba(234,88,12,.10);--st-accl:rgba(13,148,136,.35);--st-disl:rgba(234,88,12,.35);container-type:inline-size;display:flex;flex-direction:column;gap:10px;margin-top:10px}',
-    '.smm-cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}',
+    '.smm-cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch}',
     '@media (max-width:1180px){.smm-cols3{grid-template-columns:repeat(2,minmax(0,1fr))}.smm-cols3>#smmVxvCard{grid-column:1/-1}}',
     '@media (max-width:760px){.smm-cols3{grid-template-columns:minmax(0,1fr)}}',
-    '.smm-cols3>.smm-card{min-width:0}',
+    '.smm-cols3>.smm-card{min-width:0;display:flex;flex-direction:column}',
+    '.smm-cols3>.smm-card>.smm-bs,.smm-cols3>.smm-card>.smm-ob,.smm-cols3>.smm-card>.smm-vx{flex:1 1 auto}',
+    '.smm-cols3>.smm-card>.smm-bs>:last-child,.smm-cols3>.smm-card>.smm-ob>:last-child,.smm-cols3>.smm-card>.smm-vx>:last-child{flex:1 1 auto}',
+    '.smm-cols3 .smm-ob-grid{align-content:start}',
     '[data-theme="dark"] .smm-st,[data-theme="dark"] .smm-vx,[data-theme="dark"] .smm-ob,[data-theme="dark"] .smm-bs{--st-acc:#2dd4bf;--st-dis:#fb923c;--st-accb:rgba(45,212,191,.12);--st-disb:rgba(251,146,60,.12);--st-accl:rgba(45,212,191,.38);--st-disl:rgba(251,146,60,.38)}',
     '.smm-st-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}',
     '.smm-st-top .cd{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--text3)}',
@@ -485,12 +488,6 @@
     '.smm-totals div{background:var(--bg2);border-radius:8px;padding:8px;font-size:11px;color:var(--text3)}',
     '.smm-totals b{display:block;font-size:13px;color:var(--text);font-family:"IBM Plex Mono",monospace;margin-top:2px}',
     /* sankey */
-    '.smm-sk-wrap{position:relative;margin-top:8px}',
-    '.smm-sk-wrap svg{display:block;width:100%;height:auto;overflow:visible}',
-    '.smm-sk-link{transition:opacity .15s;cursor:pointer}',
-    '.smm-sk-node{cursor:pointer}',
-    '.smm-sk-lbl{font-size:12px;font-weight:800;font-family:"IBM Plex Mono",monospace}',
-    '.smm-sk-val{font-size:11px;font-weight:700;fill:var(--text)}',
     '.smm-sk-legend{display:flex;gap:14px;justify-content:center;font-size:12px;color:var(--text2);margin-top:8px;flex-wrap:wrap}',
     '.smm-sk-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}',
     '#smmTT{position:fixed;z-index:9999;pointer-events:none;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-card-lg);padding:8px 10px;font-size:12px;color:var(--text);display:none;max-width:280px;line-height:1.5}',
@@ -624,7 +621,6 @@
     '.smm-go{margin-top:auto;padding-top:8px;font-size:12px;font-weight:800;color:var(--accent)}',
     '.smm-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}',
     '.smm-chart{height:440px}',
-    '.smm-sk-hint{font-size:12px;color:var(--text3);margin:8px 0 0}',
     '.smm-ins-chart{height:270px}',
     '.smm-hocols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}',
     '.smm-hocol{display:flex;flex-direction:column;gap:16px;min-width:0}',
@@ -1281,14 +1277,6 @@
           '</section>' +
         '</div>' +
 
-          '<section class="smm-card" id="smmSankeyCard">' +
-            '<div class="smm-h3">Broker Distribution <small id="smmSkSub"></small>' + tip('Aliran barang dari pembeli (kiri) ke penjual (kanan) pada tanggal yang sama dengan Broker Summary. Pita makin tebal = nilai makin besar. Ketuk broker untuk fokus. Pita diestimasi dari porsi jual tiap broker.') + '</div>' +
-            '<div class="smm-toolbar"><div class="smm-seg" id="smmSkMetric"><button data-act="skmetric" data-v="value">Value</button><button data-act="skmetric" data-v="volume">Volume</button></div></div>' +
-            '<div class="smm-sk-hint" id="smmSkHint"></div>' +
-            '<div class="smm-sk-wrap" id="smmSankey"></div>' +
-            '<div class="smm-sk-legend"><span><i style="background:#8b5cf6"></i>Domestik</span><span><i style="background:#10b981"></i>BUMN</span><span><i style="background:#ef4444"></i>Asing</span></div>' +
-          '</section>' +
-
         '<section class="smm-card" id="smmRadarCard">' +
           '<div class="smm-h3">📡 Radar Smart Money <small id="smmRadarSub"></small>' + tip('Peringkat saham berdasarkan skor Smart Money pada periode terpilih. Klik baris untuk membuka saham itu.') + '</div>' +
           '<p class="smm-desc">Saham mana yang sedang <b>dikumpulkan</b> dan <b>dilepas</b> pemain besar? Batang makin panjang = sinyal makin kuat.</p>' +
@@ -1372,7 +1360,7 @@
             '<div id="smmHoComp"></div>' +
           '</section>' +
           '<section class="smm-card" id="smmHoHoldersCard"><div class="smm-h3">Pemegang saham terkini</div><div id="smmHoHolders"></div></section>' +
-          '<section class="smm-card smm-fill" id="smmHoBoard"></section>' +
+          '<section class="smm-card" id="smmHoBoard"></section>' +
          '</div>' +
          '<div class="smm-hocol">' +
           '<section class="smm-card" id="smmHoChartCard">' +
@@ -1382,7 +1370,7 @@
             '<div id="smmHoChart"></div>' +
           '</section>' +
           '<section class="smm-card" id="smmHoCountCard"><div class="smm-h3">Jumlah pemegang saham ' + tip('Jumlah investor per akhir bulan. Hijau = bertambah dari bulan sebelumnya, merah = berkurang.') + '</div><div id="smmHoCount"></div></section>' +
-          '<section class="smm-card smm-fill" id="smmHoCompany"></section>' +
+          '<section class="smm-card" id="smmHoCompany"></section>' +
          '</div>' +
         '</div>' +
         '<details class="smm-card smm-glossary"><summary>📘 Cara membaca halaman ini</summary><div class="smm-gloss">' +
@@ -2098,7 +2086,6 @@
   }
 
   // ─────────────────────────── Sankey ───────────────────────────
-  var _skLinks = [];
   // ─────────────────────────── Kalender flow harian ───────────────────────────
   // Heatmap net per hari bursa dalam 1 bulan. Kelompok: smart money (non-ritel), ritel, asing, atau 1 broker.
   // Ketuk tanggal → Broker Action & Distribution pindah ke hari itu (S.actEnd).
@@ -2363,115 +2350,8 @@
 
   function renderSankey() {
     if (!G().hasBroker) return;
-    renderSankeyFlow();
     renderOrbit();
   }
-  function renderSankeyFlow() {
-    var box = document.getElementById('smmSankey');
-    var g = G(), r = actRange(), rows = aggregate(g, r[0], r[1], S.inv);
-    var bKey = S.skMetric === 'value' ? 'bv' : 'bl', sKey = S.skMetric === 'value' ? 'sv' : 'sl';
-    var fmt = S.skMetric === 'value' ? fmtVal : function (v) { return fmtLot(v) + ' lot'; };
-    var TOP = (box.clientWidth || 800) < 560 ? 5 : 7;
-    function side(key) {
-      var arr = rows.slice().sort(function (a, b) { return b[key] - a[key]; });
-      var top = arr.slice(0, TOP).map(function (x) { return { code: x.code, name: x.name, type: x.type, v: x[key] }; });
-      var rest = arr.slice(TOP).reduce(function (s, x) { return s + x[key]; }, 0);
-      if (rest > 0) top.push({ code: 'Lain', name: (arr.length - TOP) + ' broker lainnya', type: 'O', v: rest });
-      return top;
-    }
-    var B = side(bKey), Sl = side(sKey);
-    var flows = [];
-    B.forEach(function (b, i) {
-      var w = Sl.map(function (s) { return s.v; });
-      var ws = w.reduce(function (a, x) { return a + x; }, 0) || 1;
-      Sl.forEach(function (s, j) { flows.push({ i: i, j: j, v: b.v * w[j] / ws }); });
-    });
-    B.forEach(function (b, i) { b.tot = flows.filter(function (f) { return f.i === i; }).reduce(function (a, f) { return a + f.v; }, 0); });
-    Sl.forEach(function (s, j) { s.tot = flows.filter(function (f) { return f.j === j; }).reduce(function (a, f) { return a + f.v; }, 0); });
-    var total = B.reduce(function (a, b) { return a + b.tot; }, 0) || 1;
-
-    var W = Math.max(320, box.clientWidth || 800), H = W < 560 ? 380 : 460, nodeW = 12, pad = 8;
-    var x0 = 4, x1 = W - 4 - nodeW;
-    function layout(arr) {
-      var k = (H - pad * (arr.length - 1)) / total, y = 0;
-      arr.forEach(function (n) { n.y = y; n.h = Math.max(2, n.tot * k); n.off = 0; y += n.h + pad; });
-      return k;
-    }
-    var k = layout(B); layout(Sl);
-    var col = function (t) { return t === 'O' ? '#9ca3af' : TYPE_META[t].color; };
-
-    // fokus default = pembeli terbesar
-    var focus = S.skFocus;
-    if (focus == null && B.length) focus = 'b:' + B[0].code;
-    var fb = focus && focus.indexOf('b:') === 0 ? focus.slice(2) : null;
-    var fs = focus && focus.indexOf('s:') === 0 ? focus.slice(2) : null;
-
-    var defs = '', links = '';
-    _skLinks = [];
-    // urutan: pita fokus digambar terakhir supaya di atas
-    flows.forEach(function (f, idx) {
-      var b = B[f.i], s = Sl[f.j], h = f.v * k;
-      if (h < 0.3) { f.skip = true; return; }
-      f.ya = b.y + b.off; b.off += h;
-      f.yb = s.y + s.off; s.off += h;
-      f.h = h;
-    });
-    var order = flows.map(function (f, i) { return i; }).filter(function (i) { return !flows[i].skip; });
-    function isOn(f) { return focus === '*' || (fb && B[f.i].code === fb) || (fs && Sl[f.j].code === fs); }
-    order.sort(function (a, b) { return (isOn(flows[a]) ? 1 : 0) - (isOn(flows[b]) ? 1 : 0); });
-    var xm0 = x0 + nodeW, xm1 = x1, xc = (xm0 + xm1) / 2;
-    order.forEach(function (i) {
-      var f = flows[i], b = B[f.i], s = Sl[f.j];
-      var gid = 'smmG' + f.i + '_' + f.j;
-      defs += '<linearGradient id="' + gid + '" gradientUnits="userSpaceOnUse" x1="' + xm0 + '" x2="' + xm1 + '"><stop offset="0" stop-color="' + col(b.type) + '"/><stop offset="1" stop-color="' + col(s.type) + '"/></linearGradient>';
-      var d = 'M' + xm0 + ' ' + f.ya.toFixed(1) + ' C' + xc + ' ' + f.ya.toFixed(1) + ' ' + xc + ' ' + f.yb.toFixed(1) + ' ' + xm1 + ' ' + f.yb.toFixed(1) +
-        ' L' + xm1 + ' ' + (f.yb + f.h).toFixed(1) + ' C' + xc + ' ' + (f.yb + f.h).toFixed(1) + ' ' + xc + ' ' + (f.ya + f.h).toFixed(1) + ' ' + xm0 + ' ' + (f.ya + f.h).toFixed(1) + ' Z';
-      var on = isOn(f);
-      var li = _skLinks.length;
-      _skLinks.push({ b: b, s: s, v: f.v });
-      links += '<path class="smm-sk-link" data-l="' + li + '" data-b="' + esc(b.code) + '" data-s="' + esc(s.code) + '" d="' + d + '" fill="' + (on ? 'url(#' + gid + ')' : (isDark() ? '#ffffff' : '#1a0f3c')) + '" opacity="' + (on ? 0.72 : 0.06) + '"/>';
-    });
-
-    function flowOf(bc, sc) {
-      var bi = B.findIndex(function (x) { return x.code === bc; }), sj = Sl.findIndex(function (x) { return x.code === sc; });
-      var f = flows.filter(function (q) { return q.i === bi && q.j === sj; })[0];
-      return f ? f.v : 0;
-    }
-    var nodes = '';
-    B.forEach(function (b) {
-      var on = !fs || flowOf(b.code, fs) > 0;
-      var shown = fs ? flowOf(b.code, fs) : b.tot;
-      nodes += '<g class="smm-sk-node" data-node="b:' + esc(b.code) + '" opacity="' + (on ? 1 : 0.35) + '">' +
-        '<rect x="' + x0 + '" y="' + b.y.toFixed(1) + '" width="' + nodeW + '" height="' + b.h.toFixed(1) + '" rx="3" fill="' + col(b.type) + '"/>';
-      if (b.h >= 13 || fb === b.code) {
-        var ty = b.y + Math.min(b.h / 2, 60) + 4;
-        var lbl = b.code + '  ' + fmt(shown);
-        nodes += '<rect x="' + (x0 + nodeW + 6) + '" y="' + (ty - 12) + '" width="' + (lbl.length * 7.2 + 10) + '" height="17" rx="5" fill="var(--card)" opacity=".88"/>' +
-          '<text class="smm-sk-lbl" x="' + (x0 + nodeW + 11) + '" y="' + ty + '" fill="' + col(b.type) + '">' + esc(b.code) + '<tspan class="smm-sk-val" dx="6">' + esc(fmt(shown)) + '</tspan></text>';
-      }
-      nodes += '</g>';
-    });
-    Sl.forEach(function (s) {
-      var on = !fb || flowOf(fb, s.code) > 0;
-      var shown = fb ? flowOf(fb, s.code) : s.tot;
-      nodes += '<g class="smm-sk-node" data-node="s:' + esc(s.code) + '" opacity="' + (on ? 1 : 0.35) + '">' +
-        '<rect x="' + x1 + '" y="' + s.y.toFixed(1) + '" width="' + nodeW + '" height="' + s.h.toFixed(1) + '" rx="3" fill="' + col(s.type) + '"/>';
-      if (s.h >= 13 || fs === s.code) {
-        var ty = s.y + Math.min(s.h / 2, 60) + 4;
-        var lbl = fmt(shown) + '  ' + s.code;
-        nodes += '<rect x="' + (x1 - 6 - (lbl.length * 7.2 + 10)) + '" y="' + (ty - 12) + '" width="' + (lbl.length * 7.2 + 10) + '" height="17" rx="5" fill="var(--card)" opacity=".88"/>' +
-          '<text class="smm-sk-lbl" x="' + (x1 - 11) + '" y="' + ty + '" text-anchor="end" fill="' + col(s.type) + '"><tspan class="smm-sk-val" dx="0">' + esc(fmt(shown)) + '</tspan> ' + esc(s.code) + '</text>';
-      }
-      nodes += '</g>';
-    });
-    box.innerHTML = '<div style="display:flex;justify-content:space-between;font-weight:800;font-size:13px;margin-bottom:6px"><span class="smm-up">Pembeli</span><span class="smm-dn">Penjual</span></div>' +
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="height:' + H + 'px"><defs>' + defs + '</defs>' + links + nodes + '</svg>';
-    document.getElementById('smmSkSub').textContent = '· ' + S.code + ' · ' + rangeText(g, r);
-    var hint = fb ? 'Fokus pembeli ' + fb + ': ke mana barangnya berasal. Ketuk lagi untuk lihat semua.' :
-      fs ? 'Fokus penjual ' + fs + ': siapa yang menampung. Ketuk lagi untuk lihat semua.' : 'Semua aliran. Ketuk broker untuk fokus.';
-    document.getElementById('smmSkHint').textContent = hint;
-  }
-
   // ─────────────────────────── Insider ───────────────────────────
   var HORIZ = [[5, '1W later'], [21, '1M later'], [63, '3M later'], [126, '6M later'], [252, '1Y later']];
   function insFiltered(g, ignoreAct) {
@@ -2754,6 +2634,44 @@
     if (empty) return;
     if (!S.hoMonth || H.months.indexOf(S.hoMonth) < 0) S.hoMonth = H.months[H.months.length - 1] || null;
     renderHoSum(H); renderHoMove(H); renderHoComp(H); renderHoChart(H); renderHoHolders(H); renderHoCount(H); renderHoProfile(H);
+    watchHoCols();
+  }
+  // Kartu Kepemilikan dibagi ke dua kolom menurut tinggi aslinya: tiap kartu masuk ke kolom yang
+  // sedang lebih pendek (urutan tetap). Kalau selisih akhir kecil, kartu terakhir kolom pendek
+  // dipanjangkan agar dasar kedua kolom rata. Di layar sempit (satu kolom) urutan CSS yang berlaku.
+  var HO_ORDER = ['smmHoCompCard', 'smmHoChartCard', 'smmHoHoldersCard', 'smmHoCountCard', 'smmHoCompany', 'smmHoBoard'];
+  var _hoRO = null, _hoRaf = 0;
+  function balanceHoCols() {
+    var wrap = root && root.querySelector('.smm-hocols'); if (!wrap) return;
+    var cols = wrap.querySelectorAll('.smm-hocol'); if (cols.length !== 2) return;
+    var cards = HO_ORDER.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    cards.forEach(function (c) { c.classList.remove('smm-fill'); });
+    if (getComputedStyle(wrap).display !== 'grid') return;
+    // Coba semua pembagian (6 kartu = 64 kombinasi), urutan dalam kolom tetap; ambil selisih terkecil.
+    var gap = 16, vis = cards.filter(function (c) { return c.offsetHeight; }), hs = vis.map(function (c) { return c.offsetHeight + gap; });
+    var best = null, bestD = Infinity, h = [0, 0];
+    for (var m = 0; m < (1 << vis.length); m++) {
+      if (vis.length && (m & 1)) continue;                // kartu pertama selalu di kiri
+      var a = 0, b = 0;
+      for (var i = 0; i < vis.length; i++) { if (m & (1 << i)) b += hs[i]; else a += hs[i]; }
+      if (Math.abs(a - b) < bestD - 0.5) { bestD = Math.abs(a - b); best = m; h = [a, b]; }
+    }
+    var plan = [[], []];
+    vis.forEach(function (c, i) { plan[(best >> i) & 1].push(c); });
+    plan.forEach(function (list, k) {
+      list.forEach(function (c, i) { if (cols[k].children[i] !== c) cols[k].insertBefore(c, cols[k].children[i] || null); });
+    });
+    var short = h[0] <= h[1] ? 0 : 1, diff = Math.abs(h[0] - h[1]);
+    if (diff > 0 && diff < 160 && plan[short].length) plan[short][plan[short].length - 1].classList.add('smm-fill');
+  }
+  function watchHoCols() {
+    var go = function () { cancelAnimationFrame(_hoRaf); _hoRaf = requestAnimationFrame(balanceHoCols); };
+    if (!_hoRO && window.ResizeObserver) {
+      _hoRO = new ResizeObserver(go);
+      HO_ORDER.forEach(function (id) { var c = document.getElementById(id); if (c) _hoRO.observe(c); });
+      var w = root.querySelector('.smm-hocols'); if (w) _hoRO.observe(w);
+    }
+    go();
   }
 
   // ─────────────────────────── Kepemilikan: helper visual ───────────────────────────
@@ -3261,7 +3179,7 @@
   }
   function syncControls() {
     syncSeg('smmPeriod', S.period); syncSeg('smmMetric', S.metric); syncSeg('smmFlowView', S.flowView); syncSeg('smmPriceMode', S.priceMode);
-    syncSeg('smmSkMetric', S.skMetric); syncSeg('smmObMetric', S.obMetric); syncSeg('smmObView', S.obView); syncSeg('smmVxvMode', S.vxv); syncSeg('smmInsSrc', S.insSrc); syncSeg('smmInsRange', S.insRange);
+    syncSeg('smmObMetric', S.obMetric); syncSeg('smmObView', S.obView); syncSeg('smmVxvMode', S.vxv); syncSeg('smmInsSrc', S.insSrc); syncSeg('smmInsRange', S.insRange);
     root.querySelectorAll('.smm-subtabs button').forEach(function (b) { var on = b.getAttribute('data-v') === S.sub; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
     document.getElementById('smmCode').value = S.code;
     document.getElementById('smmInv').value = S.inv;
@@ -3380,15 +3298,6 @@
   }
 
   function onClick(e) {
-    var node = e.target.closest && e.target.closest('[data-node]');
-    if (node && root.contains(node)) {
-      var id = node.getAttribute('data-node');
-      var g = G(), r = actRange();
-      var cur = S.skFocus;
-      if (cur == null) { var rows = aggregate(g, r[0], r[1], S.inv).sort(function (a, b) { return b.bv - a.bv; }); cur = rows.length ? 'b:' + rows[0].code : null; }
-      S.skFocus = cur === id ? '*' : id;
-      renderSankey(); return;
-    }
     var el = e.target.closest && e.target.closest('[data-act]');
     if (!el || !root.contains(el)) {
       var m = document.getElementById('smmAddMenu'); if (m) m.classList.remove('open');
@@ -3425,7 +3334,6 @@
         S.actSort = { side: side, key: key }; renderAction(); break;
       case 'actall': S.actAll = !S.actAll; renderAction(); break;
       case 'bkpick': addChip(v); S.skFocus = null; break;
-      case 'skmetric': S.skMetric = v; syncControls(); renderSankey(); break;
       case 'obmetric': S.obMetric = v; syncControls(); renderOrbit(); break;
       case 'obview': S.obView = v; syncControls(); renderOrbit(); break;
       case 'bsview': S.bsView = v; S.bsAll = false; renderBSum(); break;
@@ -3487,37 +3395,9 @@
   function onOver(e) {
     var t = e.target.closest && e.target.closest('[data-smm-tip]');
     if (t && root.contains(t)) showPop(t); else hidePop();
-    var link = e.target.closest && e.target.closest('.smm-sk-link');
-    var nodeG = e.target.closest && e.target.closest('.smm-sk-node');
-    var tt = ttEl();
-    var fmt = S.skMetric === 'value' ? function (v) { return fmtVal(v, true); } : function (v) { return fmtLot(v) + ' lot'; };
-    if (link) {
-      var L = _skLinks[+link.getAttribute('data-l')];
-      if (L) {
-        tt.innerHTML = '<b class="bk t-' + (L.b.type === 'O' ? 'D' : L.b.type) + '">' + esc(L.b.code) + '</b> → <b class="bk t-' + (L.s.type === 'O' ? 'D' : L.s.type) + '">' + esc(L.s.code) + '</b><br>' + fmt(L.v) +
-          '<br><span style="color:var(--text3)">' + nf(L.v / (L.b.tot || 1) * 100, 1) + '% dari pembelian ' + esc(L.b.code) + ' · ' + nf(L.v / (L.s.tot || 1) * 100, 1) + '% dari penjualan ' + esc(L.s.code) + '</span>';
-        tt.style.display = 'block';
-        link.setAttribute('opacity', '0.9');
-        link._smmHover = true;
-      }
-    } else if (nodeG) {
-      var id = nodeG.getAttribute('data-node'), isB = id.indexOf('b:') === 0, code = id.slice(2);
-      var tot = 0, name = code;
-      _skLinks.forEach(function (l) { var n = isB ? l.b : l.s; if (n.code === code) { tot = n.tot; name = n.name; } });
-      tt.innerHTML = '<b>' + esc(code) + '</b> · ' + esc(name) + '<br>' + (isB ? 'Total beli ' : 'Total jual ') + fmt(tot) + '<br><span style="color:var(--text3)">Ketuk untuk fokus</span>';
-      tt.style.display = 'block';
-    } else {
-      tt.style.display = 'none';
-    }
+    var tt = document.getElementById('smmTT'); if (tt) tt.style.display = 'none';
   }
-  function onOut(e) {
-    var link = e.target.closest && e.target.closest('.smm-sk-link');
-    if (link && link._smmHover) { link._smmHover = false; renderSankeyOpacityReset(link); }
-  }
-  function renderSankeyOpacityReset(link) {
-    var fill = link.getAttribute('fill') || '';
-    link.setAttribute('opacity', fill.indexOf('url(') === 0 ? '0.72' : '0.06');
-  }
+  function onOut() {}
   function onMove(e) {
     var tt = document.getElementById('smmTT');
     if (tt && tt.style.display === 'block') {
@@ -3618,7 +3498,7 @@
     }
     var an = document.getElementById('acctNav');
     if (an) {
-      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Summary', 'broker', '#smmBSumCard'], ['Lawan Transaksi', 'broker', '#smmOrbitCard'], ['Value × Volume', 'broker', '#smmVxvCard'], ['Distribusi', 'broker', '#smmSankeyCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
+      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Summary', 'broker', '#smmBSumCard'], ['Lawan Transaksi', 'broker', '#smmOrbitCard'], ['Value × Volume', 'broker', '#smmVxvCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
       var grp = document.createElement('div');
       grp.className = 'acct-nav-group'; grp.setAttribute('data-page', 'smartmoney');
       grp.innerHTML = '<button type="button" class="acct-nav-page" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">💰</span>Smart Money</button><div class="acct-nav-subs">' +

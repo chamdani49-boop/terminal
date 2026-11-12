@@ -196,3 +196,11 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
 - Broker Summary mendapat total transaksi / net asing / harga (`.smm-totals`), tabel bisa diurutkan
   (`actsort`, `S.actSort`) dan kode broker bisa diketuk (`bkpick` → chip Broker Flow).
 - Broker Distribution (Sankey) kini kartu selebar penuh. Klik kalender menggulir ke Broker Summary.
+
+## Revisi 19: Broker Distribution dihapus + tata letak rapi
+- Kartu `#smmSankeyCard` beserta `renderSankeyFlow`, `_skLinks`, tooltip pita, `skmetric` dihapus.
+  `renderSankey()` kini hanya `renderOrbit()` (nama dipertahankan karena dipanggil di banyak tempat).
+- Broker Activity: `.smm-cols3` align stretch, kartu flex-column, kotak terakhir tiap kartu mengisi sisa.
+- Kepemilikan: `balanceHoCols()` + ResizeObserver (`watchHoCols`) membagi 6 kartu ke 2 kolom dengan
+  selisih tinggi terkecil (64 kombinasi, urutan HO_ORDER dipertahankan). Selisih < 160px → kartu
+  terakhir kolom pendek diberi `.smm-fill`. Hanya saat `.smm-hocols` berupa grid (> 1100px).
