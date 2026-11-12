@@ -212,4 +212,12 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+
+  // Tombol Refresh di top bar (modul terpisah, public/refresh-btn.js). Dimuat dari sini
+  // supaya index.html (area terkunci) tidak perlu diubah.
+  if (!window.__esRefreshBtn && !document.querySelector('script[src^="/refresh-btn.js"]')) {
+    var rs = document.createElement('script');
+    rs.src = '/refresh-btn.js?v=20261112'; rs.defer = true;
+    document.head.appendChild(rs);
+  }
 })();
