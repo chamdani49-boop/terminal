@@ -339,6 +339,96 @@
     '.smm-obf .sel{cursor:pointer}.smm-obf .sel:hover rect:first-child{opacity:.75}',
     '.smm-obf .lb{fill:var(--card);opacity:.9}',
     '.smm-obf text{font-family:"IBM Plex Mono",monospace;font-size:11.5px}.smm-obf .cd{font-weight:800}.smm-obf .vl{font-weight:700;fill:var(--text)}',
+    /* Popup (sheet) */
+    '.smm-noscroll,.smm-noscroll body{overflow:hidden}',
+    '.smm-sheet-bg{position:fixed;inset:0;z-index:10000;background:rgba(10,6,24,.55);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}',
+    '.smm-sheet-bg.open{opacity:1;pointer-events:auto}',
+    '.smm-sheet{position:relative;width:min(560px,calc(100vw - 32px));max-height:min(86vh,820px);display:flex;flex-direction:column;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.35);transform:translateY(12px);transition:transform .2s}',
+    '.smm-sheet.smm-sheet-sm{width:min(440px,calc(100vw - 32px))}.smm-sheet.smm-sheet-lg{width:min(860px,calc(100vw - 32px))}',
+    '.smm-sheet-bg.open .smm-sheet{transform:none}',
+    '.smm-sheet-grip{display:none;width:44px;height:5px;border-radius:3px;background:var(--border);margin:8px auto 0;flex-shrink:0}',
+    '.smm-sheet-in{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 18px 18px}',
+    '.smm-sh-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}',
+    '.smm-sh-title{font-size:17px;font-weight:800;line-height:1.3}.smm-sh-sub{font-size:12px;color:var(--text3);margin-top:2px}',
+    '.smm-sh-x{flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:20px;line-height:1;cursor:pointer}',
+    '.smm-sh-x:hover{color:var(--accent);border-color:var(--accent)}',
+    '.smm-sh-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}',
+    '.smm-sh-search{position:relative;flex:1 1 180px;min-width:0}.smm-sh-search .smm-input{width:100%}',
+    '.smm-sh-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border2)}',
+    '.smm-datebtn{font:inherit;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--bg2);color:var(--green);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.smm-datebtn span{overflow:hidden;text-overflow:ellipsis}.smm-datebtn:hover{border-color:var(--green)}',
+    '.smm-datebar2{display:flex;align-items:center;gap:6px;margin:8px 0 10px}',
+    '.smm-datebar2 .smm-datebtn{flex:1 1 auto;justify-content:center;min-width:0}',
+    '.smm-datebar2 .smm-sel{flex-shrink:0}',
+    '.smm-dnav{flex-shrink:0;width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--green);font-size:18px;cursor:pointer}',
+    '.smm-dnav:disabled{opacity:.3;cursor:default}',
+    /* pilihan tanggal */
+    '.smm-dp-list{display:flex;flex-direction:column}',
+    '.smm-dp-opt{display:flex;justify-content:space-between;align-items:center;font:inherit;font-size:14px;font-weight:600;color:var(--text);background:none;border:0;border-radius:10px;padding:11px 6px;cursor:pointer;text-align:left}',
+    '.smm-dp-opt:hover{background:var(--bg2)}',
+    '.smm-dp-opt i{width:20px;height:20px;border-radius:50%;border:2px solid var(--text3);flex-shrink:0;position:relative}',
+    '.smm-dp-opt.on i{border-color:var(--green);background:var(--green)}',
+    '.smm-dp-opt.on i:after{content:"";position:absolute;left:5px;top:2px;width:5px;height:9px;border:solid var(--card);border-width:0 2px 2px 0;transform:rotate(45deg)}',
+    '.smm-dp-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px;padding-top:12px;border-top:1px solid var(--border2)}',
+    '.smm-dp-f .l{display:block;font-size:13px;font-weight:800;margin-bottom:6px}',
+    '.smm-dp-step{display:flex;align-items:center;border-bottom:1px solid var(--border);padding-bottom:4px}',
+    '.smm-dp-step button{width:30px;height:30px;border:0;background:none;color:var(--text2);font-size:18px;cursor:pointer;flex-shrink:0}',
+    '.smm-dp-step button:disabled{opacity:.3;cursor:default}',
+    '.smm-dp-d{position:relative;flex:1;text-align:center;font-size:14px;cursor:pointer}',
+    '.smm-dp-in{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}',
+    '.smm-dp-in::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}',
+    '.smm-dp-apply{display:block;width:100%;margin-top:16px;padding:13px;border:0;border-radius:12px;background:var(--green);color:#fff;font:inherit;font-size:15px;font-weight:800;cursor:pointer}',
+    '[data-theme="dark"] .smm-dp-apply{color:#06281a}',
+    /* popup broker */
+    '.smm-bx-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}',
+    '.smm-bx-kpi>div{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:8px 10px;min-width:0}',
+    '.smm-bx-kpi span{display:block;font-size:10.5px;color:var(--text3);font-weight:700}.smm-bx-kpi b{display:block;font-family:"IBM Plex Mono",monospace;font-size:13.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.smm-bx-kpi b small{font-size:10px;color:var(--text3)}',
+    '.smm-bx-tabs{display:none;margin-bottom:10px}',
+    '.smm-bx-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}',
+    '.smm-bx-col{min-width:0}',
+    '.smm-bx-h,.smm-bx-r{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,.8fr);gap:6px;align-items:center}',
+    '.smm-bx-h{font-size:10.5px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;padding:6px 6px 4px}',
+    '.smm-bx-h span:nth-child(n+2),.smm-bx-r span:nth-child(n+2){text-align:right}',
+    '.smm-bx-r{position:relative;width:100%;font:inherit;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text2);background:none;border:0;border-top:1px solid var(--border2);padding:8px 6px;cursor:pointer;text-align:left;overflow:hidden}',
+    '.smm-bx-r:hover{background:var(--bg2)}',
+    '.smm-bx-r .c{font-weight:800;color:var(--text);display:flex;align-items:center;gap:6px}.smm-bx-r .c small{font-size:9.5px;color:var(--text3);width:16px;text-align:right}',
+    '.smm-bx-r .v{font-weight:800}.smm-bx-col.b .smm-bx-r .v{color:var(--green)}.smm-bx-col.s .smm-bx-r .v{color:var(--red)}',
+    '.smm-bx-r i{position:absolute;left:0;bottom:0;height:2px;border-radius:2px}.smm-bx-col.b .smm-bx-r i{background:var(--green)}.smm-bx-col.s .smm-bx-r i{background:var(--red)}',
+    '.smm-bx-col .smm-st-lbl span{letter-spacing:0;text-transform:none}',
+    /* popup nama */
+    '.smm-pp-sugg{margin-top:4px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-card-lg);max-height:240px;overflow:auto}',
+    '.smm-pp-sugg button{display:block;width:100%;text-align:left;font:inherit;font-size:13px;font-weight:600;color:var(--text);background:none;border:0;padding:9px 12px;cursor:pointer}',
+    '.smm-pp-sugg button:hover{background:var(--bg2);color:var(--accent)}',
+    '.smm-pp-tabs{margin-bottom:8px}',
+    '#smmPpQ{text-transform:none}',
+    '.smm-pp-list{display:flex;flex-direction:column}',
+    '.smm-pp-st,.smm-pp-tx,.smm-pp-h{display:grid;align-items:center;gap:8px;width:100%;font:inherit;font-size:12.5px;color:var(--text2);background:none;border:0;border-top:1px solid var(--border2);padding:9px 6px;cursor:pointer;text-align:left}',
+    '.smm-pp-st:hover,.smm-pp-tx:hover,.smm-pp-h:hover{background:var(--bg2)}',
+    '.smm-pp-st{grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr)}',
+    '.smm-pp-st .c{font-weight:800;color:var(--text);display:flex;flex-direction:column;min-width:0}.smm-pp-st .c small{font-weight:600;font-size:10.5px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.smm-pp-st .bars{display:flex;flex-direction:column;gap:3px}.smm-pp-st .bars i{display:block;height:5px;border-radius:3px;min-width:2px}.smm-pp-st .bars i.b{background:var(--green)}.smm-pp-st .bars i.s{background:var(--red)}',
+    '.smm-pp-st .n{display:flex;flex-direction:column;align-items:flex-end;font-family:"IBM Plex Mono",monospace;font-size:11.5px}',
+    '.smm-pp-st .d{text-align:right;font-size:11px;color:var(--text3)}',
+    '.smm-pp-tx{grid-template-columns:72px 54px 44px minmax(0,1fr) 74px}',
+    '.smm-pp-tx .c{font-weight:800;color:var(--text)}.smm-pp-tx .a{font-size:11px;font-weight:800;border-radius:6px;padding:2px 0;text-align:center}',
+    '.smm-pp-tx .a.b{background:var(--green-bg);color:var(--green)}.smm-pp-tx .a.s{background:var(--red-bg);color:var(--red)}',
+    '.smm-pp-tx .n{font-family:"IBM Plex Mono",monospace;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.smm-pp-tx .v{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:800}',
+    '.smm-pp-h{grid-template-columns:60px minmax(0,1fr) 70px}.smm-pp-h .c{font-weight:800;color:var(--text)}.smm-pp-h b{text-align:right;font-family:"IBM Plex Mono",monospace;color:var(--text)}',
+    '.bk[data-act]{cursor:pointer}.bk[data-act]:hover{text-decoration:underline}',
+    '[data-act="bkpop"]{cursor:pointer}',
+    '@media (max-width:640px){',
+      '.smm-sheet-bg{align-items:flex-end}',
+      '.smm-sheet,.smm-sheet.smm-sheet-sm,.smm-sheet.smm-sheet-lg{width:100%;max-height:92vh;border-radius:18px 18px 0 0;border-bottom:0;transform:translateY(40px)}',
+      '.smm-sheet-grip{display:block}',
+      '.smm-sheet-in{padding:10px 14px calc(16px + env(safe-area-inset-bottom))}',
+      '.smm-bx-kpi{grid-template-columns:1fr 1fr}',
+      '.smm-bx-tabs{display:flex}.smm-bx-tabs button{flex:1}',
+      '.smm-bx-cols{grid-template-columns:1fr}.smm-bx-cols.side-b .smm-bx-col.s,.smm-bx-cols.side-s .smm-bx-col.b{display:none}',
+      '.smm-pp-st{grid-template-columns:minmax(0,1fr) minmax(0,.9fr) auto}.smm-pp-st .d{grid-column:1/-1;text-align:left;margin-top:-4px}',
+      '.smm-pp-tx{grid-template-columns:62px 48px 40px minmax(0,1fr) 64px;font-size:11.5px;gap:6px}',
+      '.smm-datebar2{flex-wrap:wrap}.smm-datebar2 .smm-datebtn{order:2;flex:1 1 calc(100% - 84px)}.smm-datebar2 .smm-dnav[data-act="dprev"]{order:1}.smm-datebar2 .smm-dnav[data-act="dnext"]{order:3}.smm-datebar2 .smm-sel{order:4;width:100%}',
+    '}',
     /* Broker Summary */
     '.smm-bs .smm-totals{margin-top:10px}',
     '.smm-bst th.s{cursor:pointer}.smm-bst th.s:hover,.smm-bst th.on{color:var(--accent)}',
@@ -1150,7 +1240,7 @@
     code: 'AVIA', period: '3M', inv: 'all', sub: 'broker',
     metric: 'value', priceMode: 'candle', showPrice: true, flowView: (function () { try { return localStorage.getItem('smm_flowview') === 'chart' ? 'chart' : 'story'; } catch (_) { return 'story'; } })(),
     chips: [], hidden: {}, colors: {},
-    actEnd: 0, actWin: 1, actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
+    actEnd: 0, actStart: 0, actPreset: 'latest', actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
     skMetric: 'value', skFocus: null, bsView: 'sum', bsAll: false, obMetric: 'value', obFocus: null, obView: 'orbit', vxv: 'both',
     insSrc: 'ALL', insAct: 'ALL', insName: null, insRange: '2Y', insHl: null,
     cal: { grp: 'sm', ym: null, end: null },
@@ -1172,7 +1262,7 @@
   function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
   function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
   function bkTag(code, type, name) {
-    return '<span class="bk t-' + type + '" data-smm-tip="' + esc(code + ' · ' + name + ' (' + TYPE_META[type].label + ')') + '">' + esc(code) + '</span>';
+    return '<span class="bk t-' + type + '" data-act="bkpop" data-v="' + esc(code) + '" role="button" tabindex="0" data-smm-tip="' + esc(code + ' · ' + name + ' (' + TYPE_META[type].label + ')') + '">' + esc(code) + '</span>';
   }
   function tip(text) { return '<i class="smm-tip" data-smm-tip="' + esc(text) + '">i</i>'; }
   function toast(msg) {
@@ -1252,15 +1342,11 @@
         '<div class="smm-cols3">' +
           '<section class="smm-card" id="smmBSumCard">' +
             '<div class="smm-h3">Broker Summary ' + tip('Siapa pembeli & penjual terbesar pada tanggal terpilih (Broker Action digabung ke sini). Net = beli dikurangi jual per broker, Gross = total beli & jual. Meter: kekuatan 9 pembeli teratas vs 9 penjual teratas. Ringkasan = tarik-tambang & gaya order; Tabel = rincian per broker.') + '</div>' +
-            '<div class="smm-datebar">' +
-              '<button data-act="dprev" aria-label="Hari sebelumnya">‹</button>' +
-              '<span id="smmActDate"></span>' +
-              '<input type="date" id="smmActPick" aria-label="Pilih tanggal">' +
-              '<button data-act="dnext" aria-label="Hari berikutnya">›</button>' +
-            '</div>' +
-            '<div class="smm-actsel">' +
-              '<select id="smmActWin" aria-label="Rentang"><option value="1">1 Hari</option><option value="5">5 Hari</option><option value="20">20 Hari</option><option value="60">60 Hari</option></select>' +
-              '<select id="smmActMode" aria-label="Mode"><option value="net">Net</option><option value="gross">Gross</option></select>' +
+            '<div class="smm-datebar2">' +
+              '<button class="smm-dnav" data-act="dprev" aria-label="Geser ke hari sebelumnya">‹</button>' +
+              '<button class="smm-datebtn" data-act="actdate" aria-haspopup="dialog">📅 <span id="smmActDate"></span> ▾</button>' +
+              '<button class="smm-dnav" data-act="dnext" aria-label="Geser ke hari berikutnya">›</button>' +
+              '<select class="smm-sel" id="smmActMode" aria-label="Mode"><option value="net">Net</option><option value="gross">Gross</option></select>' +
             '</div>' +
             '<div class="smm-toolbar"><div class="smm-seg" id="smmBsView"><button data-act="bsview" data-v="sum">Ringkasan</button><button data-act="bsview" data-v="table">Tabel</button></div></div>' +
             '<div class="smm-bs" id="smmBSum"></div>' +
@@ -1809,8 +1895,8 @@
       tug += '<div class="smm-bs-row">' +
         '<span class="nv d">' + (s ? fmtVal(s.v) : '') + '</span>' +
         '<span class="br l">' + (s ? '<i style="width:' + Math.max(2, s.v / mx * 100).toFixed(1) + '%"></i>' : '') + '</span>' +
-        '<span class="cd l">' + (s ? '<b data-smm-tip="' + esc(s.x.code + ' · ' + s.x.name + ' (' + TYPE_META[s.x.type].label + ')') + '">' + esc(s.x.code) + '</b>' + dot(s.x.type) : '') + '</span>' +
-        '<span class="cd r">' + (b ? dot(b.x.type) + '<b data-smm-tip="' + esc(b.x.code + ' · ' + b.x.name + ' (' + TYPE_META[b.x.type].label + ')') + '">' + esc(b.x.code) + '</b>' : '') + '</span>' +
+        '<span class="cd l">' + (s ? '<b data-act="bkpop" data-v="' + esc(s.x.code) + '" data-smm-tip="' + esc(s.x.code + ' · ' + s.x.name + ' (' + TYPE_META[s.x.type].label + ')') + '">' + esc(s.x.code) + '</b>' + dot(s.x.type) : '') + '</span>' +
+        '<span class="cd r">' + (b ? dot(b.x.type) + '<b data-act="bkpop" data-v="' + esc(b.x.code) + '" data-smm-tip="' + esc(b.x.code + ' · ' + b.x.name + ' (' + TYPE_META[b.x.type].label + ')') + '">' + esc(b.x.code) + '</b>' : '') + '</span>' +
         '<span class="br r">' + (b ? '<i style="width:' + Math.max(2, b.v / mx * 100).toFixed(1) + '%"></i>' : '') + '</span>' +
         '<span class="nv a">' + (b ? fmtVal(b.v) : '') + '</span></div>';
     }
@@ -1869,7 +1955,7 @@
       var fNum = function (v) { return v == null ? '-' : fmtLot(v).replace(' ', ''); };
       var half = function (q, cls) {
         if (!q) return '<td class="cd"></td><td></td><td></td><td></td><td class="sep"></td>';
-        return '<td class="cd' + (q.x.code === S.broker ? ' on' : '') + '" data-act="bkpick" data-v="' + esc(q.x.code) + '"><span class="bk t-' + q.x.type + '" data-smm-tip="' + esc(q.x.code + ' · ' + q.x.name + ' (' + TYPE_META[q.x.type].label + ')') + '">' + esc(q.x.code) + '</span></td>' +
+        return '<td class="cd' + (q.x.code === S.broker ? ' on' : '') + '" data-act="bkpop" data-v="' + esc(q.x.code) + '"><span class="bk t-' + q.x.type + '" data-smm-tip="' + esc(q.x.code + ' · ' + q.x.name + ' (' + TYPE_META[q.x.type].label + ')') + '">' + esc(q.x.code) + '</span></td>' +
           '<td class="' + cls + '">' + fmtVal(q.val).replace(' ', '') + '</td><td class="' + cls + '">' + fmtLot(q.lot).replace(' ', '') + '</td><td class="' + cls + '">' + fNum(q.f) + '</td><td class="' + cls + ' sep">' + (q.avg > 0 ? nf(q.avg) : '-') + '</td>';
       };
       var body = '';
@@ -1882,7 +1968,7 @@
           '<tbody>' + body + '</tbody></table></div>' +
           (total > 10 ? '<button class="smm-btn smm-more" data-act="bsall">' + (S.bsAll ? 'Tampilkan 10 teratas' : 'Lihat semua (' + total + ' broker)') + '</button>' : '') +
           '<p class="smm-st-note">' + (net ? 'Net = beli dikurangi jual per broker. ' : 'Gross = total beli & jual per broker. ') + 'Geser tabel ke samping untuk melihat sisi penjual.' +
-          ' Ketuk judul kolom untuk mengurutkan, ketuk kode broker untuk menambahkannya ke Broker Flow.' +
+          ' Ketuk judul kolom untuk mengurutkan, ketuk kode broker untuk melihat saham apa saja yang dibeli & dijualnya.' +
           (noF ? ' Kolom freq kosong karena data frekuensi transaksi belum ada di file broker.' : S.inv !== 'all' ? ' Freq hanya tersedia untuk Semua Investor.' : '') + '</p></div>';
       return;
     }
@@ -1896,6 +1982,349 @@
         '<div class="smm-bs-leg"><span><i style="background:' + TYPE_META.B.color + '"></i>BUMN</span><span><i style="background:' + TYPE_META.D.color + '"></i>Domestik</span><span><i style="background:' + TYPE_META.F.color + '"></i>Asing</span></div>' +
         '<p class="smm-st-note">Baris berpasangan menurut peringkat nilai, bukan pasangan transaksi.</p></div>' +
       '<div class="smm-ob-box">' + style + '</div>';
+  }
+
+  // ═══════════════════ Popup (bottom sheet di HP, modal di PC) ═══════════════════
+  // Satu lapis popup di atas halaman. Isi diganti oleh tiap fitur (tanggal, broker, nama).
+  // Elemen ada di dalam root supaya klik tetap lewat onClick (data-act).
+  var _sheetStack = [];
+  function sheetEl() {
+    var bg = document.getElementById('smmSheetBg');
+    if (!bg) {
+      bg = document.createElement('div'); bg.id = 'smmSheetBg'; bg.className = 'smm-sheet-bg';
+      bg.innerHTML = '<div class="smm-sheet" role="dialog" aria-modal="true"><div class="smm-sheet-grip" aria-hidden="true"></div><div class="smm-sheet-in" id="smmSheetIn"></div></div>';
+      root.appendChild(bg);
+      bg.addEventListener('click', function (e) { if (e.target === bg) closeSheet(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && bg.classList.contains('open')) closeSheet(); });
+    }
+    return bg;
+  }
+  // render: fungsi yang mengembalikan HTML. Dipanggil ulang dengan sheetRender().
+  function openSheet(kind, render, opts) {
+    var bg = sheetEl(), top = _sheetStack[_sheetStack.length - 1];
+    if (!(opts && opts.stack) && top) _sheetStack = [];
+    _sheetStack.push({ kind: kind, render: render, cls: (opts && opts.cls) || '' });
+    sheetRender();
+    bg.classList.add('open');
+    document.documentElement.classList.add('smm-noscroll');
+  }
+  function sheetRender() {
+    var top = _sheetStack[_sheetStack.length - 1]; if (!top) return;
+    var bg = sheetEl(), box = bg.querySelector('.smm-sheet');
+    box.className = 'smm-sheet ' + top.cls;
+    var inner = document.getElementById('smmSheetIn'), sc = inner.scrollTop;
+    inner.innerHTML = top.render();
+    inner.scrollTop = sc;
+  }
+  function closeSheet() {
+    _sheetStack.pop();
+    if (_sheetStack.length) { document.getElementById('smmSheetIn').scrollTop = 0; sheetRender(); return; }
+    var bg = document.getElementById('smmSheetBg'); if (bg) bg.classList.remove('open');
+    document.documentElement.classList.remove('smm-noscroll');
+  }
+  function sheetHead(title, sub) {
+    return '<div class="smm-sh-head"><div><div class="smm-sh-title">' + title + '</div>' + (sub ? '<div class="smm-sh-sub">' + sub + '</div>' : '') + '</div>' +
+      '<button class="smm-sh-x" data-act="shclose" aria-label="Tutup">×</button></div>';
+  }
+
+  // ═══════════════════ Pilihan tanggal ═══════════════════
+  var DP_PRESETS = [
+    ['latest', 'Terbaru'], ['prev', 'Hari sebelumnya'], ['7d', '7 hari terakhir'], ['tm', 'Bulan ini'], ['pm', 'Bulan lalu'],
+    ['1m', '1 bulan terakhir'], ['3m', '3 bulan terakhir'], ['6m', '6 bulan terakhir'], ['ytd', 'Sejak awal tahun'], ['1y', '1 tahun terakhir']
+  ];
+  function dpLabel(k) { if (k === 'all') return 'Semua tanggal'; if (k === 'custom') return 'Pilih sendiri'; var p = DP_PRESETS.filter(function (x) { return x[0] === k; })[0]; return p ? p[1] : ''; }
+  function isoAdd(iso, d, m) {
+    var p = iso.split('-'), dt = new Date(Date.UTC(+p[0], +p[1] - 1 + (m || 0), +p[2] + (d || 0)));
+    return dt.toISOString().slice(0, 10);
+  }
+  // days: daftar tanggal ISO urut naik. L = indeks hari "terbaru". → [awal, akhir] (indeks)
+  function presetRange(days, L, k) {
+    if (!days.length) return [0, 0];
+    L = clamp(L == null ? days.length - 1 : L, 0, days.length - 1);
+    var last = days[L], first = function (iso) { for (var i = 0; i <= L; i++) if (days[i] >= iso) return i; return L; };
+    switch (k) {
+      case 'prev': return [Math.max(0, L - 1), Math.max(0, L - 1)];
+      case '7d': return [first(isoAdd(last, -6)), L];
+      case 'tm': return [first(last.slice(0, 7) + '-01'), L];
+      case 'pm': {
+        var pm = isoAdd(last.slice(0, 7) + '-01', 0, -1).slice(0, 7), a = -1, b = -1;
+        for (var i = 0; i <= L; i++) if (days[i].slice(0, 7) === pm) { if (a < 0) a = i; b = i; }
+        return a < 0 ? [L, L] : [a, b];
+      }
+      case '1m': return [first(isoAdd(last, 1, -1)), L];
+      case '3m': return [first(isoAdd(last, 1, -3)), L];
+      case '6m': return [first(isoAdd(last, 1, -6)), L];
+      case 'ytd': return [first(last.slice(0, 4) + '-01-01'), L];
+      case '1y': return [first(isoAdd(last, 1, -12)), L];
+      case 'all': return [0, L];
+      default: return [L, L];
+    }
+  }
+  var _dp = null;
+  // o: { title, days, L, start, end, preset, all:bool, onApply(start, end, preset) }
+  function openDatePick(o) {
+    _dp = { o: o, s: o.start, e: o.end, k: o.preset || 'custom' };
+    openSheet('date', renderDatePick, { stack: true, cls: 'smm-sheet-sm' });
+  }
+  function renderDatePick() {
+    var d = _dp, days = d.o.days, list = (d.o.all ? [['all', 'Semua tanggal']] : []).concat(DP_PRESETS);
+    var step = function (which, cur) {
+      var iso = days[cur] || '';
+      return '<div class="smm-dp-f"><span class="l">' + (which === 's' ? 'Mulai' : 'Sampai') + '</span><div class="smm-dp-step">' +
+        '<button data-act="dpstep" data-v="' + which + ':-1" aria-label="Mundur 1 hari"' + (cur <= 0 ? ' disabled' : '') + '>‹</button>' +
+        '<label class="smm-dp-d"><b>' + (iso ? fmtDate(iso) : '-') + '</b><input type="date" class="smm-dp-in" data-dp="' + which + '" value="' + iso + '" min="' + days[0] + '" max="' + days[days.length - 1] + '" aria-label="Pilih tanggal"></label>' +
+        '<button data-act="dpstep" data-v="' + which + ':1" aria-label="Maju 1 hari"' + (cur >= days.length - 1 ? ' disabled' : '') + '>›</button></div></div>';
+    };
+    return sheetHead(esc(d.o.title || 'Pilih tanggal')) +
+      '<div class="smm-dp-list" role="radiogroup">' + list.map(function (p) {
+        var on = d.k === p[0];
+        return '<button class="smm-dp-opt' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" data-act="dppre" data-v="' + p[0] + '"><span>' + p[1] + '</span><i></i></button>';
+      }).join('') + '</div>' +
+      '<div class="smm-dp-row">' + step('s', d.s) + step('e', d.e) + '</div>' +
+      '<button class="smm-dp-apply" data-act="dpapply">Terapkan</button>';
+  }
+  function dpPreset(k) {
+    var d = _dp, r = presetRange(d.o.days, d.o.L, k);
+    d.k = k; d.s = r[0]; d.e = r[1]; sheetRender();
+  }
+  function dpStep(v) {
+    var d = _dp, p = v.split(':'), n = d.o.days.length - 1;
+    if (p[0] === 's') { d.s = clamp(d.s + +p[1], 0, n); if (d.s > d.e) d.e = d.s; }
+    else { d.e = clamp(d.e + +p[1], 0, n); if (d.e < d.s) d.s = d.e; }
+    d.k = 'custom'; sheetRender();
+  }
+  function dpPick(which, iso) {
+    var d = _dp, days = d.o.days, idx = 0;
+    for (var i = days.length - 1; i >= 0; i--) if (days[i] <= iso) { idx = i; break; }
+    if (which === 's') { d.s = idx; if (d.s > d.e) d.e = d.s; } else { d.e = idx; if (d.e < d.s) d.s = d.e; }
+    d.k = 'custom'; sheetRender();
+  }
+  function dpApply() { var d = _dp; closeSheet(); d.o.onApply(d.s, d.e, d.k); }
+  function rangeLabel(days, s, e, k) {
+    var t = s === e ? fmtDate(days[e]) : fmtDate(days[s]) + ' – ' + fmtDate(days[e]);
+    return (k && k !== 'custom' && k !== 'latest' ? dpLabel(k) + ' · ' : '') + t;
+  }
+
+  // Broker Summary: hari terakhir yang ada transaksi broker = "Terbaru"
+  function lastDataIdx(g) {
+    for (var t = g.nF - 1; t >= 0; t--) if (g.brokers.some(function (x) { return x.bv[t] || x.sv[t]; })) return t;
+    return g.nF - 1;
+  }
+  function actDays(g) { return g.days.slice(g.off, g.off + g.nF); }
+  function setActRange(s, e, k) { S.actStart = s; S.actEnd = e; S.actPreset = k || 'custom'; S.skFocus = null; renderAction(); renderSankey(); }
+  function actPresetDefault(g) { var r = presetRange(actDays(g), lastDataIdx(g), 'latest'); S.actStart = r[0]; S.actEnd = r[1]; S.actPreset = 'latest'; }
+  function openActDate() {
+    var g = G(); if (!g.hasBroker) return;
+    openDatePick({ title: 'Tanggal Broker Summary', days: actDays(g), L: lastDataIdx(g), start: actRange()[0], end: actRange()[1], preset: S.actPreset,
+      onApply: setActRange });
+  }
+
+  // ═══════════════════ Popup broker: beli & jual di semua saham ═══════════════════
+  var _bkIdx = {};   // broker → data indeks (Promise | objek | false)
+  function loadBrokerIdx(code) {
+    if (_bkIdx[code] !== undefined) return Promise.resolve(_bkIdx[code]);
+    return (_bkIdx[code] = fetch('/api/admin/smartmoney/broker?b=' + encodeURIComponent(code), { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { _bkIdx[code] = j && j.s && Array.isArray(j.days) ? j : false; return _bkIdx[code]; })
+      .catch(function () { _bkIdx[code] = false; return false; }));
+  }
+  function loadedCodes() { return Object.keys(_real).filter(function (c) { return _real[c] && !_real[c].then; }); }
+  // Data broker dari saham yang sudah dimuat di browser (cadangan bila indeks belum dibuat)
+  function brokerLocal(code) {
+    var set = {}, by = {};
+    loadedCodes().forEach(function (c) { var g = getData(c); if (g.hasBroker) actDays(g).forEach(function (d) { set[d] = 1; }); });
+    var days = Object.keys(set).sort(), gi = {}; days.forEach(function (d, i) { gi[d] = i; });
+    loadedCodes().forEach(function (c) {
+      var g = getData(c), b = g.brokers.filter(function (x) { return x.code === code; })[0]; if (!b) return;
+      var rows = [];
+      for (var t = 0; t < g.nF; t++) if (b.bv[t] || b.sv[t]) rows.push([gi[g.days[g.off + t]], b.bv[t], b.sv[t], b.bl[t], b.sl[t]]);
+      if (rows.length) by[c] = rows;
+    });
+    return { local: true, u: 1, days: days, s: by };
+  }
+  var _bp = null;
+  function openBroker(code, fromIso, toIso) {
+    code = String(code || '').toUpperCase();
+    if (!/^[A-Z0-9]{2}$/.test(code)) return;
+    var g = G(), r = activeRange(g).r;
+    _bp = { code: code, mode: 'gross', side: 'b', all: false, data: null, k: S.actPreset || 'custom',
+      from: fromIso || (g.hasBroker ? g.days[g.off + r[0]] : null), to: toIso || (g.hasBroker ? g.days[g.off + r[1]] : null) };
+    openSheet('broker', renderBrokerPop, { cls: 'smm-sheet-lg' });
+    loadBrokerIdx(code).then(function (j) {
+      if (!_bp || _bp.code !== code) return;
+      _bp.data = j || brokerLocal(code);
+      sheetRender();
+    });
+  }
+  function bpRange(D) {
+    var days = D.days, s = 0, e = days.length - 1;
+    if (!days.length) return [0, -1];
+    if (_bp.to) { e = -1; for (var i = days.length - 1; i >= 0; i--) if (days[i] <= _bp.to) { e = i; break; } if (e < 0) e = days.length - 1; }
+    if (_bp.from) { s = e; for (var k = 0; k <= e; k++) if (days[k] >= _bp.from) { s = k; break; } }
+    return [s, e];
+  }
+  function renderBrokerPop() {
+    var B = _bp, meta = brokerList().filter(function (b) { return b.code === B.code; })[0] || { code: B.code, name: B.code, foreign: false };
+    var type = brokerType(meta), nm = titleCase(meta.name);
+    var pick = '<div class="smm-sh-bar"><div class="smm-sh-search"><input class="smm-input" id="smmBpCode" list="smmBpList" value="' + esc(B.code) + '" maxlength="40" autocomplete="off" aria-label="Kode broker" placeholder="Kode broker">' +
+      '<datalist id="smmBpList">' + brokerList().map(function (b) { return '<option value="' + esc(b.code) + '">' + esc(titleCase(b.name)) + '</option>'; }).join('') + '</datalist></div>';
+    var head = sheetHead(bkTag(B.code, type, nm) + ' ' + esc(nm), TYPE_META[type].label + ' · beli & jual di semua saham');
+    if (!B.data) return head + pick + '</div><div class="smm-cardnote">Memuat data broker ' + esc(B.code) + '…</div>';
+    var D = B.data, u = D.u || 1, rg = bpRange(D);
+    var days = D.days, stocks = [];
+    Object.keys(D.s).forEach(function (c) {
+      var bv = 0, sv = 0, bl = 0, sl = 0;
+      D.s[c].forEach(function (x) { if (x[0] >= rg[0] && x[0] <= rg[1]) { bv += x[1] * u; sv += x[2] * u; bl += x[3]; sl += x[4]; } });
+      if (bv || sv) stocks.push({ c: c, bv: bv, sv: sv, bl: bl, sl: sl, net: bv - sv, netL: bl - sl });
+    });
+    var net = B.mode === 'net', tb = 0, ts = 0;
+    stocks.forEach(function (x) { tb += x.bv; ts += x.sv; });
+    var buy = (net ? stocks.filter(function (x) { return x.net > 0; }).map(function (x) { return { c: x.c, v: x.net, l: x.netL, a: x.bl ? x.bv / (x.bl * 100) : 0 }; })
+                   : stocks.filter(function (x) { return x.bv > 0; }).map(function (x) { return { c: x.c, v: x.bv, l: x.bl, a: x.bl ? x.bv / (x.bl * 100) : 0 }; })).sort(function (a, b) { return b.v - a.v; });
+    var sell = (net ? stocks.filter(function (x) { return x.net < 0; }).map(function (x) { return { c: x.c, v: -x.net, l: -x.netL, a: x.sl ? x.sv / (x.sl * 100) : 0 }; })
+                    : stocks.filter(function (x) { return x.sv > 0; }).map(function (x) { return { c: x.c, v: x.sv, l: x.sl, a: x.sl ? x.sv / (x.sl * 100) : 0 }; })).sort(function (a, b) { return b.v - a.v; });
+    var N = B.all ? 1e9 : 15;
+    var list = function (arr, cls, title) {
+      var mx = arr.length ? arr[0].v : 1;
+      return '<div class="smm-bx-col ' + cls + '"><div class="smm-st-lbl">' + title + ' <span>' + arr.length + ' saham</span></div>' +
+        (arr.length ? '<div class="smm-bx-h"><span>Saham</span><span>Value</span><span>Lot</span><span>Avg</span></div>' + arr.slice(0, N).map(function (x, i) {
+          return '<button class="smm-bx-r" data-act="bpstock" data-v="' + esc(x.c) + '" title="Buka ' + esc(x.c) + '"><span class="c"><small>' + (i + 1) + '</small>' + esc(x.c) + '</span>' +
+            '<span class="v">' + fmtVal(x.v) + '</span><span>' + fmtLot(x.l) + '</span><span>' + (x.a ? nf(x.a) : '-') + '</span><i style="width:' + Math.max(2, x.v / mx * 100).toFixed(1) + '%"></i></button>';
+        }).join('') : '<div class="smm-desc" style="padding:8px 0">Tidak ada.</div>') + '</div>';
+    };
+    var more = Math.max(buy.length, sell.length) > 15;
+    var dateTxt = rg[1] >= 0 ? rangeLabel(days, rg[0], rg[1], B.k) : '-';
+    return head + pick +
+        '<button class="smm-datebtn" data-act="bpdate">📅 <span>' + esc(dateTxt) + '</span> ▾</button>' +
+        '<div class="smm-seg" id="smmBpMode"><button data-act="bpmode" data-v="gross" class="' + (net ? '' : 'on') + '">Gross</button><button data-act="bpmode" data-v="net" class="' + (net ? 'on' : '') + '">Net</button></div></div>' +
+      (D.local ? '<div class="smm-cardnote">Indeks lintas saham belum dibuat, jadi baru dihitung dari <b>' + loadedCodes().length + ' saham yang sudah dibuka</b>. Jalankan <code>node scripts/build-smartmoney-screener.js --dir … --upload</code> untuk semua saham.</div>' : '') +
+      '<div class="smm-bx-kpi"><div><span>Total beli</span><b class="smm-up">' + fmtVal(tb, true) + '</b></div><div><span>Total jual</span><b class="smm-dn">' + fmtVal(ts, true) + '</b></div>' +
+        '<div><span>Net</span><b class="' + signCls(tb - ts) + '">' + fmtVal(tb - ts, true) + '</b></div><div><span>Saham</span><b>' + stocks.length + '</b></div></div>' +
+      '<div class="smm-seg smm-bx-tabs"><button data-act="bpside" data-v="b" class="' + (B.side === 'b' ? 'on' : '') + '">Beli (' + buy.length + ')</button><button data-act="bpside" data-v="s" class="' + (B.side === 's' ? 'on' : '') + '">Jual (' + sell.length + ')</button></div>' +
+      '<div class="smm-bx-cols side-' + B.side + '">' + list(buy, 'b', net ? 'Net beli terbesar' : 'Beli terbesar') + list(sell, 's', net ? 'Net jual terbesar' : 'Jual terbesar') + '</div>' +
+      (more ? '<button class="smm-btn smm-more" data-act="bpall">' + (B.all ? 'Tampilkan 15 teratas' : 'Lihat semua') + '</button>' : '') +
+      '<div class="smm-sh-foot">' + (G().hasBroker && G().brokers.some(function (b) { return b.code === B.code; }) ? '<button class="smm-btn" data-act="bpchip">+ Tambah ' + esc(B.code) + ' ke Broker Flow ' + esc(S.code) + '</button>' : '') +
+        '<span class="smm-desc">Ketuk saham untuk membukanya. Avg = value ÷ (lot × 100).</span></div>';
+  }
+  function bpDate() {
+    var D = _bp && _bp.data; if (!D || !D.days.length) return;
+    var rg = bpRange(D);
+    openDatePick({ title: 'Tanggal · broker ' + _bp.code, days: D.days, L: D.days.length - 1, start: rg[0], end: rg[1], preset: _bp.k,
+      onApply: function (s, e, k) { _bp.from = D.days[s]; _bp.to = D.days[e]; _bp.k = k; sheetRender(); } });
+  }
+
+  // ═══════════════════ Popup nama: insider & kepemilikan di semua saham ═══════════════════
+  var _people = null;   // Promise | objek | false
+  function loadPeople() {
+    if (_people !== null) return Promise.resolve(_people);
+    return (_people = fetch('/api/admin/smartmoney/people', { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { _people = j && j.p ? j.p : false; return _people; })
+      .catch(function () { _people = false; return false; }));
+  }
+  // Gabungan indeks (semua saham) + saham yang sudah dimuat (riwayat lengkap)
+  function personData(name) {
+    var N = normName(name), tx = [], hold = [], seen = {};
+    var addTx = function (c, d, role, act, sh, pr, val) {
+      var k = c + '|' + d + '|' + act + '|' + Math.round(sh) + '|' + Math.round(pr);
+      if (seen[k]) return; seen[k] = 1;
+      tx.push({ c: c, d: d, role: role, act: act, sh: sh, pr: pr, val: val || sh * pr });
+    };
+    loadedCodes().forEach(function (c) {
+      getData(c).trades.forEach(function (t) { if (normName(t.name) === N) addTx(c, t.date, t.role, t.action === 'BUY' ? 'B' : 'S', t.shares, t.price, t.value); });
+      var H = getHolder(c); if (!H) return;
+      var lm = H.months[H.months.length - 1];
+      (H.mv[lm] || []).forEach(function (x) { if (normName(x.name) === N) hold.push({ c: c, role: 'Pemegang ' + (x.type || ''), pct: x.pct }); });
+      H.board.forEach(function (b) { if (normName(b.name) === N) hold.push({ c: c, role: b.role || (b.board === 'komisaris' ? 'Komisaris' : 'Direksi'), pct: b.pct }); });
+      H.ubo.forEach(function (u) { if (normName(u.name) === N) hold.push({ c: c, role: 'UBO via ' + u.via, pct: u.pct }); });
+    });
+    var P = _people && _people[N], disp = name;
+    if (P) {
+      disp = P.n || name;
+      (P.t || []).forEach(function (t) { addTx(t[0], t[1], t[2], t[3], t[4], t[5], t[6]); });
+      (P.h || []).forEach(function (h) { hold.push({ c: h[0], role: 'Pemegang ' + (h[3] || ''), pct: h[2] }); });
+      (P.b || []).forEach(function (b) { hold.push({ c: b[0], role: b[1] || 'Direksi/Komisaris', pct: null }); });
+      (P.o || []).forEach(function (o) { hold.push({ c: o[0], role: 'UBO via ' + o[1], pct: o[2] }); });
+    }
+    var hs = {}; hold = hold.filter(function (h) { var k = h.c + '|' + h.role; if (hs[k]) return false; hs[k] = 1; return true; });
+    tx.sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; });
+    return { name: disp, tx: tx, hold: hold };
+  }
+  function allPersonNames() {
+    var set = {};
+    knownNames().forEach(function (n) { set[n] = n; });
+    if (_people) Object.keys(_people).forEach(function (k) { set[k] = _people[k].n || k; });
+    return set;
+  }
+  var _pp = null;
+  function openPerson(name) {
+    _pp = { name: String(name || '').trim(), q: '', k: 'all', from: null, to: null, tab: 'stock', all: false };
+    openSheet('person', renderPersonPop, { cls: 'smm-sheet-lg' });
+    loadPeople().then(function () { if (_pp) sheetRender(); });
+  }
+  function ppDays(tx) {
+    if (!tx.length) return [];
+    var a = tx[tx.length - 1].d, b = new Date().toISOString().slice(0, 10), out = [];
+    if (tx[0].d > b) b = tx[0].d;
+    for (var d = a; d <= b; d = isoAdd(d, 1)) { var w = new Date(d + 'T00:00:00Z').getUTCDay(); if (w && w < 6) out.push(d); if (out.length > 4000) break; }
+    return out;
+  }
+  function renderPersonPop() {
+    var P = _pp, d = personData(P.name), loading = _people === null || (_people && _people.then);
+    var all = allPersonNames(), q = normName(P.q);
+    var sugg = q.length >= 2 ? Object.keys(all).filter(function (k) { return k.indexOf(q) >= 0 && k !== normName(P.name); }).slice(0, 8) : [];
+    var tx = d.tx.filter(function (t) { return (!P.from || t.d >= P.from) && (!P.to || t.d <= P.to); });
+    var buy = 0, sell = 0, nb = 0, ns = 0, by = {};
+    tx.forEach(function (t) {
+      if (t.act === 'B') { buy += t.val; nb++; } else { sell += t.val; ns++; }
+      var s = by[t.c] = by[t.c] || { c: t.c, b: 0, s: 0, bs: 0, ss: 0, n: 0, last: '', role: t.role };
+      if (t.act === 'B') { s.b += t.val; s.bs += t.sh; } else { s.s += t.val; s.ss += t.sh; }
+      s.n++; if (t.d > s.last) s.last = t.d;
+    });
+    var stocks = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return (b.b + b.s) - (a.b + a.s); });
+    var mx = stocks.reduce(function (m, x) { return Math.max(m, x.b, x.s); }, 0) || 1;
+    var dateTxt = P.k === 'all' && !P.from ? 'Semua tanggal' : (P.k !== 'custom' ? dpLabel(P.k) + ' · ' : '') + (P.from ? fmtDate(P.from) : '…') + ' – ' + (P.to ? fmtDate(P.to) : '…');
+    var N = P.all ? 1e9 : 12;
+    var stockRows = stocks.slice(0, N).map(function (x) {
+      return '<button class="smm-pp-st" data-act="ppstock" data-v="' + esc(x.c) + '"><span class="c">' + esc(x.c) + '<small>' + esc(x.role) + '</small></span>' +
+        '<span class="bars"><i class="b" style="width:' + (x.b / mx * 100).toFixed(1) + '%"></i><i class="s" style="width:' + (x.s / mx * 100).toFixed(1) + '%"></i></span>' +
+        '<span class="n"><b class="smm-up">' + (x.b ? fmtVal(x.b) : '-') + '</b><b class="smm-dn">' + (x.s ? fmtVal(x.s) : '-') + '</b></span>' +
+        '<span class="d">' + x.n + 'x · ' + fmtDate(x.last) + '</span></button>';
+    }).join('');
+    var txRows = tx.slice(0, N).map(function (t) {
+      return '<button class="smm-pp-tx" data-act="ppstock" data-v="' + esc(t.c) + '"><span class="d">' + fmtDate(t.d) + '</span><span class="c">' + esc(t.c) + '</span>' +
+        '<span class="a ' + (t.act === 'B' ? 'b' : 's') + '">' + (t.act === 'B' ? 'Beli' : 'Jual') + '</span><span class="n">' + fmtLot(t.sh) + ' lbr @' + nf(t.pr) + '</span><span class="v ' + (t.act === 'B' ? 'smm-up' : 'smm-dn') + '">' + fmtVal(t.val) + '</span></button>';
+    }).join('');
+    var holdRows = d.hold.map(function (h) {
+      return '<button class="smm-pp-h" data-act="ppstock" data-v="' + esc(h.c) + '"><span class="c">' + esc(h.c) + '</span><span>' + esc(h.role) + '</span><b>' + (h.pct != null && h.pct > 0 ? nf(h.pct, 2) + '%' : '') + '</b></button>';
+    }).join('');
+    var cnt = P.tab === 'stock' ? stocks.length : tx.length;
+    return sheetHead('👤 ' + esc(d.name), Object.keys(by).length + ' saham ditransaksikan · ' + d.hold.length + ' kepemilikan/jabatan') +
+      '<div class="smm-sh-bar"><div class="smm-sh-search"><input class="smm-input" id="smmPpQ" value="' + esc(P.q) + '" placeholder="Cari nama lain…" autocomplete="off" aria-label="Cari nama">' +
+        (sugg.length ? '<div class="smm-pp-sugg">' + sugg.map(function (k) { return '<button data-act="ppname" data-v="' + esc(all[k]) + '">' + esc(all[k]) + '</button>'; }).join('') + '</div>' : '') + '</div>' +
+        '<button class="smm-datebtn" data-act="ppdate">📅 <span>' + esc(dateTxt) + '</span> ▾</button></div>' +
+      (loading ? '<div class="smm-cardnote">Memuat indeks nama semua saham…</div>' : !_people ? '<div class="smm-cardnote">Indeks nama semua saham belum dibuat, jadi baru dicari di <b>' + loadedCodes().length + ' saham yang sudah dibuka</b>. Jalankan <code>build-smartmoney-screener.js --upload</code> untuk semua saham.</div>' : '') +
+      '<div class="smm-bx-kpi"><div><span>Total beli</span><b class="smm-up">' + fmtVal(buy, true) + ' <small>' + nb + 'x</small></b></div><div><span>Total jual</span><b class="smm-dn">' + fmtVal(sell, true) + ' <small>' + ns + 'x</small></b></div>' +
+        '<div><span>Net</span><b class="' + signCls(buy - sell) + '">' + fmtVal(buy - sell, true) + '</b></div><div><span>Terakhir</span><b>' + (tx[0] ? fmtDate(tx[0].d) + ' · ' + esc(tx[0].c) : '-') + '</b></div></div>' +
+      '<div class="smm-seg smm-pp-tabs"><button data-act="pptab" data-v="stock" class="' + (P.tab === 'stock' ? 'on' : '') + '">Per saham (' + stocks.length + ')</button><button data-act="pptab" data-v="tx" class="' + (P.tab === 'tx' ? 'on' : '') + '">Transaksi (' + tx.length + ')</button></div>' +
+      (P.tab === 'stock'
+        ? (stocks.length ? '<div class="smm-pp-list">' + stockRows + '</div>' : '<div class="smm-desc" style="padding:10px 0">Tidak ada transaksi insider pada rentang ini.</div>')
+        : (tx.length ? '<div class="smm-pp-list">' + txRows + '</div>' : '<div class="smm-desc" style="padding:10px 0">Tidak ada transaksi insider pada rentang ini.</div>')) +
+      (cnt > 12 ? '<button class="smm-btn smm-more" data-act="ppall">' + (P.all ? 'Tampilkan 12 teratas' : 'Lihat semua (' + cnt + ')') + '</button>' : '') +
+      (holdRows ? '<div class="smm-st-lbl" style="margin-top:14px">Kepemilikan & jabatan terkini</div><div class="smm-pp-list">' + holdRows + '</div>' : '') +
+      '<div class="smm-sh-foot"><button class="smm-btn" data-act="ppfilter">Filter halaman Insider dengan nama ini</button><span class="smm-desc">Ketuk saham untuk membukanya.</span></div>';
+  }
+  function ppDate() {
+    var d = personData(_pp.name), days = ppDays(d.tx);
+    if (!days.length) { toast('Belum ada transaksi untuk nama ini'); return; }
+    var s = 0, e = days.length - 1;
+    if (_pp.from) for (var i = 0; i < days.length; i++) if (days[i] >= _pp.from) { s = i; break; }
+    if (_pp.to) for (var k = days.length - 1; k >= 0; k--) if (days[k] <= _pp.to) { e = k; break; }
+    openDatePick({ title: 'Tanggal transaksi', days: days, L: days.length - 1, start: s, end: e, preset: _pp.k, all: true,
+      onApply: function (a, b, k) {
+        if (k === 'all') { _pp.from = null; _pp.to = null; } else { _pp.from = days[a]; _pp.to = days[b]; }
+        _pp.k = k; sheetRender();
+      } });
   }
 
   // ─────────────── Kartu Value × Volume ───────────────
@@ -1926,7 +2355,7 @@
       var k = x.v >= 0 ? 'a' : 'd', vs = stVs(x, d.c1);
       var lot = (x.nl > 0 ? '+' : '') + fmtLot(x.nl);
       var html = '<div class="smm-st-tr ' + k + '" data-smm-tip="' + esc(x.code + ' · ' + x.name + ' (' + TYPE_META[x.type].label + ')') + '">' +
-        '<span class="c"><i style="background:' + colorFor(x.code) + '"></i>' + esc(x.code) + '</span>';
+        '<span class="c" data-act="bkpop" data-v="' + esc(x.code) + '"><i style="background:' + colorFor(x.code) + '"></i>' + esc(x.code) + '</span>';
       if (m === 'both') html += cell(x, x.nv, stSign(x.nv, false)) + '<span class="l">' + lot + '</span>';
       else if (m === 'value') html += cell(x, x.nv, stSign(x.nv, false));
       else html += cell(x, x.nl, lot);
@@ -2064,7 +2493,7 @@
   }
 
   // ─────────────────────────── Broker Action ───────────────────────────
-  function actRange() { return [Math.max(0, S.actEnd - S.actWin + 1), S.actEnd]; }
+  function actRange() { var e = Math.max(0, S.actEnd); return [clamp(Math.min(S.actStart, e), 0, e), e]; }
   function rangeText(g, r) {
     var a = g.days[g.off + r[0]], b = g.days[g.off + r[1]];
     return r[0] === r[1] ? fmtDate(b) : fmtDate(a) + ' – ' + fmtDate(b);
@@ -2074,12 +2503,9 @@
     if (!G().hasBroker) return;
     var g = G(), r = actRange();
     var day = g.days[g.off + S.actEnd];
-    document.getElementById('smmActDate').textContent = rangeText(g, r);
-    var pick = document.getElementById('smmActPick');
-    pick.min = g.days[g.off]; pick.max = g.end; pick.value = day;
-    root.querySelector('[data-act="dprev"]').disabled = S.actEnd <= 0;
-    root.querySelector('[data-act="dnext"]').disabled = S.actEnd >= g.nF - 1;
-    document.getElementById('smmActWin').value = String(S.actWin);
+    document.getElementById('smmActDate').textContent = rangeLabel(actDays(g), r[0], r[1], S.actPreset);
+    root.querySelector('[data-act="dprev"]').disabled = r[0] <= 0;
+    root.querySelector('[data-act="dnext"]').disabled = r[1] >= g.nF - 1;
     document.getElementById('smmActMode').value = S.actMode;
     renderCal();
     renderBSum();
@@ -2556,7 +2982,7 @@
       var dPct = t.curPct - t.prevPct;
       html += '<tr data-act="insrow" data-v="' + t.idx + '" data-k="' + esc(key) + '"' + (S.insHl === key ? ' class="hl"' : '') + '>' +
         '<td>' + fmtDate(t.date) + '</td>' +
-        '<td><span class="nm" data-act="insname" data-v="' + esc(t.name) + '">' + esc(t.name) + '</span><span class="smm-role">' + esc(t.role) + '</span></td>' +
+        '<td><span class="nm" data-act="person" role="button" title="Lihat semua transaksi nama ini" data-v="' + esc(t.name) + '">' + esc(t.name) + '</span><span class="smm-role">' + esc(t.role) + '</span></td>' +
         '<td><span class="smm-act ' + t.action + '">' + (t.action === 'BUY' ? 'BELI' : 'JUAL') + '</span><span class="sm ' + (t.action === 'BUY' ? 'smm-up' : 'smm-dn') + '">' + fmtVal(t.value, true) + '</span></td>' +
         '<td class="num ' + (t.action === 'BUY' ? 'smm-up' : 'smm-dn') + '">' + (dPct >= 0 ? '↗ ' : '↘ ') + nf(Math.abs(dPct), 4) + '%<span class="sm">' + nf(t.shares) + '</span></td>' +
         '<td class="num">' + nf(t.prevPct, 2) + '%<span class="sm">' + nf(t.prev) + '</span></td>' +
@@ -2577,7 +3003,7 @@
       var key = t.date + '|' + t.name, buy = t.action === 'BUY';
       cards += '<div class="smm-icard' + (S.insHl === key ? ' hl' : '') + '" data-act="insrow" data-v="' + t.idx + '" data-k="' + esc(key) + '">' +
         '<div class="r1"><span class="smm-act ' + t.action + '">' + (buy ? '▲ BELI' : '▼ JUAL') + '</span><b class="' + (buy ? 'smm-up' : 'smm-dn') + '">' + fmtVal(t.value, true) + '</b><span class="d">' + fmtDate(t.date) + '</span></div>' +
-        '<div class="r2"><span class="nm" data-act="insname" data-v="' + esc(t.name) + '">' + esc(t.name) + '</span><span class="smm-role">' + esc(t.role) + '</span></div>' +
+        '<div class="r2"><span class="nm" data-act="person" role="button" data-v="' + esc(t.name) + '">' + esc(t.name) + '</span><span class="smm-role">' + esc(t.role) + '</span></div>' +
         '<div class="r3"><span>' + nf(t.shares) + ' lembar @ ' + nf(t.price) + '</span><span>' + nf(t.prevPct, 2) + '% → <b class="' + (buy ? 'smm-up' : 'smm-dn') + '">' + nf(t.curPct, 2) + '%</b></span></div>' +
         '<div class="r4"><span class="smm-src">' + t.src + '</span>' + (t.broker !== '-' ? '<span class="smm-src">Broker ' + esc(t.broker) + '</span>' : '') + (t.tujuan !== '-' ? '<span class="smm-src">' + esc(t.tujuan) + '</span>' : '') + '</div>' +
       '</div>';
@@ -3026,7 +3452,7 @@
     if (!q) return;
     var head = q.split(' · ')[0].trim(), up = head.toUpperCase();
     var bk = brokerList().filter(function (b) { return b.code === up; })[0];
-    if (/^[A-Z]{2}$/.test(up) && bk) { setBroker(up); return; }
+    if (/^[A-Z]{2}$/.test(up) && bk) { openBroker(up); return; }
     // kode saham yang dikenal (daftar saham situs + saham pantauan) → langsung buka
     var known = allCodes().slice();
     try { if (typeof DATA !== 'undefined' && DATA && DATA.stock_list) DATA.stock_list.forEach(function (s) { known.push(s.code); }); } catch (_) {}
@@ -3034,11 +3460,11 @@
     var N = normName(q), names2 = knownNames();
     var hit = names2.filter(function (n) { return n === N; })[0] || names2.filter(function (n) { return n.indexOf(N) >= 0; })[0];
     var exactName = names2.filter(function (n) { return n === N; })[0];
-    if (exactName) { setPerson(exactName); return; }
+    if (exactName) { openPerson(exactName); return; }
     // seperti Dashboard: kode/nama saham yang mengandung teks yang diketik → saham pertama
     var sm = stockList().filter(function (x) { return x.code.indexOf(up) >= 0 || String(x.name || '').toUpperCase().indexOf(up) >= 0; })[0];
     if (sm) { openCodeFromSearch(sm.code); return; }
-    if (hit) { setPerson(hit); return; }
+    if (hit) { openPerson(hit); return; }
     if (/^[A-Z0-9]{2,6}$/.test(up)) { openCodeFromSearch(up); return; }
     toast('Tidak ditemukan: ' + q);
   }
@@ -3204,7 +3630,7 @@
     pg.classList.toggle('is-empty', !g.hasBroker);
     renderBrokerProfile();
     if (!g.hasBroker) { renderRadar(); return; }
-    if (S.actEnd > g.nF - 1 || S.actEnd < 0) S.actEnd = g.nF - 1;
+    if (S.actEnd > g.nF - 1 || S.actEnd < 0) actPresetDefault(g);
     renderSummary(); renderFlowAll(); renderAction(); renderSankey(); renderRadar();
   }
   function renderAll() {
@@ -3281,7 +3707,7 @@
     loadReal(code).then(function () {
       if (S.code !== code) return;              // user sudah pindah saham lain
       var g = G();
-      S.actEnd = g.nF - 1;
+      actPresetDefault(g);
       if (!g.hasForeign) S.inv = 'all';
       defaultChips();
       if (S.broker && g.brokers.some(function (b) { return b.code === S.broker; }) && S.chips.indexOf(S.broker) < 0) { S.chips.push(S.broker); colorFor(S.broker); }
@@ -3307,7 +3733,24 @@
     switch (act) {
       case 'sub': setSub(v); break;
       case 'load': closeSuggest(); doSearch(document.getElementById('smmCode').value); break;
-      case 'person': e.stopPropagation(); setPerson(v); break;
+      case 'person': e.stopPropagation(); openPerson(v); break;
+      case 'bkpop': e.stopPropagation(); openBroker(v); break;
+      case 'shclose': closeSheet(); break;
+      case 'dppre': dpPreset(v); break;
+      case 'dpstep': dpStep(v); break;
+      case 'dpapply': dpApply(); break;
+      case 'bpdate': bpDate(); break;
+      case 'bpmode': _bp.mode = v; sheetRender(); break;
+      case 'bpside': _bp.side = v; sheetRender(); break;
+      case 'bpall': _bp.all = !_bp.all; sheetRender(); break;
+      case 'bpchip': addChip(_bp.code); closeSheet(); break;
+      case 'bpstock': closeSheet(); openCodeFromSearch(v); if (S.sub !== 'broker' && S.sub !== 'screener') setSub('broker'); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+      case 'ppname': _pp.name = v; _pp.q = ''; _pp.all = false; document.getElementById('smmSheetIn').scrollTop = 0; sheetRender(); break;
+      case 'pptab': _pp.tab = v; _pp.all = false; sheetRender(); break;
+      case 'ppall': _pp.all = !_pp.all; sheetRender(); break;
+      case 'ppdate': ppDate(); break;
+      case 'ppfilter': { var nm = _pp.name; closeSheet(); setPerson(nm); } break;
+      case 'ppstock': closeSheet(); setCode(v); setSub('insider'); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
       case 'gobroker': if (S.broker) setBroker(S.broker); break;
       case 'goperson': if (S.person) setPerson(S.person); break;
       case 'clrbroker': e.stopPropagation(); S.broker = null; renderFilters(); renderBrokerProfile(); renderAction(); break;
@@ -3325,10 +3768,11 @@
       case 'chipx': e.stopPropagation(); S.chips = S.chips.filter(function (c) { return c !== v; }); delete S.colors[v]; renderFlowAll(); break;
       case 'addopen': e.stopPropagation(); document.getElementById('smmAddMenu').classList.toggle('open'); break;
       case 'chipadd': addChip(v); break;
-      case 'dprev': if (S.actEnd > 0) { S.actEnd--; S.skFocus = null; renderAction(); renderSankey(); } break;
-      case 'calday': S.actEnd = +v; S.skFocus = null; renderAction(); renderSankey(); { var ab = document.getElementById('smmBSumCard'); if (ab && window.innerWidth < 1100) ab.scrollIntoView({ block: 'start', behavior: 'smooth' }); } break;
+      case 'dprev': { var r1 = actRange(); if (r1[0] > 0) setActRange(r1[0] - 1, r1[1] - 1, 'custom'); } break;
+      case 'actdate': openActDate(); break;
+      case 'calday': setActRange(+v, +v, 'custom'); { var ab = document.getElementById('smmBSumCard'); if (ab && window.innerWidth < 1100) ab.scrollIntoView({ block: 'start', behavior: 'smooth' }); } break;
       case 'calmon': { var cp = S.cal.ym.split('-'), cd = new Date(Date.UTC(+cp[0], +cp[1] - 1 + +v, 1)); S.cal.ym = cd.toISOString().slice(0, 7); renderCal(); } break;
-      case 'dnext': if (S.actEnd < G().nF - 1) { S.actEnd++; S.skFocus = null; renderAction(); renderSankey(); } break;
+      case 'dnext': { var r2 = actRange(); if (r2[1] < G().nF - 1) setActRange(r2[0] + 1, r2[1] + 1, 'custom'); } break;
       case 'actsort':
         var side = el.getAttribute('data-side'), key = el.getAttribute('data-key');
         S.actSort = { side: side, key: key }; renderAction(); break;
@@ -3357,16 +3801,15 @@
   function onChange(e) {
     var id = e.target.id;
     if (id === 'smmInv') { S.inv = e.target.value; S.skFocus = null; S.obFocus = null; renderAll(); }
-    else if (id === 'smmActWin') { S.actWin = +e.target.value; S.skFocus = null; renderAction(); renderSankey(); }
     else if (id === 'smmActMode') { S.actMode = e.target.value; renderAction(); }
-    else if (id === 'smmActPick') {
-      var g = G(), val = e.target.value, idx = -1;
-      for (var t = g.nF - 1; t >= 0; t--) { if (g.days[g.off + t] <= val) { idx = t; break; } }
-      if (idx < 0) idx = 0;
-      S.actEnd = idx; S.skFocus = null; renderAction(); renderSankey();
-    }
     else if (id === 'smmCalGrp') { S.cal.grp = e.target.value; renderCal(); }
     else if (id === 'smmObFocus') { S.obFocus = e.target.value; renderOrbit(); }
+    else if (id === 'smmBpCode') {
+      var bc = String(e.target.value || '').trim().toUpperCase().split(/[\s·]/)[0];
+      if (brokerList().some(function (b) { return b.code === bc; })) { _bp.code = bc; _bp.data = null; _bp.all = false; sheetRender(); loadBrokerIdx(bc).then(function (j) { if (_bp && _bp.code === bc) { _bp.data = j || brokerLocal(bc); sheetRender(); } }); }
+      else { toast('Kode broker tidak dikenal: ' + bc); e.target.value = _bp.code; }
+    }
+    else if (e.target.classList && e.target.classList.contains('smm-dp-in')) { if (e.target.value) dpPick(e.target.getAttribute('data-dp'), e.target.value); }
     else if (id === 'smmInsAct') { S.insAct = e.target.value; renderInsider(); }
   }
 
@@ -3411,6 +3854,19 @@
   function bind() {
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
+    // Cari nama di popup: daftar saran diperbarui tanpa kehilangan fokus
+    root.addEventListener('input', function (e) {
+      if (e.target.id !== 'smmPpQ' || !_pp) return;
+      _pp.q = e.target.value; var pos = e.target.selectionStart;
+      sheetRender();
+      var q = document.getElementById('smmPpQ'); if (q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (_) {} }
+    });
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.target.id === 'smmPpQ' && _pp) {
+        var b = root.querySelector('.smm-pp-sugg button'); if (b) b.click();
+      }
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute && e.target.getAttribute('data-act') === 'bkpop') { e.preventDefault(); openBroker(e.target.getAttribute('data-v')); }
+    });
     root.addEventListener('mouseover', onOver);
     root.addEventListener('mouseout', onOut);
     root.addEventListener('mousemove', onMove);

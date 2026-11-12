@@ -204,3 +204,20 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
 - Kepemilikan: `balanceHoCols()` + ResizeObserver (`watchHoCols`) membagi 6 kartu ke 2 kolom dengan
   selisih tinggi terkecil (64 kombinasi, urutan HO_ORDER dipertahankan). Selisih < 160px → kartu
   terakhir kolom pendek diberi `.smm-fill`. Hanya saat `.smm-hocols` berupa grid (> 1100px).
+
+## Revisi 20: popup tanggal, popup broker, popup nama
+- Popup umum `openSheet/sheetRender/closeSheet` (#smmSheetBg di dalam root; bottom sheet ≤640px,
+  modal di PC; bisa bertumpuk, mis. popup tanggal di atas popup broker).
+- Tanggal: `openDatePick({days,L,start,end,preset,all,onApply})`, preset `presetRange()` (Terbaru, Hari
+  sebelumnya, 7 hari, Bulan ini, Bulan lalu, 1/3/6 bln, YTD, 1 thn, + "Semua" untuk popup nama), Mulai/
+  Sampai dengan ‹ › dan date input. Broker Summary: `S.actStart/S.actEnd/S.actPreset` (select 1/5/20/60
+  hari dihapus), ‹ › menggeser rentang, default = hari terakhir yang ada transaksi (`lastDataIdx`).
+- Popup broker `openBroker(code)`: klik kode broker mana pun (bkTag → data-act="bkpop", tabel Broker
+  Summary, tarik-tambang, Value × Volume) atau cari kode di kotak atas. Beli/Jual per saham (Gross/Net),
+  ganti broker via input, tanggal sendiri. Data: `GET /api/admin/smartmoney/broker?b=XX` → R2
+  `brokers/XX.json`; belum ada → dihitung dari saham yang sudah dimuat (`brokerLocal`, ada catatan).
+- Popup nama `openPerson(name)`: klik nama insider (tabel) / pemilik / direksi, atau cari nama di kotak
+  atas; ada kotak cari nama di popup. Per saham & daftar transaksi (filter tanggal), kepemilikan & jabatan.
+  Data: `GET /api/admin/smartmoney/people` → R2 `people.json` + saham yang sudah dimuat.
+- `scripts/build-smartmoney-screener.js` kini juga menulis `brokers/*.json` (≤250 hari) dan `people.json`
+  dan mengunggahnya dengan `--upload`. Route baru di `src/lib/admin.js` & `src/lib/smartmoney.js`.

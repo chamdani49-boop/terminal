@@ -10,6 +10,8 @@
 //   insider/{KODE}.json → transaksi orang dalam per saham
 //   holder/{KODE}.json  → kepemilikan (pemegang >1%, komposisi KSEI, jumlah pemegang, profil)
 //   screener/summary.json → ringkasan semua saham untuk Screener (scripts/build-smartmoney-screener.js)
+//   brokers/{BROKER}.json → transaksi 1 broker di semua saham (popup broker), dari skrip yang sama
+//   people.json           → transaksi insider & kepemilikan per nama (popup nama), dari skrip yang sama
 //
 // Terpisah dari D1 (user/billing) dan dari repo GitHub: kalau bucket kosong
 // atau error, hanya menu Smart Money yang terdampak (frontend jatuh ke data
@@ -49,6 +51,24 @@ export async function handleSmartMoneyApi(request, env, url) {
     } catch (e) {
       console.warn('[smartmoney] gagal baca screener/summary.json', e && e.message);
       return json({ ok: true, summary: null }, 200, NO_STORE);
+    }
+  }
+
+  // Popup broker: aktivitas 1 broker di semua saham. Popup nama: indeks semua nama.
+  if (url.pathname === '/api/admin/smartmoney/broker' || url.pathname === '/api/admin/smartmoney/people') {
+    let key = 'people.json';
+    if (url.pathname.endsWith('/broker')) {
+      const b = String(url.searchParams.get('b') || '').trim().toUpperCase();
+      if (!/^[A-Z0-9]{2}$/.test(b)) return badRequest('Kode broker tidak valid');
+      key = `brokers/${b}.json`;
+    }
+    try {
+      const obj = await env.SMARTMONEY.get(key);
+      if (!obj) return json({ ok: true, missing: true }, 200, NO_STORE);
+      return new Response(obj.body, { status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', ...NO_STORE } });
+    } catch (e) {
+      console.warn('[smartmoney] gagal baca', key, e && e.message);
+      return json({ ok: true, missing: true }, 200, NO_STORE);
     }
   }
 
