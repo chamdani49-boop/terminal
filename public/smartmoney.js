@@ -297,7 +297,7 @@
     '.smm-st-tr .l,.smm-st-tr .p{color:var(--text2)}.smm-st-tr .vs{font-weight:700;white-space:nowrap}',
     '@container (max-width:460px){.smm-st-tr{grid-template-columns:42px minmax(0,1.2fr) minmax(0,1fr) 46px 64px;gap:5px;font-size:10.5px}.smm-st-tr.h{font-size:8.5px;letter-spacing:.02em}}',
     /* Broker Distribution · Orbit */
-    '.smm-ob,.smm-vx{display:flex;flex-direction:column;gap:10px;margin-top:10px;container-type:inline-size}',
+    '.smm-ob,.smm-vx,.smm-bs{display:flex;flex-direction:column;gap:10px;margin-top:10px;container-type:inline-size}',
     '.smm-st-tbl.m-value .smm-st-tr,.smm-st-tbl.m-volume .smm-st-tr{grid-template-columns:58px minmax(0,1fr) 62px 78px}',
     '@container (max-width:460px){.smm-st-tbl.m-value .smm-st-tr,.smm-st-tbl.m-volume .smm-st-tr{grid-template-columns:46px minmax(0,1fr) 50px 66px}}',
     '.smm-ob-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}',
@@ -332,13 +332,36 @@
     '.smm-ob-row.rest .t{background:none;height:auto;font-size:11px;color:var(--text3)}',
     '.smm-ob-row .n,.smm-ob-row .p{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:700}.smm-ob-row .p{color:var(--text3)}',
     '@container (max-width:380px){.smm-ob-title{font-size:19px}.smm-ob-row{grid-template-columns:62px minmax(0,1fr) 62px 32px;gap:6px;font-size:11px}.smm-ob-top .smm-sel{max-width:none;width:100%}}',
+    /* Broker Summary */
+    '.smm-bs-meter{position:relative;height:10px;border-radius:5px;margin-top:10px;background:linear-gradient(90deg,var(--st-dis),var(--bg3) 50%,var(--st-acc))}',
+    '.smm-bs-meter i{position:absolute;top:-4px;width:4px;height:18px;margin-left:-2px;border-radius:2px;background:var(--text);box-shadow:0 0 0 2px var(--bg2)}',
+    '.smm-bs .smm-meter-lbl{margin-top:4px}',
+    '.smm-bs-head,.smm-bs-shead{font-size:15px;font-weight:800;line-height:1.35;color:var(--text);margin:8px 0 10px;text-wrap:balance}',
+    '.smm-bs-shead{margin:6px 0 0}',
+    '.smm-bs-th{display:grid;grid-template-columns:1fr auto 1fr;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}',
+    '.smm-bs-th span:nth-child(2){text-align:center}.smm-bs-th span:last-child{text-align:right}',
+    '.smm-bs-row{display:grid;grid-template-columns:52px minmax(0,1fr) 44px 44px minmax(0,1fr) 52px;align-items:center;gap:4px;font-size:11.5px;padding:3px 0}',
+    '.smm-bs-row .nv{font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:11px}.smm-bs-row .nv.d{color:var(--st-dis)}.smm-bs-row .nv.a{color:var(--st-acc);text-align:right}',
+    '.smm-bs-row .br{display:flex;height:9px}.smm-bs-row .br.l{justify-content:flex-end}',
+    '.smm-bs-row .br i{display:block;height:100%;border-radius:4px}.smm-bs-row .br.l i{background:var(--st-dis)}.smm-bs-row .br.r i{background:var(--st-acc)}',
+    '.smm-bs-row .cd{display:flex;align-items:center;gap:4px;font-weight:800;color:var(--text)}.smm-bs-row .cd.l{justify-content:flex-end}',
+    '.smm-bs .dt{display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0}',
+    '.smm-bs-leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--text2)}.smm-bs-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}',
+    '.smm-bs-ord{display:flex;flex-direction:column;gap:8px;margin-top:10px}',
+    '.smm-bs-orow{display:grid;grid-template-columns:50px minmax(0,1fr) 64px;align-items:center;gap:8px;font-size:12px}',
+    '.smm-bs-orow .cd{display:flex;align-items:center;gap:5px;font-weight:800;color:var(--text)}',
+    '.smm-bs-orow .tr{position:relative;height:4px;border-radius:2px;background:var(--bg3)}.smm-bs-orow .tr i{display:block;height:100%;border-radius:2px;background:var(--st-acc)}',
+    '.smm-bs-orow .tr em{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--st-acc);box-shadow:0 0 0 2px var(--bg2)}',
+    '.smm-bs-orow .nv{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:11.5px;color:var(--text)}',
+    '@container (max-width:360px){.smm-bs-row{grid-template-columns:46px minmax(0,1fr) 38px 38px minmax(0,1fr) 46px;font-size:10.5px}.smm-bs-row .nv{font-size:10px}}',
     /* Broker Flow · Ringkasan */
     '#smmFlowCard [hidden],#smmSankeyCard [hidden]{display:none!important}',
-    '.smm-st,.smm-vx,.smm-ob{--st-acc:#0d9488;--st-dis:#ea580c;--st-accb:rgba(13,148,136,.10);--st-disb:rgba(234,88,12,.10);--st-accl:rgba(13,148,136,.35);--st-disl:rgba(234,88,12,.35);container-type:inline-size;display:flex;flex-direction:column;gap:10px;margin-top:10px}',
-    '.smm-cols3{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}',
-    '@media (max-width:900px){.smm-cols3{grid-template-columns:minmax(0,1fr)}}',
+    '.smm-st,.smm-vx,.smm-ob,.smm-bs{--st-acc:#0d9488;--st-dis:#ea580c;--st-accb:rgba(13,148,136,.10);--st-disb:rgba(234,88,12,.10);--st-accl:rgba(13,148,136,.35);--st-disl:rgba(234,88,12,.35);container-type:inline-size;display:flex;flex-direction:column;gap:10px;margin-top:10px}',
+    '.smm-cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}',
+    '@media (max-width:1180px){.smm-cols3{grid-template-columns:repeat(2,minmax(0,1fr))}.smm-cols3>#smmVxvCard{grid-column:1/-1}}',
+    '@media (max-width:760px){.smm-cols3{grid-template-columns:minmax(0,1fr)}}',
     '.smm-cols3>.smm-card{min-width:0}',
-    '[data-theme="dark"] .smm-st,[data-theme="dark"] .smm-vx,[data-theme="dark"] .smm-ob{--st-acc:#2dd4bf;--st-dis:#fb923c;--st-accb:rgba(45,212,191,.12);--st-disb:rgba(251,146,60,.12);--st-accl:rgba(45,212,191,.38);--st-disl:rgba(251,146,60,.38)}',
+    '[data-theme="dark"] .smm-st,[data-theme="dark"] .smm-vx,[data-theme="dark"] .smm-ob,[data-theme="dark"] .smm-bs{--st-acc:#2dd4bf;--st-dis:#fb923c;--st-accb:rgba(45,212,191,.12);--st-disb:rgba(251,146,60,.12);--st-accl:rgba(45,212,191,.38);--st-disl:rgba(251,146,60,.38)}',
     '.smm-st-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}',
     '.smm-st-top .cd{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--text3)}',
     '.smm-st-top .px{font-family:"IBM Plex Mono",monospace;font-size:28px;font-weight:800;line-height:1.05;color:var(--text)}',
@@ -976,6 +999,11 @@
         });
       });
       if (fx) { b.fx = true; hasForeign = true; }
+      ['bf', 'sf'].forEach(function (k) {
+        if (!Array.isArray(raw[k])) return;
+        b[k] = new Float64Array(nF);
+        bDays.forEach(function (d, i) { var t = dIdx[d] - off; if (t >= 0 && t < nF) b[k][t] += num(raw[k][i]); });
+      });
       brokers.push(b);
     });
 
@@ -1202,8 +1230,12 @@
         '<section class="smm-card smm-calcard" id="smmCalCard"></section>' +
         '</div>' +
 
-        // Kartu baru: Lawan transaksi · Value × Volume
+        // Kartu baru: Broker Summary · Lawan transaksi · Value × Volume
         '<div class="smm-cols3">' +
+          '<section class="smm-card" id="smmBSumCard">' +
+            '<div class="smm-h3">Broker Summary ' + tip('Ringkasan pembeli vs penjual pada tanggal & mode (Net/Gross) Broker Action: kekuatan 9 pembeli teratas vs 9 penjual teratas, tarik-tambang per peringkat, dan gaya order pembeli.') + '</div>' +
+            '<div class="smm-bs" id="smmBSum"></div>' +
+          '</section>' +
           '<section class="smm-card" id="smmOrbitCard">' +
             '<div class="smm-h3">Lawan Transaksi ' + tip('Siapa lawan transaksi satu broker pada tanggal Broker Action / kalender. Diestimasi dari porsi beli & jual tiap broker karena bursa tidak mencatat pasangan pembeli–penjual.') + '</div>' +
             '<div class="smm-toolbar"><div class="smm-seg" id="smmObMetric"><button data-act="obmetric" data-v="value">Value</button><button data-act="obmetric" data-v="volume">Volume</button></div></div>' +
@@ -1734,6 +1766,76 @@
   // Peta posisi broker (Value × Volume): kanan-kiri = net value, atas-bawah = harga rata-rata,
   // besar bubble = volume. Rata-rata = value ÷ volume → siapa untung / tersangkut terhadap harga sekarang.
   function stVs(x, c1) { return x.avg > 0 ? (x.v >= 0 ? (c1 / x.avg - 1) * 100 : (x.avg / c1 - 1) * 100) : null; }
+  // ─────────────── Kartu Broker Summary ───────────────
+  // Tanggal & mode (Net/Gross) ikut Broker Action. Top 9 pembeli vs top 9 penjual,
+  // tarik-tambang berpasangan per peringkat, dan gaya order (lot per transaksi) bila
+  // data frekuensi (bf/sf) tersedia di file broker.
+  function renderBSum() {
+    var box = document.getElementById('smmBSum'); if (!box) return;
+    if (!G().hasBroker) { box.innerHTML = ''; return; }
+    var g = G(), r = actRange(), rows = aggregate(g, r[0], r[1], S.inv), net = S.actMode === 'net';
+    var B = (net ? rows.filter(function (x) { return x.net > 0; }).map(function (x) { return { x: x, v: x.net }; })
+                 : rows.map(function (x) { return { x: x, v: x.bv }; })).filter(function (q) { return q.v > 0; }).sort(function (a, b) { return b.v - a.v; }).slice(0, 9);
+    var Sl = (net ? rows.filter(function (x) { return x.net < 0; }).map(function (x) { return { x: x, v: -x.net }; })
+                  : rows.map(function (x) { return { x: x, v: x.sv }; })).filter(function (q) { return q.v > 0; }).sort(function (a, b) { return b.v - a.v; }).slice(0, 9);
+    if (!B.length && !Sl.length) { box.innerHTML = '<div class="smm-empty">Tidak ada transaksi broker pada ' + esc(rangeText(g, r)) + '. Pilih tanggal lain di kalender atau Broker Action.</div>'; return; }
+    var sb = B.reduce(function (s, q) { return s + q.v; }, 0), ss = Sl.reduce(function (s, q) { return s + q.v; }, 0);
+    var diff = sb - ss, sc = sb + ss > 0 ? diff / (sb + ss) : 0, pct = Math.abs(diff) / (Math.max(sb, ss) || 1) * 100;
+    var lab, who = diff >= 0 ? 'pembeli' : 'penjual';
+    if (Math.abs(sc) < 0.1) lab = 'Netral: ' + who + ' unggul tipis';
+    else if (Math.abs(sc) < 0.35) lab = (diff > 0 ? 'Akumulasi' : 'Distribusi') + ': ' + who + ' lebih kuat';
+    else lab = (diff > 0 ? 'Akumulasi besar' : 'Distribusi besar') + ': ' + who + ' jauh lebih kuat';
+    var head = lab + ', selisih ' + fmtVal(Math.abs(diff), true) + ' (' + nf(pct, 0) + '%).';
+    // tarik-tambang
+    var n = Math.max(B.length, Sl.length), mx = Math.max(B.length ? B[0].v : 0, Sl.length ? Sl[0].v : 0) || 1;
+    var dot = function (t) { return '<i class="dt" style="background:' + TYPE_META[t].color + '"></i>'; };
+    var tug = '';
+    for (var i = 0; i < n; i++) {
+      var s = Sl[i], b = B[i];
+      tug += '<div class="smm-bs-row">' +
+        '<span class="nv d">' + (s ? fmtVal(s.v) : '') + '</span>' +
+        '<span class="br l">' + (s ? '<i style="width:' + Math.max(2, s.v / mx * 100).toFixed(1) + '%"></i>' : '') + '</span>' +
+        '<span class="cd l">' + (s ? '<b data-smm-tip="' + esc(s.x.code + ' · ' + s.x.name + ' (' + TYPE_META[s.x.type].label + ')') + '">' + esc(s.x.code) + '</b>' + dot(s.x.type) : '') + '</span>' +
+        '<span class="cd r">' + (b ? dot(b.x.type) + '<b data-smm-tip="' + esc(b.x.code + ' · ' + b.x.name + ' (' + TYPE_META[b.x.type].label + ')') + '">' + esc(b.x.code) + '</b>' : '') + '</span>' +
+        '<span class="br r">' + (b ? '<i style="width:' + Math.max(2, b.v / mx * 100).toFixed(1) + '%"></i>' : '') + '</span>' +
+        '<span class="nv a">' + (b ? fmtVal(b.v) : '') + '</span></div>';
+    }
+    // gaya order pembeli (butuh frekuensi)
+    var style;
+    var withF = g.brokers.some(function (x) { return x.bf; });
+    if (withF) {
+      var bmap = {}; g.brokers.forEach(function (x) { bmap[x.code] = x; });
+      var ord = rows.filter(function (x) { return x.bv > 0 && bmap[x.code].bf; }).map(function (x) {
+        var f = 0, F = bmap[x.code].bf; for (var t = r[0]; t <= r[1]; t++) f += F[t] || 0;
+        return { x: x, f: f, lpt: f > 0 ? x.bl * invFac(bmap[x.code], S.inv) / f : 0 };
+      }).filter(function (q) { return q.f > 0; }).sort(function (a, b) { return b.x.bv - a.x.bv; }).slice(0, 8);
+      var lm = ord.reduce(function (m, q) { return Math.max(m, q.lpt); }, 0) || 1;
+      var big = ord.slice().sort(function (a, b) { return b.lpt - a.lpt; });
+      style = ord.length ? '<div class="smm-st-lbl">Gaya order pembeli</div>' +
+        '<div class="smm-bs-shead">' + esc(big[0].x.code) + ' main tiket besar.' + (big.length > 1 ? ' ' + esc(big[big.length - 1].x.code) + ' memecah order jadi receh.' : '') + '</div>' +
+        '<p class="smm-st-note" style="margin-top:2px">Rata-rata lot per transaksi (B.lot ÷ B.freq). Makin ke kanan, makin besar tiap order.</p>' +
+        '<div class="smm-bs-ord">' + ord.map(function (q) {
+          var w = q.lpt / lm * 100;
+          return '<div class="smm-bs-orow"><span class="cd">' + dot(q.x.type) + '<b>' + esc(q.x.code) + '</b></span><span class="tr"><i style="width:' + w.toFixed(1) + '%"></i><em style="left:' + w.toFixed(1) + '%"></em></span><span class="nv">' + nf(q.lpt, 1) + ' lot</span></div>';
+        }).join('') + '</div>' : '';
+    } else {
+      style = '<div class="smm-st-lbl">Gaya order pembeli</div><p class="smm-st-note" style="margin-top:4px">Belum tersedia: file broker belum memuat frekuensi transaksi (B.freq), jadi lot per transaksi belum bisa dihitung. Bagian ini muncul otomatis begitu frekuensi ada di data.</p>';
+    }
+    box.innerHTML =
+      '<div class="smm-ob-top"><div><div class="smm-ob-kick">' + esc(S.code) + ' · Broker Summary</div><div class="smm-vx-rng">' + esc(rangeText(g, r)) + ' · ' + (net ? 'Net' : 'Gross') + '</div></div>' +
+        '<div class="smm-vx-px"><small>Harga</small><b>' + nf(g.ohlc[g.off + S.actEnd] ? g.ohlc[g.off + S.actEnd].close : 0) + '</b></div></div>' +
+      '<div class="smm-ob-box"><div class="smm-st-lbl">Broker action</div>' +
+        '<div class="smm-bs-meter"><i style="left:' + ((sc + 1) / 2 * 100).toFixed(1) + '%"></i></div>' +
+        '<div class="smm-meter-lbl"><span>Big Dist</span><span>Netral</span><span>Big Acc</span></div>' +
+        '<div class="smm-bs-head">' + esc(head) + '</div>' +
+        '<div class="smm-st-camps"><div class="smm-st-camp a"><div class="l">Top ' + B.length + ' beli</div><div class="v">' + fmtVal(sb) + '</div></div>' +
+        '<div class="smm-st-camp d"><div class="l">Top ' + Sl.length + ' jual</div><div class="v">' + fmtVal(ss) + '</div></div></div></div>' +
+      '<div class="smm-ob-box"><div class="smm-bs-th"><span>Penjual</span><span>Tarik-tambang</span><span>Pembeli</span></div>' + tug +
+        '<div class="smm-bs-leg"><span><i style="background:' + TYPE_META.B.color + '"></i>BUMN</span><span><i style="background:' + TYPE_META.D.color + '"></i>Domestik</span><span><i style="background:' + TYPE_META.F.color + '"></i>Asing</span></div>' +
+        '<p class="smm-st-note">Baris berpasangan menurut peringkat nilai, bukan pasangan transaksi.</p></div>' +
+      '<div class="smm-ob-box">' + style + '</div>';
+  }
+
   // ─────────────── Kartu Value × Volume ───────────────
   // Broker = chip Broker Flow, periode = filter periode. Rata-rata = value ÷ volume,
   // dibandingkan dengan harga sekarang → siapa untung, siapa tersangkut.
@@ -1976,6 +2078,7 @@
       '<div>Net asing<b class="' + signCls(fNet) + '">' + (fNet == null ? '-' : fmtVal(fNet, true)) + '</b></div>' +
       '<div>Harga<b class="' + signCls(chg) + '">' + nf(c.close) + ' (' + fmtPct(chg) + ')</b></div>';
     renderCal();
+    renderBSum();
   }
 
   // ─────────────────────────── Sankey ───────────────────────────
@@ -3418,7 +3521,7 @@
     }
     var an = document.getElementById('acctNav');
     if (an) {
-      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Action', 'broker', '#smmActionCard'], ['Lawan Transaksi', 'broker', '#smmOrbitCard'], ['Value × Volume', 'broker', '#smmVxvCard'], ['Distribusi', 'broker', '#smmSankeyCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
+      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Action', 'broker', '#smmActionCard'], ['Broker Summary', 'broker', '#smmBSumCard'], ['Lawan Transaksi', 'broker', '#smmOrbitCard'], ['Value × Volume', 'broker', '#smmVxvCard'], ['Distribusi', 'broker', '#smmSankeyCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
       var grp = document.createElement('div');
       grp.className = 'acct-nav-group'; grp.setAttribute('data-page', 'smartmoney');
       grp.innerHTML = '<button type="button" class="acct-nav-page" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">💰</span>Smart Money</button><div class="acct-nav-subs">' +

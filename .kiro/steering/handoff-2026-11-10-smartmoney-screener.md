@@ -159,3 +159,12 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   Ringkasan (default) | Grafik, Ringkasan lengkap dengan bar "Net value per broker".
 - Kartu Order Flow terpisah dihapus (isinya sama dengan Ringkasan). Baris `.smm-cols3` kini 2 kartu:
   Lawan Transaksi + Value × Volume (2 kolom > 900px, 1 kolom di bawahnya). `fitStory` dihapus.
+
+## Revisi 14: kartu Broker Summary (kolom ke-3 baru)
+- `#smmBSumCard` di depan Lawan Transaksi & Value × Volume dalam `.smm-cols3` (3 kolom > 1180px,
+  2 kolom + Value × Volume selebar penuh 761–1180px, 1 kolom di HP). Kartu lama tidak diubah.
+- `renderBSum()` (dipanggil di akhir `renderAction`): ikut tanggal & mode Net/Gross Broker Action.
+  Meter top 9 beli vs top 9 jual + kalimat, tarik-tambang berpasangan per peringkat, gaya order pembeli.
+- Gaya order butuh frekuensi transaksi: `adapt()` kini membaca array opsional `bf` / `sf` per broker
+  (jumlah transaksi beli/jual per hari). Data R2 sekarang belum punya → kartu menampilkan catatan
+  "belum tersedia". Untuk mengaktifkan: tambahkan `bf`/`sf` ke file broker di R2 (pipeline data).
