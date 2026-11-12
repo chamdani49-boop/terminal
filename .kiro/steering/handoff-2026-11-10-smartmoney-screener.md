@@ -187,3 +187,12 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
 - Tabel gaya Stockbit: BY, B.val, B.lot, B.freq, B.avg | SL, S.val, S.lot, S.freq, S.avg, 10 teratas +
   "Lihat semua" (`S.bsAll`). Geser horizontal di layar sempit, kolom BY sticky. Freq dari `bf`/`sf`
   (tampil "-" bila belum ada di data atau filter investor bukan Semua).
+
+## Revisi 18: Broker Action dilebur ke Broker Summary
+- Kartu `#smmActionCard` dihapus. Kontrol tanggal (‹ tanggal ›, date picker), rentang 1/5/20/60 hari dan
+  Net/Gross (`#smmActDate`, `#smmActPick`, `#smmActWin`, `#smmActMode`) pindah ke `#smmBSumCard`
+  (tombol Net|Gross `#smmBsNet` dihapus, diganti select Mode).
+- `renderAction()` kini hanya mengisi kontrol tanggal lalu `renderCal()` + `renderBSum()`.
+- Broker Summary mendapat total transaksi / net asing / harga (`.smm-totals`), tabel bisa diurutkan
+  (`actsort`, `S.actSort`) dan kode broker bisa diketuk (`bkpick` → chip Broker Flow).
+- Broker Distribution (Sankey) kini kartu selebar penuh. Klik kalender menggulir ke Broker Summary.
