@@ -297,11 +297,16 @@
     '.smm-st-tr .l,.smm-st-tr .p{color:var(--text2)}.smm-st-tr .vs{font-weight:700;white-space:nowrap}',
     '@container (max-width:460px){.smm-st-tr{grid-template-columns:42px minmax(0,1.2fr) minmax(0,1fr) 46px 64px;gap:5px;font-size:10.5px}.smm-st-tr.h{font-size:8.5px;letter-spacing:.02em}}',
     /* Broker Distribution · Orbit */
-    '.smm-ob{display:flex;flex-direction:column;gap:10px;margin-top:10px;container-type:inline-size}',
+    '.smm-ob,.smm-vx{display:flex;flex-direction:column;gap:10px;margin-top:10px;container-type:inline-size}',
+    '.smm-st-tbl.m-value .smm-st-tr,.smm-st-tbl.m-volume .smm-st-tr{grid-template-columns:58px minmax(0,1fr) 62px 78px}',
+    '@container (max-width:460px){.smm-st-tbl.m-value .smm-st-tr,.smm-st-tbl.m-volume .smm-st-tr{grid-template-columns:46px minmax(0,1fr) 50px 66px}}',
     '.smm-ob-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}',
     '.smm-ob-kick{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}',
     '.smm-ob-title{font-size:22px;font-weight:800;color:var(--text);line-height:1.2}',
     '.smm-ob-top .smm-sel{max-width:180px}',
+    '.smm-vx-px{text-align:right;font-family:"IBM Plex Mono",monospace}.smm-vx-px small{display:block;font-size:10px;color:var(--text3);font-family:inherit}.smm-vx-px b{font-size:20px;color:var(--text)}',
+    '.smm-vx-rng{font-size:13px;font-weight:700;color:var(--text2);margin-top:2px}',
+    '.smm-vx-head{font-size:14.5px;line-height:1.4;color:var(--text2);margin-top:4px}.smm-vx-head b{color:var(--text)}',
     '.smm-ob-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:10px 12px;min-width:0}',
     '.smm-ob-bar{display:flex;height:14px;border-radius:5px;overflow:hidden;margin-top:8px;background:var(--bg3);gap:2px}',
     '.smm-ob-bar i{display:block;height:100%}',
@@ -329,9 +334,12 @@
     '@container (max-width:380px){.smm-ob-title{font-size:19px}.smm-ob-row{grid-template-columns:62px minmax(0,1fr) 62px 32px;gap:6px;font-size:11px}.smm-ob-top .smm-sel{max-width:none;width:100%}}',
     /* Broker Flow · Ringkasan */
     '#smmFlowCard [hidden],#smmSankeyCard [hidden]{display:none!important}',
-    '.smm-ob{--st-accb:rgba(13,148,136,.10);--st-acc:#0d9488}',
-    '.smm-st{--st-acc:#0d9488;--st-dis:#ea580c;--st-accb:rgba(13,148,136,.10);--st-disb:rgba(234,88,12,.10);--st-accl:rgba(13,148,136,.35);--st-disl:rgba(234,88,12,.35);container-type:inline-size;display:flex;flex-direction:column;gap:10px;margin-top:10px}',
-    '[data-theme="dark"] .smm-st,[data-theme="dark"] .smm-ob{--st-acc:#2dd4bf;--st-dis:#fb923c;--st-accb:rgba(45,212,191,.12);--st-disb:rgba(251,146,60,.12);--st-accl:rgba(45,212,191,.38);--st-disl:rgba(251,146,60,.38)}',
+    '.smm-st,.smm-vx,.smm-ob{--st-acc:#0d9488;--st-dis:#ea580c;--st-accb:rgba(13,148,136,.10);--st-disb:rgba(234,88,12,.10);--st-accl:rgba(13,148,136,.35);--st-disl:rgba(234,88,12,.35);container-type:inline-size;display:flex;flex-direction:column;gap:10px;margin-top:10px}',
+    '.smm-cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}',
+    '@media (max-width:1180px){.smm-cols3{grid-template-columns:repeat(2,minmax(0,1fr))}.smm-cols3>#smmVxvCard{grid-column:1/-1}}',
+    '@media (max-width:760px){.smm-cols3{grid-template-columns:minmax(0,1fr)}}',
+    '.smm-cols3>.smm-card{min-width:0}',
+    '[data-theme="dark"] .smm-st,[data-theme="dark"] .smm-vx,[data-theme="dark"] .smm-ob{--st-acc:#2dd4bf;--st-dis:#fb923c;--st-accb:rgba(45,212,191,.12);--st-disb:rgba(251,146,60,.12);--st-accl:rgba(45,212,191,.38);--st-disl:rgba(251,146,60,.38)}',
     '.smm-st-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}',
     '.smm-st-top .cd{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--text3)}',
     '.smm-st-top .px{font-family:"IBM Plex Mono",monospace;font-size:28px;font-weight:800;line-height:1.05;color:var(--text)}',
@@ -371,14 +379,8 @@
     '.smm-st-plots .na,.smm-st-plots .nd,.smm-st-plots .pt,.smm-st-plots .tt{paint-order:stroke;stroke:var(--bg2);stroke-width:3px;stroke-linejoin:round}',
     '.smm-st-plots .na{fill:var(--st-acc)}.smm-st-plots .nd{fill:var(--st-dis)}.smm-st-plots .xt{fill:var(--text3)}',
     '.smm-st-x{position:absolute;top:22px;bottom:22px;width:0;border-left:1px solid var(--accent);pointer-events:none;display:none}',
-    '.smm-st-bars{display:flex;flex-direction:column;gap:7px;margin-top:8px}',
-    '.smm-st-bar{display:grid;grid-template-columns:52px minmax(0,1fr) 78px;align-items:center;gap:8px;font-size:12px}',
-    '.smm-st-bar .c{display:flex;align-items:center;gap:5px;font-weight:800;color:var(--text)}.smm-st-bar .c i{width:7px;height:7px;border-radius:50%;flex-shrink:0}',
-    '.smm-st-bar .t{height:12px;border-radius:4px;background:var(--bg3);overflow:hidden}.smm-st-bar .t i{display:block;height:100%;border-radius:4px}',
-    '.smm-st-bar.a .t i{background:var(--st-acc)}.smm-st-bar.d .t i{background:var(--st-dis)}',
-    '.smm-st-bar .n{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:11.5px}.smm-st-bar.a .n{color:var(--st-acc)}.smm-st-bar.d .n{color:var(--st-dis)}',
     '.smm-st-note{margin:10px 0 0;font-size:11px;line-height:1.45;color:var(--text3)}',
-    '@container (min-width:640px){.smm-st-body{grid-template-columns:minmax(0,1.75fr) minmax(220px,1fr)}.smm-st-head{font-size:20px}.smm-st-camp .v{font-size:22px}}',
+    '@container (min-width:640px){.smm-st-head{font-size:20px}.smm-st-camp .v{font-size:22px}}',
     '@container (max-width:360px){.smm-st-top .px{font-size:24px}.smm-st-head{font-size:16px}.smm-st-camp .v{font-size:17px}.smm-st-bar{grid-template-columns:46px minmax(0,1fr) 70px}}',
     '.smm-legend .row{display:flex;gap:10px;flex-wrap:wrap}',
     '.smm-legend .row span{white-space:nowrap}',
@@ -1095,10 +1097,10 @@
   // ─────────────────────────── State ───────────────────────────
   var S = {
     code: 'AVIA', period: '3M', inv: 'all', sub: 'broker',
-    metric: 'value', priceMode: 'candle', showPrice: true, flowView: (function () { try { return localStorage.getItem('smm_flowview') === 'chart' ? 'chart' : 'story'; } catch (_) { return 'story'; } })(),
+    metric: 'value', priceMode: 'candle', showPrice: true,
     chips: [], hidden: {}, colors: {},
     actEnd: 0, actWin: 1, actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
-    skMetric: 'value', skFocus: null, skView: 'orbit',
+    skMetric: 'value', skFocus: null, obMetric: 'value', obFocus: null, vxv: 'both',
     insSrc: 'ALL', insAct: 'ALL', insName: null, insRange: '2Y', insHl: null,
     cal: { grp: 'sm', ym: null, end: null },
     broker: null, person: null, personAll: false, hoMonth: null, hoSide: 'all', hoChart: 'lf'
@@ -1180,19 +1182,35 @@
         // Broker Flow (lebar) + Kalender flow harian (samping)
         '<div class="smm-flowrow">' +
         '<section class="smm-card" id="smmFlowCard">' +
-          '<div class="smm-h3">Broker Flow <small id="smmFlowSub"></small>' + tip('Ringkasan: broker yang dipilih dibagi dua kubu, Akumulator (net beli) dan Distributor (net jual), lalu dibandingkan dengan harga. Grafik: garis net beli − jual tiap broker dijumlah dari awal periode, di atas candle harga (sumbu kanan). Pilih broker lewat chip di bawah.') + '</div>' +
+          '<div class="smm-h3">Broker Flow <small id="smmFlowSub"></small>' + tip('Garis = total beli dikurangi jual (net) tiap broker, dijumlah dari awal periode. Garis naik = broker terus menimbun. Garis turun = broker terus melepas. Bandingkan dengan harga (sumbu kanan). Broker pada chip juga dipakai kartu Order Flow dan Value × Volume.') + '</div>' +
           '<div class="smm-toolbar">' +
-            '<div class="smm-seg" id="smmFlowView" role="tablist" aria-label="Tampilan Broker Flow"><button data-act="flowview" data-v="story">Ringkasan</button><button data-act="flowview" data-v="chart">Grafik</button></div>' +
             '<div class="smm-seg" id="smmMetric"><button data-act="metric" data-v="value">Value</button><button data-act="metric" data-v="volume">Volume</button></div>' +
             '<div class="smm-seg smm-pricetog" id="smmPriceMode"><button data-act="pmode" data-v="candle">Candle</button><button data-act="pmode" data-v="line">Garis</button></div>' +
           '</div>' +
-          '<div class="smm-st" id="smmFlowStory"></div>' +
           '<div class="smm-legend" id="smmFlowLegend" aria-live="polite"></div>' +
           '<div class="smm-chart" id="smmFlowChart"></div>' +
           '<div class="smm-chips" id="smmChips"></div>' +
           '<div class="smm-insight" id="smmFlowInsight"></div>' +
         '</section>' +
         '<section class="smm-card smm-calcard" id="smmCalCard"></section>' +
+        '</div>' +
+
+        // Tiga kartu baru: Order Flow · Lawan transaksi · Value × Volume
+        '<div class="smm-cols3">' +
+          '<section class="smm-card" id="smmStoryCard">' +
+            '<div class="smm-h3">Order Flow ' + tip('Broker pada chip Broker Flow dibagi dua kubu: Akumulator (net beli) dan Distributor (net jual). Harga dan arus kumulatif tiap kubu ditampilkan berdampingan. Ikut periode, Value/Volume, dan filter investor.') + '</div>' +
+            '<div class="smm-st" id="smmFlowStory"></div>' +
+          '</section>' +
+          '<section class="smm-card" id="smmOrbitCard">' +
+            '<div class="smm-h3">Lawan Transaksi ' + tip('Siapa lawan transaksi satu broker pada tanggal Broker Action / kalender. Diestimasi dari porsi beli & jual tiap broker karena bursa tidak mencatat pasangan pembeli–penjual.') + '</div>' +
+            '<div class="smm-toolbar"><div class="smm-seg" id="smmObMetric"><button data-act="obmetric" data-v="value">Value</button><button data-act="obmetric" data-v="volume">Volume</button></div></div>' +
+            '<div class="smm-ob" id="smmOrbit"></div>' +
+          '</section>' +
+          '<section class="smm-card" id="smmVxvCard">' +
+            '<div class="smm-h3">Value × Volume ' + tip('Value = besar uang, Volume = jumlah lot. Value dibagi volume = harga rata-rata broker. Dibandingkan dengan harga sekarang, terlihat siapa yang untung dan siapa yang masih tersangkut.') + '</div>' +
+            '<div class="smm-toolbar"><div class="smm-seg" id="smmVxvMode"><button data-act="vxv" data-v="value">Value</button><button data-act="vxv" data-v="volume">Volume</button><button data-act="vxv" data-v="both">Keduanya</button></div></div>' +
+            '<div class="smm-vx" id="smmVxv"></div>' +
+          '</section>' +
         '</div>' +
 
         '<div class="smm-grid">' +
@@ -1217,10 +1235,8 @@
           '</section>' +
 
           '<section class="smm-card" id="smmSankeyCard">' +
-            '<div class="smm-h3">Broker Distribution <small id="smmSkSub"></small>' + tip('Siapa lawan transaksi broker terpilih pada tanggal yang sama dengan Broker Action. Orbit: lawan satu broker. Aliran: pita dari semua pembeli (kiri) ke penjual (kanan). Lawan transaksi diestimasi dari porsi beli/jual karena bursa tidak mencatat pasangannya.') + '</div>' +
-            '<div class="smm-toolbar"><div class="smm-seg" id="smmSkView"><button data-act="skview" data-v="orbit">Orbit</button><button data-act="skview" data-v="flow">Aliran</button></div>' +
-            '<div class="smm-seg" id="smmSkMetric"><button data-act="skmetric" data-v="value">Value</button><button data-act="skmetric" data-v="volume">Volume</button></div></div>' +
-            '<div class="smm-ob" id="smmOrbit"></div>' +
+            '<div class="smm-h3">Broker Distribution <small id="smmSkSub"></small>' + tip('Aliran barang dari pembeli (kiri) ke penjual (kanan) pada tanggal yang sama dengan Broker Action. Pita makin tebal = nilai makin besar. Ketuk broker untuk fokus. Pita diestimasi dari porsi jual tiap broker.') + '</div>' +
+            '<div class="smm-toolbar"><div class="smm-seg" id="smmSkMetric"><button data-act="skmetric" data-v="value">Value</button><button data-act="skmetric" data-v="volume">Volume</button></div></div>' +
             '<div class="smm-sk-hint" id="smmSkHint"></div>' +
             '<div class="smm-sk-wrap" id="smmSankey"></div>' +
             '<div class="smm-sk-legend"><span><i style="background:#8b5cf6"></i>Domestik</span><span><i style="background:#10b981"></i>BUMN</span><span><i style="background:#ef4444"></i>Asing</span></div>' +
@@ -1485,17 +1501,8 @@
     if (!G().hasBroker) return;
     var el = document.getElementById('smmFlowChart');
     if (!el) return;
-    var g = G(), t0 = periodStart(g, S.period), story = S.flowView === 'story';
+    var g = G(), t0 = periodStart(g, S.period);
     document.getElementById('smmFlowSub').textContent = '· ' + S.code + ' · ' + fmtDate(g.days[g.off + t0]) + ' – ' + fmtDate(g.end) + ' · ' + (S.metric === 'value' ? 'nilai (Rp)' : 'volume (lot)') + (S.inv === 'F' ? ' · investor asing' : S.inv === 'D' ? ' · investor domestik' : '');
-    ['smmFlowStory'].forEach(function (id) { document.getElementById(id).hidden = !story; });
-    ['smmFlowChart', 'smmFlowLegend', 'smmPriceMode'].forEach(function (id) { document.getElementById(id).hidden = story; });
-    if (story) {
-      if (flowChart) { try { flowChart.remove(); } catch (_) {} flowChart = null; }
-      flowSeries = {}; _flowCum = {}; _flowIdx = {};
-      renderFlowStory();
-      return;
-    }
-    if (_storyRO) { _storyRO.disconnect(); _storyRO = null; }
     if (!window.LightweightCharts) { setTimeout(buildFlow, 300); return; }
     if (flowChart) { try { flowChart.remove(); } catch (_) {} flowChart = null; }
     flowSeries = {}; _flowCum = {}; _flowIdx = {};
@@ -1602,6 +1609,7 @@
   }
   function renderFlowStory() {
     var box = document.getElementById('smmFlowStory'); if (!box) return;
+    if (!G().hasBroker) { box.innerHTML = ''; return; }
     var d = flowStoryData(); _story = d;
     if (!d.list.length || d.n < 2) {
       box.innerHTML = '<div class="smm-empty">Pilih minimal satu broker lewat chip di bawah untuk melihat ringkasan.</div>';
@@ -1613,17 +1621,6 @@
       return '<div class="smm-st-camp ' + cls + '"><div class="l">' + title + ' <b>' + (arr.length ? arr.map(function (x) { return esc(x.code); }).join('+') : '-') + '</b></div>' +
         '<div class="v">' + (arr.length ? stSign(sum, d.vol) : '-') + '</div></div>';
     };
-    var mxv = d.list.reduce(function (m, x) { return Math.max(m, Math.abs(x.nv)); }, 0) || 1;
-    var trs = d.list.map(function (x) {
-      var k = x.v >= 0 ? 'a' : 'd', vs = stVs(x, d.c1);
-      var vsTxt = vs == null ? '-' : (x.v >= 0 ? '' : 'jual ') + fmtPct(vs);
-      return '<div class="smm-st-tr ' + k + '" data-smm-tip="' + esc(x.code + ' · ' + x.name + ' (' + TYPE_META[x.type].label + ')') + '">' +
-        '<span class="c"><i style="background:' + colorFor(x.code) + '"></i>' + esc(x.code) + '</span>' +
-        '<span class="v"><b>' + stSign(x.nv, false) + '</b><em><i style="width:' + Math.max(3, Math.abs(x.nv) / mxv * 100).toFixed(1) + '%"></i></em></span>' +
-        '<span class="l">' + (x.nl > 0 ? '+' : '') + fmtLot(x.nl) + '</span>' +
-        '<span class="p">' + (x.avg > 0 ? nf(x.avg) : '-') + '</span>' +
-        '<span class="vs ' + (vs == null ? '' : vs >= 0 ? 'smm-up' : 'smm-dn') + '">' + vsTxt + '</span></div>';
-    }).join('');
     box.innerHTML =
       '<div class="smm-st-top"><div><div class="cd">' + esc(S.code) + '</div><div class="px">' + nf(d.c1) + '</div></div>' +
         '<div class="ch ' + signCls(d.chg) + '">' + (d.chg > 0 ? '+' : d.chg < 0 ? '−' : '') + nf(Math.abs(d.chg)) + ' (' + fmtPct(d.chgP, 2) + ')<small>' + rng + '</small></div></div>' +
@@ -1636,12 +1633,8 @@
           '<div class="smm-st-lbl">Net flow kumulatif' + (S.inv !== 'all' ? ' (estimasi)' : '') + '<span><i class="a"></i>Akumulator <i class="d"></i>Distributor</span></div><svg id="smmStFl" aria-label="Grafik net flow kumulatif"></svg>' +
           '<div class="smm-st-x" aria-hidden="true"></div></div>' +
         '</div>' +
-        '<div class="smm-st-box smm-st-mapbox"><div class="smm-st-lbl">Peta posisi broker' + tip('Kanan = net beli, kiri = net jual. Atas = harga rata-rata di atas harga sekarang, bawah = di bawahnya. Besar bubble = volume (lot). Rata-rata = value dibagi volume, jadi terlihat siapa yang untung dan siapa yang tersangkut.') + '</div>' +
-          '<div class="smm-st-mtxt">' + storyMapText(d) + '</div><svg id="smmStMap" class="smm-st-map" role="img" aria-label="Peta posisi broker"></svg></div>' +
       '</div>' +
-      '<div class="smm-st-box"><div class="smm-st-lbl">Value × Volume per broker</div>' +
-        '<div class="smm-st-tbl"><div class="smm-st-tr h"><span>Broker</span><span>Net value</span><span>Net lot</span><span>Rata²</span><span>vs harga</span></div>' + trs + '</div>' +
-        '<p class="smm-st-note">Net beli − jual broker yang dipilih (chip di bawah), periode ' + rng + '. Rata² = value ÷ volume; "vs harga" = posisi rata-rata terhadap harga ' + nf(d.c1) + ' (net jual: selisih harga jual).' + (S.inv !== 'all' ? ' Porsi ' + (S.inv === 'F' ? 'asing' : 'domestik') + ' sebagian berupa estimasi.' : '') + ' Pilih <b>Grafik</b> untuk candle & garis per broker.</p></div>';
+      '<p class="smm-st-note">Kumulatif net beli − jual broker pada chip Broker Flow, periode ' + rng + '.' + (S.inv !== 'all' ? ' Porsi ' + (S.inv === 'F' ? 'asing' : 'domestik') + ' sebagian berupa estimasi.' : '') + ' Rincian per broker ada di kartu Value × Volume.</p>';
     drawStoryPlots();
     var plots = document.getElementById('smmStPlots');
     plots.addEventListener('pointermove', storyHover);
@@ -1657,6 +1650,20 @@
     }
   }
   var ST_PAD = { l: 6, r: 6 };
+  // Di layar lebar ketiga kartu sejajar: grafik Order Flow dipanjangkan supaya
+  // tingginya setara kartu tetangga (tanpa ruang kosong).
+  var _storyExtra = 0, _fitRaf = 0;
+  function fitStory() {
+    cancelAnimationFrame(_fitRaf);
+    _fitRaf = requestAnimationFrame(function () {
+      var c = document.getElementById('smmStoryCard'), o = document.getElementById('smmOrbitCard'), v = document.getElementById('smmVxvCard');
+      if (!c || !o || !v || !c.offsetHeight) return;
+      var cr = c.getBoundingClientRect(), mates = [o, v].filter(function (x) { return Math.abs(x.getBoundingClientRect().top - cr.top) < 2 && x.offsetHeight; });
+      var natural = c.offsetHeight - _storyExtra, want = 0;
+      if (mates.length) want = Math.min(420, Math.max(0, Math.max.apply(null, mates.map(function (x) { return x.offsetHeight; })) - natural));
+      if (Math.abs(want - _storyExtra) > 4) { _storyExtra = want; drawStoryPlots(); }
+    });
+  }
   function stX(i, W, n) { return ST_PAD.l + (n > 1 ? i / (n - 1) : 0.5) * (W - ST_PAD.l - ST_PAD.r); }
   function stPath(vals, W, y, n) { return vals.map(function (v, i) { return (i ? 'L' : 'M') + stX(i, W, n).toFixed(1) + ' ' + y(v).toFixed(1); }).join(''); }
   function stText(x, y, W, txt, cls) {
@@ -1668,7 +1675,8 @@
     var W = plots.clientWidth || 600, n = d.n; _storyW = plots.clientWidth;
     var narrow = W < 420;
     // ── Harga ──
-    var H1 = narrow ? 118 : 132, pt = 20, pb = 18;
+    var ex = _storyExtra / 2;
+    var H1 = (narrow ? 118 : 132) + ex, pt = 20, pb = 18;
     var lo = Math.min.apply(null, d.px), hi = Math.max.apply(null, d.px); if (hi === lo) { hi += 1; lo -= 1; }
     var y1 = function (v) { return pt + (hi - v) / (hi - lo) * (H1 - pt - pb); };
     var iHi = d.px.indexOf(Math.max.apply(null, d.px)), iLo = d.px.indexOf(Math.min.apply(null, d.px));
@@ -1687,7 +1695,7 @@
     var sv1 = document.getElementById('smmStPx');
     sv1.setAttribute('viewBox', '0 0 ' + W + ' ' + H1); sv1.setAttribute('height', H1); sv1.innerHTML = s1;
     // ── Net flow kumulatif ──
-    var H2 = narrow ? 128 : 142, ft = 14, fb = 22;
+    var H2 = (narrow ? 128 : 142) + ex, ft = 14, fb = 22;
     var all = d.A.concat(d.D, [0]), fmin = Math.min.apply(null, all), fmax = Math.max.apply(null, all);
     if (fmax === fmin) { fmax += 1; fmin -= 1; }
     var y2 = function (v) { return ft + (fmax - v) / (fmax - fmin) * (H2 - ft - fb); }, y0 = y2(0);
@@ -1717,17 +1725,67 @@
     var sv2 = document.getElementById('smmStFl');
     sv2.setAttribute('viewBox', '0 0 ' + W + ' ' + H2); sv2.setAttribute('height', H2); sv2.innerHTML = s2;
     storyRead(-1);
-    drawStoryMap();
+    fitStory();
   }
   // Peta posisi broker (Value × Volume): kanan-kiri = net value, atas-bawah = harga rata-rata,
   // besar bubble = volume. Rata-rata = value ÷ volume → siapa untung / tersangkut terhadap harga sekarang.
   function stVs(x, c1) { return x.avg > 0 ? (x.v >= 0 ? (c1 / x.avg - 1) * 100 : (x.avg / c1 - 1) * 100) : null; }
-  function drawStoryMap() {
-    var d = _story, svg = document.getElementById('smmStMap'); if (!d || !svg) return;
-    var W = svg.parentNode.clientWidth - 2 || 300, H = W < 340 ? 220 : 240, pl = 8, pr = 8, pt = 24, pb = 30;
+  // ─────────────── Kartu Value × Volume ───────────────
+  // Broker = chip Broker Flow, periode = filter periode. Rata-rata = value ÷ volume,
+  // dibandingkan dengan harga sekarang → siapa untung, siapa tersangkut.
+  var _vxv = null;
+  function vxvData() {
+    var g = G(), t0 = periodStart(g, S.period), by = {}, useL = S.vxv === 'volume';
+    aggregate(g, t0, g.nF - 1, S.inv).forEach(function (x) { by[x.code] = x; });
+    var list = S.chips.filter(function (c) { return !S.hidden[c] && by[c]; }).map(function (c) {
+      var x = by[c], v = useL ? x.netL : x.net;
+      return { code: c, name: x.name, type: x.type, v: v, nv: x.net, nl: x.netL, avg: v >= 0 ? x.bAvg : x.sAvg };
+    }).sort(function (a, b) { return b.v - a.v; });
+    var last = g.ohlc[g.nP - 1];
+    return { list: list, c1: last ? last.close : 0, end: g.end, rng: fmtDate(g.days[g.off + t0]) + ' – ' + fmtDate(g.end, true) };
+  }
+  function renderVxv() {
+    var box = document.getElementById('smmVxv'); if (!box) return;
+    if (!G().hasBroker) { box.innerHTML = ''; return; }
+    var d = vxvData(); _vxv = d;
+    if (!d.list.length) { box.innerHTML = '<div class="smm-empty">Pilih minimal satu broker lewat chip di Broker Flow.</div>'; return; }
+    var m = S.vxv, showV = m !== 'volume', showL = m !== 'value';
+    var mx = d.list.reduce(function (a, x) { return Math.max(a, Math.abs(m === 'volume' ? x.nl : x.nv)); }, 0) || 1;
+    var cell = function (x, val, txt) {
+      return '<span class="v"><b>' + txt + '</b><em><i style="width:' + Math.max(3, Math.abs(val) / mx * 100).toFixed(1) + '%"></i></em></span>';
+    };
+    var trs = d.list.map(function (x) {
+      var k = x.v >= 0 ? 'a' : 'd', vs = stVs(x, d.c1);
+      var lot = (x.nl > 0 ? '+' : '') + fmtLot(x.nl);
+      var html = '<div class="smm-st-tr ' + k + '" data-smm-tip="' + esc(x.code + ' · ' + x.name + ' (' + TYPE_META[x.type].label + ')') + '">' +
+        '<span class="c"><i style="background:' + colorFor(x.code) + '"></i>' + esc(x.code) + '</span>';
+      if (m === 'both') html += cell(x, x.nv, stSign(x.nv, false)) + '<span class="l">' + lot + '</span>';
+      else if (m === 'value') html += cell(x, x.nv, stSign(x.nv, false));
+      else html += cell(x, x.nl, lot);
+      return html + '<span class="p">' + (x.avg > 0 ? nf(x.avg) : '-') + '</span>' +
+        '<span class="vs ' + (vs == null ? '' : vs >= 0 ? 'smm-up' : 'smm-dn') + '">' + (vs == null ? '-' : (x.v >= 0 ? '' : 'jual ') + fmtPct(vs)) + '</span></div>';
+    }).join('');
+    var head = '<div class="smm-st-tr h"><span>Broker</span>' + (m === 'both' ? '<span>Value</span><span>Volume</span>' : m === 'value' ? '<span>Net value</span>' : '<span>Net lot</span>') + '<span>Rata²</span><span>vs harga</span></div>';
+    box.innerHTML =
+      '<div class="smm-ob-top"><div><div class="smm-ob-kick">' + esc(S.code) + ' · Broker Flow</div><div class="smm-vx-rng">' + esc(d.rng) + '</div></div>' +
+        '<div class="smm-vx-px"><small>Harga</small><b>' + nf(d.c1) + '</b></div></div>' +
+      '<div class="smm-ob-box smm-st-hero"><div class="smm-st-kick">Kenapa dua angka lebih jujur</div><div class="smm-vx-head">' + storyMapText(d) + '</div>' +
+        '<p class="smm-st-note" style="margin-top:6px">Value dibagi volume = harga rata-rata broker. Dibandingkan harga sekarang, kelihatan siapa yang untung dan siapa yang masih tersangkut.</p></div>' +
+      '<div class="smm-ob-box"><div class="smm-st-lbl">Peta posisi broker</div><svg id="smmVxMap" class="smm-st-map" role="img" aria-label="Peta posisi broker"></svg>' +
+        '<p class="smm-st-note">Posisi kiri–kanan = net ' + (m === 'volume' ? 'volume' : 'value') + '. Atas–bawah = harga rata-rata. Besar bubble = ' + (m === 'volume' ? 'value' : 'volume') + '. Hijau = net beli, oranye = net jual.</p></div>' +
+      '<div class="smm-ob-box"><div class="smm-st-tbl m-' + m + '">' + head + trs + '</div>' +
+        '<p class="smm-st-note">Broker pada chip Broker Flow. "vs harga" untuk net beli = harga sekarang dibanding rata-rata beli; untuk net jual = rata-rata jual dibanding harga sekarang.' + (S.inv !== 'all' ? ' Porsi ' + (S.inv === 'F' ? 'asing' : 'domestik') + ' sebagian berupa estimasi.' : '') + '</p></div>';
+    drawVxvMap();
+    fitStory();
+  }
+  function drawVxvMap() {
+    var d = _vxv, svg = document.getElementById('smmVxMap'); if (!d || !svg || !svg.parentNode.clientWidth) return;
+    var byL = S.vxv === 'volume';
+    var W = svg.parentNode.clientWidth - 24 || 300, H = W < 340 ? 220 : 240, pl = 8, pr = 8, pt = 24, pb = 30;
     var pts = d.list.filter(function (x) { return x.avg > 0; });
-    var c1 = d.c1, mxV = pts.reduce(function (m, x) { return Math.max(m, Math.abs(x.nv)); }, 0) || 1;
-    var mxL = pts.reduce(function (m, x) { return Math.max(m, Math.abs(x.nl)); }, 0) || 1;
+    var xv = function (x) { return byL ? x.nl : x.nv; }, sv = function (x) { return byL ? x.nv : x.nl; };
+    var c1 = d.c1, mxV = pts.reduce(function (m, x) { return Math.max(m, Math.abs(xv(x))); }, 0) || 1;
+    var mxS = pts.reduce(function (m, x) { return Math.max(m, Math.abs(sv(x))); }, 0) || 1;
     var ys = pts.map(function (x) { return x.avg; }).concat([c1]), lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
     var padY = (hi - lo) * 0.18 || c1 * 0.02; lo -= padY; hi += padY;
     var X = function (v) { return pl + (v / mxV * 0.86 + 1) / 2 * (W - pl - pr); };
@@ -1742,9 +1800,9 @@
     s += '<text class="qt" x="' + (pl + 2) + '" y="' + (pt - 8) + '">Jual di harga tinggi</text>';
     s += '<text class="qt a" x="' + (W - pr - 2) + '" y="' + (H - pb + 13) + '" text-anchor="end">Beli murah, untung</text>';
     s += '<text class="qt" x="' + (pl + 2) + '" y="' + (H - pb + 13) + '">Jual di harga rendah</text>';
-    s += '<text class="xt" x="' + x0.toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle">Net value →</text>';
-    pts.slice().sort(function (a, b) { return Math.abs(b.nl) - Math.abs(a.nl); }).forEach(function (x) {
-      var cx = X(x.nv), cy = Y(x.avg), r = 6 + (W < 340 ? 8 : 10) * Math.sqrt(Math.abs(x.nl) / mxL), k = x.v >= 0 ? 'a' : 'd';
+    s += '<text class="xt" x="' + x0.toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle">Net ' + (byL ? 'volume' : 'value') + ' →</text>';
+    pts.slice().sort(function (a, b) { return Math.abs(sv(b)) - Math.abs(sv(a)); }).forEach(function (x) {
+      var cx = X(xv(x)), cy = Y(x.avg), r = 6 + (W < 340 ? 8 : 10) * Math.sqrt(Math.abs(sv(x)) / mxS), k = x.v >= 0 ? 'a' : 'd';
       var inside = r >= 11, lx = cx + (cx > W * 0.7 ? -r - 3 : r + 3), anc = cx > W * 0.7 ? 'end' : 'start';
       s += '<g class="bb ' + k + '" data-smm-tip="' + esc(x.code + ' · net ' + fmtVal(x.nv) + ' · ' + fmtLot(x.nl) + ' lot · rata-rata ' + nf(x.avg)) + '">' +
         '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '"/>' +
@@ -1755,9 +1813,9 @@
   function storyMapText(d) {
     var buy = d.list.filter(function (x) { return x.v > 0 && x.avg > 0; });
     if (!buy.length) return 'Belum ada broker net beli di antara broker yang dipilih.';
-    var big = buy.slice().sort(function (a, b) { return b.nv - a.nv; })[0];
+    var big = buy.slice().sort(function (a, b) { return b.v - a.v; })[0];
     var stuck = buy.slice().sort(function (a, b) { return b.avg - a.avg; })[0], vs = stVs(stuck, d.c1);
-    var t = '<b>Value bilang ' + esc(big.code) + ' paling besar menimbun.</b> ';
+    var t = '<b>' + (S.vxv === 'volume' ? 'Volume' : 'Value') + ' bilang ' + esc(big.code) + ' paling besar menimbun.</b> ';
     if (vs < 0) t += 'Dibagi volume, rata-rata beli <b>' + esc(stuck.code) + ' ' + nf(stuck.avg) + '</b> vs harga ' + nf(d.c1) + ' (<b class="smm-dn">' + fmtPct(vs) + '</b>): paling tersangkut.';
     else { var best = buy.slice().sort(function (a, b) { return a.avg - b.avg; })[0]; t += 'Dibagi volume, semua akumulator masih untung. <b>' + esc(best.code) + '</b> paling murah di <b>' + nf(best.avg) + '</b> (<b class="smm-up">' + fmtPct(stVs(best, d.c1)) + '</b>).'; }
     return t;
@@ -2006,9 +2064,9 @@
   // Data broker summary tidak memuat pasangan pembeli-penjual. Lawan transaksi diestimasi
   // proporsional: beli X dibagi ke tiap penjual sesuai porsi jualnya di hari/rentang itu
   // (cara yang sama dipakai pita Sankey, jadi angka kedua tampilan cocok).
-  function skFocusOf(rows) {
-    var vk = S.skMetric === 'value', bK = vk ? 'bv' : 'bl', sK = vk ? 'sv' : 'sl';
-    var f = S.skFocus, side = 'b', code = null;
+  function obFocusOf(rows) {
+    var vk = S.obMetric === 'value', bK = vk ? 'bv' : 'bl', sK = vk ? 'sv' : 'sl';
+    var f = S.obFocus, side = 'b', code = null;
     if (f && f !== '*' && f.indexOf(':') === 1) { side = f.charAt(0); code = f.slice(2); }
     var key = side === 'b' ? bK : sK;
     var me = rows.filter(function (x) { return x.code === code && x[key] > 0; })[0];
@@ -2025,9 +2083,10 @@
   }
   function renderOrbit() {
     var box = document.getElementById('smmOrbit'); if (!box) return;
-    var g = G(), r = actRange(), rows = aggregate(g, r[0], r[1], S.inv), vk = S.skMetric === 'value';
+    if (!G().hasBroker) { box.innerHTML = ''; return; }
+    var g = G(), r = actRange(), rows = aggregate(g, r[0], r[1], S.inv), vk = S.obMetric === 'value';
     var fmt = vk ? fmtVal : function (v) { return fmtLot(v) + ' lot'; };
-    var F = skFocusOf(rows);
+    var F = obFocusOf(rows);
     if (!F.me || !(F.me[F.key] > 0)) { box.innerHTML = '<div class="smm-empty">Tidak ada transaksi broker pada ' + esc(rangeText(g, r)) + '. Pilih tanggal lain di kalender atau Broker Action.</div>'; return; }
     var X = F.me, mine = X[F.key], buyer = F.side === 'b';
     var T = rows.reduce(function (s, x) { return s + x[F.opp]; }, 0) || 1;
@@ -2062,7 +2121,7 @@
       var tip = esc(p.code + ' · ' + p.name + ' · ' + fmt(p.v) + ' (' + nf(pct(p.v) * 100, 0) + '%)' + (p.self ? ' · transaksi dengan diri sendiri' : ' · ketuk untuk lihat lawan ' + p.code));
       lines += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="' + col + '" stroke-width="' + (1.5 + 8 * a).toFixed(1) + '" stroke-opacity=".5"' + (p.self ? ' stroke-dasharray="4 4"' : '') + '/>';
       var below = y > cy + 4, ly = below ? y + nr + 13 : y - nr - 6;
-      dots += '<g class="sat' + (p.self ? ' self' : '') + '"' + (p.self ? '' : ' data-act="skfocus" data-v="' + (buyer ? 's' : 'b') + ':' + esc(p.code) + '"') + ' data-smm-tip="' + tip + '">' +
+      dots += '<g class="sat' + (p.self ? ' self' : '') + '"' + (p.self ? '' : ' data-act="obfocus" data-v="' + (buyer ? 's' : 'b') + ':' + esc(p.code) + '"') + ' data-smm-tip="' + tip + '">' +
         '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + nr.toFixed(1) + '" fill="' + col + '" fill-opacity=".16" stroke="' + col + '" stroke-width="2"' + (p.self ? ' stroke-dasharray="3 3"' : '') + '/>' +
         '<text class="c" x="' + x.toFixed(1) + '" y="' + (y + (p.self ? -1 : 4)).toFixed(1) + '" text-anchor="middle">' + esc(p.code) + '</text>' +
         (p.self ? '<text class="sl" x="' + x.toFixed(1) + '" y="' + (y + 10).toFixed(1) + '" text-anchor="middle">sendiri</text>' : '') +
@@ -2088,7 +2147,7 @@
     box.innerHTML =
       '<div class="smm-ob-top"><div><div class="smm-ob-kick">' + esc(S.code) + ' · ' + esc(rangeText(g, r)) + '</div>' +
         '<div class="smm-ob-title">' + (buyer ? 'Siapa lawan ' : 'Siapa penampung ') + esc(X.code) + '?</div></div>' +
-        '<select class="smm-sel" id="smmSkFocus" aria-label="Pilih broker"><optgroup label="Pembeli">' + opts(vk ? 'bv' : 'bl', 'b') + '</optgroup><optgroup label="Penjual">' + opts(vk ? 'sv' : 'sl', 's') + '</optgroup></select></div>' +
+        '<select class="smm-sel" id="smmObFocus" aria-label="Pilih broker"><optgroup label="Pembeli">' + opts(vk ? 'bv' : 'bl', 'b') + '</optgroup><optgroup label="Penjual">' + opts(vk ? 'sv' : 'sl', 's') + '</optgroup></select></div>' +
       '<div class="smm-ob-box"><div class="smm-st-lbl">' + (buyer ? 'Beli ' : 'Jual ') + esc(X.code) + ' ' + esc(fmt(mine)) + ' bertemu siapa</div>' +
         '<div class="smm-ob-bar">' + bar + '</div><div class="smm-ob-leg">' + leg + '</div>' +
         '<div class="smm-ob-head">' + esc(head) + '</div></div>' +
@@ -2099,18 +2158,14 @@
           '<p class="smm-st-note">Estimasi: transaksi ' + esc(X.code) + ' dibagi ke lawan sesuai porsi ' + (buyer ? 'jual' : 'beli') + ' masing-masing pada rentang yang sama. Data bursa tidak mencatat pasangan pembeli–penjual.</p></div>' +
       '</div>';
     _orbitW = box.clientWidth;
+    fitStory();
   }
   var _orbitW = 0;
 
   function renderSankey() {
     if (!G().hasBroker) return;
-    var orbit = S.skView === 'orbit';
-    document.getElementById('smmOrbit').hidden = !orbit;
-    document.getElementById('smmSankey').hidden = orbit;
-    document.getElementById('smmSkHint').hidden = orbit;
-    document.getElementById('smmSkSub').textContent = '· ' + S.code + ' · ' + rangeText(G(), actRange());
-    if (orbit) { renderOrbit(); return; }
     renderSankeyFlow();
+    renderOrbit();
   }
   function renderSankeyFlow() {
     var box = document.getElementById('smmSankey');
@@ -3006,8 +3061,8 @@
     el.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === val); });
   }
   function syncControls() {
-    syncSeg('smmPeriod', S.period); syncSeg('smmMetric', S.metric); syncSeg('smmFlowView', S.flowView); syncSeg('smmPriceMode', S.priceMode);
-    syncSeg('smmSkMetric', S.skMetric); syncSeg('smmSkView', S.skView); syncSeg('smmInsSrc', S.insSrc); syncSeg('smmInsRange', S.insRange);
+    syncSeg('smmPeriod', S.period); syncSeg('smmMetric', S.metric); syncSeg('smmPriceMode', S.priceMode);
+    syncSeg('smmSkMetric', S.skMetric); syncSeg('smmObMetric', S.obMetric); syncSeg('smmVxvMode', S.vxv); syncSeg('smmInsSrc', S.insSrc); syncSeg('smmInsRange', S.insRange);
     root.querySelectorAll('.smm-subtabs button').forEach(function (b) { var on = b.getAttribute('data-v') === S.sub; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
     document.getElementById('smmCode').value = S.code;
     document.getElementById('smmInv').value = S.inv;
@@ -3021,7 +3076,7 @@
     inv.disabled = !g.hasForeign;
     inv.title = g.hasForeign ? '' : 'Data porsi asing belum tersedia untuk saham ini';
   }
-  function renderFlowAll() { renderChips(); buildFlow(); renderFlowInsight(); }
+  function renderFlowAll() { renderChips(); buildFlow(); renderFlowInsight(); renderFlowStory(); renderVxv(); }
   // Halaman yang tersembunyi ditandai "kotor" dan baru dirender saat dibuka,
   // supaya grafik dibangun dengan ukuran container yang benar.
   var _dirty = { broker: true, insider: true, holder: true };
@@ -3154,11 +3209,10 @@
       case 'hoside': S.hoSide = v; renderHoComp(getHolder(S.code)); break;
       case 'hochart': S.hochart = v; S.hoChart = v; renderHoChart(getHolder(S.code)); break;
       case 'period': S.period = v; syncControls(); renderBrokerProfile(); if (G().hasBroker) { renderSummary(); renderFlowAll(); } renderRadar(); break;
-      case 'metric': S.metric = v; syncControls(); buildFlow(); renderFlowInsight(); break;
+      case 'metric': S.metric = v; syncControls(); buildFlow(); renderFlowInsight(); renderFlowStory(); break;
       case 'pmode': S.priceMode = v; syncControls(); renderChips(); buildFlow(); break;
       case 'chipprice': S.showPrice = !S.showPrice; renderChips(); if (flowSeries.__price) flowSeries.__price.applyOptions({ visible: S.showPrice }); flowLegend(null); break;
-      case 'chip': S.hidden[v] = !S.hidden[v]; renderChips(); if (S.flowView === 'story') renderFlowStory(); else { if (flowSeries[v]) flowSeries[v].applyOptions({ visible: !S.hidden[v] }); flowLegend(null); } break;
-      case 'flowview': if (S.flowView !== v) { S.flowView = v; try { localStorage.setItem('smm_flowview', v); } catch (_) {} syncControls(); buildFlow(); } break;
+      case 'chip': S.hidden[v] = !S.hidden[v]; renderChips(); if (flowSeries[v]) flowSeries[v].applyOptions({ visible: !S.hidden[v] }); flowLegend(null); renderFlowStory(); renderVxv(); break;
       case 'chipx': e.stopPropagation(); S.chips = S.chips.filter(function (c) { return c !== v; }); delete S.colors[v]; renderFlowAll(); break;
       case 'addopen': e.stopPropagation(); document.getElementById('smmAddMenu').classList.toggle('open'); break;
       case 'chipadd': addChip(v); break;
@@ -3172,8 +3226,9 @@
       case 'actall': S.actAll = !S.actAll; renderAction(); break;
       case 'bkpick': addChip(v); S.skFocus = null; break;
       case 'skmetric': S.skMetric = v; syncControls(); renderSankey(); break;
-      case 'skview': S.skView = v; syncControls(); renderSankey(); break;
-      case 'skfocus': S.skFocus = v; renderSankey(); break;
+      case 'obmetric': S.obMetric = v; syncControls(); renderOrbit(); break;
+      case 'obfocus': S.obFocus = v; renderOrbit(); break;
+      case 'vxv': S.vxv = v; syncControls(); renderVxv(); break;
       case 'insrange': S.insRange = v; syncControls(); insRange(); break;
       case 'inssrc': S.insSrc = v; syncControls(); renderInsider(); break;
       case 'insname': e.stopPropagation(); S.insName = S.insName === v ? null : v; renderInsider(); break;
@@ -3190,7 +3245,7 @@
   }
   function onChange(e) {
     var id = e.target.id;
-    if (id === 'smmInv') { S.inv = e.target.value; S.skFocus = null; renderAll(); }
+    if (id === 'smmInv') { S.inv = e.target.value; S.skFocus = null; S.obFocus = null; renderAll(); }
     else if (id === 'smmActWin') { S.actWin = +e.target.value; S.skFocus = null; renderAction(); renderSankey(); }
     else if (id === 'smmActMode') { S.actMode = e.target.value; renderAction(); }
     else if (id === 'smmActPick') {
@@ -3200,7 +3255,7 @@
       S.actEnd = idx; S.skFocus = null; renderAction(); renderSankey();
     }
     else if (id === 'smmCalGrp') { S.cal.grp = e.target.value; renderCal(); }
-    else if (id === 'smmSkFocus') { S.skFocus = e.target.value; renderSankey(); }
+    else if (id === 'smmObFocus') { S.obFocus = e.target.value; renderOrbit(); }
     else if (id === 'smmInsAct') { S.insAct = e.target.value; renderInsider(); }
   }
 
@@ -3302,7 +3357,7 @@
     var rt;
     window.addEventListener('resize', function () {
       clearTimeout(rt);
-      rt = setTimeout(function () { if (_built && root.classList.contains('active')) { updateSticky(); if (S.sub === 'broker') renderSankey(); } }, 200);
+      rt = setTimeout(function () { if (_built && root.classList.contains('active')) { updateSticky(); if (S.sub === 'broker') { renderSankey(); drawVxvMap(); } } }, 200);
     });
   }
 
@@ -3360,7 +3415,7 @@
     }
     var an = document.getElementById('acctNav');
     if (an) {
-      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Action', 'broker', '#smmActionCard'], ['Distribusi', 'broker', '#smmSankeyCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
+      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Action', 'broker', '#smmActionCard'], ['Order Flow', 'broker', '#smmStoryCard'], ['Lawan Transaksi', 'broker', '#smmOrbitCard'], ['Value × Volume', 'broker', '#smmVxvCard'], ['Distribusi', 'broker', '#smmSankeyCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
       var grp = document.createElement('div');
       grp.className = 'acct-nav-group'; grp.setAttribute('data-page', 'smartmoney');
       grp.innerHTML = '<button type="button" class="acct-nav-page" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">💰</span>Smart Money</button><div class="acct-nav-subs">' +

@@ -142,3 +142,14 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
 - Value × Volume dilebur ke Ringkasan Broker Flow: bar "Net value per broker" diganti tabel
   (Net value, Net lot, Rata², vs harga) + Peta posisi broker (`drawStoryMap`, `storyMapText`, `stVs`).
   Toggle Value/Volume yang sudah ada dipakai, jadi tidak ada opsi "Keduanya" terpisah.
+
+## Revisi 12: tiga kartu baru terpisah (membatalkan peleburan Revisi 10–11)
+- User: visual baru harus jadi kartu/kolom baru, bukan digabung ke kartu lama.
+- Broker Flow kembali grafik saja (switch Ringkasan/Grafik dan `S.flowView` dihapus).
+  Broker Distribution kembali Sankey saja (switch Orbit/Aliran dihapus; pita tetap proporsional).
+- Baris baru `.smm-cols3` setelah Broker Flow + Kalender: `#smmStoryCard` (Order Flow, `renderFlowStory`),
+  `#smmOrbitCard` (Lawan Transaksi, `renderOrbit`, state `S.obMetric` / `S.obFocus`, select `#smmObFocus`),
+  `#smmVxvCard` (Value × Volume, `renderVxv` / `drawVxvMap`, mode `S.vxv` value|volume|both).
+  3 kolom ≥ 1181px, 2 kolom (Value × Volume selebar penuh) 761–1180px, 1 kolom di HP.
+- Anti dobel: bar "net per broker" Order Flow dihapus (rinciannya ada di tabel Value × Volume).
+- `fitStory()` memanjangkan grafik Order Flow agar setinggi kartu tetangga saat sejajar.
