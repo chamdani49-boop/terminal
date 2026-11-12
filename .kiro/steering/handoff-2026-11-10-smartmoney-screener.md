@@ -181,3 +181,9 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   Stockbit. Broker fokus besar di kolomnya, broker sejenis lain kecil (ketuk = pindah fokus), kolom lawan =
   lawan transaksi (top 6/7 + Lain). Fokus penjual dicerminkan (penjual di kanan). Pita abu-abu = estimasi
   aliran broker lain. Bar komposisi & select tetap di atas untuk kedua tampilan.
+
+## Revisi 17: Broker Summary punya switch Ringkasan | Tabel + Net | Gross
+- `#smmBsView` (`S.bsView` sum|table), `#smmBsNet` mengubah `S.actMode` (sinkron dengan select Broker Action).
+- Tabel gaya Stockbit: BY, B.val, B.lot, B.freq, B.avg | SL, S.val, S.lot, S.freq, S.avg, 10 teratas +
+  "Lihat semua" (`S.bsAll`). Geser horizontal di layar sempit, kolom BY sticky. Freq dari `bf`/`sf`
+  (tampil "-" bila belum ada di data atau filter investor bukan Semua).

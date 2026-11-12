@@ -340,6 +340,16 @@
     '.smm-obf .lb{fill:var(--card);opacity:.9}',
     '.smm-obf text{font-family:"IBM Plex Mono",monospace;font-size:11.5px}.smm-obf .cd{font-weight:800}.smm-obf .vl{font-weight:700;fill:var(--text)}',
     /* Broker Summary */
+    '.smm-bst-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}',
+    '.smm-bst{width:100%;min-width:560px;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:11.5px}',
+    '.smm-bst th{font-family:inherit;font-size:10.5px;font-weight:800;color:var(--text3);text-align:right;padding:6px 5px;border-bottom:1px solid var(--border2);white-space:nowrap}',
+    '.smm-bst td{text-align:right;padding:7px 5px;white-space:nowrap;border-bottom:1px solid var(--border2)}',
+    '.smm-bst tr:last-child td{border-bottom:0}',
+    '.smm-bst .cd{text-align:left}.smm-bst td.cd{font-weight:800}',
+    '.smm-bst th.cd:first-child,.smm-bst td.cd:first-child{position:sticky;left:0;background:var(--bg2);z-index:1}',
+    '.smm-bst .sep{padding-right:12px}',
+    '.smm-bst td.b{color:var(--green)}.smm-bst td.s{color:var(--red)}',
+    '.smm-bst-box .smm-more{margin-top:8px}',
     '.smm-cardnote{font-size:12px;line-height:1.5;color:var(--text2);background:var(--bg2);border:1px dashed var(--border);border-radius:10px;padding:8px 10px}.smm-cardnote b{color:var(--text)}',
     '.smm-bs-meter{position:relative;height:10px;border-radius:5px;margin-top:10px;background:linear-gradient(90deg,var(--st-dis),var(--bg3) 50%,var(--st-acc))}',
     '.smm-bs-meter i{position:absolute;top:-4px;width:4px;height:18px;margin-left:-2px;border-radius:2px;background:var(--text);box-shadow:0 0 0 2px var(--bg2)}',
@@ -1141,7 +1151,7 @@
     metric: 'value', priceMode: 'candle', showPrice: true, flowView: (function () { try { return localStorage.getItem('smm_flowview') === 'chart' ? 'chart' : 'story'; } catch (_) { return 'story'; } })(),
     chips: [], hidden: {}, colors: {},
     actEnd: 0, actWin: 1, actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
-    skMetric: 'value', skFocus: null, obMetric: 'value', obFocus: null, obView: 'orbit', vxv: 'both',
+    skMetric: 'value', skFocus: null, bsView: 'sum', bsAll: false, obMetric: 'value', obFocus: null, obView: 'orbit', vxv: 'both',
     insSrc: 'ALL', insAct: 'ALL', insName: null, insRange: '2Y', insHl: null,
     cal: { grp: 'sm', ym: null, end: null },
     broker: null, person: null, personAll: false, hoMonth: null, hoSide: 'all', hoChart: 'lf'
@@ -1242,6 +1252,8 @@
         '<div class="smm-cols3">' +
           '<section class="smm-card" id="smmBSumCard">' +
             '<div class="smm-h3">Broker Summary ' + tip('Ringkasan pembeli vs penjual pada tanggal & mode (Net/Gross) Broker Action: kekuatan 9 pembeli teratas vs 9 penjual teratas, tarik-tambang per peringkat, dan gaya order pembeli.') + '</div>' +
+            '<div class="smm-toolbar"><div class="smm-seg" id="smmBsView"><button data-act="bsview" data-v="sum">Ringkasan</button><button data-act="bsview" data-v="table">Tabel</button></div>' +
+              '<div class="smm-seg" id="smmBsNet"><button data-act="bsnet" data-v="net">Net</button><button data-act="bsnet" data-v="gross">Gross</button></div></div>' +
             '<div class="smm-bs" id="smmBSum"></div>' +
           '</section>' +
           '<section class="smm-card" id="smmOrbitCard">' +
@@ -1844,12 +1856,46 @@
     } else {
       style = '<div class="smm-st-lbl">Gaya order pembeli</div><p class="smm-st-note" style="margin-top:4px">Belum tersedia: file broker belum memuat frekuensi transaksi (B.freq), jadi lot per transaksi belum bisa dihitung. Bagian ini muncul otomatis begitu frekuensi ada di data.</p>';
     }
+    syncSeg('smmBsView', S.bsView); syncSeg('smmBsNet', S.actMode);
+    var top = '<div class="smm-ob-top"><div><div class="smm-ob-kick">' + esc(S.code) + ' · Broker Summary</div><div class="smm-vx-rng">' + esc(rangeText(g, r)) + ' · ' + (net ? 'Net' : 'Gross') + (S.inv === 'F' ? ' · Asing' : S.inv === 'D' ? ' · Domestik' : '') + '</div></div>' +
+        '<div class="smm-vx-px"><small>Harga</small><b>' + nf(g.ohlc[g.off + r[1]] ? g.ohlc[g.off + r[1]].close : 0) + '</b></div></div>' + movedNote(g, ar);
+    var meter = '<div class="smm-bs-meter"><i style="left:' + ((sc + 1) / 2 * 100).toFixed(1) + '%"></i></div>' +
+        '<div class="smm-meter-lbl"><span>Big Dist</span><span>Netral</span><span>Big Acc</span></div>';
+    if (S.bsView === 'table') {
+      var fm = {}; g.brokers.forEach(function (x) { fm[x.code] = x; });
+      var fq = function (code, k) {
+        var b = fm[code]; if (!b || !b[k] || S.inv !== 'all') return null;
+        var f = 0; for (var t = r[0]; t <= r[1]; t++) f += b[k][t] || 0; return f;
+      };
+      var mk = function (x, side) {
+        if (net) return side === 'b' ? { x: x, val: x.net, lot: x.netL, avg: x.bAvg, f: fq(x.code, 'bf') } : { x: x, val: -x.net, lot: -x.netL, avg: x.sAvg, f: fq(x.code, 'sf') };
+        return side === 'b' ? { x: x, val: x.bv, lot: x.bl, avg: x.bAvg, f: fq(x.code, 'bf') } : { x: x, val: x.sv, lot: x.sl, avg: x.sAvg, f: fq(x.code, 'sf') };
+      };
+      var by = (net ? rows.filter(function (x) { return x.net > 0; }) : rows.filter(function (x) { return x.bv > 0; })).map(function (x) { return mk(x, 'b'); }).sort(function (a, b) { return b.val - a.val; });
+      var sl = (net ? rows.filter(function (x) { return x.net < 0; }) : rows.filter(function (x) { return x.sv > 0; })).map(function (x) { return mk(x, 's'); }).sort(function (a, b) { return b.val - a.val; });
+      var total = Math.max(by.length, sl.length), nn = S.bsAll ? total : Math.min(10, total);
+      var fNum = function (v) { return v == null ? '-' : fmtLot(v).replace(' ', ''); };
+      var half = function (q, cls) {
+        if (!q) return '<td class="cd"></td><td></td><td></td><td></td><td class="sep"></td>';
+        return '<td class="cd"><span class="bk t-' + q.x.type + '" data-smm-tip="' + esc(q.x.code + ' · ' + q.x.name + ' (' + TYPE_META[q.x.type].label + ')') + '">' + esc(q.x.code) + '</span></td>' +
+          '<td class="' + cls + '">' + fmtVal(q.val).replace(' ', '') + '</td><td class="' + cls + '">' + fmtLot(q.lot).replace(' ', '') + '</td><td class="' + cls + '">' + fNum(q.f) + '</td><td class="' + cls + ' sep">' + (q.avg > 0 ? nf(q.avg) : '-') + '</td>';
+      };
+      var body = '';
+      for (var ii = 0; ii < nn; ii++) body += '<tr>' + half(by[ii], 'b') + half(sl[ii], 's') + '</tr>';
+      var noF = !g.brokers.some(function (x) { return x.bf; });
+      box.innerHTML = top +
+        '<div class="smm-ob-box"><div class="smm-st-lbl">Broker action</div>' + meter + '</div>' +
+        '<div class="smm-ob-box smm-bst-box"><div class="smm-bst-wrap"><table class="smm-bst">' +
+          '<thead><tr><th class="cd">BY</th><th>B.val</th><th>B.lot</th><th>B.freq</th><th class="sep">B.avg</th><th class="cd">SL</th><th>S.val</th><th>S.lot</th><th>S.freq</th><th class="sep">S.avg</th></tr></thead>' +
+          '<tbody>' + body + '</tbody></table></div>' +
+          (total > 10 ? '<button class="smm-btn smm-more" data-act="bsall">' + (S.bsAll ? 'Tampilkan 10 teratas' : 'Lihat semua (' + total + ' broker)') + '</button>' : '') +
+          '<p class="smm-st-note">' + (net ? 'Net = beli dikurangi jual per broker. ' : 'Gross = total beli & jual per broker. ') + 'Geser tabel ke samping untuk melihat sisi penjual.' +
+          (noF ? ' Kolom freq kosong karena data frekuensi transaksi belum ada di file broker.' : S.inv !== 'all' ? ' Freq hanya tersedia untuk Semua Investor.' : '') + '</p></div>';
+      return;
+    }
     box.innerHTML =
-      '<div class="smm-ob-top"><div><div class="smm-ob-kick">' + esc(S.code) + ' · Broker Summary</div><div class="smm-vx-rng">' + esc(rangeText(g, r)) + ' · ' + (net ? 'Net' : 'Gross') + '</div></div>' +
-        '<div class="smm-vx-px"><small>Harga</small><b>' + nf(g.ohlc[g.off + r[1]] ? g.ohlc[g.off + r[1]].close : 0) + '</b></div></div>' + movedNote(g, ar) +
-      '<div class="smm-ob-box"><div class="smm-st-lbl">Broker action</div>' +
-        '<div class="smm-bs-meter"><i style="left:' + ((sc + 1) / 2 * 100).toFixed(1) + '%"></i></div>' +
-        '<div class="smm-meter-lbl"><span>Big Dist</span><span>Netral</span><span>Big Acc</span></div>' +
+      top +
+      '<div class="smm-ob-box"><div class="smm-st-lbl">Broker action</div>' + meter +
         '<div class="smm-bs-head">' + esc(head) + '</div>' +
         '<div class="smm-st-camps"><div class="smm-st-camp a"><div class="l">Top ' + B.length + ' beli</div><div class="v">' + fmtVal(sb) + '</div></div>' +
         '<div class="smm-st-camp d"><div class="l">Top ' + Sl.length + ' jual</div><div class="v">' + fmtVal(ss) + '</div></div></div></div>' +
@@ -3435,6 +3481,9 @@
       case 'skmetric': S.skMetric = v; syncControls(); renderSankey(); break;
       case 'obmetric': S.obMetric = v; syncControls(); renderOrbit(); break;
       case 'obview': S.obView = v; syncControls(); renderOrbit(); break;
+      case 'bsview': S.bsView = v; S.bsAll = false; renderBSum(); break;
+      case 'bsnet': if (S.actMode !== v) { S.actMode = v; renderAction(); } break;
+      case 'bsall': S.bsAll = !S.bsAll; renderBSum(); break;
       case 'obfocus': S.obFocus = v; renderOrbit(); break;
       case 'vxv': S.vxv = v; syncControls(); renderVxv(); break;
       case 'insrange': S.insRange = v; syncControls(); insRange(); break;
