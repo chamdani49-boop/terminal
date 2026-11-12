@@ -121,3 +121,13 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   hari mendatang = garis putus-putus. Minggu di luar bulan disembunyikan.
 - Header: kartu Net bulan ini (+lot) dan Hari beli/jual dengan bar porsi, chip beli & jual terbesar,
   legenda skala warna di bawah kalender.
+
+## Revisi 10: Broker Flow · tampilan Ringkasan (utama) + Grafik (opsi kedua)
+- Switch `#smmFlowView` (Ringkasan | Grafik), state `S.flowView`, disimpan di localStorage `smm_flowview`
+  (default `story`). Grafik = candle + garis kumulatif per broker (LWC lama, tidak berubah).
+- Ringkasan (`#smmFlowStory`, fungsi `flowStoryData`, `flowStoryHead`, `renderFlowStory`, `drawStoryPlots`,
+  `storyHover`, `storyRead`): harga + perubahan periode, judul otomatis (Tarik-tambang / Akumulasi /
+  Distribusi), kartu Akumulator (chip net > 0) vs Distributor (chip net < 0), SVG harga (Puncak, Low,
+  Titik balik) + SVG net flow kumulatif tiap kubu, bar net per broker. Ikut chip, periode, Value/Volume,
+  filter investor. SVG digambar ulang lewat ResizeObserver; layout 2 kolom via container query ≥ 640px.
+- Mode Ringkasan menghapus chart LWC (hemat memori); `buildFlow()` tetap jadi pintu masuk keduanya.
