@@ -113,3 +113,11 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   menghitung saham `realBroker`. Tanpa data asli muncul banner `.sx-nodata` berisi cara mengunggah.
   Harga & teknikal tetap asli dari ohlc.json. `SCR_V` = 20261110e.
 - Catatan: kolom "KSEI" di Foreign masih perkiraan dari arus transaksi asing (bukan file KSEI).
+
+## Revisi 9: visual Kalender flow (Broker Activity)
+- Bug: lingkaran di belakang "Avg" berasal dari class `.av` avatar Kepemilikan → diganti `.smm-av`.
+- Sel baru: tanggal + panah SVG (▲/▼) di atas, nilai net besar, "lot · @harga rata-rata", garis
+  kekuatan di bawah (`--w`), warna pekat menurut besar net. Hari tanpa transaksi / libur = arsir,
+  hari mendatang = garis putus-putus. Minggu di luar bulan disembunyikan.
+- Header: kartu Net bulan ini (+lot) dan Hari beli/jual dengan bar porsi, chip beli & jual terbesar,
+  legenda skala warna di bawah kalender.
