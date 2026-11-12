@@ -175,3 +175,9 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
 - Perbaikan: `activeRange(g)` mundur ke hari terakhir yang ada transaksi broker + catatan `.smm-cardnote`
   ("… belum ada transaksi broker. Ditampilkan hari terakhir …"). Pesan kosong di kartu baru memakai
   `.smm-cardnote` (selalu terlihat), bukan `.smm-empty`.
+
+## Revisi 16: Lawan Transaksi punya switch Orbit | Aliran
+- `#smmObView` (`S.obView` orbit|flow). Aliran = `obFlowSvg()`: Sankey terfokus gaya Broker Distribution
+  Stockbit. Broker fokus besar di kolomnya, broker sejenis lain kecil (ketuk = pindah fokus), kolom lawan =
+  lawan transaksi (top 6/7 + Lain). Fokus penjual dicerminkan (penjual di kanan). Pita abu-abu = estimasi
+  aliran broker lain. Bar komposisi & select tetap di atas untuk kedua tampilan.

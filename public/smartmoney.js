@@ -332,6 +332,13 @@
     '.smm-ob-row.rest .t{background:none;height:auto;font-size:11px;color:var(--text3)}',
     '.smm-ob-row .n,.smm-ob-row .p{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:700}.smm-ob-row .p{color:var(--text3)}',
     '@container (max-width:380px){.smm-ob-title{font-size:19px}.smm-ob-row{grid-template-columns:62px minmax(0,1fr) 62px 32px;gap:6px;font-size:11px}.smm-ob-top .smm-sel{max-width:none;width:100%}}',
+    '.smm-obf-hd{display:flex;justify-content:space-between;font-weight:800;font-size:13px;margin:8px 0 6px}',
+    '.smm-obf{display:block;width:100%;overflow:visible}',
+    '.smm-obf .gh{fill:var(--text3);opacity:.07}',
+    '.smm-obf .mn{opacity:.62;transition:opacity .15s;cursor:default}.smm-obf .mn:hover{opacity:.9}',
+    '.smm-obf .sel{cursor:pointer}.smm-obf .sel:hover rect:first-child{opacity:.75}',
+    '.smm-obf .lb{fill:var(--card);opacity:.9}',
+    '.smm-obf text{font-family:"IBM Plex Mono",monospace;font-size:11.5px}.smm-obf .cd{font-weight:800}.smm-obf .vl{font-weight:700;fill:var(--text)}',
     /* Broker Summary */
     '.smm-cardnote{font-size:12px;line-height:1.5;color:var(--text2);background:var(--bg2);border:1px dashed var(--border);border-radius:10px;padding:8px 10px}.smm-cardnote b{color:var(--text)}',
     '.smm-bs-meter{position:relative;height:10px;border-radius:5px;margin-top:10px;background:linear-gradient(90deg,var(--st-dis),var(--bg3) 50%,var(--st-acc))}',
@@ -1134,7 +1141,7 @@
     metric: 'value', priceMode: 'candle', showPrice: true, flowView: (function () { try { return localStorage.getItem('smm_flowview') === 'chart' ? 'chart' : 'story'; } catch (_) { return 'story'; } })(),
     chips: [], hidden: {}, colors: {},
     actEnd: 0, actWin: 1, actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
-    skMetric: 'value', skFocus: null, obMetric: 'value', obFocus: null, vxv: 'both',
+    skMetric: 'value', skFocus: null, obMetric: 'value', obFocus: null, obView: 'orbit', vxv: 'both',
     insSrc: 'ALL', insAct: 'ALL', insName: null, insRange: '2Y', insHl: null,
     cal: { grp: 'sm', ym: null, end: null },
     broker: null, person: null, personAll: false, hoMonth: null, hoSide: 'all', hoChart: 'lf'
@@ -1239,7 +1246,7 @@
           '</section>' +
           '<section class="smm-card" id="smmOrbitCard">' +
             '<div class="smm-h3">Lawan Transaksi ' + tip('Siapa lawan transaksi satu broker pada tanggal Broker Action / kalender. Diestimasi dari porsi beli & jual tiap broker karena bursa tidak mencatat pasangan pembeli–penjual.') + '</div>' +
-            '<div class="smm-toolbar"><div class="smm-seg" id="smmObMetric"><button data-act="obmetric" data-v="value">Value</button><button data-act="obmetric" data-v="volume">Volume</button></div></div>' +
+            '<div class="smm-toolbar"><div class="smm-seg" id="smmObView"><button data-act="obview" data-v="orbit">Orbit</button><button data-act="obview" data-v="flow">Aliran</button></div><div class="smm-seg" id="smmObMetric"><button data-act="obmetric" data-v="value">Value</button><button data-act="obmetric" data-v="volume">Volume</button></div></div>' +
             '<div class="smm-ob" id="smmOrbit"></div>' +
           '</section>' +
           '<section class="smm-card" id="smmVxvCard">' +
@@ -2273,15 +2280,93 @@
       '<div class="smm-ob-box"><div class="smm-st-lbl">' + (buyer ? 'Beli ' : 'Jual ') + esc(X.code) + ' ' + esc(fmt(mine)) + ' bertemu siapa</div>' +
         '<div class="smm-ob-bar">' + bar + '</div><div class="smm-ob-leg">' + leg + '</div>' +
         '<div class="smm-ob-head">' + esc(head) + '</div></div>' +
+      (S.obView === 'flow' ?
+      '<div class="smm-ob-box"><div class="smm-st-lbl">Aliran lawan transaksi</div>' +
+        obFlowSvg({ W: Math.max(260, (box.clientWidth || 600) - 26), buyer: buyer, X: X, mine: mine, fmt: fmt, parts: parts,
+          others: rows.filter(function (x) { return x.code !== X.code && x[F.key] > 0; }).sort(function (a, b) { return b[F.key] - a[F.key]; }).slice(0, 6).map(function (x) { return { code: x.code, type: x.type, v: x[F.key] }; }) }) +
+        '<div class="smm-sk-legend"><span><i style="background:' + TYPE_META.D.color + '"></i>Domestik</span><span><i style="background:' + TYPE_META.B.color + '"></i>BUMN</span><span><i style="background:' + TYPE_META.F.color + '"></i>Asing</span></div>' +
+        '<p class="smm-st-note">Pita = perkiraan barang ' + esc(X.code) + (buyer ? ' dari tiap penjual' : ' ke tiap pembeli') + ' (dibagi sesuai porsi ' + (buyer ? 'jual' : 'beli') + ' masing-masing). Pita abu-abu = ' + (buyer ? 'pembeli' : 'penjual') + ' lain. Ketuk broker untuk pindah fokus. * = dengan diri sendiri.</p></div>' :
       '<div class="smm-ob-grid">' +
         '<div class="smm-ob-box"><div class="smm-st-lbl">Orbit lawan transaksi</div><svg class="smm-ob-svg" viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="Orbit lawan transaksi ' + esc(X.code) + '">' + svg + '</svg>' +
           '<p class="smm-st-note">Ukuran lingkaran & tebal garis = nilai transaksi. Ketuk lingkaran untuk melihat lawan broker itu.</p></div>' +
         '<div class="smm-ob-box"><div class="smm-st-lbl">' + (buyer ? 'Penjual terbesar' : 'Pembeli terbesar') + '<span>% dari ' + esc(fmt(mine)) + '</span></div><div class="smm-ob-list">' + lst + '</div>' +
           '<p class="smm-st-note">Estimasi: transaksi ' + esc(X.code) + ' dibagi ke lawan sesuai porsi ' + (buyer ? 'jual' : 'beli') + ' masing-masing pada rentang yang sama. Data bursa tidak mencatat pasangan pembeli–penjual.</p></div>' +
-      '</div>';
+      '</div>');
     _orbitW = box.clientWidth;
   }
   var _orbitW = 0;
+  // Aliran (Sankey terfokus, gaya Broker Distribution): kolom fokus = broker terpilih (besar) + broker
+  // sejenis lainnya (kecil, ketuk untuk pindah fokus); kolom lawan = lawan transaksi broker terpilih.
+  function obFlowSvg(o) {
+    var W = o.W, narrow = W < 460, H = narrow ? 420 : 470, nodeW = 10, gap = 6;
+    var buyer = o.buyer, col = function (t) { return t === 'O' ? '#9ca3af' : TYPE_META[t].color; };
+    var xL = 2, xR = W - 2 - nodeW, xF = buyer ? xL : xR, xC = buyer ? xR : xL;
+    // kolom fokus
+    var others = o.others, k = others.length, hF = k ? H * 0.42 : H, hO = k ? (H - hF - gap * k) / k : 0;
+    var fNodes = [{ code: o.X.code, type: o.X.type, v: o.mine, y: 0, h: hF, focus: true }];
+    others.forEach(function (x, i) { fNodes.push({ code: x.code, type: x.type, v: x.v, y: hF + gap + i * (hO + gap), h: hO }); });
+    // kolom lawan
+    var TOP = narrow ? 6 : 7, cp = o.parts.slice(0, TOP), rest = o.parts.slice(TOP).reduce(function (s, p) { return s + p.v; }, 0);
+    if (rest > 0) cp.push({ code: 'Lain', name: (o.parts.length - TOP) + ' broker lainnya', type: 'O', v: rest });
+    var minH = 18, tot = cp.reduce(function (s, p) { return s + p.v; }, 0) || 1, free = H - gap * (cp.length - 1);
+    var nSmall = 0, sumBig = 0;
+    cp.forEach(function (p) { if (p.v / tot * free < minH) nSmall++; else sumBig += p.v; });
+    var scale = (free - nSmall * minH) / (sumBig || 1), y = 0;
+    cp.forEach(function (p) { p.h = p.v / tot * free < minH ? minH : p.v * scale; p.y = y; y += p.h + gap; });
+    // pita bayangan dari broker lain (estimasi proporsional)
+    var ghost = '', main = '', defs = '';
+    var xa = buyer ? xF + nodeW : xC + nodeW, xb = buyer ? xC : xF, xm = (xa + xb) / 2;
+    var rib = function (y1, h1, y2, h2) {
+      var A = buyer ? [y1, h1] : [y2, h2], B = buyer ? [y2, h2] : [y1, h1];
+      return 'M' + xa + ' ' + A[0].toFixed(1) + ' C' + xm + ' ' + A[0].toFixed(1) + ' ' + xm + ' ' + B[0].toFixed(1) + ' ' + xb + ' ' + B[0].toFixed(1) +
+        ' L' + xb + ' ' + (B[0] + B[1]).toFixed(1) + ' C' + xm + ' ' + (B[0] + B[1]).toFixed(1) + ' ' + xm + ' ' + (A[0] + A[1]).toFixed(1) + ' ' + xa + ' ' + (A[0] + A[1]).toFixed(1) + ' Z';
+    };
+    fNodes.slice(1).forEach(function (n) {
+      var off = 0;
+      cp.forEach(function (p, j) {
+        var sh = p.v / tot, h1 = n.h * sh, h2 = Math.max(0.6, p.h * sh * 0.35), y2 = p.y + p.h * (j % 3) / 4;
+        ghost += '<path class="gh" d="' + rib(n.y + off, h1, y2, h2) + '"/>'; off += h1;
+      });
+    });
+    // pita utama dari broker fokus
+    var off = 0;
+    cp.forEach(function (p, j) {
+      var h1 = p.v / tot * hF, gid = 'smmObG' + j;
+      defs += '<linearGradient id="' + gid + '" gradientUnits="userSpaceOnUse" x1="' + xa + '" x2="' + xb + '"><stop offset="0" stop-color="' + col(buyer ? o.X.type : p.type) + '"/><stop offset="1" stop-color="' + col(buyer ? p.type : o.X.type) + '"/></linearGradient>';
+      main += '<path class="mn" d="' + rib(off, h1, p.y, p.h) + '" fill="url(#' + gid + ')" data-smm-tip="' + esc((buyer ? o.X.code + ' beli dari ' + p.code : o.X.code + ' jual ke ' + p.code) + ' · ' + o.fmt(p.v) + ' (' + nf(p.v / o.mine * 100, 0) + '%)' + (p.self ? ' · dengan diri sendiri' : '')) + '"/>';
+      off += h1;
+    });
+    // node
+    var nodes = '';
+    fNodes.forEach(function (n) {
+      var c = col(n.type), lx = buyer ? xF + nodeW + 6 : xF - 6, anc = buyer ? 'start' : 'end';
+      nodes += '<g' + (n.focus ? '' : ' class="sel" data-act="obfocus" data-v="' + (buyer ? 'b' : 's') + ':' + esc(n.code) + '" data-smm-tip="' + esc(n.code + ' · ' + (buyer ? 'beli ' : 'jual ') + o.fmt(n.v) + ' · ketuk untuk fokus') + '"') + '>' +
+        '<rect x="' + xF + '" y="' + n.y.toFixed(1) + '" width="' + nodeW + '" height="' + Math.max(2, n.h).toFixed(1) + '" rx="3" fill="' + (n.focus ? c : 'var(--bg4,var(--bg3))') + '"/>';
+      if (n.focus) {
+        var lbl = n.code + '  ' + o.fmt(n.v), lw = lbl.length * 7 + 14, ty = n.y + n.h / 2;
+        nodes += '<rect class="lb" x="' + (buyer ? lx : lx - lw) + '" y="' + (ty - 11) + '" width="' + lw + '" height="20" rx="5"/>' +
+          '<text x="' + (buyer ? lx + 7 : lx - 7) + '" y="' + (ty + 4) + '" text-anchor="' + anc + '"><tspan class="cd" fill="' + c + '">' + esc(n.code) + '</tspan><tspan class="vl" dx="6">' + esc(o.fmt(n.v)) + '</tspan></text>';
+      } else {
+        nodes += '<text class="cd" x="' + lx + '" y="' + (n.y + n.h / 2 + 4).toFixed(1) + '" text-anchor="' + anc + '" fill="' + c + '">' + esc(n.code) + '</text>';
+      }
+      nodes += '</g>';
+    });
+    cp.forEach(function (p) {
+      var c = col(p.type), lx = buyer ? xC - 6 : xC + nodeW + 6, anc = buyer ? 'end' : 'start';
+      var lbl = o.fmt(p.v) + '  ' + p.code, lw = lbl.length * 6.6 + 12, ty = p.y + Math.min(p.h / 2, 60);
+      var clickable = !p.self && p.code !== 'Lain';
+      nodes += '<g' + (clickable ? ' class="sel" data-act="obfocus" data-v="' + (buyer ? 's' : 'b') + ':' + esc(p.code) + '"' : '') + ' data-smm-tip="' + esc(p.code + ' · ' + (p.name || '') + ' · ' + o.fmt(p.v) + (clickable ? ' · ketuk untuk lihat lawan ' + p.code : '')) + '">' +
+        '<rect x="' + xC + '" y="' + p.y.toFixed(1) + '" width="' + nodeW + '" height="' + p.h.toFixed(1) + '" rx="3" fill="' + c + '"/>' +
+        '<rect class="lb" x="' + (buyer ? lx - lw : lx) + '" y="' + (ty - 10) + '" width="' + lw + '" height="19" rx="5"/>' +
+        '<text x="' + (buyer ? lx - 6 : lx + 6) + '" y="' + (ty + 4) + '" text-anchor="' + anc + '">' +
+          (buyer ? '<tspan class="vl">' + esc(o.fmt(p.v)) + '</tspan><tspan class="cd" dx="5" fill="' + c + '">' + esc(p.self ? p.code + '*' : p.code) + '</tspan>'
+                 : '<tspan class="cd" fill="' + c + '">' + esc(p.self ? p.code + '*' : p.code) + '</tspan><tspan class="vl" dx="5">' + esc(o.fmt(p.v)) + '</tspan>') +
+        '</text></g>';
+    });
+    return '<div class="smm-obf-hd"><span class="smm-up">Pembeli</span><span class="smm-dn">Penjual</span></div>' +
+      '<svg class="smm-obf" viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="Aliran lawan transaksi ' + esc(o.X.code) + '"><defs>' + defs + '</defs>' + ghost + main + nodes + '</svg>';
+  }
+
 
   function renderSankey() {
     if (!G().hasBroker) return;
@@ -3183,7 +3268,7 @@
   }
   function syncControls() {
     syncSeg('smmPeriod', S.period); syncSeg('smmMetric', S.metric); syncSeg('smmFlowView', S.flowView); syncSeg('smmPriceMode', S.priceMode);
-    syncSeg('smmSkMetric', S.skMetric); syncSeg('smmObMetric', S.obMetric); syncSeg('smmVxvMode', S.vxv); syncSeg('smmInsSrc', S.insSrc); syncSeg('smmInsRange', S.insRange);
+    syncSeg('smmSkMetric', S.skMetric); syncSeg('smmObMetric', S.obMetric); syncSeg('smmObView', S.obView); syncSeg('smmVxvMode', S.vxv); syncSeg('smmInsSrc', S.insSrc); syncSeg('smmInsRange', S.insRange);
     root.querySelectorAll('.smm-subtabs button').forEach(function (b) { var on = b.getAttribute('data-v') === S.sub; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
     document.getElementById('smmCode').value = S.code;
     document.getElementById('smmInv').value = S.inv;
@@ -3349,6 +3434,7 @@
       case 'bkpick': addChip(v); S.skFocus = null; break;
       case 'skmetric': S.skMetric = v; syncControls(); renderSankey(); break;
       case 'obmetric': S.obMetric = v; syncControls(); renderOrbit(); break;
+      case 'obview': S.obView = v; syncControls(); renderOrbit(); break;
       case 'obfocus': S.obFocus = v; renderOrbit(); break;
       case 'vxv': S.vxv = v; syncControls(); renderVxv(); break;
       case 'insrange': S.insRange = v; syncControls(); insRange(); break;
