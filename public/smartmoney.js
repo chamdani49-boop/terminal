@@ -335,9 +335,8 @@
     /* Broker Flow · Ringkasan */
     '#smmFlowCard [hidden],#smmSankeyCard [hidden]{display:none!important}',
     '.smm-st,.smm-vx,.smm-ob{--st-acc:#0d9488;--st-dis:#ea580c;--st-accb:rgba(13,148,136,.10);--st-disb:rgba(234,88,12,.10);--st-accl:rgba(13,148,136,.35);--st-disl:rgba(234,88,12,.35);container-type:inline-size;display:flex;flex-direction:column;gap:10px;margin-top:10px}',
-    '.smm-cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}',
-    '@media (max-width:1180px){.smm-cols3{grid-template-columns:repeat(2,minmax(0,1fr))}.smm-cols3>#smmVxvCard{grid-column:1/-1}}',
-    '@media (max-width:760px){.smm-cols3{grid-template-columns:minmax(0,1fr)}}',
+    '.smm-cols3{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}',
+    '@media (max-width:900px){.smm-cols3{grid-template-columns:minmax(0,1fr)}}',
     '.smm-cols3>.smm-card{min-width:0}',
     '[data-theme="dark"] .smm-st,[data-theme="dark"] .smm-vx,[data-theme="dark"] .smm-ob{--st-acc:#2dd4bf;--st-dis:#fb923c;--st-accb:rgba(45,212,191,.12);--st-disb:rgba(251,146,60,.12);--st-accl:rgba(45,212,191,.38);--st-disl:rgba(251,146,60,.38)}',
     '.smm-st-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}',
@@ -380,7 +379,13 @@
     '.smm-st-plots .na{fill:var(--st-acc)}.smm-st-plots .nd{fill:var(--st-dis)}.smm-st-plots .xt{fill:var(--text3)}',
     '.smm-st-x{position:absolute;top:22px;bottom:22px;width:0;border-left:1px solid var(--accent);pointer-events:none;display:none}',
     '.smm-st-note{margin:10px 0 0;font-size:11px;line-height:1.45;color:var(--text3)}',
-    '@container (min-width:640px){.smm-st-head{font-size:20px}.smm-st-camp .v{font-size:22px}}',
+    '.smm-st-bars{display:flex;flex-direction:column;gap:7px;margin-top:8px}',
+    '.smm-st-bar{display:grid;grid-template-columns:52px minmax(0,1fr) 78px;align-items:center;gap:8px;font-size:12px}',
+    '.smm-st-bar .c{display:flex;align-items:center;gap:5px;font-weight:800;color:var(--text)}.smm-st-bar .c i{width:7px;height:7px;border-radius:50%;flex-shrink:0}',
+    '.smm-st-bar .t{height:12px;border-radius:4px;background:var(--bg3);overflow:hidden}.smm-st-bar .t i{display:block;height:100%;border-radius:4px}',
+    '.smm-st-bar.a .t i{background:var(--st-acc)}.smm-st-bar.d .t i{background:var(--st-dis)}',
+    '.smm-st-bar .n{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:11.5px}.smm-st-bar.a .n{color:var(--st-acc)}.smm-st-bar.d .n{color:var(--st-dis)}',
+    '@container (min-width:640px){.smm-st-body{grid-template-columns:minmax(0,1.75fr) minmax(220px,1fr)}.smm-st-head{font-size:20px}.smm-st-camp .v{font-size:22px}}',
     '@container (max-width:360px){.smm-st-top .px{font-size:24px}.smm-st-head{font-size:16px}.smm-st-camp .v{font-size:17px}.smm-st-bar{grid-template-columns:46px minmax(0,1fr) 70px}}',
     '.smm-legend .row{display:flex;gap:10px;flex-wrap:wrap}',
     '.smm-legend .row span{white-space:nowrap}',
@@ -1097,7 +1102,7 @@
   // ─────────────────────────── State ───────────────────────────
   var S = {
     code: 'AVIA', period: '3M', inv: 'all', sub: 'broker',
-    metric: 'value', priceMode: 'candle', showPrice: true,
+    metric: 'value', priceMode: 'candle', showPrice: true, flowView: (function () { try { return localStorage.getItem('smm_flowview') === 'chart' ? 'chart' : 'story'; } catch (_) { return 'story'; } })(),
     chips: [], hidden: {}, colors: {},
     actEnd: 0, actWin: 1, actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
     skMetric: 'value', skFocus: null, obMetric: 'value', obFocus: null, vxv: 'both',
@@ -1182,11 +1187,13 @@
         // Broker Flow (lebar) + Kalender flow harian (samping)
         '<div class="smm-flowrow">' +
         '<section class="smm-card" id="smmFlowCard">' +
-          '<div class="smm-h3">Broker Flow <small id="smmFlowSub"></small>' + tip('Garis = total beli dikurangi jual (net) tiap broker, dijumlah dari awal periode. Garis naik = broker terus menimbun. Garis turun = broker terus melepas. Bandingkan dengan harga (sumbu kanan). Broker pada chip juga dipakai kartu Order Flow dan Value × Volume.') + '</div>' +
+          '<div class="smm-h3">Broker Flow <small id="smmFlowSub"></small>' + tip('Garis = total beli dikurangi jual (net) tiap broker, dijumlah dari awal periode. Garis naik = broker terus menimbun. Garis turun = broker terus melepas. Bandingkan dengan harga (sumbu kanan). Ringkasan: broker pada chip dibagi dua kubu, Akumulator (net beli) dan Distributor (net jual), lalu dibandingkan dengan harga. Broker pada chip juga dipakai kartu Value × Volume.') + '</div>' +
           '<div class="smm-toolbar">' +
+            '<div class="smm-seg" id="smmFlowView" role="tablist" aria-label="Tampilan Broker Flow"><button data-act="flowview" data-v="story">Ringkasan</button><button data-act="flowview" data-v="chart">Grafik</button></div>' +
             '<div class="smm-seg" id="smmMetric"><button data-act="metric" data-v="value">Value</button><button data-act="metric" data-v="volume">Volume</button></div>' +
             '<div class="smm-seg smm-pricetog" id="smmPriceMode"><button data-act="pmode" data-v="candle">Candle</button><button data-act="pmode" data-v="line">Garis</button></div>' +
           '</div>' +
+          '<div class="smm-st" id="smmFlowStory"></div>' +
           '<div class="smm-legend" id="smmFlowLegend" aria-live="polite"></div>' +
           '<div class="smm-chart" id="smmFlowChart"></div>' +
           '<div class="smm-chips" id="smmChips"></div>' +
@@ -1195,12 +1202,8 @@
         '<section class="smm-card smm-calcard" id="smmCalCard"></section>' +
         '</div>' +
 
-        // Tiga kartu baru: Order Flow · Lawan transaksi · Value × Volume
+        // Kartu baru: Lawan transaksi · Value × Volume
         '<div class="smm-cols3">' +
-          '<section class="smm-card" id="smmStoryCard">' +
-            '<div class="smm-h3">Order Flow ' + tip('Broker pada chip Broker Flow dibagi dua kubu: Akumulator (net beli) dan Distributor (net jual). Harga dan arus kumulatif tiap kubu ditampilkan berdampingan. Ikut periode, Value/Volume, dan filter investor.') + '</div>' +
-            '<div class="smm-st" id="smmFlowStory"></div>' +
-          '</section>' +
           '<section class="smm-card" id="smmOrbitCard">' +
             '<div class="smm-h3">Lawan Transaksi ' + tip('Siapa lawan transaksi satu broker pada tanggal Broker Action / kalender. Diestimasi dari porsi beli & jual tiap broker karena bursa tidak mencatat pasangan pembeli–penjual.') + '</div>' +
             '<div class="smm-toolbar"><div class="smm-seg" id="smmObMetric"><button data-act="obmetric" data-v="value">Value</button><button data-act="obmetric" data-v="volume">Volume</button></div></div>' +
@@ -1501,8 +1504,17 @@
     if (!G().hasBroker) return;
     var el = document.getElementById('smmFlowChart');
     if (!el) return;
-    var g = G(), t0 = periodStart(g, S.period);
+    var g = G(), t0 = periodStart(g, S.period), story = S.flowView === 'story';
     document.getElementById('smmFlowSub').textContent = '· ' + S.code + ' · ' + fmtDate(g.days[g.off + t0]) + ' – ' + fmtDate(g.end) + ' · ' + (S.metric === 'value' ? 'nilai (Rp)' : 'volume (lot)') + (S.inv === 'F' ? ' · investor asing' : S.inv === 'D' ? ' · investor domestik' : '');
+    document.getElementById('smmFlowStory').hidden = !story;
+    ['smmFlowChart', 'smmFlowLegend', 'smmPriceMode'].forEach(function (id) { document.getElementById(id).hidden = story; });
+    if (story) {
+      if (flowChart) { try { flowChart.remove(); } catch (_) {} flowChart = null; }
+      flowSeries = {}; _flowCum = {}; _flowIdx = {};
+      renderFlowStory();
+      return;
+    }
+    if (_storyRO) { _storyRO.disconnect(); _storyRO = null; }
     if (!window.LightweightCharts) { setTimeout(buildFlow, 300); return; }
     if (flowChart) { try { flowChart.remove(); } catch (_) {} flowChart = null; }
     flowSeries = {}; _flowCum = {}; _flowIdx = {};
@@ -1621,6 +1633,13 @@
       return '<div class="smm-st-camp ' + cls + '"><div class="l">' + title + ' <b>' + (arr.length ? arr.map(function (x) { return esc(x.code); }).join('+') : '-') + '</b></div>' +
         '<div class="v">' + (arr.length ? stSign(sum, d.vol) : '-') + '</div></div>';
     };
+    var max = d.list.reduce(function (m, x) { return Math.max(m, Math.abs(x.v)); }, 0) || 1;
+    var bars = d.list.map(function (x) {
+      return '<div class="smm-st-bar ' + (x.v >= 0 ? 'a' : 'd') + '" data-smm-tip="' + esc(x.code + ' · ' + x.name + ' (' + TYPE_META[x.type].label + ')') + '">' +
+        '<span class="c"><i style="background:' + colorFor(x.code) + '"></i>' + esc(x.code) + '</span>' +
+        '<span class="t"><i style="width:' + Math.max(2, Math.abs(x.v) / max * 100).toFixed(1) + '%"></i></span>' +
+        '<span class="n">' + stSign(x.v, d.vol) + '</span></div>';
+    }).join('');
     box.innerHTML =
       '<div class="smm-st-top"><div><div class="cd">' + esc(S.code) + '</div><div class="px">' + nf(d.c1) + '</div></div>' +
         '<div class="ch ' + signCls(d.chg) + '">' + (d.chg > 0 ? '+' : d.chg < 0 ? '−' : '') + nf(Math.abs(d.chg)) + ' (' + fmtPct(d.chgP, 2) + ')<small>' + rng + '</small></div></div>' +
@@ -1633,8 +1652,9 @@
           '<div class="smm-st-lbl">Net flow kumulatif' + (S.inv !== 'all' ? ' (estimasi)' : '') + '<span><i class="a"></i>Akumulator <i class="d"></i>Distributor</span></div><svg id="smmStFl" aria-label="Grafik net flow kumulatif"></svg>' +
           '<div class="smm-st-x" aria-hidden="true"></div></div>' +
         '</div>' +
-      '</div>' +
-      '<p class="smm-st-note">Kumulatif net beli − jual broker pada chip Broker Flow, periode ' + rng + '.' + (S.inv !== 'all' ? ' Porsi ' + (S.inv === 'F' ? 'asing' : 'domestik') + ' sebagian berupa estimasi.' : '') + ' Rincian per broker ada di kartu Value × Volume.</p>';
+        '<div class="smm-st-box"><div class="smm-st-lbl">Net ' + (d.vol ? 'volume' : 'value') + ' per broker</div><div class="smm-st-bars">' + bars + '</div>' +
+          '<p class="smm-st-note">Kumulatif net beli − jual broker yang dipilih (chip di bawah), periode ' + rng + (S.inv !== 'all' ? '. Porsi ' + (S.inv === 'F' ? 'asing' : 'domestik') + ' sebagian berupa estimasi.' : '.') + ' Pilih <b>Grafik</b> untuk candle & garis per broker.</p></div>' +
+      '</div>';
     drawStoryPlots();
     var plots = document.getElementById('smmStPlots');
     plots.addEventListener('pointermove', storyHover);
@@ -1650,20 +1670,6 @@
     }
   }
   var ST_PAD = { l: 6, r: 6 };
-  // Di layar lebar ketiga kartu sejajar: grafik Order Flow dipanjangkan supaya
-  // tingginya setara kartu tetangga (tanpa ruang kosong).
-  var _storyExtra = 0, _fitRaf = 0;
-  function fitStory() {
-    cancelAnimationFrame(_fitRaf);
-    _fitRaf = requestAnimationFrame(function () {
-      var c = document.getElementById('smmStoryCard'), o = document.getElementById('smmOrbitCard'), v = document.getElementById('smmVxvCard');
-      if (!c || !o || !v || !c.offsetHeight) return;
-      var cr = c.getBoundingClientRect(), mates = [o, v].filter(function (x) { return Math.abs(x.getBoundingClientRect().top - cr.top) < 2 && x.offsetHeight; });
-      var natural = c.offsetHeight - _storyExtra, want = 0;
-      if (mates.length) want = Math.min(420, Math.max(0, Math.max.apply(null, mates.map(function (x) { return x.offsetHeight; })) - natural));
-      if (Math.abs(want - _storyExtra) > 4) { _storyExtra = want; drawStoryPlots(); }
-    });
-  }
   function stX(i, W, n) { return ST_PAD.l + (n > 1 ? i / (n - 1) : 0.5) * (W - ST_PAD.l - ST_PAD.r); }
   function stPath(vals, W, y, n) { return vals.map(function (v, i) { return (i ? 'L' : 'M') + stX(i, W, n).toFixed(1) + ' ' + y(v).toFixed(1); }).join(''); }
   function stText(x, y, W, txt, cls) {
@@ -1675,8 +1681,7 @@
     var W = plots.clientWidth || 600, n = d.n; _storyW = plots.clientWidth;
     var narrow = W < 420;
     // ── Harga ──
-    var ex = _storyExtra / 2;
-    var H1 = (narrow ? 118 : 132) + ex, pt = 20, pb = 18;
+    var H1 = narrow ? 118 : 132, pt = 20, pb = 18;
     var lo = Math.min.apply(null, d.px), hi = Math.max.apply(null, d.px); if (hi === lo) { hi += 1; lo -= 1; }
     var y1 = function (v) { return pt + (hi - v) / (hi - lo) * (H1 - pt - pb); };
     var iHi = d.px.indexOf(Math.max.apply(null, d.px)), iLo = d.px.indexOf(Math.min.apply(null, d.px));
@@ -1695,7 +1700,7 @@
     var sv1 = document.getElementById('smmStPx');
     sv1.setAttribute('viewBox', '0 0 ' + W + ' ' + H1); sv1.setAttribute('height', H1); sv1.innerHTML = s1;
     // ── Net flow kumulatif ──
-    var H2 = (narrow ? 128 : 142) + ex, ft = 14, fb = 22;
+    var H2 = narrow ? 128 : 142, ft = 14, fb = 22;
     var all = d.A.concat(d.D, [0]), fmin = Math.min.apply(null, all), fmax = Math.max.apply(null, all);
     if (fmax === fmin) { fmax += 1; fmin -= 1; }
     var y2 = function (v) { return ft + (fmax - v) / (fmax - fmin) * (H2 - ft - fb); }, y0 = y2(0);
@@ -1725,7 +1730,6 @@
     var sv2 = document.getElementById('smmStFl');
     sv2.setAttribute('viewBox', '0 0 ' + W + ' ' + H2); sv2.setAttribute('height', H2); sv2.innerHTML = s2;
     storyRead(-1);
-    fitStory();
   }
   // Peta posisi broker (Value × Volume): kanan-kiri = net value, atas-bawah = harga rata-rata,
   // besar bubble = volume. Rata-rata = value ÷ volume → siapa untung / tersangkut terhadap harga sekarang.
@@ -1776,7 +1780,6 @@
       '<div class="smm-ob-box"><div class="smm-st-tbl m-' + m + '">' + head + trs + '</div>' +
         '<p class="smm-st-note">Broker pada chip Broker Flow. "vs harga" untuk net beli = harga sekarang dibanding rata-rata beli; untuk net jual = rata-rata jual dibanding harga sekarang.' + (S.inv !== 'all' ? ' Porsi ' + (S.inv === 'F' ? 'asing' : 'domestik') + ' sebagian berupa estimasi.' : '') + '</p></div>';
     drawVxvMap();
-    fitStory();
   }
   function drawVxvMap() {
     var d = _vxv, svg = document.getElementById('smmVxMap'); if (!d || !svg || !svg.parentNode.clientWidth) return;
@@ -2158,7 +2161,6 @@
           '<p class="smm-st-note">Estimasi: transaksi ' + esc(X.code) + ' dibagi ke lawan sesuai porsi ' + (buyer ? 'jual' : 'beli') + ' masing-masing pada rentang yang sama. Data bursa tidak mencatat pasangan pembeli–penjual.</p></div>' +
       '</div>';
     _orbitW = box.clientWidth;
-    fitStory();
   }
   var _orbitW = 0;
 
@@ -3061,7 +3063,7 @@
     el.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === val); });
   }
   function syncControls() {
-    syncSeg('smmPeriod', S.period); syncSeg('smmMetric', S.metric); syncSeg('smmPriceMode', S.priceMode);
+    syncSeg('smmPeriod', S.period); syncSeg('smmMetric', S.metric); syncSeg('smmFlowView', S.flowView); syncSeg('smmPriceMode', S.priceMode);
     syncSeg('smmSkMetric', S.skMetric); syncSeg('smmObMetric', S.obMetric); syncSeg('smmVxvMode', S.vxv); syncSeg('smmInsSrc', S.insSrc); syncSeg('smmInsRange', S.insRange);
     root.querySelectorAll('.smm-subtabs button').forEach(function (b) { var on = b.getAttribute('data-v') === S.sub; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
     document.getElementById('smmCode').value = S.code;
@@ -3076,7 +3078,7 @@
     inv.disabled = !g.hasForeign;
     inv.title = g.hasForeign ? '' : 'Data porsi asing belum tersedia untuk saham ini';
   }
-  function renderFlowAll() { renderChips(); buildFlow(); renderFlowInsight(); renderFlowStory(); renderVxv(); }
+  function renderFlowAll() { renderChips(); buildFlow(); renderFlowInsight(); renderVxv(); }
   // Halaman yang tersembunyi ditandai "kotor" dan baru dirender saat dibuka,
   // supaya grafik dibangun dengan ukuran container yang benar.
   var _dirty = { broker: true, insider: true, holder: true };
@@ -3209,10 +3211,11 @@
       case 'hoside': S.hoSide = v; renderHoComp(getHolder(S.code)); break;
       case 'hochart': S.hochart = v; S.hoChart = v; renderHoChart(getHolder(S.code)); break;
       case 'period': S.period = v; syncControls(); renderBrokerProfile(); if (G().hasBroker) { renderSummary(); renderFlowAll(); } renderRadar(); break;
-      case 'metric': S.metric = v; syncControls(); buildFlow(); renderFlowInsight(); renderFlowStory(); break;
+      case 'metric': S.metric = v; syncControls(); buildFlow(); renderFlowInsight(); break;
       case 'pmode': S.priceMode = v; syncControls(); renderChips(); buildFlow(); break;
       case 'chipprice': S.showPrice = !S.showPrice; renderChips(); if (flowSeries.__price) flowSeries.__price.applyOptions({ visible: S.showPrice }); flowLegend(null); break;
-      case 'chip': S.hidden[v] = !S.hidden[v]; renderChips(); if (flowSeries[v]) flowSeries[v].applyOptions({ visible: !S.hidden[v] }); flowLegend(null); renderFlowStory(); renderVxv(); break;
+      case 'chip': S.hidden[v] = !S.hidden[v]; renderChips(); if (S.flowView === 'story') renderFlowStory(); else { if (flowSeries[v]) flowSeries[v].applyOptions({ visible: !S.hidden[v] }); flowLegend(null); } renderVxv(); break;
+      case 'flowview': if (S.flowView !== v) { S.flowView = v; try { localStorage.setItem('smm_flowview', v); } catch (_) {} syncControls(); buildFlow(); } break;
       case 'chipx': e.stopPropagation(); S.chips = S.chips.filter(function (c) { return c !== v; }); delete S.colors[v]; renderFlowAll(); break;
       case 'addopen': e.stopPropagation(); document.getElementById('smmAddMenu').classList.toggle('open'); break;
       case 'chipadd': addChip(v); break;
@@ -3415,7 +3418,7 @@
     }
     var an = document.getElementById('acctNav');
     if (an) {
-      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Action', 'broker', '#smmActionCard'], ['Order Flow', 'broker', '#smmStoryCard'], ['Lawan Transaksi', 'broker', '#smmOrbitCard'], ['Value × Volume', 'broker', '#smmVxvCard'], ['Distribusi', 'broker', '#smmSankeyCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
+      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Action', 'broker', '#smmActionCard'], ['Lawan Transaksi', 'broker', '#smmOrbitCard'], ['Value × Volume', 'broker', '#smmVxvCard'], ['Distribusi', 'broker', '#smmSankeyCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
       var grp = document.createElement('div');
       grp.className = 'acct-nav-group'; grp.setAttribute('data-page', 'smartmoney');
       grp.innerHTML = '<button type="button" class="acct-nav-page" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">💰</span>Smart Money</button><div class="acct-nav-subs">' +

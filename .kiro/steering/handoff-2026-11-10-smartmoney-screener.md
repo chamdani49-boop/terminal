@@ -153,3 +153,9 @@ Setiap tampilan punya tombol Cara pakai & Manfaat (terbuka otomatis pada kunjung
   3 kolom ≥ 1181px, 2 kolom (Value × Volume selebar penuh) 761–1180px, 1 kolom di HP.
 - Anti dobel: bar "net per broker" Order Flow dihapus (rinciannya ada di tabel Value × Volume).
 - `fitStory()` memanjangkan grafik Order Flow agar setinggi kartu tetangga saat sejajar.
+
+## Revisi 13: Broker Flow kembali Ringkasan (utama) | Grafik (opsi kedua)
+- User menegaskan perintah Revisi 10 sudah benar dan TIDAK boleh diubah: Broker Flow = switch
+  Ringkasan (default) | Grafik, Ringkasan lengkap dengan bar "Net value per broker".
+- Kartu Order Flow terpisah dihapus (isinya sama dengan Ringkasan). Baris `.smm-cols3` kini 2 kartu:
+  Lawan Transaksi + Value × Volume (2 kolom > 900px, 1 kolom di bawahnya). `fitStory` dihapus.
