@@ -7263,6 +7263,115 @@ body.is-mobile-device.force-desktop .pl-col-main{
 <div id="tr-view-live" class="tr-subpane" role="tabpanel" aria-hidden="true">
 
   <!-- Fallback empty state — visible saat data.pending===true atau belum di-fetch. -->
+<style id="trLiveV2">
+/* ══ Tracker › Live — tampilan v2 KHUSUS HP / layar kecil (≤760px). PC tidak berubah. ══ */
+#tr-view-live .tlc-hp{display:none}
+@media (max-width:760px){
+#tr-view-live .tlc-hp{display:block}#tr-view-live .tlc-lv.tlc-hp,#tr-view-live .tlc-ft.tlc-hp{display:flex}
+#tr-view-live .tlc .tlc-pc{display:none!important}
+#tr-view-live .tlc .tr-live-card-l{min-width:0;flex:1}
+
+
+#tr-view-live .tr-live-terminal{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 12%,var(--card)),var(--card));border-radius:20px;padding:18px;box-shadow:var(--shadow-card)}
+#tr-view-live .tr-live-terminal-h{margin-bottom:14px}
+#tr-view-live .tr-live-terminal-title{font-size:13px;font-weight:800;letter-spacing:.2px}
+#tr-view-live .tr-live-terminal-ihsg{border-radius:999px;padding:5px 12px}
+#tr-view-live .tr-live-total-summary{background:none;border:0;padding:0;margin-bottom:14px}
+#tr-view-live .tr-live-total-val{font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1}
+#tr-view-live .tr-live-total-lbl{font-size:11px;letter-spacing:1px;color:var(--text3);margin-top:4px}
+#tr-view-live .tr-live-total-r{text-align:right}
+#tr-view-live .tr-live-total-breakdown{font-size:13px;font-weight:800;color:var(--green)}
+#tr-view-live .tr-live-total-sub{font-size:12px;color:var(--text3)}
+#tr-view-live .tr-live-terminal-cells{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#tr-view-live .tr-live-cell{background:color-mix(in srgb,var(--bg) 55%,transparent);border:1px solid var(--border);border-radius:14px;padding:11px 12px;text-align:left}
+#tr-view-live .tr-live-cell-ico{font-size:14px;opacity:.85}
+#tr-view-live .tr-live-cell-val{font-size:22px;font-weight:800;letter-spacing:-.5px}
+#tr-view-live .tr-live-cell-sub{font-size:10.5px;letter-spacing:.4px;color:var(--text3)}
+#tr-view-live .tr-live-strip{height:10px;border-radius:999px;margin-top:12px;background:color-mix(in srgb,var(--red) 45%,transparent);overflow:hidden}
+#tr-view-live .tr-live-strip>div{background:var(--green);border-radius:999px}
+#tr-view-live .tr-live-stream-hd{font-size:12px;letter-spacing:.3px;text-transform:none;margin:18px 2px 10px}
+#tr-view-live .tr-live-stream-hd .count{color:var(--text)}
+#tr-view-live .tr-live-search{border-radius:12px}
+#tr-view-live .tr-live-datewrap,#tr-view-live .tr-live-firmselect{border-radius:12px}
+
+/* grid 2 kartu di semua ukuran */
+#tr-view-live .tr-live-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#tr-view-live .tr-live-card.tlc{border-radius:20px;padding:16px 16px 14px 18px}
+#tr-view-live .tr-live-card.tlc::before{width:4px}
+#tr-view-live .tlc .tr-live-card-top{margin-bottom:6px;gap:10px}
+#tr-view-live .tlc .tr-live-card-tick{font-size:22px;letter-spacing:-.6px;gap:7px}
+#tr-view-live .tlc .tr-live-card-badge{font-size:10px;padding:2px 7px;border-radius:6px}
+#tr-view-live .tlc .tr-live-card-sub{font-family:inherit;font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tr-view-live .tlc .tr-live-card-float{font-size:26px;letter-spacing:-.8px;line-height:1}
+#tr-view-live .tlc .tr-live-card-float-lbl{font-size:10px}
+#tr-view-live .tlc .tlc-state{margin-top:6px}
+#tr-view-live .tlc .tr-live-card-firm{font-size:12.5px;margin:2px 0 0}
+#tr-view-live .tlc-rng{position:relative;height:46px;margin:6px 4px 0}
+#tr-view-live .tlc-trk{position:absolute;left:0;right:0;top:21px;height:8px;border-radius:999px;overflow:hidden;background:var(--bg3)}
+#tr-view-live .tlc-trk>div{position:absolute;top:0;bottom:0}
+#tr-view-live .tlc-trk .z1{background:color-mix(in srgb,var(--red) 26%,transparent)}
+#tr-view-live .tlc-trk .z2{background:color-mix(in srgb,var(--green) 20%,transparent)}
+#tr-view-live .tlc-trk .fl{background:var(--green)}
+#tr-view-live .tlc.dn .tlc-trk .fl{background:var(--red)}
+#tr-view-live .tlc-tick{position:absolute;top:15px;width:2px;height:20px;border-radius:2px;transform:translateX(-1px)}
+#tr-view-live .tlc-tick.sl{background:var(--red)}#tr-view-live .tlc-tick.tp{background:var(--green)}#tr-view-live .tlc-tick.hit{background:#f59e0b}
+#tr-view-live .tlc-tick.en{background:var(--text);opacity:.8;top:12px;height:26px}
+#tr-view-live .tlc-live{position:absolute;top:17px;width:16px;height:16px;border-radius:50%;transform:translateX(-8px);background:var(--card);border:3px solid var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 22%,transparent)}
+#tr-view-live .tlc.dn .tlc-live{border-color:var(--red);box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 22%,transparent)}
+#tr-view-live .tlc-tip{position:absolute;top:-2px;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;background:var(--text);color:var(--card);padding:1px 6px;border-radius:6px;white-space:nowrap}
+#tr-view-live .tlc-lv{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px}
+#tr-view-live .tlc-lvl{display:flex;align-items:baseline;gap:5px;white-space:nowrap}
+#tr-view-live .tlc-lvl small{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-weight:700}
+#tr-view-live .tlc-lvl small i{width:8px;height:8px;border-radius:2px;background:var(--green)}
+#tr-view-live .tlc-lvl.sl small i{background:var(--red)}#tr-view-live .tlc-lvl.hit small i{background:#f59e0b}
+#tr-view-live .tlc-lvl b{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;color:var(--text)}
+#tr-view-live .tlc-lvl.hit b{color:#f59e0b}
+#tr-view-live .tlc-lvl em{font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;color:var(--green)}
+#tr-view-live .tlc-lvl.sl em{color:var(--red)}
+#tr-view-live .tlc-ft{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--text3)}
+#tr-view-live .tlc-ft b{color:var(--text);font-family:'IBM Plex Mono',monospace}
+#tr-view-live .tlc-rr{background:var(--bg2);border:1px solid var(--border);padding:2px 8px;border-radius:8px;font-weight:700;color:var(--text2)}
+#tr-view-live .tlc .tr-live-card-date{margin-top:8px;padding-top:8px}
+#tr-view-live .tlc.unfilled .tlc-live,#tr-view-live .tlc.unfilled .tlc-tip,#tr-view-live .tlc.unfilled .tlc-trk .fl{opacity:.55}
+
+#tr-view-live .tr-live-terminal-cells{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  #tr-view-live .tlc .tr-live-card-l{display:contents}
+  #tr-view-live .tlc .tr-live-card-firm{order:3}
+  #tr-view-live .tr-live-terminal{padding:14px;border-radius:16px}
+  #tr-view-live .tr-live-total-val{font-size:30px}
+  #tr-view-live .tr-live-cell{padding:9px 10px}
+  #tr-view-live .tr-live-cell-val{font-size:18px}
+  #tr-view-live .tr-live-grid{gap:8px}
+  #tr-view-live .tr-live-card.tlc{padding:11px 10px 11px 13px;border-radius:16px}
+  #tr-view-live .tlc .tr-live-card-top{flex-direction:column;gap:6px;margin-bottom:2px}
+  #tr-view-live .tlc .tr-live-card-r{text-align:left}
+  #tr-view-live .tlc .tr-live-card-tick{font-size:17px;flex-wrap:nowrap}
+  #tr-view-live .tlc .tr-live-card-badge{font-size:8.5px;padding:1px 5px}
+  #tr-view-live .tlc .tr-live-card-sub{font-size:10.5px}
+  #tr-view-live .tlc .tr-live-card-float{font-size:20px}
+  #tr-view-live .tlc .tr-live-card-float-lbl{display:none}
+  #tr-view-live .tlc .tr-live-card-waiting{font-size:10.5px;padding:3px 8px}
+  #tr-view-live .tlc .tlc-state{margin-top:4px}
+  #tr-view-live .tlc .tr-live-card-firm{font-size:10.5px;gap:4px}
+  #tr-view-live .tlc .tr-live-card-firm b{font-size:10.5px}
+  #tr-view-live .tlc-rng{height:38px;margin:4px 2px 0}
+  #tr-view-live .tlc-trk{top:17px;height:6px}
+  #tr-view-live .tlc-tick{top:12px;height:16px}#tr-view-live .tlc-tick.en{top:10px;height:20px}
+  #tr-view-live .tlc-live{top:13px;width:14px;height:14px;transform:translateX(-7px);border-width:2.5px}
+  #tr-view-live .tlc-tip{font-size:9.5px;top:-3px}
+  #tr-view-live .tlc-lv{flex-direction:column;gap:2px}
+  #tr-view-live .tlc-lvl{justify-content:space-between}
+  #tr-view-live .tlc-lvl small{font-size:10px}
+  #tr-view-live .tlc-lvl b{font-size:11.5px;margin-left:auto}
+  #tr-view-live .tlc-lvl em{font-size:10px;min-width:40px;text-align:right}
+  #tr-view-live .tlc-ft{font-size:10.5px;flex-direction:column;align-items:flex-start;gap:4px}
+  #tr-view-live .tlc .tr-live-card-date{font-size:9.5px}
+
+}
+@media (max-width:340px){#tr-view-live .tr-live-grid{grid-template-columns:1fr}}
+</style>
   <div class="tr-empty" id="trLivePending">
     <div class="tr-empty-ico">🚀</div>
     <div class="tr-empty-title">Live 24/7 — menunggu data</div>
@@ -13154,23 +13263,63 @@ body.is-mobile-device.force-desktop .pl-col-main{
       }
     }
 
-    return '<div class="tr-live-card ' + cardCls + '" data-recid="' + esc(o.id || '') + '" title="Klik untuk detail rekomendasi ' + esc(o.ticker) + '">'
+    // ── Tampilan v2 (kartu 2 kolom + bar rentang SL · entry · live · TP) ──
+    var _num = function(v){ v = +v; return Number.isFinite(v) && v > 0 ? v : null; };
+    var _e = _num(o.entry), _l = _num(o.lastPrice), _sl = _num(o.sl), _t1 = _num(o.tp1), _t2 = hasT2 ? _num(o.tp2) : null;
+    var _dir = isBuy ? 1 : -1;
+    var _vals = [_e, _l, _sl, _t1, _t2].filter(function(v){ return v != null; });
+    var barHtml = '';
+    if (_e != null && _vals.length >= 2) {
+      var _lo = Math.min.apply(null, _vals), _hi = Math.max.apply(null, _vals), _pad = (_hi - _lo) * 0.06 || _e * 0.02;
+      _lo -= _pad; _hi += _pad;
+      // BUY: SL kiri → TP kanan. SELL: dicerminkan supaya "untung" tetap ke kanan.
+      var P = function(v){ var p = (v - _lo) / (_hi - _lo) * 100; return (isBuy ? p : 100 - p).toFixed(2); };
+      var pe = +P(_e), pl = _l != null ? +P(_l) : null;
+      barHtml = '<div class="tlc-rng" aria-hidden="true"><div class="tlc-trk">'
+        + '<div class="z1" style="left:0;width:' + pe + '%"></div><div class="z2" style="left:' + pe + '%;right:0"></div>'
+        + (pl != null ? '<div class="fl" style="left:' + Math.min(pe, pl) + '%;width:' + Math.abs(pl - pe) + '%"></div>' : '')
+        + '</div>'
+        + (_sl != null ? '<div class="tlc-tick sl" style="left:' + P(_sl) + '%"></div>' : '')
+        + (_t1 != null ? '<div class="tlc-tick ' + (tp1Hit ? 'hit' : 'tp') + '" style="left:' + P(_t1) + '%"></div>' : '')
+        + (_t2 != null ? '<div class="tlc-tick ' + (tp2Hit ? 'hit' : 'tp') + '" style="left:' + P(_t2) + '%"></div>' : '')
+        + '<div class="tlc-tick en" style="left:' + pe + '%"></div>'
+        + (pl != null ? '<div class="tlc-live" style="left:' + pl + '%"></div><span class="tlc-tip" style="left:' + Math.min(90, Math.max(10, pl)) + '%">' + fmtN(o.lastPrice) + '</span>' : '')
+        + '</div>';
+    }
+    var lvl = function(cls, label, price, hit){
+      if (price == null) return '';
+      return '<div class="tlc-lvl ' + cls + (hit ? ' hit' : '') + '"><small><i></i>' + label + (hit ? ' ✓' : '') + '</small><b>' + fmtN(price) + '</b><em>' + pctTo(price) + '</em></div>';
+    };
+    var lvHtml = '<div class="tlc-lv">'
+      + lvl('sl', 'SL', _sl, false)
+      + lvl('tp', hasT2 ? 'TP1' : 'TP', _t1, tp1Hit)
+      + lvl('tp', 'TP2', _t2, tp2Hit)
+      + '</div>';
+    var rr = (_e != null && _sl != null && _t1 != null && Math.abs(_e - _sl) > 0) ? Math.abs(_t1 - _e) / Math.abs(_e - _sl) : null;
+    var hitCls = (tp1Hit || tp2Hit || _liveOv === 'TP1_LIVE' || _liveOv === 'TP2_LIVE') ? ' hit' : '';
+
+    return '<div class="tr-live-card tlc ' + cardCls + hitCls + '" data-recid="' + esc(o.id || '') + '" title="Klik untuk detail rekomendasi ' + esc(o.ticker) + '">'
       + '<div class="tr-live-card-top">'
         + '<div class="tr-live-card-l">'
-          + '<div class="tr-live-card-tick">' + esc(o.ticker) + ' <span class="tr-live-card-badge ' + (isBuy ? 'buy' : 'sell') + '">' + (isBuy ? 'BUY' : 'SELL') + '</span> ' + stateBadgeHtml + '</div>'
+          + '<div class="tr-live-card-tick">' + esc(o.ticker) + ' <span class="tr-live-card-badge ' + (isBuy ? 'buy' : 'sell') + '">' + (isBuy ? 'BUY' : 'SELL') + '</span> <span class="tlc-pc">' + stateBadgeHtml + '</span></div>'
           + (o.tickerName ? '<div class="tr-live-card-sub">' + esc(o.tickerName) + '</div>' : '')
           + '<div class="tr-live-card-firm">' + primaryIcon + ' <b>' + esc(primaryEntity) + '</b>' + certLine + verified + '</div>'
         + '</div>'
         + '<div class="tr-live-card-r">'
           + rightPanel
+          + '<div class="tlc-state tlc-hp">' + stateBadgeHtml + '</div>'
         + '</div>'
       + '</div>'
-      + '<div class="tr-live-card-meta">'
+      + '<div class="tr-live-card-meta tlc-pc">'
         + '<div><div class="k">ENTRY</div><div class="v">' + fmtN(o.entry) + '</div></div>'
         + '<div><div class="k">HARGA LIVE</div><div class="v">' + fmtN(o.lastPrice) + '</div></div>'
       + '</div>'
-      + '<div class="tr-live-card-tp-row ' + (hasT2 ? '' : 'no-tp2') + '">'
-        + slBox + tp1Box + tp2Box
+      + '<div class="tr-live-card-tp-row tlc-pc ' + (hasT2 ? '' : 'no-tp2') + '">' + slBox + tp1Box + tp2Box + '</div>'
+      + barHtml.replace('class="tlc-rng"', 'class="tlc-rng tlc-hp"')
+      + lvHtml.replace('class="tlc-lv"', 'class="tlc-lv tlc-hp"')
+      + '<div class="tlc-ft tlc-hp">'
+        + '<span>Entry <b>' + fmtN(o.entry) + '</b>' + (_l != null ? ' → Live <b>' + fmtN(o.lastPrice) + '</b>' : '') + '</span>'
+        + (rr != null ? '<span class="tlc-rr" title="Potensi untung banding risiko (TP1 vs SL)">R/R 1:' + rr.toFixed(1).replace('.', ',') + '</span>' : '')
       + '</div>'
       + '<div class="tr-live-card-date">'
         + '<span><span class="lbl">📅 Sinyal:</span> ' + fmtShortDate(o.openDate) + horizonLine + '</span>'
