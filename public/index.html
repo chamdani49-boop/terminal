@@ -7372,6 +7372,69 @@ body.is-mobile-device.force-desktop .pl-col-main{
 }
 @media (max-width:340px){#tr-view-live .tr-live-grid{grid-template-columns:1fr}}
 </style>
+<style id="trLiveHead">
+/* ══ Tracker › Live — header donat + chip filter (sama untuk HP, tablet, PC) ══ */
+#tr-view-live .tr-live-terminal{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 12%,var(--card)),var(--card));border:1px solid var(--border);border-radius:22px;padding:18px 20px;box-shadow:var(--shadow-card)}
+#tr-view-live .tr-live-terminal-h{margin-bottom:14px}
+#tr-view-live .tlh-top{display:flex;align-items:center;gap:22px}
+#tr-view-live .tlh-ring{--p:0;width:128px;height:128px;flex:none;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(var(--green) calc(var(--p)*1%),color-mix(in srgb,var(--red) 55%,transparent) 0)}
+#tr-view-live .tlh-ring.empty{background:var(--bg3)}
+#tr-view-live .tlh-ring-in{width:98px;height:98px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#tr-view-live .tlh-ring-in .tr-live-cell-val{font-family:inherit;font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;color:var(--text)!important}
+#tr-view-live .tlh-ring-in small{font-size:12px;font-weight:700;color:var(--text3);margin-top:3px}
+#tr-view-live .tlh-top .tr-live-total-summary{display:block;background:none;border:0;padding:0;margin:0;min-width:0}
+#tr-view-live .tlh-top .tr-live-total-val{font-family:inherit;font-size:52px;font-weight:800;letter-spacing:-2px;line-height:1;color:var(--text)}
+#tr-view-live .tlh-top .tr-live-total-lbl{font-family:inherit;font-size:16px;letter-spacing:0;text-transform:none;color:var(--text3);margin-top:6px;font-weight:600}
+#tr-view-live .tlh-seg{display:flex;gap:3px;height:12px;border-radius:999px;overflow:hidden;margin-top:18px;background:var(--bg3)}
+#tr-view-live .tlh-seg span{display:block;min-width:3px}
+#tr-view-live .tlh-seg .a,#tr-view-live .tlh-legend i.a{background:var(--green)}
+#tr-view-live .tlh-seg .w,#tr-view-live .tlh-legend i.w{background:#fbbf24}
+#tr-view-live .tlh-seg .m,#tr-view-live .tlh-legend i.m{background:color-mix(in srgb,var(--text3) 60%,transparent)}
+#tr-view-live .tlh-seg .c,#tr-view-live .tlh-legend i.c{background:#60a5fa}
+#tr-view-live .tlh-legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:14px;color:var(--text2)}
+#tr-view-live .tlh-legend span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+#tr-view-live .tlh-legend i{width:11px;height:11px;border-radius:50%}
+#tr-view-live .tlh-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px;margin-top:18px}
+#tr-view-live .tlh-kpis .tr-live-cell{background:color-mix(in srgb,var(--bg) 55%,transparent);border:1px solid var(--border);border-radius:16px;padding:14px 16px;text-align:left;min-height:0;box-shadow:none}
+#tr-view-live .tlh-kpis .tr-live-cell::before,#tr-view-live .tlh-kpis .tr-live-cell::after{display:none}
+#tr-view-live .tlh-kpis .tr-live-cell-val{font-family:inherit;font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1.05}
+#tr-view-live .tlh-kpis .green .tr-live-cell-val{color:var(--green)}#tr-view-live .tlh-kpis .red .tr-live-cell-val{color:var(--red)}
+#tr-view-live .tlh-kpis .tr-live-cell-sub{font-family:inherit;font-size:14px;letter-spacing:0;text-transform:none;color:var(--text2);margin-top:6px;font-weight:500}
+/* chip filter */
+#tr-view-live .tlh-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+#tr-view-live .tlh-chips::-webkit-scrollbar{display:none}
+#tr-view-live .tlh-chips button{flex:none;font:inherit;font-size:13.5px;font-weight:700;color:var(--text2);background:var(--card);border:1px solid var(--border);border-radius:999px;padding:8px 18px;cursor:pointer;transition:all .15s}
+#tr-view-live .tlh-chips button small{font-size:11px;font-weight:700;color:var(--text3);margin-left:3px}
+#tr-view-live .tlh-chips button:hover{border-color:var(--accent);color:var(--accent)}
+#tr-view-live .tlh-chips button[aria-pressed="true"]{color:var(--text);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,var(--card))}
+#tr-view-live .tlh-chips button[aria-pressed="true"] small{color:var(--text2)}
+#tr-view-live .tlh-chips button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#tr-view-live .tr-live-search{border-radius:14px}
+@media (max-width:640px){
+  #tr-view-live .tr-live-terminal{padding:14px;border-radius:18px}
+  #tr-view-live .tlh-top{gap:16px}
+  #tr-view-live .tlh-ring{width:104px;height:104px}
+  #tr-view-live .tlh-ring-in{width:80px;height:80px}
+  #tr-view-live .tlh-ring-in .tr-live-cell-val{font-size:24px}
+  #tr-view-live .tlh-ring-in small{font-size:11px}
+  #tr-view-live .tlh-top .tr-live-total-val{font-size:40px}
+  #tr-view-live .tlh-top .tr-live-total-lbl{font-size:14px}
+  #tr-view-live .tlh-seg{height:10px;margin-top:14px}
+  #tr-view-live .tlh-legend{font-size:12.5px;gap:4px 14px}
+  #tr-view-live .tlh-kpis{gap:7px;margin-top:14px}
+  #tr-view-live .tlh-kpis .tr-live-cell{padding:11px 10px;border-radius:13px}
+  #tr-view-live .tlh-kpis .tr-live-cell-val{font-size:21px}
+  #tr-view-live .tlh-kpis .tr-live-cell-sub{font-size:11.5px}
+  #tr-view-live .tlh-chips button{font-size:12.5px;padding:7px 14px}
+}
+@media (max-width:360px){
+  #tr-view-live .tlh-ring{width:88px;height:88px}#tr-view-live .tlh-ring-in{width:68px;height:68px}
+  #tr-view-live .tlh-ring-in .tr-live-cell-val{font-size:20px}
+  #tr-view-live .tlh-top .tr-live-total-val{font-size:34px}
+  #tr-view-live .tlh-kpis .tr-live-cell-val{font-size:18px}
+}
+</style>
   <div class="tr-empty" id="trLivePending">
     <div class="tr-empty-ico">🚀</div>
     <div class="tr-empty-title">Live 24/7 — menunggu data</div>
@@ -7423,48 +7486,26 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </span>
       </div>
 
-      <!-- Total signal summary bar (menggantikan card 'TOTAL SIGNAL' terpisah) -->
-      <div class="tr-live-total-summary">
-        <div class="tr-live-total-l">
+      <!-- Header v2: donat akurasi + total sinyal + bar komposisi + 3 KPI (semua ukuran layar). -->
+      <div class="tlh-top">
+        <div class="tlh-ring" id="trLiveRing" style="--p:0" role="img" aria-label="Akurasi live">
+          <div class="tlh-ring-in"><div class="tr-live-cell-val" id="trLiveLtAcc">—</div><small>akurasi</small></div>
+        </div>
+        <div class="tr-live-total-summary">
           <div class="tr-live-total-val" id="trLiveTotalVal">—</div>
-          <div class="tr-live-total-lbl">TOTAL SIGNAL</div>
-        </div>
-        <div class="tr-live-total-r">
-          <div class="tr-live-total-breakdown" id="trLiveOpenN">— aktif</div>
-          <div class="tr-live-total-sub">
-            <span id="trLiveClosedN">0</span> selesai
-          </div>
+          <div class="tr-live-total-lbl">total sinyal</div>
+          <span id="trLiveOpenN" style="display:none"></span>
+          <span id="trLiveClosedN" style="display:none">0</span>
         </div>
       </div>
-
-      <!-- 4-cell metric grid: profit, loss, akurasi, skor tertinggi -->
-      <div class="tr-live-terminal-cells">
-        <div class="tr-live-cell green">
-          <div class="tr-live-cell-ico">📈</div>
-          <div class="tr-live-cell-val" id="trLiveLtProfit">0</div>
-          <div class="tr-live-cell-sub">POSISI PROFIT</div>
-        </div>
-        <div class="tr-live-cell red">
-          <div class="tr-live-cell-ico">📉</div>
-          <div class="tr-live-cell-val" id="trLiveLtLoss">0</div>
-          <div class="tr-live-cell-sub">POSISI LOSS</div>
-        </div>
-        <div class="tr-live-cell blue">
-          <div class="tr-live-cell-ico">🎯</div>
-          <div class="tr-live-cell-val" id="trLiveLtAcc">—</div>
-          <div class="tr-live-cell-sub">AKURASI LIVE</div>
-        </div>
-        <div class="tr-live-cell purple">
-          <div class="tr-live-cell-ico">💰</div>
-          <div class="tr-live-cell-val" id="trLiveLtAvgFloat">—</div>
-          <div class="tr-live-cell-sub">RATA-RATA FLOATING</div>
-        </div>
+      <div class="tlh-seg" id="trLiveSeg" role="img" aria-label="Komposisi sinyal"></div>
+      <div class="tlh-legend" id="trLiveSegLeg"></div>
+      <div class="tr-live-terminal-cells tlh-kpis">
+        <div class="tr-live-cell green"><div class="tr-live-cell-val" id="trLiveLtProfit">0</div><div class="tr-live-cell-sub">posisi profit</div></div>
+        <div class="tr-live-cell red"><div class="tr-live-cell-val" id="trLiveLtLoss">0</div><div class="tr-live-cell-sub">posisi loss</div></div>
+        <div class="tr-live-cell purple"><div class="tr-live-cell-val" id="trLiveLtAvgFloat">—</div><div class="tr-live-cell-sub">rata-rata floating</div></div>
       </div>
-
-      <!-- Progress bar akurasi (fill = rasio profit vs profit+loss).
-           Text duplikat 'X posisi terbuka · Y profit · Z loss' dihilangkan
-           (permintaan user) — angka sudah ada di 4 cell di atas. -->
-      <div class="tr-live-strip"><div id="trLiveLtStripFill" style="width:0%"></div></div>
+      <div class="tr-live-strip" style="display:none"><div id="trLiveLtStripFill" style="width:0%"></div></div>
     </div>
     <!-- Elemen tersembunyi (WIN RATE fields) untuk backward-compat JS renderer.
          Kartu WIN RATE KONSENSUS di-hilangkan per user request, tapi IIFE JS
@@ -7495,6 +7536,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <span class="ico">📅</span>
           <select id="trLiveDate" class="tr-live-date" aria-label="Pilih tanggal rekomendasi"></select>
         </div>
+      </div>
+      <div class="tlh-chips" id="trLiveResChips" role="group" aria-label="Filter hasil">
+        <button type="button" data-res="all" aria-pressed="true">Semua</button>
+        <button type="button" data-res="pos" aria-pressed="false">Profit</button>
+        <button type="button" data-res="neg" aria-pressed="false">Loss</button>
+        <button type="button" data-res="hit" aria-pressed="false">TP tercapai</button>
       </div>
       <div class="tr-live-firmbar">
         <span class="tr-live-firmbar-lbl"><span class="tr-ico" aria-hidden="true">🏢</span> Sekuritas</span>
@@ -13036,8 +13083,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // Section ini menggabungkan TOTAL SIGNAL summary + 4 metric cells.
   // - Summary: total signal (aktif+menunggu+terlewat+selesai) + breakdown per state
   // - Cells: posisi profit / loss / akurasi live / rata-rata floating P&L
+  var _trLastData = null;
   function renderTerminal(data){
-    var openList = data.openList || [];
+    // Header ikut tanggal yang dipilih (dropdown tanggal di toolbar). 'Semua tanggal' → total backend.
+    _trLastData = data;
+    var dw = (typeof resolvedDate === 'function' && typeof trFilter !== 'undefined' && trCombined && trCombined.length) ? resolvedDate() : null;
+    var inD = function(o){ return !dw || String((o && o.openDate) || '').slice(0, 10) === dw; };
+    var openList = (data.openList || []).filter(inD);
     var profit = 0, loss = 0;
     var totalFloat = 0;
     for (var i = 0; i < openList.length; i++) {
@@ -13072,12 +13124,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (fill) fill.style.width = ((profit + loss) ? (profit / (profit + loss) * 100) : 0) + '%';
 
     // ── Total signal summary (dulunya card 'TOTAL SIGNAL' terpisah) ──
-    var triggered = data.open || 0;
-    var pendingC  = data.pendingCount  || 0;
-    var missedC   = data.missedCount   || 0;
-    var closedC   = data.totalClosed   || 0;
+    var triggered = dw ? openList.length : (data.open || 0);
+    var pendingC  = dw ? (data.pendingList || []).filter(inD).length : (data.pendingCount || 0);
+    var missedC   = dw ? (data.missedList  || []).filter(inD).length : (data.missedCount  || 0);
+    var closedC   = dw ? (data.historyList || []).filter(inD).length : (data.totalClosed  || 0);
     var total = triggered + pendingC + missedC + closedC;
-    var tv = $('trLiveTotalVal'); if (tv) tv.textContent = total;
+    var tv = $('trLiveTotalVal'); if (tv) tv.textContent = fmtN(total);
+    var tl = document.querySelector('#tr-view-live .tlh-top .tr-live-total-lbl');
+    if (tl) tl.textContent = 'total sinyal' + (dw ? ' · ' + fmtShortDate(dw) : ' · semua tanggal');
     var oN = $('trLiveOpenN');
     if (oN) {
       // Breakdown per state: '98 aktif · 106 menunggu · 82 terlewat aktif'
@@ -13087,11 +13141,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
       oN.textContent = parts.join(' · ');
     }
     var cN = $('trLiveClosedN'); if (cN) cN.textContent = closedC;
+    var ring = $('trLiveRing');
+    if (ring) { ring.style.setProperty('--p', (profit + loss) ? acc : 0); ring.classList.toggle('empty', !(profit + loss)); }
+    var seg = $('trLiveSeg'), leg = $('trLiveSegLeg');
+    if (seg && leg) {
+      var parts2 = [[triggered, 'aktif', 'a'], [pendingC, 'menunggu', 'w'], [missedC, 'terlewat', 'm'], [closedC, 'selesai', 'c']];
+      seg.innerHTML = parts2.filter(function(x){ return x[0] > 0; }).map(function(x){ return '<span class="' + x[2] + '" style="flex:' + x[0] + '" title="' + x[0] + ' ' + x[1] + '"></span>'; }).join('');
+      leg.innerHTML = parts2.map(function(x){ return '<span><i class="' + x[2] + '"></i>' + fmtN(x[0]) + ' ' + x[1] + '</span>'; }).join('');
+    }
 
     // Stream heading — v2: total = triggered + unfilled
     var unfilled = data.unfilledList || [];
     var totalCards = openList.length + unfilled.length;
-    var sc = $('trLiveStreamCount'); if (sc) sc.textContent = totalCards;
+    var sc = $('trLiveStreamCount'); if (sc && !(trCombined && trCombined.length)) sc.textContent = totalCards;   // kalau grid sudah ada, paintGrid yang mengisi
     var sf = $('trLiveStreamFloat');
     if (sf) {
       sf.textContent = fmtPct(avgFloat);
@@ -13330,7 +13392,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
 
   // ── Filter state (tanggal + cari saham + list sekuritas) ──
-  var trFilter = { q: '', firm: null, date: null };  // firm=null → semua; date=null → tgl terbaru
+  var trFilter = { q: '', firm: null, date: null, res: 'all' };  // firm=null → semua; date=null → tgl terbaru
   var trCombined = [];                                 // openList + unfilledList terakhir
 
   // Label sumber sebuah rekomendasi: HANYA nama firm. Nama analis TIDAK
@@ -13358,6 +13420,40 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return dw ? trCombined.filter(function(o){ return dayOf(o) === dw; }) : trCombined.slice();
   }
 
+  // Hasil sebuah rec: 'hit' (TP tercapai), 'pos' (profit), 'neg' (loss), null (belum entry / 0%).
+  function resOf(o){
+    var st = o.state || 'TRIGGERED';
+    var ov = (typeof window.__TR_liveStatusOverride === 'function') ? window.__TR_liveStatusOverride(o) : null;
+    var hits = o.tpHits || [], cb = String(o.closedBy || '');
+    if (ov === 'TP1_LIVE' || ov === 'TP2_LIVE' || hits.indexOf('TP1') >= 0 || hits.indexOf('TP2') >= 0 || cb === 'TP1' || cb === 'TP2' || st === 'TP_HIT') return 'hit';
+    if ((st === 'PENDING' || st === 'RUNNING_MISSED') && ov !== 'ACTIVE') return null;
+    var f = +o.floatingPct || 0;
+    return f > 0 ? 'pos' : f < 0 ? 'neg' : null;
+  }
+  function resMatch(o){
+    var r = trFilter.res || 'all';
+    if (r === 'all') return true;
+    var x = resOf(o);
+    return r === 'pos' ? (x === 'pos' || x === 'hit') : x === r;
+  }
+  function paintResChips(base){
+    var box = $('trLiveResChips'); if (!box) return;
+    var n = { all: base.length, pos: 0, neg: 0, hit: 0 };
+    base.forEach(function(o){ var x = resOf(o); if (x === 'pos' || x === 'hit') n.pos++; if (x === 'neg') n.neg++; if (x === 'hit') n.hit++; });
+    var lbl = { all: 'Semua', pos: 'Profit', neg: 'Loss', hit: 'TP tercapai' };
+    Array.prototype.forEach.call(box.querySelectorAll('button'), function(b){
+      var k = b.getAttribute('data-res');
+      b.setAttribute('aria-pressed', k === (trFilter.res || 'all') ? 'true' : 'false');
+      b.innerHTML = lbl[k] + ' <small>' + n[k] + '</small>';
+    });
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target && e.target.closest && e.target.closest('#trLiveResChips button');
+    if (!b) return;
+    trFilter.res = b.getAttribute('data-res') || 'all';
+    paintGrid();
+  });
+
   // Terapkan filter tanggal + sekuritas + query ke daftar rekomendasi.
   function applyFilter(list){
     var q = (trFilter.q || '').trim().toLowerCase();
@@ -13365,6 +13461,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     return list.filter(function(o){
       if (dw && dayOf(o) !== dw) return false;
       if (trFilter.firm != null && firmOf(o) !== trFilter.firm) return false;
+      if (!resMatch(o)) return false;
       if (q) {
         var hay = (String(o.ticker || '') + ' ' + String(o.tickerName || '')).toLowerCase();
         if (hay.indexOf(q) < 0) return false;
@@ -13450,6 +13547,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
       el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px 12px;color:var(--text3);font-family:\'IBM Plex Mono\',monospace;font-size:12px">Tidak ada rekomendasi aktif saat ini.</div>';
       return;
     }
+    var _r0 = trFilter.res; trFilter.res = 'all';
+    paintResChips(applyFilter(trCombined));
+    trFilter.res = _r0;
     var list = applyFilter(trCombined);
     // Update count di heading supaya cerminkan hasil terlihat.
     var sc = $('trLiveStreamCount'); if (sc) sc.textContent = list.length;
@@ -13529,6 +13629,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     renderHeroes(data);
     renderTerminal(data);
     renderGrid(data);
+    renderTerminal(data);   // ulang setelah trCombined terisi supaya header ikut tanggal terpilih
     renderMarketIntel(data);
     renderWatchlist(data);
   }
@@ -13581,6 +13682,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       trFilter.date = e.target.value;
       buildFirmChips(); // opsi sekuritas ikut tanggal
       paintGrid();
+      if (_trLastData) renderTerminal(_trLastData);   // header ikut tanggal
       return;
     }
     if (e.target.id === 'trLiveFirmSelect') {
@@ -13598,11 +13700,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var reset = e.target.closest('#trLiveFilterReset');
     if (reset) {
       e.preventDefault();
-      trFilter.q = ''; trFilter.firm = null; trFilter.date = '__all__';
+      trFilter.q = ''; trFilter.firm = null; trFilter.date = '__all__'; trFilter.res = 'all';
       var inp = $('trLiveSearch'); if (inp) inp.value = '';
       var clr0 = $('trLiveSearchClear'); if (clr0) clr0.style.display = 'none';
       var dsel = $('trLiveDate'); if (dsel) dsel.value = '__all__';
       buildFirmChips(); paintGrid();
+      if (_trLastData) renderTerminal(_trLastData);
       return;
     }
     // Clear tombol ✕ di search
