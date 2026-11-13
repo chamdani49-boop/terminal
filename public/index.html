@@ -7264,10 +7264,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
 
   <!-- Fallback empty state — visible saat data.pending===true atau belum di-fetch. -->
 <style id="trLiveV2">
-/* ══ Tracker › Live — tampilan v2 KHUSUS HP / layar kecil (≤760px). PC tidak berubah. ══ */
-#tr-view-live .tlc-hp{display:none}
-@media (max-width:760px){
-#tr-view-live .tlc-hp{display:block}#tr-view-live .tlc-lv.tlc-hp,#tr-view-live .tlc-ft.tlc-hp{display:flex}
+/* ══ Tracker › Live — kartu v2 untuk semua ukuran (PC 3 kolom, tablet & HP 2 kolom) ══ */
+#tr-view-live .tlc-hp{display:block}#tr-view-live .tlc-lv.tlc-hp{display:flex}#tr-view-live .tlc-ft.tlc-hp{display:flex}
 #tr-view-live .tlc .tlc-pc{display:none!important}
 #tr-view-live .tlc .tr-live-card-l{min-width:0;flex:1}
 
@@ -7295,7 +7293,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 #tr-view-live .tr-live-datewrap,#tr-view-live .tr-live-firmselect{border-radius:12px}
 
 /* grid 2 kartu di semua ukuran */
-#tr-view-live .tr-live-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#tr-view-live .tr-live-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 #tr-view-live .tr-live-card.tlc{border-radius:20px;padding:16px 16px 14px 18px}
 #tr-view-live .tr-live-card.tlc::before{width:4px}
 #tr-view-live .tlc .tr-live-card-top{margin-bottom:6px;gap:10px}
@@ -7319,8 +7317,9 @@ body.is-mobile-device.force-desktop .pl-col-main{
 #tr-view-live .tlc-live{position:absolute;top:17px;width:16px;height:16px;border-radius:50%;transform:translateX(-8px);background:var(--card);border:3px solid var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 22%,transparent)}
 #tr-view-live .tlc.dn .tlc-live{border-color:var(--red);box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 22%,transparent)}
 #tr-view-live .tlc-tip{position:absolute;top:-2px;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;background:var(--text);color:var(--card);padding:1px 6px;border-radius:6px;white-space:nowrap}
-#tr-view-live .tlc-lv{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px}
-#tr-view-live .tlc-lvl{display:flex;align-items:baseline;gap:5px;white-space:nowrap}
+#tr-view-live .tlc-lv{display:flex;gap:6px;margin-top:4px}
+#tr-view-live .tlc-lvl{display:flex;flex-direction:column;gap:1px;white-space:nowrap;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:6px 8px;min-width:0;flex:1 1 0}
+#tr-view-live .tlc-lvl.hit{border-color:#f59e0b}
 #tr-view-live .tlc-lvl small{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-weight:700}
 #tr-view-live .tlc-lvl small i{width:8px;height:8px;border-radius:2px;background:var(--green)}
 #tr-view-live .tlc-lvl.sl small i{background:var(--red)}#tr-view-live .tlc-lvl.hit small i{background:#f59e0b}
@@ -7334,8 +7333,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
 #tr-view-live .tlc .tr-live-card-date{margin-top:8px;padding-top:8px}
 #tr-view-live .tlc.unfilled .tlc-live,#tr-view-live .tlc.unfilled .tlc-tip,#tr-view-live .tlc.unfilled .tlc-trk .fl{opacity:.55}
 
-#tr-view-live .tr-live-terminal-cells{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
+@media (max-width:1100px){#tr-view-live .tr-live-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){
   #tr-view-live .tlc .tr-live-card-l{display:contents}
   #tr-view-live .tlc .tr-live-card-firm{order:3}
@@ -7361,12 +7359,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
   #tr-view-live .tlc-tick{top:12px;height:16px}#tr-view-live .tlc-tick.en{top:10px;height:20px}
   #tr-view-live .tlc-live{top:13px;width:14px;height:14px;transform:translateX(-7px);border-width:2.5px}
   #tr-view-live .tlc-tip{font-size:9.5px;top:-3px}
-  #tr-view-live .tlc-lv{flex-direction:column;gap:2px}
-  #tr-view-live .tlc-lvl{justify-content:space-between}
+  #tr-view-live .tlc-lv.tlc-hp{display:flex;flex-direction:column;gap:2px}
+  #tr-view-live .tlc-lvl{flex-direction:row;align-items:baseline;justify-content:space-between;background:none;border:0;padding:0}
   #tr-view-live .tlc-lvl small{font-size:10px}
   #tr-view-live .tlc-lvl b{font-size:11.5px;margin-left:auto}
   #tr-view-live .tlc-lvl em{font-size:10px;min-width:40px;text-align:right}
-  #tr-view-live .tlc-ft{font-size:10.5px;flex-direction:column;align-items:flex-start;gap:4px}
+  #tr-view-live .tlc-ft.tlc-hp{font-size:10.5px;flex-direction:column;align-items:flex-start;gap:4px}
   #tr-view-live .tlc .tr-live-card-date{font-size:9.5px}
 
 }
