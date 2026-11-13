@@ -2438,6 +2438,26 @@ select.form-control option{background:var(--card);color:var(--text)}
   .card-chart .period-tab{padding:6px 11px;font-size:11px;letter-spacing:.3px}
 }
 
+/* ── Chart Dashboard versi HP (≤640px): gaya minimalis (judul + pil periode, legenda garis,
+   grid samar). Target konsensus & batas beli/jual tetap tampil. PC/tablet tidak berubah. ── */
+.dcm-title,.dcm-hint{display:none}
+@media(max-width:640px){
+  #page-dashboard .card-chart{border-radius:22px;padding:16px 14px 12px}
+  #page-dashboard .card-chart > div:first-child{flex-wrap:wrap!important;align-items:flex-start;gap:10px 8px;margin-bottom:6px!important}
+  #page-dashboard .dcm-title{display:block;order:1;flex:1 1 0;min-width:0;font-size:17px;font-weight:800;line-height:1.25;color:var(--text2);letter-spacing:-.2px}
+  #page-dashboard .card-chart .period-tabs{order:2;flex-shrink:0;gap:5px;margin:0}
+  #page-dashboard .card-chart .period-tab{padding:6px 11px;font-size:11.5px;font-weight:700;border-radius:999px;font-family:inherit;letter-spacing:0;background:transparent}
+  #page-dashboard .card-chart .period-tab.active{background:#8b5cf6;border-color:#8b5cf6;color:#fff;box-shadow:none}
+  #page-dashboard .card-chart .chart-legend{order:3;flex:1 1 100%;flex-wrap:wrap;overflow:visible;gap:6px 14px;font-size:12px;margin:2px 0 0}
+  #page-dashboard .card-chart .chart-legend .legend-item{font-weight:600;color:var(--text2);gap:7px}
+  #page-dashboard .card-chart .chart-legend .legend-item strong{color:var(--text2)!important;font-weight:600}
+  #page-dashboard .card-chart .chart-legend .legend-dot{width:18px;height:4px!important;border-radius:99px}
+  #page-dashboard .card-chart .chart-wrap{height:250px}
+  #page-dashboard .card-chart .dashboard-chart-watermark{opacity:.45}
+  #page-dashboard .dcm-hint{display:block;font-size:11.5px;line-height:1.45;color:var(--text3);margin-top:8px}
+}
+@media(max-width:360px){#page-dashboard .dcm-title{font-size:15px}#page-dashboard .card-chart .period-tab{padding:5px 9px;font-size:10.5px}}
+
 /* ── REC RATING BARS (Bareksa-style) ── */
 .rec-rating{
   display:inline-flex;gap:2px;align-items:center;
@@ -6138,6 +6158,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
       <!-- Chart -->
       <div class="card card-chart">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div class="dcm-title" id="dcmTitle" aria-hidden="true">IHSG · rebase 100</div>
           <div class="chart-legend">
             <div class="legend-item"><div class="legend-dot" style="background:#e11d48;height:4px"></div>IHSG</div>
             <div class="legend-item"><div class="legend-dot" style="background:#6d28d9;height:5px"></div><span id="legendStock">TLKM</span></div>
@@ -6157,6 +6178,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
                di atas x-axis Chart.js. -->
           <div class="dashboard-chart-watermark" aria-hidden="true">economstock terminal</div>
         </div>
+        <div class="dcm-hint">Sentuh grafik untuk melihat angka · titik kuning = target konsensus · garis hijau/merah = batas beli/jual</div>
       </div>
 
       <!-- Analyst Recommendations Table -->
@@ -24694,6 +24716,15 @@ function renderChart(code) {
   const ct = chartColors();
   const isDarkC  = document.documentElement.getAttribute('data-theme') === 'dark';
   const consColor = isDarkC ? '#fbbf24' : '#d97706';   // amber / gold
+  // Layar sempit (≤640px): gaya minimalis — garis lebih tipis, grid samar, label lebih sedikit.
+  const sm = window.matchMedia && window.matchMedia('(max-width:640px)').matches;
+  const dTitle = document.getElementById('dcmTitle');
+  if (dTitle) dTitle.textContent = code + ' vs IHSG · rebase 100';
+  if (!window.__dcmMq && window.matchMedia) {
+    window.__dcmMq = window.matchMedia('(max-width:640px)');
+    const onMq = () => { try { if (mainChartInstance && mainChartInstance.$code) renderChart(mainChartInstance.$code); } catch (_) {} };
+    if (window.__dcmMq.addEventListener) window.__dcmMq.addEventListener('change', onMq); else if (window.__dcmMq.addListener) window.__dcmMq.addListener(onMq);
+  }
   const buyColor  = isDarkC ? '#4ade80' : '#16a34a';   // hijau — batas beli
   const sellColor = isDarkC ? '#fb7185' : '#dc2626';   // merah — batas jual
 
@@ -24737,8 +24768,8 @@ function renderChart(code) {
     data: {
       labels,
       datasets: [
-        { label:'IHSG', data: ihsgNorm, borderColor:'#e11d48', borderWidth:2.2, pointRadius:0, tension:.3, fill:false },
-        { label: code, data: stockNorm, borderColor:'#6d28d9', borderWidth:2.8, pointRadius:0, tension:.3,
+        { label:'IHSG', data: ihsgNorm, borderColor: sm ? (isDarkC ? '#fb7185' : '#e11d48') : '#e11d48', borderWidth: sm ? 1.6 : 2.2, pointRadius:0, tension: sm ? .2 : .3, fill:false },
+        { label: code, data: stockNorm, borderColor: sm ? (isDarkC ? '#8b7cf6' : '#6d28d9') : '#6d28d9', borderWidth: sm ? 2 : 2.8, pointRadius:0, tension: sm ? .2 : .3,
           fill: true, backgroundColor: (ctx) => {
             const g = ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
             g.addColorStop(0,'rgba(109,40,217,0.22)'); g.addColorStop(1,'rgba(109,40,217,0)'); return g;
@@ -24749,11 +24780,11 @@ function renderChart(code) {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             return isDark ? 'rgba(244, 114, 182, 0.95)' : 'rgba(190, 24, 93, 0.85)';
           },
-          borderWidth: 3, borderDash:[8,5], pointRadius:0, fill:false, tension:0 },
+          borderWidth: sm ? 1.2 : 3, borderDash: sm ? [4,4] : [8,5], pointRadius:0, fill:false, tension:0 },
         { label:'Konsensus',
           data: labels.map((_, i) => i === lastI ? targetNorm : null),
           borderColor: consColor, backgroundColor: consColor,
-          pointRadius:      labels.map((_, i) => (i === lastI && targetNorm != null) ? 5 : 0),
+          pointRadius:      labels.map((_, i) => (i === lastI && targetNorm != null) ? (sm ? 4 : 5) : 0),
           pointHoverRadius: labels.map((_, i) => (i === lastI && targetNorm != null) ? 7 : 0),
           pointStyle:'circle', showLine:false, fill:false, order:0 },
         { label:'Batas Jual',
@@ -24807,7 +24838,11 @@ function renderChart(code) {
           }
         }
       },
-      scales:{
+      scales: sm ? {
+        x:{grid:{display:false},border:{display:false},ticks:{color:ct.ticks,font:{size:9.5,weight:'500'},maxTicksLimit:5,maxRotation:0,autoSkipPadding:12}},
+        y:{grid:{color: isDarkC ? 'rgba(255,255,255,.06)' : 'rgba(26,15,60,.06)'},border:{display:false},ticks:{color:ct.ticks,font:{size:9.5,weight:'500'},maxTicksLimit:6,padding:4},
+           title:{display:false}}
+      } : {
         x:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'},maxTicksLimit:12}},
         y:{grid:{color:ct.grid},ticks:{color:ct.ticks,font:{size:12,weight:'600'}},
            title:{display:true,text:'Index (Base=100)',color:ct.ticks,font:{size:12,weight:'700'}}}
