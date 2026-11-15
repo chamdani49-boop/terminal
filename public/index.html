@@ -5482,6 +5482,14 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
   .tr-ov-dist-bar{height:20px}
 }
 
+/* Rekomendasi Terbaru — tombol & popup tanggal sendiri (header panel) */
+.tr-ov-lat-anchor{display:inline-flex;align-items:center}
+.tr-ov-lat-presets{display:grid;grid-template-columns:1fr 1fr 1fr 1.5fr;gap:4px;margin-bottom:10px;padding:6px;border-radius:8px;background:var(--bg2);border:1px solid var(--border)}
+.tr-ov-lat-pre{padding:6px 4px;font-family:inherit;font-size:11px;font-weight:700;text-align:center;min-width:0;white-space:nowrap;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--text2);cursor:pointer;transition:background .12s,color .12s}
+.tr-ov-lat-pre:hover{background:var(--card);color:var(--text)}
+.tr-ov-lat-pre.active{background:var(--grad);color:#fff}
+@media(max-width:640px){.tr-ov-lat-anchor{flex:1 1 100%}.tr-ov-lat-anchor .tr-pf-datebtn{width:100%;justify-content:center}}
+
 /* ═══════════════════════════════════════════════════════════════════
    OVERVIEW — TAMPILAN BARU 5 KARTU (visual saja)
    Distribusi hasil · Aktivitas 24 jam · Sentimen analis ·
@@ -7206,6 +7214,41 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <option value="sl">SL (0)</option>
           <option value="expired">Expired (0)</option>
         </select>
+        <!-- Pilihan tanggal SENDIRI utk panel ini (terpisah dari kalender panel
+             "Saham Paling Banyak di Rekom"). Preset cepat + kalender rentang bebas.
+             Berlaku utk view Stock Pick maupun Winrate. -->
+        <div class="tr-pf-cal-anchor tr-ov-lat-anchor">
+          <button type="button" class="tr-pf-datebtn filtered" id="trOvLatDateBtn" aria-haspopup="dialog" aria-controls="trOvLatCalPopup" aria-expanded="false" title="Pilih tanggal rekomendasi">
+            <span class="tr-ico" aria-hidden="true">📅</span>
+            <span id="trOvLatDateBtnLbl">30 hari terakhir</span>
+            <span class="arr">▾</span>
+          </button>
+          <div class="tr-pf-cal-popup" id="trOvLatCalPopup" role="dialog" aria-modal="false" aria-label="Pilih tanggal Rekomendasi Terbaru" hidden>
+            <div class="tr-ov-lat-presets" id="trOvLatPresets" role="group" aria-label="Preset tanggal">
+              <button type="button" class="tr-ov-lat-pre" data-lat-preset="7d">7 hari</button>
+              <button type="button" class="tr-ov-lat-pre" data-lat-preset="30d">30 hari</button>
+              <button type="button" class="tr-ov-lat-pre" data-lat-preset="90d">90 hari</button>
+              <button type="button" class="tr-ov-lat-pre" data-lat-preset="mtd">Bulan ini</button>
+            </div>
+            <div class="cal-head">
+              <div class="cal-title" id="trOvLatCalTitle">—</div>
+              <div class="cal-nav">
+                <button type="button" class="cal-nav-btn" id="trOvLatCalPrev" aria-label="Bulan sebelumnya" title="Bulan sebelumnya">‹</button>
+                <button type="button" class="cal-nav-btn" id="trOvLatCalNext" aria-label="Bulan berikutnya" title="Bulan berikutnya">›</button>
+              </div>
+            </div>
+            <div class="cal-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div>
+            <div class="cal-grid" id="trOvLatCalGrid"></div>
+            <div class="cal-footer">
+              <div class="cal-legend"><span><span class="dot"></span>ada rekomendasi</span></div>
+              <div class="cal-range-info" id="trOvLatCalRangeInfo">Klik tgl awal, lalu tgl akhir untuk pilih rentang</div>
+              <div class="cal-actions">
+                <button type="button" class="cal-reset" id="trOvLatCalAll" title="Tampilkan semua tanggal"><span class="tr-ico" aria-hidden="true">🌐</span> Semua</button>
+                <button type="button" class="cal-ok" id="trOvLatCalOk" title="Terapkan rentang tgl yg dipilih" disabled>OK</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- Filter Basis × Target — hanya muncul saat view=firms -->
@@ -7223,8 +7266,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
     <!-- Filter status tabs — hanya muncul saat view=recent. Sinkron dgn
          style Analis firm listing (Semua/Aktif/Menunggu/TP1/TP2/SL/Expired).
-         Rentang tanggal ikut kolom "Saham Paling Aktif" (default 30 hari
-         terakhir sesuai request user). -->
+         Rentang tanggal: pilihan sendiri lewat tombol 📅 di header panel
+         (default 30 hari terakhir). -->
     <div class="tr-ov-latest-tabs" id="trOvLatestTabs" role="tablist" aria-label="Filter status rekomendasi">
       <button type="button" class="tr-ov-latest-tab active" data-status="all" role="tab" aria-selected="true">Semua (<span id="trOvLatestNAll">0</span>)</button>
       <button type="button" class="tr-ov-latest-tab" data-status="active" role="tab" aria-selected="false">Aktif (<span id="trOvLatestNAct">0</span>)</button>
@@ -15967,8 +16010,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // State kalender filter tanggal — dipakai bersama updateOvTopTickers &
   // renderOvTickCal (defined below). null = tidak difilter (semua tgl).
   // Default filter: 30 hari terakhir (dari today ke belakang). User bisa
-  // ubah via kalender di header panel "Saham Paling Aktif". Filter ini
-  // JUGA berlaku untuk panel "Rekomendasi Terbaru" — biar sinkron.
+  // ubah via kalender di header panel "Saham Paling Aktif". Hanya utk panel
+  // itu; "Rekomendasi Terbaru" punya pilihan tanggal sendiri (_trOvLatDate).
   function _tovInit30dFilter(){
     var end = new Date();
     var start = new Date(end.getTime() - 30 * 86400 * 1000);
@@ -16413,8 +16456,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
       _tovTickCalPending = null;
       _tovTickCalUpdateButton();
       updateOvTopTickers();
-      // Rekomendasi Terbaru ikut refresh filter tanggal
-      if (typeof updateOvLatest === 'function') updateOvLatest();
       _tovTickCalClose();
       return;
     }
@@ -16426,8 +16467,6 @@ body.is-mobile-device.force-desktop .pl-col-main{
         _tovTickDateFilter = { start: start, end: end };
         _tovTickCalUpdateButton();
         updateOvTopTickers();
-        // Rekomendasi Terbaru ikut refresh filter tanggal
-        if (typeof updateOvLatest === 'function') updateOvLatest();
       }
       _tovTickCalClose();
       return;
@@ -16444,6 +16483,162 @@ body.is-mobile-device.force-desktop .pl-col-main{
   var _trOvLatestView = 'recent';      // 'recent' | 'firms'
   var _trOvLatestData = null;          // cache utk re-render antar interaksi
   var _trOvLatestStatusTab = 'all';    // status filter: 'all' | 'active' | 'pending' | 'tp' | 'sl' | 'expired'
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Rekomendasi Terbaru — PILIHAN TANGGAL SENDIRI
+  // Terpisah dari kalender panel "Saham Paling Banyak di Rekom". Default 30
+  // hari terakhir (sama seperti sebelumnya). Preset: 7 / 30 / 90 hari, Bulan
+  // ini, Semua; atau rentang bebas di kalender (tgl awal → tgl akhir → OK).
+  // Berlaku utk view Stock Pick dan Winrate. Reuse CSS .tr-pf-cal-popup / .cal-*.
+  // ═══════════════════════════════════════════════════════════════════
+  var _trOvLatDate = _tovInit30dFilter();   // { start, end } | null (null = semua tanggal)
+  var _trOvLatPreset = '30d';               // '7d' | '30d' | '90d' | 'mtd' | 'all' | 'custom'
+  var _trOvLatCalPending = null;            // { start, end } selama memilih di kalender
+  var _trOvLatCalYM = null;                 // { year, month } bulan yg tampil
+  var _trOvLatDaySet = null;                // Set<'YYYY-MM-DD'> tgl yg punya rekomendasi
+  var _trOvLatDayCount = null;              // { 'YYYY-MM-DD': jumlah }
+  var _LAT_MON = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  var _LAT_MON_FULL = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var _LAT_PRESET_NAME = { '7d':'7 hari terakhir', '30d':'30 hari terakhir', '90d':'90 hari terakhir', mtd:'Bulan ini', all:'Semua tanggal' };
+
+  function _latPad(n){ return String(n).padStart(2,'0'); }
+  function _latIso(d){ return d.getUTCFullYear() + '-' + _latPad(d.getUTCMonth()+1) + '-' + _latPad(d.getUTCDate()); }
+  function _latFmt(iso){ var p = iso.split('-'); return p[2] + ' ' + _LAT_MON[+p[1]-1] + " '" + p[0].slice(-2); }
+  function _latPresetRange(k){
+    var now = new Date(), n = { '7d':7, '30d':30, '90d':90 }[k];
+    if(n) return { start: _latIso(new Date(now.getTime() - n * 86400000)), end: _latIso(now) };
+    if(k === 'mtd') return { start: now.getUTCFullYear() + '-' + _latPad(now.getUTCMonth()+1) + '-01', end: _latIso(now) };
+    return null;   // 'all'
+  }
+  function _latBuildDayIndex(){
+    _trOvLatDaySet = new Set(); _trOvLatDayCount = {};
+    var d0 = _trOvLatestData || {};
+    var add = function(r){
+      var d = String(r.openDate || '').slice(0,10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+      _trOvLatDaySet.add(d); _trOvLatDayCount[d] = (_trOvLatDayCount[d]||0) + 1;
+    };
+    (d0.openList||[]).forEach(add); (d0.historyList||[]).forEach(add);
+    (d0.pendingList||[]).forEach(add); (d0.missedList||[]).forEach(add);
+  }
+  function _trOvLatUpdateBtn(){
+    var lbl = $('trOvLatDateBtnLbl'), btn = $('trOvLatDateBtn'); if(!lbl || !btn) return;
+    if(_trOvLatPreset !== 'custom' && _LAT_PRESET_NAME[_trOvLatPreset]) lbl.textContent = _LAT_PRESET_NAME[_trOvLatPreset];
+    else if(_trOvLatDate) lbl.textContent = _trOvLatDate.start === _trOvLatDate.end ? _latFmt(_trOvLatDate.start) : (_latFmt(_trOvLatDate.start) + ' → ' + _latFmt(_trOvLatDate.end));
+    else lbl.textContent = _LAT_PRESET_NAME.all;
+    btn.classList.toggle('filtered', !!_trOvLatDate);
+    var pre = document.querySelectorAll('#trOvLatPresets .tr-ov-lat-pre');
+    for(var i = 0; i < pre.length; i++) pre[i].classList.toggle('active', pre[i].getAttribute('data-lat-preset') === _trOvLatPreset);
+  }
+  function _trOvLatApply(preset, range){
+    _trOvLatPreset = preset; _trOvLatDate = range;
+    _trOvLatUpdateBtn();
+    if(typeof updateOvLatest === 'function') updateOvLatest();
+  }
+  function _trOvLatCalOpen(){
+    var pop = $('trOvLatCalPopup'); if(!pop) return;
+    _latBuildDayIndex();
+    _trOvLatCalPending = _trOvLatDate ? { start: _trOvLatDate.start, end: _trOvLatDate.end } : null;
+    var ref = _trOvLatDate ? _trOvLatDate.end : (_trOvLatDaySet.size ? Array.from(_trOvLatDaySet).sort().pop() : _latIso(new Date()));
+    var p = ref.split('-'); _trOvLatCalYM = { year: +p[0], month: +p[1] - 1 };
+    pop.hidden = false;
+    var btn = $('trOvLatDateBtn'); if(btn) btn.setAttribute('aria-expanded', 'true');
+    _trOvLatUpdateBtn();
+    _trOvLatCalRender();
+  }
+  function _trOvLatCalClose(){
+    var pop = $('trOvLatCalPopup'); if(!pop) return;
+    pop.hidden = true;
+    var btn = $('trOvLatDateBtn'); if(btn) btn.setAttribute('aria-expanded', 'false');
+    _trOvLatCalPending = null;
+  }
+  function _trOvLatCalRender(){
+    var grid = $('trOvLatCalGrid'); if(!grid || !_trOvLatCalYM) return;
+    var Y = _trOvLatCalYM.year, M = _trOvLatCalYM.month;
+    var title = $('trOvLatCalTitle'); if(title) title.textContent = _LAT_MON_FULL[M] + ' ' + Y;
+    var rs = null, re = null;
+    if(_trOvLatCalPending && _trOvLatCalPending.start){ rs = _trOvLatCalPending.start; re = _trOvLatCalPending.end || null; }
+    else if(_trOvLatDate){ rs = _trOvLatDate.start; re = _trOvLatDate.end; }
+    var minStr = null, maxStr = null;
+    if(_trOvLatDaySet && _trOvLatDaySet.size){ var arr = Array.from(_trOvLatDaySet).sort(); minStr = arr[0]; maxStr = arr[arr.length-1]; }
+    var todayIso = _latIso(new Date());
+    var firstDow = new Date(Date.UTC(Y, M, 1)).getUTCDay();
+    var dim = new Date(Date.UTC(Y, M + 1, 0)).getUTCDate();
+    var prevDim = new Date(Date.UTC(Y, M, 0)).getUTCDate();
+    var cells = [], i, d;
+    for(i = firstDow - 1; i >= 0; i--) cells.push({ y: M === 0 ? Y - 1 : Y, m: M === 0 ? 11 : M - 1, d: prevDim - i, other: true });
+    for(d = 1; d <= dim; d++) cells.push({ y: Y, m: M, d: d, other: false });
+    var need = 42 - cells.length;
+    for(i = 1; i <= need; i++) cells.push({ y: M === 11 ? Y + 1 : Y, m: M === 11 ? 0 : M + 1, d: i, other: true });
+    grid.innerHTML = cells.map(function(c){
+      var iso = c.y + '-' + _latPad(c.m + 1) + '-' + _latPad(c.d), cls = ['cal-day'];
+      if(c.other) cls.push('other-month');
+      if(iso === todayIso) cls.push('today');
+      if(_trOvLatDaySet && _trOvLatDaySet.has(iso)) cls.push('has-recs');
+      if(rs && re){
+        if(iso === rs) cls.push('range-start');
+        if(iso === re) cls.push('range-end');
+        if(iso > rs && iso < re) cls.push('in-range');
+      } else if(rs && !re && iso === rs) cls.push('selected');
+      var ttl = _trOvLatDayCount && _trOvLatDayCount[iso] ? (' title="' + _trOvLatDayCount[iso] + ' rekomendasi"') : '';
+      return '<button type="button" class="' + cls.join(' ') + '" data-iso="' + iso + '"' + (c.other ? ' disabled' : '') + ttl + '>' + c.d + '</button>';
+    }).join('');
+    var prevBtn = $('trOvLatCalPrev'), nextBtn = $('trOvLatCalNext');
+    if(prevBtn){
+      var canPrev = true;
+      if(minStr){ var a = minStr.split('-'); canPrev = Y > +a[0] || (Y === +a[0] && M > +a[1] - 1); }
+      prevBtn.disabled = !canPrev;
+    }
+    if(nextBtn){
+      var canNext = true;
+      if(maxStr){ var b = maxStr.split('-'); canNext = Y < +b[0] || (Y === +b[0] && M < +b[1] - 1); }
+      nextBtn.disabled = !canNext;
+    }
+    var info = $('trOvLatCalRangeInfo');
+    if(info){
+      if(!_trOvLatCalPending || !_trOvLatCalPending.start) info.innerHTML = _trOvLatDate
+        ? ('Aktif: <b>' + _trOvLatDate.start + (_trOvLatDate.end !== _trOvLatDate.start ? ' → ' + _trOvLatDate.end : '') + '</b>. Klik tgl untuk ubah.')
+        : 'Menampilkan semua tanggal. Klik tgl awal, lalu tgl akhir.';
+      else if(!_trOvLatCalPending.end) info.innerHTML = 'Awal: <b>' + _trOvLatCalPending.start + '</b> · klik tgl akhir (atau OK utk 1 hari)';
+      else info.innerHTML = 'Dari <b>' + _trOvLatCalPending.start + '</b> → <b>' + _trOvLatCalPending.end + '</b>';
+    }
+    var ok = $('trOvLatCalOk');
+    if(ok){ var can = !!(_trOvLatCalPending && _trOvLatCalPending.start); ok.disabled = !can; ok.classList.toggle('active-ok', can); }
+    var all = $('trOvLatCalAll'); if(all) all.classList.toggle('active-reset', _trOvLatDate == null);
+  }
+  document.addEventListener('click', function(e){
+    var t = e.target; if(!t || !t.closest) return;
+    var pop = $('trOvLatCalPopup'); if(!pop) return;
+    if(t.closest('#trOvLatDateBtn')){ if(pop.hidden) _trOvLatCalOpen(); else _trOvLatCalClose(); return; }
+    if(pop.hidden) return;
+    if(!t.closest('#trOvLatCalPopup')){ _trOvLatCalClose(); return; }   // klik di luar popup
+    var pre = t.closest('.tr-ov-lat-pre');
+    if(pre){ var k = pre.getAttribute('data-lat-preset'); _trOvLatApply(k, _latPresetRange(k)); _trOvLatCalClose(); return; }
+    if(t.closest('#trOvLatCalPrev')){ if(_trOvLatCalYM){ _trOvLatCalYM.month--; if(_trOvLatCalYM.month < 0){ _trOvLatCalYM.month = 11; _trOvLatCalYM.year--; } _trOvLatCalRender(); } return; }
+    if(t.closest('#trOvLatCalNext')){ if(_trOvLatCalYM){ _trOvLatCalYM.month++; if(_trOvLatCalYM.month > 11){ _trOvLatCalYM.month = 0; _trOvLatCalYM.year++; } _trOvLatCalRender(); } return; }
+    var day = t.closest('#trOvLatCalGrid .cal-day');
+    if(day && !day.disabled){
+      var iso = day.getAttribute('data-iso'); if(!iso) return;
+      var pd = _trOvLatCalPending;
+      if(!pd || !pd.start || pd.end) _trOvLatCalPending = { start: iso, end: null };
+      else if(iso === pd.start) _trOvLatCalPending = { start: iso, end: null };
+      else _trOvLatCalPending = iso < pd.start ? { start: iso, end: pd.start } : { start: pd.start, end: iso };
+      _trOvLatCalRender();
+      return;
+    }
+    if(t.closest('#trOvLatCalAll')){ _trOvLatApply('all', null); _trOvLatCalClose(); return; }
+    if(t.closest('#trOvLatCalOk')){
+      if(_trOvLatCalPending && _trOvLatCalPending.start){
+        _trOvLatApply('custom', { start: _trOvLatCalPending.start, end: _trOvLatCalPending.end || _trOvLatCalPending.start });
+      }
+      _trOvLatCalClose();
+      return;
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    var pop = $('trOvLatCalPopup'); if(pop && !pop.hidden) _trOvLatCalClose();
+  });
 
   function firmShortLbl(name){
     if(!name) return '—';
@@ -16511,8 +16706,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   var _fmtNRow = function(v){ return (v==null||!Number.isFinite(+v)) ? '—' : Number(v).toLocaleString('id-ID'); };
 
-  // View: Rekomendasi Terbaru — filter by tanggal (mengikuti filter di
-  // panel "Saham Paling Aktif", default 30 hari terakhir) + filter by
+  // View: Rekomendasi Terbaru — filter by tanggal (pilihan sendiri panel ini,
+  // default 30 hari terakhir) + filter by
   // status tab (Semua / Aktif / Menunggu / TP / SL / Expired).
   function renderLatestRecent(el, data){
     var pool = [];
@@ -16521,13 +16716,13 @@ body.is-mobile-device.force-desktop .pl-col-main{
     (data.pendingList||[]).forEach(function(r){ pool.push({_b:'pending', r:r}); });
     (data.missedList||[]).forEach(function(r){ pool.push({_b:'missed',  r:r}); });
 
-    // Filter 1: rentang tanggal — sinkron dgn _tovTickDateFilter (panel
-    // "Saham Paling Aktif"). Kalau null (user reset ke All Tanggal),
-    // include semua.
-    if (_tovTickDateFilter) {
+    // Filter 1: rentang tanggal — pilihan SENDIRI panel ini (_trOvLatDate,
+    // tombol 📅 di header panel), tidak lagi ikut kalender panel "Saham
+    // Paling Banyak di Rekom". Kalau null ("Semua"), include semua.
+    if (_trOvLatDate) {
       pool = pool.filter(function(x){
         var d = String(x.r.openDate || '').slice(0,10);
-        return d && d >= _tovTickDateFilter.start && d <= _tovTickDateFilter.end;
+        return d && d >= _trOvLatDate.start && d <= _trOvLatDate.end;
       });
     }
     pool.sort(function(a,b){ return String(b.r.openDate||'').localeCompare(String(a.r.openDate||'')); });
@@ -16583,12 +16778,10 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var cnt = $('trOvLatestCount');
     if(cnt){
       var subParts = [pool.length + ' rekomendasi'];
-      if (_tovTickDateFilter) {
-        var monthShort3 = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
-        var fmt = function(iso){ var p = iso.split('-'); return p[2] + ' ' + monthShort3[+p[1]-1] + " '" + p[0].slice(-2); };
-        var rangeTxt = (_tovTickDateFilter.start === _tovTickDateFilter.end)
-          ? fmt(_tovTickDateFilter.start)
-          : (fmt(_tovTickDateFilter.start) + ' → ' + fmt(_tovTickDateFilter.end));
+      if (_trOvLatDate) {
+        var rangeTxt = (_trOvLatDate.start === _trOvLatDate.end)
+          ? _latFmt(_trOvLatDate.start)
+          : (_latFmt(_trOvLatDate.start) + ' → ' + _latFmt(_trOvLatDate.end));
         subParts.push(rangeTxt);
       } else {
         subParts.push('semua tanggal');
@@ -16670,8 +16863,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function renderLatestFirms(el, data){
     var firmsRaw = Object.values(data.byFirm || {});
     var firmsStats = firmsRaw
-      .map(function(f){ return { firm: f, stats: computeFirmStats(f, _ovTarget, _tovTickDateFilter),
-                                 cum: computeFirmCumulative(f, _ovTarget, _tovTickDateFilter) }; })
+      .map(function(f){ return { firm: f, stats: computeFirmStats(f, _ovTarget, _trOvLatDate),
+                                 cum: computeFirmCumulative(f, _ovTarget, _trOvLatDate) }; })
       .filter(function(x){ return x.stats.trades >= MIN_TRADES_FOR_RANK; });
 
     var cnt = $('trOvLatestCount');
