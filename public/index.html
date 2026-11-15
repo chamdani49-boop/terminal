@@ -5540,7 +5540,7 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 #tr-view-main .tr-ov-donut{position:relative;width:132px;flex:none}
 #tr-view-main .tr-ov-donut svg{display:block;width:100%;height:auto}
 #tr-view-main .tr-ov-donut-track{stroke:var(--ovx-tile)}
-#tr-view-main .tr-ov-donut-seg{transition:stroke-dasharray .5s ease}
+#tr-view-main .tr-ov-donut-seg{transition:stroke-dasharray .5s ease,stroke .25s ease}
 #tr-view-main .tr-ov-donut-seg.tp1{stroke:var(--ovx-mint)}
 #tr-view-main .tr-ov-donut-seg.tp2{stroke:var(--ovx-sky)}
 #tr-view-main .tr-ov-donut-seg.sl{stroke:var(--ovx-co)}
@@ -5572,7 +5572,10 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 #tr-view-main .tr-ov-sent-body{justify-content:center !important;gap:6px !important}
 #tr-view-main .tr-ov-baro-wrap{width:100%;max-width:270px;margin:0 auto}
 #tr-view-main .tr-ov-baro-svg{max-width:none;width:100%}
+#tr-view-main .tr-ov-donut-track,
+#tr-view-main .tr-ov-baro-track{transition:stroke .25s ease}
 #tr-view-main .tr-ov-baro-track{stroke:var(--ovx-tile)}
+#tr-view-main #trOvGaugeGrad stop{transition:stop-color .25s ease}
 #tr-view-main .tr-ov-baro-arc{transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1),opacity .2s}
 #tr-view-main .tr-ov-baro-center{bottom:2%}
 #tr-view-main .tr-ov-baro-val{font-family:var(--ovx-head);font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:1}
@@ -16775,8 +16778,11 @@ body.is-mobile-device.force-desktop .pl-col-main{
   });
 
   // ── Master render ──
+  // Data terakhir yg dirender — dipakai utk menggambar ulang grafik saat tema berganti.
+  var _trOvLastData = null;
   function renderRingkasan(data){
     if (!data || data.pending) return; // pertahankan dummy kalau pending
+    _trOvLastData = data;
     try { updateKpi(data);            } catch(e) { console.warn('[tracker.overview] KPI:', e && e.message); }
     try { updateChart(data);          } catch(e) { console.warn('[tracker.overview] Chart:', e && e.message); }
     try { updateOvSubtitle(data);     } catch(e) { console.warn('[tracker.overview] Subtitle:', e && e.message); }
@@ -16792,6 +16798,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // updateOvRankings() DIHAPUS — sudah tergabung di view Per Firm dari
     // updateOvLatest. Filter Basis × Target dipindah ke panel Rekomendasi Terbaru.
   }
+
+  // ── Ganti tema (terang ↔ gelap) ────────────────────────────────────
+  // Grafik Chart.js membaca warna CSS SAAT DIBUAT, jadi tidak ikut berubah
+  // sendiri ketika tema berganti. Gambar ulang dua grafik Overview dgn warna
+  // tema baru. Kartu donut/gauge/tile murni CSS → otomatis ikut.
+  try {
+    new MutationObserver(function(){
+      if(!_trOvLastData) return;
+      try { updateOvTrend(_trOvLastData); } catch(e) { console.warn('[tracker.overview] theme Trend:', e && e.message); }
+      try { updateOvTopTickers();         } catch(e) { console.warn('[tracker.overview] theme TopTickers:', e && e.message); }
+    }).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+  } catch(_){}
 
   // ── Klik kartu firm di papan peringkat lama → switch ke Tab Performa
   //     (backward-compat: kalau element #trLb re-inject di future, tetap
