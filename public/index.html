@@ -95,7 +95,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
 <style>
 /* ─────────────────────────────────────────────────────────────────
    Theme tokens — mirror Rupiah Monitor (app/globals.css).
@@ -5483,6 +5483,137 @@ html.tracker-loading #tr-view-main .tr-ov-latest-wrap{opacity:0}
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   OVERVIEW — TAMPILAN BARU 5 KARTU (visual saja)
+   Distribusi hasil · Aktivitas 24 jam · Sentimen analis ·
+   Rekomendasi per hari · Saham paling banyak direkom.
+   Semua selector di-scope ke #tr-view-main (tab Overview) dan ditaruh
+   SETELAH aturan lama supaya menang di cascade. Tab lain tidak tersentuh.
+   Warna mengikuti tema aplikasi (terang/gelap).
+   ═══════════════════════════════════════════════════════════════════ */
+#tr-view-main .tr-ov-highlights,
+#tr-view-main .tr-ov-grid-2{
+  --ovx-mint:#0f9d84;--ovx-co:#e0405a;--ovx-sky:#2f8fd8;--ovx-am:#d9a21b;
+  --ovx-tile:var(--bg2);
+  --ovx-head:'Bricolage Grotesque','Plus Jakarta Sans',system-ui,sans-serif;
+}
+[data-theme="dark"] #tr-view-main .tr-ov-highlights,
+[data-theme="dark"] #tr-view-main .tr-ov-grid-2{
+  --ovx-mint:#4ee0c1;--ovx-co:#ff6b81;--ovx-sky:#5ec8ff;--ovx-am:#fbbf24;
+  --ovx-tile:var(--bg3);
+}
+
+/* Tata letak: kartu atas 1,2 : 1 : 1 — baris bawah 1,4 : 1 */
+#tr-view-main .tr-ov-highlights{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);gap:16px}
+#tr-view-main .tr-ov-grid-2{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px}
+@media(max-width:900px){
+  #tr-view-main .tr-ov-highlights,
+  #tr-view-main .tr-ov-grid-2{grid-template-columns:minmax(0,1fr);gap:12px}
+}
+
+/* Kartu: sudut lebih bulat, tanpa garis aksen atas */
+#tr-view-main .tr-ov-hl-card,
+#tr-view-main .tr-ov-grid-2 .tr-ov-panel{border-radius:18px;padding:16px;gap:12px;min-width:0}
+#tr-view-main .tr-ov-hl-card::before,
+#tr-view-main .tr-ov-grid-2 .tr-ov-panel::before{display:none}
+#tr-view-main .tr-ov-hl-card .tr-ov-hl-foot{display:none}
+#tr-view-main .tr-ov-hl-body{min-height:0;justify-content:center}
+
+/* Judul + subjudul */
+#tr-view-main .tr-ov-hl-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+#tr-view-main .tr-ov-hl-h,
+#tr-view-main .tr-ov-panel-tt .tr-ov-panel-title{
+  font-family:var(--ovx-head);font-size:17px;font-weight:600;letter-spacing:-.02em;
+  text-transform:none;line-height:1.25;color:var(--text);gap:0
+}
+#tr-view-main .tr-ov-hl-h .tr-ico,
+#tr-view-main .tr-ov-panel-tt .tr-ico{display:none}
+#tr-view-main .tr-ov-hl-sub,
+#tr-view-main .tr-ov-panel-tt .tr-ov-panel-sub{
+  display:block;font-family:inherit;font-size:12.5px;font-weight:500;letter-spacing:0;
+  text-transform:none;color:var(--text2);line-height:1.4;margin-top:2px
+}
+#tr-view-main .tr-ov-panel-tt{display:flex;flex-direction:column;min-width:0}
+#tr-view-main .tr-ov-grid-2 .tr-ov-panel-hd{align-items:flex-start}
+
+/* 1 · Distribusi hasil — donut + legend */
+#tr-view-main .tr-ov-dist-content{flex-direction:row;align-items:center;gap:18px}
+#tr-view-main .tr-ov-donut{position:relative;width:132px;flex:none}
+#tr-view-main .tr-ov-donut svg{display:block;width:100%;height:auto}
+#tr-view-main .tr-ov-donut-track{stroke:var(--ovx-tile)}
+#tr-view-main .tr-ov-donut-seg{transition:stroke-dasharray .5s ease}
+#tr-view-main .tr-ov-donut-seg.tp1{stroke:var(--ovx-mint)}
+#tr-view-main .tr-ov-donut-seg.tp2{stroke:var(--ovx-sky)}
+#tr-view-main .tr-ov-donut-seg.sl{stroke:var(--ovx-co)}
+#tr-view-main .tr-ov-donut-seg.exp{stroke:var(--ovx-am)}
+#tr-view-main .tr-ov-donut-c{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;pointer-events:none;text-align:center
+}
+#tr-view-main .tr-ov-donut-c b{font-family:var(--ovx-head);font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1;color:var(--text)}
+#tr-view-main .tr-ov-donut-c small{font-size:11px;color:var(--text2);margin-top:3px}
+#tr-view-main .tr-ov-dist-lgd{display:grid;gap:8px;font-family:inherit;font-size:13px;letter-spacing:0;color:var(--text2)}
+#tr-view-main .tr-ov-lg{display:flex;align-items:center;gap:8px;white-space:nowrap}
+#tr-view-main .tr-ov-lg b{color:var(--text);font-weight:700}
+#tr-view-main .tr-ov-lg i{width:10px;height:10px;border-radius:3px;flex:none}
+#tr-view-main .tr-ov-lg i.tp1{background:var(--ovx-mint)}
+#tr-view-main .tr-ov-lg i.tp2{background:var(--ovx-sky)}
+#tr-view-main .tr-ov-lg i.sl{background:var(--ovx-co)}
+#tr-view-main .tr-ov-lg i.exp{background:var(--ovx-am)}
+
+/* 2 · Aktivitas 24 jam — tiga tile angka */
+#tr-view-main .tr-ov-act-grid{gap:8px}
+#tr-view-main .tr-ov-act-item{background:var(--ovx-tile);border:0;border-radius:14px;padding:14px 6px}
+#tr-view-main .tr-ov-act-v{font-family:var(--ovx-head);font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.05}
+#tr-view-main #trOvActWin{color:var(--ovx-mint)}
+#tr-view-main #trOvActLoss{color:var(--ovx-co)}
+#tr-view-main .tr-ov-act-k{font-family:inherit;font-size:11.5px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--text2);margin-top:4px}
+
+/* 3 · Sentimen analis — busur gradien */
+#tr-view-main .tr-ov-sent-body{justify-content:center !important;gap:6px !important}
+#tr-view-main .tr-ov-baro-wrap{width:100%;max-width:270px;margin:0 auto}
+#tr-view-main .tr-ov-baro-svg{max-width:none;width:100%}
+#tr-view-main .tr-ov-baro-track{stroke:var(--ovx-tile)}
+#tr-view-main .tr-ov-baro-arc{transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1),opacity .2s}
+#tr-view-main .tr-ov-baro-center{bottom:2%}
+#tr-view-main .tr-ov-baro-val{font-family:var(--ovx-head);font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:1}
+#tr-view-main .tr-ov-baro-lbl{display:none}
+#tr-view-main .tr-ov-baro-legend{font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:0;margin-top:0;padding:0 2px}
+#tr-view-main .tr-ov-baro-legend .dot{display:none}
+#tr-view-main .tr-ov-baro-legend .dn{color:var(--ovx-co)}
+#tr-view-main .tr-ov-baro-legend .up{color:var(--ovx-mint)}
+#tr-view-main .tr-ov-hl-badge{
+  margin-left:0;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:0;
+  text-transform:lowercase;padding:3px 12px;border-radius:999px;border-color:transparent;flex-shrink:0
+}
+#tr-view-main .tr-ov-hl-badge::first-letter{text-transform:uppercase}
+#tr-view-main .tr-ov-hl-badge.bull{background:var(--green-bg);background:color-mix(in srgb,var(--ovx-mint) 18%,transparent);color:var(--ovx-mint);border-color:transparent}
+#tr-view-main .tr-ov-hl-badge.bear{background:var(--red-bg);background:color-mix(in srgb,var(--ovx-co) 18%,transparent);color:var(--ovx-co);border-color:transparent}
+#tr-view-main .tr-ov-hl-badge.neu{background:var(--yellow-bg);background:color-mix(in srgb,var(--ovx-am) 18%,transparent);color:var(--ovx-am);border-color:transparent}
+
+/* 4 + 5 · Grafik: area lebih lega supaya 10 baris ticker tidak sempit */
+#tr-view-main .tr-ov-grid-2 .tr-ov-chart-h180{height:240px}
+
+@media(max-width:640px){
+  #tr-view-main .tr-ov-hl-card,
+  #tr-view-main .tr-ov-grid-2 .tr-ov-panel{padding:14px;border-radius:16px}
+  #tr-view-main .tr-ov-hl-h,
+  #tr-view-main .tr-ov-panel-tt .tr-ov-panel-title{font-size:16px}
+  #tr-view-main .tr-ov-dist-content{gap:14px}
+  #tr-view-main .tr-ov-donut{width:112px}
+  #tr-view-main .tr-ov-donut-c b{font-size:20px}
+  #tr-view-main .tr-ov-act-v{font-size:26px}
+  #tr-view-main .tr-ov-baro-wrap{max-width:240px}
+  #tr-view-main .tr-ov-baro-val{font-size:36px}
+  #tr-view-main .tr-ov-baro-legend{font-size:12px}
+  #tr-view-main .tr-ov-hl-badge{font-size:11.5px;padding:2px 10px}
+  #tr-view-main .tr-ov-grid-2 .tr-ov-chart-h180{height:220px}
+}
+@media(prefers-reduced-motion:reduce){
+  #tr-view-main .tr-ov-baro-arc,
+  #tr-view-main .tr-ov-donut-seg{transition:none}
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    MOBILE POLISH (≤640px) — khusus tab LIVE & PERFORMA di menu Tracker.
    Tujuan: bikin tampilan HP lebih minimalis & padat tanpa mengubah versi
    desktop. Semua selector di-prefix `#tr-view-live` atau `#tr-view-perf`
@@ -6909,16 +7040,18 @@ body.is-mobile-device.force-desktop .pl-col-main{
        yang terbaik untuk kriteria yang aku mau'. -->
   <div class="tr-ov-highlights">
     <div class="tr-ov-hl-card" data-goto="perf" role="button" tabindex="0" aria-label="Buka tab Performa">
-      <div class="tr-ov-hl-h"><span class="tr-ico" aria-hidden="true">📊</span> Distribusi Hasil</div>
+      <div class="tr-ov-hl-top">
+        <div>
+          <div class="tr-ov-hl-h"><span class="tr-ico" aria-hidden="true">📊</span> Distribusi hasil</div>
+          <div class="tr-ov-hl-sub" id="trOvDistSub">Menunggu data…</div>
+        </div>
+      </div>
       <div class="tr-ov-hl-body">
-        <!-- Donut/pie chart dihapus per user request — cukup stacked bar
-             + text legend (TP1/TP2/SL/Expired counts + total). -->
+        <!-- Donut SVG (segmen digambar oleh updateOvDistribution) + legend. -->
         <div class="tr-ov-dist-content">
-          <div class="tr-ov-dist-bar" id="trOvDistBar" title="TP1 · TP2 · SL · Expired">
-            <div class="tr-ov-dist-seg tp1" style="width:0%"></div>
-            <div class="tr-ov-dist-seg tp2" style="width:0%"></div>
-            <div class="tr-ov-dist-seg sl"  style="width:0%"></div>
-            <div class="tr-ov-dist-seg exp" style="width:0%"></div>
+          <div class="tr-ov-donut">
+            <svg viewBox="0 0 120 120" id="trOvDonut" aria-hidden="true"></svg>
+            <div class="tr-ov-donut-c"><b id="trOvDonutPct">—</b><small>menang</small></div>
           </div>
           <div class="tr-ov-dist-lgd" id="trOvDistLgd">Menunggu data…</div>
         </div>
@@ -6927,20 +7060,25 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
 
     <div class="tr-ov-hl-card" data-goto="live" role="button" tabindex="0" aria-label="Buka tab Live">
-      <div class="tr-ov-hl-h"><span class="tr-ico" aria-hidden="true">⚡</span> Aktivitas 24 Jam</div>
+      <div class="tr-ov-hl-top">
+        <div>
+          <div class="tr-ov-hl-h"><span class="tr-ico" aria-hidden="true">⚡</span> Aktivitas 24 jam</div>
+          <div class="tr-ov-hl-sub" id="trOvActSub">Menunggu data…</div>
+        </div>
+      </div>
       <div class="tr-ov-hl-body">
         <div class="tr-ov-act-grid">
           <div class="tr-ov-act-item">
             <div class="tr-ov-act-v" id="trOvActNew">—</div>
-            <div class="tr-ov-act-k">baru rilis</div>
+            <div class="tr-ov-act-k">Baru rilis</div>
           </div>
           <div class="tr-ov-act-item">
             <div class="tr-ov-act-v" id="trOvActWin">—</div>
-            <div class="tr-ov-act-k">hit TP</div>
+            <div class="tr-ov-act-k">Hit TP</div>
           </div>
           <div class="tr-ov-act-item">
             <div class="tr-ov-act-v" id="trOvActLoss">—</div>
-            <div class="tr-ov-act-k">hit SL</div>
+            <div class="tr-ov-act-k">Hit SL</div>
           </div>
         </div>
       </div>
@@ -6948,45 +7086,38 @@ body.is-mobile-device.force-desktop .pl-col-main{
     </div>
 
     <div class="tr-ov-hl-card" data-goto="live" role="button" tabindex="0" aria-label="Buka sentimen di tab Live">
-      <!-- Barometer sentimen — visual gauge SVG (adopsi pattern donut/center-value
-           dari Consensus overview). 3 zone: red (bear 0-40%) → yellow (neutral
-           40-60%) → green (bull 60-100%). Needle rotate berdasarkan bullish%.
-           Badge di header ala .ov-card-badge dari Consensus (BULL/BEAR/NEUTRAL). -->
-      <div class="tr-ov-hl-h">
-        <span class="tr-ico" aria-hidden="true">🌐</span> Sentimen Analis
+      <!-- Barometer sentimen: busur gradien (merah → kuning → hijau) yang terisi
+           sebesar bullish%. Badge level (BULL/BEAR/NEUTRAL) di kanan atas. -->
+      <div class="tr-ov-hl-top">
+        <div>
+          <div class="tr-ov-hl-h"><span class="tr-ico" aria-hidden="true">🌐</span> Sentimen analis</div>
+          <div class="tr-ov-hl-sub" id="trOvSentSample">— trade dianalisis</div>
+        </div>
         <span class="tr-ov-hl-badge" id="trOvSentBadge">—</span>
       </div>
       <div class="tr-ov-hl-body tr-ov-sent-body">
         <div class="tr-ov-baro-wrap">
-          <svg class="tr-ov-baro-svg" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <!-- Background track (semi-circle) — abu-abu tipis di bawah zone berwarna. -->
-            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--bg3)" stroke-width="16" stroke-linecap="round"/>
-            <!-- Red zone (bearish 0-40%): from 180° to 108° angle -->
-            <path d="M 20 100 A 80 80 0 0 1 75.3 23.9" fill="none" stroke="var(--red)" stroke-width="14" stroke-linecap="round" opacity="0.9"/>
-            <!-- Yellow zone (neutral 40-60%): from 108° to 72° -->
-            <path d="M 75.3 23.9 A 80 80 0 0 1 124.7 23.9" fill="none" stroke="var(--yellow)" stroke-width="14" opacity="0.9"/>
-            <!-- Green zone (bullish 60-100%): from 72° to 0° -->
-            <path d="M 124.7 23.9 A 80 80 0 0 1 180 100" fill="none" stroke="var(--green)" stroke-width="14" stroke-linecap="round" opacity="0.9"/>
-            <!-- Needle — CSS transform-origin di 100,100. Rotasi via JS/CSS. -->
-            <g id="trOvBaroNeedle" class="tr-ov-baro-needle">
-              <line x1="100" y1="100" x2="100" y2="32" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/>
-              <circle cx="100" cy="100" r="7" fill="var(--text)"/>
-              <circle cx="100" cy="100" r="3.5" fill="var(--card)"/>
-            </g>
+          <svg class="tr-ov-baro-svg" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="trOvGaugeGrad" gradientUnits="userSpaceOnUse" x1="14" y1="0" x2="186" y2="0">
+                <stop offset="0" style="stop-color:var(--ovx-co)"/>
+                <stop offset=".55" style="stop-color:var(--ovx-am)"/>
+                <stop offset="1" style="stop-color:var(--ovx-mint)"/>
+              </linearGradient>
+            </defs>
+            <path class="tr-ov-baro-track" d="M 14 100 A 86 86 0 0 1 186 100" fill="none" stroke-width="18" stroke-linecap="round"/>
+            <path id="trOvBaroArc" class="tr-ov-baro-arc" d="M 14 100 A 86 86 0 0 1 186 100" fill="none" stroke="url(#trOvGaugeGrad)" stroke-width="18" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
           </svg>
-          <!-- Center overlay (di dalam arc) — value % + label mood, ala .ov-donut-center Consensus. -->
           <div class="tr-ov-baro-center">
             <div class="tr-ov-baro-val" id="trOvBaroVal">—</div>
             <div class="tr-ov-baro-lbl" id="trOvBaroLbl">NEUTRAL</div>
           </div>
         </div>
-        <!-- Legend footer: breakdown bull vs bear di kiri-kanan -->
         <div class="tr-ov-baro-legend">
           <span class="dn"><span class="dot"></span><span id="trOvSentBear">—</span> bearish</span>
           <span class="up"><span id="trOvSentBull">—</span> bullish<span class="dot"></span></span>
         </div>
       </div>
-      <div class="tr-ov-hl-foot" id="trOvSentSample">— trade dianalisis</div>
     </div>
   </div>
 
@@ -6998,14 +7129,19 @@ body.is-mobile-device.force-desktop .pl-col-main{
   <div class="tr-ov-grid-2">
     <div class="tr-ov-panel">
       <div class="tr-ov-panel-hd">
-        <span class="tr-ov-panel-title"><span class="tr-ico" aria-hidden="true">📈</span> Aktivitas Rekomendasi</span>
-        <span class="tr-ov-panel-sub">12 bulan terakhir</span>
+        <div class="tr-ov-panel-tt">
+          <span class="tr-ov-panel-title"><span class="tr-ico" aria-hidden="true">📈</span> Rekomendasi per hari</span>
+          <span class="tr-ov-panel-sub">12 bulan terakhir</span>
+        </div>
       </div>
       <div class="tr-ov-chart-h180"><canvas id="trOvActTrend"></canvas></div>
     </div>
     <div class="tr-ov-panel">
       <div class="tr-ov-panel-hd">
-        <span class="tr-ov-panel-title"><span class="tr-ico" aria-hidden="true">🎯</span> Saham Paling Banyak di Rekom</span>
+        <div class="tr-ov-panel-tt">
+          <span class="tr-ov-panel-title"><span class="tr-ico" aria-hidden="true">🎯</span> Saham paling banyak direkom</span>
+          <span class="tr-ov-panel-sub">top 10</span>
+        </div>
         <!-- Kalender filter tanggal (adopsi pattern dari halaman Analis).
              Tombol default text "Semua Tanggal" → berubah jd rentang saat
              filter aktif. Popup .tr-pf-cal-popup reuse CSS existing supaya
@@ -15413,32 +15549,56 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // updateOvBestFirm() DIHAPUS — card "Sekuritas Terbaik" di-remove
   // dari HTML karena redundant dgn Ranking + Filter di section bawah.
 
-  // Distribusi Hasil — stacked bar + text legend saja. Donut/pie chart
-  // dihapus per user request; visual cukup lewat proporsi bar + count text.
+  // Distribusi Hasil — donut SVG + legend. Angka (TP1/TP2/SL/Expired) tetap
+  // dari sumber data yg sama; yg berubah hanya cara menampilkannya.
+  // Angka tengah = porsi TP (TP1+TP2) dari seluruh trade selesai.
   function updateOvDistribution(data){
     var tp1 = (data.tpCounts&&+data.tpCounts.TP1)||0;
     var tp2 = (data.tpCounts&&+data.tpCounts.TP2)||0;
     var sl  = +data.slCount||0;
     var exp = (data.closedByCounts&&+data.closedByCounts.EXPIRED)||0;
     var total = tp1+tp2+sl+exp;
-    var segments = [tp1, tp2, sl, exp];
-    var pct = function(v){ return total ? (v/total*100) : 0; };
+    var nf = function(n){ return n.toLocaleString('id-ID'); };
     var lgd = $('trOvDistLgd');
-    var bar = $('trOvDistBar');
+    var svg = $('trOvDonut');
+    var pctEl = $('trOvDonutPct');
+    var subEl = $('trOvDistSub');
+    var segs = [
+      {k:'tp1', label:'TP1', v:tp1},
+      {k:'tp2', label:'TP2', v:tp2},
+      {k:'sl',  label:'SL',  v:sl},
+      {k:'exp', label:'EXP', v:exp}
+    ];
 
-    if(bar){
-      var segs = bar.querySelectorAll('.tr-ov-dist-seg');
-      for(var s=0; s<segs.length && s<segments.length; s++){
-        segs[s].style.width = pct(segments[s]) + '%';
+    if(svg){
+      // pathLength=100 → panjang dash dihitung langsung dalam persen.
+      var html = '<circle class="tr-ov-donut-track" cx="60" cy="60" r="50" fill="none" stroke-width="14"/>';
+      var off = 0;
+      if(total){
+        segs.forEach(function(sg){
+          if(!sg.v) return;
+          var len = sg.v/total*100;
+          var gap = len > 1.5 ? 0.8 : 0;
+          html += '<circle class="tr-ov-donut-seg '+sg.k+'" cx="60" cy="60" r="50" fill="none" stroke-width="14"'
+            + ' pathLength="100" stroke-dasharray="'+(len-gap).toFixed(3)+' '+(100-len+gap).toFixed(3)+'"'
+            + ' stroke-dashoffset="'+(-off).toFixed(3)+'" transform="rotate(-90 60 60)"/>';
+          off += len;
+        });
       }
+      svg.innerHTML = html;
     }
+    if(pctEl){
+      pctEl.textContent = total
+        ? ((tp1+tp2)/total*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%'
+        : '—';
+    }
+    if(subEl) subEl.textContent = total ? (nf(total) + ' rekomendasi selesai') : 'Belum ada trade selesai';
     if(lgd){
       lgd.innerHTML = total
-        ? '<span style="color:var(--green)">'+tp1+' TP1</span> · '
-          + '<span style="color:var(--green)">'+tp2+' TP2</span> · '
-          + '<span style="color:var(--red)">'+sl+' SL</span> · '
-          + '<span style="color:var(--yellow)">'+exp+' EXP</span> <span style="opacity:.6">('+total+' total)</span>'
-        : 'Belum ada trade selesai';
+        ? segs.filter(function(sg){ return sg.k!=='exp' || sg.v>0; }).map(function(sg){
+            return '<span class="tr-ov-lg"><i class="'+sg.k+'"></i>'+sg.label+' <b>'+nf(sg.v)+'</b></span>';
+          }).join('')
+        : '<span class="tr-ov-lg-empty">Belum ada trade selesai</span>';
     }
   }
 
@@ -15470,6 +15630,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
       // SL murni (belum TP1). SL_TRAIL sudah masuk winCount.
       return isRecent(r.closedDate) && String(r.closedBy||'').toUpperCase()==='SL';
     }).length;
+    var actSub = $('trOvActSub');
+    if(actSub){
+      actSub.textContent = (winCount+lossCount)
+        ? (winCount + ' target · ' + lossCount + ' stop loss tersentuh')
+        : 'Belum ada target atau stop loss tersentuh';
+    }
     if(actNew)  actNew.textContent = newCount;
     if(actWin){
       actWin.textContent = winCount;
@@ -15488,11 +15654,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var b = +mi.bullish || 50;
     var bearPct = +mi.bearish || (100 - b);
 
-    // Update needle rotation: -90° (0% bull) → +90° (100% bull) — half circle sweep
-    var needle = $('trOvBaroNeedle');
-    if(needle){
-      var rotation = (b - 50) * 1.8; // -90..+90 range
-      needle.style.transform = 'rotate(' + rotation.toFixed(1) + 'deg)';
+    // Busur gauge terisi sebesar bullish% (pathLength=100 → offset = 100 - bull%).
+    var arc = $('trOvBaroArc');
+    if(arc){
+      var fill = Math.max(0, Math.min(100, b));
+      arc.style.strokeDashoffset = (100 - fill).toFixed(1);
+      arc.style.opacity = fill > 0 ? '1' : '0';
     }
 
     // Determine label + badge class dari level bull%
@@ -15649,6 +15816,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // timeline yang kontinu. Chart.js autoSkip menipiskan label sumbu X
   // supaya tidak crowded di rentang panjang.
   var _trOvActTrend = null;
+  // Hex (#rgb / #rrggbb) → rgba(...). Dipakai utk warna bar chart Overview.
+  function _trOvRgba(c, a){
+    c = String(c||'').trim();
+    var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(c);
+    if(!m) return 'rgba(124,58,237,' + a + ')';
+    var h = m[1]; if(h.length === 3) h = h.replace(/./g, '$&$&');
+    return 'rgba(' + parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16) + ',' + a + ')';
+  }
   function updateOvTrend(data){
     var canvas = $('trOvActTrend'); if (!canvas || typeof Chart === 'undefined') return;
 
@@ -15739,14 +15914,17 @@ body.is-mobile-device.force-desktop .pl-col-main{
         labels: labels,
         datasets:[{
           label:'Rec', data: series,
+          // Bar hari aktif = violet lembut (penuh saat disentuh); hari kosong
+          // = batang pendek samar supaya ritme harian tetap terbaca.
           backgroundColor: series.map(function(v){
-            // Bar 0 samar (border only), bar dgn value solid dgn opacity
-            // proporsional ke value relatif — highlight hari-hari aktif.
-            if(v <= 0) return 'rgba(109,40,217,.06)';
-            return accent;
+            return _trOvRgba(accent, v > 0 ? 0.58 : 0.2);
           }),
-          borderRadius: 3, borderSkipped: false,
-          barPercentage: 0.9, categoryPercentage: 0.95
+          hoverBackgroundColor: series.map(function(v){
+            return v > 0 ? accent : _trOvRgba(accent, 0.35);
+          }),
+          minBarLength: 3,
+          borderRadius: {topLeft:5, topRight:5, bottomLeft:0, bottomRight:0}, borderSkipped: false,
+          barPercentage: 0.82, categoryPercentage: 0.95
         }]
       },
       options:{
@@ -15772,7 +15950,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
         },
         scales:{
           x:{grid:{display:false}, ticks:{color: text3, font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit: maxTicks}},
-          y:{grid:{color: border}, ticks:{color: text3, font:{size:10}, precision:0}, min:0}
+          y:{grid:{color: _trOvRgba(border, 0.45), drawBorder:false}, border:{display:false}, ticks:{color: text3, font:{size:10}, precision:0}, min:0}
         }
       }
     });
@@ -15863,6 +16041,25 @@ body.is-mobile-device.force-desktop .pl-col-main{
     var text2 = css.getPropertyValue('--text2').trim() || '#6e6490';
     var text3 = css.getPropertyValue('--text3').trim() || '#a49cc0';
     var card = css.getPropertyValue('--card').trim() || '#ffffff';
+    var accentC = css.getPropertyValue('--accent').trim() || '#6d28d9';
+    var accent2C = css.getPropertyValue('--accent2').trim() || '#2563eb';
+    var textC = css.getPropertyValue('--text').trim() || '#1a0f3c';
+
+    // Angka jumlah di ujung kanan tiap bar (Chart.js tdk punya data label bawaan).
+    var valuePlugin = {
+      id:'trOvTickVal',
+      afterDatasetsDraw:function(ch){
+        var meta = ch.getDatasetMeta(0), c = ch.ctx;
+        c.save();
+        c.fillStyle = textC;
+        c.font = '700 12px "Plus Jakarta Sans", system-ui, sans-serif';
+        c.textAlign = 'right'; c.textBaseline = 'middle';
+        meta.data.forEach(function(bar, i){
+          if(arr[i]) c.fillText(String(arr[i].n), ch.width - 2, bar.y);
+        });
+        c.restore();
+      }
+    };
 
     _trOvTopTickers = new Chart(canvas, {
       type:'bar',
@@ -15870,15 +16067,24 @@ body.is-mobile-device.force-desktop .pl-col-main{
         labels: arr.map(function(x){ return x.ticker; }),
         datasets:[{
           label:'Rec', data: arr.map(function(x){ return x.n; }),
-          backgroundColor: arr.map(function(_, i){
-            var alpha = 0.35 + (0.55 * (arr.length - i) / arr.length);
-            return 'rgba(109,40,217,' + alpha.toFixed(2) + ')';
-          }),
-          borderRadius: 5, borderSkipped: false, barPercentage: 0.82, categoryPercentage: 0.82
+          // Gradien violet → biru per bar (mengikuti panjang bar masing-masing).
+          backgroundColor: function(ctx){
+            var el = ctx.element;
+            if(!el || !ctx.chart.chartArea) return accentC;
+            var p = el.getProps(['x','base'], true);
+            var x0 = Math.min(p.x, p.base), x1 = Math.max(p.x, p.base);
+            if(!isFinite(x0) || !isFinite(x1) || x1 - x0 < 1) return accentC;
+            var g = ctx.chart.ctx.createLinearGradient(x0, 0, x1, 0);
+            g.addColorStop(0, accentC); g.addColorStop(1, accent2C);
+            return g;
+          },
+          borderRadius: 7, borderSkipped: false, barPercentage: 0.56, categoryPercentage: 1
         }]
       },
+      plugins:[valuePlugin],
       options:{
         indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        layout:{padding:{right:30}},
         plugins:{
           legend:{display:false},
           tooltip:{
@@ -15888,12 +16094,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
           }
         },
         scales:{
-          x:{grid:{color: border}, ticks:{color: text3, font:{size:10}, precision:0}, min:0},
+          x:{display:false, grid:{display:false}, min:0},
           y:{
-            grid:{display:false},
+            grid:{display:false, drawBorder:false}, border:{display:false},
             ticks:{
               color: text2,
-              font:{size:9.5, weight:'700'},
+              font:{size:11, weight:'700'},
               // autoSkip:false → paksa SEMUA label ticker muncul (tidak
               // di-skip Chart.js walau padat). Font di-perkecil dari 11
               // → 9.5 utk kompensasi supaya semua muat vertikal (10 rows).
