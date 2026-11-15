@@ -302,6 +302,8 @@ body.is-mobile-device .view-toggle{display:inline-flex}
 .acct-action{display:block;text-align:center;margin-top:8px;padding:9px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;border:1px solid var(--border);color:var(--text);transition:background .15s,border-color .15s,color .15s}
 .acct-action:hover{background:var(--bg2);border-color:var(--accent);color:var(--accent)}
 .acct-action.danger:hover{border-color:#dc2626;color:#dc2626}
+/* Info akun (Status/Ajak teman/Paket/Masa aktif) di atas Menu */
+.acct-info{padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--border)}
 /* Menu navigasi di dropdown avatar (diisi public/acct-nav.js) */
 .acct-nav{padding-bottom:10px;margin-bottom:8px;border-bottom:1px solid var(--border)}
 .acct-nav:empty{display:none}
@@ -332,6 +334,7 @@ body.is-mobile-device .view-toggle{display:inline-flex}
   .acct-avatar{width:32px;height:32px;font-size:13px}
   .acct-name{font-size:12px}
   .acct-email{font-size:10.5px}
+  .acct-info{padding-bottom:5px;margin-bottom:6px}
   .acct-nav{padding-bottom:6px;margin-bottom:6px}
   .acct-nav-title{font-size:9.5px;margin-bottom:2px}
   .acct-nav-group{padding:1px 0}
@@ -6076,11 +6079,14 @@ body.is-mobile-device.force-desktop .pl-col-main{
         </div>
         <button type="button" class="info-btn" style="margin-left:auto" aria-label="Panduan menu sesuai gaya" title="Menu sesuai tujuan (invest / swing / trading)" onclick="showInfoModal('🧭 Menu Sesuai Tujuanmu','Pilih menu sesuai gaya kamu:<br><br>&bull; Untuk <strong>investasi</strong> (jangka panjang) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Valuasi</strong>.<br><br>&bull; Untuk <strong>swing</strong> (jangka menengah) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Dashboard</strong>.<br><br>&bull; Untuk <strong>trading</strong> (jangka pendek) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Tracker</strong>.')">?</button>
       </div>
+      <!-- Info akun (Status / Ajak teman / Paket / Masa aktif) — tepat di bawah email, di atas Menu -->
+      <div class="acct-info">
+        <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
+        <div class="acct-row" id="acctRefRow" style="display:none"><span class="acct-label">Ajak teman</span><span class="acct-val" id="acctRef">—</span></div>
+        <div class="acct-row"><span class="acct-label">Paket</span><span class="acct-val" id="acctPlan">—</span></div>
+        <div class="acct-row" id="acctExpiryRow"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
+      </div>
       <div class="acct-nav" id="acctNav" aria-label="Menu navigasi"></div>
-      <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
-      <div class="acct-row" id="acctRefRow" style="display:none"><span class="acct-label">Ajak teman</span><span class="acct-val" id="acctRef">—</span></div>
-      <div class="acct-row"><span class="acct-label">Paket</span><span class="acct-val" id="acctPlan">—</span></div>
-      <div class="acct-row" id="acctExpiryRow"><span class="acct-label">Masa aktif s/d</span><span class="acct-val" id="acctExpiry">—</span></div>
       <a class="acct-action" id="acctAdminLink" href="/admin" style="display:none">⚙️ Dashboard Admin</a>
       <a class="acct-action" href="/billing">↻ Perpanjang / Billing</a>
       <a class="acct-action danger" href="/api/auth/logout">⎋ Logout</a>
