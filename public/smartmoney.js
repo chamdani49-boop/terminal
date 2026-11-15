@@ -362,6 +362,13 @@
     '.smm-datebar2 .smm-sel{flex-shrink:0}',
     '.smm-dnav{flex-shrink:0;width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--green);font-size:18px;cursor:pointer}',
     '.smm-dnav:disabled{opacity:.3;cursor:default}',
+    '.smm-cdate{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%}',
+    '.smm-cdate .smm-datebtn{padding:6px 11px;font-size:12px;min-width:0}',
+    '.smm-cdate b.p{font-weight:800}',
+    '.smm-cdate.own .smm-datebtn{border-color:var(--green);background:var(--green-bg)}',
+    '.smm-cdx{flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:15px;line-height:1;cursor:pointer}',
+    '.smm-cdx:hover{border-color:var(--green);color:var(--green)}.smm-cdx[hidden]{display:none}',
+    '.smm-cols3 .smm-cdate{flex:1 1 100%}.smm-cols3 .smm-cdate .smm-datebtn{flex:1 1 auto;justify-content:center}',
     /* pilihan tanggal */
     '.smm-dp-list{display:flex;flex-direction:column}',
     '.smm-dp-opt{display:flex;justify-content:space-between;align-items:center;font:inherit;font-size:14px;font-weight:600;color:var(--text);background:none;border:0;border-radius:10px;padding:11px 6px;cursor:pointer;text-align:left}',
@@ -1242,6 +1249,7 @@
     code: 'AVIA', period: '3m', pFrom: null, pTo: null, inv: 'all', sub: 'broker',
     metric: 'value', priceMode: 'candle', showPrice: true, flowView: (function () { try { return localStorage.getItem('smm_flowview') === 'chart' ? 'chart' : 'story'; } catch (_) { return 'story'; } })(),
     chips: [], hidden: {}, colors: {},
+    cr: {},   // tanggal khusus per kartu: { flow|vxv|orbit|radar: { k, from, to } }. Kosong = ikut tanggal global.
     actEnd: 0, actStart: 0, actPreset: 'latest', actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
     skMetric: 'value', skFocus: null, bsView: 'sum', bsAll: false, obMetric: 'value', obFocus: null, obView: 'orbit', vxv: 'both',
     insSrc: 'ALL', insAct: 'ALL', insName: null, insRange: '2Y', insHl: null,
@@ -1327,6 +1335,7 @@
         '<section class="smm-card" id="smmFlowCard">' +
           '<div class="smm-h3">Broker Flow <small id="smmFlowSub"></small>' + tip('Garis = total beli dikurangi jual (net) tiap broker, dijumlah dari awal periode. Garis naik = broker terus menimbun. Garis turun = broker terus melepas. Bandingkan dengan harga (sumbu kanan). Ringkasan: broker pada chip dibagi dua kubu, Akumulator (net beli) dan Distributor (net jual), lalu dibandingkan dengan harga. Broker pada chip juga dipakai kartu Value × Volume.') + '</div>' +
           '<div class="smm-toolbar">' +
+            cdateBtn('flow') +
             '<div class="smm-seg" id="smmFlowView" role="tablist" aria-label="Tampilan Broker Flow"><button data-act="flowview" data-v="story">Ringkasan</button><button data-act="flowview" data-v="chart">Grafik</button></div>' +
             '<div class="smm-seg" id="smmMetric"><button data-act="metric" data-v="value">Value</button><button data-act="metric" data-v="volume">Volume</button></div>' +
             '<div class="smm-seg smm-pricetog" id="smmPriceMode"><button data-act="pmode" data-v="candle">Candle</button><button data-act="pmode" data-v="line">Garis</button></div>' +
@@ -1354,19 +1363,20 @@
             '<div class="smm-bs" id="smmBSum"></div>' +
           '</section>' +
           '<section class="smm-card" id="smmOrbitCard">' +
-            '<div class="smm-h3">Lawan Transaksi ' + tip('Siapa lawan transaksi satu broker pada tanggal Broker Summary / kalender. Diestimasi dari porsi beli & jual tiap broker karena bursa tidak mencatat pasangan pembeli–penjual.') + '</div>' +
-            '<div class="smm-toolbar"><div class="smm-seg" id="smmObView"><button data-act="obview" data-v="orbit">Orbit</button><button data-act="obview" data-v="flow">Aliran</button></div><div class="smm-seg" id="smmObMetric"><button data-act="obmetric" data-v="value">Value</button><button data-act="obmetric" data-v="volume">Volume</button></div></div>' +
+            '<div class="smm-h3">Lawan Transaksi ' + tip('Siapa lawan transaksi satu broker. Tanggalnya ikut Broker Summary / kalender, atau pilih tanggal sendiri lewat tombol 📅 di kartu ini. Diestimasi dari porsi beli & jual tiap broker karena bursa tidak mencatat pasangan pembeli–penjual.') + '</div>' +
+            '<div class="smm-toolbar">' + cdateBtn('orbit') + '<div class="smm-seg" id="smmObView"><button data-act="obview" data-v="orbit">Orbit</button><button data-act="obview" data-v="flow">Aliran</button></div><div class="smm-seg" id="smmObMetric"><button data-act="obmetric" data-v="value">Value</button><button data-act="obmetric" data-v="volume">Volume</button></div></div>' +
             '<div class="smm-ob" id="smmOrbit"></div>' +
           '</section>' +
           '<section class="smm-card" id="smmVxvCard">' +
             '<div class="smm-h3">Value × Volume ' + tip('Value = besar uang, Volume = jumlah lot. Value dibagi volume = harga rata-rata broker. Dibandingkan dengan harga sekarang, terlihat siapa yang untung dan siapa yang masih tersangkut.') + '</div>' +
-            '<div class="smm-toolbar"><div class="smm-seg" id="smmVxvMode"><button data-act="vxv" data-v="value">Value</button><button data-act="vxv" data-v="volume">Volume</button><button data-act="vxv" data-v="both">Keduanya</button></div></div>' +
+            '<div class="smm-toolbar">' + cdateBtn('vxv') + '<div class="smm-seg" id="smmVxvMode"><button data-act="vxv" data-v="value">Value</button><button data-act="vxv" data-v="volume">Volume</button><button data-act="vxv" data-v="both">Keduanya</button></div></div>' +
             '<div class="smm-vx" id="smmVxv"></div>' +
           '</section>' +
         '</div>' +
 
         '<section class="smm-card" id="smmRadarCard">' +
           '<div class="smm-h3">📡 Radar Smart Money <small id="smmRadarSub"></small>' + tip('Peringkat saham berdasarkan skor Smart Money pada periode terpilih. Klik baris untuk membuka saham itu.') + '</div>' +
+          '<div class="smm-toolbar" style="margin-bottom:8px">' + cdateBtn('radar') + '</div>' +
           '<p class="smm-desc">Saham mana yang sedang <b>dikumpulkan</b> dan <b>dilepas</b> pemain besar? Batang makin panjang = sinyal makin kuat.</p>' +
           '<div class="smm-radar-cols" id="smmRadar"></div>' +
         '</section>' +
@@ -1544,7 +1554,7 @@
     list = list.filter(function (c) { var d = getData(c); return d.hasBroker; });
     var data = list.map(function (c) {
       var g = getData(c); if (!g.hasBroker) return null;
-      var rr = PR(g), t0 = rr[0];
+      var rr = CR(g, 'radar'), t0 = rr[0];
       var sc = smartScore(g, t0, rr[1]);
       var chg = (pxEnd(g, rr[1]).close / g.ohlc[g.off + t0].open - 1) * 100;
       return { code: c, score: sc.score, acc: sc.acc, fNet: g.hasForeign ? sc.fNet : null, chg: chg };
@@ -1562,7 +1572,7 @@
           '<span class="n ' + signCls(x.chg) + '">' + fmtPct(x.chg) + '</span></div>';
       }).join('');
     }
-    document.getElementById('smmRadarSub').textContent = '· ' + periodText() + ' · ' + list.length + ' saham pantauan';
+    document.getElementById('smmRadarSub').textContent = '· ' + periodText('radar') + ' · ' + list.length + ' saham pantauan';
     document.getElementById('smmRadar').innerHTML =
       '<div class="smm-radar-col"><h5>🟢 Sedang dikumpulkan</h5>' + rowsHtml(acc, true) + '</div>' +
       '<div class="smm-radar-col"><h5>🔴 Sedang dilepas</h5>' + rowsHtml(dis, false) + '</div>';
@@ -1625,7 +1635,7 @@
     if (!G().hasBroker) return;
     var el = document.getElementById('smmFlowChart');
     if (!el) return;
-    var g = G(), rr = PR(g), t0 = rr[0], t1 = rr[1], story = S.flowView === 'story';
+    var g = G(), rr = CR(g, 'flow'), t0 = rr[0], t1 = rr[1], story = S.flowView === 'story';
     document.getElementById('smmFlowSub').textContent = '· ' + S.code + ' · ' + fmtDate(g.days[g.off + t0]) + ' – ' + fmtDate(g.days[g.off + t1]) + ' · ' + (S.metric === 'value' ? 'nilai (Rp)' : 'volume (lot)') + (S.inv === 'F' ? ' · investor asing' : S.inv === 'D' ? ' · investor domestik' : '');
     document.getElementById('smmFlowStory').hidden = !story;
     ['smmFlowChart', 'smmFlowLegend', 'smmPriceMode'].forEach(function (id) { document.getElementById(id).hidden = story; });
@@ -1687,7 +1697,7 @@
   }
   function stDay(k) { var p = k.split('-'); return (+p[2]) + ' ' + MON[+p[1] - 1]; }
   function flowStoryData() {
-    var g = G(), rr = PR(g), t0 = rr[0], t1 = rr[1], vol = S.metric !== 'value';
+    var g = G(), rr = CR(g, 'flow'), t0 = rr[0], t1 = rr[1], vol = S.metric !== 'value';
     var by = {}, bmap = {};
     aggregate(g, t0, t1, S.inv).forEach(function (x) { by[x.code] = x; });
     g.brokers.forEach(function (b) { bmap[b.code] = b; });
@@ -1733,7 +1743,7 @@
       net: sumA + sumD, c0: c0, c1: c1, chg: c1 - c0, chgP: c0 ? (c1 / c0 - 1) * 100 : 0, turn: turn, bestA: bestA, bestD: bestD };
   }
   function flowStoryHead(d) {
-    var per = periodText(), big = Math.max(d.sumA, -d.sumD), down = d.chg < 0, net = stSign(d.net, d.vol);
+    var per = periodText('flow'), big = Math.max(d.sumA, -d.sumD), down = d.chg < 0, net = stSign(d.net, d.vol);
     if (d.acc.length && d.dis.length && big > 0 && Math.abs(d.net) / big < 0.25)
       return { k: 'n', kick: 'Tarik-tambang ' + per, head: 'Dua kubu broker saling meniadakan: net hanya sekitar ' + net };
     if (d.net >= 0)
@@ -1745,7 +1755,7 @@
     if (!G().hasBroker) { box.innerHTML = ''; return; }
     var d = flowStoryData(); _story = d;
     if (!d.list.length || d.n < 2) {
-      box.innerHTML = '<div class="smm-cardnote">' + (d.n < 2 ? 'Rentang tanggal hanya 1 hari. Pilih minimal 2 hari lewat tombol 📅 di atas untuk melihat grafik arus.' : 'Pilih minimal satu broker lewat chip di bawah untuk melihat ringkasan.') + '</div>';
+      box.innerHTML = '<div class="smm-cardnote">' + (d.n < 2 ? 'Rentang tanggal hanya 1 hari. Pilih minimal 2 hari lewat tombol 📅 tanggal untuk melihat grafik arus.' : 'Pilih minimal satu broker lewat chip di bawah untuk melihat ringkasan.') + '</div>';
       return;
     }
     var h = flowStoryHead(d), g = d.g;
@@ -2111,22 +2121,27 @@
 
   // ── Rentang global (tombol tanggal di bawah kotak cari). Semua kartu memakainya; Broker Summary
   // (dan Lawan Transaksi) ikut di-set saat rentang global dipilih, tapi tetap bisa diubah sendiri.
-  function PR(g) {
+  // Rentang (indeks hari) utk satu spesifikasi periode: preset ('3m', 'latest', ...) atau 'custom' (from/to ISO).
+  function specRange(g, per, from, to) {
     var days = actDays(g), n = days.length;
     if (!n) return [0, 0];
-    if (S.period === 'custom' && S.pFrom) {
+    if (per === 'custom' && from) {
       var e = n - 1, st;
-      if (S.pTo) { e = -1; for (var i = n - 1; i >= 0; i--) if (days[i] <= S.pTo) { e = i; break; } if (e < 0) e = 0; }
-      st = e; for (var k = 0; k <= e; k++) if (days[k] >= S.pFrom) { st = k; break; }
+      if (to) { e = -1; for (var i = n - 1; i >= 0; i--) if (days[i] <= to) { e = i; break; } if (e < 0) e = 0; }
+      st = e; for (var k = 0; k <= e; k++) if (days[k] >= from) { st = k; break; }
       return [st, e];
     }
-    return presetRange(days, lastDataIdx(g), S.period);
+    return presetRange(days, lastDataIdx(g), per);
   }
+  function PR(g) { return specRange(g, S.period, S.pFrom, S.pTo); }
+  // Rentang utk satu kartu: tanggal khusus kartu bila ada, selain itu ikut tanggal global.
+  function CR(g, key) { var o = S.cr[key]; return o ? specRange(g, o.k, o.from, o.to) : PR(g); }
   // Harga penutup akhir rentang: kalau rentang sampai hari terakhir, pakai harga terbaru.
   function pxEnd(g, t1) { return t1 >= lastDataIdx(g) ? g.ohlc[g.nP - 1] : g.ohlc[g.off + t1]; }
-  function periodText() {
-    if (S.period === 'custom') { var g = G(), r = PR(g), d = actDays(g); return d.length ? 'periode ' + rangeText(g, r) : 'periode terpilih'; }
-    return (dpLabel(S.period) || '3 bulan terakhir').toLowerCase();
+  function periodText(key) {
+    var o = key ? S.cr[key] : null, per = o ? o.k : S.period;
+    if (per === 'custom') { var g = G(), r = o ? specRange(g, o.k, o.from, o.to) : PR(g), d = actDays(g); return d.length ? 'periode ' + rangeText(g, r) : 'periode terpilih'; }
+    return (dpLabel(per) || '3 bulan terakhir').toLowerCase();
   }
   function openGlobalDate() {
     var g = G(), days = actDays(g);
@@ -2134,6 +2149,7 @@
     var r = PR(g);
     openDatePick({ title: 'Tanggal semua kartu', days: days, L: lastDataIdx(g), start: r[0], end: r[1], preset: S.period,
       onApply: function (a, b, k) {
+        S.cr = {};   // tanggal global = semua kartu; hapus tanggal khusus per kartu
         S.period = k; S.pFrom = k === 'custom' ? days[a] : null; S.pTo = k === 'custom' ? days[b] : null;
         // trigger ke Broker Summary & Lawan Transaksi
         if (k === 'custom') { S.actStart = a; S.actEnd = b; } else { var q = presetRange(days, lastDataIdx(g), k); S.actStart = q[0]; S.actEnd = q[1]; }
@@ -2143,6 +2159,71 @@
         renderRadar();
         toast('Tanggal semua kartu: ' + rangeLabel(days, PR(g)[0], PR(g)[1], k));
       } });
+  }
+
+  // ── Tanggal khusus per kartu (Broker Flow, Lawan Transaksi, Value × Volume, Radar).
+  // Default ikut tanggal global. Memilih tanggal di kartu hanya mengubah kartu itu;
+  // tombol ↺ mengembalikannya ke tanggal global. Memilih tanggal global menghapus semuanya.
+  var CARD_NAME = { flow: 'Broker Flow', orbit: 'Lawan Transaksi', vxv: 'Value × Volume', radar: 'Radar Smart Money' };
+  function cdateBtn(key) {
+    return '<span class="smm-cdate" id="smmCDw_' + key + '">' +
+      '<button class="smm-datebtn smm-cdbtn" data-act="cdate" data-v="' + key + '" aria-haspopup="dialog" title="Tanggal khusus untuk kartu ini">📅 <span id="smmCD_' + key + '"></span> ▾</button>' +
+      '<button class="smm-cdx" data-act="cdatex" data-v="' + key + '" id="smmCDx_' + key + '" aria-label="Kembali ikut tanggal global" title="Kembali ikut tanggal global" hidden>↺</button>' +
+    '</span>';
+  }
+  // Saham acuan utk daftar tanggal. Radar tetap bisa dipakai walau saham aktif belum punya data broker.
+  function cardRefG(key) {
+    var g = G();
+    if (!g.hasBroker && key === 'radar') {
+      var cs = universe().filter(function (c) { return getData(c).hasBroker; });
+      if (cs.length) return getData(cs[0]);
+    }
+    return g;
+  }
+  // Rentang yang sedang berlaku utk kartu (Lawan Transaksi default-nya ikut Broker Summary).
+  function cardRange(g, key) {
+    return key === 'orbit' && !S.cr.orbit ? activeRange(g).r : CR(g, key);
+  }
+  function syncCDates() {
+    Object.keys(CARD_NAME).forEach(function (key) {
+      var sp = document.getElementById('smmCD_' + key); if (!sp) return;
+      var w = document.getElementById('smmCDw_' + key), x = document.getElementById('smmCDx_' + key);
+      var g = cardRefG(key), days = actDays(g), o = S.cr[key];
+      if (w) w.classList.toggle('own', !!o);
+      if (x) x.hidden = !o;
+      if (!g.hasBroker || !days.length) { sp.textContent = 'Tanggal'; return; }
+      var r = cardRange(g, key), per = o ? o.k : (key === 'orbit' ? S.actPreset : S.period);
+      var pl = per !== 'custom' && per !== 'latest' ? dpLabel(per) : '';
+      var rt = r[0] === r[1] ? fmtDate(days[r[1]]) : fmtDate(days[r[0]]) + ' – ' + fmtDate(days[r[1]]);
+      sp.innerHTML = (pl ? '<b class="p">' + esc(pl) + '</b>' : '') + '<span class="r">' + (pl ? ' · ' : '') + esc(rt) + '</span>';
+      sp.classList.toggle('has-p', !!pl);
+    });
+  }
+  function renderCard(key) {
+    syncCDates();
+    if (key === 'flow') { renderChips(); buildFlow(); renderFlowInsight(); }
+    else if (key === 'vxv') renderVxv();
+    else if (key === 'orbit') { S.obFocus = null; renderOrbit(); }
+    else if (key === 'radar') renderRadar();
+  }
+  function openCardDate(key) {
+    if (!CARD_NAME[key]) return;
+    var g = cardRefG(key), days = actDays(g);
+    if (!g.hasBroker || !days.length) { toast('Belum ada data broker untuk ' + S.code); return; }
+    var r = cardRange(g, key), o = S.cr[key];
+    openDatePick({ title: 'Tanggal ' + CARD_NAME[key], days: days, L: lastDataIdx(g), start: r[0], end: r[1],
+      preset: o ? o.k : (key === 'orbit' ? S.actPreset : S.period),
+      onApply: function (a, b, k) {
+        S.cr[key] = { k: k, from: k === 'custom' ? days[a] : null, to: k === 'custom' ? days[b] : null };
+        renderCard(key);
+        toast(CARD_NAME[key] + ': ' + rangeLabel(days, a, b, k));
+      } });
+  }
+  function clearCardDate(key) {
+    if (!S.cr[key]) return;
+    delete S.cr[key];
+    renderCard(key);
+    toast(CARD_NAME[key] + ': ikut tanggal global');
   }
 
   // Broker Summary: hari terakhir yang ada transaksi broker = "Terbaru"
@@ -2372,7 +2453,7 @@
   // dibandingkan dengan harga sekarang → siapa untung, siapa tersangkut.
   var _vxv = null;
   function vxvData() {
-    var g = G(), rr = PR(g), t0 = rr[0], t1 = rr[1], by = {}, useL = S.vxv === 'volume';
+    var g = G(), rr = CR(g, 'vxv'), t0 = rr[0], t1 = rr[1], by = {}, useL = S.vxv === 'volume';
     aggregate(g, t0, t1, S.inv).forEach(function (x) { by[x.code] = x; });
     var list = S.chips.filter(function (c) { return !S.hidden[c] && by[c]; }).map(function (c) {
       var x = by[c], v = useL ? x.netL : x.net;
@@ -2501,7 +2582,7 @@
         '<span class="dot" style="background:' + colorFor(code) + '"></span>' + code +
         '<span class="x" data-act="chipx" data-v="' + code + '" aria-label="Hapus ' + code + '">×</span></span>';
     });
-    var rr = PR(g), t0 = rr[0];
+    var rr = CR(g, 'flow'), t0 = rr[0];
     var rows = aggregate(g, t0, rr[1], S.inv).filter(function (x) { return S.chips.indexOf(x.code) < 0; })
       .sort(function (a, b) { return Math.abs(b.net) - Math.abs(a.net); });
     html += '<span class="smm-add"><button data-act="addopen" aria-label="Tambah broker" data-smm-tip="Tambah broker ke grafik">+</button><div class="smm-addmenu" id="smmAddMenu">' +
@@ -2514,7 +2595,7 @@
 
   function renderFlowInsight() {
     if (!G().hasBroker) return;
-    var g = G(), rr = PR(g), t0 = rr[0], t1 = rr[1];
+    var g = G(), rr = CR(g, 'flow'), t0 = rr[0], t1 = rr[1];
     var rows = aggregate(g, t0, t1, S.inv).sort(function (a, b) { return b.net - a.net; });
     var top = rows[0], bot = rows[rows.length - 1];
     var acc = accScore(rows).score;
@@ -2528,7 +2609,7 @@
     var lbl = S.metric === 'value' ? function (x) { return fmtVal(x, true); } : function (x) { return fmtLot(x) + ' lot'; };
     var vTop = S.metric === 'value' ? top.net : top.netL, vBot = S.metric === 'value' ? bot.net : bot.netL;
     document.getElementById('smmFlowInsight').innerHTML =
-      '💡 Dalam ' + periodText() + ', ' + bkTag(top.code, top.type, top.name) + ' <b>' + esc(top.name) + '</b> (' + TYPE_META[top.type].label + ') paling banyak menimbun: net beli <b class="smm-up">' + lbl(vTop) + '</b> di rata-rata <b>' + nf(top.bAvg) + '</b>. ' +
+      '💡 Dalam ' + periodText('flow') + ', ' + bkTag(top.code, top.type, top.name) + ' <b>' + esc(top.name) + '</b> (' + TYPE_META[top.type].label + ') paling banyak menimbun: net beli <b class="smm-up">' + lbl(vTop) + '</b> di rata-rata <b>' + nf(top.bAvg) + '</b>. ' +
       bkTag(bot.code, bot.type, bot.name) + ' <b>' + esc(bot.name) + '</b> paling banyak melepas: net jual <b class="smm-dn">' + lbl(Math.abs(vBot)) + '</b>. Harga bergerak <b class="' + signCls(chg) + '">' + fmtPct(chg) + '</b>.<br>' + pattern;
   }
 
@@ -2659,7 +2740,7 @@
   function renderOrbit() {
     var box = document.getElementById('smmOrbit'); if (!box) return;
     if (!G().hasBroker) { box.innerHTML = ''; return; }
-    var g = G(), ar = activeRange(g), r = ar.r, rows = aggregate(g, r[0], r[1], S.inv), vk = S.obMetric === 'value';
+    var g = G(), ar = S.cr.orbit ? { r: CR(g, 'orbit'), moved: false } : activeRange(g), r = ar.r, rows = aggregate(g, r[0], r[1], S.inv), vk = S.obMetric === 'value';
     var fmt = vk ? fmtVal : function (v) { return fmtLot(v) + ' lot'; };
     var F = obFocusOf(rows);
     if (!F.me || !(F.me[F.key] > 0)) { box.innerHTML = emptyNote(g, r); return; }
@@ -3644,7 +3725,7 @@
     el.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === val); });
   }
   function syncControls() {
-    { var gd = document.getElementById('smmGDate'); if (gd) { var gg = G(), dd = actDays(gg), pr = PR(gg), pl = S.period !== 'custom' && S.period !== 'latest' ? dpLabel(S.period) : ''; var rt = dd.length ? (pr[0] === pr[1] ? fmtDate(dd[pr[1]]) : fmtDate(dd[pr[0]]) + ' – ' + fmtDate(dd[pr[1]])) : ''; gd.innerHTML = (pl ? '<b class="p">' + esc(pl) + '</b>' : '') + (rt ? '<span class="r">' + (pl ? ' · ' : '') + esc(rt) + '</span>' : ''); gd.classList.toggle('has-p', !!pl); } } syncSeg('smmMetric', S.metric); syncSeg('smmFlowView', S.flowView); syncSeg('smmPriceMode', S.priceMode);
+    { var gd = document.getElementById('smmGDate'); if (gd) { var gg = G(), dd = actDays(gg), pr = PR(gg), pl = S.period !== 'custom' && S.period !== 'latest' ? dpLabel(S.period) : ''; var rt = dd.length ? (pr[0] === pr[1] ? fmtDate(dd[pr[1]]) : fmtDate(dd[pr[0]]) + ' – ' + fmtDate(dd[pr[1]])) : ''; gd.innerHTML = (pl ? '<b class="p">' + esc(pl) + '</b>' : '') + (rt ? '<span class="r">' + (pl ? ' · ' : '') + esc(rt) + '</span>' : ''); gd.classList.toggle('has-p', !!pl); } } syncCDates(); syncSeg('smmMetric', S.metric); syncSeg('smmFlowView', S.flowView); syncSeg('smmPriceMode', S.priceMode);
     syncSeg('smmObMetric', S.obMetric); syncSeg('smmObView', S.obView); syncSeg('smmVxvMode', S.vxv); syncSeg('smmInsSrc', S.insSrc); syncSeg('smmInsRange', S.insRange);
     root.querySelectorAll('.smm-subtabs button').forEach(function (b) { var on = b.getAttribute('data-v') === S.sub; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
     document.getElementById('smmCode').value = S.code;
@@ -3800,6 +3881,8 @@
       case 'hoside': S.hoSide = v; renderHoComp(getHolder(S.code)); break;
       case 'hochart': S.hochart = v; S.hoChart = v; renderHoChart(getHolder(S.code)); break;
       case 'gdate': openGlobalDate(); break;
+      case 'cdate': openCardDate(v); break;
+      case 'cdatex': clearCardDate(v); break;
       case 'metric': S.metric = v; syncControls(); buildFlow(); renderFlowInsight(); break;
       case 'pmode': S.priceMode = v; syncControls(); renderChips(); buildFlow(); break;
       case 'chipprice': S.showPrice = !S.showPrice; renderChips(); if (flowSeries.__price) flowSeries.__price.applyOptions({ visible: S.showPrice }); flowLegend(null); break;
