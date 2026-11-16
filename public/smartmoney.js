@@ -368,7 +368,7 @@
     '.smm-cdate.own .smm-datebtn{border-color:var(--green);background:var(--green-bg)}',
     '.smm-cdx{flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:15px;line-height:1;cursor:pointer}',
     '.smm-cdx:hover{border-color:var(--green);color:var(--green)}.smm-cdx[hidden]{display:none}',
-    '.smm-cols3 .smm-cdate{flex:1 1 100%}.smm-cols3 .smm-cdate .smm-datebtn{flex:1 1 auto;justify-content:center}',
+    '.smm-cols3 .smm-cdate,.smm-flowrow>#smmVxvCard .smm-cdate{flex:1 1 100%}.smm-cols3 .smm-cdate .smm-datebtn,.smm-flowrow>#smmVxvCard .smm-cdate .smm-datebtn{flex:1 1 auto;justify-content:center}',
     /* pilihan tanggal */
     '.smm-dp-list{display:flex;flex-direction:column}',
     '.smm-dp-opt{display:flex;justify-content:space-between;align-items:center;font:inherit;font-size:14px;font-weight:600;color:var(--text);background:none;border:0;border-radius:10px;padding:11px 6px;cursor:pointer;text-align:left}',
@@ -477,12 +477,14 @@
     '#smmFlowCard [hidden]{display:none!important}',
     '.smm-st,.smm-vx,.smm-ob,.smm-bs{--st-acc:#0d9488;--st-dis:#ea580c;--st-accb:rgba(13,148,136,.10);--st-disb:rgba(234,88,12,.10);--st-accl:rgba(13,148,136,.35);--st-disl:rgba(234,88,12,.35);container-type:inline-size;display:flex;flex-direction:column;gap:10px;margin-top:10px}',
     '.smm-cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch}',
-    '@media (max-width:1180px){.smm-cols3{grid-template-columns:repeat(2,minmax(0,1fr))}.smm-cols3>#smmVxvCard{grid-column:1/-1}}',
+    '@media (max-width:1180px){.smm-cols3{grid-template-columns:repeat(2,minmax(0,1fr))}.smm-cols3>#smmCalCard{grid-column:1/-1}}',
     '@media (max-width:760px){.smm-cols3{grid-template-columns:minmax(0,1fr)}}',
     '.smm-cols3>.smm-card{min-width:0;display:flex;flex-direction:column}',
     '.smm-cols3>.smm-card>.smm-bs,.smm-cols3>.smm-card>.smm-ob,.smm-cols3>.smm-card>.smm-vx{flex:1 1 auto}',
     '.smm-cols3>.smm-card>.smm-bs>:last-child,.smm-cols3>.smm-card>.smm-ob>:last-child,.smm-cols3>.smm-card>.smm-vx>:last-child{flex:1 1 auto}',
     '.smm-cols3 .smm-ob-grid{align-content:start}',
+    '.smm-flowrow>#smmVxvCard{min-width:0;display:flex;flex-direction:column}',
+    '.smm-flowrow>#smmVxvCard>.smm-vx{flex:1 1 auto}.smm-flowrow>#smmVxvCard>.smm-vx>:last-child{flex:1 1 auto}',
     '[data-theme="dark"] .smm-st,[data-theme="dark"] .smm-vx,[data-theme="dark"] .smm-ob,[data-theme="dark"] .smm-bs{--st-acc:#2dd4bf;--st-dis:#fb923c;--st-accb:rgba(45,212,191,.12);--st-disb:rgba(251,146,60,.12);--st-accl:rgba(45,212,191,.38);--st-disl:rgba(251,146,60,.38)}',
     '.smm-st-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}',
     '.smm-st-top .cd{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--text3)}',
@@ -1330,7 +1332,7 @@
         '<section class="smm-card smm-profile" id="smmBkProfile" hidden></section>' +
         '<section class="smm-sum" id="smmSummary"></section>' +
 
-        // Broker Flow (lebar) + Kalender flow harian (samping)
+        // Broker Flow (lebar) + Value × Volume (samping)
         '<div class="smm-flowrow">' +
         '<section class="smm-card" id="smmFlowCard">' +
           '<div class="smm-h3">Broker Flow <small id="smmFlowSub"></small>' + tip('Garis = total beli dikurangi jual (net) tiap broker, dijumlah dari awal periode. Garis naik = broker terus menimbun. Garis turun = broker terus melepas. Bandingkan dengan harga (sumbu kanan). Ringkasan: broker pada chip dibagi dua kubu, Akumulator (net beli) dan Distributor (net jual), lalu dibandingkan dengan harga. Broker pada chip juga dipakai kartu Value × Volume.') + '</div>' +
@@ -1346,10 +1348,14 @@
           '<div class="smm-chips" id="smmChips"></div>' +
           '<div class="smm-insight" id="smmFlowInsight"></div>' +
         '</section>' +
-        '<section class="smm-card smm-calcard" id="smmCalCard"></section>' +
+        '<section class="smm-card" id="smmVxvCard">' +
+          '<div class="smm-h3">Value × Volume ' + tip('Value = besar uang, Volume = jumlah lot. Value dibagi volume = harga rata-rata broker. Dibandingkan dengan harga sekarang, terlihat siapa yang untung dan siapa yang masih tersangkut.') + '</div>' +
+          '<div class="smm-toolbar">' + cdateBtn('vxv') + '<div class="smm-seg" id="smmVxvMode"><button data-act="vxv" data-v="value">Value</button><button data-act="vxv" data-v="volume">Volume</button><button data-act="vxv" data-v="both">Keduanya</button></div></div>' +
+          '<div class="smm-vx" id="smmVxv"></div>' +
+        '</section>' +
         '</div>' +
 
-        // Kartu baru: Broker Summary · Lawan transaksi · Value × Volume
+        // Kartu baru: Broker Summary · Lawan transaksi · Kalender flow harian
         '<div class="smm-cols3">' +
           '<section class="smm-card" id="smmBSumCard">' +
             '<div class="smm-h3">Broker Summary ' + tip('Siapa pembeli & penjual terbesar pada tanggal terpilih (Broker Action digabung ke sini). Net = beli dikurangi jual per broker, Gross = total beli & jual. Meter: kekuatan 9 pembeli teratas vs 9 penjual teratas. Ringkasan = tarik-tambang & gaya order; Tabel = rincian per broker.') + '</div>' +
@@ -1367,11 +1373,7 @@
             '<div class="smm-toolbar">' + cdateBtn('orbit') + '<div class="smm-seg" id="smmObView"><button data-act="obview" data-v="orbit">Orbit</button><button data-act="obview" data-v="flow">Aliran</button></div><div class="smm-seg" id="smmObMetric"><button data-act="obmetric" data-v="value">Value</button><button data-act="obmetric" data-v="volume">Volume</button></div></div>' +
             '<div class="smm-ob" id="smmOrbit"></div>' +
           '</section>' +
-          '<section class="smm-card" id="smmVxvCard">' +
-            '<div class="smm-h3">Value × Volume ' + tip('Value = besar uang, Volume = jumlah lot. Value dibagi volume = harga rata-rata broker. Dibandingkan dengan harga sekarang, terlihat siapa yang untung dan siapa yang masih tersangkut.') + '</div>' +
-            '<div class="smm-toolbar">' + cdateBtn('vxv') + '<div class="smm-seg" id="smmVxvMode"><button data-act="vxv" data-v="value">Value</button><button data-act="vxv" data-v="volume">Volume</button><button data-act="vxv" data-v="both">Keduanya</button></div></div>' +
-            '<div class="smm-vx" id="smmVxv"></div>' +
-          '</section>' +
+          '<section class="smm-card smm-calcard" id="smmCalCard"></section>' +
         '</div>' +
 
         '<section class="smm-card" id="smmRadarCard">' +
