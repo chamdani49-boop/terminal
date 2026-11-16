@@ -392,6 +392,7 @@
     '.smm-bx-kpi span{display:block;font-size:10.5px;color:var(--text3);font-weight:700}.smm-bx-kpi b{display:block;font-family:"IBM Plex Mono",monospace;font-size:13.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.smm-bx-kpi b small{font-size:10px;color:var(--text3)}',
     '.smm-bx-tabs{display:none;margin-bottom:10px}',
+    '.smm-bp-tabs{margin-bottom:10px}',
     '.smm-bx-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}',
     '.smm-bx-col{min-width:0}',
     '.smm-bx-h,.smm-bx-r{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,.8fr);gap:6px;align-items:center}',
@@ -2301,7 +2302,7 @@
     code = String(code || '').toUpperCase();
     if (!/^[A-Z0-9]{2}$/.test(code)) return;
     var g = G(), r = activeRange(g).r;
-    _bp = { code: code, mode: 'gross', side: 'b', all: false, data: null, k: S.actPreset || 'custom',
+    _bp = { code: code, mode: 'gross', tab: 'flow', side: 'b', all: false, data: null, px: null, k: S.actPreset || 'custom',
       from: fromIso || (g.hasBroker ? g.days[g.off + r[0]] : null), to: toIso || (g.hasBroker ? g.days[g.off + r[1]] : null) };
     openSheet('broker', renderBrokerPop, { cls: 'smm-sheet-lg' });
     loadBrokerIdx(code).then(function (j) {
@@ -2316,6 +2317,29 @@
     if (_bp.to) { e = -1; for (var i = days.length - 1; i >= 0; i--) if (days[i] <= _bp.to) { e = i; break; } if (e < 0) e = days.length - 1; }
     if (_bp.from) { s = e; for (var k = 0; k <= e; k++) if (days[k] >= _bp.from) { s = k; break; } }
     return [s, e];
+  }
+  // ── Tab "Untung & Rugi": estimasi P&L broker per saham pada rentang terpilih ──
+  // P&L = (total jual − total beli) + net lot × 100 × harga penutup di akhir rentang.
+  // Artinya: arus kas dari transaksi periode ini, ditambah sisa posisi (net lot) dinilai pada harga akhir.
+  // Net beli → untung bila harga akhir di atas rata-rata beli. Net jual → untung bila harga akhir
+  // di bawah rata-rata jual (konsisten dgn kolom "vs harga" di Value × Volume).
+  function bpLoadPx() {
+    if (!_bp || _bp.px || _bp.pxBusy) return;
+    _bp.pxBusy = true;
+    loadOhlc().then(function (all) {
+      if (!_bp) return;
+      _bp.px = all && all.tickers ? all.tickers : {}; _bp.pxFail = !(all && all.tickers); _bp.pxBusy = false;
+      var top = _sheetStack[_sheetStack.length - 1];
+      if (top && top.kind === 'broker') sheetRender();
+    });
+  }
+  // Harga penutup terakhir pada/sebelum tanggal iso (0 bila tidak ada data harga).
+  function bpPriceAt(code, iso) {
+    var T = _bp && _bp.px && _bp.px[code], c = T && T.candles, ts = Date.parse(iso + 'T00:00:00Z') / 1000 + 86399;
+    if (c && c.length) { for (var i = c.length - 1; i >= 0; i--) if (c[i][0] <= ts) return +c[i][4] || 0; }
+    var g = _real[code] && !_real[code].then ? _real[code] : null;
+    if (g && g.ohlc && g.days) { for (var j = Math.min(g.days.length, g.ohlc.length) - 1; j >= 0; j--) if (g.days[j] <= iso) return g.ohlc[j] ? (+g.ohlc[j].close || 0) : 0; }
+    return 0;
   }
   function renderBrokerPop() {
     var B = _bp, meta = brokerList().filter(function (b) { return b.code === B.code; })[0] || { code: B.code, name: B.code, foreign: false };
@@ -2346,19 +2370,57 @@
             '<span class="v">' + fmtVal(x.v) + '</span><span>' + fmtLot(x.l) + '</span><span>' + (x.a ? nf(x.a) : '-') + '</span><i style="width:' + Math.max(2, x.v / mx * 100).toFixed(1) + '%"></i></button>';
         }).join('') : '<div class="smm-desc" style="padding:8px 0">Tidak ada.</div>') + '</div>';
     };
-    var more = Math.max(buy.length, sell.length) > 15;
+    var isPnl = B.tab === 'pnl', win = [], lose = [], noPx = 0, sumW = 0, sumL = 0, endIso = rg[1] >= 0 ? days[rg[1]] : null;
+    if (isPnl && B.px && endIso) {
+      stocks.forEach(function (x) {
+        var px = bpPriceAt(x.c, endIso);
+        if (!px) { noPx++; return; }
+        var o = { c: x.c, pnl: (x.sv - x.bv) + x.netL * 100 * px, netL: x.netL, px: px, aB: x.bl ? x.bv / (x.bl * 100) : 0, aS: x.sl ? x.sv / (x.sl * 100) : 0 };
+        if (o.pnl > 0) { win.push(o); sumW += o.pnl; } else if (o.pnl < 0) { lose.push(o); sumL += o.pnl; }
+      });
+      win.sort(function (p1, p2) { return p2.pnl - p1.pnl; });
+      lose.sort(function (p1, p2) { return p1.pnl - p2.pnl; });
+    }
+    var more = isPnl ? Math.max(win.length, lose.length) > 15 : Math.max(buy.length, sell.length) > 15;
     var dateTxt = rg[1] >= 0 ? rangeLabel(days, rg[0], rg[1], B.k) : '-';
-    return head + pick +
-        '<button class="smm-datebtn" data-act="bpdate">📅 <span>' + esc(dateTxt) + '</span> ▾</button>' +
-        '<div class="smm-seg" id="smmBpMode"><button data-act="bpmode" data-v="gross" class="' + (net ? '' : 'on') + '">Gross</button><button data-act="bpmode" data-v="net" class="' + (net ? 'on' : '') + '">Net</button></div></div>' +
-      (D.local ? '<div class="smm-cardnote">Indeks lintas saham belum dibuat, jadi baru dihitung dari <b>' + loadedCodes().length + ' saham yang sudah dibuka</b>. Jalankan <code>node scripts/build-smartmoney-screener.js --dir … --upload</code> untuk semua saham.</div>' : '') +
-      '<div class="smm-bx-kpi"><div><span>Total beli</span><b class="smm-up">' + fmtVal(tb, true) + '</b></div><div><span>Total jual</span><b class="smm-dn">' + fmtVal(ts, true) + '</b></div>' +
+    var plist = function (arr, cls, title) {
+      var mx = arr.length ? Math.abs(arr[0].pnl) : 1;
+      return '<div class="smm-bx-col ' + cls + '"><div class="smm-st-lbl">' + title + ' <span>' + arr.length + ' saham</span></div>' +
+        (arr.length ? '<div class="smm-bx-h"><span>Saham</span><span>Est. P&amp;L</span><span>Net lot</span><span>Harga</span></div>' + arr.slice(0, N).map(function (x, i) {
+          var tt = 'Beli avg ' + (x.aB ? nf(x.aB) : '-') + ' · Jual avg ' + (x.aS ? nf(x.aS) : '-') + ' · Harga ' + nf(x.px) + ' · Buka ' + x.c;
+          return '<button class="smm-bx-r" data-act="bpstock" data-v="' + esc(x.c) + '" title="' + esc(tt) + '"><span class="c"><small>' + (i + 1) + '</small>' + esc(x.c) + '</span>' +
+            '<span class="v">' + fmtVal(x.pnl, true) + '</span><span>' + (x.netL > 0 ? '+' : '') + fmtLot(x.netL) + '</span><span>' + nf(x.px) + '</span><i style="width:' + Math.max(2, Math.abs(x.pnl) / mx * 100).toFixed(1) + '%"></i></button>';
+        }).join('') : '<div class="smm-desc" style="padding:8px 0">Tidak ada.</div>') + '</div>';
+    };
+    var tabSeg = '<div class="smm-seg smm-bp-tabs" id="smmBpTab" role="tablist" aria-label="Tampilan profil broker"><button data-act="bptab" data-v="flow" class="' + (isPnl ? '' : 'on') + '">Beli &amp; Jual</button><button data-act="bptab" data-v="pnl" class="' + (isPnl ? 'on' : '') + '">Untung &amp; Rugi</button></div>';
+    var body;
+    if (!isPnl) {
+      body = '<div class="smm-bx-kpi"><div><span>Total beli</span><b class="smm-up">' + fmtVal(tb, true) + '</b></div><div><span>Total jual</span><b class="smm-dn">' + fmtVal(ts, true) + '</b></div>' +
         '<div><span>Net</span><b class="' + signCls(tb - ts) + '">' + fmtVal(tb - ts, true) + '</b></div><div><span>Saham</span><b>' + stocks.length + '</b></div></div>' +
       '<div class="smm-seg smm-bx-tabs"><button data-act="bpside" data-v="b" class="' + (B.side === 'b' ? 'on' : '') + '">Beli (' + buy.length + ')</button><button data-act="bpside" data-v="s" class="' + (B.side === 's' ? 'on' : '') + '">Jual (' + sell.length + ')</button></div>' +
-      '<div class="smm-bx-cols side-' + B.side + '">' + list(buy, 'b', net ? 'Net beli terbesar' : 'Beli terbesar') + list(sell, 's', net ? 'Net jual terbesar' : 'Jual terbesar') + '</div>' +
+      '<div class="smm-bx-cols side-' + B.side + '">' + list(buy, 'b', net ? 'Net beli terbesar' : 'Beli terbesar') + list(sell, 's', net ? 'Net jual terbesar' : 'Jual terbesar') + '</div>';
+    } else if (!B.px) {
+      body = '<div class="smm-cardnote">Memuat harga saham…</div>';
+    } else {
+      body = (B.pxFail ? '<div class="smm-cardnote">Data harga belum bisa dimuat, jadi untung/rugi belum bisa dihitung.</div>' : '') +
+      '<div class="smm-bx-kpi"><div><span>Estimasi untung / rugi</span><b class="' + signCls(sumW + sumL) + '">' + fmtVal(sumW + sumL, true) + '</b></div>' +
+        '<div><span>Saham untung</span><b class="smm-up">' + win.length + ' <small>' + fmtVal(sumW, true) + '</small></b></div>' +
+        '<div><span>Saham rugi</span><b class="smm-dn">' + lose.length + ' <small>' + fmtVal(sumL, true) + '</small></b></div>' +
+        '<div><span>Tanpa data harga</span><b>' + noPx + '</b></div></div>' +
+      '<div class="smm-seg smm-bx-tabs"><button data-act="bpside" data-v="b" class="' + (B.side === 'b' ? 'on' : '') + '">Untung (' + win.length + ')</button><button data-act="bpside" data-v="s" class="' + (B.side === 's' ? 'on' : '') + '">Rugi (' + lose.length + ')</button></div>' +
+      '<div class="smm-bx-cols side-' + B.side + '">' + plist(win, 'b', 'Paling untung') + plist(lose, 's', 'Paling rugi') + '</div>';
+    }
+    return head + pick +
+        '<button class="smm-datebtn" data-act="bpdate">📅 <span>' + esc(dateTxt) + '</span> ▾</button>' +
+        (isPnl ? '' : '<div class="smm-seg" id="smmBpMode"><button data-act="bpmode" data-v="gross" class="' + (net ? '' : 'on') + '">Gross</button><button data-act="bpmode" data-v="net" class="' + (net ? 'on' : '') + '">Net</button></div>') + '</div>' +
+      tabSeg +
+      (D.local ? '<div class="smm-cardnote">Indeks lintas saham belum dibuat, jadi baru dihitung dari <b>' + loadedCodes().length + ' saham yang sudah dibuka</b>. Jalankan <code>node scripts/build-smartmoney-screener.js --dir … --upload</code> untuk semua saham.</div>' : '') +
+      body +
       (more ? '<button class="smm-btn smm-more" data-act="bpall">' + (B.all ? 'Tampilkan 15 teratas' : 'Lihat semua') + '</button>' : '') +
       '<div class="smm-sh-foot">' + (G().hasBroker && G().brokers.some(function (b) { return b.code === B.code; }) ? '<button class="smm-btn" data-act="bpchip">+ Tambah ' + esc(B.code) + ' ke Broker Flow ' + esc(S.code) + '</button>' : '') +
-        '<span class="smm-desc">Ketuk saham untuk membukanya. Avg = value ÷ (lot × 100).</span></div>';
+        '<span class="smm-desc">' + (isPnl
+          ? 'Estimasi = (jual − beli) + net lot × 100 × harga penutup ' + esc(endIso ? fmtDate(endIso) : '-') + '. Hanya dari transaksi pada tanggal terpilih; belum menghitung saham yang sudah dipegang sebelumnya dan biaya transaksi. Ketuk saham untuk membukanya.'
+          : 'Ketuk saham untuk membukanya. Avg = value ÷ (lot × 100).') + '</span></div>';
   }
   function bpDate() {
     var D = _bp && _bp.data; if (!D || !D.days.length) return;
@@ -3954,6 +4016,7 @@
       case 'dpstep': dpStep(v); break;
       case 'dpapply': dpApply(); break;
       case 'bpdate': bpDate(); break;
+      case 'bptab': _bp.tab = v === 'pnl' ? 'pnl' : 'flow'; _bp.all = false; if (_bp.tab === 'pnl') bpLoadPx(); sheetRender(); break;
       case 'bpmode': _bp.mode = v; sheetRender(); break;
       case 'bpside': _bp.side = v; sheetRender(); break;
       case 'bpall': _bp.all = !_bp.all; sheetRender(); break;
