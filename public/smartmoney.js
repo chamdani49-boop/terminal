@@ -48,30 +48,6 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function hashStr(s) {
-    var h = 2166136261 >>> 0;
-    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-    return h;
-  }
-  function rng(seed) {
-    var a = seed >>> 0;
-    return function () {
-      a = (a + 0x6D2B79F5) >>> 0;
-      var t = a;
-      t = Math.imul(t ^ (t >>> 15), t | 1);
-      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-  function gauss(r) {
-    var u = r() || 1e-9, v = r();
-    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-  }
-  function shuffle(arr, r) {
-    var a = arr.slice();
-    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
-    return a;
-  }
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
   function tickSize(p) { return p < 200 ? 1 : p < 500 ? 2 : p < 2000 ? 5 : p < 5000 ? 10 : 25; }
   function roundTick(p) { var t = tickSize(p); return Math.max(50, Math.round(p / t) * t); }
@@ -747,6 +723,8 @@
     '#page-smartmoney[data-smm-sub="screener"] #smmActive{display:none!important}',
     '.smm-empty{display:none;text-align:center;padding:28px 16px;font-size:13px;color:var(--text2);line-height:1.7}',
     '.smm-pg.is-empty>.smm-empty{display:block}',
+    '.smm-pg{transition:opacity .25s ease}#page-smartmoney.smm-loading .smm-pg{opacity:0;pointer-events:none}',
+    '.smm-badge[hidden]{display:none}',
     '.smm-pg.is-empty>*:not(.smm-empty):not(#smmRadarCard):not(#smmBkProfile):not(#smmPersonCard){display:none!important}',
     '.smm-badge.real{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}',
     '.smm-sum{grid-template-columns:minmax(300px,1.35fr) repeat(3,minmax(0,1fr))}',
@@ -1080,26 +1058,80 @@
       })
       .catch(function () { _index = []; return _index; });
   }
-  function loadReal(code) {
-    if (_real[code] !== undefined) return Promise.resolve(_real[code]);
-    var p = fetch('/api/admin/smartmoney?code=' + encodeURIComponent(code), { credentials: 'same-origin', cache: 'no-store' })
+  // Ambil data mentah 1 saham dari R2. Bila file broker tidak memuat harga, harga diambil dari
+  // /ohlc.json lalu DISISIPKAN ke data mentah supaya data bisa disimpan di cache lokal tanpa
+  // perlu memuat ulang /ohlc.json (±3,5 MB).
+  var _rawOf = {}, _rawStr = {};
+  function fetchRaw(code) {
+    return fetch('/api/admin/smartmoney?code=' + encodeURIComponent(code), { credentials: 'same-origin', cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) {
-        if (!j || !j.ok || (!j.broker && !j.insider && !j.holder)) return false;
+        if (!j || !j.ok || (!j.broker && !j.insider && !j.holder)) return null;
         var needPx = !(j.broker && Array.isArray(j.broker.ohlc) && j.broker.ohlc.length);
-        return (needPx ? loadOhlc() : Promise.resolve(null)).then(function (all) {
-          try {
-            var g = adapt(code, j.broker, j.insider, all, j.holder);
-            if (g) { g.holder = adaptHolder(code, j.holder, g); g.hasHolder = !!g.holder; }
-            return g;
+        if (!needPx) return j;
+        return loadOhlc().then(function (all) {
+          var T = all && all.tickers && all.tickers[code];
+          if (T && Array.isArray(T.candles) && T.candles.length) {
+            var b = {}; Object.keys(j.broker || {}).forEach(function (k) { b[k] = j.broker[k]; });
+            b.ohlc = T.candles;
+            var o = {}; Object.keys(j).forEach(function (k) { o[k] = j[k]; }); o.broker = b;
+            return o;
           }
-          catch (e) { console.warn('[smartmoney] data ' + code + ' tidak valid:', e); return false; }
+          return j;
         });
       })
-      .catch(function () { return false; })
-      .then(function (v) { _real[code] = v; return v; });
+      .catch(function () { return null; });
+  }
+  function buildData(code, j) {
+    try {
+      var g = adapt(code, j.broker, j.insider, null, j.holder);
+      if (g) { g.holder = adaptHolder(code, j.holder, g); g.hasHolder = !!g.holder; }
+      return g || false;
+    } catch (e) { console.warn('[smartmoney] data ' + code + ' tidak valid:', e); return false; }
+  }
+  function keepRaw(code, j) { _rawOf[code] = j; try { _rawStr[code] = JSON.stringify(j); } catch (_) { _rawStr[code] = null; } }
+  function loadReal(code) {
+    if (_real[code] !== undefined) return Promise.resolve(_real[code]);
+    var p = fetchRaw(code).then(function (j) {
+      var g = j ? buildData(code, j) : false;
+      if (g) keepRaw(code, j);
+      _real[code] = g; return g;
+    });
     _real[code] = p;
     return p;
+  }
+
+  // ── Cache lokal (pola cache-first seperti Dashboard/Tracker) ──
+  // Saham terakhir yang dibuka + daftar indeks disimpan di localStorage. Saat halaman dibuka lagi,
+  // isi langsung tampil dari cache, lalu diperbarui diam-diam dari server (tanpa layar loading).
+  var SMM_CACHE_KEY = 'smm.cache.v1', SMM_CACHE_MAX_AGE = 3 * 864e5, SMM_CACHE_MAX_LEN = 2000000;
+  function readCache() {
+    try {
+      var w = JSON.parse(localStorage.getItem(SMM_CACHE_KEY) || 'null');
+      if (!w || !w.ts || !w.code || !w.raw || Date.now() - w.ts > SMM_CACHE_MAX_AGE) return null;
+      return w;
+    } catch (_) { try { localStorage.removeItem(SMM_CACHE_KEY); } catch (__) {} return null; }
+  }
+  function writeCache(code) {
+    var raw = _rawOf[code]; if (!raw) return;
+    setTimeout(function () {
+      try {
+        var str = JSON.stringify({ ts: Date.now(), code: code, index: _index || [], raw: raw });
+        if (str.length > SMM_CACHE_MAX_LEN) { localStorage.removeItem(SMM_CACHE_KEY); return; }
+        localStorage.setItem(SMM_CACHE_KEY, str);
+      } catch (_) { try { localStorage.removeItem(SMM_CACHE_KEY); } catch (__) {} }
+    }, 80);
+  }
+  // Perbarui data saham dari server di belakang layar; render ulang hanya bila datanya berubah.
+  function revalidate(code) {
+    return fetchRaw(code).then(function (j) {
+      if (!j) return;
+      var str = null; try { str = JSON.stringify(j); } catch (_) {}
+      if (str && str === _rawStr[code]) { writeCache(code); return; }
+      var g = buildData(code, j); if (!g) return;
+      _real[code] = g; keepRaw(code, j); writeCache(code);
+      if (S.code === code) { if (S.actEnd > g.nF - 1 || S.actEnd < 0) actPresetDefault(g); renderAll(); }
+    });
   }
 
   function isoOf(x) {
@@ -1337,7 +1369,7 @@
     return '' +
     '<div class="smm-wrap">' +
       '<div class="smm-head">' +
-        '<div class="smm-title"><h2>💰 Smart Money</h2><span class="smm-badge adm">Admin only</span><span class="smm-badge none" id="smmSrcBadge">Memuat data…</span></div>' +
+        '<div class="smm-title"><h2>💰 Smart Money</h2><span class="smm-badge adm">Admin only</span><span class="smm-badge none" id="smmSrcBadge" hidden></span></div>' +
         '<p class="smm-sub">Lacak ke mana <b>uang besar</b> bergerak. <span class="smm-up">Hijau</span> = sedang dikumpulkan, <span class="smm-dn">merah</span> = sedang dilepas.</p>' +
       '</div>' +
 
@@ -1372,7 +1404,7 @@
         // Broker Flow (lebar) + Value × Volume (samping)
         '<div class="smm-flowrow">' +
         '<section class="smm-card" id="smmFlowCard">' +
-          '<div class="smm-h3">Broker Flow <small id="smmFlowSub"></small>' + tip('Garis = total beli dikurangi jual (net) tiap broker, dijumlah dari awal periode. Garis naik = broker terus menimbun. Garis turun = broker terus melepas. Bandingkan dengan harga (sumbu kanan). Ringkasan: broker pada chip dibagi dua kubu, Akumulator (net beli) dan Distributor (net jual), lalu dibandingkan dengan harga. Broker pada chip juga dipakai kartu Value × Volume.') + '</div>' +
+          '<div class="smm-h3">Broker Flow <small id="smmFlowSub"></small>' + tip('Arus beli dikurangi jual (net) broker yang ada di chip, dijumlah sejak awal rentang tanggal kartu ini. Ringkasan: broker dibagi dua kubu, Akumulator (net beli) dan Distributor (net jual), lalu ditampilkan grafik harga, net flow kumulatif tiap kubu, dan net per broker. Grafik: harga (candle atau garis) plus garis kumulatif tiap broker; garis naik = terus menimbun, turun = terus melepas. Value = rupiah, Volume = lot. Tambah atau hapus broker lewat chip di bawah kartu; chip yang sama dipakai kartu Value × Volume. Tanggal: tombol 📅 di kartu (default ikut tanggal semua kartu).') + '</div>' +
           '<div class="smm-toolbar">' +
             cdateBtn('flow') +
             '<div class="smm-seg" id="smmFlowView" role="tablist" aria-label="Tampilan Broker Flow"><button data-act="flowview" data-v="story">Ringkasan</button><button data-act="flowview" data-v="chart">Grafik</button></div>' +
@@ -1386,7 +1418,7 @@
           '<div class="smm-insight" id="smmFlowInsight"></div>' +
         '</section>' +
         '<section class="smm-card" id="smmVxvCard">' +
-          '<div class="smm-h3">Value × Volume ' + tip('Value = besar uang, Volume = jumlah lot. Value dibagi volume = harga rata-rata broker. Dibandingkan dengan harga sekarang, terlihat siapa yang untung dan siapa yang masih tersangkut.') + '</div>' +
+          '<div class="smm-h3">Value × Volume ' + tip('Untuk broker yang ada di chip Broker Flow. Value = rupiah, Volume = lot, rata-rata = value ÷ (lot × 100). Peta posisi: kiri-kanan = net value (kanan = net beli), atas-bawah = harga rata-rata dibanding harga sekarang, besar bubble = volume. Tabel kolom vs harga: untuk net beli = harga sekarang dibanding rata-rata beli; untuk net jual = rata-rata jual dibanding harga sekarang. Positif berarti posisinya untung. Tanggal: tombol 📅 di kartu.') + '</div>' +
           '<div class="smm-toolbar">' + cdateBtn('vxv') + '<div class="smm-seg" id="smmVxvMode"><button data-act="vxv" data-v="value">Value</button><button data-act="vxv" data-v="volume">Volume</button><button data-act="vxv" data-v="both">Keduanya</button></div></div>' +
           '<div class="smm-vx" id="smmVxv"></div>' +
         '</section>' +
@@ -1395,7 +1427,7 @@
         // Kartu baru: Broker Summary · Lawan transaksi · Kalender flow harian
         '<div class="smm-cols3">' +
           '<section class="smm-card" id="smmBSumCard">' +
-            '<div class="smm-h3">Broker Summary ' + tip('Siapa pembeli & penjual terbesar pada tanggal terpilih (Broker Action digabung ke sini). Net = beli dikurangi jual per broker, Gross = total beli & jual. Meter: kekuatan 9 pembeli teratas vs 9 penjual teratas. Ringkasan = tarik-tambang & gaya order; Tabel = rincian per broker.') + '</div>' +
+            '<div class="smm-h3">Broker Summary ' + tip('Pembeli dan penjual terbesar pada tanggal terpilih. Ganti tanggal lewat 📅, geser per hari dengan ‹ ›, atau ketuk tanggal di Kalender flow. Net = beli dikurangi jual per broker, Gross = total beli dan total jual. Meter Broker action (Big Dist sampai Big Acc) membandingkan kekuatan 9 pembeli teratas dengan 9 penjual teratas. Ringkasan = tarik-tambang per peringkat dan gaya order (lot per transaksi, bila file memuat frekuensi). Tabel = rincian per broker. Ketuk kode broker untuk melihat aktivitasnya di semua saham.') + '</div>' +
             '<div class="smm-datebar2">' +
               '<button class="smm-dnav" data-act="dprev" aria-label="Geser ke hari sebelumnya">‹</button>' +
               '<button class="smm-datebtn" data-act="actdate" aria-haspopup="dialog">📅 <span id="smmActDate"></span> ▾</button>' +
@@ -1406,7 +1438,7 @@
             '<div class="smm-bs" id="smmBSum"></div>' +
           '</section>' +
           '<section class="smm-card" id="smmOrbitCard">' +
-            '<div class="smm-h3">Lawan Transaksi ' + tip('Siapa lawan transaksi satu broker. Tanggalnya ikut Broker Summary / kalender, atau pilih tanggal sendiri lewat tombol 📅 di kartu ini. Diestimasi dari porsi beli & jual tiap broker karena bursa tidak mencatat pasangan pembeli–penjual.') + '</div>' +
+            '<div class="smm-h3">Lawan Transaksi ' + tip('Dari siapa satu broker membeli, atau kepada siapa ia menjual. Pilih broker di daftar pilihan. Bar warna = porsi lawan asing, lokal, BUMN, dan broker itu sendiri. Orbit = lingkaran lawan (besar lingkaran dan tebal garis = nilai), Aliran = daftar porsi tiap lawan. Angka ini estimasi: bursa tidak mencatat pasangan pembeli-penjual, jadi beli si broker dibagi ke penjual sesuai porsi jual masing-masing pada rentang yang sama. Tanggal default ikut Broker Summary, atau pilih sendiri lewat 📅.') + '</div>' +
             '<div class="smm-toolbar">' + cdateBtn('orbit') + '<div class="smm-seg" id="smmObView"><button data-act="obview" data-v="orbit">Orbit</button><button data-act="obview" data-v="flow">Aliran</button></div><div class="smm-seg" id="smmObMetric"><button data-act="obmetric" data-v="value">Value</button><button data-act="obmetric" data-v="volume">Volume</button></div></div>' +
             '<div class="smm-ob" id="smmOrbit"></div>' +
           '</section>' +
@@ -1414,7 +1446,7 @@
         '</div>' +
 
         '<section class="smm-card" id="smmRadarCard">' +
-          '<div class="smm-h3">📡 Radar Smart Money <small id="smmRadarSub"></small>' + tip('Peringkat saham berdasarkan skor Smart Money pada periode terpilih. Klik baris untuk membuka saham itu.') + '</div>' +
+          '<div class="smm-h3">📡 Radar Smart Money <small id="smmRadarSub"></small>' + tip('Saham pantauan diurutkan menurut Skor Smart Money (0-100) pada rentang tanggal kartu ini. Kiri: skor 50 ke atas (cenderung dikumpulkan). Kanan: di bawah 50 (cenderung dilepas). Panjang batang = jarak skor dari 50. Net asing = net beli investor asing, Harga = perubahan harga pada rentang itu. Ketuk baris untuk membuka saham.') + '</div>' +
           '<div class="smm-toolbar" style="margin-bottom:8px">' + cdateBtn('radar') + '</div>' +
           '<p class="smm-desc">Saham mana yang sedang <b>dikumpulkan</b> dan <b>dilepas</b> pemain besar? Batang makin panjang = sinyal makin kuat.</p>' +
           '<div class="smm-radar-cols" id="smmRadar"></div>' +
@@ -1440,7 +1472,7 @@
         // Baris atas: grafik (lebar) + daftar orang dalam setinggi grafik (scroll bila panjang)
         '<div class="smm-ins-row">' +
         '<section class="smm-card" id="smmInsiderCard">' +
-          '<div class="smm-h3">Harga & transaksi orang dalam <small id="smmInsSub"></small>' + tip('Transaksi direksi, komisaris, dan pemegang saham pengendali yang dilaporkan ke IDX / KSEI. Orang dalam paling tahu kondisi perusahaan, jadi pembelian mereka sering dianggap sinyal keyakinan.') + '</div>' +
+          '<div class="smm-h3">Harga & transaksi orang dalam <small id="smmInsSub"></small>' + tip('Harga saham dengan penanda transaksi orang dalam (direksi, komisaris, pengendali) yang dilaporkan ke IDX atau KSEI: ▲ hijau = beli, ▼ merah = jual, makin besar panah = makin besar nilainya. Pilih rentang 6M, 1Y, atau 2Y. Ketuk nama di daftar Orang dalam untuk menyorot dan memfilter transaksinya.') + '</div>' +
           '<div class="smm-toolbar" style="margin-bottom:8px"><div class="smm-seg" id="smmInsRange"><button data-act="insrange" data-v="6M">6M</button><button data-act="insrange" data-v="1Y">1Y</button><button data-act="insrange" data-v="2Y">2Y</button></div>' +
           '<span class="lbl smm-ins-legend"><b class="smm-up">▲ Beli</b> <b class="smm-dn">▼ Jual</b> · panah besar = transaksi besar</span></div>' +
           '<div class="smm-ins-chart" id="smmInsChart"></div>' +
@@ -1456,7 +1488,7 @@
         '</div>' +
 
         '<section class="smm-card" id="smmInsListCard">' +
-          '<div class="smm-h3">Daftar transaksi</div>' +
+          '<div class="smm-h3">Daftar transaksi ' + tip('Semua laporan transaksi orang dalam, terbaru di atas. Filter sumber (IDX atau KSEI) dan aksi (beli atau jual). Sebelum → sesudah = porsi kepemilikan pelapor sebelum dan sesudah transaksi.') + '</div>' +
           '<div class="smm-ins-filter">' +
             '<div class="smm-seg" id="smmInsSrc"><button data-act="inssrc" data-v="ALL">Semua</button><button data-act="inssrc" data-v="IDX">IDX</button><button data-act="inssrc" data-v="KSEI">KSEI</button></div>' +
             '<select class="smm-sel" id="smmInsAct" aria-label="Aksi"><option value="ALL">Semua Aksi</option><option value="BUY">Beli</option><option value="SELL">Jual</option></select>' +
@@ -1481,7 +1513,7 @@
         '<div class="smm-card smm-empty">📭 <b>Belum ada data kepemilikan untuk saham ini.</b><br>Unggah lewat <code>upload_smartmoney.py</code> (folder <code>smartmoney/holder/</code>), atau pilih saham lain.</div>' +
         '<section class="smm-ins-sum" id="smmHoSum"></section>' +
         '<section class="smm-card" id="smmHoMoveCard">' +
-          '<div class="smm-h3">Pergerakan pemegang &gt; 1% <small id="smmHoMoveSub"></small>' + tip('Daftar pemegang saham di atas 1% per akhir bulan (data KSEI). Δ MoM = perubahan porsi dibanding bulan sebelumnya, dalam poin persen (pp). Klik nama untuk melihat jejaknya di saham lain.') + '</div>' +
+          '<div class="smm-h3">Pergerakan pemegang &gt; 1% <small id="smmHoMoveSub"></small>' + tip('Pemegang saham di atas 1% per akhir bulan (data KSEI). Pilih bulan di deretan atas. Bar paling atas = peta porsi semua pemegang (abu-abu = publik dan pemegang di bawah 1%). Tiap baris: porsi bulan ini, perubahan dibanding bulan sebelumnya dalam poin persen (pp), jumlah lembar dan nilainya, scripless dan scrip, serta tren 12 bulan. BARU = masuk daftar, keluar daftar = turun ke bawah 1%. Ketuk nama untuk melihat jejaknya di saham lain.') + '</div>' +
           '<div class="smm-scroll smm-seg smm-months-seg" id="smmHoMoveMonths"></div>' +
           '<div class="smm-hobar" id="smmHoBar"></div>' +
           '<div id="smmHoMoveTxt"></div>' +
@@ -1491,22 +1523,22 @@
         '<div class="smm-hocols">' +
          '<div class="smm-hocol">' +
           '<section class="smm-card" id="smmHoCompCard">' +
-            '<div class="smm-h3">Komposisi pemegang ' + tip('Pembagian saham berdasarkan jenis investor KSEI: korporasi, reksa dana, institusi keuangan, individu, dan lainnya. Ritel = individu, institusi = selain individu.') + '</div>' +
+            '<div class="smm-h3">Komposisi pemegang ' + tip('Pembagian saham scripless per jenis investor KSEI (korporasi, reksa dana, institusi keuangan, individu, dan lainnya) pada bulan terpilih, beserta perubahan dibanding bulan sebelumnya. Pilih Semua, Lokal, atau Asing. Di bawah donat: perbandingan scrip vs scripless (atau lokal vs asing) dan ritel vs institusi. Ritel = individu, institusi = selain individu.') + '</div>' +
             '<div class="smm-scroll smm-seg smm-months-seg" id="smmHoCompMonths"></div>' +
             '<div class="smm-seg" id="smmHoSide" style="margin:8px 0"><button data-act="hoside" data-v="all">Semua</button><button data-act="hoside" data-v="local">Lokal</button><button data-act="hoside" data-v="foreign">Asing</button></div>' +
             '<div id="smmHoComp"></div>' +
           '</section>' +
-          '<section class="smm-card" id="smmHoHoldersCard"><div class="smm-h3">Pemegang saham terkini</div><div id="smmHoHolders"></div></section>' +
+          '<section class="smm-card" id="smmHoHoldersCard"><div class="smm-h3">Pemegang saham terkini ' + tip('Pemegang saham terbaru menurut laporan emiten, termasuk direksi dan komisaris yang memegang saham, serta pemilik manfaat akhir (UBO). Bar atas = peta porsi (abu-abu = publik). Ketuk nama untuk melihat jejaknya di saham lain.') + '</div><div id="smmHoHolders"></div></section>' +
           '<section class="smm-card" id="smmHoBoard"></section>' +
          '</div>' +
          '<div class="smm-hocol">' +
           '<section class="smm-card" id="smmHoChartCard">' +
-            '<div class="smm-h3">Tren kepemilikan 12 bulan ' + tip('Porsi kepemilikan scripless per akhir bulan. Mode Per kategori memperlihatkan siapa yang menambah atau mengurangi porsi dari bulan ke bulan.') + '</div>' +
+            '<div class="smm-h3">Tren kepemilikan 12 bulan ' + tip('Porsi kepemilikan scripless 12 bulan terakhir per akhir bulan. Lokal vs Asing: garis porsi asing (skala diperbesar agar perubahan kecil terlihat) dan perubahannya tiap bulan dalam poin persen. Per kategori: tren tiap jenis investor, porsi sekarang, dan perubahan sejak awal periode.') + '</div>' +
             '<div class="smm-toolbar"><div class="smm-seg" id="smmHoChartMode"><button data-act="hochart" data-v="lf">Lokal vs Asing</button><button data-act="hochart" data-v="cat">Per kategori</button></div></div>' +
             '<div class="smm-hokpi" id="smmHoChartKpi"></div>' +
             '<div id="smmHoChart"></div>' +
           '</section>' +
-          '<section class="smm-card" id="smmHoCountCard"><div class="smm-h3">Jumlah pemegang saham ' + tip('Jumlah investor per akhir bulan. Hijau = bertambah dari bulan sebelumnya, merah = berkurang.') + '</div><div id="smmHoCount"></div></section>' +
+          '<section class="smm-card" id="smmHoCountCard"><div class="smm-h3">Jumlah pemegang saham ' + tip('Jumlah investor yang memegang saham ini per akhir bulan, sampai 24 bulan. Hijau = bertambah dari bulan sebelumnya, merah = berkurang. Jumlah pemegang yang turun berarti saham terkumpul di lebih sedikit tangan, sering menyertai akumulasi.') + '</div><div id="smmHoCount"></div></section>' +
           '<section class="smm-card" id="smmHoCompany"></section>' +
          '</div>' +
         '</div>' +
@@ -1563,22 +1595,22 @@
       '<div class="smm-card smm-verdict k-' + lab.k + '">' + gaugeSvg(sc.score) +
         '<div><h4>Skor Smart Money · ' + esc(S.code) + ' · ' + esc(pTxt) + '</h4>' +
         '<div class="big">' + esc(lab.label) + '</div><p>' + esc(lab.desc) + '</p><ul>' + bullets.map(function (b) { return '<li>' + b + '</li>'; }).join('') + '</ul></div>' +
-        '<span style="position:absolute;top:10px;right:10px">' + tip('Skor 0-100 gabungan: 45% pola bandar (Broker Action), 30% arus dana asing, 25% transaksi insider 6 bulan terakhir. Di atas 55 = cenderung masuk, di bawah 45 = cenderung keluar.') + '</span>' +
+        '<span style="position:absolute;top:10px;right:10px">' + tip('Skor 0-100 dari tiga komponen: 45% pola bandar (3 net pembeli terbesar dibanding 3 net penjual terbesar), 30% arus dana asing dibanding total transaksi, dan 25% transaksi orang dalam 6 bulan terakhir. 50 = netral, 55 ke atas = cenderung masuk, 45 ke bawah = cenderung keluar. Periode ikut tombol tanggal semua kartu.') + '</span>' +
       '</div>' +
-      '<div class="smm-card smm-kpi"><h4>🏦 Bandar ' + tip('Broker dengan net buy terbesar pada periode ini dan harga rata-rata belinya.') + '</h4>' +
+      '<div class="smm-card smm-kpi"><h4>🏦 Bandar ' + tip('Broker dengan net beli terbesar pada periode tanggal semua kartu, harga rata-rata belinya, dan untung atau ruginya terhadap harga terakhir. Di bawahnya: broker dengan net jual terbesar.') + '</h4>' +
         '<div class="v">' + bkTag(top.code, top.type, top.name) + ' <span class="smm-up" style="font-size:16px">' + fmtVal(top.net) + '</span></div>' +
         '<span class="pill k-' + al.k + '">' + al.emoji + ' ' + al.label + '</span>' +
         '<p>Penimbun terbesar: <b>' + esc(top.name) + '</b>, rata-rata beli <b>' + nf(top.bAvg) + '</b>. Harga sekarang ' + nf(c1) + ' → bandar ' + (gain >= 0 ? '<b class="smm-up">untung ' + fmtPct(gain) + '</b>' : '<b class="smm-dn">rugi ' + fmtPct(gain) + '</b>') + '.</p>' +
         '<p style="margin-top:4px">Pelepas terbesar: ' + bkTag(bot.code, bot.type, bot.name) + ' <span class="smm-dn">' + fmtVal(bot.net) + '</span></p>' +
       '</div>' +
-      '<div class="smm-card smm-kpi"><h4>🌏 Investor Asing ' + tip('Perkiraan porsi transaksi investor asing (net beli − jual) pada periode terpilih.') + '</h4>' +
+      '<div class="smm-card smm-kpi"><h4>🌏 Investor Asing ' + tip('Net beli dikurangi jual investor asing pada periode tanggal semua kartu, dan besarnya dibanding total transaksi. Hanya tersedia bila file data memuat porsi investor asing.') + '</h4>' +
         (g.hasForeign ?
         '<div class="v ' + signCls(fl) + '">' + fmtVal(fl, true) + '</div>' +
         '<span class="pill k-' + (fl > 0 ? 'a' : 'd') + '">' + (fl > 0 ? '⬆ Net Buy' : '⬇ Net Sell') + '</span>' +
         '<p>Dalam ' + esc(pTxt) + ', asing ' + (fl > 0 ? '<b>memasukkan</b>' : '<b>menarik</b>') + ' dana ' + fmtVal(Math.abs(fl), true) + ' atau ' + nf(Math.abs(fl) / sc.turnover * 100, 1) + '% dari total transaksi ' + fmtVal(sc.turnover, true) + '.</p>'
         : '<div class="v">-</div><span class="pill k-n">Belum ada data</span><p>File data saham ini belum berisi porsi investor asing (kolom fbv/fsv/fbl/fsl).</p>') +
       '</div>' +
-      '<div class="smm-card smm-kpi smm-kpi-link" data-act="sub" data-v="insider" role="button" tabindex="0"><h4>🕵️ Orang Dalam ' + tip('Total nilai beli dikurangi jual oleh direksi / komisaris / pengendali dalam 6 bulan terakhir.') + '</h4>' +
+      '<div class="smm-card smm-kpi smm-kpi-link" data-act="sub" data-v="insider" role="button" tabindex="0"><h4>🕵️ Orang Dalam ' + tip('Nilai beli dikurangi jual oleh direksi, komisaris, dan pengendali dalam 6 bulan terakhir, berikut jumlah transaksinya. Ketuk kartu untuk membuka halaman Insider.') + '</h4>' +
         '<div class="v ' + signCls(ins.net) + '">' + fmtVal(ins.net, true) + '</div>' +
         '<span class="pill k-' + insLab.k + '">' + insLab.t + '</span>' +
         '<p>6 bulan: beli <b class="smm-up">' + ins.nb + 'x</b>, jual <b class="smm-dn">' + ins.ns + 'x</b>. Harga ' + esc(pTxt) + ': <b class="' + signCls(chg) + '">' + fmtPct(chg) + '</b>.</p>' +
@@ -2804,7 +2836,7 @@
     var bestS = rows.filter(function (x) { return x.v < 0; }).sort(function (a2, b2) { return a2.v - b2.v; })[0];
     var fillHtml = calFillHtml(rows);
     box.innerHTML =
-      '<div class="smm-h3">📅 Kalender flow ' + tip('Net beli dikurangi jual per hari bursa untuk kelompok terpilih. Hijau = net beli, merah = net jual, makin pekat makin besar. Ketuk tanggal untuk melihat pembeli & penjual hari itu di Broker Action dan Distribution.') + '</div>' +
+      '<div class="smm-h3">📅 Kalender flow ' + tip('Net beli dikurangi jual per hari bursa untuk kelompok terpilih: smart money (non-ritel), ritel, investor asing, atau satu broker. Hijau = net beli, merah = net jual, makin pekat makin besar; garis bawah = kekuatan hari itu dibanding hari terbesar bulan ini. Isi kotak: net value, lot, dan harga rata-rata. Ketuk tanggal untuk membuka hari itu di Broker Summary dan Lawan Transaksi. Di layar lebar, bila ada ruang, tampil juga Net per minggu dan Pola per hari (rata-rata net tiap hari bursa).') + '</div>' +
       '<div class="smm-calhead">' +
         '<button class="smm-btn smm-calnav" data-act="calmon" data-v="-1" ' + (mi <= 0 ? 'disabled' : '') + ' aria-label="Bulan sebelumnya">‹</button>' +
         '<b class="smm-calm">' + CAL_MON[M] + ' ' + Y + '</b>' +
@@ -3132,7 +3164,7 @@
     });
     var r3 = rec[2];
     document.getElementById('smmInsRecord').innerHTML =
-      '<h5>Buy record <small>porsi pembelian yang kemudian naik</small></h5>' +
+      '<h5>Buy record <small>porsi pembelian yang kemudian naik</small> ' + tip('Dari semua pembelian orang dalam, berapa persen yang harganya lebih tinggi 1 minggu, 1, 3, 6, dan 12 bulan kemudian. Angka besar = hasil 3 bulan. Makin tinggi, makin bagus timing beli mereka.') + '</h5>' +
       '<div class="smm-rec-big ' + (r3.pct == null ? '' : r3.pct >= 50 ? 'smm-up' : 'smm-dn') + '">' + (r3.pct == null ? '-' : nf(r3.pct) + '%') + '</div>' +
       '<div style="font-size:11px;color:var(--text3)">naik 3 bulan kemudian · ' + r3.n + ' transaksi beli</div>' +
       rec.map(function (x) {
@@ -3155,7 +3187,7 @@
     all.forEach(function (t) { var y = t.date.slice(0, 4); years[y] = years[y] || { b: 0, s: 0 }; years[y][t.action === 'BUY' ? 'b' : 's'] += t.value; });
     var maxY = Object.keys(years).reduce(function (a, y) { return Math.max(a, years[y].b, years[y].s); }, 1);
     document.getElementById('smmInsYear').innerHTML =
-      '<h5>Per bulan <small>12 bulan terakhir</small></h5>' +
+      '<h5>Per bulan <small>12 bulan terakhir</small> ' + tip('Tiap kotak = satu bulan. Hijau = orang dalam net membeli, merah = net menjual, makin pekat makin besar nilainya. Arahkan kursor ke kotak untuk melihat angkanya.') + '</h5>' +
       '<div class="smm-months lbl">' + months.map(function (k) { return '<div>' + MON[+k.slice(5) - 1].charAt(0) + '</div>'; }).join('') + '</div>' +
       '<div class="smm-months">' + months.map(function (k) {
         var v = mNet[k] || 0, a = Math.abs(v) / maxM;
@@ -3163,7 +3195,7 @@
         return '<div data-smm-tip="' + esc(MON[+k.slice(5) - 1] + ' ' + k.slice(0, 4) + ': ' + (v ? (v > 0 ? 'net beli ' : 'net jual ') + fmtVal(Math.abs(v), true) : 'tidak ada transaksi')) + '"' + (bg ? ' style="background:' + bg + '"' : '') + '></div>';
       }).join('') + '</div>' +
       '<div style="display:flex;gap:12px;font-size:11px;color:var(--text3);margin:6px 0 10px"><span>🟩 Bulan net beli</span><span>🟥 Bulan net jual</span></div>' +
-      '<h5>Per tahun <small>nilai beli vs jual</small></h5>' +
+      '<h5>Per tahun <small>nilai beli vs jual</small> ' + tip('Total nilai beli (hijau) dan jual (merah) orang dalam per tahun.') + '</h5>' +
       Object.keys(years).sort().reverse().map(function (y) {
         var o = years[y];
         return '<div style="display:grid;grid-template-columns:38px 1fr;gap:6px;align-items:center;font-size:11px;margin-top:4px"><b>' + y + '</b><div>' +
@@ -3187,7 +3219,7 @@
     });
     var sFall = sells.map(function (t) { return retAfter(g, t, 21); }).filter(function (x) { return x != null; });
     var sFallPct = sFall.length ? sFall.filter(function (x) { return x < 0; }).length / sFall.length * 100 : null;
-    document.getElementById('smmInsAna1').innerHTML = '<h5>Analisis</h5><div class="smm-ana">' +
+    document.getElementById('smmInsAna1').innerHTML = '<h5>Analisis ' + tip('Ringkasan semua laporan orang dalam yang sesuai filter: kapan pertama dan terakhir, jumlah hari beli dan jual, total nilai, dan rasio beli : jual.') + '</h5><div class="smm-ana">' +
       '<span>Transaksi pertama</span><span>' + (first ? fmtDate(first.date, true) : '-') + '</span>' +
       '<span>Transaksi terakhir</span><span>' + (last ? fmtDate(last.date, true) + ' · ' + daysAgo + 'h lalu' : '-') + '</span>' +
       '<span>Hari dengan beli</span><span>' + Object.keys(bDays).length + '</span>' +
@@ -3207,7 +3239,7 @@
     var avg1 = avgAfter(buys, 21), avg6 = avgAfter(buys, 126), sAvg1 = avgAfter(sells, 21);
     var bSh = 0, bVal = 0; buys.forEach(function (t) { bSh += t.shares; bVal += t.shares * t.price; });
     var bAvgPx = bSh ? bVal / bSh : 0, vsAvg = bAvgPx ? (lastPx / bAvgPx - 1) * 100 : null;
-    document.getElementById('smmInsAna2').innerHTML = '<h5>Kualitas timing</h5><div class="smm-ana">' +
+    document.getElementById('smmInsAna2').innerHTML = '<h5>Kualitas timing ' + tip('Seberapa tepat waktu orang dalam bertransaksi: rata-rata perubahan harga 1, 3, dan 6 bulan setelah beli, dan 1 bulan setelah jual (negatif = jual sebelum harga turun). Harga rata-rata beli dibanding harga terakhir.') + '</h5><div class="smm-ana">' +
       '<span>Rata-rata 1 bln setelah beli</span><span class="' + signCls(avg1) + '">' + (avg1 == null ? '-' : fmtPct(avg1)) + '</span>' +
       '<span>Rata-rata 3 bln setelah beli</span><span class="' + signCls(avg3) + '">' + (avg3 == null ? '-' : fmtPct(avg3)) + '</span>' +
       '<span>Rata-rata 6 bln setelah beli</span><span class="' + signCls(avg6) + '">' + (avg6 == null ? '-' : fmtPct(avg6)) + '</span>' +
@@ -3221,7 +3253,7 @@
 
     // Pemegang (orang dalam)
     var y1 = g.nP - 252;
-    document.getElementById('smmInsHolders').innerHTML = '<h5>Orang dalam <small>' + g.insiders.length + ' orang · klik untuk filter</small></h5>' + '<div class="smm-ins-list">' +
+    document.getElementById('smmInsHolders').innerHTML = '<h5>Orang dalam <small>' + g.insiders.length + ' orang · klik untuk filter</small> ' + tip('Daftar orang dalam yang pernah melapor, jabatannya, porsi kepemilikannya, dan net beli dikurangi jual 12 bulan terakhir. Ketuk nama untuk memfilter grafik dan tabel; ketuk lagi untuk melepas filter.') + '</h5>' + '<div class="smm-ins-list">' +
       g.insiders.map(function (p) {
         var net = g.trades.filter(function (t) { return t.name === p.name && t.idx >= y1; }).reduce(function (a, t) { return a + (t.action === 'BUY' ? t.value : -t.value); }, 0);
         return '<div class="smm-rrow' + (S.insName === p.name ? ' on' : '') + '" style="grid-template-columns:1fr auto;padding:6px" data-act="insname" data-v="' + esc(p.name) + '">' +
@@ -3243,12 +3275,12 @@
     var r1 = rec[1];
     document.getElementById('smmInsSum').innerHTML =
       '<div class="smm-card smm-verdict k-' + (k === 'a' ? 'a' : k === 'd' ? 'd' : 'n') + '"><div>' +
-        '<h4>Sinyal orang dalam · ' + esc(S.code) + ' · 6 bulan</h4>' +
+        '<h4>Sinyal orang dalam · ' + esc(S.code) + ' · 6 bulan ' + tip('Arah transaksi orang dalam 6 bulan terakhir: MEMBELI bila nilai beli lebih besar dari jual, MENJUAL bila sebaliknya.') + '</h4>' +
         '<div class="big ' + signCls(ins.net) + '">' + head + '</div>' +
         '<p>' + v + '</p></div></div>' +
-      '<div class="smm-card smm-kpi"><h4>Net 6 bulan</h4><div class="v ' + signCls(ins.net) + '">' + fmtVal(ins.net, true) + '</div><p>Nilai beli dikurangi jual.</p></div>' +
-      '<div class="smm-card smm-kpi"><h4>Ketepatan beli</h4><div class="v ' + (r1.pct == null ? '' : r1.pct >= 50 ? 'smm-up' : 'smm-dn') + '">' + (r1.pct == null ? '-' : nf(r1.pct) + '%') + '</div><p>Pembelian yang naik 1 bulan kemudian' + (r1.n ? ' (' + r1.ok + ' dari ' + r1.n + ')' : '') + '.</p></div>' +
-      '<div class="smm-card smm-kpi"><h4>Transaksi terakhir</h4><div class="v" style="font-size:18px">' + (lastT ? fmtDate(lastT.date) : '-') + '</div>' +
+      '<div class="smm-card smm-kpi"><h4>Net 6 bulan ' + tip('Total nilai beli dikurangi jual orang dalam dalam 6 bulan terakhir.') + '</h4><div class="v ' + signCls(ins.net) + '">' + fmtVal(ins.net, true) + '</div><p>Nilai beli dikurangi jual.</p></div>' +
+      '<div class="smm-card smm-kpi"><h4>Ketepatan beli ' + tip('Persentase pembelian orang dalam yang harganya lebih tinggi 1 bulan kemudian.') + '</h4><div class="v ' + (r1.pct == null ? '' : r1.pct >= 50 ? 'smm-up' : 'smm-dn') + '">' + (r1.pct == null ? '-' : nf(r1.pct) + '%') + '</div><p>Pembelian yang naik 1 bulan kemudian' + (r1.n ? ' (' + r1.ok + ' dari ' + r1.n + ')' : '') + '.</p></div>' +
+      '<div class="smm-card smm-kpi"><h4>Transaksi terakhir ' + tip('Laporan transaksi orang dalam paling baru: tanggal, beli atau jual, nilai, dan nama pelapor.') + '</h4><div class="v" style="font-size:18px">' + (lastT ? fmtDate(lastT.date) : '-') + '</div>' +
         (lastT ? '<p><span class="smm-act ' + lastT.action + '">' + (lastT.action === 'BUY' ? 'BELI' : 'JUAL') + '</span> ' + fmtVal(lastT.value, true) + ' oleh <b>' + esc(lastT.name) + '</b></p>' : '') + '</div>';
     document.getElementById('smmInsSub').textContent = '· ' + S.code + ' · ' + g.trades.length + ' laporan';
     document.getElementById('smmInsTag').innerHTML = S.insName ? '<span class="smm-ftag" data-act="insclear">' + esc(S.insName) + ' ×</span>' : '';
@@ -3472,14 +3504,14 @@
     document.getElementById('smmHoSum').innerHTML =
       '<div class="smm-card smm-verdict smm-hov k-' + k + '"><div class="smm-hov-ico">' + ico + '</div><div class="smm-hov-b"><h4>Sinyal kepemilikan · ' + esc(S.code) + (last ? ' · ' + monthLabel(last, true) : '') + '</h4>' +
         '<div class="big">' + head + '</div><p>' + desc + '</p><ul class="smm-hof">' + facts.join('') + '</ul><small class="smm-mute">Perubahan dibanding 3 bulan lalu.</small></div>' +
-        '<span style="position:absolute;top:10px;right:10px">' + tip('Logika sederhana: jumlah pemegang turun + porsi ritel turun = barang dikumpulkan (akumulasi). Jumlah pemegang naik + ritel naik = barang dibagikan ke ritel (distribusi). Sumber data: KSEI bulanan.') + '</span></div>' +
-      '<div class="smm-card smm-kpi smm-hok"><h4>🌏 Kepemilikan asing ' + tip('Porsi saham scripless yang dipegang investor asing (data KSEI akhir bulan).') + '</h4>' +
+        '<span style="position:absolute;top:10px;right:10px">' + tip('Kesimpulan dari data KSEI bulanan, dibanding 3 bulan lalu. Jumlah pemegang turun dan porsi ritel turun = saham dikumpulkan (akumulasi). Jumlah pemegang naik dan porsi ritel naik = saham dibagikan ke ritel (distribusi). Selain itu dianggap netral.') + '</span></div>' +
+      '<div class="smm-card smm-kpi smm-hok"><h4>🌏 Kepemilikan asing ' + tip('Porsi saham scripless yang dipegang investor asing pada akhir bulan terbaru (KSEI), dan perubahannya.') + '</h4>' +
         '<div class="v">' + (c1 ? nf(c1.fPct, 2) + '%' : '-') + '</div>' + (c1 ? hoPill(fD) + ' <small class="smm-mute">3 bln</small>' : '') +
         '<div class="sp">' + spark(fSeries, 140, 30) + '</div><p>' + (c1 ? 'Lokal ' + nf(c1.lPct, 2) + '%. Garis = tren 12 bulan.' : 'Belum ada data komposisi.') + '</p></div>' +
-      '<div class="smm-card smm-kpi smm-hok"><h4>👥 Jumlah pemegang ' + tip('Jumlah investor yang memegang saham ini per akhir bulan. Turun = saham terkumpul di lebih sedikit tangan.') + '</h4>' +
+      '<div class="smm-card smm-kpi smm-hok"><h4>👥 Jumlah pemegang ' + tip('Jumlah investor yang memegang saham ini pada akhir bulan terbaru, dan perubahannya. Turun = saham terkumpul di lebih sedikit tangan.') + '</h4>' +
         '<div class="v">' + (cl ? nf(cl.count) : '-') + '</div>' + (cl && cp ? hoPill(cl.count - cp.count, 0, '') + ' <small class="smm-mute">dari bulan lalu</small>' : '') +
         '<div class="sp">' + spark(cSeries, 140, 30) + '</div><p>' + (cl ? fmtPct(cChg3) + ' dalam 3 bulan.' : '') + '</p></div>' +
-      '<div class="smm-card smm-kpi smm-hok"><h4>🎯 Konsentrasi ' + tip('Total porsi pemegang di atas 1%. Free float = porsi yang beredar di publik. Konsentrasi tinggi + free float kecil = harga lebih mudah digerakkan.') + '</h4>' +
+      '<div class="smm-card smm-kpi smm-hok"><h4>🎯 Konsentrasi ' + tip('Total porsi pemegang di atas 1%. Free float = porsi yang beredar bebas di publik. Konsentrasi tinggi dan free float kecil membuat harga lebih mudah digerakkan.') + '</h4>' +
         '<div class="smm-hok-r">' + hoRing(big, '#7c3aed') + '<div><div class="v">' + nf(big, 2) + '%</div><small class="smm-mute">dipegang pemegang &gt;1%</small></div></div>' +
         '<div class="smm-hok-r">' + hoRing(ff, '#10b981') + '<div><div class="v sm">' + nf(ff, 2) + '%</div><small class="smm-mute">free float (publik)</small></div></div></div>';
   }
@@ -3628,7 +3660,7 @@
       (map ? '<div class="smm-hmap">' + map + '</div><small class="smm-mute">Peta kepemilikan: lebar warna = porsi saham. Abu-abu = publik.</small>' : '') +
       '<div class="smm-hsec"><div class="smm-hhead2"><span>🏛️ Pemegang saham</span><span>Lembar · Porsi</span></div>' + (hs || '<div class="smm-desc">-</div>') + '</div>' +
       '<div class="smm-hsec"><div class="smm-hhead2"><span>👔 Direksi &amp; Komisaris</span><span>Lembar · Porsi</span></div>' + (bd || '<div class="smm-desc">-</div>') + '</div>' +
-      '<div class="smm-hsec"><div class="smm-hhead2"><span>🔗 Pemilik Manfaat Akhir (UBO) ' + tip('Ultimate Beneficial Owner: orang yang pada akhirnya menguasai saham lewat perusahaan perantara.') + '</span><span>Porsi</span></div>' + (ub || '<div class="smm-desc">Belum ada data UBO.</div>') + '</div>';
+      '<div class="smm-hsec"><div class="smm-hhead2"><span>🔗 Pemilik Manfaat Akhir (UBO) ' + tip('Ultimate Beneficial Owner: orang yang pada akhirnya menguasai saham ini lewat perusahaan perantara. Panah menunjukkan jalurnya: orang, lalu perusahaan perantara, lalu porsi di saham ini.') + '</span><span>Porsi</span></div>' + (ub || '<div class="smm-desc">Belum ada data UBO.</div>') + '</div>';
   }
 
   function renderHoCount(H) {
@@ -3829,7 +3861,7 @@
         '<span class="n hm2" data-smm-tip="Porsi broker ini dari total transaksi saham tsb">' + nf(x.share, 1) + '%</span></div>';
     }).join('');
     card.innerHTML =
-      '<div class="smm-h3">🏦 Profil broker ' + bkTag(code, type, titleCase(meta.name)) + ' <small>' + esc(titleCase(meta.name)) + ' · ' + TYPE_META[type].label + ' · ' + periodText() + ' · ' + rows.length + ' saham</small>' + tip('Aktivitas broker ini di semua saham pantauan pada periode terpilih. Klik baris untuk membuka saham itu.') + '</div>' +
+      '<div class="smm-h3">🏦 Profil broker ' + bkTag(code, type, titleCase(meta.name)) + ' <small>' + esc(titleCase(meta.name)) + ' · ' + TYPE_META[type].label + ' · ' + periodText() + ' · ' + rows.length + ' saham</small>' + tip('Aktivitas broker ini di semua saham pantauan pada periode tanggal semua kartu: net beli atau jual dan harga rata-ratanya per saham. Ketuk baris untuk membuka saham itu.') + '</div>' +
       (rows.length ? '<div class="smm-bkkpi">' +
         '<div><span>Total net</span><b class="' + signCls(tot) + '">' + fmtVal(tot, true) + '</b></div>' +
         '<div><span>Dikumpulkan</span><b class="smm-up">' + nAcc + ' saham</b></div>' +
@@ -3897,8 +3929,10 @@
     document.getElementById('smmInsAct').value = S.insAct;
     var g = G(), bd = document.getElementById('smmSrcBadge');
     if (bd) {
-      bd.textContent = g.real ? 'Data asli · ' + fmtDate(g.updated || g.end) : (_real[S.code] === undefined || (_real[S.code] && _real[S.code].then) ? 'Memuat data…' : 'Belum ada data');
+      var ld = _real[S.code] === undefined || !!(_real[S.code] && _real[S.code].then);
+      bd.textContent = g.real ? 'Data asli · ' + fmtDate(g.updated || g.end) : 'Belum ada data';
       bd.className = 'smm-badge ' + (g.real ? 'real' : 'none');
+      bd.hidden = !g.real && ld;
     }
     var inv = document.getElementById('smmInv');
     inv.disabled = !g.hasForeign;
@@ -3939,7 +3973,7 @@
     return _scrP;
   }
   var screenerApi = {
-    esc: esc, nf: nf, fmtVal: fmtVal, fmtLot: fmtLot, fmtPct: fmtPct, hashStr: hashStr, rng: rng, gauss: gauss, shuffle: shuffle,
+    esc: esc, nf: nf, fmtVal: fmtVal, fmtLot: fmtLot, fmtPct: fmtPct,
     tip: tip, toast: toast, bkTag: bkTag, brokerList: brokerList, brokerType: brokerType, titleCase: titleCase,
     loadOhlc: function () { return loadOhlc(); }, loadReal: loadReal,
     index: function () { return _index; },
@@ -3998,6 +4032,7 @@
       if (S.broker && g.brokers.some(function (b) { return b.code === S.broker; }) && S.chips.indexOf(S.broker) < 0) { S.chips.push(S.broker); colorFor(S.broker); }
       if (S.person) { var own = g.trades.filter(function (t) { return normName(t.name) === normName(S.person); })[0]; S.insName = own ? own.name : null; }
       renderAll();
+      if (g.real || g.hasBroker || g.hasInsider || g.hasHolder) { try { localStorage.setItem('smm_code', code); } catch (_) {} writeCache(code); }
     });
   }
   function addChip(code) {
@@ -4197,13 +4232,37 @@
       defaultChips();
       _built = true;
       try { var sv = localStorage.getItem('smm_sub'); S.sub = sv === 'insider' || sv === 'holder' || sv === 'screener' ? sv : 'broker'; } catch (_) {}
+      // 1) Cache lokal → isi langsung tampil (tanpa layar loading)
+      var C = readCache(), hyd = false;
+      if (C) {
+        var g0 = buildData(C.code, C.raw);
+        if (g0) {
+          _real[C.code] = g0; keepRaw(C.code, C.raw); S.code = C.code; hyd = true;
+          if (Array.isArray(C.index) && C.index.length) _index = C.index.slice();
+        }
+      }
+      // Belum ada cache: isi halaman disembunyikan sebentar lalu muncul halus begitu data saham
+      // aktif siap (cara yang sama dengan Overview Tracker) — tanpa spinner / teks "memuat".
+      if (!hyd) {
+        root.classList.add('smm-loading');
+        setTimeout(function () { root.classList.remove('smm-loading'); }, 8000);
+      }
       renderAll();
       setSub(S.sub, true);
-      // Data asli: index dulu → saham pertama yang punya data → muat radar di belakang
+      if (hyd) setCode(S.code);
+      // 2) Server: indeks → saham aktif (bila belum dari cache) → saham lain utk Radar di belakang
       loadIndex().then(function (codes) {
-        if (codes.length && codes.indexOf(S.code) < 0) S.code = codes[0];
+        if (hyd) { rebuildSuggest(); return revalidate(S.code); }
+        var saved = null; try { saved = localStorage.getItem('smm_code'); } catch (_) {}
+        var want = saved || S.code;
+        if (codes.length) S.code = codes.indexOf(want) >= 0 ? want : codes.indexOf(S.code) >= 0 ? S.code : codes[0];
+        return loadReal(S.code).then(function () { setCode(S.code); root.classList.remove('smm-loading'); });
+      }).then(function () {
         return Promise.all(universe().map(loadReal));
-      }).then(function () { setCode(S.code); });
+      }).then(function () {
+        if (S.sub === 'broker' && G().hasBroker) renderRadar(); else _dirty.broker = true;
+        rebuildSuggest();
+      });
     } else if (S.sub === 'broker') {
       renderSankey(); // lebar container bisa berubah saat halaman tersembunyi
     }
