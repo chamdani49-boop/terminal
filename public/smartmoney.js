@@ -393,6 +393,11 @@
     '.smm-bx-kpi b small{font-size:10px;color:var(--text3)}',
     '.smm-bx-tabs{display:none;margin-bottom:10px}',
     '.smm-bp-tabs{margin-bottom:10px}',
+    '.smm-bx-h.pl,.smm-bx-r.pl{grid-template-columns:minmax(0,.95fr) minmax(0,1.2fr) minmax(0,.9fr) minmax(0,.9fr) minmax(0,1.05fr);gap:4px}',
+    '.smm-bx-r.pl{align-items:start}.smm-bx-r.pl em{display:block;font-style:normal;font-size:10px;font-weight:700;color:var(--text3);margin-top:1px;white-space:nowrap}',
+    '.smm-bx-r.pl .v em.smm-up{color:var(--green)}.smm-bx-r.pl .v em.smm-dn{color:var(--red)}',
+    '.smm-bx-r.pl>span{overflow:hidden;text-overflow:ellipsis}',
+    '@media (max-width:480px){.smm-bx-h.pl,.smm-bx-r.pl{font-size:10.5px;gap:3px}.smm-bx-r.pl em{font-size:9px}}',
     '.smm-bx-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}',
     '.smm-bx-col{min-width:0}',
     '.smm-bx-h,.smm-bx-r{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,.8fr);gap:6px;align-items:center}',
@@ -2375,7 +2380,8 @@
       stocks.forEach(function (x) {
         var px = bpPriceAt(x.c, endIso);
         if (!px) { noPx++; return; }
-        var o = { c: x.c, pnl: (x.sv - x.bv) + x.netL * 100 * px, netL: x.netL, px: px, aB: x.bl ? x.bv / (x.bl * 100) : 0, aS: x.sl ? x.sv / (x.sl * 100) : 0 };
+        var pnl = (x.sv - x.bv) + x.netL * 100 * px, base = x.netL >= 0 ? x.bv : x.sv;
+        var o = { c: x.c, pnl: pnl, pct: base ? pnl / base * 100 : 0, netL: x.netL, px: px, aB: x.bl ? x.bv / (x.bl * 100) : 0, aS: x.sl ? x.sv / (x.sl * 100) : 0 };
         if (o.pnl > 0) { win.push(o); sumW += o.pnl; } else if (o.pnl < 0) { lose.push(o); sumL += o.pnl; }
       });
       win.sort(function (p1, p2) { return p2.pnl - p1.pnl; });
@@ -2386,10 +2392,13 @@
     var plist = function (arr, cls, title) {
       var mx = arr.length ? Math.abs(arr[0].pnl) : 1;
       return '<div class="smm-bx-col ' + cls + '"><div class="smm-st-lbl">' + title + ' <span>' + arr.length + ' saham</span></div>' +
-        (arr.length ? '<div class="smm-bx-h"><span>Saham</span><span>Est. P&amp;L</span><span>Net lot</span><span>Harga</span></div>' + arr.slice(0, N).map(function (x, i) {
-          var tt = 'Beli avg ' + (x.aB ? nf(x.aB) : '-') + ' · Jual avg ' + (x.aS ? nf(x.aS) : '-') + ' · Harga ' + nf(x.px) + ' · Buka ' + x.c;
-          return '<button class="smm-bx-r" data-act="bpstock" data-v="' + esc(x.c) + '" title="' + esc(tt) + '"><span class="c"><small>' + (i + 1) + '</small>' + esc(x.c) + '</span>' +
-            '<span class="v">' + fmtVal(x.pnl, true) + '</span><span>' + (x.netL > 0 ? '+' : '') + fmtLot(x.netL) + '</span><span>' + nf(x.px) + '</span><i style="width:' + Math.max(2, Math.abs(x.pnl) / mx * 100).toFixed(1) + '%"></i></button>';
+        (arr.length ? '<div class="smm-bx-h pl"><span>Saham</span><span>Est. P&amp;L</span><span>Avg beli</span><span>Avg jual</span><span>Harga</span></div>' + arr.slice(0, N).map(function (x, i) {
+          var tt = 'Beli avg ' + (x.aB ? nf(x.aB) : '-') + ' · Jual avg ' + (x.aS ? nf(x.aS) : '-') + ' · Harga ' + nf(x.px) + ' · Net ' + (x.netL > 0 ? '+' : '') + fmtLot(x.netL) + ' lot · Buka ' + x.c;
+          return '<button class="smm-bx-r pl" data-act="bpstock" data-v="' + esc(x.c) + '" title="' + esc(tt) + '"><span class="c"><small>' + (i + 1) + '</small>' + esc(x.c) + '</span>' +
+            '<span class="v">' + fmtVal(x.pnl, true) + '<em class="' + signCls(x.pct) + '">' + fmtPct(x.pct) + '</em></span>' +
+            '<span>' + (x.aB ? nf(x.aB) : '-') + '</span><span>' + (x.aS ? nf(x.aS) : '-') + '</span>' +
+            '<span>' + nf(x.px) + '<em>' + (x.netL > 0 ? '+' : '') + fmtLot(x.netL) + ' lot</em></span>' +
+            '<i style="width:' + Math.max(2, Math.abs(x.pnl) / mx * 100).toFixed(1) + '%"></i></button>';
         }).join('') : '<div class="smm-desc" style="padding:8px 0">Tidak ada.</div>') + '</div>';
     };
     var tabSeg = '<div class="smm-seg smm-bp-tabs" id="smmBpTab" role="tablist" aria-label="Tampilan profil broker"><button data-act="bptab" data-v="flow" class="' + (isPnl ? '' : 'on') + '">Beli &amp; Jual</button><button data-act="bptab" data-v="pnl" class="' + (isPnl ? 'on' : '') + '">Untung &amp; Rugi</button></div>';
@@ -2419,7 +2428,7 @@
       (more ? '<button class="smm-btn smm-more" data-act="bpall">' + (B.all ? 'Tampilkan 15 teratas' : 'Lihat semua') + '</button>' : '') +
       '<div class="smm-sh-foot">' + (G().hasBroker && G().brokers.some(function (b) { return b.code === B.code; }) ? '<button class="smm-btn" data-act="bpchip">+ Tambah ' + esc(B.code) + ' ke Broker Flow ' + esc(S.code) + '</button>' : '') +
         '<span class="smm-desc">' + (isPnl
-          ? 'Estimasi = (jual − beli) + net lot × 100 × harga penutup ' + esc(endIso ? fmtDate(endIso) : '-') + '. Hanya dari transaksi pada tanggal terpilih; belum menghitung saham yang sudah dipegang sebelumnya dan biaya transaksi. Ketuk saham untuk membukanya.'
+          ? 'Estimasi = (jual − beli) + net lot × 100 × harga penutup ' + esc(endIso ? fmtDate(endIso) : '-') + '. Persen = estimasi ÷ nilai beli (net beli) atau nilai jual (net jual). Avg = value ÷ (lot × 100). Hanya dari transaksi pada tanggal terpilih; belum menghitung saham yang sudah dipegang sebelumnya dan biaya transaksi. Ketuk saham untuk membukanya.'
           : 'Ketuk saham untuk membukanya. Avg = value ÷ (lot × 100).') + '</span></div>';
   }
   function bpDate() {
