@@ -130,7 +130,7 @@
 
   function newArrs(m) {
     var n = m.n;
-    ['val', 'smB', 'smS', 'smBL', 'smSL', 'rtB', 'rtS', 'rtBL', 'rtSL', 'fB', 'fS', 'fBL', 'fSL', 'blk', 'kF'].forEach(function (k) { m[k] = new Float64Array(n); });
+    ['val', 'smB', 'smS', 'smBL', 'smSL', 'rtB', 'rtS', 'rtBL', 'rtSL', 'fB', 'fS', 'fBL', 'fSL', 'blk'].forEach(function (k) { m[k] = new Float64Array(n); });
     m.ascBv = new Float32Array(n);
     m.brokers = [];
     m._posA = m._posR = null;
@@ -161,20 +161,14 @@
       b.trough = n - 1 - mnI; b.peak = n - 1 - mxI; b.n10 = n10;
     });
   }
-  function kseiFrom(m, k0) {
-    var k = k0;
-    for (var t = 0; t < m.n; t++) {
-      if (m.shares > 0) k += (m.fBL[t] - m.fSL[t]) * 100 / m.shares * 100 * 0.85;
-      k = clamp(k, 0, 100); m.kF[t] = k;
-    }
-  }
+  // Catatan: porsi KSEI asing TIDAK lagi diperkirakan dari arus transaksi (dulu arus × 0,85 dari titik awal 20%,
+  // angka tiruan yang tampil seolah data KSEI). Kolom, preset, dan filter KSEI di tampilan Foreign dihapus.
 
   // Tanpa data asli: arus broker/asing/ritel/insider/holder KOSONG (tidak ada dummy).
   function blank(m) {
     newArrs(m);
     m.wS = m.n - Math.min(WIN, m.n - m.first);
     m.nBk = 0; m.asc = -1; m.h5 = []; m.ins = []; m.ff = null;
-    kseiFrom(m, 0);
   }
   // Data asli R2 per saham → struktur model
   function applyReal(m, g) {
@@ -208,7 +202,6 @@
         var ab = g.brokers.filter(function (x) { return x.code === m.brokers[m.asc].code; })[0];
         for (var t3 = 0; t3 < g.nF; t3++) if (map[t3] >= 0) m.ascBv[map[t3]] += ab.bv[t3];
       }
-      kseiFrom(m, m.kF0 || 20);
       m.realBroker = true;
     }
     if (g.trades && g.trades.length) {
@@ -264,7 +257,6 @@
     m.nBk = Math.max(m.brokers.length, (s.bk || []).length);
     if (s.so) m.shares = s.so;
     if (s.ff != null) m.ff = s.ff;
-    kseiFrom(m, m.kF0 || 20);
     m.ins = [];
     (s.ins || []).forEach(function (x) {
       var ti = -1; for (var k = n - 1; k >= 0; k--) { if (U.axis[k] <= x[0]) { ti = k; break; } }
@@ -469,7 +461,7 @@
     accum: { mode: 'pos', trend: 'acc', top: 5, market: 'reg', minLose: 0, minLoss: 0, maxDays: 0, minNet: 0, preset: '', q: '', sort: 'net', dir: -1, limit: 10 },
     smart: { mode: 'retail', a: null, b: null, rng: '1W', q: '', sort: 'sm', dir: -1, pl: 'all', limit: 50 },
     bh: { mode: 'assoc', per: '1W', hper: '3M', flip: false, q: '', lim: { a: 10, d: 10 } },
-    foreign: { mode: 'int', side: 'acc', preset: 'all', per: '30D', liq: 0, ksei: 'all', show: 50, q: '', sort: 'score', dir: -1 }
+    foreign: { mode: 'int', side: 'acc', preset: 'all', per: '30D', liq: 0, show: 50, q: '', sort: 'score', dir: -1 }
   };
   function T0() { return U.n - 1 - V.asOf; }
 
@@ -525,7 +517,6 @@
     var m = { code: code, name: mt.name || code, sector: mt.sector || '-', board: mt.board || '', mcap: mt.mcap || 0, shares: mt.shares || 0,
       n: n, first: first, o: o, h: h, l: l, c: c, tr: tr, real: false };
     blank(m);
-    m.kF0 = 0;
     derive(m);
     return m;
   }
@@ -590,14 +581,23 @@
     },
     foreign: {
       title: 'Foreign Flow', ico: 'globe', desc: 'Seberapa kuat, konsisten, dan cepat arus dana asing di tiap saham.',
-      how: [['sliders', 'Pilih Akumulasi / Distribusi, periode, lalu preset (Senyap, KSEI, Akselerasi, dll).'], ['target', 'Skor 0-100 = intensitas (40%), konsistensi (25%), akselerasi (20%), konfirmasi KSEI (15%).'], ['radar', 'Radar Top 20 memetakan saham: kanan = intensitas tinggi, atas = konsisten.'], ['ext', 'Ketuk saham untuk detail.']],
-      why: [['globe', 'Asing sering menjadi penggerak utama saham big cap.'], ['moon', 'Preset Senyap menemukan akumulasi asing di saham kecil-menengah sebelum harga bergerak.'], ['shield', 'Konfirmasi KSEI menyaring arus semu (misalnya crossing) karena kepemilikan asing benar-benar naik.']]
+      how: [['sliders', 'Pilih Akumulasi / Distribusi, periode, lalu preset (Senyap, Akselerasi, Big Money, Divergen).'], ['target', 'Skor 0-100 = intensitas (47%), konsistensi (29%), akselerasi (24%).'], ['radar', 'Radar Top 20 memetakan saham: kanan = intensitas tinggi, atas = konsisten.'], ['ext', 'Ketuk saham untuk detail.']],
+      why: [['globe', 'Asing sering menjadi penggerak utama saham big cap.'], ['moon', 'Preset Senyap menemukan akumulasi asing di saham kecil-menengah sebelum harga bergerak.'], ['shield', 'Konsistensi dan akselerasi menyaring arus sesaat, misalnya satu transaksi besar yang hanya terjadi sekali.']]
     }
+  };
+  // Penjelasan ikon (i) per tampilan: fungsi, tujuan, dan cara pakai.
+  var VIEW_TIP = {
+    today: 'Fungsi: menampilkan sinyal saham terbaru setelah bursa tutup, plus preset yang paling sering benar. Tujuan: tahu saham mana yang layak dipantau untuk sesi berikutnya tanpa membuka ratusan saham. Cara pakai: geser tanggal dengan ‹ ›, lihat kartu Setup Preset, lalu ketuk saham untuk membuka Broker Activity.',
+    gems: 'Fungsi: memberi skor gabungan 0-100 (pola bandar, arus asing, teknikal) untuk tiap saham, lalu memfilter dengan preset. Tujuan: menyaring ratusan saham jadi daftar pendek yang punya alasan jelas. Cara pakai: pilih preset Bullish (kandidat beli) atau Risk (hindari), atur Tier, kapitalisasi, dan likuiditas, lalu ketuk baris untuk detailnya.',
+    accum: 'Fungsi: menunjukkan broker terbesar dan harga rata-rata beli mereka selama ±6 bulan. Tujuan: melihat di harga berapa pemain besar mengumpulkan, dan apakah mereka sedang untung atau nyangkut. Cara pakai: pilih Quick Preset atau atur filter (broker teratas, tren, broker rugi). Floor = rata-rata beli broker; harga di bawah floor berarti rugi (TRAPPED).',
+    smart: 'Fungsi: mencari saham yang dikumpulkan smart money saat ritel menjual, dan menghitung P&L posisi mereka. Tujuan: menangkap fase pemain besar menampung dari ritel. Cara pakai: atur rentang tanggal (1W, 2W, 1M, 3M, atau pilih sendiri), lalu lihat Nampung Retail (smart money beli, ritel jual) dan P&L (untung atau nyangkut).',
+    bh: 'Fungsi: menelusuri pihak terafiliasi: broker penjamin emisi (associate), pemegang saham di atas 5%, dan orang dalam. Tujuan: melihat siapa yang menambah atau mengurangi kepemilikan di belakang layar. Cara pakai: pilih Associate Broker, Holder >5%, atau Insider, lalu ketuk baris untuk membuka Broker Activity. Balik arah menampilkan saham yang arahnya berubah dibanding periode sebelumnya.',
+    foreign: 'Fungsi: mengukur kekuatan, konsistensi, dan kecepatan arus asing per saham (skor 0-100 dari intensitas 47%, konsistensi 29%, dan akselerasi 24%). Tujuan: menemukan saham yang sedang diakumulasi atau dilepas asing. Cara pakai: pilih Akumulasi atau Distribusi, periode, lalu preset (Senyap, Akselerasi, Big Money, Divergen). Radar Top 20: kanan = intensitas tinggi, atas = konsisten.'
   };
   function vhead(k, right) {
     var g = GUIDE[k], open = V.guide[k];
     return '<div class="sx-vhead">' +
-      '<div class="sx-vtitle"><span class="sx-vico">' + ic(g.ico) + '</span><div><h3>' + esc(g.title) + '</h3><p>' + esc(g.desc) + '</p></div></div>' +
+      '<div class="sx-vtitle"><span class="sx-vico">' + ic(g.ico) + '</span><div><h3>' + esc(g.title) + ' ' + tip(VIEW_TIP[k] || g.desc) + '</h3><p>' + esc(g.desc) + '</p></div></div>' +
       '<div class="sx-vright">' + (right || '') +
         '<div class="sx-gbtns" role="group" aria-label="Panduan">' +
           '<button class="sx-gbtn' + (open === 'how' ? ' on' : '') + '" data-sx="guide" data-v="how" aria-expanded="' + (open === 'how') + '">' + ic('book') + '<span>Cara pakai</span></button>' +
@@ -694,14 +694,14 @@
         '</div>' +
       '</div>' +
       '<section class="sx-box">' +
-        '<div class="sx-bh"><h4>' + ic('users') + 'Associate Broker &amp; Pemegang Saham</h4><button class="sx-link" data-sx="view" data-v="bh">Buka Broker &amp; Holder ' + ic('right') + '</button></div>' +
+        '<div class="sx-bh"><h4>' + ic('users') + 'Associate Broker &amp; Pemegang Saham ' + tip('Associate broker = broker penjamin emisi saham ini. Kartu ini menampilkan saham yang associate-nya net beli dalam 5 hari terakhir, serta pemegang di atas 5% yang baru menambah. Ketuk baris untuk membuka Broker Activity saham itu.') + '</h4><button class="sx-link" data-sx="view" data-v="bh">Buka Broker &amp; Holder ' + ic('right') + '</button></div>' +
         '<p class="sx-center"><b>' + aligned.length + ' saham dengan sinyal searah minggu ini</b><br><small class="sx-mute">Associate broker, holder &gt;5%, dan insider, minimal 2 sinyal searah.</small></p>' +
         (aligned.length ? '<div class="sx-align">' + aligned.slice(0, 8).map(function (x) {
           return '<button class="sx-arow" data-sx="open" data-v="' + esc(x.m.code) + '"><b>' + esc(x.m.code) + '</b><small>' + esc(x.m.name) + '</small><span>' + chips(x.s) + '</span></button>';
         }).join('') + '</div>' : '') +
       '</section>' +
       '<section>' +
-        '<div class="sx-bh"><h4>' + ic('star') + 'Setup Preset</h4><button class="sx-btn' + (V.acc ? ' on' : '') + '" data-sx="tacc">' + ic('bar') + 'Akurasi preset</button></div>' +
+        '<div class="sx-bh"><h4>' + ic('star') + 'Setup Preset ' + tip('Fungsi: menampilkan preset sinyal (mis. Dual Confirmation, Block Absorption, Oversold Reversal) beserta jumlah saham yang memenuhinya hari ini. Tujuan: melihat setup mana yang sedang bekerja. Akurasi preset = rata-rata return 10 hari setelah sinyal dibanding rata-rata semua saham dalam 3 bulan terakhir.') + '</h4><button class="sx-btn' + (V.acc ? ' on' : '') + '" data-sx="tacc">' + ic('bar') + 'Akurasi preset</button></div>' +
         accTbl +
         '<div class="sx-verdict">' + ic('lightbulb') + '<span><b>Terbaik saat ini.</b> ' + verdict + '</span></div>' +
         '<div class="sx-pgrid3">' + bulls.map(card).join('') + '</div>' +
@@ -960,7 +960,7 @@
     return vhead('smart') +
       '<div class="sx-bar">' + seg('smode', [['retail', ic('funnel') + 'Nampung Retail'], ['pl', ic('bank') + 'Smart Money P&amp;L']], st.mode, 'big') + '</div>' +
       '<div class="sx-box sx-smhead">' +
-        '<div class="sx-smt"><h4>' + ic(st.mode === 'pl' ? 'bank' : 'funnel') + (st.mode === 'pl' ? 'Smart Money P&amp;L' : 'Smart Money Nampung Retail Scanner') + '</h4>' +
+        '<div class="sx-smt"><h4>' + ic(st.mode === 'pl' ? 'bank' : 'funnel') + (st.mode === 'pl' ? 'Smart Money P&amp;L' : 'Smart Money Nampung Retail Scanner') + ' ' + tip(st.mode === 'pl' ? 'Fungsi: menghitung untung atau rugi posisi smart money di tiap saham. Tujuan: tahu apakah pemain besar masih untung (boleh lanjut menahan) atau nyangkut (berpotensi dilepas). Avg = harga rata-rata transaksi mereka; P&L = harga terakhir dibanding avg.' : 'Fungsi: menyaring saham yang smart money-nya net beli saat ritel net jual. Tujuan: menangkap fase pemain besar menampung dari ritel. Cara pakai: pilih rentang tanggal, lalu urutkan kolom Nampung Retail.') + '</h4>' +
           '<p class="sx-mute">' + (st.mode === 'pl' ? 'Posisi smart money pada rentang terpilih: masih untung atau nyangkut di harga sekarang.' : 'Mencari saham yang dikumpulkan smart money sementara ritel menjual.') + '</p></div>' +
         '<div class="sx-smc">' + searchBox('sxSQ', st.q, 'Cari kode…') +
           '<div class="sx-range">' + ic('cal') + '<input type="date" id="sxFrom" min="' + U.axis[0] + '" max="' + U.axis[U.n - 1] + '" value="' + U.axis[r[0]] + '" aria-label="Dari">' +
@@ -1116,12 +1116,12 @@
   // ─────────────────────────── 6. FOREIGN ───────────────────────────
   var FX_PER = { '1D': 1, '7D': 5, '30D': 21, '60D': 42 };
   var FX_PRE = [
-    ['all', 'Semua', ''], ['quiet', 'Senyap (Small/Mid)', 'moon'], ['ksei', 'Terkonfirmasi KSEI', 'check'],
+    ['all', 'Semua', ''], ['quiet', 'Senyap (Small/Mid)', 'moon'],
     ['accel', 'Akselerasi', 'zap'], ['big', 'Big Money', 'bank'], ['div', 'Divergen', 'split']
   ];
   var FX_DESC = {
     all: 'Semua saham sesuai arah dan filter.', quiet: 'Kapitalisasi < Rp20 T dan harga relatif diam (±3%) walau asing aktif.',
-    ksei: 'Kepemilikan asing di KSEI ikut berubah searah dengan arus transaksi.', accel: 'Rata-rata harian paruh terakhir periode ≥ 2× paruh sebelumnya.',
+    accel: 'Rata-rata harian paruh terakhir periode ≥ 2× paruh sebelumnya.',
     big: 'Net asing ≥ Rp10 M pada periode ini.', div: 'Asing membeli saat harga turun (atau menjual saat harga naik).'
   };
   function fxRows() {
@@ -1136,49 +1136,44 @@
       var r1 = sum(m.Pfn, n - h, n - 1) / h, r0 = k > 1 ? sum(m.Pfn, a, n - h - 1) / Math.max(1, k - h) : 0;
       if (dist) { r1 = -r1; r0 = -r0; }
       var accel = r0 > 0 ? r1 / r0 : r1 > 0 ? 99 : 0;
-      var kd = m.kF[n - 1] - m.kF[Math.max(0, a - 1)];
       var ff = m.shares * (m.ff || 0.3);
       var netL = 0; for (var t3 = a; t3 < n; t3++) netL += m.fBL[t3] - m.fSL[t3];
       var streak = Math.abs(m.fst[n - 1]);
       rows.push({ m: m, net: net, int: net / val * 100, ffp: ff ? netL * 100 / ff * 100 : 0, cons: days ? pos / days * 100 : 0,
-        streak: (dist ? m.fst[n - 1] < 0 : m.fst[n - 1] > 0) ? streak : 0, accel: accel, ksei: kd, kOk: Math.abs(kd) >= 0.01 && (kd > 0) === !dist,
+        streak: (dist ? m.fst[n - 1] < 0 : m.fst[n - 1] > 0) ? streak : 0, accel: accel,
         chg: (m.c[n - 1] / m.c[Math.max(0, a - 1)] - 1) * 100, liq: avgVal(m, n - 1, 20) });
     });
     // skor: persentil intensitas & akselerasi dalam universe periode ini
     function pct(key) { var s = rows.map(function (x) { return Math.abs(x[key]); }).sort(function (x, y) { return x - y; }); return function (v) { var lo = 0, hi = s.length; while (lo < hi) { var md = (lo + hi) >> 1; if (s[md] < v) lo = md + 1; else hi = md; } return s.length ? lo / s.length : 0; }; }
     var pI = pct('int'), pA = pct('accel');
-    rows.forEach(function (x) { x.score = Math.round(100 * (0.4 * pI(Math.abs(x.int)) + 0.25 * x.cons / 100 + 0.2 * pA(Math.abs(x.accel)) + 0.15 * (x.kOk ? 1 : 0))); });
+    rows.forEach(function (x) { x.score = Math.round(100 * (0.47 * pI(Math.abs(x.int)) + 0.29 * x.cons / 100 + 0.24 * pA(Math.abs(x.accel)))); });
     var all = rows.slice();
     rows = rows.filter(function (x) {
       if (!matchQ(x.m, st.q)) return false;
       if (st.liq && x.liq < st.liq) return false;
-      if (st.ksei === 'ok' && !x.kOk) return false;
-      if (st.ksei === 'no' && x.kOk) return false;
       switch (st.preset) {
         case 'quiet': return (x.m.mcap || x.m.shares * x.m.c[n - 1]) < 2e13 && Math.abs(x.chg) < 3;
-        case 'ksei': return x.kOk;
         case 'accel': return x.accel >= 2;
         case 'big': return Math.abs(x.net) >= 1e10;
         case 'div': return dist ? x.chg > 0 : x.chg < 0;
       }
       return true;
     });
-    var key = { score: 'score', int: 'int', ffp: 'ffp', cons: 'cons', accel: 'accel', ksei: 'ksei', net: 'net', chg: 'chg' }[st.sort] || 'score';
-    var sgn = dist && (key === 'int' || key === 'ffp' || key === 'net' || key === 'ksei') ? -1 : 1;
+    var key = { score: 'score', int: 'int', ffp: 'ffp', cons: 'cons', accel: 'accel', net: 'net', chg: 'chg' }[st.sort] || 'score';
+    var sgn = dist && (key === 'int' || key === 'ffp' || key === 'net') ? -1 : 1;
     rows.sort(function (x, y) { return (x[key] - y[key]) * st.dir * sgn; });
     return { rows: rows, all: all, a: a };
   }
   function viewForeign() {
     var st = V.foreign;
     return vhead('foreign') +
-      '<div class="sx-bar">' + seg('fmode', [['int', ic('target') + 'Flow Intensity'], ['radar', ic('radar') + 'Radar <small>Top 20</small>']], st.mode, 'big') + '</div>' +
+      '<div class="sx-bar">' + seg('fmode', [['int', ic('target') + 'Flow Intensity'], ['radar', ic('radar') + 'Radar <small>Top 20</small>']], st.mode, 'big') + ' ' + tip('Flow Intensity = tabel saham diurutkan menurut skor arus asing. Radar Top 20 = peta 20 saham teratas: kanan = intensitas tinggi, atas = konsisten dari hari ke hari, ukuran lingkaran = besar net asing, garis kuning = akselerasi 2x atau lebih. Ketuk saham untuk membukanya.') + '</div>' +
       '<div class="sx-bar">' + seg('fside', [['acc', ic('up') + 'Akumulasi'], ['dist', ic('down') + 'Distribusi']], st.side, 'side') +
         '<div class="sx-hs sx-fpre">' + FX_PRE.map(function (p) { return '<button class="sx-pchip' + (st.preset === p[0] ? ' on' : '') + '" data-sx="fpre" data-v="' + p[0] + '" data-smm-tip="' + esc(FX_DESC[p[0]]) + '">' + (p[2] ? ic(p[2]) : '') + esc(p[1]) + '</button>'; }).join('') + '</div>' +
       '</div>' +
       '<div class="sx-bar">' + searchBox('sxFQ', st.q, 'Cari kode / nama…') +
         '<label class="sx-lab"><span class="sx-cap">Periode</span>' + seg('fper', [['1D', '1D'], ['7D', '7D'], ['30D', '30D'], ['60D', '60D']], st.per, 'sm') + '</label>' +
         '<label class="sx-lab"><span class="sx-cap">Likuid ≥</span><select class="sx-sel" id="sxFLiq">' + [[0, 'Semua'], [1e9, 'Rp1 M'], [5e9, 'Rp5 M'], [1e10, 'Rp10 M'], [5e10, 'Rp50 M']].map(function (x) { return '<option value="' + x[0] + '"' + (+x[0] === st.liq ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></label>' +
-        '<label class="sx-lab"><span class="sx-cap">KSEI</span><select class="sx-sel" id="sxFKsei">' + [['all', 'Semua'], ['ok', 'Terkonfirmasi'], ['no', 'Belum']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === st.ksei ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></label>' +
         (st.mode === 'int' ? '<label class="sx-lab"><span class="sx-cap">Tampil</span><select class="sx-sel" id="sxFShow">' + [20, 50, 100, 200].map(function (x) { return '<option' + (x === st.show ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' : '') +
       '</div>' +
       '<div id="sxBody"></div>';
@@ -1191,14 +1186,12 @@
     var show = rows.slice(0, st.show), mxI = 0;
     show.forEach(function (x) { mxI = Math.max(mxI, Math.abs(x.int)); });
     function th(k, label, tp, cls) { var on = st.sort === k; return '<th class="s' + (cls ? ' ' + cls : '') + (on ? ' on' : '') + '" data-sx="fsort" data-v="' + k + '">' + label + ' <i>' + (on ? (st.dir < 0 ? '↓' : '↑') : '↕') + '</i>' + (tp ? tip(tp) : '') + '</th>'; }
-    function kseiCell(x) { return Math.abs(x.ksei) < 0.01 ? '<span class="sx-ks n">≈0,00</span>' : '<span class="sx-ks ' + (x.kOk ? 'ok' : 'no') + '">' + ic(x.kOk ? 'check' : 'x') + (x.ksei > 0 ? '+' : '') + nf(x.ksei, 2) + '</span>'; }
     var tbl = '<div class="sx-tw sx-desk sx-stick"><table class="sx-tbl sx-fx"><thead><tr><th class="l">Saham</th>' +
-      th('score', 'Skor', 'Skor 0-100: intensitas 40%, konsistensi 25%, akselerasi 20%, konfirmasi KSEI 15%.') +
+      th('score', 'Skor', 'Skor 0-100 dari tiga komponen: intensitas arus asing 47%, konsistensi arah harian 29%, dan akselerasi 24%. Makin tinggi, arus asing makin kuat dan konsisten.') +
       th('int', 'Intensitas', 'Net asing dibanding total nilai transaksi saham itu pada periode ini.', 'l') +
       th('ffp', 'Float%', 'Net lot asing dibanding jumlah saham free float.') +
       th('cons', 'Konsisten', 'Persentase hari bursa dengan arah yang sama (net beli untuk akumulasi).') +
       th('accel', 'Akselerasi', 'Rata-rata harian paruh akhir periode dibanding paruh awal. ▲ 2,0 = dua kali lebih kencang.') +
-      th('ksei', 'KSEI', 'Perubahan porsi kepemilikan asing di KSEI (poin persen). ✓ = searah dengan arus transaksi.') +
       th('net', 'Net') + th('chg', 'Harga%') + '</tr></thead><tbody>' +
       show.map(function (x) {
         return '<tr data-sx="open" data-v="' + esc(x.m.code) + '"><td class="l">' + stockCell(x.m) + '</td>' +
@@ -1207,13 +1200,13 @@
           '<td class="sx-pu">' + fp(x.ffp, 2) + '</td>' +
           '<td><b>' + nf(x.cons, 0) + '%</b>' + (x.streak >= 5 ? '<small class="sx-y">' + x.streak + ' hari beruntun</small>' : '') + '</td>' +
           '<td class="' + (x.accel >= 1 ? 'sx-up' : 'sx-dn') + '">' + (x.accel >= 1 ? '▲ ' : '▼ ') + (x.accel >= 99 ? 'baru' : nf(x.accel, 1)) + '</td>' +
-          '<td>' + kseiCell(x) + '</td><td class="' + sc(x.net) + '"><b>' + (x.net > 0 ? '+' : '') + fv(x.net) + '</b></td><td class="' + sc(x.chg) + '">' + fp(x.chg) + '</td></tr>';
+          '<td class="' + sc(x.net) + '"><b>' + (x.net > 0 ? '+' : '') + fv(x.net) + '</b></td><td class="' + sc(x.chg) + '">' + fp(x.chg) + '</td></tr>';
       }).join('') + '</tbody></table></div>';
     var cards = '<div class="sx-cards sx-mob">' + show.map(function (x) {
       return '<div class="sx-mc" data-sx="open" data-v="' + esc(x.m.code) + '"><div class="r1"><b class="c">' + esc(x.m.code) + '</b><small class="grow">' + esc(x.m.name) + '</small><span class="sx-fs' + (x.score >= 85 ? ' hot' : x.score >= 70 ? ' warm' : '') + '">' + x.score + '</span></div>' +
         '<div class="r2"><span class="sx-ib2 w"><i class="' + (dist ? 'r' : 'g') + '" style="width:' + clamp(Math.abs(x.int) / (mxI || 1) * 100, 4, 100) + '%"></i></span><b class="' + sc(x.int) + ' mono">' + fp(x.int) + '</b></div>' +
         '<div class="r3"><span>Net <b class="' + sc(x.net) + '">' + fv(x.net) + '</b></span><span>Konsisten <b>' + nf(x.cons, 0) + '%</b></span><span>Akselerasi <b class="' + (x.accel >= 1 ? 'sx-up' : 'sx-dn') + '">' + (x.accel >= 99 ? 'baru' : nf(x.accel, 1)) + '</b></span></div>' +
-        '<div class="r3"><span>KSEI ' + kseiCell(x) + '</span><span>Float <b class="sx-pu">' + fp(x.ffp, 2) + '</b></span><span>Harga <b class="' + sc(x.chg) + '">' + fp(x.chg) + '</b></span></div></div>';
+        '<div class="r3"><span>Float <b class="sx-pu">' + fp(x.ffp, 2) + '</b></span><span>Harga <b class="' + sc(x.chg) + '">' + fp(x.chg) + '</b></span></div></div>';
     }).join('') + '</div>';
     return head + tbl + cards;
   }
@@ -1382,7 +1375,6 @@
       case 'sxFrom': if (v) { Sm.a = idxOfDate(v); if (Sm.b == null) Sm.b = U.n - 1; Sm.rng = ''; } rerenderKeepScroll(); return;
       case 'sxTo': if (v) { Sm.b = idxOfDate(v); if (Sm.a == null) Sm.a = 0; Sm.rng = ''; } rerenderKeepScroll(); return;
       case 'sxFLiq': Fx.liq = +v || 0; renderBody(); return;
-      case 'sxFKsei': Fx.ksei = v; renderBody(); return;
       case 'sxFShow': Fx.show = +v || 50; renderBody(); return;
       default: return;
     }
