@@ -704,6 +704,37 @@
     '.smm-cc.out{opacity:.25;background:transparent;border-style:dashed}.smm-cc.fut{opacity:.4;background:transparent;border-style:dashed}',
     '.smm-cc.off,.smm-cc.zero{background:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--text3) 9%,transparent) 6px 7px),var(--bg2)}',
     '.smm-cc.sel{outline:2px solid var(--accent);outline-offset:1px;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}',
+    // Layar lebar / PC (>=1100px): kartu kalender ditarik setinggi kolom sebelahnya, jadi baris sel dulu ikut
+    // melar (tinggi & sempit) dan teks terpotong. Sekarang tinggi sel mengikuti isi, baris tanpa data (belum
+    // ada / libur) dipadatkan, isi sel ditumpuk, huruf mengikuti lebar kartu (container query). Sisa ruang di
+    // bawah diisi visual tambahan (.smm-calfill) HANYA bila muat. HP/tablet tidak berubah.
+    '.smm-calfill{display:none}',
+    '@media (min-width:1100px){',
+    '.smm-calcard{container-type:inline-size}',
+    '.smm-cal{flex:0 0 auto;grid-auto-rows:auto;align-content:start}',
+    '.smm-cc{justify-content:flex-start;gap:4px;padding:8px 9px;min-height:96px}',
+    '.smm-cc.out,.smm-cc.fut,.smm-cc.off,.smm-cc.zero{min-height:44px}',
+    '.smm-cc .nv{font-size:clamp(10px,2.6cqw,14px)}',
+    '.smm-cc .mt{flex-direction:column;justify-content:flex-start;gap:1px}',
+    '.smm-cc .mt small{font-size:clamp(8.5px,1.9cqw,10.5px)}',
+    '.smm-cc .bar{margin-top:auto}',
+    '.smm-calfill{display:flex;flex-direction:column;gap:10px;flex:1 1 auto;min-height:0;overflow:hidden}',
+    '.smm-cf[hidden]{display:none}',
+    '.smm-cf{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:10px 12px;flex:none}',
+    '.smm-cft{font-size:11.5px;font-weight:800;color:var(--text);margin-bottom:8px}.smm-cft small{display:block;font-size:10.5px;font-weight:600;color:var(--text3);margin-top:1px}',
+    '.smm-wk{display:grid;grid-template-columns:62px minmax(0,1fr) auto;align-items:center;gap:8px;padding:3px 0;font-size:11px}',
+    '.smm-wk .d{color:var(--text2);font-weight:700;white-space:nowrap}.smm-wk b{font-family:"IBM Plex Mono",monospace;font-size:11px;white-space:nowrap}',
+    '.smm-wk .tr,.smm-wd .tr{position:relative;background:color-mix(in srgb,var(--text3) 14%,transparent);border-radius:4px}',
+    '.smm-wk .tr{height:9px}.smm-wk .tr::before,.smm-wd .tr::before{content:"";position:absolute;background:color-mix(in srgb,var(--text3) 55%,transparent)}',
+    '.smm-wk .tr::before{left:50%;top:-2px;bottom:-2px;width:1px}',
+    '.smm-wk .tr i{position:absolute;top:0;bottom:0;border-radius:4px}.smm-wk .tr i.p{left:50%;background:var(--green)}.smm-wk .tr i.n{right:50%;background:var(--red)}',
+    '.smm-wd{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;text-align:center}',
+    '.smm-wd .c{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}',
+    '.smm-wd .tr{width:100%;max-width:34px;height:64px}.smm-wd .tr::before{left:0;right:0;top:50%;height:1px}',
+    '.smm-wd .tr i{position:absolute;left:0;right:0;border-radius:3px}.smm-wd .tr i.p{bottom:50%;background:var(--green)}.smm-wd .tr i.n{top:50%;background:var(--red)}',
+    '.smm-wd b{font-family:"IBM Plex Mono",monospace;font-size:10px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.smm-wd em{font-style:normal;font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}',
+    '.smm-cfn{font-size:11px;color:var(--text2);margin-top:8px;line-height:1.4}.smm-cfn b{color:var(--text)}',
+    '}',
     '.smm-callg{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:10.5px;color:var(--text3)}.smm-callg>span{display:inline-flex;align-items:center;gap:2px}',
     '.smm-callg i{display:inline-block;width:14px;height:10px;border-radius:3px}.smm-callg small{margin-left:auto}',
     '.smm-callg i.r{background:#dc2626}.smm-callg i.r2{background:color-mix(in srgb,#dc2626 40%,var(--bg2))}.smm-callg i.n{background:var(--bg2);border:1px solid var(--border2)}.smm-callg i.g2{background:color-mix(in srgb,#16a34a 40%,var(--bg2))}.smm-callg i.g{background:#16a34a}',
@@ -2700,6 +2731,7 @@
     var nTot = nb + ns, totL = rows.reduce(function (s2, x) { return s2 + x.l; }, 0), bp = nTot ? nb / nTot * 100 : 0;
     var bestB = rows.filter(function (x) { return x.v > 0; }).sort(function (a2, b2) { return b2.v - a2.v; })[0];
     var bestS = rows.filter(function (x) { return x.v < 0; }).sort(function (a2, b2) { return a2.v - b2.v; })[0];
+    var fillHtml = calFillHtml(rows);
     box.innerHTML =
       '<div class="smm-h3">📅 Kalender flow ' + tip('Net beli dikurangi jual per hari bursa untuk kelompok terpilih. Hijau = net beli, merah = net jual, makin pekat makin besar. Ketuk tanggal untuk melihat pembeli & penjual hari itu di Broker Action dan Distribution.') + '</div>' +
       '<div class="smm-calhead">' +
@@ -2716,7 +2748,66 @@
         (bestB ? '<span class="g">Beli terbesar <b>' + fmtVal(bestB.v) + '</b> · ' + fmtDate(bestB.d) + '</span>' : '') +
         (bestS ? '<span class="r">Jual terbesar <b>' + fmtVal(Math.abs(bestS.v)) + '</b> · ' + fmtDate(bestS.d) + '</span>' : '') + '</div>' : '') +
       '<div class="smm-cal">' + ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'].map(function (x) { return '<div class="smm-ch">' + x + '</div>'; }).join('') + cells + '</div>' +
+      fillHtml +
       '<div class="smm-callg"><span>Jual</span><span class="sc"><i class="r"></i><i class="r2"></i><i class="n"></i><i class="g2"></i><i class="g"></i></span><span>Beli</span><small>makin pekat = makin besar · garis bawah = kekuatan hari itu</small></div>';
+    fitCalFill();
+    watchCalFill();
+  }
+  // ── Isian bawah kartu Kalender (hanya layar lebar, hanya bila ada ruang kosong) ──
+  // Dua visual yang TIDAK ada di kolom lain: net per minggu, dan pola rata-rata per hari bursa.
+  function calFillHtml(rows) {
+    var good = rows.filter(function (x) { return x.v || x.l; });
+    if (good.length < 2) return '';
+    var up = function (v) { return signCls(v); };
+    // 1) Net per minggu (minggu Senin–Jumat, sama dengan baris kalender)
+    var wkMap = {}, wkOrder = [];
+    good.forEach(function (x) {
+      var dt = new Date(x.d + 'T00:00:00Z'), dw = (dt.getUTCDay() + 6) % 7, mon = new Date(dt.getTime() - dw * 86400000).toISOString().slice(0, 10);
+      if (!wkMap[mon]) { wkMap[mon] = { v: 0, a: x.d, b: x.d }; wkOrder.push(mon); }
+      var w = wkMap[mon]; w.v += x.v; if (x.d < w.a) w.a = x.d; if (x.d > w.b) w.b = x.d;
+    });
+    var mxW = wkOrder.reduce(function (m, k) { return Math.max(m, Math.abs(wkMap[k].v)); }, 0) || 1;
+    var wkHtml = '<div class="smm-cf"><div class="smm-cft">Net per minggu<small>jumlah net harian tiap pekan di bulan ini</small></div>' + wkOrder.map(function (k) {
+      var w = wkMap[k], pct = Math.max(3, Math.abs(w.v) / mxW * 50).toFixed(1), lbl = w.a === w.b ? stDay(w.a) : (+w.a.slice(8)) + '–' + stDay(w.b);
+      return '<div class="smm-wk"><span class="d">' + lbl + '</span><span class="tr"><i class="' + (w.v >= 0 ? 'p' : 'n') + '" style="width:' + pct + '%"></i></span><b class="' + up(w.v) + '">' + fmtVal(w.v, true) + '</b></div>';
+    }).join('') + '</div>';
+    // 2) Pola per hari bursa (rata-rata net Senin … Jumat)
+    var wdHtml = '';
+    if (good.length >= 8) {
+      var N = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'], acc = [0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0];
+      good.forEach(function (x) { var dw = (new Date(x.d + 'T00:00:00Z').getUTCDay() + 6) % 7; if (dw < 5) { acc[dw] += x.v; cnt[dw]++; } });
+      var avg = acc.map(function (v, i) { return cnt[i] ? v / cnt[i] : null; });
+      var mxA = avg.reduce(function (m, v) { return v == null ? m : Math.max(m, Math.abs(v)); }, 0) || 1;
+      var iBest = -1, iWorst = -1;
+      avg.forEach(function (v, i) { if (v == null) return; if (iBest < 0 || v > avg[iBest]) iBest = i; if (iWorst < 0 || v < avg[iWorst]) iWorst = i; });
+      wdHtml = '<div class="smm-cf"><div class="smm-cft">Pola per hari<small>rata-rata net tiap hari bursa</small></div><div class="smm-wd">' + avg.map(function (v, i) {
+        if (v == null) return '<div class="c"><span class="tr"></span><b>-</b><em>' + N[i] + '</em></div>';
+        var h = Math.max(4, Math.abs(v) / mxA * 50).toFixed(1);
+        return '<div class="c"><span class="tr"><i class="' + (v >= 0 ? 'p' : 'n') + '" style="height:' + h + '%"></i></span><b class="' + up(v) + '">' + fmtVal(v, true) + '</b><em>' + N[i] + '</em></div>';
+      }).join('') + '</div>' + (iBest >= 0 && iBest !== iWorst
+        ? '<p class="smm-cfn">Rata-rata paling kuat di <b>' + N[iBest] + '</b> (' + fmtVal(avg[iBest], true) + '), paling lemah di <b>' + N[iWorst] + '</b> (' + fmtVal(avg[iWorst], true) + ').</p>' : '') + '</div>';
+    }
+    return '<div class="smm-calfill">' + wkHtml + wdHtml + '</div>';
+  }
+  // Tampilkan blok isian satu per satu selama masih muat di sisa ruang kartu.
+  function fitCalFill() {
+    var card = document.getElementById('smmCalCard'); if (!card) return;
+    var fill = card.querySelector('.smm-calfill'); if (!fill) return;
+    var blocks = Array.prototype.slice.call(fill.children);
+    blocks.forEach(function (b) { b.hidden = true; });
+    var free = fill.clientHeight, used = 0;
+    blocks.forEach(function (b) {
+      b.hidden = false;
+      var h = b.offsetHeight + (used ? 10 : 0);
+      if (used + h <= free) used += h; else b.hidden = true;
+    });
+  }
+  var _calRO = null;
+  function watchCalFill() {
+    if (_calRO || typeof ResizeObserver === 'undefined') return;
+    var host = document.querySelector('.smm-cols3'); if (!host) return;
+    _calRO = new ResizeObserver(function () { window.requestAnimationFrame(fitCalFill); });
+    _calRO.observe(host);
   }
   // ─────────────── Broker Distribution · Orbit "Siapa lawan X?" ───────────────
   // Data broker summary tidak memuat pasangan pembeli-penjual. Lawan transaksi diestimasi
