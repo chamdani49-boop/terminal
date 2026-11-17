@@ -18,6 +18,8 @@ biasa (flag `GATING_ENABLED="false"`, binding D1 dikomentari).
 - **Bayar** — Mayar.id: tombol → `/api/checkout` → invoice dinamis via API
   (atau payment link statis bila `MAYAR_API_KEY` kosong); webhook
   `/api/webhook/mayar` mengaktifkan langganan.
+  Penyedia bisa diganti ke **Lynk.id** dari panel Admin → Penyedia Pembayaran
+  (webhook `/api/webhook/lynk`). Panduan lengkap: [`docs/LYNK_SETUP.md`](LYNK_SETUP.md).
 - **Admin** — `/admin` (UI) + `/api/admin/*` (dibatasi `ADMIN_EMAILS`).
 
 ---

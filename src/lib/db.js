@@ -310,9 +310,9 @@ export async function listUsersWithSub(env) {
       last_seen: r.last_seen || null,   // epoch detik aktivitas terakhir (null = belum pernah)
       status,
       source: r.source || null,
-      // Pendapatan riil = langganan dari pembayaran Mayar yang punya txn id.
-      // Grant admin/manual (source!='mayar') TIDAK dihitung sebagai pendapatan.
-      paid: r.source === 'mayar' && !!r.txn,
+      // Pendapatan riil = langganan dari pembayaran Mayar/Lynk yang punya txn id.
+      // Grant admin/manual (source bukan 'mayar'/'lynk') TIDAK dihitung sebagai pendapatan.
+      paid: (r.source === 'mayar' || r.source === 'lynk') && !!r.txn,
       is_admin: admins.includes((r.email || '').toLowerCase()),
     };
   });
@@ -332,16 +332,16 @@ export async function listReferralsGrouped(env) {
              eu.email AS referee_email, eu.name AS referee_name,
              s.status AS sub_status, s.expires_at AS expires_at,
              (SELECT COUNT(*) FROM subscriptions ps
-                WHERE ps.user_id = r.referee_id AND ps.source = 'mayar'
+                WHERE ps.user_id = r.referee_id AND ps.source IN ('mayar','lynk')
                   AND ps.mayar_txn_id IS NOT NULL) AS paid_count`;
   // Paket langganan BERBAYAR terakhir (Mayar) → plan (durasi) + scope (tracker/full).
   const PAID_PLAN_SELECT = `,
              (SELECT pp.plan FROM subscriptions pp
-                WHERE pp.user_id = r.referee_id AND pp.source = 'mayar'
+                WHERE pp.user_id = r.referee_id AND pp.source IN ('mayar','lynk')
                   AND pp.mayar_txn_id IS NOT NULL
                 ORDER BY pp.expires_at DESC LIMIT 1) AS paid_plan,
              (SELECT pp.scope FROM subscriptions pp
-                WHERE pp.user_id = r.referee_id AND pp.source = 'mayar'
+                WHERE pp.user_id = r.referee_id AND pp.source IN ('mayar','lynk')
                   AND pp.mayar_txn_id IS NOT NULL
                 ORDER BY pp.expires_at DESC LIMIT 1) AS paid_scope`;
   const FROM_REST = `
