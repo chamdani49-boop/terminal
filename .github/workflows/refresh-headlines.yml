@@ -2,8 +2,9 @@ name: Refresh Headlines (berita pasar)
 
 # ═══════════════════════════════════════════════════════════════════════
 # Tarik berita terbaru dari beberapa portal (CNBC, Kontan, Bisnis.com,
-# Bloomberg Technoz, EmitenNews, InvestorTrust, Stockwatch) via Google News
-# RSS, lalu tulis/gabung ke public/headlines.json (retensi 3 hari, maks 80).
+# Bloomberg Technoz, EmitenNews, InvestorTrust, Stockwatch, IDX Channel,
+# IDX/BEI, dll.) via Google News
+# RSS, lalu tulis/gabung ke public/headlines.json (retensi 3 hari, maks 300).
 # Frontend (Pasar Live → Headlines) membaca file ini via jsDelivr CDN.
 #
 # Tidak memakai Gemini/Telegram — murni fetch + tulis JSON.

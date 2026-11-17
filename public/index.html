@@ -24114,7 +24114,7 @@ function plBuildNewsUI(wrap) {
     + '<div class="row">'
     +   '<select class="pl-news-sel" id="plNewsSrc" onchange="plNewsSetF(\'source\',this.value)">' + srcOpts + '</select>'
     +   '<select class="pl-news-sel" id="plNewsPer" onchange="plNewsSetF(\'period\',this.value)">'
-    +     '<option value="all">Semua hari</option><option value="today">Hari ini</option><option value="yest">Kemarin</option>'
+    +     '<option value="all">Semua hari</option><option value="today">Hari ini</option><option value="yest">Kemarin</option><option value="d2">2 hari lalu</option>'
     +   '</select>'
     + '</div>'
     + '<select class="pl-news-sel" id="plNewsCat" onchange="plNewsSetF(\'cat\',this.value)">' + catOpts + '</select>'
@@ -24158,6 +24158,7 @@ function plRenderNews() {
     if (f.source !== 'all' && n.source !== f.source) return false;
     if (f.period === 'today' && plDayIdxWIB(n.ts) !== today) return false;
     if (f.period === 'yest' && plDayIdxWIB(n.ts) !== today - 1) return false;
+    if (f.period === 'd2' && plDayIdxWIB(n.ts) !== today - 2) return false;
     const title = (n.title || '').toLowerCase();
     if (cat.cat) { if (n.cat !== cat.cat) return false; }          // kategori berbasis field (mis. Insight)
     else if (cat.kw.length && !cat.kw.some(k => title.includes(k))) return false;

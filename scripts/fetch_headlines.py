@@ -8,7 +8,7 @@ tanpa perlu tahu URL RSS native tiap situs). Link item membuka artikel asli.
 Murni fetch + tulis JSON untuk web (TANPA Gemini / Telegram / Playwright).
 Dijalankan terjadwal oleh .github/workflows/refresh-headlines.yml (cron).
 
-Cache: hanya fetch "hari berjalan" (when:2d untuk jaga-jaga zona waktu), lalu
+Cache: fetch berita 3 hari terakhir (when:3d), lalu
 digabung dgn cache lama; item > RETENTION_DAYS dibuang, total dibatasi MAX_ITEMS.
 """
 import json
@@ -26,8 +26,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "public", "headlines.json")
 
 RETENTION_DAYS = 3       # berita lebih tua dari ini dibuang dari cache
-MAX_ITEMS = 80           # batas total item di file (biar kecil & cepat)
-PER_SOURCE = 12          # ambil maksimal sekian item terbaru per portal
+MAX_ITEMS = 300          # batas total item di file (cukup utk 3 hari dari ~14 portal)
+PER_SOURCE = 30          # ambil maksimal sekian item terbaru per portal
 
 # Portal sumber → domain (dipakai filter `site:` di Google News).
 # Ganti / tambah portal di sini saja (mis. ganti dengan referensimu sendiri).
@@ -45,6 +45,9 @@ SOURCES = [
     ("IDN Financials",    "idnfinancials.com"),
     ("Kabar Bursa",       "kabarbursa.com"),
     ("IQPlus",            "iqplus.info"),
+    # Berita resmi Bursa Efek Indonesia. Filter site: memakai path agar hanya
+    # rubrik berita (bukan seluruh idx.co.id).
+    ("IDX (BEI)",         "idx.co.id/id/berita"),
 ]
 
 # Portal "luas" yang meliput banyak topik di luar pasar modal (otomotif,
@@ -76,7 +79,7 @@ JUNK_TITLE_RE = re.compile(
 
 
 def gnews_url(domain: str) -> str:
-    q = f"site:{domain} when:2d"
+    q = f"site:{domain} when:{RETENTION_DAYS}d"
     if domain in BROAD_SOURCES:                       # batasi portal luas ke topik pasar modal
         q += " (" + " OR ".join(FINANCE_TERMS) + ")"
     return ("https://news.google.com/rss/search?q="
