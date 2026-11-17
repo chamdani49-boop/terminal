@@ -1019,6 +1019,24 @@
       '.smm-kv{grid-template-columns:110px 1fr}',
     '}',
     '@media (min-width:641px) and (max-width:900px){.smm-ins-mid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#smmInsAna1{grid-column:1/-1}}',
+    // ── Bilah lengket ringkas saat di-scroll (semua ukuran layar) ──
+    '#smmBarSentry{height:0}',
+    '.smm-bar,.smm-bar .smm-input,.smm-bar .smm-btn,.smm-subtabs,.smm-subtabs button{transition:padding .18s ease,font-size .18s ease,gap .18s ease,border-radius .18s ease}',
+    '#smmBar.smm-compact{padding:4px 8px;gap:8px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.18)}',
+    '#smmBar.smm-compact .smm-input.smm-search{padding:5px 10px;font-size:12px;width:200px;min-height:0}',
+    '#smmBar.smm-compact .smm-btn{padding:5px 10px;font-size:12px;min-height:0}',
+    '#smmBar.smm-compact .smm-subtabs{padding:2px;border-radius:9px;gap:2px}',
+    '#smmBar.smm-compact .smm-subtabs button{padding:5px 12px;font-size:12px;min-height:0}',
+    '@media (max-width:640px){',
+      '#smmBar.smm-compact{flex-wrap:nowrap;padding:4px 6px;gap:6px}',
+      '#smmBar.smm-compact .smm-bar-pick{flex:1 1 auto;min-width:0}',
+      '#smmBar.smm-compact .smm-input.smm-search{width:auto}',
+      '#smmBar.smm-compact .smm-subtabs{flex:0 0 auto;display:inline-flex}',
+      '#smmBar.smm-compact .smm-subtabs button{flex:0 0 auto;padding:5px 8px;font-size:14px}',
+      '#smmBar.smm-compact .smm-subtabs button>span{display:none}',
+    '}',
+    // Screener punya pencarian sendiri → bilah Smart Money tidak ditampilkan di sana.
+    '#page-smartmoney[data-smm-sub="screener"] #smmBar,#page-smartmoney[data-smm-sub="screener"] #smmBarSentry{display:none!important}',
     '@media (max-width:480px){.smm-tbl .lot{display:none}.smm-tbl td:nth-child(5){padding-left:6px}}',
     '@media (max-width:360px){.smm-sum,.smm-ins-sum{grid-template-columns:1fr}.smm-verdict{flex-direction:column;align-items:flex-start}}'
   ].join('\n');
@@ -1376,15 +1394,16 @@
       '</div>' +
 
       // Bar lengket: pilih saham + pindah halaman
+      '<div id="smmBarSentry" aria-hidden="true"></div>' +
       '<div class="smm-bar" id="smmBar">' +
         '<div class="smm-bar-pick">' +
           '<div class="smm-searchwrap"><input class="smm-input smm-search" id="smmCode" maxlength="80" autocomplete="off" placeholder="Saham, broker, atau nama" aria-label="Cari kode saham, kode broker, atau nama insider" enterkeyhint="search"><div class="search-drop smm-drop" id="smmDrop" role="listbox"></div></div>' +
           '<button class="smm-btn primary" data-act="load">Cari</button>' +
         '</div>' +
         '<div class="smm-subtabs" role="tablist">' +
-          '<button role="tab" data-act="sub" data-v="broker">📊 <span class="l">Broker Activity</span><span class="s">Broker</span></button>' +
-          '<button role="tab" data-act="sub" data-v="insider">🕵️ <span>Insider</span></button>' +
-          '<button role="tab" data-act="sub" data-v="holder">🏛️ <span class="l">Kepemilikan</span><span class="s">Pemilik</span></button>' +
+          '<button role="tab" data-act="sub" data-v="broker" aria-label="Broker Activity" title="Broker Activity">📊 <span class="l">Broker Activity</span><span class="s">Broker</span></button>' +
+          '<button role="tab" data-act="sub" data-v="insider" aria-label="Insider" title="Insider">🕵️ <span>Insider</span></button>' +
+          '<button role="tab" data-act="sub" data-v="holder" aria-label="Kepemilikan" title="Kepemilikan">🏛️ <span class="l">Kepemilikan</span><span class="s">Pemilik</span></button>' +
         '</div>' +
       '</div>' +
       '<div class="smm-active" id="smmActive" hidden></div>' +
@@ -3997,6 +4016,7 @@
     document.getElementById('smmPgScreener').hidden = v !== 'screener';
     root.setAttribute('data-smm-sub', v);
     syncControls();
+    updateCompact();
     if (v === 'screener') showScreener();
     if (v === 'broker' && _dirty.broker) renderBroker();
     else if (v === 'broker') renderSankey();
@@ -4017,7 +4037,19 @@
     if (tk && getComputedStyle(tk).display !== 'none' && getComputedStyle(tk).position !== 'static') off = Math.max(off, tk.getBoundingClientRect().bottom);
     return Math.max(0, Math.round(off));
   }
-  function updateSticky() { if (root) root.style.setProperty('--smm-top', stickyTop() + 'px'); }
+  function updateSticky() { if (root) root.style.setProperty('--smm-top', stickyTop() + 'px'); updateCompact(); }
+  // Bilah lengket diringkas begitu halaman di-scroll melewati posisi aslinya. Patokannya penanda
+  // nol-tinggi di atas bilah, jadi perubahan tinggi bilah tidak memicu bolak-balik.
+  var _compact = false;
+  function updateCompact() {
+    if (!root) return;
+    var bar = document.getElementById('smmBar'), sen = document.getElementById('smmBarSentry');
+    if (!bar || !sen) return;
+    var d = sen.getBoundingClientRect().top - stickyTop();
+    var want = _compact ? d < -4 : d < -24;
+    if (S.sub === 'screener' || !root.classList.contains('active')) want = false;
+    if (want !== _compact) { _compact = want; bar.classList.toggle('smm-compact', want); }
+  }
   function setCode(code) {
     code = String(code || '').trim().toUpperCase();
     if (!/^[A-Z0-9]{2,6}$/.test(code)) { toast('Kode saham tidak valid'); return; }
@@ -4217,6 +4249,11 @@
     // Ganti tema → bangun ulang grafik dengan warna baru
     new MutationObserver(function () { if (!_built) return; if (S.sub === 'broker') { buildFlow(); renderSankey(); } else if (S.sub !== 'screener') buildInsChart(); })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    var _cq = false;
+    window.addEventListener('scroll', function () {
+      if (_cq) return; _cq = true;
+      window.requestAnimationFrame(function () { _cq = false; if (_built) updateCompact(); });
+    }, { passive: true });
     var rt;
     window.addEventListener('resize', function () {
       clearTimeout(rt);
