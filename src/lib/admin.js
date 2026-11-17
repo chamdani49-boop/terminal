@@ -10,6 +10,7 @@ import {
 import { getBillingConfig, saveBillingConfig } from './billing.js';
 import { recentFlags, flagSummary, sendTelegram, sendTelegramPhoto, deviceSummary, autosuspendEnabled } from './abuse.js';
 import { handleSmartMoneyApi } from './smartmoney.js';
+import { listLynk, resolveLynk, ignoreLynk, providerStatus, setPaymentProvider } from './lynk.js';
 
 export function isAdmin(env, email) {
   if (!email) return false;
@@ -101,6 +102,38 @@ export async function handleAdminApi(request, env, url) {
     if (r.ok) return json({ ok: true, message: 'Foto terkirim ke Telegram.' });
     if (r.skipped) return json({ error: r.reason || 'Telegram belum dikonfigurasi.' }, 400);
     return json({ error: 'Gagal kirim: ' + (r.error || 'unknown') }, 500);
+  }
+
+  // ── Sakelar penyedia pembayaran (Mayar / Lynk.id): status & ganti ──
+  if (path === '/api/admin/payment-provider' && request.method === 'GET') {
+    try { return json({ ok: true, ...(await providerStatus(env)) }); }
+    catch (e) { return json({ error: (e && e.message) || 'Gagal membaca status' }, 500); }
+  }
+  if (path === '/api/admin/payment-provider' && request.method === 'POST') {
+    let body;
+    try { body = await request.json(); } catch { return badRequest('Body tidak valid'); }
+    try { return json({ ok: true, ...(await setPaymentProvider(env, (body || {}).provider, session.email)) }); }
+    catch (e) { return json({ error: (e && e.message) || 'Gagal mengganti' }, 400); }
+  }
+
+  // ── Lynk: antrean pembayaran yang belum cocok + riwayat terbaru ──
+  if (path === '/api/admin/lynk' && request.method === 'GET') {
+    try { return json({ ok: true, ...(await listLynk(env)) }); }
+    catch (e) { return json({ error: (e && e.message) || 'Gagal membaca data Lynk' }, 500); }
+  }
+  // ── Lynk: cocokkan manual satu pembayaran ke email akun (mengaktifkan langganan) ──
+  if (path === '/api/admin/lynk/resolve' && request.method === 'POST') {
+    let body;
+    try { body = await request.json(); } catch { return badRequest('Body tidak valid'); }
+    try { return json({ ok: true, ...(await resolveLynk(env, session.email, body || {})) }); }
+    catch (e) { return json({ error: (e && e.message) || 'Gagal mencocokkan' }, 400); }
+  }
+  // ── Lynk: abaikan pembayaran pending (mis. tes / bukan produk Terminal) ──
+  if (path === '/api/admin/lynk/ignore' && request.method === 'POST') {
+    let body;
+    try { body = await request.json(); } catch { return badRequest('Body tidak valid'); }
+    try { await ignoreLynk(env, session.email, (body || {}).id); return json({ ok: true }); }
+    catch (e) { return json({ error: (e && e.message) || 'Gagal' }, 400); }
   }
 
   // ── Billing: baca config lengkap (termasuk link Mayar) untuk editor ──

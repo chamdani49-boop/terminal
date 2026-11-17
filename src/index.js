@@ -14,6 +14,7 @@ import { json, redirect, serverError, now, b64urlEncode, hmacSign } from './lib/
 import { getSession, clearSessionCookieHeader } from './lib/session.js';
 import { googleStart, googleCallback, emailRequest, emailVerify } from './lib/auth.js';
 import { checkout, webhook } from './lib/mayar.js';
+import { webhook as lynkWebhook, lynkCheckout, getPaymentProvider } from './lib/lynk.js';
 import { handleAdminApi } from './lib/admin.js';
 import { getActiveSubscription, getReferralInfo, getUserById, markGuideSeen, getFeatureFlags, getPwaStatus, markPwaPromptShown, markPwaInstalled } from './lib/db.js';
 import { getBillingConfig, publicBilling } from './lib/billing.js';
@@ -348,8 +349,13 @@ async function handleApi(request, env, url, ctx) {
   }
 
   // ── Checkout & webhook Mayar ──
-  if (path === '/api/checkout' && method === 'GET') return checkout(request, env, url);
+  // Penyedia pembayaran dipilih admin di panel (sakelar Mayar / Lynk.id; lihat lynk.js).
+  // Webhook KEDUANYA tetap aktif supaya transaksi yang sudah berjalan tetap diproses.
+  if (path === '/api/checkout' && method === 'GET') {
+    return (await getPaymentProvider(env)) === 'lynk' ? lynkCheckout(request, env, url) : checkout(request, env, url);
+  }
   if (path === '/api/webhook/mayar' && method === 'POST') return webhook(request, env, ctx);
+  if (path === '/api/webhook/lynk' && method === 'POST') return lynkWebhook(request, env);
 
   // ── Konfigurasi billing (publik, dibaca billing.html) ──
   if (path === '/api/billing-config' && method === 'GET') {

@@ -177,6 +177,39 @@ tbody tr:hover{background:var(--bg2)}
 .switch input:checked + .slider:before{transform:translateX(22px);background:#fff}
 .feat-state{font-size:11px;font-weight:700;color:var(--text3);min-width:64px;text-align:right}
 .bill-body{margin-top:16px}
+/* Penyedia pembayaran (sakelar Mayar / Lynk.id) + antrean pencocokan */
+.pay-switch{display:inline-flex;background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:4px;gap:4px;margin:2px 0 12px}
+.pay-opt{border:0;background:none;color:var(--text2);font-family:inherit;font-size:14px;font-weight:700;padding:10px 24px;border-radius:999px;cursor:pointer;transition:.15s}
+.pay-opt:hover{color:var(--text)}
+.pay-opt.on{background:var(--grad);color:#fff;box-shadow:0 3px 12px rgba(109,40,217,.28)}
+.pay-opt:disabled{opacity:.6;cursor:wait}
+.pay-info{font-size:12.5px;color:var(--text2);line-height:1.6}
+.pay-info b{color:var(--text)}
+.pay-chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;margin:2px 6px 2px 0}
+.pay-chip.ok{background:var(--green-bg);color:var(--green)}
+.pay-chip.warn{background:var(--yellow-bg);color:var(--yellow)}
+.pay-msg{font-size:12.5px;font-weight:600;min-height:18px;margin-top:8px}
+.pay-msg.err{color:var(--red)}.pay-msg.ok{color:var(--green)}
+.lq-title{font-size:13px;font-weight:800;margin:20px 0 4px}
+.lq-sub{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5}
+.lq-item{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.lq-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px}
+.lq-top b{font-weight:800}
+.lq-amt{font-weight:800;color:var(--accent);white-space:nowrap}
+.lq-why{font-size:12px;color:var(--yellow);margin:4px 0 8px;font-weight:600}
+.lq-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.lq-form input,.lq-form select{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px 10px;color:var(--text);font-family:inherit;font-size:13px;min-width:0}
+.lq-form input{flex:1 1 200px}
+.lq-btn{border:1px solid var(--border);background:var(--card);color:var(--text2);font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer}
+.lq-btn.go{background:var(--grad);color:#fff;border:0}
+.lq-btn:hover{filter:brightness(1.06)}
+.lq-btn:disabled{opacity:.6;cursor:wait}
+.lq-raw{display:none;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--card);border:1px solid var(--border2);border-radius:9px;padding:8px;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow:auto;color:var(--text2)}
+.lq-raw.open{display:block}
+.lq-recent{width:100%;border-collapse:collapse;font-size:12px}
+.lq-recent td,.lq-recent th{padding:6px 8px;border-bottom:1px solid var(--border2);text-align:left;white-space:nowrap}
+.lq-recent th{color:var(--text3);font-weight:700;font-size:11px}
+.lq-wrap{overflow-x:auto}
 .bill-body.collapsed{display:none}
 .bill-global{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .bill-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -304,6 +337,33 @@ table.ut{min-width:0;table-layout:auto}
     <div class="usage-note" id="usageNote">Memuat data penggunaan…</div>
   </section>
 
+  <!-- PENYEDIA PEMBAYARAN (sakelar Mayar / Lynk.id) -->
+  <section class="bill-card" id="payCard" style="display:none">
+    <div class="bill-head" id="payHead">
+      <div class="usage-title">💱 Penyedia Pembayaran <span class="plan-badge" id="payBadge">—</span></div>
+      <button class="bill-toggle" id="payToggle" type="button">Sembunyikan ▲</button>
+    </div>
+    <div class="bill-body" id="payBody">
+      <p class="pay-info" style="margin-bottom:12px">
+        Pilih ke mana tombol bayar di halaman Billing mengarah. Berlaku <b>seketika</b> untuk pembayaran baru.
+        Langganan yang sudah berjalan <b>tidak berubah</b>, dan webhook Mayar maupun Lynk.id tetap aktif
+        sehingga pembayaran yang sudah dibuat tetap diproses.
+      </p>
+      <div class="pay-switch" role="group" aria-label="Penyedia pembayaran">
+        <button type="button" class="pay-opt" data-prov="mayar" id="payOptMayar">Mayar</button>
+        <button type="button" class="pay-opt" data-prov="lynk" id="payOptLynk">Lynk.id</button>
+      </div>
+      <div class="pay-info" id="payInfo">Memuat…</div>
+      <div class="pay-msg" id="payMsg"></div>
+
+      <div class="lq-title">📥 Pembayaran Lynk.id menunggu pencocokan <span class="plan-badge" id="lqBadge">0</span></div>
+      <div class="lq-sub">Muncul di sini bila email pembeli tidak cocok dengan akun Terminal, nominal tidak dikenali, atau data webhook kurang lengkap. Cek, lalu aktifkan ke email yang benar atau abaikan.</div>
+      <div id="lqList"></div>
+      <div class="lq-title" style="margin-top:16px">🧾 Riwayat terbaru</div>
+      <div class="lq-wrap"><table class="lq-recent"><thead><tr><th>Waktu</th><th>Email</th><th>Paket</th><th>Nominal</th><th>Status</th></tr></thead><tbody id="lqRecent"></tbody></table></div>
+    </div>
+  </section>
+
   <!-- PENGATURAN BILLING -->
   <section class="bill-card" id="billCard" style="display:none">
     <div class="bill-head" id="billHead">
@@ -312,9 +372,9 @@ table.ut{min-width:0;table-layout:auto}
     </div>
     <div class="bill-body collapsed" id="billBody">
       <p style="font-size:12.5px;color:var(--text2);line-height:1.55;margin-bottom:14px">
-        Ubah harga real &amp; harga coret, teks tiap card, label promo, dan link Mayar.
+        Ubah harga real &amp; harga coret, teks tiap card, label promo, dan link pembayaran (Mayar / Lynk.id).
         <b>Persentase hemat</b> &amp; <b>harga per-bulan</b> dihitung otomatis.
-        Isi <b>link Mayar</b> tiap paket agar tombol bayar mengarah ke halaman produk yang harganya sama dengan di mayar.id.
+        Isi <b>link</b> tiap paket (sesuai penyedia yang dipilih di kartu Penyedia Pembayaran) agar tombol bayar mengarah ke halaman produk yang harganya sama.
       </p>
       <div class="bill-global">
         <div class="bf"><label for="bfPromo">Label promo (badge paket unggulan)</label><input id="bfPromo" type="text" maxlength="60" placeholder="PALING HEMAT"></div>
@@ -1003,6 +1063,9 @@ function billPlanEditor(plan){
     '<div class="bf"><label>Link Mayar (direct link — biar tidak lupa)</label>'+
       '<div class="bf-link"><input data-k="mayarLink" type="url" placeholder="https://...mayar.id/..."><button type="button" class="bf-open" data-open>Buka</button></div>'+
     '</div>'+
+    '<div class="bf"><label>Link Lynk.id (halaman produk paket ini)</label>'+
+      '<div class="bf-link"><input data-k="lynkLink" type="url" placeholder="https://lynk.id/..."><button type="button" class="bf-open" data-open-lynk>Buka</button></div>'+
+    '</div>'+
   '</div>';
 }
 
@@ -1023,13 +1086,17 @@ function billPopulate(cfg){
     var pl=(cfg.plans&&cfg.plans[p])||{};
     function set(k,v){var el=card.querySelector('[data-k="'+k+'"]');if(el)el.value=(v==null?'':v);}
     set('name',pl.name);set('dur',pl.dur);set('priceReal',pl.priceReal);set('priceCoret',pl.priceCoret);
-    set('sub',pl.sub);set('btnText',pl.btnText);set('mayarLink',pl.mayarLink);
+    set('sub',pl.sub);set('btnText',pl.btnText);set('mayarLink',pl.mayarLink);set('lynkLink',pl.lynkLink);
     var f=pl.features||[];set('f0',f[0]);set('f1',f[1]);set('f2',f[2]);
     billUpdateCalc(card);
     card.addEventListener('input',function(){billUpdateCalc(card);});
     card.querySelector('[data-open]').addEventListener('click',function(){
       var url=(card.querySelector('[data-k="mayarLink"]').value||'').trim();
       if(url) window.open(url,'_blank','noopener'); else alert('Link Mayar paket ini masih kosong.');
+    });
+    card.querySelector('[data-open-lynk]').addEventListener('click',function(){
+      var url=(card.querySelector('[data-k="lynkLink"]').value||'').trim();
+      if(url) window.open(url,'_blank','noopener'); else alert('Link Lynk.id paket ini masih kosong.');
     });
   });
 }
@@ -1040,7 +1107,7 @@ function billCollect(){
     var card=document.getElementById('billGrid').querySelector('.bplan[data-plan="'+p+'"]');
     function g(k){var el=card.querySelector('[data-k="'+k+'"]');return el?el.value:'';}
     cfg.plans[p]={
-      name:g('name'),dur:g('dur'),sub:g('sub'),btnText:g('btnText'),mayarLink:(g('mayarLink')||'').trim(),
+      name:g('name'),dur:g('dur'),sub:g('sub'),btnText:g('btnText'),mayarLink:(g('mayarLink')||'').trim(),lynkLink:(g('lynkLink')||'').trim(),
       priceReal:parseInt(g('priceReal')||'0',10)||0,
       priceCoret:parseInt(g('priceCoret')||'0',10)||0,
       features:[g('f0'),g('f1'),g('f2')].map(function(x){return (x||'').trim();}).filter(Boolean)
@@ -1137,6 +1204,108 @@ document.getElementById('refHead').addEventListener('click',function(){
 });
 
 loadBilling();
+
+// ── Penyedia pembayaran: sakelar Mayar / Lynk.id + antrean pencocokan Lynk ──
+var PAY_PLAN_LABEL={'1bulan':'1 Bulan (Tracker)','3bulan':'3 Bulan','6bulan':'6 Bulan','tahunan':'Tahunan'};
+function _escP(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function payWhen(ts){return ts?new Date(ts*1000).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'-';}
+function payMsg(t,cls){var m=document.getElementById('payMsg');m.className='pay-msg'+(cls?' '+cls:'');m.textContent=t||'';}
+
+function payRenderStatus(st){
+  document.getElementById('payOptMayar').classList.toggle('on',st.provider==='mayar');
+  document.getElementById('payOptLynk').classList.toggle('on',st.provider==='lynk');
+  document.getElementById('payBadge').textContent='Aktif: '+(st.provider==='lynk'?'Lynk.id':'Mayar');
+  var chips=[];
+  chips.push('<span class="pay-chip '+(st.lynk.tokenConfigured?'ok':'warn')+'">Webhook Lynk: '+(st.lynk.tokenConfigured?'siap':'token belum diisi')+'</span>');
+  chips.push('<span class="pay-chip '+(st.lynk.missingLinks.length?'warn':'ok')+'">Link Lynk: '+(st.lynk.missingLinks.length?'kurang '+st.lynk.missingLinks.map(function(p){return PAY_PLAN_LABEL[p]||p;}).join(', '):'lengkap')+'</span>');
+  chips.push('<span class="pay-chip '+((st.mayar.apiKey||st.mayar.webhookToken)?'ok':'warn')+'">Mayar: '+((st.mayar.apiKey||st.mayar.webhookToken)?'terkonfigurasi':'belum dikonfigurasi')+'</span>');
+  var who=st.fromAdmin&&st.setBy?'Terakhir diganti oleh <b>'+_escP(st.setBy)+'</b>, '+payWhen(st.setAt)+'.':'Belum pernah diganti dari panel (memakai pengaturan bawaan server).';
+  document.getElementById('payInfo').innerHTML=chips.join('')+'<br>'+who+
+    (st.provider==='lynk'?'<br>Pembeli akan diminta memakai <b>email akun Terminal</b> saat mengisi data di Lynk.id. Pembayaran dengan email berbeda masuk antrean di bawah.':'');
+}
+
+function lqItem(p){
+  var plans=['1bulan','3bulan','6bulan','tahunan'];
+  return '<div class="lq-item" data-id="'+_escP(p.id)+'">'+
+    '<div class="lq-top"><span><b>'+_escP(p.name||'(tanpa nama)')+'</b> · '+_escP(p.email||'(tanpa email)')+'</span><span class="lq-amt">Rp'+billRp(p.amount)+'</span></div>'+
+    '<div class="lq-why">⚠ '+_escP(p.reason||'menunggu pencocokan')+' · '+payWhen(p.created_at)+'</div>'+
+    '<div class="lq-form">'+
+      '<input type="email" data-lq="email" placeholder="Email akun Terminal" value="'+_escP(p.email||'')+'">'+
+      '<select data-lq="plan">'+plans.map(function(k){return '<option value="'+k+'"'+(k===p.plan?' selected':'')+'>'+PAY_PLAN_LABEL[k]+'</option>';}).join('')+'</select>'+
+      '<button type="button" class="lq-btn go" data-lq-act="resolve">Aktifkan</button>'+
+      '<button type="button" class="lq-btn" data-lq-act="ignore">Abaikan</button>'+
+      '<button type="button" class="lq-btn" data-lq-act="raw">Payload</button>'+
+    '</div>'+
+    '<div class="lq-raw">'+_escP(p.raw||'')+'</div></div>';
+}
+
+function lqRender(d){
+  var pend=d.pending||[];
+  document.getElementById('lqBadge').textContent=String(pend.length);
+  document.getElementById('lqList').innerHTML=pend.length?pend.map(lqItem).join(''):'<div class="lq-sub">Tidak ada pembayaran yang menunggu. 🎉</div>';
+  var stLbl={activated:'✅ Aktif',ignored:'⚪ Diabaikan',pending:'⏳ Menunggu',processing:'⏳ Diproses'};
+  document.getElementById('lqRecent').innerHTML=(d.recent||[]).length?d.recent.map(function(r){
+    return '<tr><td>'+payWhen(r.created_at)+'</td><td>'+_escP(r.email||'-')+'</td><td>'+_escP(PAY_PLAN_LABEL[r.plan]||r.plan||'-')+'</td><td>Rp'+billRp(r.amount)+'</td><td>'+(stLbl[r.status]||_escP(r.status))+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="color:var(--text3)">Belum ada transaksi Lynk.id.</td></tr>';
+}
+
+async function loadPay(){
+  var card=document.getElementById('payCard');
+  try{
+    var rs=await fetch('/api/admin/payment-provider',{headers:{'Accept':'application/json'}});
+    if(!rs.ok){ card.style.display='none'; return; }
+    payRenderStatus(await rs.json());
+    card.style.display='block';
+    var rl=await fetch('/api/admin/lynk',{headers:{'Accept':'application/json'}});
+    if(rl.ok) lqRender(await rl.json());
+  }catch(e){ card.style.display='none'; }
+}
+
+document.querySelectorAll('.pay-opt').forEach(function(b){
+  b.addEventListener('click',async function(){
+    var prov=b.getAttribute('data-prov');
+    if(b.classList.contains('on')) return;
+    var name=prov==='lynk'?'Lynk.id':'Mayar';
+    if(!confirm('Pindahkan pembayaran ke '+name+'?\n\nSemua pembayaran BARU akan diarahkan ke '+name+'. Langganan yang sudah berjalan tidak berubah.')) return;
+    document.querySelectorAll('.pay-opt').forEach(function(x){x.disabled=true;});
+    payMsg('Menyimpan…');
+    try{
+      var r=await fetch('/api/admin/payment-provider',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:prov})});
+      var d=await r.json().catch(function(){return {};});
+      if(!r.ok) throw new Error(d.error||('HTTP '+r.status));
+      payRenderStatus(d); payMsg('✓ Pembayaran sekarang memakai '+name+'.','ok');
+      setTimeout(function(){ var m=document.getElementById('payMsg'); if(m.classList.contains('ok')) m.textContent=''; },5000);
+    }catch(e){ payMsg(e.message||String(e),'err'); }
+    document.querySelectorAll('.pay-opt').forEach(function(x){x.disabled=false;});
+  });
+});
+
+document.getElementById('lqList').addEventListener('click',async function(ev){
+  var btn=ev.target.closest('[data-lq-act]'); if(!btn) return;
+  var item=btn.closest('.lq-item'), id=item.getAttribute('data-id'), act=btn.getAttribute('data-lq-act');
+  if(act==='raw'){ item.querySelector('.lq-raw').classList.toggle('open'); return; }
+  var email=(item.querySelector('[data-lq="email"]').value||'').trim(), plan=item.querySelector('[data-lq="plan"]').value;
+  if(act==='resolve'){
+    if(!email){ payMsg('Isi email akun Terminal dulu.','err'); return; }
+    if(!confirm('Aktifkan paket '+PAY_PLAN_LABEL[plan]+' untuk '+email+'?')) return;
+  } else if(!confirm('Abaikan pembayaran ini? (tidak mengaktifkan langganan)')) return;
+  btn.disabled=true;
+  try{
+    var r=await fetch('/api/admin/lynk/'+(act==='resolve'?'resolve':'ignore'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,email:email,plan:plan})});
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok) throw new Error(d.error||('HTTP '+r.status));
+    payMsg(act==='resolve'?'✓ Langganan '+PAY_PLAN_LABEL[d.plan||plan]+' aktif untuk '+(d.email||email)+'.':'✓ Pembayaran diabaikan.','ok');
+    var rl=await fetch('/api/admin/lynk',{headers:{'Accept':'application/json'}}); if(rl.ok) lqRender(await rl.json());
+  }catch(e){ payMsg(e.message||String(e),'err'); btn.disabled=false; }
+});
+
+document.getElementById('payHead').addEventListener('click',function(ev){
+  if(ev.target.closest('.pay-opt')) return;
+  var body=document.getElementById('payBody'), t=document.getElementById('payToggle');
+  var hidden=body.classList.toggle('collapsed');
+  t.textContent=hidden?'Tampilkan ▼':'Sembunyikan ▲';
+});
+loadPay();
 
 // ── Pengaturan Fitur (toggle trial & ajak teman) ──
 function featSetState(){

@@ -40,6 +40,7 @@ export const DEFAULT_BILLING = {
       ],
       btnText: 'Langganan Tracker 1 Bulan',
       mayarLink: '',
+      lynkLink: '',
       comingSoon: false,   // Sudah aktif — tombol beli enabled.
     },
     '3bulan': {
@@ -56,6 +57,7 @@ export const DEFAULT_BILLING = {
       ],
       btnText: 'Langganan 3 Bulan',
       mayarLink: '',
+      lynkLink: '',
     },
     '6bulan': {
       name: 'Paket Semester',
@@ -71,6 +73,7 @@ export const DEFAULT_BILLING = {
       ],
       btnText: 'Langganan 6 Bulan',
       mayarLink: '',
+      lynkLink: '',
     },
     'tahunan': {
       name: 'Paket Tahunan',
@@ -86,6 +89,7 @@ export const DEFAULT_BILLING = {
       ],
       btnText: 'Langganan Tahunan',
       mayarLink: '',
+      lynkLink: '',
     },
   },
 };
@@ -118,6 +122,7 @@ export function mergeBilling(cfg) {
     if (typeof src.sub === 'string') dst.sub = src.sub.slice(0, 160);
     if (typeof src.btnText === 'string') dst.btnText = src.btnText.slice(0, 60);
     if (typeof src.mayarLink === 'string') dst.mayarLink = src.mayarLink.trim().slice(0, 500);
+    if (typeof src.lynkLink === 'string') dst.lynkLink = src.lynkLink.trim().slice(0, 500);
     if (Number.isFinite(+src.priceReal)) dst.priceReal = Math.max(0, Math.round(+src.priceReal));
     if (Number.isFinite(+src.priceCoret)) dst.priceCoret = Math.max(0, Math.round(+src.priceCoret));
     if (Array.isArray(src.features)) {
@@ -168,7 +173,7 @@ export function publicBilling(cfg) {
       priceReal: s.priceReal, priceCoret: s.priceCoret,
       features: s.features,
       audience: Array.isArray(s.audience) ? s.audience.slice() : [],   // target audience tags
-      hasLink: !!(s.mayarLink && s.mayarLink.length),
+      hasLink: !!((s.mayarLink && s.mayarLink.length) || (s.lynkLink && s.lynkLink.length)),
       comingSoon: !!s.comingSoon,   // Flag preview-only: tombol disabled di UI
     };
   }
