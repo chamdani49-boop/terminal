@@ -615,6 +615,8 @@
     '.smm-gloss b{display:block;color:var(--text);margin-bottom:2px}',
     '.smm-nav .smm-nav-ico{margin-right:2px}',
     '@media (max-width:1279px){.smm-nav .smm-nav-lbl{display:none}.smm-nav .smm-nav-ico{margin:0}}',
+    // Layar lebar (tulisan "Smart Money" tampil): ikon 💰 disembunyikan, sama seperti tab Tracker.
+    '@media (min-width:1280px){.smm-nav .smm-nav-ico{display:none}}',
     '.smm-toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:var(--text);color:var(--card);padding:8px 14px;border-radius:999px;font-size:12px;font-weight:700;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none}',
     '.smm-toast.show{opacity:1}',
     /* responsive */
