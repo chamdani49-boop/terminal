@@ -514,7 +514,7 @@
     '.smm-st-bar .t{height:12px;border-radius:4px;background:var(--bg3);overflow:hidden}.smm-st-bar .t i{display:block;height:100%;border-radius:4px}',
     '.smm-st-bar.a .t i{background:var(--st-acc)}.smm-st-bar.d .t i{background:var(--st-dis)}',
     '.smm-st-bar .n{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:11.5px}.smm-st-bar.a .n{color:var(--st-acc)}.smm-st-bar.d .n{color:var(--st-dis)}',
-    '@container (min-width:640px){.smm-st-body{grid-template-columns:minmax(0,1.75fr) minmax(220px,1fr)}.smm-st-head{font-size:20px}.smm-st-camp .v{font-size:22px}}',
+    '@container (min-width:640px){.smm-st-head{font-size:20px}.smm-st-camp .v{font-size:22px}}',
     '@container (max-width:360px){.smm-st-top .px{font-size:24px}.smm-st-head{font-size:16px}.smm-st-camp .v{font-size:17px}.smm-st-bar{grid-template-columns:46px minmax(0,1fr) 70px}}',
     '.smm-legend .row{display:flex;gap:10px;flex-wrap:wrap}',
     '.smm-legend .row span{white-space:nowrap}',
@@ -1388,11 +1388,6 @@
     UNIVERSE.forEach(function (c) { if (codes.indexOf(c) < 0) codes.push(c); });
     return '' +
     '<div class="smm-wrap">' +
-      '<div class="smm-head">' +
-        '<div class="smm-title"><h2>💰 Smart Money</h2><span class="smm-badge adm">Admin only</span><span class="smm-badge none" id="smmSrcBadge" hidden></span></div>' +
-        '<p class="smm-sub">Lacak ke mana <b>uang besar</b> bergerak. <span class="smm-up">Hijau</span> = sedang dikumpulkan, <span class="smm-dn">merah</span> = sedang dilepas.</p>' +
-      '</div>' +
-
       // Bar lengket: pilih saham + pindah halaman
       '<div id="smmBarSentry" aria-hidden="true"></div>' +
       '<div class="smm-bar" id="smmBar">' +
@@ -4364,8 +4359,16 @@
       };
       var subs = [['Broker Activity', 'broker'], ['Insider', 'insider'], ['Kepemilikan', 'holder']];
       var grp = document.createElement('div');
-      grp.className = 'acct-nav-group'; grp.setAttribute('data-page', 'smartmoney');
-      grp.innerHTML = '<button type="button" class="acct-nav-page" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">💰</span>Smart Money</button><div class="acct-nav-subs">' +
+      grp.className = 'acct-nav-group open'; grp.setAttribute('data-page', 'smartmoney');
+      // Sub-menu tampil bawaan di semua perangkat (bisa ditutup lewat ▾). acct-nav.js membaca status
+      // buka-tutup dari localStorage 'es_nav_open'; isi 'terbuka' bila pengguna belum pernah mengaturnya.
+      try {
+        var navOpen = JSON.parse(localStorage.getItem('es_nav_open') || '{}') || {};
+        if (!('smartmoney' in navOpen)) { navOpen.smartmoney = true; localStorage.setItem('es_nav_open', JSON.stringify(navOpen)); }
+      } catch (_) {}
+      grp.innerHTML = '<div class="acct-nav-head"><button type="button" class="acct-nav-page" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">💰</span>Smart Money</button>' +
+        '<button type="button" class="acct-nav-tgl" data-tgl="smartmoney" aria-expanded="true" aria-label="Tampilkan/sembunyikan sub-menu Smart Money" title="Tampilkan/sembunyikan sub-menu"><span class="acct-nav-chev" aria-hidden="true"></span></button></div>' +
+        '<div class="acct-nav-subs">' +
         subs.map(function (s) { return '<button type="button" class="acct-nav-sub" data-smm-sub="' + s[1] + '" data-smm-go="">' + s[0] + '</button>'; }).join('') + '</div>';
       an.appendChild(grp);
       grp.addEventListener('click', go);
