@@ -1385,7 +1385,6 @@
           '<button role="tab" data-act="sub" data-v="broker">📊 <span class="l">Broker Activity</span><span class="s">Broker</span></button>' +
           '<button role="tab" data-act="sub" data-v="insider">🕵️ <span>Insider</span></button>' +
           '<button role="tab" data-act="sub" data-v="holder">🏛️ <span class="l">Kepemilikan</span><span class="s">Pemilik</span></button>' +
-          '<button role="tab" data-act="sub" data-v="screener">🔎 <span class="l">Screener</span><span class="s">Screen</span></button>' +
         '</div>' +
       '</div>' +
       '<div class="smm-active" id="smmActive" hidden></div>' +
@@ -4225,7 +4224,9 @@
     });
   }
 
-  function open() {
+  // keepSub=true: dipanggil dari menu samping (sub-halaman dipilih sesudahnya).
+  // Tanpa itu (nav atas / bawah): bila sedang di Screener, kembali ke Broker Activity.
+  function open(keepSub) {
     root = document.getElementById('page-smartmoney');
     if (!root) return;
     if (!_built) {
@@ -4233,7 +4234,8 @@
       bind();
       defaultChips();
       _built = true;
-      try { var sv = localStorage.getItem('smm_sub'); S.sub = sv === 'insider' || sv === 'holder' || sv === 'screener' ? sv : 'broker'; } catch (_) {}
+      // Screener hanya dibuka dari menu samping → tidak dipulihkan saat halaman dibuka biasa.
+      try { var sv = localStorage.getItem('smm_sub'); S.sub = sv === 'insider' || sv === 'holder' ? sv : 'broker'; } catch (_) {}
       // 1) Cache lokal → isi langsung tampil (tanpa layar loading)
       var C = readCache(), hyd = false;
       if (C) {
@@ -4265,6 +4267,8 @@
         if (S.sub === 'broker' && G().hasBroker) renderRadar(); else _dirty.broker = true;
         rebuildSuggest();
       });
+    } else if (!keepSub && S.sub === 'screener') {
+      setSub('broker', true);
     } else if (S.sub === 'broker') {
       renderSankey(); // lebar container bisa berubah saat halaman tersembunyi
     }
@@ -4311,7 +4315,7 @@
         var menu = document.getElementById('acctMenu'), wrap = document.getElementById('acctWrap');
         if (menu) menu.classList.remove('open'); if (wrap) wrap.classList.remove('menu-open');
         if (typeof window.showPage === 'function') window.showPage('smartmoney');
-        open();
+        open(true);
         var sub = btn.getAttribute('data-smm-sub');
         if (sub) setSub(sub, true);
         var sel = btn.getAttribute('data-smm-go');
