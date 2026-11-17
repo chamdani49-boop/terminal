@@ -13,9 +13,14 @@
 //          → disimpan sebagai "pending" dan muncul di panel Admin untuk
 //            dicocokkan manual. Tidak ada pembayaran yang hilang.
 //
-// KEAMANAN
-//   - Webhook GAGAL TERTUTUP: tanpa LYNK_WEBHOOK_TOKEN di Worker, semua panggilan ditolak.
-//   - Token dibandingkan dengan perbandingan waktu-konstan.
+// KEAMANAN (dua lapis, keduanya dibandingkan waktu-konstan)
+//   - Tanda tangan Lynk (disarankan): header X-Lynk-Signature =
+//       sha256_hex(amount + refId + message_id + LYNK_MERCHANT_KEY)   (dokumen webhook Lynk)
+//     Dokumen tidak menyebut field `amount` yang dipakai, jadi grandTotal maupun totalPrice diterima.
+//   - Token URL: ?token=<LYNK_WEBHOOK_TOKEN> (atau header x-webhook-token / Authorization).
+//   - Bila LYNK_MERCHANT_KEY di-set: tanda tangan WAJIB valid untuk aktivasi. Tanda tangan salah tapi
+//     token URL benar → disimpan sebagai pending (terlihat di Admin), tidak diaktifkan.
+//   - GAGAL TERTUTUP: tanpa LYNK_MERCHANT_KEY dan LYNK_WEBHOOK_TOKEN, semua panggilan ditolak.
 //   - Satu transaksi hanya diproses sekali (kunci unik per ID transaksi).
 //   - Modul ini TIDAK mengubah langganan yang sudah ada kecuali ada pembayaran baru
 //     (perpanjangan = menambah durasi dari tanggal kedaluwarsa saat ini).
@@ -127,9 +132,13 @@ export function extractFields(payload) {
     || deepFind(payload, ['customer_name', 'customername', 'buyer_name', 'buyername']);
   const txn = deepFind(payload, ['order_id', 'orderid', 'ref_id', 'refid', 'transaction_id', 'transactionid',
     'invoice_id', 'invoiceid', 'invoice', 'message_id', 'messageid', 'payment_id', 'paymentid', 'id']);
-  const amountRaw = deepFind(payload, ['grand_total', 'grandtotal', 'total_amount', 'totalamount',
-    'total_price', 'totalprice', 'total', 'amount', 'subtotal', 'price']);
-  const status = deepFind(payload, ['payment_status', 'transaction_status', 'status']);
+  // Lynk: totals.totalPrice = harga produk (tanpa addon/ongkir). totals.grandTotal = uang BERSIH
+  // yang diterima penjual setelah dipotong biaya → TIDAK cocok untuk mengenali paket.
+  const amountRaw = deepFind(payload, ['totalprice', 'total_price', 'grand_total', 'grandtotal',
+    'total_amount', 'totalamount', 'total', 'amount', 'subtotal', 'price']);
+  const netRaw = deepFind(payload, ['grandtotal', 'grand_total']);
+  // Lynk: data.message_action = "SUCCESS" untuk pembayaran berhasil.
+  const status = deepFind(payload, ['message_action', 'payment_status', 'transaction_status', 'status']);
   const event = deepFind(payload, ['event', 'event_type', 'eventtype', 'type']);
   const title = deepFind(payload, ['product_title', 'producttitle', 'product_name', 'productname', 'item_name', 'title']);
   const email = emailRaw ? String(emailRaw).trim().toLowerCase() : '';
@@ -139,6 +148,7 @@ export function extractFields(payload) {
     name: nameRaw ? String(nameRaw).trim().slice(0, 120) : '',
     txn: txn != null ? String(txn).trim().slice(0, 120) : '',
     amount: parseAmount(amountRaw),
+    net: parseAmount(netRaw),
     status: status != null ? String(status).toLowerCase().trim() : '',
     event: event != null ? String(event).toLowerCase().trim() : '',
     title: title != null ? String(title).slice(0, 200) : '',
@@ -182,30 +192,73 @@ async function savePayment(env, row) {
     row.amount || 0, row.plan || null, row.user_id || null, row.raw || null, now()).run();
 }
 
+// ── Tanda tangan Lynk: sha256_hex(amount + refId + message_id + merchantKey) ──
+function lynkSigParts(payload) {
+  const d = (payload && payload.data) || {};
+  const md = d.message_data || {};
+  const tot = md.totals || {};
+  const refId = md.refId != null ? String(md.refId) : (deepFind(payload, ['refid']) != null ? String(deepFind(payload, ['refid'])) : '');
+  const msgId = d.message_id != null ? String(d.message_id) : (deepFind(payload, ['message_id']) != null ? String(deepFind(payload, ['message_id'])) : '');
+  const amounts = [];
+  for (const v of [tot.grandTotal, tot.totalPrice, deepFind(payload, ['grandtotal']), deepFind(payload, ['totalprice'])]) {
+    if (v == null || v === '') continue;
+    const sv = String(v);
+    if (!amounts.includes(sv)) amounts.push(sv);
+  }
+  return { refId, msgId, amounts };
+}
+export async function verifyLynkSignature(payload, received, key) {
+  received = String(received || '').trim().toLowerCase();
+  if (!key || !received) return false;
+  const { refId, msgId, amounts } = lynkSigParts(payload);
+  if (!refId || !msgId || !amounts.length) return false;
+  let ok = false;
+  for (const amount of amounts) {
+    const calc = await sha256Hex(amount + refId + msgId + key);
+    if (timingSafeEqual(calc, received)) ok = true;   // tidak berhenti lebih awal (waktu tetap)
+  }
+  return ok;
+}
+
 // ── WEBHOOK ──
 export async function webhook(request, env) {
   if (!env.DB) return json({ error: 'D1 belum di-binding' }, 503);
 
-  // 1) Autentikasi (gagal tertutup)
+  // 1) Siapkan autentikasi (gagal tertutup)
   const secret = (env.LYNK_WEBHOOK_TOKEN || '').trim();
-  if (!secret) return json({ error: 'Webhook Lynk belum dikonfigurasi (LYNK_WEBHOOK_TOKEN kosong)' }, 503);
+  const merchantKey = (env.LYNK_MERCHANT_KEY || '').trim();
+  if (!secret && !merchantKey) return json({ error: 'Webhook Lynk belum dikonfigurasi (LYNK_MERCHANT_KEY / LYNK_WEBHOOK_TOKEN kosong)' }, 503);
   const url = new URL(request.url);
   const got = url.searchParams.get('token')
     || request.headers.get('x-webhook-token')
     || request.headers.get('x-callback-token')
     || (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!timingSafeEqual(got, secret)) return json({ error: 'Invalid webhook token' }, 401);
+  const tokenOk = !!secret && timingSafeEqual(got, secret);
+  // Tanpa Merchant Key, token URL wajib benar sebelum badan dibaca.
+  if (!merchantKey && !tokenOk) return json({ error: 'Invalid webhook token' }, 401);
 
   // 2) Baca & parse badan (JSON, atau form-urlencoded sebagai cadangan)
   const text = await request.text();
   if (text.length > MAX_BODY) return json({ error: 'Payload terlalu besar' }, 413);
   let payload;
-  try { payload = JSON.parse(text); } catch {
+  try { payload = JSON.parse(text); } catch { try { payload = JSON.parse(text.replace(/,\s*([}\]])/g, '$1')); } catch { payload = undefined; } }
+  if (payload === undefined) {
     // Cadangan: form-urlencoded (a=b&c=d). Teks tanpa pola kunci=nilai ditolak.
     if (!/^[^=\s&]+=[^&]*(&[^=\s&]+=[^&]*)*$/.test(text.trim())) return badRequest('Payload bukan JSON');
     payload = Object.fromEntries(new URLSearchParams(text.trim()));
   }
   if (!payload || typeof payload !== 'object') return badRequest('Payload tidak valid');
+
+  // 1b) Tanda tangan Lynk (bila Merchant Key di-set)
+  let sigProblem = '';
+  if (merchantKey) {
+    const sigOk = await verifyLynkSignature(payload, request.headers.get('x-lynk-signature'), merchantKey);
+    if (!sigOk) {
+      if (!tokenOk) return json({ error: 'Invalid signature' }, 401);
+      // Token URL benar tapi tanda tangan tidak cocok/tidak ada → simpan untuk diperiksa, jangan aktifkan.
+      sigProblem = request.headers.get('x-lynk-signature') ? 'tanda tangan Lynk tidak cocok (cek LYNK_MERCHANT_KEY)' : 'header X-Lynk-Signature tidak ada';
+    }
+  }
 
   await ensureTable(env);
   const f = extractFields(payload);
@@ -219,6 +272,10 @@ export async function webhook(request, env) {
   if (await txnAlreadyProcessed(env, id)) return json({ ok: true, duplicate: true });
 
   const base = { id, email: f.email || f.emailRaw, name: f.name, amount: f.amount, raw };
+  if (sigProblem) {
+    await savePayment(env, { ...base, status: 'pending', reason: sigProblem });
+    return json({ ok: true, pending: true });
+  }
 
   // 4) Bukan transaksi lunas? (status/event jelas gagal → abaikan; tak dikenal → pending)
   const signals = `${f.status} ${f.event}`.trim();
@@ -337,7 +394,11 @@ export async function providerStatus(env) {
   return {
     provider: await getPaymentProvider(env),
     fromAdmin: stored, setBy, setAt,
-    lynk: { tokenConfigured: !!(env.LYNK_WEBHOOK_TOKEN || '').trim(), missingLinks: await plansMissingLynkLink(env) },
+    lynk: {
+      tokenConfigured: !!((env.LYNK_WEBHOOK_TOKEN || '').trim() || (env.LYNK_MERCHANT_KEY || '').trim()),
+      merchantKey: !!(env.LYNK_MERCHANT_KEY || '').trim(),
+      missingLinks: await plansMissingLynkLink(env),
+    },
     mayar: { apiKey: !!(env.MAYAR_API_KEY || '').trim(), webhookToken: !!(env.MAYAR_WEBHOOK_TOKEN || '').trim() },
   };
 }
@@ -347,8 +408,8 @@ export async function providerStatus(env) {
 export async function setPaymentProvider(env, provider, adminEmail) {
   if (provider !== 'lynk' && provider !== 'mayar') throw new Error('Penyedia tidak valid');
   if (provider === 'lynk') {
-    if (!(env.LYNK_WEBHOOK_TOKEN || '').trim()) {
-      throw new Error('Belum bisa pindah ke Lynk.id: LYNK_WEBHOOK_TOKEN belum diisi di Worker (webhook akan menolak semua pembayaran).');
+    if (!(env.LYNK_WEBHOOK_TOKEN || '').trim() && !(env.LYNK_MERCHANT_KEY || '').trim()) {
+      throw new Error('Belum bisa pindah ke Lynk.id: LYNK_MERCHANT_KEY atau LYNK_WEBHOOK_TOKEN belum diisi di Worker (webhook akan menolak semua pembayaran).');
     }
     const missing = await plansMissingLynkLink(env);
     if (missing.length) {
@@ -370,7 +431,7 @@ export async function listLynk(env) {
   const pending = await env.DB.prepare(`SELECT ${cols}, raw FROM lynk_payments WHERE status = 'pending' ORDER BY created_at DESC LIMIT 100`).all();
   const recent = await env.DB.prepare(`SELECT ${cols} FROM lynk_payments WHERE status != 'pending' ORDER BY created_at DESC LIMIT 30`).all();
   return {
-    configured: !!(env.LYNK_WEBHOOK_TOKEN || '').trim(),
+    configured: !!((env.LYNK_WEBHOOK_TOKEN || '').trim() || (env.LYNK_MERCHANT_KEY || '').trim()),
     provider: await getPaymentProvider(env),
     pending: (pending.results || []).map((r) => ({ ...r, raw: String(r.raw || '').slice(0, 1500) })),
     recent: recent.results || [],
