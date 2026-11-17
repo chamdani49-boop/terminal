@@ -1338,7 +1338,7 @@
   // ─────────────────────────── State ───────────────────────────
   var S = {
     code: 'AVIA', period: '3m', pFrom: null, pTo: null, inv: 'all', sub: 'broker',
-    metric: 'value', priceMode: 'candle', showPrice: true, flowView: (function () { try { return localStorage.getItem('smm_flowview') === 'chart' ? 'chart' : 'story'; } catch (_) { return 'story'; } })(),
+    metric: 'value', priceMode: 'candle', showPrice: true, flowView: (function () { try { localStorage.removeItem('smm_flowview'); } catch (_) {} return 'story'; })(),
     chips: [], hidden: {}, colors: {},
     cr: {},   // tanggal khusus per kartu: { flow|vxv|orbit|radar: { k, from, to } }. Kosong = ikut tanggal global.
     actEnd: 0, actStart: 0, actPreset: 'latest', actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
@@ -4115,7 +4115,7 @@
       case 'pmode': S.priceMode = v; syncControls(); renderChips(); buildFlow(); break;
       case 'chipprice': S.showPrice = !S.showPrice; renderChips(); if (flowSeries.__price) flowSeries.__price.applyOptions({ visible: S.showPrice }); flowLegend(null); break;
       case 'chip': S.hidden[v] = !S.hidden[v]; renderChips(); if (S.flowView === 'story') renderFlowStory(); else { if (flowSeries[v]) flowSeries[v].applyOptions({ visible: !S.hidden[v] }); flowLegend(null); } renderVxv(); break;
-      case 'flowview': if (S.flowView !== v) { S.flowView = v; try { localStorage.setItem('smm_flowview', v); } catch (_) {} syncControls(); buildFlow(); } break;
+      case 'flowview': if (S.flowView !== v) { S.flowView = v; syncControls(); buildFlow(); } break;
       case 'chipx': e.stopPropagation(); S.chips = S.chips.filter(function (c) { return c !== v; }); delete S.colors[v]; renderFlowAll(); break;
       case 'addopen': e.stopPropagation(); document.getElementById('smmAddMenu').classList.toggle('open'); break;
       case 'chipadd': addChip(v); break;
