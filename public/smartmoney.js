@@ -4303,13 +4303,9 @@
     }
     var an = document.getElementById('acctNav');
     if (an) {
-      var subs = [['Broker Activity', 'broker', ''], ['Broker Flow', 'broker', '#smmFlowCard'], ['Broker Summary', 'broker', '#smmBSumCard'], ['Lawan Transaksi', 'broker', '#smmOrbitCard'], ['Value × Volume', 'broker', '#smmVxvCard'], ['Radar', 'broker', '#smmRadarCard'], ['Insider', 'insider', ''], ['Daftar Transaksi Insider', 'insider', '#smmInsListCard'], ['Kepemilikan', 'holder', ''], ['Pemegang > 1%', 'holder', '#smmHoMoveCard'], ['Jumlah Pemegang', 'holder', '#smmHoCountCard'], ['Screener', 'screener', '']];
-      var grp = document.createElement('div');
-      grp.className = 'acct-nav-group'; grp.setAttribute('data-page', 'smartmoney');
-      grp.innerHTML = '<button type="button" class="acct-nav-page" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">💰</span>Smart Money</button><div class="acct-nav-subs">' +
-        subs.map(function (s) { return '<button type="button" class="acct-nav-sub" data-smm-sub="' + s[1] + '" data-smm-go="' + s[2] + '">' + s[0] + '</button>'; }).join('') + '</div>';
-      an.appendChild(grp);
-      grp.addEventListener('click', function (e) {
+      // Menu samping: grup Smart Money hanya berisi 3 halaman utama; Screener jadi menu tersendiri
+      // (hanya di menu samping, tidak ditambahkan ke nav atas).
+      var go = function (e) {
         var btn = e.target.closest('button[data-smm-go]'); if (!btn) return;
         e.preventDefault(); e.stopPropagation();
         var menu = document.getElementById('acctMenu'), wrap = document.getElementById('acctWrap');
@@ -4324,7 +4320,19 @@
           if (!t) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
           window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + window.pageYOffset - stickyTop() - 70), behavior: 'smooth' });
         }, 80);
-      });
+      };
+      var subs = [['Broker Activity', 'broker'], ['Insider', 'insider'], ['Kepemilikan', 'holder']];
+      var grp = document.createElement('div');
+      grp.className = 'acct-nav-group'; grp.setAttribute('data-page', 'smartmoney');
+      grp.innerHTML = '<button type="button" class="acct-nav-page" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">💰</span>Smart Money</button><div class="acct-nav-subs">' +
+        subs.map(function (s) { return '<button type="button" class="acct-nav-sub" data-smm-sub="' + s[1] + '" data-smm-go="">' + s[0] + '</button>'; }).join('') + '</div>';
+      an.appendChild(grp);
+      grp.addEventListener('click', go);
+      var scr = document.createElement('div');
+      scr.className = 'acct-nav-group'; scr.setAttribute('data-page', 'smm-screener');
+      scr.innerHTML = '<button type="button" class="acct-nav-page" data-smm-sub="screener" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">🔎</span>Screener</button>';
+      an.appendChild(scr);
+      scr.addEventListener('click', go);
     }
     if (location.hash === '#smartmoney' && typeof window.showPage === 'function') { window.showPage('smartmoney'); open(); }
   }
