@@ -1216,7 +1216,8 @@ function payRenderStatus(st){
   document.getElementById('payOptLynk').classList.toggle('on',st.provider==='lynk');
   document.getElementById('payBadge').textContent='Aktif: '+(st.provider==='lynk'?'Lynk.id':'Mayar');
   var chips=[];
-  chips.push('<span class="pay-chip '+(st.lynk.tokenConfigured?'ok':'warn')+'">Webhook Lynk: '+(st.lynk.tokenConfigured?'siap':'token belum diisi')+'</span>');
+  chips.push('<span class="pay-chip '+(st.lynk.tokenConfigured?'ok':'warn')+'">Webhook Lynk: '+(st.lynk.tokenConfigured?'siap':'belum dikonfigurasi')+'</span>');
+  chips.push('<span class="pay-chip '+(st.lynk.merchantKey?'ok':'warn')+'">Tanda tangan Lynk: '+(st.lynk.merchantKey?'aktif':'Merchant Key belum diisi')+'</span>');
   chips.push('<span class="pay-chip '+(st.lynk.missingLinks.length?'warn':'ok')+'">Link Lynk: '+(st.lynk.missingLinks.length?'kurang '+st.lynk.missingLinks.map(function(p){return PAY_PLAN_LABEL[p]||p;}).join(', '):'lengkap')+'</span>');
   chips.push('<span class="pay-chip '+((st.mayar.apiKey||st.mayar.webhookToken)?'ok':'warn')+'">Mayar: '+((st.mayar.apiKey||st.mayar.webhookToken)?'terkonfigurasi':'belum dikonfigurasi')+'</span>');
   var who=st.fromAdmin&&st.setBy?'Terakhir diganti oleh <b>'+_escP(st.setBy)+'</b>, '+payWhen(st.setAt)+'.':'Belum pernah diganti dari panel (memakai pengaturan bawaan server).';
