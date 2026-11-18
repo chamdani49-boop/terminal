@@ -449,7 +449,6 @@
 
   // ─────────────────────────── State ───────────────────────────
   var VIEWS = [
-    { k: 'stk', ico: 'layers', label: 'Per Saham', sub: 'Semua analisis 1 halaman' },
     { k: 'today', ico: 'today', label: 'Today', sub: 'Sinyal terbaik' },
     { k: 'gems', ico: 'gem', label: 'Gems', sub: 'Sinyal harian' },
     { k: 'accum', ico: 'layers', label: 'Accumulation', sub: 'Posisi broker 6 bln' },
@@ -458,7 +457,7 @@
     { k: 'foreign', ico: 'globe', label: 'Foreign', sub: 'Intensitas & radar' }
   ];
   var V = {
-    view: 'stk', asOf: 0, guide: {}, acc: null,
+    view: 'today', asOf: 0, guide: {}, acc: null,
     gems: { preset: 'top', tier: 0, cap: 'all', liq: 'all', sector: '', q: '', sort: 'score', dir: -1, limit: 50 },
     accum: { mode: 'pos', trend: 'acc', top: 5, market: 'reg', minLose: 0, minLoss: 0, maxDays: 0, minNet: 0, preset: '', q: '', sort: 'net', dir: -1, limit: 10 },
     smart: { mode: 'retail', a: null, b: null, rng: '1W', q: '', sort: 'sm', dir: -1, pl: 'all', limit: 50 },
@@ -568,7 +567,7 @@
   // ─────────────────────────── Panduan (cara pakai & manfaat) ───────────────────────────
   var GUIDE = {
     stk: {
-      title: 'Per Saham', ico: 'layers', desc: 'Satu halaman: berita, swing, konsensus, valuasi, trade, broker, insider, dan kepemilikan untuk satu kode saham.',
+      title: 'StockPro', ico: 'layers', desc: 'Satu halaman: berita, swing, konsensus, valuasi, trade, broker, insider, dan kepemilikan untuk satu kode saham.',
       how: [['search', 'Ketik kode atau nama saham, lalu pilih dari daftar.'], ['bar', 'Tiap kartu memberi kesimpulan (hijau = positif, kuning = netral, merah = waspada) beserta alasannya.'], ['ext', 'Tombol di kartu membuka halaman aslinya (Dashboard, Konsensus, Valuasi, Tracker, Broker Activity) untuk saham yang sama.']],
       why: [['target', 'Tidak perlu membuka 6 menu satu per satu untuk tahu keadaan satu saham.'], ['shield', 'Sinyal yang saling bertentangan langsung kelihatan, misalnya konsensus positif tapi broker besar menjual.'], ['info', 'Kesimpulan berasal dari aturan sederhana, bukan rekomendasi investasi. Keputusan tetap di tangan Anda.']]
     },
@@ -2448,6 +2447,8 @@
     '.sx-why{margin:0;font-size:12px;line-height:1.4;color:var(--text2)}',
     '.sx-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}',
     '.sx-cap{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text3)}',
+    /* StockPro: tanpa bilah tab Screener */
+    '.sx-only .sx-top{display:none}',
     /* top bar + tabs */
     '.sx-top{display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-card);min-width:0}',
     '.sx-brand{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent);padding-right:12px;border-right:1px solid var(--border2);flex-shrink:0}',
@@ -2813,7 +2814,7 @@
     A = api; host = container;
     if (!document.getElementById('sxStyle')) { var st = document.createElement('style'); st.id = 'sxStyle'; st.textContent = CSS; document.head.appendChild(st); }
     if (!_bound) {
-      var sv = load('sx_view'); if (sv && VIEW[sv] && VIEWS.some(function (x) { return x.k === sv; })) V.view = sv;
+      var sv = load('sx_view'); if (sv && VIEW[sv]) V.view = sv;
       host.innerHTML = shell();
       host.addEventListener('error', function (e) { var t = e.target; if (t && t.classList && t.classList.contains('sp-lg')) t.style.display = 'none'; }, true);
       host.addEventListener('touchstart', function (e) { if (e.touches.length === 2 && e.target.closest && e.target.closest('.sp-sc')) _pinch = { d: pinchDist(e.touches), z: V.stk.zoom || 1 }; }, { passive: true });
@@ -2834,6 +2835,9 @@
       });
       _bound = true;
     }
+    var pend = window.__smmScrPending; window.__smmScrPending = null;
+    if (pend) { V.view = pend.view || (V.view === 'stk' ? 'today' : V.view); store('sx_view', V.view); }
+    host.classList.toggle('sx-only', V.view === 'stk');   // StockPro: tab Screener disembunyikan
     renderView();
   }
   // Kalender pindah ke Broker Activity; Screener tidak perlu mengikuti saham aktif.

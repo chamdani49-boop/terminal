@@ -3975,7 +3975,7 @@
   }
   // ── Screener (sub-tab 4) dimuat dinamis supaya file ini tidak membengkak.
   // Naikkan SCR_V setiap kali smartmoney-screener.js diubah (cache-busting).
-  var SCR_V = '20261118e', _scrP = null;
+  var SCR_V = '20261118f', _scrP = null;
   function ensureScreener() {
     if (window.SmartMoneyScreener) return Promise.resolve();
     if (_scrP) return _scrP;
@@ -4351,6 +4351,7 @@
         if (typeof window.showPage === 'function') window.showPage('smartmoney');
         open(true);
         var sub = btn.getAttribute('data-smm-sub');
+        if (sub === 'screener') window.__smmScrPending = { view: btn.getAttribute('data-smm-view') || null };
         if (sub) setSub(sub, true);
         var sel = btn.getAttribute('data-smm-go');
         setTimeout(function () {
@@ -4379,6 +4380,12 @@
       scr.innerHTML = '<button type="button" class="acct-nav-page" data-smm-sub="screener" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">🔎</span>Screener</button>';
       an.appendChild(scr);
       scr.addEventListener('click', go);
+      // StockPro: halaman Per Saham dipisah dari Screener. Hanya di bilah samping.
+      var spro = document.createElement('div');
+      spro.className = 'acct-nav-group'; spro.setAttribute('data-page', 'smm-stockpro');
+      spro.innerHTML = '<button type="button" class="acct-nav-page" data-smm-sub="screener" data-smm-view="stk" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">⚡</span>StockPro</button>';
+      an.appendChild(spro);
+      spro.addEventListener('click', go);
     }
     if (location.hash === '#smartmoney' && typeof window.showPage === 'function') { window.showPage('smartmoney'); open(); }
   }
