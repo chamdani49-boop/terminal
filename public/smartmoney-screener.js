@@ -1927,7 +1927,6 @@
     var skel = function () { return computing ? '' : '<p class="sp-sub">Belum ada.</p>'; };
     if (!computing) setTimeout(spReveal, 0);
     return '<div class="sp">' +
-      '<h3 class="sp-rh">Peta sinyal hari ini</h3><p class="sp-sub">Makin ke kanan, makin banyak modul yang positif. Makin ke kiri, makin banyak peringatan.</p>' +
       '<div class="sp-scw"><div class="sp-sc"><div class="sp-map' + ((st.zoom || 1) < 1.8 ? ' zc' : '') + '" id="spMap" style="--z:' + (st.zoom || 1) + '"><div class="sp-zone r"></div><div class="sp-zone g"></div><div class="sp-mid"></div><div class="sp-glow"></div>' +
         '<span class="sp-zl sx-dn" style="left:14px">Hindari</span><span class="sp-zl sx-mute" style="left:50%;transform:translateX(-50%)">Netral</span><span class="sp-zl sx-up" style="right:14px">Layak dibeli</span><div class="sp-axis"></div>' + ticks + bub + coll + '</div></div></div>' +
         '<div class="sp-zrow"><p class="sp-hint">Cubit layar atau pakai tombol + / − untuk memperbesar peta, lalu geser.</p>' +
@@ -2090,7 +2089,7 @@
   }
   function viewStk() {
     var st = V.stk;
-    return vhead('stk') +
+    return vhead('stk').replace(/<div class="sx-gbtns"[\s\S]*?<\/div>/, '') +
       (st.code ? '<div class="sx-bar">' + searchBox('sxPQ', st.q, 'Cari kode atau nama saham, mis. BBCA') + '</div>' : '') +
       '<div id="sxBody"></div>';
   }
@@ -2145,6 +2144,7 @@
     var el = host.querySelector('#sxView');
     if (!U) { ensureUniverse(renderView); return; }
     if (!U.list.length) { el.innerHTML = empty('Data harga (ohlc.json) belum tersedia.'); return; }
+    if (V.view === 'stk') V.guide.stk = null;
     if (V.guide[V.view] === undefined) { V.guide[V.view] = load('sx_seen_' + V.view) ? null : 'how'; store('sx_seen_' + V.view, '1'); }
     try {
       el.innerHTML = VIEW[V.view]();
