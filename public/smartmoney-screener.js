@@ -1924,8 +1924,10 @@
     });
     var ticks = ''; for (var t = -5; t <= 5; t++) if (t % 2 === 0 || Math.abs(t) === 5) ticks += '<span class="sp-tick mono" style="left:' + ((t + 5.5) / 11 * 100) + '%">' + (t > 0 ? '+' : t < 0 ? '−' : '') + Math.abs(t) + '</span>';
     var intro = computing && !st.introDone;
-    var coll = intro ? '<div class="sp-web" id="spWeb"></div>' : '';
-    if (intro) { setStat(!sigReady() ? 'Memuat berita, valuasi, dan data Tracker…' : 'Mengumpulkan data · ' + nf(Object.keys(map0).length) + ' / ' + nf(U.list.length) + ' saham'); setTimeout(spWebStart, 0); }
+    var statTxt = !sigReady() ? 'Memuat berita, valuasi, dan data Tracker…' : 'Mengumpulkan data · ' + nf(Object.keys(map0).length) + ' / ' + nf(U.list.length) + ' saham';
+    // Pertama kali: animasi benang. Kunjungan berikutnya saat masih menghitung: spinner + teks progres.
+    var coll = intro ? '<div class="sp-web" id="spWeb"></div>' : computing ? '<div class="sx-load sp-ld"><div class="sx-spin"></div><b>' + esc(statTxt) + '</b></div>' : '';
+    if (intro) { setStat(statTxt); setTimeout(spWebStart, 0); }
     var skel = function () { return computing ? '' : '<p class="sp-sub">Belum ada.</p>'; };
     if (!computing) setTimeout(spReveal, 0);
     return '<div class="sp">' +
@@ -2694,6 +2696,8 @@
     '.sp-bub.sp-in{animation:sp-drop .55s 0s cubic-bezier(.2,.9,.3,1.3) both}',
     '.sp-web{transition:opacity .45s ease}.sp-web.out{opacity:0}',
     '@keyframes spFade{from{opacity:0}to{opacity:1}}',
+    /* loading kunjungan berikutnya: spinner di atas peta */
+    '.sp-ld{position:absolute;inset:0;justify-content:center;padding:0;background:color-mix(in srgb,var(--card) 70%,transparent);z-index:5}',
     /* loading: animasi benang (referensi peta sinyal) */
     '.sp-webhost{position:relative;height:300px;margin-top:12px;border-radius:20px;border:1px solid var(--border);background:var(--card);overflow:hidden}',
     '.sp-web{position:absolute;inset:0;pointer-events:none;overflow:hidden}',
