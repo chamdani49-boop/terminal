@@ -1062,6 +1062,29 @@
   }
   function getData(code) { return _real[code] && !_real[code].then ? _real[code] : emptyData(code); }
 
+  // Respons API Smart Money disimpan di Cache Storage browser selama 3 jam (mirip screening di
+  // Pasar Live: dimuat sekali lalu dipakai ulang). Server mengirim no-store, jadi cache HTTP biasa
+  // tidak bekerja; ini lapisan cache sendiri. Gagal / kedaluwarsa → ambil dari server,
+  // dan bila server gagal, data lama tetap dipakai.
+  var SMM_CC = 'es-smm-v1', SMM_TTL = 3 * 60 * 60 * 1000;
+  function fetchJsonNet(url) {
+    return fetch(url, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : null; });
+  }
+  function cachedJson(url) {
+    var parse = function (t) { try { return t ? JSON.parse(t) : null; } catch (_) { return null; } };
+    if (!window.caches || !caches.open) return fetchJsonNet(url).then(parse).catch(function () { return null; });
+    return caches.open(SMM_CC).then(function (c) {
+      return c.match(url).then(function (hit) {
+        var t = hit ? +hit.headers.get('x-es-t') : 0;
+        if (hit && t && Date.now() - t < SMM_TTL) return hit.text().then(parse);
+        return fetchJsonNet(url).then(function (body) {
+          if (body == null) return hit ? hit.text().then(parse) : null;
+          try { c.put(url, new Response(body, { headers: { 'Content-Type': 'application/json', 'x-es-t': String(Date.now()) } })); } catch (_) {}
+          return parse(body);
+        }).catch(function () { return hit ? hit.text().then(parse) : null; });
+      });
+    }).catch(function () { return fetchJsonNet(url).then(parse).catch(function () { return null; }); });
+  }
   function loadOhlc() {
     if (_ohlcAll) return _ohlcAll;
     _ohlcAll = fetch('/ohlc.json', { credentials: 'same-origin' })
@@ -1069,8 +1092,7 @@
     return _ohlcAll;
   }
   function loadIndex() {
-    return fetch('/api/admin/smartmoney/index', { credentials: 'same-origin', cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : null; })
+    return cachedJson('/api/admin/smartmoney/index')
       .then(function (j) {
         var codes = j && j.ok && j.index && Array.isArray(j.index.codes) ? j.index.codes : [];
         _index = codes.map(function (c) { return String(c).toUpperCase(); }).filter(function (c) { return /^[A-Z0-9]{2,6}$/.test(c); });
@@ -1083,8 +1105,7 @@
   // perlu memuat ulang /ohlc.json (±3,5 MB).
   var _rawOf = {}, _rawStr = {};
   function fetchRaw(code) {
-    return fetch('/api/admin/smartmoney?code=' + encodeURIComponent(code), { credentials: 'same-origin', cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : null; })
+    return cachedJson('/api/admin/smartmoney?code=' + encodeURIComponent(code))
       .then(function (j) {
         if (!j || !j.ok || (!j.broker && !j.insider && !j.holder)) return null;
         var needPx = !(j.broker && Array.isArray(j.broker.ohlc) && j.broker.ohlc.length);
@@ -2330,8 +2351,7 @@
   var _bkIdx = {};   // broker → data indeks (Promise | objek | false)
   function loadBrokerIdx(code) {
     if (_bkIdx[code] !== undefined) return Promise.resolve(_bkIdx[code]);
-    return (_bkIdx[code] = fetch('/api/admin/smartmoney/broker?b=' + encodeURIComponent(code), { credentials: 'same-origin', cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : null; })
+    return (_bkIdx[code] = cachedJson('/api/admin/smartmoney/broker?b=' + encodeURIComponent(code))
       .then(function (j) { _bkIdx[code] = j && j.s && Array.isArray(j.days) ? j : false; return _bkIdx[code]; })
       .catch(function () { _bkIdx[code] = false; return false; }));
   }
@@ -2489,8 +2509,7 @@
   var _people = null;   // Promise | objek | false
   function loadPeople() {
     if (_people !== null) return Promise.resolve(_people);
-    return (_people = fetch('/api/admin/smartmoney/people', { credentials: 'same-origin', cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : null; })
+    return (_people = cachedJson('/api/admin/smartmoney/people')
       .then(function (j) { _people = j && j.p ? j.p : false; return _people; })
       .catch(function () { _people = false; return false; }));
   }
@@ -3975,7 +3994,7 @@
   }
   // ── Screener (sub-tab 4) dimuat dinamis supaya file ini tidak membengkak.
   // Naikkan SCR_V setiap kali smartmoney-screener.js diubah (cache-busting).
-  var SCR_V = '20261118l', _scrP = null;
+  var SCR_V = '20261118m', _scrP = null;
   function ensureScreener() {
     if (window.SmartMoneyScreener) return Promise.resolve();
     if (_scrP) return _scrP;
@@ -3988,6 +4007,7 @@
     return _scrP;
   }
   var screenerApi = {
+    cachedJson: cachedJson,
     esc: esc, nf: nf, fmtVal: fmtVal, fmtLot: fmtLot, fmtPct: fmtPct,
     tip: tip, toast: toast, bkTag: bkTag, brokerList: brokerList, brokerType: brokerType, titleCase: titleCase,
     loadOhlc: function () { return loadOhlc(); }, loadReal: loadReal,

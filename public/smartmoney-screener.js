@@ -277,8 +277,7 @@
     derive(m);
   }
   function loadSummary() {
-    return fetch('/api/admin/smartmoney/screener', { credentials: 'same-origin', cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : null; })
+    return (A.cachedJson ? A.cachedJson('/api/admin/smartmoney/screener') : fetch('/api/admin/smartmoney/screener', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }))
       .then(function (j) {
         if (!j || !j.stocks || !Array.isArray(j.days)) return 0;
         var cnt = 0;
@@ -499,7 +498,7 @@
           var w = _waiters; _waiters = null;
           w.forEach(function (f) { f(); });
           // 1 file ringkasan untuk semua saham dulu; per saham hanya untuk yang belum tercakup
-          loadSummary().then(loadRealAll);
+          loadSummary().then(function (cnt) { loadRealAll(cnt); });
         }
       }
       if (!axis.length) { U = U2; var w0 = _waiters; _waiters = null; w0.forEach(function (f) { f(); }); return; }
@@ -529,12 +528,13 @@
   // Pemuatan data broker (ringkasan + per saham) selesai. Sebelum ini, "belum ada data broker" TIDAK boleh
   // ditampilkan karena datanya masih dalam perjalanan.
   function brokerDone() { if (!U || U.brokerReady) return; U.brokerReady = true; if (!(V.stk.sig && V.stk.sig.brk)) sigBump(); if (host && !host.hidden) { if (V.view === 'stk') { if (V.stk.code) renderBody(); else stkRefresh(); } } }
-  function loadRealAll() {
+  function loadRealAll(fromSum) {
     var tries = 0;
     (function waitIdx() {
       var codes = A.index();
       if (!codes) { if (++tries < 40) setTimeout(waitIdx, 500); else brokerDone(); return; }
-      codes = codes.filter(function (c) { return U.by[c] && !U.by[c].fromSummary; }).slice(0, 150);
+      // Ringkasan sudah ada → hanya saham baru (di luar ringkasan) yang diambil per saham, maks 20.
+      codes = codes.filter(function (c) { return U.by[c] && !U.by[c].fromSummary; }).slice(0, fromSum ? 20 : 150);
       var q = codes.slice(), busy = 0, dirty = false, timer = null;
       function flush() { timer = null; if (!dirty) return; dirty = false; U.bt = null; if (host && !host.hidden && V.view !== 'stk') renderView(); }
       function next() {
