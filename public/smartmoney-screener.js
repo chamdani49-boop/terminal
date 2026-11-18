@@ -1922,7 +1922,6 @@
         bub += '<button class="sp-bub ' + (st.introDone || rev[x.m.code] ? 'sp-done' : 'sp-hid') + '" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
       });
     });
-    var ticks = ''; for (var t = -5; t <= 5; t++) if (t % 2 === 0 || Math.abs(t) === 5) ticks += '<span class="sp-tick mono" style="left:' + ((t + 5.5) / 11 * 100) + '%">' + (t > 0 ? '+' : t < 0 ? '−' : '') + Math.abs(t) + '</span>';
     var intro = computing && !st.introDone;
     var statTxt = !sigReady() ? 'Memuat berita, valuasi, dan data Tracker…' : 'Mengumpulkan data · ' + nf(Object.keys(map0).length) + ' / ' + nf(U.list.length) + ' saham';
     // Pertama kali: animasi benang. Kunjungan berikutnya saat masih menghitung: spinner + teks progres.
@@ -1932,7 +1931,7 @@
     if (!computing) setTimeout(spReveal, 0);
     return '<div class="sp">' +
       '<div class="sp-scw"><div class="sp-sc"><div class="sp-map' + ((st.zoom || 1) < 1.8 ? ' zc' : '') + '" id="spMap" style="--z:' + (st.zoom || 1) + '"><div class="sp-zone r"></div><div class="sp-zone g"></div><div class="sp-mid"></div><div class="sp-glow"></div>' +
-        '<span class="sp-zl sx-dn" style="left:14px">Hindari</span><span class="sp-zl sx-mute" style="left:50%;transform:translateX(-50%)">Netral</span><span class="sp-zl sx-up" style="right:14px">Layak dibeli</span><div class="sp-axis"></div>' + ticks + bub + coll + '</div></div></div>' +
+        '<span class="sp-zl sx-dn" style="left:14px">Hindari</span><span class="sp-zl sx-mute" style="left:50%;transform:translateX(-50%)">Netral</span><span class="sp-zl sx-up" style="right:14px">Layak dibeli</span>' + bub + coll + '</div></div></div>' +
         '<div class="sp-zrow"><p class="sp-hint">Cubit layar atau pakai tombol + / − untuk memperbesar peta, lalu geser.</p>' +
           '<div class="sp-zoom" role="group" aria-label="Zoom peta"><button data-sx="spzoom" data-v="out" aria-label="Perkecil">−</button><span class="mono" id="spZv">' + Math.round((st.zoom || 1) * 100) + '%</span><button data-sx="spzoom" data-v="in" aria-label="Perbesar">+</button></div></div>' +
       '<section class="sp-cols"><div><div class="sp-ch" style="--c:var(--green)"><h3>Layak dibeli</h3><span>sinyal terkuat dulu</span></div>' + (B.slice(0, 10).map(function (x, i) { return spRow(x, i, 'g'); }).join('') || skel()) + '</div>' +
@@ -2340,7 +2339,7 @@
     '.sp-zrow{display:none}',
     '.sp-sc{touch-action:pan-x pan-y;overflow-x:auto;scrollbar-width:none;border-radius:20px;border:1px solid var(--border);background:var(--card)}',
     '.sp-map{position:relative;min-width:1000px;height:312px}',
-    '.sp-zone{position:absolute;top:0;bottom:34px}',
+    '.sp-zone{position:absolute;top:0;bottom:0}',
     '.sp-zone.r{left:0;width:30%;background:linear-gradient(90deg,color-mix(in srgb,var(--red) 18%,transparent),transparent)}',
     '.sp-zone.g{right:0;width:30%;background:linear-gradient(270deg,color-mix(in srgb,var(--green) 18%,transparent),transparent)}',
     '.sp-zl{position:absolute;top:12px;font-size:12px;font-weight:700}',
