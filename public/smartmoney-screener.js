@@ -100,6 +100,7 @@
     star: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
     lightbulb: '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.74V17h8v-2.26A7 7 0 0 0 12 2z"/>',
     x: '<path d="M18 6L6 18M6 6l12 12"/>',
+    news: '<path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M19 8h2v10a2 2 0 0 1-2 2M8 8h7M8 12h7M8 16h4"/>',
     dollar: '<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'
   };
   function ic(name, cls) {
@@ -453,7 +454,8 @@
     { k: 'accum', ico: 'layers', label: 'Accumulation', sub: 'Posisi broker 6 bln' },
     { k: 'smart', ico: 'funnel', label: 'Smart Money', sub: 'Nampung ritel & P&L' },
     { k: 'bh', ico: 'users', label: 'Broker & Holder', sub: 'Associate, >5%, insider' },
-    { k: 'foreign', ico: 'globe', label: 'Foreign', sub: 'Intensitas & radar' }
+    { k: 'foreign', ico: 'globe', label: 'Foreign', sub: 'Intensitas & radar' },
+    { k: 'news', ico: 'news', label: 'Headlines', sub: 'Berita per saham' }
   ];
   var V = {
     view: 'today', asOf: 0, guide: {}, acc: null,
@@ -461,6 +463,7 @@
     accum: { mode: 'pos', trend: 'acc', top: 5, market: 'reg', minLose: 0, minLoss: 0, maxDays: 0, minNet: 0, preset: '', q: '', sort: 'net', dir: -1, limit: 10 },
     smart: { mode: 'retail', a: null, b: null, rng: '1W', q: '', sort: 'sm', dir: -1, pl: 'all', limit: 50 },
     bh: { mode: 'assoc', per: '1W', hper: '3M', flip: false, q: '', lim: { a: 10, d: 10 } },
+    news: { per: '7D', q: '', limit: 30 },
     foreign: { mode: 'int', side: 'acc', preset: 'all', per: '30D', liq: 0, show: 50, q: '', sort: 'score', dir: -1, rd: 7, rsort: 'days', rdir: -1, rexp: undefined }
   };
   function T0() { return U.n - 1 - V.asOf; }
@@ -554,6 +557,11 @@
 
   // ─────────────────────────── Panduan (cara pakai & manfaat) ───────────────────────────
   var GUIDE = {
+    news: {
+      title: 'Headlines per Saham', ico: 'news', desc: 'Berita terbaru yang menyebut kode saham, dikelompokkan per saham.',
+      how: [['cal', 'Pilih rentang: 24 jam, 7 hari, atau 30 hari.'], ['search', 'Cari kode saham atau nama perusahaan.'], ['ext', 'Ketuk judul untuk membuka beritanya di tab baru. Tombol di bawah tiap saham membuka Broker Activity atau Pasar Live.']],
+      why: [['news', 'Tahu saham mana yang sedang ramai diberitakan tanpa membaca semua portal.'], ['spike', 'Saham dengan banyak berita sering diikuti lonjakan volume.'], ['info', 'Berita hanya dicocokkan lewat kode saham di judul, jadi berita tanpa kode tidak muncul di sini.']]
+    },
     today: {
       title: 'Today', ico: 'today', desc: 'Ringkasan sinyal terbaru setelah penutupan pasar. Entry ideal di sesi berikutnya.',
       how: [['cal', 'Geser tanggal dengan tombol ‹ › untuk melihat sinyal hari-hari sebelumnya.'], ['star', 'Kartu Setup Preset diurutkan dari yang paling bagus hasilnya 3 bulan terakhir.'], ['target', 'Label akurasi membandingkan return 10 hari setelah sinyal dengan rata-rata semua saham.'], ['ext', 'Ketuk saham untuk membuka Broker Activity, atau "Lihat semua" untuk daftar lengkap di Gems.']],
@@ -587,6 +595,7 @@
   };
   // Penjelasan ikon (i) per tampilan: fungsi, tujuan, dan cara pakai.
   var VIEW_TIP = {
+    news: 'Fungsi: mengelompokkan berita (headlines.json) berdasarkan kode saham yang disebut di judul. Tujuan: melihat saham yang sedang jadi sorotan media. Cara pakai: pilih rentang waktu, cari kode, lalu ketuk judul untuk membaca beritanya.',
     today: 'Fungsi: menampilkan sinyal saham terbaru setelah bursa tutup, plus preset yang paling sering benar. Tujuan: tahu saham mana yang layak dipantau untuk sesi berikutnya tanpa membuka ratusan saham. Cara pakai: geser tanggal dengan ‹ ›, lihat kartu Setup Preset, lalu ketuk saham untuk membuka Broker Activity.',
     gems: 'Fungsi: memberi skor gabungan 0-100 (pola bandar, arus asing, teknikal) untuk tiap saham, lalu memfilter dengan preset. Tujuan: menyaring ratusan saham jadi daftar pendek yang punya alasan jelas. Cara pakai: pilih preset Bullish (kandidat beli) atau Risk (hindari), atur Tier, kapitalisasi, dan likuiditas, lalu ketuk baris untuk detailnya.',
     accum: 'Fungsi: menunjukkan broker terbesar dan harga rata-rata beli mereka selama ±6 bulan. Tujuan: melihat di harga berapa pemain besar mengumpulkan, dan apakah mereka sedang untung atau nyangkut. Cara pakai: pilih Quick Preset atau atur filter (broker teratas, tren, broker rugi). Floor = rata-rata beli broker; harga di bawah floor berarti rugi (TRAPPED).',
@@ -1344,8 +1353,65 @@
   }
 
   // ─────────────────────────── Render & event ───────────────────────────
-  var BODY = { gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
-  var VIEW = { today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign };
+  // ─────────────────────────── 7. HEADLINES ───────────────────────────
+  var NEWS_PER = { '24H': 1, '7D': 7, '30D': 30 };
+  var _news = null, _newsLoading = false;
+  function loadNews(cb) {
+    if (_news) { cb(); return; }
+    if (_newsLoading) return;
+    _newsLoading = true;
+    fetch('headlines.json?v=' + Math.floor(Date.now() / 300000), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : { items: [] }; })
+      .catch(function () { return { items: [] }; })
+      .then(function (j) { _news = { items: (j && j.items) || [], at: j && j.generated_at }; _newsLoading = false; cb(); });
+  }
+  function timeAgo(ts) {
+    var s = Math.max(0, Math.floor(Date.now() / 1000 - (ts || 0)));
+    if (s < 3600) return Math.max(1, Math.floor(s / 60)) + ' mnt lalu';
+    if (s < 86400) return Math.floor(s / 3600) + ' jam lalu';
+    return Math.floor(s / 86400) + ' hari lalu';
+  }
+  // Kode saham = 4 huruf kapital utuh di judul yang ada di universe. Satu berita bisa menyebut beberapa kode.
+  function newsByStock() {
+    var st = V.news, cut = Date.now() / 1000 - NEWS_PER[st.per] * 86400, by = {};
+    ((_news && _news.items) || []).forEach(function (it) {
+      if (!it.ts || it.ts < cut) return;
+      var seen = {}, m = String(it.title || '').match(/\b[A-Z]{4}\b/g) || [];
+      m.forEach(function (c) {
+        if (seen[c] || !U.by[c]) return; seen[c] = 1;
+        (by[c] = by[c] || []).push(it);
+      });
+    });
+    return by;
+  }
+  function viewNews() {
+    var st = V.news;
+    return vhead('news', _news && _news.at ? '<span class="sx-dr">' + ic('cal') + 'Update ' + esc(timeAgo(Date.parse(_news.at) / 1000)) + '</span>' : '') +
+      '<div class="sx-bar">' + seg('nper', [['24H', '24 jam'], ['7D', '7 hari'], ['30D', '30 hari']], st.per, 'sm') +
+        '<span class="sx-grow"></span>' + searchBox('sxNQ', st.q, 'Kode saham / nama') + '</div>' +
+      '<div id="sxBody"></div>';
+  }
+  function bodyNews() {
+    var b = host.querySelector('#sxBody');
+    if (!_news) { loadNews(function () { if (V.view === 'news') renderBody(); }); return '<div class="sx-empty">' + ic('news') + '<p>Memuat berita…</p></div>'; }
+    var st = V.news, by = newsByStock(), q = (st.q || '').toUpperCase();
+    var rows = Object.keys(by).map(function (c) { return { m: U.by[c], list: by[c].sort(function (a, b) { return b.ts - a.ts; }) }; })
+      .filter(function (x) { return matchQ(x.m, q); })
+      .sort(function (a, b) { return b.list.length - a.list.length || b.list[0].ts - a.list[0].ts; });
+    if (!rows.length) return empty('Belum ada berita yang menyebut kode saham pada rentang ini.');
+    var shown = rows.slice(0, st.limit);
+    return '<div class="sx-newslist">' + shown.map(function (x) {
+      return '<div class="sx-news">' +
+        '<div class="sx-news-h">' + stockCell(x.m) + '<span class="sx-news-n mono">' + x.list.length + ' berita</span>' +
+          '<span class="sx-news-b"><button class="sx-lnk" data-sx="gopage" data-v="pasar">' + ic('news') + 'Pasar Live</button></span></div>' +
+        '<ul>' + x.list.slice(0, 3).map(function (it) {
+          return '<li><a href="' + esc(it.link) + '" target="_blank" rel="noopener noreferrer">' + esc(it.title) + '</a><small>' + esc(it.source || '') + ' · ' + esc(timeAgo(it.ts)) + '</small></li>';
+        }).join('') + '</ul></div>';
+    }).join('') + '</div>' + more('nmore', shown.length, rows.length);
+  }
+
+  var BODY = { news: bodyNews, gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
+  var VIEW = { news: viewNews, today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign };
   function shell() {
     return '<div class="sx">' +
       '<div class="sx-top">' +
@@ -1414,6 +1480,9 @@
     var G = V.gems, Ac = V.accum, Sm = V.smart, Bh = V.bh, Fx = V.foreign, C = V.cal;
     switch (a) {
       case 'view': V.view = v; store('sx_view', v); renderView(); host.scrollIntoView({ block: 'start', behavior: 'smooth' }); return;
+      case 'nper': V.news.per = v; V.news.limit = 30; renderView(); return;
+      case 'nmore': V.news.limit += 30; renderBody(); return;
+      case 'gopage': e.stopPropagation(); if (typeof window.showPage === 'function') { window.showPage(v); window.scrollTo(0, 0); } return;
       case 'tscroll': var tb = host.querySelector('#sxTabs'); tb.scrollBy({ left: +v * tb.clientWidth * 0.7, behavior: 'smooth' }); return;
       case 'guide': V.guide[V.view] = V.guide[V.view] === v ? null : v; rerenderKeepScroll(); return;
       case 'open': e.stopPropagation(); if (U && U.by[v]) A.openStock(v); return;
@@ -1477,7 +1546,7 @@
   }
   var _qt = null;
   function onInput(e) {
-    var id = e.target.id, map = { sxGQ: 'gems', sxAQ: 'accum', sxSQ: 'smart', sxBQ: 'bh', sxFQ: 'foreign' };
+    var id = e.target.id, map = { sxGQ: 'gems', sxAQ: 'accum', sxSQ: 'smart', sxBQ: 'bh', sxFQ: 'foreign', sxNQ: 'news' };
     if (!map[id]) return;
     V[map[id]].q = e.target.value.trim();
     clearTimeout(_qt); _qt = setTimeout(renderBody, 160);
@@ -1490,6 +1559,17 @@
     '.sx-up{color:var(--green)!important}.sx-dn{color:var(--red)!important}.sx-pu{color:#8b5cf6}[data-theme="dark"] .sx-pu{color:#c4a3ff}.sx-y{color:var(--yellow)!important}',
     '.sx-mute{color:var(--text3)}.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}',
     '.sx-grow{flex:1}',
+    '.sx-newslist{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px}',
+    '.sx-news{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:8px}',
+    '.sx-news-h{display:flex;align-items:center;gap:10px;min-width:0}',
+    '.sx-news-n{margin-left:auto;font-size:11px;color:var(--text3);white-space:nowrap}',
+    '.sx-news ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}',
+    '.sx-news li{display:flex;flex-direction:column;gap:2px;min-width:0}',
+    '.sx-news li a{font-size:13px;line-height:1.35;color:var(--text);text-decoration:none;font-weight:600}',
+    '.sx-news li a:hover{color:var(--accent);text-decoration:underline}',
+    '.sx-news li small{font-size:11px;color:var(--text3)}',
+    '.sx-lnk{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11px;font-weight:700;padding:5px 10px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer}',
+    '.sx-lnk:hover{color:var(--accent);border-color:var(--accent)}',
     '.sx-cap{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text3)}',
     /* top bar + tabs */
     '.sx-top{display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-card);min-width:0}',
