@@ -60,6 +60,9 @@ a{color:inherit;text-decoration:none}
 .acct-id{overflow:hidden}
 .acct-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .acct-email{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-ref-copy{display:none;align-items:center;gap:4px;margin-top:5px;padding:3px 9px;border:1px solid var(--border);border-radius:999px;background:var(--bg2);color:var(--text2);font-family:inherit;font-size:11px;font-weight:600;line-height:1.3;cursor:pointer;white-space:nowrap;max-width:100%;transition:background .15s,border-color .15s,color .15s}
+.acct-ref-copy.show{display:inline-flex}
+.acct-ref-copy:hover{border-color:var(--accent);color:var(--accent)}
 .acct-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0}
 .acct-label{color:var(--text2)}
 .acct-val{color:var(--text);font-weight:600}
@@ -432,6 +435,7 @@ a{color:inherit;text-decoration:none}
         <div class="acct-id">
           <div class="acct-name" id="acctName">—</div>
           <div class="acct-email" id="acctEmail">—</div>
+          <button type="button" class="acct-ref-copy" id="acctRefCopy" onclick="acctCopyRef(this)">🔗 Salin link referral</button>
         </div>
       </div>
       <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
@@ -701,6 +705,39 @@ document.getElementById('yr').textContent=new Date().getFullYear();
   }catch(e){}
 })();
 
+// ── Tombol "Salin link referral" di bawah email (pop-up akun) ──
+// Link diisi dari /api/referral (window.__ES_REF_LINK). Tombol tampil hanya bila
+// user login & fitur ajak teman aktif.
+function acctCopyRef(btn){
+  var link = window.__ES_REF_LINK;
+  if (!link) return;
+  var old = btn.getAttribute('data-label') || btn.textContent;
+  btn.setAttribute('data-label', old);
+  function done(ok){
+    if (!ok) { try { window.prompt('Salin manual:', link); } catch (_) {} return; }
+    btn.textContent = '✓ Tersalin!';
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function(){ btn.textContent = old; }, 1800);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function(){ done(true); }, function(){ done(legacy()); });
+  } else { done(legacy()); }
+  function legacy(){
+    try {
+      var ta = document.createElement('textarea'); ta.value = link;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      var ok = document.execCommand('copy'); document.body.removeChild(ta); return ok;
+    } catch (_) { return false; }
+  }
+}
+function acctShowRefCopy(j){
+  var b = document.getElementById('acctRefCopy');
+  if (!b) return;
+  if (j && j.authenticated && j.enabled !== false && j.link) { window.__ES_REF_LINK = j.link; b.classList.add('show'); }
+  else { window.__ES_REF_LINK = null; b.classList.remove('show'); }
+}
+
 // ── Ajak Teman (referral) + statistik di pop-up akun ──
 (function(){
   var refBtn=document.getElementById('refBtn');
@@ -714,6 +751,7 @@ document.getElementById('yr').textContent=new Date().getFullYear();
     // Muat kode + statistik (sekali). Kalau belum login → info.authenticated=false.
     fetch('/api/referral',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
       info=j;
+      acctShowRefCopy(j);
       // Fitur ajak teman dimatikan admin → sembunyikan kartu & rapikan kolom.
       if(j&&j.enabled===false){
         refBtn.style.display='none';
