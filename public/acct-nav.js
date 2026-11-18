@@ -220,4 +220,10 @@
     rs.src = '/refresh-btn.js?v=20261117'; rs.defer = true;
     document.head.appendChild(rs);
   }
+  // Tombol back/forward browser untuk pindah halaman (public/page-history.js).
+  if (!window.__esPageHistory && !document.querySelector('script[src^="/page-history.js"]')) {
+    var ph = document.createElement('script');
+    ph.src = '/page-history.js?v=20261118a'; ph.defer = true;
+    document.head.appendChild(ph);
+  }
 })();
