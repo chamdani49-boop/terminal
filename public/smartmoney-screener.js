@@ -1872,6 +1872,7 @@
     var rev = V.stk.rev = V.stk.rev || {};
     var hid = Array.prototype.slice.call(map.querySelectorAll('.sp-bub.sp-hid'));
     if (!hid.length) return;
+    V.stk.introDone = true;
     hid.sort(function (a, b) { return (parseFloat(a.style.left) - parseFloat(b.style.left)) || (parseFloat(a.style.top) - parseFloat(b.style.top)); });
     var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var gap = still ? 0 : Math.max(35, Math.min(90, 2400 / hid.length));
@@ -1918,12 +1919,13 @@
     Object.keys(bucket).forEach(function (k) {
       k = +k;
       bucket[k].forEach(function (x, j) {
-        bub += '<button class="sp-bub ' + (rev[x.m.code] ? 'sp-done' : 'sp-hid') + '" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
+        bub += '<button class="sp-bub ' + (st.introDone || rev[x.m.code] ? 'sp-done' : 'sp-hid') + '" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
       });
     });
     var ticks = ''; for (var t = -5; t <= 5; t++) if (t % 2 === 0 || Math.abs(t) === 5) ticks += '<span class="sp-tick mono" style="left:' + ((t + 5.5) / 11 * 100) + '%">' + (t > 0 ? '+' : t < 0 ? '−' : '') + Math.abs(t) + '</span>';
-    var coll = computing ? '<div class="sp-web" id="spWeb"></div>' : '';
-    if (computing) { setStat(!sigReady() ? 'Memuat berita, valuasi, dan data Tracker…' : 'Mengumpulkan data · ' + nf(Object.keys(map0).length) + ' / ' + nf(U.list.length) + ' saham'); setTimeout(spWebStart, 0); }
+    var intro = computing && !st.introDone;
+    var coll = intro ? '<div class="sp-web" id="spWeb"></div>' : '';
+    if (intro) { setStat(!sigReady() ? 'Memuat berita, valuasi, dan data Tracker…' : 'Mengumpulkan data · ' + nf(Object.keys(map0).length) + ' / ' + nf(U.list.length) + ' saham'); setTimeout(spWebStart, 0); }
     var skel = function () { return computing ? '' : '<p class="sp-sub">Belum ada.</p>'; };
     if (!computing) setTimeout(spReveal, 0);
     return '<div class="sp">' +
