@@ -1654,7 +1654,70 @@
       '</div>';
   }
 
+  // ── Radar dari ringkasan Screener (1 file untuk semua saham), menggantikan 40 request per saham.
+  // Skor = rumus smartScore yang sama: 3 broker net beli & jual teratas, net asing / transaksi, insider 6 bulan.
+  // Ringkasan memuat net broker harian ±21 hari terakhir; rentang yang lebih panjang memakai total 6 bulan.
+  var _sum = null, _sumP = null, _ohlcJ = null;
+  function loadSum() {
+    if (_sumP) return _sumP;
+    return (_sumP = cachedJson('/api/admin/smartmoney/screener').then(function (j) {
+      _sum = j && j.stocks && Array.isArray(j.days) && j.days.length ? j : false; return _sum;
+    }).catch(function () { _sum = false; return false; }));
+  }
+  function tsIso(x) { if (typeof x === 'string') return x.slice(0, 10); var ms = x > 1e12 ? x : x * 1000; return new Date(ms).toISOString().slice(0, 10); }
+  function sumRangeDates() {
+    var g = cardRefG('radar'), ad = g && g.hasBroker ? actDays(g) : [];
+    if (ad && ad.length) { var rr = CR(g, 'radar'); return [ad[rr[0]], ad[Math.min(rr[1], ad.length - 1)]]; }
+    var days = _sum.days, o = S.cr.radar, per = o ? o.k : S.period, from = o ? o.from : S.pFrom, to = o ? o.to : S.pTo;
+    if (per === 'custom' && from) return [from, to || days[days.length - 1]];
+    var r = presetRange(days, days.length - 1, per);
+    return [days[r[0]], days[r[1]]];
+  }
+  function pxChg(code, d0, d1) {
+    var T = _ohlcJ && _ohlcJ.tickers && _ohlcJ.tickers[code], cs = T && T.candles;
+    if (!cs || !cs.length) return null;
+    var op = null, cl = null;
+    for (var i = cs.length - 1; i >= 0; i--) {
+      var d = tsIso(cs[i][0]);
+      if (cl == null && d <= d1) cl = +cs[i][4];
+      if (d >= d0) op = +cs[i][1] || +cs[i][4]; else if (cl != null) break;
+    }
+    return op && cl ? (cl / op - 1) * 100 : null;
+  }
+  function sumScore(code, d0, d1) {
+    var x = _sum.stocks[code]; if (!x || !x.bk || !x.bk.length) return null;
+    var days = _sum.days, u = _sum.u || 1, G0 = x.g || {}, i0 = -1, i1 = -1, i;
+    for (i = 0; i < days.length; i++) { if (days[i] >= d0 && i0 < 0) i0 = i; if (days[i] <= d1) i1 = i; }
+    if (i0 < 0 || i1 < i0) return null;
+    var fNet = 0, tv = 0, hasF = false;
+    for (i = i0; i <= i1; i++) {
+      var fb = (G0.fB && G0.fB[i]) || 0, fs = (G0.fS && G0.fS[i]) || 0;
+      if (fb || fs) hasF = true;
+      fNet += (fb - fs) * u; tv += (((G0.smB && G0.smB[i]) || 0) + ((G0.rtB && G0.rtB[i]) || 0)) * u;
+    }
+    var rows = x.bk.map(function (row) {
+      var nv = row[1] || [], off = days.length - nv.length, net = 0;
+      if (i0 >= off) { for (var t = i0; t <= i1; t++) net += (nv[t - off] || 0) * u; }
+      else { var w = row[2] || [0, 0]; net = ((w[0] || 0) - (w[1] || 0)) * u; }
+      return { net: net };
+    });
+    var acc = accScore(rows).score;
+    var fComp = hasF ? Math.tanh(fNet / (tv || 1) * 25) : 0;
+    var cut = days[Math.max(0, days.length - 126)], buy = 0, sell = 0;
+    (x.ins || []).forEach(function (r) { if (r[0] < cut) return; var v = (r[4] || 0) * (r[5] || 0); if (r[3] === 'BUY') buy += v; else sell += v; });
+    var iComp = buy + sell > 0 ? (buy - sell) / (buy + sell) : 0;
+    return { code: code, score: clamp(Math.round(50 + 50 * (0.45 * acc + 0.30 * fComp + 0.25 * iComp)), 0, 100), fNet: hasF ? fNet : null, chg: pxChg(code, d0, d1) };
+  }
+  function renderRadarSum() {
+    var rd = sumRangeDates(), list = universe().slice();
+    if (list.indexOf(S.code) < 0) list.push(S.code);
+    var data = list.map(function (c) { return sumScore(c, rd[0], rd[1]); }).filter(Boolean);
+    var acc = data.filter(function (x) { return x.score >= 50; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 6);
+    var dis = data.filter(function (x) { return x.score < 50; }).sort(function (a, b) { return a.score - b.score; }).slice(0, 6);
+    radarHtml(acc, dis, data.length);
+  }
   function renderRadar() {
+    if (_sum) { renderRadarSum(); return; }
     var key = S.period;
     var list = universe().slice();
     if (list.indexOf(S.code) < 0) list.push(S.code);
@@ -1668,6 +1731,9 @@
     }).filter(Boolean);
     var acc = data.filter(function (x) { return x.score >= 50; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 6);
     var dis = data.filter(function (x) { return x.score < 50; }).sort(function (a, b) { return a.score - b.score; }).slice(0, 6);
+    radarHtml(acc, dis, list.length);
+  }
+  function radarHtml(acc, dis, nList) {
     function rowsHtml(arr, good) {
       if (!arr.length) return '<div class="smm-desc">Tidak ada saham di kategori ini.</div>';
       return '<div class="smm-rhead"><span>Kode</span><span>Skor</span><span>Net asing</span><span>Harga</span></div>' + arr.map(function (x) {
@@ -1676,10 +1742,10 @@
           '<span class="c">' + x.code + '</span>' +
           '<span style="display:flex;align-items:center;gap:6px"><span class="smm-rbar" style="flex:1"><i style="width:' + w.toFixed(0) + '%;background:' + (good ? 'var(--green)' : 'var(--red)') + '"></i></span><b class="mono-n" style="font-size:11px;width:22px;text-align:right">' + x.score + '</b></span>' +
           '<span class="n ' + signCls(x.fNet) + '">' + (x.fNet == null ? '-' : fmtVal(x.fNet)) + '</span>' +
-          '<span class="n ' + signCls(x.chg) + '">' + fmtPct(x.chg) + '</span></div>';
+          '<span class="n ' + signCls(x.chg) + '">' + (x.chg == null ? '-' : fmtPct(x.chg)) + '</span></div>';
       }).join('');
     }
-    document.getElementById('smmRadarSub').textContent = '· ' + periodText('radar') + ' · ' + list.length + ' saham pantauan';
+    document.getElementById('smmRadarSub').textContent = '· ' + periodText('radar') + ' · ' + nList + ' saham pantauan';
     document.getElementById('smmRadar').innerHTML =
       '<div class="smm-radar-col"><h5>🟢 Sedang dikumpulkan</h5>' + rowsHtml(acc, true) + '</div>' +
       '<div class="smm-radar-col"><h5>🔴 Sedang dilepas</h5>' + rowsHtml(dis, false) + '</div>';
@@ -3994,7 +4060,7 @@
   }
   // ── Screener (sub-tab 4) dimuat dinamis supaya file ini tidak membengkak.
   // Naikkan SCR_V setiap kali smartmoney-screener.js diubah (cache-busting).
-  var SCR_V = '20261118m', _scrP = null;
+  var SCR_V = '20261118n', _scrP = null;
   function ensureScreener() {
     if (window.SmartMoneyScreener) return Promise.resolve();
     if (_scrP) return _scrP;
@@ -4316,7 +4382,10 @@
         if (codes.length) S.code = codes.indexOf(want) >= 0 ? want : codes.indexOf(S.code) >= 0 ? S.code : codes[0];
         return loadReal(S.code).then(function () { setCode(S.code); root.classList.remove('smm-loading'); });
       }).then(function () {
-        return Promise.all(universe().map(loadReal));
+        return loadSum().then(function (sm) {
+          if (!sm) return Promise.all(universe().map(loadReal));
+          return loadOhlc().then(function (a) { _ohlcJ = a; });
+        });
       }).then(function () {
         if (S.sub === 'broker' && G().hasBroker) renderRadar(); else _dirty.broker = true;
         rebuildSuggest();
