@@ -287,7 +287,7 @@
           try { applySummary(m, j.stocks[code], j); cnt++; } catch (e) { console.warn('[screener] summary', code, e); }
         });
         U.summaryAt = j.updated || null;
-        if (cnt) { U.bt = null; if (host && !host.hidden) renderView(); }
+        if (cnt) { U.bt = null; if (V.view === 'stk') { sigBump(); if (!V.stk.code) renderBody(); } else if (host && !host.hidden) renderView(); }
         return cnt;
       })
       .catch(function () { return 0; });
@@ -537,7 +537,7 @@
       if (!codes) { if (++tries < 40) setTimeout(waitIdx, 500); else brokerDone(); return; }
       codes = codes.filter(function (c) { return U.by[c] && !U.by[c].fromSummary; }).slice(0, 150);
       var q = codes.slice(), busy = 0, dirty = false, timer = null;
-      function flush() { timer = null; if (!dirty) return; dirty = false; U.bt = null; if (host && !host.hidden) renderView(); }
+      function flush() { timer = null; if (!dirty) return; dirty = false; U.bt = null; if (host && !host.hidden && V.view !== 'stk') renderView(); }
       function next() {
         if (!q.length && !busy) { brokerDone(); return; }
         while (busy < 4 && q.length) {
@@ -1680,7 +1680,7 @@
   var SEC_NAME = { swing: 'Swing', cons: 'Konsensus', invest: 'Valuasi', trade: 'Trade', news: 'Berita', broker: 'Broker', insider: 'Insider', holder: 'Kepemilikan' };
   var SEC_FN = { swing: secSwing, cons: secCons, invest: secInvest, trade: secTrade, news: secNews, broker: secBroker, insider: secInsider, holder: secHolder };
   var _sigVer = 0;
-  function sigBump() { _sigVer++; if (V.stk) V.stk.sig = null; }
+  function sigBump() { _sigVer++; if (V.stk && V.stk.sig) { V.stk.sigStale = V.stk.sig; V.stk.sig = null; } }
   function scoreOf(m) {
     var by = {}, g = 0, r = 0, known = 0;
     SEC_KEYS.forEach(function (k) {
@@ -1700,8 +1700,10 @@
     var ver = _sigVer, list = U.list.slice(), i = 0, map = {}, n = U.n;
     (function step() {
       var end = Math.min(list.length, i + 60);
+      st.sigProg = i / list.length; spProgress();
       for (; i < end; i++) { var sc0 = scoreOf(list[i]); sc0.liq = sum(list[i].Pval, n - 20, n - 1); map[list[i].code] = sc0; }
       if (i < list.length) { setTimeout(step, 0); return; }
+      st.sigProg = i / list.length; spProgress();
       st.sigBusy = false;
       if (ver !== _sigVer) { sigCompute(cb); return; }
       st.sig = { ver: ver, map: map };
@@ -1723,18 +1725,30 @@
       '<div class="pxv mono">' + px(lastPx(m, m.code)) + '<small class="' + sc(ch) + '">' + fp(ch, 2) + '</small></div>' +
       '<div class="tz">' + reasons(x, c) + '<span class="go">Lihat analisis ›</span></div></button>';
   }
+  // Satu loader untuk seluruh tahap (berita, valuasi, Tracker, hitung sinyal). Teks tetap, hanya batang yang maju.
+  function spFrac() {
+    var st = V.stk, f = (_news ? 0.15 : 0) + (_scr ? 0.15 : 0) + ((trkData() || _trkErr) ? 0.15 : 0);
+    return f + (sigReady() ? 0.55 * (st.sigProg || 0) : 0);
+  }
+  function spLoader() {
+    return '<div class="sx-load sp-load"><div class="sx-spin"></div><b>Menyiapkan radar sinyal…</b><div class="sx-pbar"><i style="width:' + Math.round(spFrac() * 100) + '%"></i></div>' +
+      '<small>Menggabungkan 8 modul analisis untuk ' + nf(U.list.length) + ' saham.</small></div>';
+  }
+  function spProgress() {
+    var i = host && host.querySelector('.sp-load .sx-pbar i'); if (i) i.style.width = Math.round(spFrac() * 100) + '%';
+  }
   function stkLanding() {
     var st = V.stk;
-    var load = function (t) { return '<div class="sx-load"><div class="sx-spin"></div><b>' + esc(t) + '</b></div>'; };
-    if (!_news) loadNews(function () { sigBump(); if (V.view === 'stk' && !V.stk.code) renderBody(); });
-    if (!_scr) loadScr(function () { sigBump(); if (V.view === 'stk' && !V.stk.code) renderBody(); });
-    if (!trkData() && !_trkLoading && !_trkErr) loadTrk(function () { sigBump(); if (V.view === 'stk' && !V.stk.code) renderBody(); });
-    if (!sigReady()) return load('Memuat berita, valuasi, dan data Tracker…');
-    if (!st.sig || st.sig.ver !== _sigVer) {
-      sigCompute(function () { if (V.view === 'stk' && !V.stk.code) renderBody(); });
-      return load('Menghitung sinyal ' + nf(U.list.length) + ' saham…');
-    }
-    var all = Object.keys(st.sig.map).map(function (c) { return st.sig.map[c]; }).filter(function (x) { return x.known >= 3; });
+    var onDone = function () { if (V.view === 'stk' && !V.stk.code) renderBody(); };
+    if (!_news) loadNews(function () { sigBump(); onDone(); });
+    if (!_scr) loadScr(function () { sigBump(); onDone(); });
+    if (!trkData() && !_trkLoading && !_trkErr) loadTrk(function () { sigBump(); onDone(); });
+    var fresh = st.sig && st.sig.ver === _sigVer ? st.sig : null;
+    if (sigReady() && !fresh) sigCompute(onDone);
+    var cur = fresh || st.sigStale;                 // hasil lama tetap tampil selagi dihitung ulang (tanpa kedip)
+    if (!cur) return spLoader();
+    var map0 = cur.map;
+    var all = Object.keys(map0).map(function (c) { return map0[c]; }).filter(function (x) { return x.known >= 3; });
     var B = all.filter(function (x) { return x.score >= 2; }).sort(function (a, b) { return b.score - a.score || b.liq - a.liq; });
     var H = all.filter(function (x) { return x.score <= -2; }).sort(function (a, b) { return a.score - b.score || b.liq - a.liq; });
     var N = all.filter(function (x) { return x.score > -2 && x.score < 2; }).sort(function (a, b) { return b.liq - a.liq; });
@@ -1748,7 +1762,7 @@
     Object.keys(bucket).forEach(function (k) {
       k = +k;
       bucket[k].forEach(function (x, j) {
-        bub += '<button class="sp-bub" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (46 + j * 36) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's">' + esc(x.m.code) + '</button>';
+        bub += '<button class="sp-bub" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
       });
     });
     var ticks = ''; for (var t = -5; t <= 5; t++) if (t % 2 === 0 || Math.abs(t) === 5) ticks += '<span class="sp-tick mono" style="left:' + ((t + 5.5) / 11 * 100) + '%">' + (t > 0 ? '+' : t < 0 ? '−' : '') + Math.abs(t) + '</span>';
@@ -1897,7 +1911,7 @@
       var map = host && host.querySelector('#spMap'); if (!map || still || document.hidden) return;
       var W = map.clientWidth, col = W / 11, mx = Math.min(18, col * 0.22), t = ms / 1000;
       if (!map._b) {
-        map._b = [].slice.call(map.querySelectorAll('.sp-bub')).map(function (el, i) { return { el: el, hx: parseFloat(el.style.left) / 100, py: parseFloat(el.style.top) + 14, ph: i * 1.7, sp: 0.5 + (i % 5) * 0.09, cx: 0, cy: 0, s: 1, i: 1 }; });
+        map._b = [].slice.call(map.querySelectorAll('.sp-bub')).map(function (el, i) { return { el: el, hx: parseFloat(el.style.left) / 100, py: parseFloat(el.style.top) + 20, ph: i * 1.7, sp: 0.5 + (i % 5) * 0.09, cx: 0, cy: 0, s: 1, i: 1 }; });
         map.addEventListener('pointermove', function (e) { var r = map.getBoundingClientRect(); map._m = { x: e.clientX - r.left, y: e.clientY - r.top }; map.classList.add('hot'); map.style.setProperty('--gx', map._m.x + 'px'); map.style.setProperty('--gy', map._m.y + 'px'); });
         map.addEventListener('pointerleave', function () { map._m = null; map.classList.remove('hot'); });
       }
@@ -1928,7 +1942,7 @@
       }).join('') + '</div>';
     }
     if (st.code && U.by[st.code]) { setTimeout(spObserve, 50); return stkDetail(st.code); }
-    var h = stkLanding(); setTimeout(spLive, 50); return h;
+    var h = stkLanding(); setTimeout(spLive, 50); setTimeout(function () { var sc1 = host && host.querySelector('.sp-sc'); if (sc1 && sc1.scrollWidth > sc1.clientWidth) sc1.scrollLeft = (sc1.scrollWidth - sc1.clientWidth) / 2; }, 60); return h;
   }
 
   var BODY = { stk: bodyStk, cons: bodyCons, news: bodyNews, gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
@@ -2156,7 +2170,7 @@
     '.sp-cnt span{font-size:12px;color:var(--text3)}',
     '.sp-rh{margin:14px 0 0;font-size:17px;font-weight:800}',
     '.sp-sc{margin-top:12px;overflow-x:auto;scrollbar-width:none;border-radius:20px;border:1px solid var(--border);background:var(--card)}',
-    '.sp-map{position:relative;min-width:620px;height:236px}',
+    '.sp-map{position:relative;min-width:1000px;height:312px}',
     '.sp-zone{position:absolute;top:0;bottom:34px}',
     '.sp-zone.r{left:0;width:30%;background:linear-gradient(90deg,color-mix(in srgb,var(--red) 18%,transparent),transparent)}',
     '.sp-zone.g{right:0;width:30%;background:linear-gradient(270deg,color-mix(in srgb,var(--green) 18%,transparent),transparent)}',
@@ -2164,8 +2178,11 @@
     '.sp-axis{position:absolute;left:0;right:0;bottom:34px;border-top:1px solid var(--border2)}',
     '.sp-tick{position:absolute;bottom:10px;transform:translateX(-50%);font-size:11px;color:var(--text3)}',
     '.sp-mid{position:absolute;top:0;bottom:34px;left:50%;border-left:1px dashed var(--border2)}',
-    '.sp-bub{position:absolute;transform:translate(calc(-50% + var(--dx,0px)),var(--dy,0px)) scale(var(--s,1));font:inherit;font-size:13px;font-weight:800;padding:5px 12px;border-radius:99px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 20%,var(--card));color:var(--text);cursor:pointer;white-space:nowrap;animation:sp-drop .6s var(--d) cubic-bezier(.2,.9,.3,1.3) both;transition:background .2s,color .2s;will-change:transform}',
+    '.sp-bub{position:absolute;display:inline-flex;align-items:center;gap:8px;transform:translate(calc(-50% + var(--dx,0px)),var(--dy,0px)) scale(var(--s,1));font:inherit;font-size:14px;font-weight:800;padding:5px 15px 5px 5px;border-radius:99px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 20%,var(--card));color:var(--text);cursor:pointer;white-space:nowrap;animation:sp-drop .6s var(--d) cubic-bezier(.2,.9,.3,1.3) both;transition:background .2s,color .2s;will-change:transform}',
     '.sp-bub:hover{background:var(--c);color:#06120d;z-index:3}',
+    '.sp-lgw{position:relative;flex:none;width:28px;height:28px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:var(--border2);font-style:normal}',
+    '.sp-lgw b{font-size:10px;font-weight:800;color:var(--text2)}',
+    '.sp-lgw img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}',
     '.sp-glow{position:absolute;width:240px;height:240px;margin:-120px 0 0 -120px;left:var(--gx,-999px);top:var(--gy,-999px);background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 22%,transparent),transparent);opacity:0;transition:opacity .3s;pointer-events:none}',
     '.sp-map.hot .sp-glow{opacity:1}',
     '@keyframes sp-drop{from{opacity:0;transform:translate(-50%,-26px)}}',
@@ -2255,6 +2272,7 @@
     '.sp-nl a{font-size:13.5px;line-height:1.35;color:var(--text);font-weight:700;text-decoration:none}.sp-nl a:hover{color:var(--accent);text-decoration:underline}.sp-nl small{font-size:11px;color:var(--text3)}',
     '@container (max-width:900px){.sp-hero{grid-template-columns:1fr}.sp-cols{grid-template-columns:1fr}.sp-mods{grid-template-columns:repeat(2,1fr)}}',
     '@container (max-width:760px){.sp-sec{grid-template-columns:1fr;gap:14px}.sp-bk{grid-template-columns:1fr}.sp-pick{grid-template-columns:1fr 1fr}.sp-pick>div:first-child{grid-column:1/-1}}',
+    '@container (max-width:700px){.sp-map{min-width:1040px}.sp-bub{font-size:13px;gap:6px;padding:4px 12px 4px 4px}.sp-lgw{width:24px;height:24px}}',
     '@container (max-width:520px){.sp-row{grid-template-columns:22px 1fr auto;padding:12px 4px}.sp-row .tk small{display:block;margin:4px 0 0}.sp-dhero{grid-template-columns:1fr}.sp-dpx{text-align:left;display:flex;align-items:baseline;gap:12px}.sp-radar{grid-template-columns:1fr auto}.sp-rsb,.sp-rl{grid-column:1/-1}.sp-hz{grid-template-columns:1fr;gap:20px;padding-left:24px;margin-top:26px}.sp-hz:before{left:6px;right:auto;top:6px;bottom:6px;width:2px;height:auto;background:linear-gradient(var(--green),var(--yellow),var(--green))}.sp-hz>div:before{left:-24px;top:3px}.sp-lanes{margin-left:0}.sp-lb{position:static;height:auto;display:block;margin-bottom:2px;width:auto;font-size:12px}.sp-ln{height:84px}.sp-tr{top:22px}.sp-vs{top:58px}.sp-ax{margin-left:0}.sp-now{top:-24px}}',
     '@media (prefers-reduced-motion:reduce){.sp *{animation:none!important;transition:none!important}}',
     '.sx-hint{display:flex;align-items:center;gap:10px;padding:16px;border-radius:14px;border:1px dashed var(--border2);color:var(--text2);font-size:13px}.sx-hint p{margin:0}',
@@ -2630,6 +2648,7 @@
     if (!_bound) {
       var sv = load('sx_view'); if (sv && VIEW[sv] && VIEWS.some(function (x) { return x.k === sv; })) V.view = sv;
       host.innerHTML = shell();
+      host.addEventListener('error', function (e) { var t = e.target; if (t && t.classList && t.classList.contains('sp-lg')) t.style.display = 'none'; }, true);
       host.addEventListener('click', onClick);
       host.addEventListener('change', onChange);
       host.addEventListener('input', onInput);
