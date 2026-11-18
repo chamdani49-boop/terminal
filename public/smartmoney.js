@@ -1337,11 +1337,11 @@
 
   // ─────────────────────────── State ───────────────────────────
   var S = {
-    code: 'AVIA', period: '3m', pFrom: null, pTo: null, inv: 'all', sub: 'broker',
+    code: 'AVIA', period: '7d', pFrom: null, pTo: null, inv: 'all', sub: 'broker',
     metric: 'value', priceMode: 'candle', showPrice: true, flowView: (function () { try { localStorage.removeItem('smm_flowview'); } catch (_) {} return 'story'; })(),
     chips: [], hidden: {}, colors: {},
     cr: {},   // tanggal khusus per kartu: { flow|vxv|orbit|radar: { k, from, to } }. Kosong = ikut tanggal global.
-    actEnd: 0, actStart: 0, actPreset: 'latest', actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
+    actEnd: 0, actStart: 0, actPreset: '7d', actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
     skMetric: 'value', skFocus: null, bsView: 'sum', bsAll: false, obMetric: 'value', obFocus: null, obView: 'orbit', vxv: 'both',
     insSrc: 'ALL', insAct: 'ALL', insName: null, insRange: '2Y', insHl: null,
     cal: { grp: 'sm', ym: null, end: null },
@@ -2319,7 +2319,7 @@
   }
   function actDays(g) { return g.days.slice(g.off, g.off + g.nF); }
   function setActRange(s, e, k) { S.actStart = s; S.actEnd = e; S.actPreset = k || 'custom'; S.skFocus = null; renderAction(); renderSankey(); }
-  function actPresetDefault(g) { var r = presetRange(actDays(g), lastDataIdx(g), 'latest'); S.actStart = r[0]; S.actEnd = r[1]; S.actPreset = 'latest'; }
+  function actPresetDefault(g) { var r = presetRange(actDays(g), lastDataIdx(g), '7d'); S.actStart = r[0]; S.actEnd = r[1]; S.actPreset = '7d'; }
   function openActDate() {
     var g = G(); if (!g.hasBroker) return;
     openDatePick({ title: 'Tanggal Broker Summary', days: actDays(g), L: lastDataIdx(g), start: actRange()[0], end: actRange()[1], preset: S.actPreset,
