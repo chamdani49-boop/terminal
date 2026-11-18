@@ -2121,6 +2121,17 @@
     });
     window.scrollTo(0, 0);
   }
+  // Buka Analisis Tracker untuk satu kode. Data Tracker bisa termuat lambat, dan
+  // __TR_openAnalisis hanya mencoba sekitar 2 detik, jadi panggilannya diulang sampai ~7 detik.
+  function goTr(code) {
+    try { window.showPage('tracker'); } catch (_) {}
+    [0, 400, 1000, 2000, 3500, 7000].forEach(function (ms) {
+      setTimeout(function () {
+        try { if (typeof window.__TR_openAnalisis === 'function') window.__TR_openAnalisis(code); } catch (_) {}
+      }, ms);
+    });
+    window.scrollTo(0, 0);
+  }
   var BODY = { stk: bodyStk, cons: bodyCons, news: bodyNews, gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
   var VIEW = { stk: viewStk, cons: viewCons, news: viewNews, today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign };
   function shell() {
@@ -2201,7 +2212,7 @@
       case 'cmore': V.cons.limit += 30; renderBody(); return;
       case 'gocons': e.stopPropagation(); goConsensus(v); return;
       case 'pick': V.stk.code = v; V.stk.q = ''; store('sx_stk', v); renderView(); window.scrollTo(0, 0); return;
-      case 'gotr': e.stopPropagation(); try { window.showPage('tracker'); if (typeof window.__TR_openAnalisis === 'function') window.__TR_openAnalisis(v); window.scrollTo(0, 0); } catch (err) {} return;
+      case 'gotr': e.stopPropagation(); goTr(v); return;
       case 'spzoom': spZoomStep(v === 'in' ? 1 : -1); return;
       case 'spback': V.stk.code = ''; V.stk.q = ''; renderView(); window.scrollTo(0, 0); return;
       case 'spgo': var tg = host.querySelector('#sps-' + v); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); return;
