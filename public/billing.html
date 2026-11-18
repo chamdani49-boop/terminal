@@ -53,7 +53,7 @@ a{color:inherit;text-decoration:none}
 .acct-wrap{position:relative;display:none}
 .acct-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--grad);color:#fff;cursor:pointer;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;text-transform:uppercase;transition:transform .2s,box-shadow .2s;line-height:1}
 .acct-btn:hover{transform:scale(1.08);box-shadow:0 0 0 3px rgba(109,40,217,.18)}
-.acct-menu{position:absolute;top:calc(100% + 8px);right:0;width:240px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-card-lg);padding:14px;display:none;z-index:300}
+.acct-menu{position:absolute;top:calc(100% + 8px);left:0;width:min(240px,calc(100vw - 24px));background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-card-lg);padding:14px;display:none;z-index:300}
 .acct-menu.open{display:block}
 .acct-head{display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:8px;border-bottom:1px solid var(--border)}
 .acct-avatar{width:40px;height:40px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;text-transform:uppercase;flex-shrink:0}
@@ -385,6 +385,13 @@ a{color:inherit;text-decoration:none}
 .bill-link.tg:hover{border-color:#229ED9}
 
 /* MOBILE */
+.acct-wrap{flex-shrink:0}
+/* HP sangat sempit: avatar kini di kiri, jadi header dirapatkan agar semua tombol tetap muat */
+@media(max-width:400px){
+  .top-bar{padding:0 10px;gap:6px}
+  .logo{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+  .link-back{padding:6px 9px;font-size:11px;white-space:nowrap}
+}
 @media(max-width:560px){
   .top-bar{padding:0 14px;gap:10px}
   .logo{font-size:18px}
@@ -423,10 +430,6 @@ a{color:inherit;text-decoration:none}
 </head>
 <body>
 <header class="top-bar">
-  <a class="logo" href="/">economstock<span>TERMINAL</span></a>
-  <div class="top-spacer"></div>
-  <a class="link-back" href="/">← Dashboard</a>
-  <button class="theme-toggle" id="themeBtn" type="button" title="Ganti tema" aria-label="Ganti tema"><span id="themeIcon">🌙</span></button>
   <div class="acct-wrap" id="acctWrap">
     <button class="acct-btn" id="acctBtn" type="button" aria-label="Akun"><span id="acctInitial">·</span></button>
     <div class="acct-menu" id="acctMenu">
@@ -443,6 +446,10 @@ a{color:inherit;text-decoration:none}
       <a class="acct-action danger" href="/api/auth/logout">⎋ Logout</a>
     </div>
   </div>
+  <a class="logo" href="/">economstock<span>TERMINAL</span></a>
+  <div class="top-spacer"></div>
+  <a class="link-back" href="/">← Dashboard</a>
+  <button class="theme-toggle" id="themeBtn" type="button" title="Ganti tema" aria-label="Ganti tema"><span id="themeIcon">🌙</span></button>
 </header>
 
 <main class="wrap">
