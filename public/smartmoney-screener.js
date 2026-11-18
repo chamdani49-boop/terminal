@@ -1552,20 +1552,34 @@
     return o;
   }
   function secTrade(m, code) {
-    var o = { t: 'Trade (stock pick)', ico: 'flow', acts: [['gopage', 'Buka Tracker', 'tracker']] };
+    var o = { t: 'Trade (stock pick)', ico: 'flow', acts: [['gotr', 'Buka Analisis Tracker']] };
     var d = window.__TR_getData && window.__TR_getData();
     if (!d || d.pending) { o.v = V_('d', 'Memuat…'); o.lines = ['<p class="sx-why">Data Tracker belum dimuat. Buka menu Tracker sekali, lalu kembali.</p>']; return o; }
-    var today = iso0();
+    var today = iso0(), pxv = lastPx(m, code);
     var open = (d.openList || []).filter(function (r) { return r.ticker === code && r.status === 'OPEN'; });
     var pend = (d.pendingList || []).filter(function (r) { return r.ticker === code && (!r.pendingExpiresAt || r.pendingExpiresAt >= today); });
-    var all = open.concat(pend), buy = all.filter(function (r) { return r.type === 'BUY'; }).length, sell = all.length - buy;
-    var bt = d.byTicker && d.byTicker[code];
+    var all = open.concat(pend), bt = d.byTicker && d.byTicker[code];
     if (!all.length) { o.v = V_('d', 'Tidak ada pick'); o.lines = ['<p class="sx-why">Tidak ada stock pick yang masih aktif untuk saham ini.' + (bt ? ' Riwayat: ' + bt.trades + ' trade, winrate ' + nf(bt.winrate, 0) + '%.' : '') + '</p>']; return o; }
-    o.v = buy > sell ? V_('g', buy + ' pick beli') : sell > buy ? V_('r', sell + ' pick jual') : V_('n', 'Campuran');
-    o.why = all.length + ' pick aktif (' + open.length + ' berjalan, ' + pend.length + ' menunggu entry)' + (bt ? '. Riwayat saham ini: winrate ' + nf(bt.winrate, 0) + '% dari ' + bt.trades + ' trade.' : '.');
-    o.lines = all.slice(0, 3).map(function (r) {
-      return '<div class="sx-pick"><b class="' + (r.type === 'BUY' ? 'sx-up' : 'sx-dn') + '">' + esc(r.type) + '</b><span class="mono">' + px(r.entry) + ' › ' + px(r.tp1) + ' · SL ' + px(r.sl) + '</span><small>' + esc(r.firm || '') + ' · ' + (r.status === 'OPEN' ? nf(r.floatingPct || 0, 1) + '%' : 'menunggu') + '</small></div>';
+    // Kalkulasi per pick (BUY: naik = untung, SELL: kebalikannya)
+    var rows = all.map(function (r) {
+      var sg = r.type === 'SELL' ? -1 : 1, e = +r.entry, t1 = +r.tp1, t2 = +r.tp2 || 0, sl = +r.sl;
+      var gain = sg * (t1 - e) / e * 100, gain2 = t2 ? sg * (t2 - e) / e * 100 : 0, risk = sg * (e - sl) / e * 100;
+      var rr = risk > 0 ? gain / risk : 0, toE = pxv && e ? (e / pxv - 1) * 100 : 0, now = pxv && e ? sg * (pxv - e) / e * 100 : 0;
+      return { r: r, sg: sg, e: e, t1: t1, t2: t2, sl: sl, gain: gain, gain2: gain2, risk: risk, rr: rr, toE: toE, now: now, run: r.status === 'OPEN' };
     });
+    var buy = rows.filter(function (x) { return x.sg > 0; }).length, sell = rows.length - buy;
+    var good = rows.filter(function (x) { return x.rr >= 1.5; }).length;
+    var avgRR = rows.reduce(function (a, x) { return a + x.rr; }, 0) / rows.length;
+    o.v = buy > sell ? V_('g', buy + ' pick beli') : sell > buy ? V_('r', sell + ' pick jual') : V_('n', 'Campuran');
+    o.why = rows.length + ' pick aktif (' + open.length + ' berjalan, ' + pend.length + ' menunggu entry). ' + good + ' di antaranya punya risk:reward minimal 1,5.' + (bt ? ' Riwayat saham ini: winrate ' + nf(bt.winrate, 0) + '% dari ' + bt.trades + ' trade.' : '');
+    var best = rows.slice().sort(function (x, y) { return y.rr - x.rr; })[0];
+    o.lines = [
+      kv('Harga sekarang', px(pxv)), kv('R:R rata-rata', '1 : ' + nf(avgRR, 1), avgRR >= 1.5 ? 'sx-up' : avgRR < 1 ? 'sx-dn' : ''),
+      kv('Terbaik (R:R)', '1 : ' + nf(best.rr, 1) + ' · ' + esc(best.r.firm || ''), ''),
+      '<div class="sx-ptbl">' + rows.slice(0, 4).map(function (x) {
+        return '<div class="sx-pt"><div class="h"><b class="' + (x.sg > 0 ? 'sx-up' : 'sx-dn') + '">' + esc(x.r.type) + '</b><span class="sx-mute">' + esc(x.r.firm || '') + '</span><em class="' + (x.run ? 'on' : '') + '">' + (x.run ? 'berjalan ' + (x.now > 0 ? '+' : '') + nf(x.now, 1) + '%' : (x.toE >= 0 ? 'tunggu naik ' : 'tunggu turun ') + nf(Math.abs(x.toE), 1) + '%') + '</em></div>' +
+          '<div class="g mono"><span>Entry<b>' + px(x.e) + '</b></span><span>TP1<b class="sx-up">' + px(x.t1) + '<small>+' + nf(x.gain, 1) + '%</small></b></span><span>SL<b class="sx-dn">' + px(x.sl) + '<small>-' + nf(x.risk, 1) + '%</small></b></span><span>R:R<b class="' + (x.rr >= 1.5 ? 'sx-up' : x.rr < 1 ? 'sx-dn' : '') + '">1 : ' + nf(x.rr, 1) + '</b></span></div></div>';
+      }).join('') + (rows.length > 4 ? '<small class="sx-mute">+' + (rows.length - 4) + ' pick lain di halaman Analisis</small>' : '') + '</div>'];
     return o;
   }
   function secNews(m, code) {
@@ -1625,9 +1639,41 @@
     return o;
   }
   function secCard(s, code) {
-    return '<section class="sx-sec ' + s.v.c + '"><header><span class="sx-sec-i">' + ic(s.ico) + '</span><h4>' + esc(s.t) + '</h4><span class="sx-pill ' + s.v.c + '">' + esc(s.v.t) + '</span></header>' +
+    return '<section class="sx-sec k-' + s.k + ' ' + s.v.c + '"><header><span class="sx-sec-i">' + ic(s.ico) + '</span><h4>' + esc(s.t) + '</h4><span class="sx-pill ' + s.v.c + '">' + esc(s.v.t) + '</span></header>' +
       (s.why ? '<p class="sx-why">' + esc(s.why) + '</p>' : '') + '<div class="sx-sec-b">' + (s.lines || []).join('') + '</div>' +
       '<div class="sx-acts">' + s.acts.map(function (a) { return '<button class="sx-lnk" data-sx="' + a[0] + '" data-v="' + esc(a[2] || code) + '">' + ic('ext') + esc(a[1]) + '</button>'; }).join('') + '</div></section>';
+  }
+  // ── Kartu Keputusan: menggabungkan sinyal per gaya (investasi / swing / trading).
+  // Skor = jumlah (bobot × arah), arah: positif +1, waspada -1, selain itu 0. Ambang ±2.
+  var DEC_STYLES = [
+    { k: 'invest', t: 'Investasi', sub: 'jangka panjang', ico: 'dollar', w: { invest: 2, cons: 1, holder: 1, insider: 1 },
+      lab: { g: 'Layak dicicil', n: 'Pantau dulu', r: 'Tunggu lebih murah' } },
+    { k: 'swing', t: 'Swing', sub: 'jangka menengah', ico: 'spike', w: { swing: 2, broker: 2, cons: 1 },
+      lab: { g: 'Siap beli bertahap', n: 'Tunggu momentum', r: 'Hindari / kurangi' } },
+    { k: 'trade', t: 'Trading', sub: 'jangka pendek', ico: 'flow', w: { trade: 2, broker: 1, swing: 1 },
+      lab: { g: 'Ikuti pick aktif', n: 'Belum ada setup jelas', r: 'Jangan masuk' } }
+  ];
+  var SEC_NAME = { swing: 'Swing', cons: 'Konsensus', invest: 'Valuasi', trade: 'Trade', news: 'Berita', broker: 'Broker', insider: 'Insider', holder: 'Kepemilikan' };
+  function decisionCard(secs) {
+    var by = {}; secs.forEach(function (x) { by[x.k] = x; });
+    var cols = DEC_STYLES.map(function (st) {
+      var sc0 = 0, used = 0, pos = [], neg = [], none = [];
+      Object.keys(st.w).forEach(function (k) {
+        var x = by[k]; if (!x) return;
+        var dir = x.v.c === 'g' ? 1 : x.v.c === 'r' ? -1 : 0;
+        if (x.v.c === 'g' || x.v.c === 'r' || x.v.c === 'n') used++;
+        sc0 += dir * st.w[k];
+        (dir > 0 ? pos : dir < 0 ? neg : none).push(SEC_NAME[k]);
+      });
+      var c = !used ? 'd' : sc0 >= 2 ? 'g' : sc0 <= -2 ? 'r' : 'n';
+      var label = c === 'd' ? 'Data minim' : st.lab[c];
+      var conflict = pos.length && neg.length;
+      return '<div class="sx-dc ' + c + '"><div class="sx-dc-h"><span class="sx-sec-i">' + ic(st.ico) + '</span><b>' + st.t + '</b><small>' + st.sub + '</small></div>' +
+        '<div class="sx-dc-v">' + esc(label) + '</div>' +
+        '<div class="sx-dc-r">' + (pos.length ? '<span class="sx-up">+ ' + esc(pos.join(', ')) + '</span>' : '') + (neg.length ? '<span class="sx-dn">− ' + esc(neg.join(', ')) + '</span>' : '') + (!pos.length && !neg.length ? '<span class="sx-mute">Belum ada sinyal searah</span>' : '') + '</div>' +
+        (conflict ? '<p class="sx-dc-c">Sinyal bertentangan: ' + esc(pos[0]) + ' positif, tetapi ' + esc(neg[0]) + ' waspada.</p>' : '') + '</div>';
+    });
+    return '<div class="sx-dec"><div class="sx-dec-t"><b>Keputusan</b><small>Gabungan semua sinyal di bawah, per gaya Anda. Bukan rekomendasi investasi.</small></div><div class="sx-dec-g">' + cols.join('') + '</div></div>';
   }
   function viewStk() {
     var st = V.stk;
@@ -1658,11 +1704,13 @@
     var secs = [secSwing, secCons, secInvest, secTrade, secNews, secBroker, secInsider, secHolder].map(function (f) {
       try { return f(m, code); } catch (e) { console.warn('[screener] stk', f.name, e); return { t: f.name, ico: 'info', v: V_('d', 'Error'), lines: [], acts: [] }; }
     });
+    ['swing', 'cons', 'invest', 'trade', 'news', 'broker', 'insider', 'holder'].forEach(function (k, i) { secs[i].k = k; });
+    var by0 = {}; secs.forEach(function (x) { by0[x.k] = x; });
     var g = secs.filter(function (x) { return x.v.c === 'g'; }).length, r = secs.filter(function (x) { return x.v.c === 'r'; }).length;
     var head = '<div class="sx-sh"><div class="sx-sh-l"><b class="sx-sh-c">' + esc(code) + '</b><span>' + esc(m.name) + '</span><small>' + esc(m.sector || '') + '</small></div>' +
       '<div class="sx-sh-r mono"><b>' + px(pxv) + '</b><span class="' + sc(chg) + '">' + fp(chg, 2) + '</span></div>' +
       '<div class="sx-sh-s"><span class="sx-pill g">' + g + ' positif</span><span class="sx-pill r">' + r + ' waspada</span><span class="sx-pill">' + (secs.length - g - r) + ' netral / minim</span></div></div>';
-    return head + '<div class="sx-secgrid">' + secs.map(function (x) { return secCard(x, code); }).join('') + '</div>' +
+    return head + decisionCard(secs) + '<div class="sx-secgrid">' + ['swing', 'cons', 'invest', 'news', 'trade', 'broker', 'insider', 'holder'].map(function (k) { return secCard(by0[k], code); }).join('') + '</div>' +
       '<p class="sx-note">Kesimpulan dibuat dari aturan sederhana pada data yang tersedia dan bukan rekomendasi investasi. Cocokkan dengan profil risiko dan tujuan Anda (investasi, swing, atau trading).</p>';
   }
 
@@ -1755,6 +1803,7 @@
       case 'cmore': V.cons.limit += 30; renderBody(); return;
       case 'gocons': e.stopPropagation(); goConsensus(v); return;
       case 'pick': V.stk.code = v; V.stk.q = ''; store('sx_stk', v); renderView(); window.scrollTo(0, 0); return;
+      case 'gotr': e.stopPropagation(); try { window.showPage('tracker'); if (typeof window.__TR_openAnalisis === 'function') window.__TR_openAnalisis(v); window.scrollTo(0, 0); } catch (err) {} return;
       case 'godash': e.stopPropagation(); if (typeof window.selectStock === 'function') window.selectStock(v); return;
       case 'goval': e.stopPropagation(); try { window.showPage('valuasi'); if (typeof window.vlSelectStock === 'function') window.vlSelectStock(v); window.scrollTo(0, 0); } catch (err) {} return;
       case 'tscroll': var tb = host.querySelector('#sxTabs'); tb.scrollBy({ left: +v * tb.clientWidth * 0.7, behavior: 'smooth' }); return;
@@ -1848,7 +1897,7 @@
     '.sx-sh-l{display:flex;flex-direction:column;min-width:0;flex:1 1 220px}.sx-sh-c{font-size:24px;line-height:1.1;letter-spacing:.02em}.sx-sh-l span{font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sx-sh-l small{font-size:11px;color:var(--text3)}',
     '.sx-sh-r{display:flex;flex-direction:column;align-items:flex-end}.sx-sh-r b{font-size:22px}.sx-sh-r span{font-size:12px;font-weight:700}',
     '.sx-sh-s{display:flex;gap:6px;flex-wrap:wrap;flex-basis:100%}',
-    '.sx-secgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}',
+    '.sx-secgrid{grid-auto-flow:dense;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}',
     '.sx-sec{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--border2);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}',
     '.sx-sec.g{border-top-color:var(--green)}.sx-sec.r{border-top-color:var(--red)}.sx-sec.n{border-top-color:var(--yellow)}',
     '.sx-sec header{display:flex;align-items:center;gap:8px;min-width:0}.sx-sec h4{margin:0;font-size:13px;font-weight:800;flex:1;min-width:0}',
@@ -1863,6 +1912,19 @@
     '.sx-sg{display:flex;flex-direction:column;align-items:flex-start;gap:1px;font:inherit;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;min-width:0}.sx-sg:hover{border-color:var(--accent)}.sx-sg b{font-size:14px}.sx-sg small{font-size:11px;color:var(--text3);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     '.sx-bar .sx-search:only-child{flex:1;max-width:460px}.sx-bar .sx-search:only-child input{width:100%}',
     '.sx-secgrid+.sx-note{margin-top:12px}',
+    '.sx-ptbl{display:flex;flex-direction:column;gap:8px}',
+    '@media (min-width:900px){.sx-sec.k-trade{grid-column:span 2}.sx-sec.k-trade .sx-ptbl{display:grid;grid-template-columns:1fr 1fr}.sx-sec.k-trade .sx-ptbl>small{grid-column:1/-1}}',
+    '.sx-pt{border:1px solid var(--border);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;min-width:0}',
+    '.sx-pt .h{display:flex;align-items:center;gap:8px;font-size:11.5px;min-width:0}.sx-pt .h span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sx-pt .h em{font-style:normal;font-weight:700;color:var(--text3);white-space:nowrap}.sx-pt .h em.on{color:var(--accent)}',
+    '.sx-pt .g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;font-size:10px;color:var(--text3)}.sx-pt .g span{display:flex;flex-direction:column;gap:1px;min-width:0}.sx-pt .g b{font-size:12px;color:var(--text);white-space:nowrap}.sx-pt .g b small{display:block;font-size:10px;font-weight:700}',
+    '.sx-dec{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:14px 16px;margin-bottom:12px;display:flex;flex-direction:column;gap:12px}',
+    '.sx-dec-t{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.sx-dec-t b{font-size:14px;letter-spacing:.04em;text-transform:uppercase}.sx-dec-t small{font-size:11.5px;color:var(--text3)}',
+    '.sx-dec-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}',
+    '.sx-dc{border:1px solid var(--border);border-left:4px solid var(--border2);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}',
+    '.sx-dc.g{border-left-color:var(--green);background:var(--green-bg)}.sx-dc.r{border-left-color:var(--red);background:rgba(239,68,68,.08)}.sx-dc.n{border-left-color:var(--yellow)}',
+    '.sx-dc-h{display:flex;align-items:center;gap:7px;font-size:12.5px}.sx-dc-h small{color:var(--text3);font-size:11px}',
+    '.sx-dc-v{font-size:19px;font-weight:800;line-height:1.2}.sx-dc.g .sx-dc-v{color:var(--green)}.sx-dc.r .sx-dc-v{color:var(--red)}.sx-dc.n .sx-dc-v{color:var(--yellow)}.sx-dc.d .sx-dc-v{color:var(--text3)}',
+    '.sx-dc-r{display:flex;flex-direction:column;gap:2px;font-size:11.5px;font-weight:600}.sx-dc-c{margin:2px 0 0;font-size:11.5px;color:var(--yellow);line-height:1.4}',
     '.sx-hint{display:flex;align-items:center;gap:10px;padding:16px;border-radius:14px;border:1px dashed var(--border2);color:var(--text2);font-size:13px}.sx-hint p{margin:0}',
     '.sx-conslist{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px}',
     '.sx-cons{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--border2);border-radius:14px;padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:9px}',
