@@ -529,7 +529,7 @@
   var _realDone = 0;
   // Pemuatan data broker (ringkasan + per saham) selesai. Sebelum ini, "belum ada data broker" TIDAK boleh
   // ditampilkan karena datanya masih dalam perjalanan.
-  function brokerDone() { if (!U || U.brokerReady) return; U.brokerReady = true; sigBump(); if (host && !host.hidden) { srcNote(); if (V.view === 'stk') renderBody(); } }
+  function brokerDone() { if (!U || U.brokerReady) return; U.brokerReady = true; sigBump(); if (host && !host.hidden) { if (V.view === 'stk') renderBody(); } }
   function loadRealAll() {
     var tries = 0;
     (function waitIdx() {
@@ -1945,7 +1945,6 @@
           '<button class="sx-arr r" data-sx="tscroll" data-v="1" aria-label="Geser kanan">' + ic('right') + '</button>' +
         '</div>' +
       '</div>' +
-      '<div class="sx-src" id="sxSrc"></div>' +
       '<div class="sx-view" id="sxView"></div>' +
     '</div>';
   }
@@ -1964,16 +1963,6 @@
     w.classList.toggle('can-l', tabs.scrollLeft > 4);
     w.classList.toggle('can-r', tabs.scrollLeft + tabs.clientWidth < tabs.scrollWidth - 4);
   }
-  function srcNote() {
-    var el = host.querySelector('#sxSrc'); if (!el || !U) return;
-    el.style.display = V.view === 'stk' ? 'none' : '';
-    if (V.view === 'stk') return;
-    var nReal = U.list.filter(function (m) { return m.realBroker; }).length;
-    el.innerHTML = '<span class="sx-sb ok">' + ic('check') + 'Harga &amp; teknikal asli · ' + nf(U.list.length) + ' saham</span>' +
-      '<span class="sx-sb ' + (nReal ? 'ok' : U.brokerReady ? 'dm' : '') + '">' + ic(nReal ? 'check' : 'info') + (nReal ? nReal + ' saham dengan data broker asli <i class="sx-real">●</i>' + (U.brokerReady ? '' : ' · memuat…') : U.brokerReady ? 'Belum ada data broker asli' : 'Memuat data broker…') + '</span>' +
-      '<span class="sx-sb">' + ic('cal') + 'Harga ' + esc(dShort(U.axis[U.n - 1])) + (U.summaryAt ? ' · ringkasan broker ' + esc(dShort(String(U.summaryAt).slice(0, 10))) : '') + '</span>' +
-      (nReal || !U.brokerReady ? '' : '<div class="sx-nodata">' + ic('info') + '<span><b>Belum ada data broker asli.</b> Semua daftar yang memakai arus broker, asing, ritel, insider, atau pemegang saham akan kosong sampai ringkasan diunggah: <code>node scripts/build-smartmoney-screener.js --dir &lt;folder smartmoney&gt; --upload</code>.</span></div>');
-  }
   function renderView() {
     if (!host) return;
     syncTabs();
@@ -1981,7 +1970,6 @@
     if (!U) { ensureUniverse(renderView); return; }
     if (!U.list.length) { el.innerHTML = empty('Data harga (ohlc.json) belum tersedia.'); return; }
     if (V.guide[V.view] === undefined) { V.guide[V.view] = load('sx_seen_' + V.view) ? null : 'how'; store('sx_seen_' + V.view, '1'); }
-    srcNote();
     try {
       el.innerHTML = VIEW[V.view]();
       renderBody();
@@ -2292,10 +2280,6 @@
     '.sx-tabs-wrap.can-l .sx-arr.l,.sx-tabs-wrap.can-r .sx-arr.r{display:inline-flex}',
     '.sx-tabs-wrap.can-l::before,.sx-tabs-wrap.can-r::after{content:"";position:absolute;top:0;bottom:0;width:36px;pointer-events:none;z-index:1}',
     '.sx-tabs-wrap.can-l::before{left:0;background:linear-gradient(90deg,var(--card),transparent)}.sx-tabs-wrap.can-r::after{right:0;background:linear-gradient(-90deg,var(--card),transparent)}',
-    '.sx-src{display:flex;gap:6px;flex-wrap:wrap}',
-    '.sx-sb{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--bg2);color:var(--text2)}',
-    '.sx-sb .sx-ic{width:13px;height:13px}.sx-sb.ok{color:var(--green);background:var(--green-bg)}.sx-sb.dm{color:var(--yellow);background:var(--yellow-bg)}',
-    '.sx-nodata{flex-basis:100%;display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.55;color:var(--text2);padding:10px 12px;border-radius:12px;background:var(--yellow-bg);border:1px solid color-mix(in srgb,var(--yellow) 45%,transparent)}.sx-nodata .sx-ic{color:var(--yellow);margin-top:2px}.sx-nodata b{color:var(--text)}.sx-nodata code{font-size:11.5px;word-break:break-all}',
     '.sx-real{font-style:normal;color:var(--green);font-size:9px;margin-left:3px;vertical-align:2px}',
     '.sx-view{display:flex;flex-direction:column;gap:14px;min-width:0}',
     /* head + guide */
