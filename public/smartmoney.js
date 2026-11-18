@@ -4258,6 +4258,7 @@
 
   // keepSub=true: dipanggil dari menu samping (sub-halaman dipilih sesudahnya).
   // Tanpa itu (nav atas / bawah): bila sedang di Screener, kembali ke Broker Activity.
+  var _resume = false;
   function open(keepSub) {
     root = document.getElementById('page-smartmoney');
     if (!root) return;
@@ -4267,7 +4268,8 @@
       defaultChips();
       _built = true;
       // Screener hanya dibuka dari menu samping → tidak dipulihkan saat halaman dibuka biasa.
-      try { var sv = localStorage.getItem('smm_sub'); S.sub = sv === 'insider' || sv === 'holder' ? sv : 'broker'; } catch (_) {}
+      // Pengecualian: saat halaman dimuat ulang (restore()), Screener ikut dipulihkan.
+      try { var sv = localStorage.getItem('smm_sub'); S.sub = sv === 'insider' || sv === 'holder' || (_resume && sv === 'screener') ? sv : 'broker'; } catch (_) {}
       // 1) Cache lokal → isi langsung tampil (tanpa layar loading)
       var C = readCache(), hyd = false;
       if (C) {
@@ -4381,7 +4383,17 @@
     if (location.hash === '#smartmoney' && typeof window.showPage === 'function') { window.showPage('smartmoney'); open(); }
   }
 
-  window.SmartMoney = { open: open };
+  // Dipanggil refresh-btn.js setelah browser di-refresh: buka lagi halaman Smart Money
+  // beserta sub-tab terakhir (Broker / Insider / Kepemilikan / Screener).
+  function restore() {
+    _resume = true;
+    try {
+      if (typeof window.showPage === 'function') window.showPage('smartmoney');
+      open(true);
+    } finally { _resume = false; }
+  }
+
+  window.SmartMoney = { open: open, restore: restore };
 
   // Tunggu hasil /api/me (window.__ES_IS_ADMIN di-set oleh _ensureAccess).
   var tries = 0;

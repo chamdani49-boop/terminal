@@ -217,7 +217,7 @@
   // supaya index.html (area terkunci) tidak perlu diubah.
   if (!window.__esRefreshBtn && !document.querySelector('script[src^="/refresh-btn.js"]')) {
     var rs = document.createElement('script');
-    rs.src = '/refresh-btn.js?v=20261112'; rs.defer = true;
+    rs.src = '/refresh-btn.js?v=20261117'; rs.defer = true;
     document.head.appendChild(rs);
   }
 })();

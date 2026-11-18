@@ -10,6 +10,11 @@
  * depan tombol tema, dan navigasi setelah reload dilakukan dengan meng-klik
  * .nav-tab / tombol sub-menu yang sudah ada (sama seperti acct-nav.js).
  * Dimuat di index.html (via acct-nav.js), admin.html, dan billing.html.
+ *
+ * Refresh BROWSER (F5 / Ctrl+R / tarik-ke-bawah di HP) juga memulihkan halaman:
+ * halaman aktif disimpan otomatis saat halaman ditutup/dimuat ulang (sessionStorage,
+ * hanya untuk tab ini), lalu dibuka lagi bila navigasi berikutnya bertipe 'reload'.
+ * Membuka situs baru / tab baru tetap mulai dari Dashboard.
  * ══════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -58,12 +63,33 @@
     return null;
   }
 
+  // Simpan halaman aktif saat halaman akan ditutup / dimuat ulang (termasuk F5 browser).
+  // Tidak menimpa simpanan dari tombol ↻ yang baru saja dibuat.
+  function autoSave() {
+    try {
+      var page = activePage();
+      if (!page) return;
+      var old = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+      if (old && old.btn && Date.now() - old.t < 5000) return;
+      sessionStorage.setItem(KEY, JSON.stringify({ path: location.pathname, page: page, sub: activeSub(page), t: Date.now(), btn: false }));
+    } catch (_) {}
+  }
+  function isReload() {
+    try {
+      var n = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      if (n) return n.type === 'reload';
+      return !!(performance.navigation && performance.navigation.type === 1);
+    } catch (_) { return false; }
+  }
+  window.addEventListener('pagehide', autoSave);
+  window.addEventListener('beforeunload', autoSave);
+
   function doRefresh(btn) {
     btn.classList.add('spin');
     btn.disabled = true;
     try {
       var page = activePage();
-      if (page) sessionStorage.setItem(KEY, JSON.stringify({ path: location.pathname, page: page, sub: activeSub(page), t: Date.now() }));
+      if (page) sessionStorage.setItem(KEY, JSON.stringify({ path: location.pathname, page: page, sub: activeSub(page), t: Date.now(), btn: true }));
     } catch (_) {}
     // hash #smartmoney dsb. tetap ikut; query string dipertahankan.
     location.reload();
@@ -92,11 +118,28 @@
     return document.getElementById('bn-' + page);
   }
 
+  // Smart Money disisipkan belakangan oleh smartmoney.js (hanya admin) dan tidak punya tab nav
+  // atas, jadi dipulihkan lewat API-nya setelah modulnya siap.
+  function restoreSmartMoney(after) {
+    var tries = 100;   // ±30 dtk (menunggu cek admin selesai)
+    (function wait() {
+      if (document.getElementById('page-smartmoney') && window.SmartMoney && window.SmartMoney.restore) {
+        try { window.SmartMoney.restore(); } catch (_) {}
+        if (after) after();
+        return;
+      }
+      if (--tries > 0) setTimeout(wait, 300);
+    })();
+  }
+
   function restore() {
     var st = null;
     try { st = JSON.parse(sessionStorage.getItem(KEY) || 'null'); sessionStorage.removeItem(KEY); } catch (_) {}
     if (!st || st.path !== location.pathname || Date.now() - st.t > 60000) return;
-    var after = function () { toast('Halaman dimuat ulang · filter kembali ke awal'); };
+    // Simpanan otomatis hanya dipakai bila ini benar-benar reload (bukan buka baru / pindah halaman).
+    if (!st.btn && !isReload()) return;
+    var after = function () { if (st.btn) toast('Halaman dimuat ulang · filter kembali ke awal'); };
+    if (st.page === 'smartmoney') { restoreSmartMoney(after); return; }
     if (!st.page || !document.getElementById('page-' + st.page)) { after(); return; }
     var openSub = function () {
       if (!st.sub) { after(); return; }
