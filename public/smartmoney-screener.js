@@ -455,7 +455,8 @@
     { k: 'smart', ico: 'funnel', label: 'Smart Money', sub: 'Nampung ritel & P&L' },
     { k: 'bh', ico: 'users', label: 'Broker & Holder', sub: 'Associate, >5%, insider' },
     { k: 'foreign', ico: 'globe', label: 'Foreign', sub: 'Intensitas & radar' },
-    { k: 'news', ico: 'news', label: 'Headlines', sub: 'Berita per saham' }
+    { k: 'news', ico: 'news', label: 'Headlines', sub: 'Berita per saham' },
+    { k: 'cons', ico: 'target', label: 'Konsensus', sub: 'Target & rekomendasi analis' }
   ];
   var V = {
     view: 'today', asOf: 0, guide: {}, acc: null,
@@ -464,6 +465,7 @@
     smart: { mode: 'retail', a: null, b: null, rng: '1W', q: '', sort: 'sm', dir: -1, pl: 'all', limit: 50 },
     bh: { mode: 'assoc', per: '1W', hper: '3M', flip: false, q: '', lim: { a: 10, d: 10 } },
     news: { per: '7D', q: '', limit: 30 },
+    cons: { v: 'all', min: 3, q: '', sort: 'up', limit: 30 },
     foreign: { mode: 'int', side: 'acc', preset: 'all', per: '30D', liq: 0, show: 50, q: '', sort: 'score', dir: -1, rd: 7, rsort: 'days', rdir: -1, rexp: undefined }
   };
   function T0() { return U.n - 1 - V.asOf; }
@@ -525,15 +527,19 @@
   }
   // Saham yang punya file asli di R2 → hitung ulang dari data asli
   var _realDone = 0;
+  // Pemuatan data broker (ringkasan + per saham) selesai. Sebelum ini, "belum ada data broker" TIDAK boleh
+  // ditampilkan karena datanya masih dalam perjalanan.
+  function brokerDone() { if (!U || U.brokerReady) return; U.brokerReady = true; if (host && !host.hidden) srcNote(); }
   function loadRealAll() {
     var tries = 0;
     (function waitIdx() {
       var codes = A.index();
-      if (!codes) { if (++tries < 40) setTimeout(waitIdx, 500); return; }
+      if (!codes) { if (++tries < 40) setTimeout(waitIdx, 500); else brokerDone(); return; }
       codes = codes.filter(function (c) { return U.by[c] && !U.by[c].fromSummary; }).slice(0, 150);
       var q = codes.slice(), busy = 0, dirty = false, timer = null;
       function flush() { timer = null; if (!dirty) return; dirty = false; U.bt = null; if (host && !host.hidden) renderView(); }
       function next() {
+        if (!q.length && !busy) { brokerDone(); return; }
         while (busy < 4 && q.length) {
           var c = q.shift(); busy++;
           A.loadReal(c).then(function (code) { return function (g) {
@@ -557,6 +563,11 @@
 
   // ─────────────────────────── Panduan (cara pakai & manfaat) ───────────────────────────
   var GUIDE = {
+    cons: {
+      title: 'Konsensus Analis', ico: 'target', desc: 'Seberapa jauh target harga analis dari harga sekarang, dan seberapa kompak mereka.',
+      how: [['sliders', 'Pilih kesimpulan: Condong beli, Tunggu, atau Waspada.'], ['users', 'Atur minimal jumlah analis supaya saham dengan 1-2 rekomendasi tidak menyesatkan.'], ['bar', 'Batang hijau/abu/merah = porsi BUY/NEUTRAL/SELL. Potensi = target rata-rata dibanding harga sekarang.'], ['ext', 'Tombol Detail Konsensus membuka halaman Konsensus untuk saham itu.']],
+      why: [['target', 'Satu layar untuk tahu saham mana yang masih punya ruang naik menurut analis.'], ['shield', 'Saham yang harganya sudah melewati target ditandai Waspada.'], ['info', 'Kesimpulan ini ringkasan aturan sederhana, bukan rekomendasi investasi.']]
+    },
     news: {
       title: 'Headlines per Saham', ico: 'news', desc: 'Berita terbaru yang menyebut kode saham, dikelompokkan per saham.',
       how: [['cal', 'Pilih rentang: 24 jam, 7 hari, atau 30 hari.'], ['search', 'Cari kode saham atau nama perusahaan.'], ['ext', 'Ketuk judul untuk membuka beritanya di tab baru. Tombol di bawah tiap saham membuka Broker Activity atau Pasar Live.']],
@@ -595,6 +606,7 @@
   };
   // Penjelasan ikon (i) per tampilan: fungsi, tujuan, dan cara pakai.
   var VIEW_TIP = {
+    cons: 'Fungsi: membandingkan target harga rata-rata analis dengan harga sekarang dan menghitung porsi BUY/NEUTRAL/SELL. Tujuan: tahu saham mana yang masih punya ruang naik menurut analis. Cara pakai: pilih kesimpulan, atur minimal analis, lalu ketuk Detail Konsensus untuk melihat rekomendasi per firm.',
     news: 'Fungsi: mengelompokkan berita (headlines.json) berdasarkan kode saham yang disebut di judul. Tujuan: melihat saham yang sedang jadi sorotan media. Cara pakai: pilih rentang waktu, cari kode, lalu ketuk judul untuk membaca beritanya.',
     today: 'Fungsi: menampilkan sinyal saham terbaru setelah bursa tutup, plus preset yang paling sering benar. Tujuan: tahu saham mana yang layak dipantau untuk sesi berikutnya tanpa membuka ratusan saham. Cara pakai: geser tanggal dengan ‹ ›, lihat kartu Setup Preset, lalu ketuk saham untuk membuka Broker Activity.',
     gems: 'Fungsi: memberi skor gabungan 0-100 (pola bandar, arus asing, teknikal) untuk tiap saham, lalu memfilter dengan preset. Tujuan: menyaring ratusan saham jadi daftar pendek yang punya alasan jelas. Cara pakai: pilih preset Bullish (kandidat beli) atau Risk (hindari), atur Tier, kapitalisasi, dan likuiditas, lalu ketuk baris untuk detailnya.',
@@ -1410,8 +1422,73 @@
     }).join('') + '</div>' + more('nmore', shown.length, rows.length);
   }
 
-  var BODY = { news: bodyNews, gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
-  var VIEW = { news: viewNews, today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign };
+  // ─────────────────────────── 8. KONSENSUS ───────────────────────────
+  var CONS_V = {
+    buy:  { k: 'buy',  t: 'Condong beli', c: 'g' },
+    hold: { k: 'hold', t: 'Tunggu',       c: 'n' },
+    warn: { k: 'warn', t: 'Waspada',      c: 'r' },
+    na:   { k: 'na',   t: 'Data minim',   c: 'd' }
+  };
+  // Aturan sederhana: potensi = target rata-rata / harga - 1; porsi BUY/SELL dari jumlah analis.
+  function consVerdict(r) {
+    if (r.total < 3 || !r.px || !r.target) return CONS_V.na;
+    if (r.up < 0 || r.sellPct >= 30) return CONS_V.warn;
+    if (r.up >= 15 && r.buyPct >= 60) return CONS_V.buy;
+    return CONS_V.hold;
+  }
+  function consReason(r, v) {
+    if (v.k === 'na') return r.total < 3 ? 'Baru ' + r.total + ' analis, belum cukup untuk disimpulkan.' : 'Harga atau target belum tersedia.';
+    if (r.up < 0) return 'Harga sudah di atas target rata-rata analis (' + fp(r.up, 1) + ').';
+    if (r.sellPct >= 30) return nf(r.sellPct, 0) + '% analis merekomendasikan SELL.';
+    if (v.k === 'buy') return nf(r.buyPct, 0) + '% analis BUY dan target rata-rata ' + fp(r.up, 1) + ' di atas harga.';
+    return r.up < 15 ? 'Ruang naik menurut analis hanya ' + fp(r.up, 1) + '.' : 'Hanya ' + nf(r.buyPct, 0) + '% analis yang BUY, belum kompak.';
+  }
+  function consRows() {
+    var st = V.cons, sm = (typeof DATA !== 'undefined' && DATA && DATA.consensus_summary) || {}, lv = (DATA && DATA.live) || {}, q = (st.q || '').toUpperCase(), out = [];
+    Object.keys(sm).forEach(function (c) {
+      var m = U.by[c], x = sm[c]; if (!m || !x) return;
+      var px0 = lv[c] && +lv[c].price || (m.c && m.c[m.c.length - 1]) || 0, total = +x.total || 0;
+      var r = { m: m, total: total, buy: +x.buy || 0, neu: +x.neutral || 0, sell: +x.sell || 0, hi: +x.high || 0, lo: +x.low || 0, target: +x.target || 0, px: px0 };
+      r.buyPct = total ? r.buy / total * 100 : 0; r.sellPct = total ? r.sell / total * 100 : 0; r.neuPct = total ? r.neu / total * 100 : 0;
+      r.up = px0 && r.target ? (r.target / px0 - 1) * 100 : 0;
+      r.v = consVerdict(r);
+      if (total < st.min || !matchQ(m, q)) return;
+      if (st.v !== 'all' && r.v.k !== st.v) return;
+      out.push(r);
+    });
+    out.sort(function (a, b) { return st.sort === 'n' ? b.total - a.total || b.up - a.up : b.up - a.up; });
+    return out;
+  }
+  function viewCons() {
+    var st = V.cons;
+    return vhead('cons') +
+      '<div class="sx-bar">' + seg('cv', [['all', 'Semua'], ['buy', 'Condong beli'], ['hold', 'Tunggu'], ['warn', 'Waspada']], st.v, 'big') + '</div>' +
+      '<div class="sx-bar">' + seg('cmin', [['1', '≥1 analis'], ['3', '≥3'], ['5', '≥5'], ['10', '≥10']], st.min, 'sm') +
+        seg('csort', [['up', 'Potensi'], ['n', 'Jumlah analis']], st.sort, 'sm') +
+        '<span class="sx-grow"></span>' + searchBox('sxCQ', st.q, 'Kode saham / nama') + '</div>' +
+      '<div id="sxBody"></div>';
+  }
+  function bodyCons() {
+    var st = V.cons, rows = consRows();
+    if (typeof DATA === 'undefined' || !DATA || !DATA.consensus_summary) return empty('Data konsensus belum dimuat.');
+    if (!rows.length) return empty('Tidak ada saham yang cocok dengan filter ini.');
+    var shown = rows.slice(0, st.limit);
+    return '<div class="sx-conslist">' + shown.map(function (r) {
+      var span = r.hi > r.lo ? r.hi - r.lo : 0, pos = span ? clamp((r.px - r.lo) / span * 100, 0, 100) : 50, tpos = span ? clamp((r.target - r.lo) / span * 100, 0, 100) : 50;
+      return '<div class="sx-cons ' + r.v.c + '">' +
+        '<div class="sx-cons-h">' + stockCell(r.m) + '<span class="sx-pill ' + r.v.c + '">' + esc(r.v.t) + '</span></div>' +
+        '<div class="sx-cons-up mono"><b class="' + sc(r.up) + '">' + (r.up > 0 ? '+' : '') + nf(r.up, 1) + '%</b><small>potensi ke target ' + px(r.target) + ' · harga ' + px(r.px) + '</small></div>' +
+        '<div class="sx-stack" role="img" aria-label="BUY ' + r.buy + ', NEUTRAL ' + r.neu + ', SELL ' + r.sell + '"><i class="b" style="width:' + r.buyPct + '%"></i><i class="n" style="width:' + r.neuPct + '%"></i><i class="s" style="width:' + r.sellPct + '%"></i></div>' +
+        '<div class="sx-cons-n mono"><span class="sx-up">BUY ' + r.buy + '</span><span class="sx-mute">NETRAL ' + r.neu + '</span><span class="sx-dn">SELL ' + r.sell + '</span><span class="sx-grow"></span><span class="sx-mute">' + r.total + ' analis</span></div>' +
+        (span ? '<div class="sx-rng" title="Rentang target analis ' + px(r.lo) + ' – ' + px(r.hi) + '"><i class="t" style="left:' + tpos + '%"></i><i class="p" style="left:' + pos + '%"></i></div><div class="sx-rng-l mono"><span>' + px(r.lo) + '</span><span class="sx-mute">● harga · ▮ target rata-rata</span><span>' + px(r.hi) + '</span></div>' : '') +
+        '<p class="sx-why">' + esc(consReason(r, r.v)) + '</p>' +
+        '<div class="sx-acts"><button class="sx-lnk" data-sx="gocons" data-v="' + esc(r.m.code) + '">' + ic('target') + 'Detail Konsensus</button><button class="sx-lnk" data-sx="open" data-v="' + esc(r.m.code) + '">' + ic('funnel') + 'Smart Money</button></div>' +
+      '</div>';
+    }).join('') + '</div>' + more('cmore', shown.length, rows.length);
+  }
+
+  var BODY = { cons: bodyCons, news: bodyNews, gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
+  var VIEW = { cons: viewCons, news: viewNews, today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign };
   function shell() {
     return '<div class="sx">' +
       '<div class="sx-top">' +
@@ -1447,9 +1524,9 @@
     var el = host.querySelector('#sxSrc'); if (!el || !U) return;
     var nReal = U.list.filter(function (m) { return m.realBroker; }).length;
     el.innerHTML = '<span class="sx-sb ok">' + ic('check') + 'Harga &amp; teknikal asli · ' + nf(U.list.length) + ' saham</span>' +
-      '<span class="sx-sb ' + (nReal ? 'ok' : 'dm') + '">' + ic(nReal ? 'check' : 'info') + (nReal ? nReal + ' saham dengan data broker asli <i class="sx-real">●</i>' : 'Belum ada data broker asli') + '</span>' +
+      '<span class="sx-sb ' + (nReal ? 'ok' : U.brokerReady ? 'dm' : '') + '">' + ic(nReal ? 'check' : 'info') + (nReal ? nReal + ' saham dengan data broker asli <i class="sx-real">●</i>' + (U.brokerReady ? '' : ' · memuat…') : U.brokerReady ? 'Belum ada data broker asli' : 'Memuat data broker…') + '</span>' +
       '<span class="sx-sb">' + ic('cal') + 'Harga ' + esc(dShort(U.axis[U.n - 1])) + (U.summaryAt ? ' · ringkasan broker ' + esc(dShort(String(U.summaryAt).slice(0, 10))) : '') + '</span>' +
-      (nReal ? '' : '<div class="sx-nodata">' + ic('info') + '<span><b>Belum ada data broker asli.</b> Semua daftar yang memakai arus broker, asing, ritel, insider, atau pemegang saham akan kosong sampai ringkasan diunggah: <code>node scripts/build-smartmoney-screener.js --dir &lt;folder smartmoney&gt; --upload</code>.</span></div>');
+      (nReal || !U.brokerReady ? '' : '<div class="sx-nodata">' + ic('info') + '<span><b>Belum ada data broker asli.</b> Semua daftar yang memakai arus broker, asing, ritel, insider, atau pemegang saham akan kosong sampai ringkasan diunggah: <code>node scripts/build-smartmoney-screener.js --dir &lt;folder smartmoney&gt; --upload</code>.</span></div>');
   }
   function renderView() {
     if (!host) return;
@@ -1472,6 +1549,16 @@
     if (f && b) b.innerHTML = f();
   }
   function rerenderKeepScroll() { var y = window.pageYOffset; renderView(); window.scrollTo(0, y); }
+  // Buka halaman Konsensus > Per Saham, sudah terfilter ke satu kode.
+  function goConsensus(code) {
+    try {
+      if (typeof window.showPage === 'function') window.showPage('consensus');
+      if (typeof window.switchConsensusView === 'function') window.switchConsensusView('stock');
+      var inp = document.getElementById('consensusSearch'); if (inp) inp.value = code;
+      if (typeof window.renderConsensusCards === 'function') window.renderConsensusCards();
+      window.scrollTo(0, 0);
+    } catch (err) { console.warn('[screener] goConsensus', err); }
+  }
   function onClick(e) {
     var el = e.target.closest && e.target.closest('[data-sx]');
     if (!el || !host.contains(el)) return;
@@ -1483,6 +1570,11 @@
       case 'nper': V.news.per = v; V.news.limit = 30; renderView(); return;
       case 'nmore': V.news.limit += 30; renderBody(); return;
       case 'gopage': e.stopPropagation(); if (typeof window.showPage === 'function') { window.showPage(v); window.scrollTo(0, 0); } return;
+      case 'cv': V.cons.v = v; V.cons.limit = 30; renderView(); return;
+      case 'cmin': V.cons.min = +v; V.cons.limit = 30; renderView(); return;
+      case 'csort': V.cons.sort = v; renderView(); return;
+      case 'cmore': V.cons.limit += 30; renderBody(); return;
+      case 'gocons': e.stopPropagation(); goConsensus(v); return;
       case 'tscroll': var tb = host.querySelector('#sxTabs'); tb.scrollBy({ left: +v * tb.clientWidth * 0.7, behavior: 'smooth' }); return;
       case 'guide': V.guide[V.view] = V.guide[V.view] === v ? null : v; rerenderKeepScroll(); return;
       case 'open': e.stopPropagation(); if (U && U.by[v]) A.openStock(v); return;
@@ -1546,7 +1638,7 @@
   }
   var _qt = null;
   function onInput(e) {
-    var id = e.target.id, map = { sxGQ: 'gems', sxAQ: 'accum', sxSQ: 'smart', sxBQ: 'bh', sxFQ: 'foreign', sxNQ: 'news' };
+    var id = e.target.id, map = { sxGQ: 'gems', sxAQ: 'accum', sxSQ: 'smart', sxBQ: 'bh', sxFQ: 'foreign', sxNQ: 'news', sxCQ: 'cons' };
     if (!map[id]) return;
     V[map[id]].q = e.target.value.trim();
     clearTimeout(_qt); _qt = setTimeout(renderBody, 160);
@@ -1570,6 +1662,23 @@
     '.sx-news li small{font-size:11px;color:var(--text3)}',
     '.sx-lnk{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11px;font-weight:700;padding:5px 10px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer}',
     '.sx-lnk:hover{color:var(--accent);border-color:var(--accent)}',
+    '.sx-conslist{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px}',
+    '.sx-cons{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--border2);border-radius:14px;padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:9px}',
+    '.sx-cons.g{border-left-color:var(--green)}.sx-cons.r{border-left-color:var(--red)}.sx-cons.n{border-left-color:var(--yellow)}',
+    '.sx-cons-h{display:flex;align-items:center;gap:10px;min-width:0}.sx-cons-h .sx-pill{margin-left:auto}',
+    '.sx-pill{font-size:10px;font-weight:800;letter-spacing:.04em;padding:4px 9px;border-radius:99px;white-space:nowrap;background:var(--bg3,rgba(128,128,128,.15));color:var(--text2)}',
+    '.sx-pill.g{background:rgba(34,197,94,.16);color:var(--green)}.sx-pill.r{background:rgba(239,68,68,.16);color:var(--red)}.sx-pill.n{background:rgba(234,179,8,.16);color:var(--yellow)}',
+    '.sx-cons-up{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.sx-cons-up b{font-size:22px;line-height:1}.sx-cons-up small{font-size:11px;color:var(--text3)}',
+    '.sx-stack{display:flex;height:7px;border-radius:99px;overflow:hidden;background:var(--border)}',
+    '.sx-stack i{display:block;height:100%}.sx-stack .b{background:var(--green)}.sx-stack .n{background:var(--text3);opacity:.5}.sx-stack .s{background:var(--red)}',
+    '.sx-cons-n{display:flex;gap:10px;font-size:11px;font-weight:700}',
+    '.sx-rng{position:relative;height:6px;border-radius:99px;background:var(--border);margin-top:2px}',
+    '.sx-rng i{position:absolute;top:50%;transform:translate(-50%,-50%);display:block}',
+    '.sx-rng .p{width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--card)}',
+    '.sx-rng .t{width:4px;height:14px;border-radius:2px;background:var(--green)}',
+    '.sx-rng-l{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--text3)}',
+    '.sx-why{margin:0;font-size:12px;line-height:1.4;color:var(--text2)}',
+    '.sx-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}',
     '.sx-cap{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text3)}',
     /* top bar + tabs */
     '.sx-top{display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-card);min-width:0}',
