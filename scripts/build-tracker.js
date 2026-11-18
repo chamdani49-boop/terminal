@@ -893,9 +893,31 @@ function _firmSpaceless(name) {
 //   SimInvest = aplikasi trading milik Sinarmas Sekuritas → digabung.
 const _FIRM_BRAND_ALIASES = new Map([
   ['SIMINVEST', 'SINARMAS SEKURITAS'],
+  // IPOT = aplikasi trading milik Indo Premier ("Indopremier (IPOT)").
+  ['IPOT', 'INDO PREMIER SEKURITAS'],
+  ['INDOPREMIERIPOT', 'INDO PREMIER SEKURITAS'],
 ]);
 
+// Nama sering ditulis dgn keterangan di dalam kurung: "Indopremier (IPOT)",
+// "Semen Indonesia (Persero)". Coba cocokkan nama TANPA kurung, lalu isi
+// kurungnya, lalu nama utuh. Kembalikan match pertama yg ketemu.
 function matchCanonicalFirm(inputName) {
+  const raw = String(inputName || '');
+  const noParen = raw.replace(/\([^)]*\)?/g, ' ').replace(/\s+/g, ' ').trim();
+  const inParen = [];
+  raw.replace(/\(([^)]*)\)?/g, (_, t) => { if (t && t.trim()) inParen.push(t.trim()); return ''; });
+  const tries = [];
+  if (noParen && noParen !== raw.trim()) tries.push(noParen);
+  tries.push(raw);
+  for (const t of inParen) tries.push(t);
+  for (const t of tries) {
+    const m = _matchCanonicalFirmOne(t);
+    if (m) return m;
+  }
+  return null;
+}
+
+function _matchCanonicalFirmOne(inputName) {
   const inputTokens = _firmSignatureTokens(inputName);
   if (!inputTokens.length) return null;
   const _alias = _FIRM_BRAND_ALIASES.get(inputTokens.join(''));
@@ -941,7 +963,8 @@ function canonicalFirmKey(name) {
   // Fallback: regex strip lama (biar backward compat & handle firm yg
   // belum ada di broker-codes.js)
   let s = String(name).trim().toUpperCase();
-  s = s.replace(/^PT\s+/, '');
+  s = s.replace(/\([^)]*\)?/g, ' ');   // buang keterangan dlm kurung
+  s = s.replace(/^\s*PT\s+/, '');
   s = s.replace(/[.,]/g, ' ');
   s = s.replace(/\s+TBK$/, '');
   s = s.replace(/\s+SEKURITAS(\s+INDONESIA)?$/, '');
@@ -1786,6 +1809,16 @@ async function main() {
   if (firmMergeLogged) {
     console.log('  ✓ Firm canonical merge:');
     mergeSummary.forEach(s => console.log(s));
+  }
+  // Peringatan: nama firm yg TIDAK cocok dgn daftar resmi (broker-codes.js).
+  // Biasanya brand/aplikasi/typo baru yg akan tampil sbg firm terpisah —
+  // tambahkan ke _FIRM_BRAND_ALIASES (build-tracker.js) + ALIASES di
+  // _canonicalFirmKey (public/index.html).
+  const unmatchedFirms = [...firmVariantsByKey.values()]
+    .map(v => [...v].find(n => matchCanonicalFirm(n)) ? null : [...v][0])
+    .filter(Boolean);
+  if (unmatchedFirms.length) {
+    console.log(`  ⚠ ${unmatchedFirms.length} firm tidak ada di daftar resmi (cek kalau ada duplikat): ` + unmatchedFirms.join(' | '));
   }
   // Rewrite rec.firm ke display kanonik
   for (const rec of recsRaw) {

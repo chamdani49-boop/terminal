@@ -12119,7 +12119,8 @@ body.is-mobile-device.force-desktop .pl-col-main{
   function _canonicalFirmKey(name){
     if(!name) return '';
     var s = String(name).trim().toUpperCase();
-    s = s.replace(/^PT\s+/, '');
+    s = s.replace(/\([^)]*\)?/g, ' ');       // buang keterangan dlm kurung: "Indopremier (IPOT)"
+    s = s.replace(/^\s*PT\s+/, '');
     s = s.replace(/[.,&]/g, ' ');           // strip . , &
     s = s.replace(/\s+TBK$/, '');
     s = s.replace(/\s+(SEKURITAS|SECURITIES)(\s+INDONESIA)?$/, '');
@@ -12131,10 +12132,12 @@ body.is-mobile-device.force-desktop .pl-col-main{
     // (akronim yang jauh dari nama lengkap, atau varian spelling dgn
     // vs tanpa spasi). Tambahkan di sini kalau ada firm lain yang
     // ke-split di Sheet dgn nama variasi.
+    // Key dibandingkan TANPA spasi, supaya "Indo Premier" = "Indopremier".
     var ALIASES = {
-      'KISI':        'KOREA INVESTMENT',   // "KISI Sekuritas" = "Korea Investment And Sekuritas Indonesia"
-      'INDOPREMIER': 'INDO PREMIER'        // "Indopremier Sekuritas" = "Indo Premier Sekuritas"
+      'KISI':        'KOREAINVESTMENT',    // "KISI Sekuritas" = "Korea Investment And Sekuritas Indonesia"
+      'IPOT':        'INDOPREMIER'         // IPOT = aplikasi Indo Premier
     };
+    s = s.replace(/\s+/g, '');
     if (ALIASES[s]) s = ALIASES[s];
     return s;
   }
