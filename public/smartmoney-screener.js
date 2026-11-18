@@ -449,21 +449,21 @@
 
   // ─────────────────────────── State ───────────────────────────
   var VIEWS = [
+    { k: 'stk', ico: 'layers', label: 'Per Saham', sub: 'Semua analisis 1 halaman' },
     { k: 'today', ico: 'today', label: 'Today', sub: 'Sinyal terbaik' },
     { k: 'gems', ico: 'gem', label: 'Gems', sub: 'Sinyal harian' },
     { k: 'accum', ico: 'layers', label: 'Accumulation', sub: 'Posisi broker 6 bln' },
     { k: 'smart', ico: 'funnel', label: 'Smart Money', sub: 'Nampung ritel & P&L' },
     { k: 'bh', ico: 'users', label: 'Broker & Holder', sub: 'Associate, >5%, insider' },
-    { k: 'foreign', ico: 'globe', label: 'Foreign', sub: 'Intensitas & radar' },
-    { k: 'news', ico: 'news', label: 'Headlines', sub: 'Berita per saham' },
-    { k: 'cons', ico: 'target', label: 'Konsensus', sub: 'Target & rekomendasi analis' }
+    { k: 'foreign', ico: 'globe', label: 'Foreign', sub: 'Intensitas & radar' }
   ];
   var V = {
-    view: 'today', asOf: 0, guide: {}, acc: null,
+    view: 'stk', asOf: 0, guide: {}, acc: null,
     gems: { preset: 'top', tier: 0, cap: 'all', liq: 'all', sector: '', q: '', sort: 'score', dir: -1, limit: 50 },
     accum: { mode: 'pos', trend: 'acc', top: 5, market: 'reg', minLose: 0, minLoss: 0, maxDays: 0, minNet: 0, preset: '', q: '', sort: 'net', dir: -1, limit: 10 },
     smart: { mode: 'retail', a: null, b: null, rng: '1W', q: '', sort: 'sm', dir: -1, pl: 'all', limit: 50 },
     bh: { mode: 'assoc', per: '1W', hper: '3M', flip: false, q: '', lim: { a: 10, d: 10 } },
+    stk: { code: '', q: '' },
     news: { per: '7D', q: '', limit: 30 },
     cons: { v: 'all', min: 3, q: '', sort: 'up', limit: 30 },
     foreign: { mode: 'int', side: 'acc', preset: 'all', per: '30D', liq: 0, show: 50, q: '', sort: 'score', dir: -1, rd: 7, rsort: 'days', rdir: -1, rexp: undefined }
@@ -529,7 +529,7 @@
   var _realDone = 0;
   // Pemuatan data broker (ringkasan + per saham) selesai. Sebelum ini, "belum ada data broker" TIDAK boleh
   // ditampilkan karena datanya masih dalam perjalanan.
-  function brokerDone() { if (!U || U.brokerReady) return; U.brokerReady = true; if (host && !host.hidden) srcNote(); }
+  function brokerDone() { if (!U || U.brokerReady) return; U.brokerReady = true; if (host && !host.hidden) { srcNote(); if (V.view === 'stk') renderBody(); } }
   function loadRealAll() {
     var tries = 0;
     (function waitIdx() {
@@ -563,6 +563,11 @@
 
   // ─────────────────────────── Panduan (cara pakai & manfaat) ───────────────────────────
   var GUIDE = {
+    stk: {
+      title: 'Per Saham', ico: 'layers', desc: 'Satu halaman: berita, swing, konsensus, valuasi, trade, broker, insider, dan kepemilikan untuk satu kode saham.',
+      how: [['search', 'Ketik kode atau nama saham, lalu pilih dari daftar.'], ['bar', 'Tiap kartu memberi kesimpulan (hijau = positif, kuning = netral, merah = waspada) beserta alasannya.'], ['ext', 'Tombol di kartu membuka halaman aslinya (Dashboard, Konsensus, Valuasi, Tracker, Broker Activity) untuk saham yang sama.']],
+      why: [['target', 'Tidak perlu membuka 6 menu satu per satu untuk tahu keadaan satu saham.'], ['shield', 'Sinyal yang saling bertentangan langsung kelihatan, misalnya konsensus positif tapi broker besar menjual.'], ['info', 'Kesimpulan berasal dari aturan sederhana, bukan rekomendasi investasi. Keputusan tetap di tangan Anda.']]
+    },
     cons: {
       title: 'Konsensus Analis', ico: 'target', desc: 'Seberapa jauh target harga analis dari harga sekarang, dan seberapa kompak mereka.',
       how: [['sliders', 'Pilih kesimpulan: Condong beli, Tunggu, atau Waspada.'], ['users', 'Atur minimal jumlah analis supaya saham dengan 1-2 rekomendasi tidak menyesatkan.'], ['bar', 'Batang hijau/abu/merah = porsi BUY/NEUTRAL/SELL. Potensi = target rata-rata dibanding harga sekarang.'], ['ext', 'Tombol Detail Konsensus membuka halaman Konsensus untuk saham itu.']],
@@ -606,6 +611,7 @@
   };
   // Penjelasan ikon (i) per tampilan: fungsi, tujuan, dan cara pakai.
   var VIEW_TIP = {
+    stk: 'Fungsi: merangkum semua analisis satu saham dalam satu halaman. Tujuan: membantu memutuskan langkah berikutnya tanpa membuka banyak menu. Cara pakai: cari kode saham, baca kesimpulan tiap kartu, lalu buka halaman aslinya bila perlu detail.',
     cons: 'Fungsi: membandingkan target harga rata-rata analis dengan harga sekarang dan menghitung porsi BUY/NEUTRAL/SELL. Tujuan: tahu saham mana yang masih punya ruang naik menurut analis. Cara pakai: pilih kesimpulan, atur minimal analis, lalu ketuk Detail Konsensus untuk melihat rekomendasi per firm.',
     news: 'Fungsi: mengelompokkan berita (headlines.json) berdasarkan kode saham yang disebut di judul. Tujuan: melihat saham yang sedang jadi sorotan media. Cara pakai: pilih rentang waktu, cari kode, lalu ketuk judul untuk membaca beritanya.',
     today: 'Fungsi: menampilkan sinyal saham terbaru setelah bursa tutup, plus preset yang paling sering benar. Tujuan: tahu saham mana yang layak dipantau untuk sesi berikutnya tanpa membuka ratusan saham. Cara pakai: geser tanggal dengan ‹ ›, lihat kartu Setup Preset, lalu ketuk saham untuk membuka Broker Activity.',
@@ -1487,8 +1493,181 @@
     }).join('') + '</div>' + more('cmore', shown.length, rows.length);
   }
 
-  var BODY = { cons: bodyCons, news: bodyNews, gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
-  var VIEW = { cons: viewCons, news: viewNews, today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign };
+  // ─────────────────────────── 0. PER SAHAM (1 halaman) ───────────────────────────
+  var _scr = null, _scrLoading = false;
+  function loadScr(cb) {
+    if (_scr) { cb(); return; }
+    if (_scrLoading) return;
+    _scrLoading = true;
+    fetch('screening.json?v=' + Math.floor(Date.now() / 3600000))
+      .then(function (r) { return r.ok ? r.json() : { stocks: {} }; })
+      .catch(function () { return { stocks: {} }; })
+      .then(function (j) { _scr = j && j.stocks ? j : { stocks: {} }; _scrLoading = false; cb(); });
+  }
+  function V_(c, t) { return { c: c, t: t }; }          // verdict: c = g|n|r|d
+  function lastPx(m, code) {
+    var lv = (typeof DATA !== 'undefined' && DATA && DATA.live && DATA.live[code]) || null;
+    return (lv && +lv.price) || (m.c && m.c[m.n - 1]) || 0;
+  }
+  function kv(k, v, cls) { return '<div class="sx-kv"><span>' + k + '</span><b class="mono ' + (cls || '') + '">' + v + '</b></div>'; }
+  function iso0() { return new Date().toISOString().slice(0, 10); }
+
+  function secSwing(m, code) {
+    var tr = null; try { if (typeof window.ptSigmaTriggers === 'function') tr = window.ptSigmaTriggers(code); } catch (_) {}
+    var o = { t: 'Swing', ico: 'spike', acts: [['godash', 'Buka Dashboard']] };
+    if (!tr || !tr.price) { o.v = V_('d', 'Data minim'); o.lines = ['<p class="sx-why">Statistik historis belum cukup untuk menghitung batas beli/jual.</p>']; return o; }
+    var dB = (tr.price / tr.buyPrice - 1) * 100, dS = (tr.sellPrice / tr.price - 1) * 100;
+    if (tr.price <= tr.buyPrice) { o.v = V_('g', 'Area beli'); o.why = 'Harga sudah di bawah batas beli statistik (rata-rata tahunan dikurangi 2σ).'; }
+    else if (tr.price >= tr.sellPrice) { o.v = V_('r', 'Area jual'); o.why = 'Harga sudah di atas batas jual statistik. Pertimbangkan ambil untung.'; }
+    else { o.v = V_('n', 'Tunggu'); o.why = 'Harga di tengah rentang. Beli saat turun ' + nf(Math.max(0, dB), 1) + '% ke batas beli, atau jual saat naik ' + nf(Math.max(0, dS), 1) + '%.'; }
+    o.lines = [kv('Harga', px(tr.price)), kv('Batas beli', px(tr.buyPrice), 'sx-up'), kv('Batas jual', px(tr.sellPrice), 'sx-dn')];
+    return o;
+  }
+  function secCons(m, code) {
+    var x = (typeof DATA !== 'undefined' && DATA && DATA.consensus_summary && DATA.consensus_summary[code]) || null;
+    var o = { t: 'Konsensus analis', ico: 'target', acts: [['gocons', 'Detail Konsensus']] };
+    if (!x) { o.v = V_('d', 'Tidak ada'); o.lines = ['<p class="sx-why">Belum ada analis yang meliput saham ini.</p>']; return o; }
+    var total = +x.total || 0, r = { total: total, buy: +x.buy || 0, neu: +x.neutral || 0, sell: +x.sell || 0, target: +x.target || 0, px: lastPx(m, code) };
+    r.buyPct = total ? r.buy / total * 100 : 0; r.sellPct = total ? r.sell / total * 100 : 0; r.neuPct = total ? r.neu / total * 100 : 0;
+    r.up = r.px && r.target ? (r.target / r.px - 1) * 100 : 0;
+    var v = consVerdict(r); o.v = V_(v.c, v.t); o.why = consReason(r, v);
+    o.lines = [kv('Target rata-rata', px(r.target)), kv('Potensi', (r.up > 0 ? '+' : '') + nf(r.up, 1) + '%', sc(r.up)),
+      '<div class="sx-stack"><i class="b" style="width:' + r.buyPct + '%"></i><i class="n" style="width:' + r.neuPct + '%"></i><i class="s" style="width:' + r.sellPct + '%"></i></div>',
+      '<div class="sx-cons-n mono"><span class="sx-up">BUY ' + r.buy + '</span><span class="sx-mute">NETRAL ' + r.neu + '</span><span class="sx-dn">SELL ' + r.sell + '</span></div>'];
+    return o;
+  }
+  function secInvest(m, code) {
+    var o = { t: 'Investasi (valuasi)', ico: 'dollar', acts: [['goval', 'Buka Valuasi']] };
+    var f = _scr && _scr.stocks && _scr.stocks[code];
+    if (!_scr) { o.v = V_('d', 'Memuat…'); o.lines = []; return o; }
+    if (!f || !f.data_ok) { o.v = V_('d', 'Data minim'); o.lines = ['<p class="sx-why">Data fundamental belum lengkap.</p>']; return o; }
+    var pxv = lastPx(m, code), fair = +f.dcf_fair || +f.ddm_fair || 0, basis = +f.dcf_fair ? 'DCF' : 'DDM';
+    var disc = fair && pxv ? (fair / pxv - 1) * 100 : null, roe = +f.roe || 0, per = pxv && +f.eps > 0 ? pxv / f.eps : 0, pbv = pxv && +f.bvps > 0 ? pxv / f.bvps : 0;
+    if (disc == null) { o.v = V_('n', 'Cek manual'); o.why = 'Nilai wajar (DCF/DDM) belum tersedia. Lihat PER, PBV, dan ROE di bawah.'; }
+    else if (disc >= 20 && roe >= 10) { o.v = V_('g', 'Diskon'); o.why = 'Harga ' + nf(disc, 0) + '% di bawah nilai wajar ' + basis + ' dan ROE ' + nf(roe, 1) + '%. Cocok dicicil untuk jangka panjang.'; }
+    else if (disc < 0) { o.v = V_('r', 'Mahal'); o.why = 'Harga ' + nf(-disc / (1 + disc / 100), 0) + '% di atas nilai wajar ' + basis + '.'; }
+    else { o.v = V_('n', 'Wajar'); o.why = disc >= 20 ? 'Murah, tapi ROE ' + nf(roe, 1) + '% belum meyakinkan.' : 'Hanya ' + nf(disc, 0) + '% di bawah nilai wajar ' + basis + '. Margin pengaman tipis.'; }
+    o.lines = [kv('Nilai wajar ' + basis, fair ? px(fair) : '-'), kv('Diskon', disc == null ? '-' : (disc > 0 ? '+' : '') + nf(disc, 0) + '%', disc == null ? '' : sc(disc)),
+      kv('PER · PBV', (per ? nf(per, 1) + 'x' : '-') + ' · ' + (pbv ? nf(pbv, 2) + 'x' : '-')), kv('ROE · DPR', nf(roe, 1) + '% · ' + nf((+f.dpr || 0) * 100, 0) + '%')];
+    return o;
+  }
+  function secTrade(m, code) {
+    var o = { t: 'Trade (stock pick)', ico: 'flow', acts: [['gopage', 'Buka Tracker', 'tracker']] };
+    var d = window.__TR_getData && window.__TR_getData();
+    if (!d || d.pending) { o.v = V_('d', 'Memuat…'); o.lines = ['<p class="sx-why">Data Tracker belum dimuat. Buka menu Tracker sekali, lalu kembali.</p>']; return o; }
+    var today = iso0();
+    var open = (d.openList || []).filter(function (r) { return r.ticker === code && r.status === 'OPEN'; });
+    var pend = (d.pendingList || []).filter(function (r) { return r.ticker === code && (!r.pendingExpiresAt || r.pendingExpiresAt >= today); });
+    var all = open.concat(pend), buy = all.filter(function (r) { return r.type === 'BUY'; }).length, sell = all.length - buy;
+    var bt = d.byTicker && d.byTicker[code];
+    if (!all.length) { o.v = V_('d', 'Tidak ada pick'); o.lines = ['<p class="sx-why">Tidak ada stock pick yang masih aktif untuk saham ini.' + (bt ? ' Riwayat: ' + bt.trades + ' trade, winrate ' + nf(bt.winrate, 0) + '%.' : '') + '</p>']; return o; }
+    o.v = buy > sell ? V_('g', buy + ' pick beli') : sell > buy ? V_('r', sell + ' pick jual') : V_('n', 'Campuran');
+    o.why = all.length + ' pick aktif (' + open.length + ' berjalan, ' + pend.length + ' menunggu entry)' + (bt ? '. Riwayat saham ini: winrate ' + nf(bt.winrate, 0) + '% dari ' + bt.trades + ' trade.' : '.');
+    o.lines = all.slice(0, 3).map(function (r) {
+      return '<div class="sx-pick"><b class="' + (r.type === 'BUY' ? 'sx-up' : 'sx-dn') + '">' + esc(r.type) + '</b><span class="mono">' + px(r.entry) + ' › ' + px(r.tp1) + ' · SL ' + px(r.sl) + '</span><small>' + esc(r.firm || '') + ' · ' + (r.status === 'OPEN' ? nf(r.floatingPct || 0, 1) + '%' : 'menunggu') + '</small></div>';
+    });
+    return o;
+  }
+  function secNews(m, code) {
+    var o = { t: 'Berita', ico: 'news', acts: [['gopage', 'Buka Pasar Live', 'pasar']] };
+    if (!_news) { o.v = V_('d', 'Memuat…'); o.lines = []; return o; }
+    var cut = Date.now() / 1000 - 7 * 86400, re = new RegExp('\\b' + code + '\\b');
+    var list = _news.items.filter(function (it) { return it.ts >= cut && re.test(it.title || ''); }).sort(function (a, b) { return b.ts - a.ts; });
+    if (!list.length) { o.v = V_('d', 'Sepi'); o.lines = ['<p class="sx-why">Tidak ada berita yang menyebut ' + esc(code) + ' dalam 7 hari terakhir.</p>']; return o; }
+    o.v = list.length >= 3 ? V_('n', 'Ramai') : V_('n', list.length + ' berita');
+    o.why = list.length + ' berita dalam 7 hari. Baca isinya untuk menilai positif atau negatif.';
+    o.lines = ['<ul class="sx-nl">' + list.slice(0, 3).map(function (it) {
+      return '<li><a href="' + esc(it.link) + '" target="_blank" rel="noopener noreferrer">' + esc(it.title) + '</a><small>' + esc(it.source || '') + ' · ' + esc(timeAgo(it.ts)) + '</small></li>';
+    }).join('') + '</ul>'];
+    return o;
+  }
+  function secBroker(m, code) {
+    var o = { t: 'Broker summary', ico: 'users', acts: [['open', 'Buka Broker Activity']] };
+    if (!m.realBroker) { o.v = V_('d', U.brokerReady ? 'Belum ada data' : 'Memuat…'); o.lines = U.brokerReady ? ['<p class="sx-why">Data broker untuk saham ini belum tersedia.</p>'] : []; return o; }
+    var n = U.n, a = n - 5, rg = regime(m, n - 1);
+    var nets = m.brokers.map(function (b) { var t = 0; for (var d = a; d < n; d++) t += b.nv[d]; return { b: b, net: t }; });
+    var top = nets.slice().sort(function (x, y) { return y.net - x.net; }).filter(function (x) { return x.net > 0; }).slice(0, 3);
+    var bot = nets.slice().sort(function (x, y) { return x.net - y.net; }).filter(function (x) { return x.net < 0; }).slice(0, 3);
+    var sm = sum(m.Psm, a, n - 1), fn = sum(m.Pfn, a, n - 1);
+    o.v = rg.k === 'acc' ? V_('g', 'Akumulasi') : rg.k === 'dist' ? V_('r', 'Distribusi') : V_('n', 'Netral');
+    o.why = 'Smart money 5 hari ' + (sm > 0 ? 'net beli ' : 'net jual ') + fv(Math.abs(sm)) + ', asing ' + (fn > 0 ? 'net beli ' : 'net jual ') + fv(Math.abs(fn)) + '.';
+    var chip = function (x) { return '<span class="sx-bchip">' + bk(x.b.code, x.b.type, x.b.name) + '<i class="mono ' + sc(x.net) + '">' + (x.net > 0 ? '+' : '') + fv(x.net) + '</i></span>'; };
+    o.lines = [kv('Rezim 20 hari', esc(rg.label), rg.k === 'acc' ? 'sx-up' : rg.k === 'dist' ? 'sx-dn' : ''),
+      '<div class="sx-bcol"><small class="sx-up">Net beli 5 hari</small>' + (top.map(chip).join('') || '<small class="sx-mute">-</small>') + '</div>',
+      '<div class="sx-bcol"><small class="sx-dn">Net jual 5 hari</small>' + (bot.map(chip).join('') || '<small class="sx-mute">-</small>') + '</div>'];
+    return o;
+  }
+  function secInsider(m, code) {
+    var o = { t: 'Insider', ico: 'user', acts: [['open', 'Buka Insider']] };
+    if (!m.realBroker) { o.v = V_('d', U.brokerReady ? 'Belum ada data' : 'Memuat…'); o.lines = []; return o; }
+    var t0 = U.n - 63, L = m.ins.filter(function (e) { return e.t >= t0; }).sort(function (a, b) { return b.t - a.t; });
+    if (!L.length) { o.v = V_('d', 'Sepi'); o.lines = ['<p class="sx-why">Tidak ada transaksi insider yang dilaporkan dalam 3 bulan terakhir.</p>']; return o; }
+    var b = 0, sl = 0; L.forEach(function (e) { if (e.act === 'BUY') b += e.value; else sl += e.value; });
+    o.v = b > sl * 1.5 ? V_('g', 'Insider beli') : sl > b * 1.5 ? V_('r', 'Insider jual') : V_('n', 'Campuran');
+    o.why = 'Dalam 3 bulan: beli ' + fv(b, true) + ', jual ' + fv(sl, true) + '.';
+    o.lines = L.slice(0, 3).map(function (e) {
+      return '<div class="sx-pick"><b class="' + (e.act === 'BUY' ? 'sx-up' : 'sx-dn') + '">' + (e.act === 'BUY' ? 'BELI' : 'JUAL') + '</b><span class="mono">' + fv(e.value, true) + '</span><small>' + esc(e.name) + ' · ' + esc(dShort(U.axis[e.t])) + '</small></div>';
+    });
+    return o;
+  }
+  function secHolder(m, code) {
+    var o = { t: 'Kepemilikan >5%', ico: 'bank', acts: [['open', 'Buka Kepemilikan']] };
+    if (!m.realBroker) { o.v = V_('d', U.brokerReady ? 'Belum ada data' : 'Memuat…'); o.lines = []; return o; }
+    var t0 = U.n - 70, L = m.h5.filter(function (e) { return e.t >= t0; }).sort(function (a, b) { return Math.abs(b.cur - b.prev) - Math.abs(a.cur - a.prev); });
+    if (!L.length) { o.v = V_('d', 'Tidak berubah'); o.lines = ['<p class="sx-why">Tidak ada perubahan pemegang saham di atas 5% dalam 3 bulan terakhir.</p>']; return o; }
+    var up = 0, dn = 0; L.forEach(function (e) { if (e.cur > e.prev) up++; else dn++; });
+    o.v = up > dn ? V_('g', 'Menambah') : dn > up ? V_('r', 'Mengurangi') : V_('n', 'Campuran');
+    o.why = up + ' pemegang menambah, ' + dn + ' mengurangi porsi.';
+    o.lines = L.slice(0, 3).map(function (e) {
+      var d = e.cur - e.prev;
+      return '<div class="sx-pick"><b class="' + sc(d) + '">' + (d > 0 ? '+' : '') + nf(d, 2) + ' pp</b><span class="mono">' + nf(e.prev, 2) + '% › ' + nf(e.cur, 2) + '%</span><small>' + esc(e.name) + '</small></div>';
+    });
+    return o;
+  }
+  function secCard(s, code) {
+    return '<section class="sx-sec ' + s.v.c + '"><header><span class="sx-sec-i">' + ic(s.ico) + '</span><h4>' + esc(s.t) + '</h4><span class="sx-pill ' + s.v.c + '">' + esc(s.v.t) + '</span></header>' +
+      (s.why ? '<p class="sx-why">' + esc(s.why) + '</p>' : '') + '<div class="sx-sec-b">' + (s.lines || []).join('') + '</div>' +
+      '<div class="sx-acts">' + s.acts.map(function (a) { return '<button class="sx-lnk" data-sx="' + a[0] + '" data-v="' + esc(a[2] || code) + '">' + ic('ext') + esc(a[1]) + '</button>'; }).join('') + '</div></section>';
+  }
+  function viewStk() {
+    var st = V.stk;
+    return vhead('stk') +
+      '<div class="sx-bar">' + searchBox('sxPQ', st.q, 'Ketik kode atau nama saham, mis. BBCA') + '</div>' +
+      '<div id="sxBody"></div>';
+  }
+  function bodyStk() {
+    var st = V.stk, q = (st.q || '').trim().toUpperCase();
+    if (q) {
+      var hits = U.list.filter(function (m) { return matchQ(m, q); }).sort(function (a, b) { return (a.code.indexOf(q) === 0 ? 0 : 1) - (b.code.indexOf(q) === 0 ? 0 : 1) || a.code.localeCompare(b.code); }).slice(0, 12);
+      if (!hits.length) return empty('Saham "' + esc(q) + '" tidak ditemukan.');
+      return '<div class="sx-sugg">' + hits.map(function (m) {
+        return '<button class="sx-sg" data-sx="pick" data-v="' + esc(m.code) + '"><b>' + esc(m.code) + '</b><small>' + esc(m.name) + '</small></button>';
+      }).join('') + '</div>';
+    }
+    if (!st.code || !U.by[st.code]) {
+      var n = U.n, pop = U.list.slice().sort(function (a, b) { return sum(b.Pval, n - 20, n - 1) - sum(a.Pval, n - 20, n - 1); }).slice(0, 12);
+      return '<div class="sx-hint">' + ic('search') + '<p>Pilih saham untuk melihat ringkasan semua analisis dalam satu halaman.</p></div>' +
+        '<div class="sx-cap" style="margin:6px 2px">Paling aktif diperdagangkan</div><div class="sx-sugg">' + pop.map(function (m) {
+          return '<button class="sx-sg" data-sx="pick" data-v="' + esc(m.code) + '"><b>' + esc(m.code) + '</b><small>' + esc(m.name) + '</small></button>';
+        }).join('') + '</div>';
+    }
+    // muat data pendukung (sekali), lalu gambar ulang
+    if (!_news) loadNews(function () { if (V.view === 'stk') renderBody(); });
+    if (!_scr) loadScr(function () { if (V.view === 'stk') renderBody(); });
+    var code = st.code, m = U.by[code], pxv = lastPx(m, code), prev = m.c[m.n - 2] || pxv, chg = prev ? (pxv / prev - 1) * 100 : 0;
+    var secs = [secSwing, secCons, secInvest, secTrade, secNews, secBroker, secInsider, secHolder].map(function (f) {
+      try { return f(m, code); } catch (e) { console.warn('[screener] stk', f.name, e); return { t: f.name, ico: 'info', v: V_('d', 'Error'), lines: [], acts: [] }; }
+    });
+    var g = secs.filter(function (x) { return x.v.c === 'g'; }).length, r = secs.filter(function (x) { return x.v.c === 'r'; }).length;
+    var head = '<div class="sx-sh"><div class="sx-sh-l"><b class="sx-sh-c">' + esc(code) + '</b><span>' + esc(m.name) + '</span><small>' + esc(m.sector || '') + '</small></div>' +
+      '<div class="sx-sh-r mono"><b>' + px(pxv) + '</b><span class="' + sc(chg) + '">' + fp(chg, 2) + '</span></div>' +
+      '<div class="sx-sh-s"><span class="sx-pill g">' + g + ' positif</span><span class="sx-pill r">' + r + ' waspada</span><span class="sx-pill">' + (secs.length - g - r) + ' netral / minim</span></div></div>';
+    return head + '<div class="sx-secgrid">' + secs.map(function (x) { return secCard(x, code); }).join('') + '</div>' +
+      '<p class="sx-note">Kesimpulan dibuat dari aturan sederhana pada data yang tersedia dan bukan rekomendasi investasi. Cocokkan dengan profil risiko dan tujuan Anda (investasi, swing, atau trading).</p>';
+  }
+
+  var BODY = { stk: bodyStk, cons: bodyCons, news: bodyNews, gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
+  var VIEW = { stk: viewStk, cons: viewCons, news: viewNews, today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign };
   function shell() {
     return '<div class="sx">' +
       '<div class="sx-top">' +
@@ -1575,6 +1754,9 @@
       case 'csort': V.cons.sort = v; renderView(); return;
       case 'cmore': V.cons.limit += 30; renderBody(); return;
       case 'gocons': e.stopPropagation(); goConsensus(v); return;
+      case 'pick': V.stk.code = v; V.stk.q = ''; store('sx_stk', v); renderView(); window.scrollTo(0, 0); return;
+      case 'godash': e.stopPropagation(); if (typeof window.selectStock === 'function') window.selectStock(v); return;
+      case 'goval': e.stopPropagation(); try { window.showPage('valuasi'); if (typeof window.vlSelectStock === 'function') window.vlSelectStock(v); window.scrollTo(0, 0); } catch (err) {} return;
       case 'tscroll': var tb = host.querySelector('#sxTabs'); tb.scrollBy({ left: +v * tb.clientWidth * 0.7, behavior: 'smooth' }); return;
       case 'guide': V.guide[V.view] = V.guide[V.view] === v ? null : v; rerenderKeepScroll(); return;
       case 'open': e.stopPropagation(); if (U && U.by[v]) A.openStock(v); return;
@@ -1638,7 +1820,7 @@
   }
   var _qt = null;
   function onInput(e) {
-    var id = e.target.id, map = { sxGQ: 'gems', sxAQ: 'accum', sxSQ: 'smart', sxBQ: 'bh', sxFQ: 'foreign', sxNQ: 'news', sxCQ: 'cons' };
+    var id = e.target.id, map = { sxGQ: 'gems', sxAQ: 'accum', sxSQ: 'smart', sxBQ: 'bh', sxFQ: 'foreign', sxNQ: 'news', sxCQ: 'cons', sxPQ: 'stk' };
     if (!map[id]) return;
     V[map[id]].q = e.target.value.trim();
     clearTimeout(_qt); _qt = setTimeout(renderBody, 160);
@@ -1662,6 +1844,26 @@
     '.sx-news li small{font-size:11px;color:var(--text3)}',
     '.sx-lnk{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11px;font-weight:700;padding:5px 10px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer}',
     '.sx-lnk:hover{color:var(--accent);border-color:var(--accent)}',
+    '.sx-sh{margin-bottom:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px}',
+    '.sx-sh-l{display:flex;flex-direction:column;min-width:0;flex:1 1 220px}.sx-sh-c{font-size:24px;line-height:1.1;letter-spacing:.02em}.sx-sh-l span{font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sx-sh-l small{font-size:11px;color:var(--text3)}',
+    '.sx-sh-r{display:flex;flex-direction:column;align-items:flex-end}.sx-sh-r b{font-size:22px}.sx-sh-r span{font-size:12px;font-weight:700}',
+    '.sx-sh-s{display:flex;gap:6px;flex-wrap:wrap;flex-basis:100%}',
+    '.sx-secgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}',
+    '.sx-sec{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--border2);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}',
+    '.sx-sec.g{border-top-color:var(--green)}.sx-sec.r{border-top-color:var(--red)}.sx-sec.n{border-top-color:var(--yellow)}',
+    '.sx-sec header{display:flex;align-items:center;gap:8px;min-width:0}.sx-sec h4{margin:0;font-size:13px;font-weight:800;flex:1;min-width:0}',
+    '.sx-sec-i{display:inline-flex;color:var(--text3)}',
+    '.sx-sec-b{display:flex;flex-direction:column;gap:7px;min-width:0}',
+    '.sx-kv{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--text3)}.sx-kv b{color:var(--text);font-size:12.5px}',
+    '.sx-pick{display:grid;grid-template-columns:auto 1fr;column-gap:8px;font-size:12px;align-items:baseline}.sx-pick small{grid-column:1/-1;color:var(--text3);font-size:11px}',
+    '.sx-nl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}.sx-nl li{display:flex;flex-direction:column;gap:1px}.sx-nl a{font-size:12.5px;line-height:1.35;color:var(--text);font-weight:600;text-decoration:none}.sx-nl a:hover{color:var(--accent);text-decoration:underline}.sx-nl small{font-size:11px;color:var(--text3)}',
+    '.sx-bcol{display:flex;flex-direction:column;gap:5px}.sx-bcol small{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}',
+    '.sx-bchip{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}',
+    '.sx-sugg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}',
+    '.sx-sg{display:flex;flex-direction:column;align-items:flex-start;gap:1px;font:inherit;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;min-width:0}.sx-sg:hover{border-color:var(--accent)}.sx-sg b{font-size:14px}.sx-sg small{font-size:11px;color:var(--text3);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.sx-bar .sx-search:only-child{flex:1;max-width:460px}.sx-bar .sx-search:only-child input{width:100%}',
+    '.sx-secgrid+.sx-note{margin-top:12px}',
+    '.sx-hint{display:flex;align-items:center;gap:10px;padding:16px;border-radius:14px;border:1px dashed var(--border2);color:var(--text2);font-size:13px}.sx-hint p{margin:0}',
     '.sx-conslist{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px}',
     '.sx-cons{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--border2);border-radius:14px;padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:9px}',
     '.sx-cons.g{border-left-color:var(--green)}.sx-cons.r{border-left-color:var(--red)}.sx-cons.n{border-left-color:var(--yellow)}',
@@ -2032,7 +2234,7 @@
     A = api; host = container;
     if (!document.getElementById('sxStyle')) { var st = document.createElement('style'); st.id = 'sxStyle'; st.textContent = CSS; document.head.appendChild(st); }
     if (!_bound) {
-      var sv = load('sx_view'); if (sv && VIEW[sv]) V.view = sv;
+      var sv = load('sx_view'); if (sv && VIEW[sv] && VIEWS.some(function (x) { return x.k === sv; })) V.view = sv;
       host.innerHTML = shell();
       host.addEventListener('click', onClick);
       host.addEventListener('change', onChange);
