@@ -1737,6 +1737,23 @@
   function spProgress() {
     var i = host && host.querySelector('.sp-load .sx-pbar i'); if (i) i.style.width = Math.round(spFrac() * 100) + '%';
   }
+  // Zoom peta sinyal (HP): tombol +/- dan cubit dua jari. Pada zoom 100% peta pas layar tanpa geser.
+  var SP_ZS = [1, 1.5, 2, 3];
+  function spSetZoom(z) {
+    var st = V.stk; z = clamp(z, 1, 3); st.zoom = z;
+    var sc = host && host.querySelector('.sp-sc'), map = host && host.querySelector('#spMap'); if (!map || !sc) return;
+    var ow = map.offsetWidth || 1, mid = sc.scrollLeft + sc.clientWidth / 2;
+    map.style.setProperty('--z', z); map.classList.toggle('zc', z < 1.8);
+    var nw = map.offsetWidth || 1; sc.scrollLeft = mid * (nw / ow) - sc.clientWidth / 2;
+    var zv = host.querySelector('#spZv'); if (zv) zv.textContent = Math.round(z * 100) + '%';
+  }
+  function spZoomStep(dir) {
+    var z = V.stk.zoom || 1, i = 0;
+    for (var k = 0; k < SP_ZS.length; k++) if (SP_ZS[k] <= z + 0.01) i = k;
+    spSetZoom(SP_ZS[clamp(i + dir, 0, SP_ZS.length - 1)]);
+  }
+  var _pinch = null;
+  function pinchDist(t) { var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.sqrt(dx * dx + dy * dy) || 1; }
   function stkLanding() {
     var st = V.stk;
     var onDone = function () { if (V.view === 'stk' && !V.stk.code) renderBody(); };
@@ -1768,8 +1785,10 @@
     var ticks = ''; for (var t = -5; t <= 5; t++) if (t % 2 === 0 || Math.abs(t) === 5) ticks += '<span class="sp-tick mono" style="left:' + ((t + 5.5) / 11 * 100) + '%">' + (t > 0 ? '+' : t < 0 ? '−' : '') + Math.abs(t) + '</span>';
     return '<div class="sp">' +
       '<h3 class="sp-rh">Peta sinyal hari ini</h3><p class="sp-sub">Makin ke kanan, makin banyak modul yang positif. Makin ke kiri, makin banyak peringatan.</p>' +
-      '<div class="sp-sc"><div class="sp-map" id="spMap"><div class="sp-zone r"></div><div class="sp-zone g"></div><div class="sp-mid"></div><div class="sp-glow"></div>' +
-        '<span class="sp-zl sx-dn" style="left:14px">Hindari</span><span class="sp-zl sx-mute" style="left:50%;transform:translateX(-50%)">Netral</span><span class="sp-zl sx-up" style="right:14px">Layak dibeli</span><div class="sp-axis"></div>' + ticks + bub + '</div></div>' +
+      '<div class="sp-scw"><div class="sp-sc"><div class="sp-map' + ((st.zoom || 1) < 1.8 ? ' zc' : '') + '" id="spMap" style="--z:' + (st.zoom || 1) + '"><div class="sp-zone r"></div><div class="sp-zone g"></div><div class="sp-mid"></div><div class="sp-glow"></div>' +
+        '<span class="sp-zl sx-dn" style="left:14px">Hindari</span><span class="sp-zl sx-mute" style="left:50%;transform:translateX(-50%)">Netral</span><span class="sp-zl sx-up" style="right:14px">Layak dibeli</span><div class="sp-axis"></div>' + ticks + bub + '</div></div></div>' +
+        '<div class="sp-zrow"><p class="sp-hint">Cubit layar atau pakai tombol + / − untuk memperbesar peta, lalu geser.</p>' +
+          '<div class="sp-zoom" role="group" aria-label="Zoom peta"><button data-sx="spzoom" data-v="out" aria-label="Perkecil">−</button><span class="mono" id="spZv">' + Math.round((st.zoom || 1) * 100) + '%</span><button data-sx="spzoom" data-v="in" aria-label="Perbesar">+</button></div></div>' +
       '<section class="sp-cols"><div><div class="sp-ch" style="--c:var(--green)"><h3>Layak dibeli</h3><span>sinyal terkuat dulu</span></div>' + (B.slice(0, 10).map(function (x, i) { return spRow(x, i, 'g'); }).join('') || '<p class="sp-sub">Belum ada.</p>') + '</div>' +
         '<div><div class="sp-ch" style="--c:var(--red)"><h3>Hindari atau kurangi</h3><span>peringatan terbanyak dulu</span></div>' + (H.slice(0, 10).map(function (x, i) { return spRow(x, i, 'r'); }).join('') || '<p class="sp-sub">Belum ada.</p>') + '</div></section>' +
       '<div class="sp-neu"><span>Netral, belum ada sinyal jelas:</span>' + N.slice(0, 24).map(function (x) { return '<button data-sx="pick" data-v="' + esc(x.m.code) + '">' + esc(x.m.code) + '</button>'; }).join('') + '</div>' +
@@ -2025,6 +2044,7 @@
       case 'gocons': e.stopPropagation(); goConsensus(v); return;
       case 'pick': V.stk.code = v; V.stk.q = ''; store('sx_stk', v); renderView(); window.scrollTo(0, 0); return;
       case 'gotr': e.stopPropagation(); try { window.showPage('tracker'); if (typeof window.__TR_openAnalisis === 'function') window.__TR_openAnalisis(v); window.scrollTo(0, 0); } catch (err) {} return;
+      case 'spzoom': spZoomStep(v === 'in' ? 1 : -1); return;
       case 'spback': V.stk.code = ''; V.stk.q = ''; renderView(); window.scrollTo(0, 0); return;
       case 'spgo': var tg = host.querySelector('#sps-' + v); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); return;
       case 'godash': e.stopPropagation(); if (typeof window.selectStock === 'function') window.selectStock(v); return;
@@ -2157,7 +2177,9 @@
     '.sp-cnt b{display:block;font-size:clamp(28px,4cqw,48px);line-height:1;font-weight:800}',
     '.sp-cnt span{font-size:12px;color:var(--text3)}',
     '.sp-rh{margin:14px 0 0;font-size:17px;font-weight:800}',
-    '.sp-sc{margin-top:12px;overflow-x:auto;scrollbar-width:none;border-radius:20px;border:1px solid var(--border);background:var(--card)}',
+    '.sp-scw{position:relative;margin-top:12px}',
+    '.sp-zrow{display:none}',
+    '.sp-sc{touch-action:pan-x pan-y;overflow-x:auto;scrollbar-width:none;border-radius:20px;border:1px solid var(--border);background:var(--card)}',
     '.sp-map{position:relative;min-width:1000px;height:312px}',
     '.sp-zone{position:absolute;top:0;bottom:34px}',
     '.sp-zone.r{left:0;width:30%;background:linear-gradient(90deg,color-mix(in srgb,var(--red) 18%,transparent),transparent)}',
@@ -2260,7 +2282,7 @@
     '.sp-nl a{font-size:13.5px;line-height:1.35;color:var(--text);font-weight:700;text-decoration:none}.sp-nl a:hover{color:var(--accent);text-decoration:underline}.sp-nl small{font-size:11px;color:var(--text3)}',
     '@container (max-width:900px){.sp-hero{grid-template-columns:1fr}.sp-cols{grid-template-columns:1fr}.sp-mods{grid-template-columns:repeat(2,1fr)}}',
     '@container (max-width:760px){.sp-sec{grid-template-columns:1fr;gap:14px}.sp-bk{grid-template-columns:1fr}.sp-pick{grid-template-columns:1fr 1fr}.sp-pick>div:first-child{grid-column:1/-1}}',
-    '@container (max-width:700px){.sp-map{min-width:1040px}.sp-bub{font-size:13px;gap:6px;padding:4px 12px 4px 4px}.sp-lgw{width:24px;height:24px}}',
+    '@container (max-width:700px){.sp-map{min-width:0;width:calc(var(--z,1) * 100%)}.sp-bub{font-size:13px;gap:6px;padding:4px 12px 4px 4px}.sp-lgw{width:24px;height:24px}.sp-map.zc .sp-bub{flex-direction:column;gap:2px;padding:3px;border-radius:12px;font-size:9px;line-height:1}.sp-map.zc .sp-bub:hover{transform:translate(calc(-50% + var(--dx,0px)),var(--dy,0px)) scale(var(--s,1))}.sp-map.zc .sp-lgw{width:24px;height:24px}.sp-zrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}.sp-zoom{flex:none;display:flex;align-items:center;gap:2px;background:var(--card);border:1px solid var(--border2);border-radius:99px;padding:2px}.sp-zoom button{width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:var(--text);font:inherit;font-size:18px;font-weight:700;cursor:pointer}.sp-zoom button:active{background:var(--border2)}.sp-zoom span{min-width:42px;text-align:center;font-size:11px;color:var(--text3)}.sp-hint{margin:0 2px;font-size:11px;line-height:1.35;color:var(--text3)}}',
     '@container (max-width:520px){.sp-row{grid-template-columns:22px 1fr auto;padding:12px 4px}.sp-row .tk small{display:block;margin:4px 0 0}.sp-dhero{grid-template-columns:1fr}.sp-dpx{text-align:left;display:flex;align-items:baseline;gap:12px}.sp-radar{grid-template-columns:1fr auto}.sp-rsb,.sp-rl{grid-column:1/-1}.sp-hz{grid-template-columns:1fr;gap:20px;padding-left:24px;margin-top:26px}.sp-hz:before{left:6px;right:auto;top:6px;bottom:6px;width:2px;height:auto;background:linear-gradient(var(--green),var(--yellow),var(--green))}.sp-hz>div:before{left:-24px;top:3px}.sp-lanes{margin-left:0}.sp-lb{position:static;height:auto;display:block;margin-bottom:2px;width:auto;font-size:12px}.sp-ln{height:84px}.sp-tr{top:22px}.sp-vs{top:58px}.sp-ax{margin-left:0}.sp-now{top:-24px}}',
     '@media (prefers-reduced-motion:reduce){.sp *{animation:none!important;transition:none!important}}',
     '.sx-hint{display:flex;align-items:center;gap:10px;padding:16px;border-radius:14px;border:1px dashed var(--border2);color:var(--text2);font-size:13px}.sx-hint p{margin:0}',
@@ -2633,6 +2655,9 @@
       var sv = load('sx_view'); if (sv && VIEW[sv] && VIEWS.some(function (x) { return x.k === sv; })) V.view = sv;
       host.innerHTML = shell();
       host.addEventListener('error', function (e) { var t = e.target; if (t && t.classList && t.classList.contains('sp-lg')) t.style.display = 'none'; }, true);
+      host.addEventListener('touchstart', function (e) { if (e.touches.length === 2 && e.target.closest && e.target.closest('.sp-sc')) _pinch = { d: pinchDist(e.touches), z: V.stk.zoom || 1 }; }, { passive: true });
+      host.addEventListener('touchmove', function (e) { if (_pinch && e.touches.length === 2) { e.preventDefault(); spSetZoom(_pinch.z * pinchDist(e.touches) / _pinch.d); } }, { passive: false });
+      host.addEventListener('touchend', function (e) { if (e.touches.length < 2) _pinch = null; });
       host.addEventListener('click', onClick);
       host.addEventListener('change', onChange);
       host.addEventListener('input', onInput);
