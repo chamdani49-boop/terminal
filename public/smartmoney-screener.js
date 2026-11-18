@@ -1752,9 +1752,7 @@
       });
     });
     var ticks = ''; for (var t = -5; t <= 5; t++) if (t % 2 === 0 || Math.abs(t) === 5) ticks += '<span class="sp-tick mono" style="left:' + ((t + 5.5) / 11 * 100) + '%">' + (t > 0 ? '+' : t < 0 ? '−' : '') + Math.abs(t) + '</span>';
-    return '<div class="sp"><section class="sp-hero"><div><h2 class="sp-h1">Hari ini <span class="sx-up">' + B.length + ' saham layak dibeli</span> dan <span class="sx-dn">' + H.length + ' sebaiknya dihindari</span></h2>' +
-        '<p class="sp-sub">Delapan modul analisis digabung jadi satu skor sinyal per saham. Ketuk saham untuk melihat alasan di balik skornya.</p></div>' +
-        '<div class="sp-cnt"><div><b class="sx-up">' + B.length + '</b><span>Layak dibeli</span></div><div><b class="sx-mute">' + N.length + '</b><span>Netral</span></div><div><b class="sx-dn">' + H.length + '</b><span>Hindari</span></div></div></section>' +
+    return '<div class="sp">' +
       '<h3 class="sp-rh">Peta sinyal hari ini</h3><p class="sp-sub">Makin ke kanan, makin banyak modul yang positif. Makin ke kiri, makin banyak peringatan.</p>' +
       '<div class="sp-sc"><div class="sp-map" id="spMap"><div class="sp-zone r"></div><div class="sp-zone g"></div><div class="sp-mid"></div><div class="sp-glow"></div>' +
         '<span class="sp-zl sx-dn" style="left:14px">Hindari</span><span class="sp-zl sx-mute" style="left:50%;transform:translateX(-50%)">Netral</span><span class="sp-zl sx-up" style="right:14px">Layak dibeli</span><div class="sp-axis"></div>' + ticks + bub + '</div></div>' +
@@ -1968,6 +1966,8 @@
   }
   function srcNote() {
     var el = host.querySelector('#sxSrc'); if (!el || !U) return;
+    el.style.display = V.view === 'stk' ? 'none' : '';
+    if (V.view === 'stk') return;
     var nReal = U.list.filter(function (m) { return m.realBroker; }).length;
     el.innerHTML = '<span class="sx-sb ok">' + ic('check') + 'Harga &amp; teknikal asli · ' + nf(U.list.length) + ' saham</span>' +
       '<span class="sx-sb ' + (nReal ? 'ok' : U.brokerReady ? 'dm' : '') + '">' + ic(nReal ? 'check' : 'info') + (nReal ? nReal + ' saham dengan data broker asli <i class="sx-real">●</i>' + (U.brokerReady ? '' : ' · memuat…') : U.brokerReady ? 'Belum ada data broker asli' : 'Memuat data broker…') + '</span>' +
@@ -2154,7 +2154,7 @@
     '.sp-cnt div{padding:14px 16px;border-right:1px solid var(--border)}.sp-cnt div:last-child{border:0}',
     '.sp-cnt b{display:block;font-size:clamp(28px,4cqw,48px);line-height:1;font-weight:800}',
     '.sp-cnt span{font-size:12px;color:var(--text3)}',
-    '.sp-rh{margin:34px 0 0;font-size:17px;font-weight:800}',
+    '.sp-rh{margin:14px 0 0;font-size:17px;font-weight:800}',
     '.sp-sc{margin-top:12px;overflow-x:auto;scrollbar-width:none;border-radius:20px;border:1px solid var(--border);background:var(--card)}',
     '.sp-map{position:relative;min-width:620px;height:236px}',
     '.sp-zone{position:absolute;top:0;bottom:34px}',
