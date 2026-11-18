@@ -1929,7 +1929,7 @@
   function viewStk() {
     var st = V.stk;
     return vhead('stk') +
-      '<div class="sx-bar">' + searchBox('sxPQ', st.q, 'Cari kode atau nama saham, mis. BBCA') + '</div>' +
+      (st.code ? '<div class="sx-bar">' + searchBox('sxPQ', st.q, 'Cari kode atau nama saham, mis. BBCA') + '</div>' : '') +
       '<div id="sxBody"></div>';
   }
   function bodyStk() {
