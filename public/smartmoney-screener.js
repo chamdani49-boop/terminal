@@ -2110,6 +2110,18 @@
     var h = stkLanding(); setTimeout(spLive, 50); setTimeout(function () { var sc1 = host && host.querySelector('.sp-sc'); if (sc1 && sc1.scrollWidth > sc1.clientWidth) sc1.scrollLeft = (sc1.scrollWidth - sc1.clientWidth) / 2; }, 60); return h;
   }
 
+  // Buka Valuasi untuk satu saham dari StockPro. Indeks valuasi dimuat lazy, dan vlSelectStock
+  // diam-diam berhenti kalau indeks belum siap, jadi panggilannya diulang sampai berhasil.
+  function goVal(code) {
+    try { window.showPage('valuasi'); } catch (_) {}
+    try { if (typeof window.vlEnsureCharts === 'function') window.vlEnsureCharts(); } catch (_) {}
+    [0, 300, 900, 1800, 3500].forEach(function (ms) {
+      setTimeout(function () {
+        try { if (typeof window.vlSelectStock === 'function') window.vlSelectStock(code); } catch (_) {}
+      }, ms);
+    });
+    window.scrollTo(0, 0);
+  }
   var BODY = { stk: bodyStk, cons: bodyCons, news: bodyNews, gems: bodyGems, accum: bodyAccum, smart: bodySmart, bh: bodyBH, foreign: bodyForeign };
   var VIEW = { stk: viewStk, cons: viewCons, news: viewNews, today: viewToday, gems: viewGems, accum: viewAccum, smart: viewSmart, bh: viewBH, foreign: viewForeign };
   function shell() {
@@ -2195,7 +2207,7 @@
       case 'spback': V.stk.code = ''; V.stk.q = ''; renderView(); window.scrollTo(0, 0); return;
       case 'spgo': var tg = host.querySelector('#sps-' + v); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); return;
       case 'godash': e.stopPropagation(); if (typeof window.selectStock === 'function') window.selectStock(v); return;
-      case 'goval': e.stopPropagation(); try { window.showPage('valuasi'); if (typeof window.vlSelectStock === 'function') window.vlSelectStock(v); window.scrollTo(0, 0); } catch (err) {} return;
+      case 'goval': e.stopPropagation(); goVal(v); return;
       case 'tscroll': var tb = host.querySelector('#sxTabs'); tb.scrollBy({ left: +v * tb.clientWidth * 0.7, behavior: 'smooth' }); return;
       case 'guide': V.guide[V.view] = V.guide[V.view] === v ? null : v; rerenderKeepScroll(); return;
       case 'open': e.stopPropagation(); if (U && U.by[v]) A.openStock(v); return;
