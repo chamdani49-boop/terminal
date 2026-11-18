@@ -1815,10 +1815,12 @@
       '<div class="sp-kv mono"><div><span>Target rata-rata</span><b>' + px(rw.target) + '</b></div><div><span>Beli</span><b class="sx-up">' + rw.buy + '</b></div><div><span>Netral</span><b>' + rw.neu + '</b></div><div><span>Jual</span><b class="sx-dn">' + rw.sell + '</b></div></div>' +
       '<div class="sp-track"><div class="sp-fill" style="width:' + rw.buyPct + '%"></div></div><p class="sp-cap">' + rw.total + ' analis meliput saham ini. ' + esc(x.why || '') + '</p>';
     if (k === 'trade') return lead + '<div class="sp-kv mono"><div><span>R:R rata-rata</span><b>1 : ' + nf(rw.avgRR, 1) + '</b></div><div><span>R:R terbaik</span><b class="sx-up">1 : ' + nf(rw.best.rr, 1) + '</b></div><div><span>Harga sekarang</span><b>' + px(rw.pxv) + '</b></div></div>' +
-      rw.rows.slice(0, 6).map(function (p) {
-        return '<div class="sp-pick mono"><div><b>' + esc(p.r.firm || '') + '</b><span><i class="' + (p.sg > 0 ? 'sx-up' : 'sx-dn') + '">' + esc(p.r.type) + '</i> · ' + (p.run ? 'berjalan <i class="' + sc(p.now) + '">' + (p.now > 0 ? '+' : '') + nf(p.now, 1) + '%</i>' : (p.toE >= 0 ? 'menunggu naik ' : 'menunggu turun ') + nf(Math.abs(p.toE), 1) + '%') + '</span></div>' +
-          '<div><span>Entry</span><b>' + px(p.e) + '</b></div><div><span>TP1</span><b class="sx-up">' + px(p.t1) + ' (+' + nf(p.gain, 1) + '%)</b></div><div><span>SL</span><b class="sx-dn">' + px(p.sl) + ' (−' + nf(p.risk, 1) + '%)</b></div><div><span>R:R</span><b class="' + (p.rr >= 1.5 ? 'sx-up' : p.rr < 1 ? 'sx-dn' : '') + '">1 : ' + nf(p.rr, 1) + '</b></div></div>';
-      }).join('') + (rw.rows.length > 6 ? '<p class="sp-cap">+' + (rw.rows.length - 6) + ' pick lain ada di halaman Analisis Tracker.</p>' : '');
+      (function () {
+        var rowHtml = function (p) { return '<div class="sp-pick mono"><div><b>' + esc(p.r.firm || '') + '</b><span><i class="' + (p.sg > 0 ? 'sx-up' : 'sx-dn') + '">' + esc(p.r.type) + '</i> · ' + (p.run ? 'berjalan <i class="' + sc(p.now) + '">' + (p.now > 0 ? '+' : '') + nf(p.now, 1) + '%</i>' : (p.toE >= 0 ? 'menunggu naik ' : 'menunggu turun ') + nf(Math.abs(p.toE), 1) + '%') + '</span></div>' +
+          '<div><span>Entry</span><b>' + px(p.e) + '</b></div><div><span>TP1</span><b class="sx-up">' + px(p.t1) + ' (+' + nf(p.gain, 1) + '%)</b></div><div><span>SL</span><b class="sx-dn">' + px(p.sl) + ' (−' + nf(p.risk, 1) + '%)</b></div><div><span>R:R</span><b class="' + (p.rr >= 1.5 ? 'sx-up' : p.rr < 1 ? 'sx-dn' : '') + '">1 : ' + nf(p.rr, 1) + '</b></div></div>'; };
+        var first = rw.rows.slice(0, 3).map(rowHtml).join(''), rest = rw.rows.slice(3).map(rowHtml).join('');
+        return first + (rest ? '<div class="sp-more" hidden>' + rest + '</div><button class="sp-lk sp-morebtn" data-sx="spmore" data-n="' + (rw.rows.length - 3) + '">Tampilkan ' + (rw.rows.length - 3) + ' pick lainnya</button>' : '');
+      })();
     if (k === 'invest') return lead + '<div class="sp-met mono">' + rw.items.map(function (it) { return '<div><span>' + esc(it[0]) + '</span><b class="' + (it[2] || '') + '">' + it[1] + '</b></div>'; }).join('') + '</div>';
     if (k === 'broker') {
       var mx = Math.max.apply(null, rw.top.concat(rw.bot).map(function (z) { return Math.abs(z.net); }).concat([1]));
@@ -2021,6 +2023,7 @@
       case 'gocons': e.stopPropagation(); goConsensus(v); return;
       case 'pick': V.stk.code = v; V.stk.q = ''; store('sx_stk', v); renderView(); window.scrollTo(0, 0); return;
       case 'gotr': e.stopPropagation(); try { window.showPage('tracker'); if (typeof window.__TR_openAnalisis === 'function') window.__TR_openAnalisis(v); window.scrollTo(0, 0); } catch (err) {} return;
+      case 'spmore': var mb = el, ex = mb.previousElementSibling; if (ex && ex.classList.contains('sp-more')) { ex.hidden = !ex.hidden; mb.textContent = ex.hidden ? 'Tampilkan ' + mb.getAttribute('data-n') + ' pick lainnya' : 'Sembunyikan'; } return;
       case 'spback': V.stk.code = ''; V.stk.q = ''; renderView(); window.scrollTo(0, 0); return;
       case 'spgo': var tg = host.querySelector('#sps-' + v); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); return;
       case 'godash': e.stopPropagation(); if (typeof window.selectStock === 'function') window.selectStock(v); return;
