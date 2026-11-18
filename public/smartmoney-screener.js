@@ -1504,6 +1504,22 @@
       .catch(function () { return { stocks: {} }; })
       .then(function (j) { _scr = j && j.stocks ? j : { stocks: {} }; _scrLoading = false; cb(); });
   }
+  // Data Tracker dimuat sendiri oleh Screener (tidak perlu membuka menu Tracker dulu).
+  // Kalau halaman Tracker sudah memuatnya (window.__TR_DATA__), pakai itu.
+  var _trk = null, _trkLoading = false, _trkErr = false;
+  function trkData() {
+    var d = window.__TR_getData && window.__TR_getData();
+    return d && !d.pending ? d : _trk;
+  }
+  function loadTrk(cb) {
+    if (trkData() || _trkLoading) { if (trkData()) cb(); return; }
+    _trkLoading = true; _trkErr = false;
+    fetch('tracker.json?v=' + Math.floor(Date.now() / 300000))
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) { _trk = j && !j.pending ? j : null; _trkErr = !_trk; })
+      .catch(function () { _trkErr = true; })
+      .then(function () { _trkLoading = false; cb(); });
+  }
   function V_(c, t) { return { c: c, t: t }; }          // verdict: c = g|n|r|d
   function lastPx(m, code) {
     var lv = (typeof DATA !== 'undefined' && DATA && DATA.live && DATA.live[code]) || null;
@@ -1553,8 +1569,12 @@
   }
   function secTrade(m, code) {
     var o = { t: 'Trade (stock pick)', ico: 'flow', acts: [['gotr', 'Buka Analisis Tracker']] };
-    var d = window.__TR_getData && window.__TR_getData();
-    if (!d || d.pending) { o.v = V_('d', 'Memuat…'); o.lines = ['<p class="sx-why">Data Tracker belum dimuat. Buka menu Tracker sekali, lalu kembali.</p>']; return o; }
+    var d = trkData();
+    if (!d) {
+      o.v = V_('d', _trkErr ? 'Gagal memuat' : 'Memuat…');
+      o.lines = ['<p class="sx-why">' + (_trkErr ? 'Data Tracker gagal dimuat. Muat ulang halaman untuk mencoba lagi.' : 'Memuat data Tracker…') + '</p>'];
+      return o;
+    }
     var today = iso0(), pxv = lastPx(m, code);
     var open = (d.openList || []).filter(function (r) { return r.ticker === code && r.status === 'OPEN'; });
     var pend = (d.pendingList || []).filter(function (r) { return r.ticker === code && (!r.pendingExpiresAt || r.pendingExpiresAt >= today); });
@@ -1700,6 +1720,7 @@
     // muat data pendukung (sekali), lalu gambar ulang
     if (!_news) loadNews(function () { if (V.view === 'stk') renderBody(); });
     if (!_scr) loadScr(function () { if (V.view === 'stk') renderBody(); });
+    if (!trkData() && !_trkLoading && !_trkErr) loadTrk(function () { if (V.view === 'stk') renderBody(); });
     var code = st.code, m = U.by[code], pxv = lastPx(m, code), prev = m.c[m.n - 2] || pxv, chg = prev ? (pxv / prev - 1) * 100 : 0;
     var secs = [secSwing, secCons, secInvest, secTrade, secNews, secBroker, secInsider, secHolder].map(function (f) {
       try { return f(m, code); } catch (e) { console.warn('[screener] stk', f.name, e); return { t: f.name, ico: 'info', v: V_('d', 'Error'), lines: [], acts: [] }; }
