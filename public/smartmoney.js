@@ -1070,14 +1070,13 @@
   function fetchJsonNet(url) {
     return fetch(url, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : null; });
   }
-  function cachedJson(url, ttl) {
-    var lim = ttl || SMM_TTL;
+  function cachedJson(url) {
     var parse = function (t) { try { return t ? JSON.parse(t) : null; } catch (_) { return null; } };
     if (!window.caches || !caches.open) return fetchJsonNet(url).then(parse).catch(function () { return null; });
     return caches.open(SMM_CC).then(function (c) {
       return c.match(url).then(function (hit) {
         var t = hit ? +hit.headers.get('x-es-t') : 0;
-        if (hit && t && Date.now() - t < lim) return hit.text().then(parse);
+        if (hit && t && Date.now() - t < SMM_TTL) return hit.text().then(parse);
         return fetchJsonNet(url).then(function (body) {
           if (body == null) return hit ? hit.text().then(parse) : null;
           try { c.put(url, new Response(body, { headers: { 'Content-Type': 'application/json', 'x-es-t': String(Date.now()) } })); } catch (_) {}
@@ -2416,15 +2415,14 @@
 
   // ═══════════════════ Popup broker: beli & jual di semua saham ═══════════════════
   var _bkIdx = {};   // broker → data indeks (Promise | objek | false)
-  // Data broker disegarkan tiap 1 jam pada 18:00-06:00 WIB (saat unggahan PC biasanya selesai), di luar jam itu tetap 3 jam.
-  function brokerCacheTtl() {
-    var h = new Date(Date.now() + 7 * 3600 * 1000).getUTCHours();
-    return (h >= 18 || h < 6) ? 60 * 60 * 1000 : SMM_TTL;
-  }
   function loadBrokerIdx(code) {
     if (_bkIdx[code] !== undefined) return Promise.resolve(_bkIdx[code]);
-    return (_bkIdx[code] = cachedJson('/api/admin/smartmoney/broker?b=' + encodeURIComponent(code), brokerCacheTtl())
-      .then(function (j) { _bkIdx[code] = j && j.s && Array.isArray(j.days) ? j : false; return _bkIdx[code]; })
+    // Data broker selalu dari server (tanpa Cache Storage browser), supaya semua perangkat menampilkan data yang sama.
+    return (_bkIdx[code] = fetchJsonNet('/api/admin/smartmoney/broker?b=' + encodeURIComponent(code))
+      .then(function (t) {
+        var j = null; try { j = t ? JSON.parse(t) : null; } catch (_) { j = null; }
+        _bkIdx[code] = j && j.s && Array.isArray(j.days) ? j : false; return _bkIdx[code];
+      })
       .catch(function () { _bkIdx[code] = false; return false; }));
   }
   function loadedCodes() { return Object.keys(_real).filter(function (c) { return _real[c] && !_real[c].then; }); }
