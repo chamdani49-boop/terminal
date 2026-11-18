@@ -1816,10 +1816,10 @@
       '<div class="sp-track"><div class="sp-fill" style="width:' + rw.buyPct + '%"></div></div><p class="sp-cap">' + rw.total + ' analis meliput saham ini. ' + esc(x.why || '') + '</p>';
     if (k === 'trade') return lead + '<div class="sp-kv mono"><div><span>R:R rata-rata</span><b>1 : ' + nf(rw.avgRR, 1) + '</b></div><div><span>R:R terbaik</span><b class="sx-up">1 : ' + nf(rw.best.rr, 1) + '</b></div><div><span>Harga sekarang</span><b>' + px(rw.pxv) + '</b></div></div>' +
       (function () {
-        var rowHtml = function (p) { return '<div class="sp-pick mono"><div><b>' + esc(p.r.firm || '') + '</b><span><i class="' + (p.sg > 0 ? 'sx-up' : 'sx-dn') + '">' + esc(p.r.type) + '</i> · ' + (p.run ? 'berjalan <i class="' + sc(p.now) + '">' + (p.now > 0 ? '+' : '') + nf(p.now, 1) + '%</i>' : (p.toE >= 0 ? 'menunggu naik ' : 'menunggu turun ') + nf(Math.abs(p.toE), 1) + '%') + '</span></div>' +
+        var rowHtml = function (p) { return '<div class="sp-pick mono" data-sx="gotr" data-v="' + esc(p.r.ticker) + '" title="Buka di Analisis Tracker"><div><b>' + esc(p.r.firm || '') + '</b><span><i class="' + (p.sg > 0 ? 'sx-up' : 'sx-dn') + '">' + esc(p.r.type) + '</i> · ' + (p.run ? 'berjalan <i class="' + sc(p.now) + '">' + (p.now > 0 ? '+' : '') + nf(p.now, 1) + '%</i>' : (p.toE >= 0 ? 'menunggu naik ' : 'menunggu turun ') + nf(Math.abs(p.toE), 1) + '%') + '</span></div>' +
           '<div><span>Entry</span><b>' + px(p.e) + '</b></div><div><span>TP1</span><b class="sx-up">' + px(p.t1) + ' (+' + nf(p.gain, 1) + '%)</b></div><div><span>SL</span><b class="sx-dn">' + px(p.sl) + ' (−' + nf(p.risk, 1) + '%)</b></div><div><span>R:R</span><b class="' + (p.rr >= 1.5 ? 'sx-up' : p.rr < 1 ? 'sx-dn' : '') + '">1 : ' + nf(p.rr, 1) + '</b></div></div>'; };
-        var first = rw.rows.slice(0, 3).map(rowHtml).join(''), rest = rw.rows.slice(3).map(rowHtml).join('');
-        return first + (rest ? '<div class="sp-more" hidden>' + rest + '</div><button class="sp-lk sp-morebtn" data-sx="spmore" data-n="' + (rw.rows.length - 3) + '">Tampilkan ' + (rw.rows.length - 3) + ' pick lainnya</button>' : '');
+        var first = rw.rows.slice(0, 3).map(rowHtml).join(''), more = rw.rows.length - 3;
+        return first + (more > 0 ? '<button class="sp-lk sp-morebtn" data-sx="gotr" data-v="' + esc(rw.rows[0].r.ticker) + '">Lihat ' + more + ' pick lainnya di Analisis Tracker ›</button>' : '');
       })();
     if (k === 'invest') return lead + '<div class="sp-met mono">' + rw.items.map(function (it) { return '<div><span>' + esc(it[0]) + '</span><b class="' + (it[2] || '') + '">' + it[1] + '</b></div>'; }).join('') + '</div>';
     if (k === 'broker') {
@@ -2023,7 +2023,6 @@
       case 'gocons': e.stopPropagation(); goConsensus(v); return;
       case 'pick': V.stk.code = v; V.stk.q = ''; store('sx_stk', v); renderView(); window.scrollTo(0, 0); return;
       case 'gotr': e.stopPropagation(); try { window.showPage('tracker'); if (typeof window.__TR_openAnalisis === 'function') window.__TR_openAnalisis(v); window.scrollTo(0, 0); } catch (err) {} return;
-      case 'spmore': var mb = el, ex = mb.previousElementSibling; if (ex && ex.classList.contains('sp-more')) { ex.hidden = !ex.hidden; mb.textContent = ex.hidden ? 'Tampilkan ' + mb.getAttribute('data-n') + ' pick lainnya' : 'Sembunyikan'; } return;
       case 'spback': V.stk.code = ''; V.stk.q = ''; renderView(); window.scrollTo(0, 0); return;
       case 'spgo': var tg = host.querySelector('#sps-' + v); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); return;
       case 'godash': e.stopPropagation(); if (typeof window.selectStock === 'function') window.selectStock(v); return;
@@ -2240,7 +2239,7 @@
     '.sp-track{position:relative;height:10px;border-radius:6px;background:var(--border);max-width:460px;margin-top:14px;overflow:hidden}',
     '.sp-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--green));transform-origin:left;animation:sp-grow 1.1s .3s both}',
     '.sp-pick{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--border);font-size:13px}',
-    '.sp-pick span{display:block;font-size:11px;color:var(--text3)}.sp-pick b{font-size:14px;font-weight:800}.sp-pick i{font-style:normal;font-weight:700}',
+    '.sp-pick{cursor:pointer}.sp-pick:hover{background:var(--card)}.sp-pick span{display:block;font-size:11px;color:var(--text3)}.sp-pick b{font-size:14px;font-weight:800}.sp-pick i{font-style:normal;font-weight:700}',
     '.sp-met{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}',
     '.sp-met span{display:block;font-size:12px;color:var(--text3)}.sp-met b{font-size:clamp(20px,3cqw,28px);line-height:1.1;font-weight:800}',
     '.sp-bk{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-top:10px}',
