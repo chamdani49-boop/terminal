@@ -1062,28 +1062,14 @@
   }
   function getData(code) { return _real[code] && !_real[code].then ? _real[code] : emptyData(code); }
 
-  // Respons API Smart Money disimpan di Cache Storage browser selama 3 jam (mirip screening di
-  // Pasar Live: dimuat sekali lalu dipakai ulang). Server mengirim no-store, jadi cache HTTP biasa
-  // tidak bekerja; ini lapisan cache sendiri. Gagal / kedaluwarsa → ambil dari server,
-  // dan bila server gagal, data lama tetap dipakai.
-  var SMM_CC = 'es-smm-v1', SMM_TTL = 3 * 60 * 60 * 1000;
+  // Semua data Smart Money diambil langsung dari server, tanpa Cache Storage browser, supaya semua perangkat
+  // dan semua user melihat data yang sama. Server mengirim no-store. Gagal → null.
   function fetchJsonNet(url) {
     return fetch(url, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : null; });
   }
   function cachedJson(url) {
     var parse = function (t) { try { return t ? JSON.parse(t) : null; } catch (_) { return null; } };
-    if (!window.caches || !caches.open) return fetchJsonNet(url).then(parse).catch(function () { return null; });
-    return caches.open(SMM_CC).then(function (c) {
-      return c.match(url).then(function (hit) {
-        var t = hit ? +hit.headers.get('x-es-t') : 0;
-        if (hit && t && Date.now() - t < SMM_TTL) return hit.text().then(parse);
-        return fetchJsonNet(url).then(function (body) {
-          if (body == null) return hit ? hit.text().then(parse) : null;
-          try { c.put(url, new Response(body, { headers: { 'Content-Type': 'application/json', 'x-es-t': String(Date.now()) } })); } catch (_) {}
-          return parse(body);
-        }).catch(function () { return hit ? hit.text().then(parse) : null; });
-      });
-    }).catch(function () { return fetchJsonNet(url).then(parse).catch(function () { return null; }); });
+    return fetchJsonNet(url).then(parse).catch(function () { return null; });
   }
   function loadOhlc() {
     if (_ohlcAll) return _ohlcAll;
