@@ -557,8 +557,12 @@
     if (!host) return;
     var el = host.querySelector('#sxView');
     if (!el) return;
-    el.innerHTML = '<div class="sx-load"><div class="sx-spin"></div><b>' + esc(txt) + '</b><div class="sx-pbar"><i style="width:' + Math.round(f * 100) + '%"></i></div>' +
-      '<small>Sekali saja per sesi. Harga diambil dari ohlc.json.</small></div>';
+    if (V.view !== 'stk') {
+      el.innerHTML = '<div class="sx-load"><div class="sx-spin"></div><b>' + esc(txt) + '</b><div class="sx-pbar"><i style="width:' + Math.round(f * 100) + '%"></i></div></div>';
+      return;
+    }
+    setStat(txt);
+    if (!el.querySelector('#spWeb')) { el.innerHTML = '<div class="sp-webhost"><div class="sp-web" id="spWeb"></div></div>'; setTimeout(spWebStart, 0); }
   }
 
   // ─────────────────────────── Panduan (cara pakai & manfaat) ───────────────────────────
@@ -1720,11 +1724,66 @@
     });
     return Object.keys(map).length ? { t: j.t, brk: !!j.brk, map: map } : null;
   }
-  var _stkRaf = 0;
-  // Render ulang peta sinyal saat saham baru selesai dihitung (dibatasi 1x per frame).
-  function stkProgress() {
-    if (V.view !== 'stk' || V.stk.code || !host || host.hidden || _stkRaf) return;
-    _stkRaf = requestAnimationFrame(function () { _stkRaf = 0; renderBody(); });
+  var _webT = [], _webStat = '';
+  var WEB_MODS = ['Teknikal', 'Fundamental', 'Arus dana', 'Berita', 'Valuasi', 'Broksum', 'Insider', 'Kepemilikan'];
+  function setStat(t) { _webStat = t; var el = host && host.querySelector('#spStat'); if (el) el.textContent = t; }
+  // Teks progres saat hitung sinyal. Hanya mengubah teks, tidak merender ulang peta (animasi tetap jalan).
+  function stkProgress(i) { if (U) setStat('Mengumpulkan data · ' + nf(i) + ' / ' + nf(U.list.length) + ' saham'); }
+  function spWebStop() { _webT.forEach(clearTimeout); _webT = []; }
+  // Animasi "benang" dari referensi: garis tumbuh dari pusat ke tiap saham, nama modul berjalan di sepanjang garis.
+  function spWebStart() {
+    spWebStop();
+    var box = host && host.querySelector('#spWeb'); if (!box) return;
+    var NSV = 'http://www.w3.org/2000/svg';
+    var W = box.clientWidth || 800, H = box.clientHeight || 260;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function mk(tag, a) { var e = document.createElementNS(NSV, tag); for (var k in a) e.setAttribute(k, a[k]); return e; }
+    var svg = mk('svg', { class: 'sp-web-svg', viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'xMidYMid meet' });
+    var hx = W / 2, hy = 22, N = 28, th = [];
+    for (var i = 0; i < N; i++) {
+      var tx = W * (0.05 + ((i * 37) % 100) / 100 * 0.9), ty = H * (0.22 + ((i * 53) % 100) / 100 * 0.6);
+      var b = (i % 2 ? 1 : -1) * (40 + (i % 3) * 40);
+      var c1 = [hx + b, hy + (ty - hy) * 0.6], c2 = [tx - (tx - hx) * 0.3 + b * 0.4, ty];
+      var d = 'M' + hx + ',' + hy + ' C' + c1.join(',') + ' ' + c2.join(',') + ' ' + tx + ',' + ty;
+      var dr = 'M' + tx + ',' + ty + ' C' + c2.join(',') + ' ' + c1.join(',') + ' ' + hx + ',' + hy;
+      var base = mk('path', { d: d, class: 'th', pathLength: 1, 'stroke-dasharray': '1 1' });
+      var pulse = mk('path', { d: dr, class: 'pl', pathLength: 1, 'stroke-dasharray': '0.05 2' });
+      var node = mk('circle', { cx: tx, cy: ty, r: 3.5, class: 'nd' });
+      var tp = mk('path', { id: 'spTp' + i, d: tx < hx ? dr : d, fill: 'none', stroke: 'none' });
+      var txt = mk('text', { class: 'tx', dy: -4 }), tpath = mk('textPath', { startOffset: '3%' });
+      tpath.setAttribute('href', '#spTp' + i);
+      WEB_MODS.forEach(function (m, j) {
+        if (j) { var sp = mk('tspan', { class: 'spc' }); sp.textContent = '\u00A0·\u00A0'; tpath.appendChild(sp); }
+        var w = mk('tspan', { 'data-m': j }); w.textContent = m; tpath.appendChild(w);
+      });
+      txt.appendChild(tpath);
+      svg.appendChild(tp); svg.appendChild(base); svg.appendChild(pulse); svg.appendChild(txt); svg.appendChild(node);
+      th.push({ base: base, pulse: pulse, node: node, txt: txt });
+    }
+    svg.appendChild(mk('circle', { cx: hx, cy: hy, r: 4.5, class: 'hub' }));
+    box.appendChild(svg);
+    var stat = document.createElement('div'); stat.className = 'sp-stat'; stat.id = 'spStat'; stat.textContent = _webStat; box.appendChild(stat);
+    function later(ms, f) { _webT.push(setTimeout(function () { if (!box.isConnected) { spWebStop(); return; } f(); }, ms)); }
+    if (reduce) { th.forEach(function (t) { t.base.style.strokeDashoffset = 0; t.node.style.opacity = .45; t.txt.style.opacity = 1; }); return; }
+    th.forEach(function (t, k) {
+      var dl = k * 24;
+      if (t.base.animate) t.base.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 900, delay: dl, easing: 'ease-out', fill: 'forwards' });
+      else t.base.style.strokeDashoffset = 0;
+      later(dl + 800, function () { t.node.style.opacity = .45; t.txt.style.opacity = 1; });
+    });
+    function pulses() {
+      th.forEach(function (t) {
+        if (t.pulse.animate) t.pulse.animate([{ strokeDashoffset: .07, opacity: 0 }, { opacity: .9, offset: .2 }, { opacity: .9, offset: .8 }, { strokeDashoffset: -1, opacity: 0 }], { duration: 800, delay: Math.random() * 250, easing: 'ease-in-out' });
+      });
+      later(2400, pulses);
+    }
+    var mi = 0;
+    function cycle() {
+      th.forEach(function (t) { t.txt.querySelectorAll('tspan[data-m]').forEach(function (e) { e.classList.toggle('on', +e.getAttribute('data-m') === mi); }); });
+      mi = (mi + 1) % WEB_MODS.length;
+      later(900, cycle);
+    }
+    later(400, pulses); cycle();
   }
   function sigCompute(cb) {
     var st = V.stk;
@@ -1735,10 +1794,10 @@
     st.sigPartial = map;
     (function step() {
       var end = Math.min(list.length, i + 60);
-      st.sigProg = i / list.length; stkProgress();
+      st.sigProg = i / list.length; stkProgress(i);
       for (; i < end; i++) { var sc0 = scoreOf(list[i]); sc0.liq = sum(list[i].Pval, n - 20, n - 1); map[list[i].code] = sc0; }
       if (i < list.length) { setTimeout(step, 0); return; }
-      st.sigProg = i / list.length; stkProgress();
+      st.sigProg = i / list.length; stkProgress(i);
       st.sigBusy = false;
       if (ver !== _sigVer) { sigCompute(cb); return; }
       st.sig = { ver: ver, map: map, t: Date.now(), brk: !!U.brokerReady }; st.sigPartial = null; sigCacheWrite(map);
@@ -1760,18 +1819,6 @@
       '<div class="pxv mono">' + px(lastPx(m, m.code)) + '<small class="' + sc(ch) + '">' + fp(ch, 2) + '</small></div>' +
       '<div class="tz">' + reasons(x, c) + '<span class="go">Lihat analisis ›</span></div></button>';
   }
-  // Satu loader untuk seluruh tahap (berita, valuasi, Tracker, hitung sinyal). Teks tetap, hanya batang yang maju.
-  function spFrac() {
-    var st = V.stk, f = (_news ? 0.15 : 0) + (_scr ? 0.15 : 0) + ((trkData() || _trkErr) ? 0.15 : 0);
-    return f + (sigReady() ? 0.55 * (st.sigProg || 0) : 0);
-  }
-  function spLoader() {
-    return '<div class="sx-load sp-load"><div class="sx-spin"></div><b>Menyiapkan radar sinyal…</b><div class="sx-pbar"><i style="width:' + Math.round(spFrac() * 100) + '%"></i></div>' +
-      '<small>Menggabungkan 8 modul analisis untuk ' + nf(U.list.length) + ' saham.</small></div>';
-  }
-  function spProgress() {
-    var i = host && host.querySelector('.sp-load .sx-pbar i'); if (i) i.style.width = Math.round(spFrac() * 100) + '%';
-  }
   // Zoom peta sinyal (HP): tombol +/- dan cubit dua jari. Pada zoom 100% peta pas layar tanpa geser.
   var SP_ZS = [1, 1.5, 2, 3];
   function spSetZoom(z) {
@@ -1791,7 +1838,16 @@
   function pinchDist(t) { var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.sqrt(dx * dx + dy * dy) || 1; }
   function stkLanding() {
     var st = V.stk;
-    var onDone = function () { if (V.view === 'stk' && !V.stk.code) renderBody(); };
+    var onDone = function () {
+      if (V.view !== 'stk' || V.stk.code) return;
+      // Masih mengumpulkan data & animasi benang sedang jalan: cukup ubah teks, jangan bangun ulang (animasi tidak restart).
+      if (!sigFresh() && host && host.querySelector('#spWeb svg')) {
+        setStat(!sigReady() ? 'Memuat berita, valuasi, dan data Tracker…' : 'Mengumpulkan data · 0 / ' + nf(U.list.length) + ' saham');
+        if (sigReady() && !V.stk.sigBusy) sigCompute(onDone);
+        return;
+      }
+      renderBody();
+    };
     if (!_news) loadNews(onDone);
     if (!_scr) loadScr(onDone);
     if (!trkData() && !_trkLoading && !_trkErr) loadTrk(onDone);
@@ -1826,12 +1882,13 @@
       k = +k;
       bucket[k].forEach(function (x, j) {
         var isNew = !shown[x.m.code]; shown[x.m.code] = 1;
-        bub += '<button class="sp-bub' + (isNew ? ' sp-pop' : '') + '" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="' + (isNew ? 'animation-delay:' + (Math.min(pop++, 14) * 45) + 'ms;' : '') + 'left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
+        bub += '<button class="sp-bub' + (isNew ? ' sp-pop' : '') + '" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="' + (isNew ? 'animation-delay:' + (Math.min(pop++, 28) * 70) + 'ms;' : '') + 'left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
       });
     });
     var ticks = ''; for (var t = -5; t <= 5; t++) if (t % 2 === 0 || Math.abs(t) === 5) ticks += '<span class="sp-tick mono" style="left:' + ((t + 5.5) / 11 * 100) + '%">' + (t > 0 ? '+' : t < 0 ? '−' : '') + Math.abs(t) + '</span>';
-    var coll = computing ? '<div class="sp-collect"><div><i></i><i></i><i></i></div><b>' + (sigReady() ? 'Mengumpulkan data ' + nf(Object.keys(map0).length) + ' / ' + nf(U.list.length) + ' saham' : 'Memuat berita, valuasi, dan data Tracker…') + '</b></div>' : '';
-    var skel = function () { return computing ? '<div class="sp-sk"></div><div class="sp-sk"></div><div class="sp-sk"></div>' : '<p class="sp-sub">Belum ada.</p>'; };
+    var coll = computing ? '<div class="sp-web" id="spWeb"></div>' : '';
+    if (computing) { setStat(!sigReady() ? 'Memuat berita, valuasi, dan data Tracker…' : 'Mengumpulkan data · ' + nf(Object.keys(map0).length) + ' / ' + nf(U.list.length) + ' saham'); setTimeout(spWebStart, 0); }
+    var skel = function () { return computing ? '' : '<p class="sp-sub">Belum ada.</p>'; };
     return '<div class="sp">' +
       '<h3 class="sp-rh">Peta sinyal hari ini</h3><p class="sp-sub">Makin ke kanan, makin banyak modul yang positif. Makin ke kiri, makin banyak peringatan.</p>' +
       '<div class="sp-scw"><div class="sp-sc"><div class="sp-map' + ((st.zoom || 1) < 1.8 ? ' zc' : '') + '" id="spMap" style="--z:' + (st.zoom || 1) + '"><div class="sp-zone r"></div><div class="sp-zone g"></div><div class="sp-mid"></div><div class="sp-glow"></div>' +
@@ -2591,16 +2648,20 @@
     '.sx-ks .sx-ic{width:11px;height:11px;margin-right:2px;vertical-align:-1px}',
     '.sx-ks{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px}',
     '.sx-ks.ok{color:var(--green);background:var(--green-bg)}.sx-ks.no{color:var(--yellow);background:var(--yellow-bg)}.sx-ks.n{color:var(--text3);background:var(--bg2)}',
-    /* peta sinyal: animasi mengumpulkan data */
-    '.sp-collect{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--text2);font-size:12.5px;font-weight:700;pointer-events:none;white-space:nowrap}',
-    '.sp-collect>div{display:flex;gap:6px}.sp-collect i{display:block;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:spDot 1.2s ease-in-out infinite}',
-    '.sp-collect i:nth-child(2){animation-delay:.15s}.sp-collect i:nth-child(3){animation-delay:.3s}',
-    '@keyframes spDot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}',
     '.sp-bub.sp-pop{animation:spFade .4s ease-out both}',
     '@keyframes spFade{from{opacity:0}to{opacity:1}}',
-    '.sp-sk{height:34px;margin-bottom:8px;border-radius:12px;background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);background-size:200% 100%;animation:spShim 1.4s linear infinite}',
-    '@keyframes spShim{from{background-position:200% 0}to{background-position:-200% 0}}',
-    '@media (prefers-reduced-motion:reduce){.sp-collect i,.sp-sk,.sp-bub.sp-pop{animation:none}}',
+    /* loading: animasi benang (referensi peta sinyal) */
+    '.sp-webhost{position:relative;height:300px;margin-top:12px;border-radius:20px;border:1px solid var(--border);background:var(--card);overflow:hidden}',
+    '.sp-web{position:absolute;inset:0;pointer-events:none;overflow:hidden}',
+    '.sp-web-svg{position:absolute;inset:0;width:100%;height:100%;font-family:Inter,system-ui,sans-serif}',
+    '.sp-web .th{fill:none;stroke:#a99bff;stroke-width:1.4;stroke-linecap:round;opacity:.2}',
+    '.sp-web .pl{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;opacity:0}',
+    '.sp-web .nd{fill:#cbbcff;opacity:0;transition:opacity .8s ease}',
+    '.sp-web .hub{fill:#e4dbff}',
+    '.sp-web .tx{font-size:11px;font-weight:600;fill:#9d90e0;opacity:0;transition:opacity .9s ease;letter-spacing:.02em}',
+    '.sp-web .tx tspan.spc{fill:#6f68b8}.sp-web .tx tspan.on{fill:#fff}',
+    '.sp-stat{position:absolute;left:0;right:0;bottom:14px;text-align:center;color:var(--text2);font-size:12.5px;font-weight:700;pointer-events:none}',
+    '@media (prefers-reduced-motion:reduce){.sp-web .nd,.sp-web .tx{transition:none}.sp-web .pl{display:none}.sp-bub.sp-pop{animation:none}}',
     /* radar top 20 (tabel peringkat harian) */
     '.sx-rdk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}',
     '.sx-rdk>div{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;box-shadow:var(--shadow-card)}',
