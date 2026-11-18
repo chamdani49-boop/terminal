@@ -287,7 +287,7 @@
           try { applySummary(m, j.stocks[code], j); cnt++; } catch (e) { console.warn('[screener] summary', code, e); }
         });
         U.summaryAt = j.updated || null;
-        if (cnt) { U.bt = null; if (V.view === 'stk') { sigBump(); if (!V.stk.code) renderBody(); } else if (host && !host.hidden) renderView(); }
+        if (cnt) { U.bt = null; if (V.view === 'stk') { if (!(V.stk.sig && V.stk.sig.brk)) sigBump(); if (!V.stk.code) renderBody(); } else if (host && !host.hidden) renderView(); }
         return cnt;
       })
       .catch(function () { return 0; });
@@ -529,7 +529,7 @@
   var _realDone = 0;
   // Pemuatan data broker (ringkasan + per saham) selesai. Sebelum ini, "belum ada data broker" TIDAK boleh
   // ditampilkan karena datanya masih dalam perjalanan.
-  function brokerDone() { if (!U || U.brokerReady) return; U.brokerReady = true; sigBump(); if (host && !host.hidden) { if (V.view === 'stk') renderBody(); } }
+  function brokerDone() { if (!U || U.brokerReady) return; U.brokerReady = true; if (!(V.stk.sig && V.stk.sig.brk)) sigBump(); if (host && !host.hidden) { if (V.view === 'stk') renderBody(); } }
   function loadRealAll() {
     var tries = 0;
     (function waitIdx() {
@@ -1692,6 +1692,34 @@
     return { m: m, by: by, g: g, r: r, known: known, score: g - r };
   }
   function sigReady() { return !!(_news && _scr && (trkData() || _trkErr)); }
+  // Cache hasil hitung sinyal (localStorage). Disegarkan tiap 3 jam; harga tetap live dari ohlc.json.
+  // Naikkan nomor di SIG_KEY bila logika scoreOf / SEC_FN berubah, supaya cache lama dibuang.
+  var SIG_KEY = 'es_sm_sig_v1', SIG_TTL = 3 * 60 * 60 * 1000;
+  function sigFresh() { var s0 = V.stk.sig; return s0 && s0.ver === _sigVer && Date.now() - (s0.t || 0) < SIG_TTL ? s0 : null; }
+  function sigCacheWrite(map) {
+    try {
+      var out = {};
+      Object.keys(map).forEach(function (c) {
+        var x = map[c], by = {};
+        SEC_KEYS.forEach(function (k) { by[k] = [x.by[k].v.c, x.by[k].v.t]; });
+        out[c] = [x.g, x.r, x.known, x.score, x.liq, by];
+      });
+      localStorage.setItem(SIG_KEY, JSON.stringify({ t: Date.now(), brk: !!U.brokerReady, map: out }));
+    } catch (_) { try { localStorage.removeItem(SIG_KEY); } catch (__) {} }
+  }
+  function sigFromCache() {
+    var j = null;
+    try { j = JSON.parse(localStorage.getItem(SIG_KEY) || 'null'); } catch (_) { j = null; }
+    if (!j || !j.map || !j.t || !U) return null;
+    var map = {};
+    Object.keys(j.map).forEach(function (c) {
+      var m = U.by[c], a = j.map[c]; if (!m || !a) return;
+      var by = {};
+      SEC_KEYS.forEach(function (k) { var p = a[5][k] || ['d', '']; by[k] = { k: k, v: { c: p[0], t: p[1] } }; });
+      map[c] = { m: m, by: by, g: a[0], r: a[1], known: a[2], score: a[3], liq: a[4] };
+    });
+    return Object.keys(map).length ? { t: j.t, brk: !!j.brk, map: map } : null;
+  }
   var _stkRaf = 0;
   // Render ulang peta sinyal saat saham baru selesai dihitung (dibatasi 1x per frame).
   function stkProgress() {
@@ -1700,7 +1728,7 @@
   }
   function sigCompute(cb) {
     var st = V.stk;
-    if (st.sig && st.sig.ver === _sigVer) { cb(); return; }
+    if (sigFresh()) { cb(); return; }
     if (st.sigBusy) return;
     st.sigBusy = true;
     var ver = _sigVer, list = U.list.slice(), i = 0, map = {}, n = U.n;
@@ -1713,7 +1741,7 @@
       st.sigProg = i / list.length; stkProgress();
       st.sigBusy = false;
       if (ver !== _sigVer) { sigCompute(cb); return; }
-      st.sig = { ver: ver, map: map }; st.sigPartial = null;
+      st.sig = { ver: ver, map: map, t: Date.now(), brk: !!U.brokerReady }; st.sigPartial = null; sigCacheWrite(map);
       cb();
     })();
   }
@@ -1764,14 +1792,23 @@
   function stkLanding() {
     var st = V.stk;
     var onDone = function () { if (V.view === 'stk' && !V.stk.code) renderBody(); };
-    if (!_news) loadNews(function () { sigBump(); onDone(); });
-    if (!_scr) loadScr(function () { sigBump(); onDone(); });
-    if (!trkData() && !_trkLoading && !_trkErr) loadTrk(function () { sigBump(); onDone(); });
-    var fresh = st.sig && st.sig.ver === _sigVer ? st.sig : null;
+    if (!_news) loadNews(onDone);
+    if (!_scr) loadScr(onDone);
+    if (!trkData() && !_trkLoading && !_trkErr) loadTrk(onDone);
+    var fresh = sigFresh();
+    if (!fresh && !st.sigBusy && sigReady() && !st.sigCacheChecked) {
+      st.sigCacheChecked = true;
+      var cc = sigFromCache();
+      if (cc) {
+        st.sigStale = { ver: 'cache', map: cc.map, t: cc.t };
+        if (Date.now() - cc.t < SIG_TTL && (cc.brk || !U.brokerReady)) { st.sig = { ver: _sigVer, map: cc.map, t: cc.t, brk: cc.brk }; fresh = st.sig; }
+      }
+    }
+    if (st.sig && !fresh) { st.sigStale = st.sig; st.sig = null; }   // sudah lewat 3 jam / data berubah: tampilkan dulu, hitung ulang di belakang
     if (sigReady() && !fresh) sigCompute(onDone);
     // Hasil lama / hasil parsial tetap tampil selagi dihitung ulang. Tanpa data sama sekali → peta kosong + animasi.
     var cur = fresh || st.sigStale || (st.sigPartial ? { map: st.sigPartial } : null) || { map: {} };
-    var computing = !fresh;
+    var computing = !fresh && !st.sigStale;
     var map0 = cur.map;
     var all = Object.keys(map0).map(function (c) { return map0[c]; }).filter(function (x) { return x.known >= 3; });
     var B = all.filter(function (x) { return x.score >= 2; }).sort(function (a, b) { return b.score - a.score || b.liq - a.liq; });
@@ -1877,9 +1914,9 @@
   }
   function stkDetail(code) {
     var m = U.by[code], by, pxv = lastPx(m, code), ch = chgOf(m);
-    if (!_news) loadNews(function () { sigBump(); if (V.view === 'stk') renderBody(); });
-    if (!_scr) loadScr(function () { sigBump(); if (V.view === 'stk') renderBody(); });
-    if (!trkData() && !_trkLoading && !_trkErr) loadTrk(function () { sigBump(); if (V.view === 'stk') renderBody(); });
+    if (!_news) loadNews(function () { if (V.view === 'stk') renderBody(); });
+    if (!_scr) loadScr(function () { if (V.view === 'stk') renderBody(); });
+    if (!trkData() && !_trkLoading && !_trkErr) loadTrk(function () { if (V.view === 'stk') renderBody(); });
     var s0 = scoreOf(m); by = s0.by;
     var lab = s0.score >= 2 ? { c: 'g', t: 'Layak dibeli' } : s0.score <= -2 ? { c: 'r', t: 'Hindari' } : { c: 'n', t: 'Netral' };
     var pos = (clamp(s0.score, -5, 5) + 5) / 10 * 100;
