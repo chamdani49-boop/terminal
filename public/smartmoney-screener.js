@@ -1692,21 +1692,28 @@
     return { m: m, by: by, g: g, r: r, known: known, score: g - r };
   }
   function sigReady() { return !!(_news && _scr && (trkData() || _trkErr)); }
+  var _stkRaf = 0;
+  // Render ulang peta sinyal saat saham baru selesai dihitung (dibatasi 1x per frame).
+  function stkProgress() {
+    if (V.view !== 'stk' || V.stk.code || !host || host.hidden || _stkRaf) return;
+    _stkRaf = requestAnimationFrame(function () { _stkRaf = 0; renderBody(); });
+  }
   function sigCompute(cb) {
     var st = V.stk;
     if (st.sig && st.sig.ver === _sigVer) { cb(); return; }
     if (st.sigBusy) return;
     st.sigBusy = true;
     var ver = _sigVer, list = U.list.slice(), i = 0, map = {}, n = U.n;
+    st.sigPartial = map;
     (function step() {
       var end = Math.min(list.length, i + 60);
-      st.sigProg = i / list.length; spProgress();
+      st.sigProg = i / list.length; stkProgress();
       for (; i < end; i++) { var sc0 = scoreOf(list[i]); sc0.liq = sum(list[i].Pval, n - 20, n - 1); map[list[i].code] = sc0; }
       if (i < list.length) { setTimeout(step, 0); return; }
-      st.sigProg = i / list.length; spProgress();
+      st.sigProg = i / list.length; stkProgress();
       st.sigBusy = false;
       if (ver !== _sigVer) { sigCompute(cb); return; }
-      st.sig = { ver: ver, map: map };
+      st.sig = { ver: ver, map: map }; st.sigPartial = null;
       cb();
     })();
   }
@@ -1762,8 +1769,9 @@
     if (!trkData() && !_trkLoading && !_trkErr) loadTrk(function () { sigBump(); onDone(); });
     var fresh = st.sig && st.sig.ver === _sigVer ? st.sig : null;
     if (sigReady() && !fresh) sigCompute(onDone);
-    var cur = fresh || st.sigStale;                 // hasil lama tetap tampil selagi dihitung ulang (tanpa kedip)
-    if (!cur) return spLoader();
+    // Hasil lama / hasil parsial tetap tampil selagi dihitung ulang. Tanpa data sama sekali → peta kosong + animasi.
+    var cur = fresh || st.sigStale || (st.sigPartial ? { map: st.sigPartial } : null) || { map: {} };
+    var computing = !fresh;
     var map0 = cur.map;
     var all = Object.keys(map0).map(function (c) { return map0[c]; }).filter(function (x) { return x.known >= 3; });
     var B = all.filter(function (x) { return x.score >= 2; }).sort(function (a, b) { return b.score - a.score || b.liq - a.liq; });
@@ -1775,22 +1783,26 @@
       var k = clamp(x.score, -5, 5); bucket[k] = bucket[k] || [];
       if (bucket[k].length < 4) bucket[k].push(x);
     });
+    var shown = st.shown = st.shown || {}, pop = 0;
     var di = 0;
     Object.keys(bucket).forEach(function (k) {
       k = +k;
       bucket[k].forEach(function (x, j) {
-        bub += '<button class="sp-bub" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
+        var isNew = !shown[x.m.code]; shown[x.m.code] = 1;
+        bub += '<button class="sp-bub' + (isNew ? ' sp-pop' : '') + '" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="' + (isNew ? 'animation-delay:' + (Math.min(pop++, 14) * 45) + 'ms;' : '') + 'left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
       });
     });
     var ticks = ''; for (var t = -5; t <= 5; t++) if (t % 2 === 0 || Math.abs(t) === 5) ticks += '<span class="sp-tick mono" style="left:' + ((t + 5.5) / 11 * 100) + '%">' + (t > 0 ? '+' : t < 0 ? '−' : '') + Math.abs(t) + '</span>';
+    var coll = computing ? '<div class="sp-collect"><div><i></i><i></i><i></i></div><b>' + (sigReady() ? 'Mengumpulkan data ' + nf(Object.keys(map0).length) + ' / ' + nf(U.list.length) + ' saham' : 'Memuat berita, valuasi, dan data Tracker…') + '</b></div>' : '';
+    var skel = function () { return computing ? '<div class="sp-sk"></div><div class="sp-sk"></div><div class="sp-sk"></div>' : '<p class="sp-sub">Belum ada.</p>'; };
     return '<div class="sp">' +
       '<h3 class="sp-rh">Peta sinyal hari ini</h3><p class="sp-sub">Makin ke kanan, makin banyak modul yang positif. Makin ke kiri, makin banyak peringatan.</p>' +
       '<div class="sp-scw"><div class="sp-sc"><div class="sp-map' + ((st.zoom || 1) < 1.8 ? ' zc' : '') + '" id="spMap" style="--z:' + (st.zoom || 1) + '"><div class="sp-zone r"></div><div class="sp-zone g"></div><div class="sp-mid"></div><div class="sp-glow"></div>' +
-        '<span class="sp-zl sx-dn" style="left:14px">Hindari</span><span class="sp-zl sx-mute" style="left:50%;transform:translateX(-50%)">Netral</span><span class="sp-zl sx-up" style="right:14px">Layak dibeli</span><div class="sp-axis"></div>' + ticks + bub + '</div></div></div>' +
+        '<span class="sp-zl sx-dn" style="left:14px">Hindari</span><span class="sp-zl sx-mute" style="left:50%;transform:translateX(-50%)">Netral</span><span class="sp-zl sx-up" style="right:14px">Layak dibeli</span><div class="sp-axis"></div>' + ticks + bub + coll + '</div></div></div>' +
         '<div class="sp-zrow"><p class="sp-hint">Cubit layar atau pakai tombol + / − untuk memperbesar peta, lalu geser.</p>' +
           '<div class="sp-zoom" role="group" aria-label="Zoom peta"><button data-sx="spzoom" data-v="out" aria-label="Perkecil">−</button><span class="mono" id="spZv">' + Math.round((st.zoom || 1) * 100) + '%</span><button data-sx="spzoom" data-v="in" aria-label="Perbesar">+</button></div></div>' +
-      '<section class="sp-cols"><div><div class="sp-ch" style="--c:var(--green)"><h3>Layak dibeli</h3><span>sinyal terkuat dulu</span></div>' + (B.slice(0, 10).map(function (x, i) { return spRow(x, i, 'g'); }).join('') || '<p class="sp-sub">Belum ada.</p>') + '</div>' +
-        '<div><div class="sp-ch" style="--c:var(--red)"><h3>Hindari atau kurangi</h3><span>peringatan terbanyak dulu</span></div>' + (H.slice(0, 10).map(function (x, i) { return spRow(x, i, 'r'); }).join('') || '<p class="sp-sub">Belum ada.</p>') + '</div></section>' +
+      '<section class="sp-cols"><div><div class="sp-ch" style="--c:var(--green)"><h3>Layak dibeli</h3><span>sinyal terkuat dulu</span></div>' + (B.slice(0, 10).map(function (x, i) { return spRow(x, i, 'g'); }).join('') || skel()) + '</div>' +
+        '<div><div class="sp-ch" style="--c:var(--red)"><h3>Hindari atau kurangi</h3><span>peringatan terbanyak dulu</span></div>' + (H.slice(0, 10).map(function (x, i) { return spRow(x, i, 'r'); }).join('') || skel()) + '</div></section>' +
       '<div class="sp-neu"><span>Netral, belum ada sinyal jelas:</span>' + N.slice(0, 24).map(function (x) { return '<button data-sx="pick" data-v="' + esc(x.m.code) + '">' + esc(x.m.code) + '</button>'; }).join('') + '</div>' +
       '<p class="sx-note">Skor = modul positif dikurangi modul waspada, dari 8 modul. Hanya saham dengan minimal 3 modul berdata yang dihitung. Dibuat dari aturan sederhana dan bukan rekomendasi investasi.</p></div>';
   }
@@ -2542,6 +2554,16 @@
     '.sx-ks .sx-ic{width:11px;height:11px;margin-right:2px;vertical-align:-1px}',
     '.sx-ks{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px}',
     '.sx-ks.ok{color:var(--green);background:var(--green-bg)}.sx-ks.no{color:var(--yellow);background:var(--yellow-bg)}.sx-ks.n{color:var(--text3);background:var(--bg2)}',
+    /* peta sinyal: animasi mengumpulkan data */
+    '.sp-collect{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--text2);font-size:12.5px;font-weight:700;pointer-events:none;white-space:nowrap}',
+    '.sp-collect>div{display:flex;gap:6px}.sp-collect i{display:block;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:spDot 1.2s ease-in-out infinite}',
+    '.sp-collect i:nth-child(2){animation-delay:.15s}.sp-collect i:nth-child(3){animation-delay:.3s}',
+    '@keyframes spDot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}',
+    '.sp-bub.sp-pop{animation:spFade .4s ease-out both}',
+    '@keyframes spFade{from{opacity:0}to{opacity:1}}',
+    '.sp-sk{height:34px;margin-bottom:8px;border-radius:12px;background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);background-size:200% 100%;animation:spShim 1.4s linear infinite}',
+    '@keyframes spShim{from{background-position:200% 0}to{background-position:-200% 0}}',
+    '@media (prefers-reduced-motion:reduce){.sp-collect i,.sp-sk,.sp-bub.sp-pop{animation:none}}',
     /* radar top 20 (tabel peringkat harian) */
     '.sx-rdk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}',
     '.sx-rdk>div{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;box-shadow:var(--shadow-card)}',
