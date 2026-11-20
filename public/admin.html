@@ -398,7 +398,7 @@ table.ut{min-width:0;table-layout:auto}
   <!-- PENGATURAN FITUR (trial & ajak teman) -->
   <section class="bill-card" id="featCard" style="display:none">
     <div class="bill-head" id="featHead">
-      <div class="usage-title">🎚️ Pengaturan Fitur <span class="plan-badge">trial &amp; ajak teman</span></div>
+      <div class="usage-title">🎚️ Pengaturan Fitur <span class="plan-badge">trial, ajak teman &amp; Smart Money</span></div>
       <button class="bill-toggle" id="featToggle" type="button">Tampilkan ▼</button>
     </div>
     <div class="bill-body collapsed" id="featBody">
@@ -433,6 +433,16 @@ table.ut{min-width:0;table-layout:auto}
         <div style="display:flex;align-items:center;gap:10px">
           <span class="feat-state" id="featReferralState">—</span>
           <label class="switch"><input type="checkbox" id="featReferral"><span class="slider"></span></label>
+        </div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-info">
+          <div class="feat-name">💰 Akses Menu Smart Money</div>
+          <div class="feat-desc"><b>ON</b> = semua user yang sudah login, termasuk yang belum berlangganan (menu lain tetap terkunci). <b>OFF</b> = hanya pelanggan aktif paket Tracker &amp; Full Akses. Berlaku untuk Broker Activity, Insider, dan Kepemilikan. <b>Screener &amp; StockPro selalu khusus Full Akses.</b> Admin selalu punya akses.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="feat-state" id="featSmmState">—</span>
+          <label class="switch"><input type="checkbox" id="featSmm"><span class="slider"></span></label>
         </div>
       </div>
       <div class="bill-actions" style="margin-top:4px">
@@ -1308,12 +1318,14 @@ document.getElementById('payHead').addEventListener('click',function(ev){
 });
 loadPay();
 
-// ── Pengaturan Fitur (toggle trial & ajak teman) ──
+// ── Pengaturan Fitur (toggle trial, ajak teman & akses Smart Money) ──
 function featSetState(){
   var t=document.getElementById('featTrial'), r=document.getElementById('featReferral');
   var ts=document.getElementById('featTrialState'), rs=document.getElementById('featReferralState');
   if(ts){ ts.textContent=t.checked?'AKTIF':'NONAKTIF'; ts.style.color=t.checked?'var(--green)':'var(--text3)'; }
   if(rs){ rs.textContent=r.checked?'AKTIF':'NONAKTIF'; rs.style.color=r.checked?'var(--green)':'var(--text3)'; }
+  var m=document.getElementById('featSmm'), ms=document.getElementById('featSmmState');
+  if(m&&ms){ ms.textContent=m.checked?'SEMUA USER LOGIN':'TRACKER & FULL'; ms.style.color=m.checked?'var(--green)':'var(--text2)'; }
 }
 async function loadFeatures(){
   var card=document.getElementById('featCard');
@@ -1324,6 +1336,7 @@ async function loadFeatures(){
     var f=(d&&d.features)||{};
     document.getElementById('featTrial').checked=f.trial!==false;
     document.getElementById('featReferral').checked=f.referral!==false;
+    document.getElementById('featSmm').checked=f.smartmoney_all!==false;
     var tm=document.getElementById('featTrialMins'); if(tm) tm.value=String(f.trial_minutes||30);
     featSetState();
     card.style.display='block';
@@ -1333,7 +1346,7 @@ async function saveFeatures(){
   var msg=document.getElementById('featMsg');
   msg.className='bill-msg'; msg.textContent='Menyimpan…';
   featSetState();
-  var features={trial:document.getElementById('featTrial').checked,referral:document.getElementById('featReferral').checked,trial_minutes:parseInt((document.getElementById('featTrialMins')||{}).value,10)||30};
+  var features={trial:document.getElementById('featTrial').checked,referral:document.getElementById('featReferral').checked,smartmoney_all:document.getElementById('featSmm').checked,trial_minutes:parseInt((document.getElementById('featTrialMins')||{}).value,10)||30};
   try{
     var r=await fetch('/api/admin/features',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({features:features})});
     var d=await r.json().catch(function(){return {};});
@@ -1341,6 +1354,7 @@ async function saveFeatures(){
     if(d&&d.features){
       document.getElementById('featTrial').checked=d.features.trial!==false;
       document.getElementById('featReferral').checked=d.features.referral!==false;
+      document.getElementById('featSmm').checked=d.features.smartmoney_all!==false;
       var tm2=document.getElementById('featTrialMins'); if(tm2&&d.features.trial_minutes) tm2.value=String(d.features.trial_minutes);
       featSetState();
     }
@@ -1350,6 +1364,7 @@ async function saveFeatures(){
 }
 document.getElementById('featTrial').addEventListener('change',saveFeatures);
 document.getElementById('featReferral').addEventListener('change',saveFeatures);
+document.getElementById('featSmm').addEventListener('change',saveFeatures);
 (function(){ var tm=document.getElementById('featTrialMins'); if(tm) tm.addEventListener('change',saveFeatures); })();
 document.getElementById('featHead').addEventListener('click',function(e){
   if(e.target.closest('.switch')) return;   // klik toggle jangan ikut collapse

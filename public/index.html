@@ -2803,22 +2803,26 @@ select.form-control option{background:var(--card);color:var(--text)}
    klik akan trigger overlay yg sama.
    Backend tetap balas 402 utk /data.json, /valuation.json dll — CSS +
    overlay ini hanya UI upsell layer, backend tetap protect. */
-body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu){
+body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu):not(.smm-nav){
   opacity:.55;
   position:relative;
 }
-body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu)::before{
+body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu):not(.smm-nav)::before{
   content:"🔒 ";
   font-size:11px;
   opacity:.85;
   margin-right:2px;
 }
-body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu):hover{
+body.scope-tracker .nav-tabs .nav-tab:not(.tr-menu):not(.smm-nav):hover{
   opacity:.85;
   color:var(--accent);
   cursor:pointer;
 }
-body.scope-tracker .bottom-nav-item:not(.tr-menu){opacity:.55}
+body.scope-tracker .bottom-nav-item:not(.tr-menu):not(#bn-smartmoney){opacity:.55}
+/* Belum berlangganan (scope-none): hanya Smart Money yang terbuka, Tracker ikut terkunci. */
+body.scope-none .nav-tabs .nav-tab.tr-menu{opacity:.55;font-weight:inherit}
+body.scope-none .nav-tabs .nav-tab.tr-menu::before{content:"🔒 ";font-size:11px;opacity:.85;margin-right:2px}
+body.scope-none .bottom-nav-item.tr-menu{opacity:.55}
 /* Sembunyikan HANYA search header global (redirect ke Valuasi/Consensus yg
    gak boleh diakses user scope=tracker). Search INTERNAL menu Tracker —
    "Pilih Saham" (.tr-anl-searchwrap) di sub-menu Analis & "Cari sekuritas"
@@ -21076,19 +21080,35 @@ async function _ensureAccess() {
     const j = await r.json();
     if (!j || !j.authenticated) { location.replace('/login'); return false; }
     window.__ES_IS_ADMIN = !!j.is_admin;
+    window.__ES_SMM = j.smartmoney || null;   // { allowed, full, admin } — akses menu Smart Money
     // Menu Tracker sekarang tampil utk semua user berlangganan — class
     // tr-admin dibiarkan (harmless, no-op) demi backward compat CSS lawas.
     if (window.__ES_IS_ADMIN) try { document.body.classList.add('tr-admin'); } catch(_){}
     const active = j.subscription && j.subscription.active;
-    if (!active && !j.is_admin) { location.replace('/billing'); return false; }
+    // Belum berlangganan tapi Smart Money dibuka untuk semua user login (switch admin):
+    // boleh masuk, hanya menu Smart Money yang terbuka. Selain itu → billing.
+    const smmOnly = !active && !j.is_admin && !!(j.smartmoney && j.smartmoney.allowed);
+    if (!active && !j.is_admin && !smmOnly) { location.replace('/billing'); return false; }
 
     // Scope enforcement — user paket Tracker (scope='tracker') hanya boleh
     // akses tab Tracker. Kita tandai body → CSS hide nav/bottom-nav lain
     // + auto-navigate ke page Tracker saat masuk dashboard. Admin selalu
     // punya akses penuh (skip). scope='full' = akses semua (default).
     const scope = j.subscription && j.subscription.scope;
-    window.__ES_SCOPE = scope || (j.is_admin ? 'full' : 'full');
-    if (scope === 'tracker' && !j.is_admin) {
+    window.__ES_SCOPE = smmOnly ? 'none' : (scope || (j.is_admin ? 'full' : 'full'));
+    if (smmOnly) {
+      // Tanpa langganan: data dashboard tidak dimuat (server tetap 402). Menu lain
+      // tampil terkunci (overlay), lalu buka Smart Money begitu menunya siap.
+      window.__ES_NO_DATA = true;
+      try { document.body.classList.add('scope-tracker', 'scope-none'); } catch(_){}
+      (function goSmm(n){
+        if (window.SmartMoney && document.getElementById('page-smartmoney') && typeof showPage === 'function') {
+          try { showPage('smartmoney'); window.SmartMoney.open(); } catch(_){}
+          return;
+        }
+        if (n < 80) setTimeout(function(){ goSmm(n + 1); }, 250);
+      })(0);
+    } else if (scope === 'tracker' && !j.is_admin) {
       try { document.body.classList.add('scope-tracker'); } catch(_){}
       // Navigate ke Tracker begitu SPA siap. Panggil 2x (sync + async)
       // krn showPage() bisa belum ter-define saat _ensureAccess() jalan
@@ -28295,7 +28315,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════════════════════════════
 (async () => {
   const ok = await _ensureAccess();
-  if (ok) loadData();
+  if (ok && !window.__ES_NO_DATA) loadData();   // tanpa langganan (hanya Smart Money) → data dashboard tidak dimuat
 })();
 </script>
 
@@ -33408,6 +33428,10 @@ document.addEventListener('keydown', (e) => {
 
   var LOCKED_MENUS = ['dashboard','pasar','consensus','valuasi'];
   var LOCKED_META = {
+    tracker: {
+      title: '📈 Tracker Rekomendasi',
+      desc: 'Rekomendasi Entry/TP/SL dari sekuritas, status berjalan, dan statistik winrate per sekuritas. Tersedia di paket Tracker dan Full Akses.'
+    },
     dashboard: {
       title: '📊 Dashboard Analitik Saham',
       desc: 'Statistik lengkap 957 saham IDX: hero + descriptive stats, chart historis 10 tahun, price target blueprint, analyst consensus, dan simulasi investasi.'
@@ -33618,6 +33642,10 @@ document.addEventListener('keydown', (e) => {
     var meta = LOCKED_META[name] || { title: '🔒 Fitur Premium', desc: 'Upgrade untuk buka akses.' };
     if (titleEl) titleEl.textContent = meta.title;
     if (descEl) descEl.textContent = meta.desc;
+    var subEl = overlay.querySelector('.locked-cta-sub');
+    if (subEl) subEl.textContent = window.__ES_SCOPE === 'none'
+      ? 'Kamu belum berlangganan · Menu Smart Money tetap terbuka'
+      : 'Kamu sedang di Paket Tracker · Ini fitur Full Akses';
     var gen = PREVIEWS[name];
     content.innerHTML = gen ? gen() : '';
 
@@ -33638,7 +33666,11 @@ document.addEventListener('keydown', (e) => {
 
   // ── Hook showPage() untuk intercept navigasi user scope='tracker' ─
   function isTrackerScope(){
-    return window.__ES_SCOPE === 'tracker' && !window.__ES_IS_ADMIN;
+    return (window.__ES_SCOPE === 'tracker' || window.__ES_SCOPE === 'none') && !window.__ES_IS_ADMIN;
+  }
+  // Belum berlangganan (scope 'none'): Tracker ikut terkunci, hanya Smart Money terbuka.
+  function lockedMenus(){
+    return window.__ES_SCOPE === 'none' ? LOCKED_MENUS.concat(['tracker']) : LOCKED_MENUS;
   }
 
   function installHook(){
@@ -33651,7 +33683,7 @@ document.addEventListener('keydown', (e) => {
 
     var original = window.showPage;
     window.showPage = function(name){
-      if (isTrackerScope() && LOCKED_MENUS.indexOf(name) >= 0){
+      if (isTrackerScope() && lockedMenus().indexOf(name) >= 0){
         showLockedPreview(name);
         return;
       }

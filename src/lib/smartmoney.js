@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────
-// smartmoney.js — API data Smart Money (KHUSUS ADMIN, dipanggil dari admin.js
-// setelah requireAdmin lolos).
+// smartmoney.js — API data Smart Money. Dipanggil dari admin.js (/api/admin/smartmoney*, admin)
+// dan dari index.js (/api/smartmoney*, user login; aturan akses dicek sebelum fungsi ini).
 //
 // Sumber data: bucket R2 private `smartmoney` (binding SMARTMONEY di
 // wrangler.toml). Diisi dari laptop oleh upload_smartmoney.py (repo scraper).
@@ -35,15 +35,16 @@ async function readJson(env, key) {
 export async function handleSmartMoneyApi(request, env, url) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
   if (!env.SMARTMONEY) return json({ ok: false, error: 'r2_not_bound' }, 200, NO_STORE);
+  const p = url.pathname.replace(/^\/api\/(?:admin\/)?smartmoney/, '');   // '', '/index', '/screener', '/broker', '/people'
 
-  if (url.pathname === '/api/admin/smartmoney/index') {
+  if (p === '/index') {
     const idx = await readJson(env, 'index.json');
     return json({ ok: true, index: idx }, 200, NO_STORE);
   }
 
   // Ringkasan seluruh pasar untuk menu Screener (dibuat scripts/build-smartmoney-screener.js).
   // Dikirim apa adanya (stream) supaya Worker tidak mem-parse file besar.
-  if (url.pathname === '/api/admin/smartmoney/screener') {
+  if (p === '/screener') {
     try {
       const obj = await env.SMARTMONEY.get('screener/summary.json');
       if (!obj) return json({ ok: true, summary: null }, 200, NO_STORE);
@@ -55,9 +56,9 @@ export async function handleSmartMoneyApi(request, env, url) {
   }
 
   // Popup broker: aktivitas 1 broker di semua saham. Popup nama: indeks semua nama.
-  if (url.pathname === '/api/admin/smartmoney/broker' || url.pathname === '/api/admin/smartmoney/people') {
+  if (p === '/broker' || p === '/people') {
     let key = 'people.json';
-    if (url.pathname.endsWith('/broker')) {
+    if (p === '/broker') {
       const b = String(url.searchParams.get('b') || '').trim().toUpperCase();
       if (!/^[A-Z0-9]{2}$/.test(b)) return badRequest('Kode broker tidak valid');
       key = `brokers/${b}.json`;
