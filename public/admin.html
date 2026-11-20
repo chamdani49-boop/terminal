@@ -445,6 +445,16 @@ table.ut{min-width:0;table-layout:auto}
           <label class="switch"><input type="checkbox" id="featSmm"><span class="slider"></span></label>
         </div>
       </div>
+      <div class="feat-row">
+        <div class="feat-info">
+          <div class="feat-name">📅 Rentang Tanggal Broker Activity (akun gratis)</div>
+          <div class="feat-desc"><b>ON</b> = akun login tanpa langganan hanya bisa memilih <b>7 hari terakhir</b>; rentang lebih panjang memunculkan pop up ajakan berlangganan. <b>OFF</b> = semua tanggal. Kalender flow tidak dibatasi. Paket Tracker, Full Akses, dan admin selalu bisa semua tanggal.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="feat-state" id="featSmm7State">—</span>
+          <label class="switch"><input type="checkbox" id="featSmm7"><span class="slider"></span></label>
+        </div>
+      </div>
       <div class="bill-actions" style="margin-top:4px">
         <span class="bill-msg" id="featMsg"></span>
       </div>
@@ -1326,6 +1336,8 @@ function featSetState(){
   if(rs){ rs.textContent=r.checked?'AKTIF':'NONAKTIF'; rs.style.color=r.checked?'var(--green)':'var(--text3)'; }
   var m=document.getElementById('featSmm'), ms=document.getElementById('featSmmState');
   if(m&&ms){ ms.textContent=m.checked?'SEMUA USER LOGIN':'TRACKER & FULL'; ms.style.color=m.checked?'var(--green)':'var(--text2)'; }
+  var m7=document.getElementById('featSmm7'), m7s=document.getElementById('featSmm7State');
+  if(m7&&m7s){ m7s.textContent=m7.checked?'7 HARI':'SEMUA TANGGAL'; m7s.style.color=m7.checked?'var(--green)':'var(--text2)'; }
 }
 async function loadFeatures(){
   var card=document.getElementById('featCard');
@@ -1337,6 +1349,7 @@ async function loadFeatures(){
     document.getElementById('featTrial').checked=f.trial!==false;
     document.getElementById('featReferral').checked=f.referral!==false;
     document.getElementById('featSmm').checked=f.smartmoney_all!==false;
+    document.getElementById('featSmm7').checked=f.smartmoney_free_7d!==false;
     var tm=document.getElementById('featTrialMins'); if(tm) tm.value=String(f.trial_minutes||30);
     featSetState();
     card.style.display='block';
@@ -1346,7 +1359,7 @@ async function saveFeatures(){
   var msg=document.getElementById('featMsg');
   msg.className='bill-msg'; msg.textContent='Menyimpan…';
   featSetState();
-  var features={trial:document.getElementById('featTrial').checked,referral:document.getElementById('featReferral').checked,smartmoney_all:document.getElementById('featSmm').checked,trial_minutes:parseInt((document.getElementById('featTrialMins')||{}).value,10)||30};
+  var features={trial:document.getElementById('featTrial').checked,referral:document.getElementById('featReferral').checked,smartmoney_all:document.getElementById('featSmm').checked,smartmoney_free_7d:document.getElementById('featSmm7').checked,trial_minutes:parseInt((document.getElementById('featTrialMins')||{}).value,10)||30};
   try{
     var r=await fetch('/api/admin/features',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({features:features})});
     var d=await r.json().catch(function(){return {};});
@@ -1355,6 +1368,7 @@ async function saveFeatures(){
       document.getElementById('featTrial').checked=d.features.trial!==false;
       document.getElementById('featReferral').checked=d.features.referral!==false;
       document.getElementById('featSmm').checked=d.features.smartmoney_all!==false;
+      document.getElementById('featSmm7').checked=d.features.smartmoney_free_7d!==false;
       var tm2=document.getElementById('featTrialMins'); if(tm2&&d.features.trial_minutes) tm2.value=String(d.features.trial_minutes);
       featSetState();
     }
@@ -1365,6 +1379,7 @@ async function saveFeatures(){
 document.getElementById('featTrial').addEventListener('change',saveFeatures);
 document.getElementById('featReferral').addEventListener('change',saveFeatures);
 document.getElementById('featSmm').addEventListener('change',saveFeatures);
+document.getElementById('featSmm7').addEventListener('change',saveFeatures);
 (function(){ var tm=document.getElementById('featTrialMins'); if(tm) tm.addEventListener('change',saveFeatures); })();
 document.getElementById('featHead').addEventListener('click',function(e){
   if(e.target.closest('.switch')) return;   // klik toggle jangan ikut collapse
