@@ -6230,7 +6230,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="acct-name" id="acctName">—</div>
           <div class="acct-email" id="acctEmail">—</div>
           <button type="button" class="acct-ref-copy" id="acctRefCopy" onclick="acctCopyRef(this)">🔗 Salin link referral</button>
-          <div class="acct-ref-note" id="acctRefNote">Tiap teman baru yang daftar lewat link ini memberi kamu +3 hari akses menu Tracker.</div>
+          <div class="acct-ref-note" id="acctRefNote">+3 hari akses Tracker per teman baru.</div>
         </div>
         <button type="button" class="info-btn" style="margin-left:auto" aria-label="Panduan menu sesuai gaya" title="Menu sesuai tujuan (invest / swing / trading)" onclick="showInfoModal('🧭 Menu Sesuai Tujuanmu','Pilih menu sesuai gaya kamu:<br><br>&bull; Untuk <strong>investasi</strong> (jangka panjang) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Valuasi</strong>.<br><br>&bull; Untuk <strong>swing</strong> (jangka menengah) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Dashboard</strong>.<br><br>&bull; Untuk <strong>trading</strong> (jangka pendek) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Tracker</strong>.')">?</button>
       </div>
@@ -21182,7 +21182,7 @@ function acctShowRefCopy(j){
   var n = document.getElementById('acctRefNote');
   if (j && j.authenticated && j.enabled !== false && j.link) {
     window.__ES_REF_LINK = j.link; b.classList.add('show');
-    if (n) { n.textContent = 'Tiap teman baru yang daftar lewat link ini memberi kamu +' + (j.per || 3) + ' hari akses menu Tracker.'; n.classList.add('show'); }
+    if (n) { n.textContent = '+' + (j.per || 3) + ' hari akses Tracker per teman baru.'; n.classList.add('show'); }
   } else {
     window.__ES_REF_LINK = null; b.classList.remove('show');
     if (n) n.classList.remove('show');
