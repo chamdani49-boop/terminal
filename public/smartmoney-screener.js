@@ -568,7 +568,7 @@
   var GUIDE = {
     stk: {
       title: 'StockPro', ico: 'layers', desc: 'Satu halaman: berita, swing, konsensus, valuasi, trade, broker, insider, dan kepemilikan untuk satu kode saham.',
-      how: [['search', 'Ketik kode atau nama saham, lalu pilih dari daftar.'], ['bar', 'Tiap kartu memberi kesimpulan (hijau = positif, kuning = netral, merah = waspada) beserta alasannya.'], ['ext', 'Tombol di kartu membuka halaman aslinya (Dashboard, Konsensus, Valuasi, Tracker, Broker Activity) untuk saham yang sama.']],
+      how: [['search', 'Ketik kode atau nama saham, lalu pilih dari daftar.'], ['bar', 'Tiap kartu memberi kesimpulan (hijau = positif, kuning = netral, merah = waspada) beserta alasannya.'], ['ext', 'Tombol di kartu membuka halaman aslinya (Dashboard, Konsensus, Valuasi, Tracker, Broker Activity) untuk saham yang sama.'], ['sliders', 'Skor berbobot: Trade ×5, Broker ×4, Insider ×3, Swing ×2, lalu Valuasi, Konsensus, Kepemilikan, Berita ×1. Layak dibeli bila skor ≥ +25, Hindari bila ≤ −25.']],
       why: [['target', 'Tidak perlu membuka 6 menu satu per satu untuk tahu keadaan satu saham.'], ['shield', 'Sinyal yang saling bertentangan langsung kelihatan, misalnya konsensus positif tapi broker besar menjual.'], ['info', 'Kesimpulan berasal dari aturan sederhana, bukan rekomendasi investasi. Keputusan tetap di tangan Anda.']]
     },
     cons: {
@@ -1618,6 +1618,8 @@
     });
     return (_news.idx = idx);
   }
+  var NEWS_POS = /\b(dividen|buyback|buy back|laba (naik|melonjak|tumbuh|melesat|meningkat)|cuan|melejit|melesat|melonjak|rekor laba|raih kontrak|kontrak baru|ARA|borong|upgrade)\b/i;
+  var NEWS_NEG = /\b(ARB|anjlok|rontok|ambrol|merosot|rugi|merugi|suspensi|disuspensi|suspend|gagal bayar|PKPU|pailit|sanksi|delisting|UMA|laba (turun|anjlok|merosot)|downgrade|digembok|tersangka)\b/i;
   function secNews(m, code) {
     var o = { t: 'Berita', ico: 'news', acts: [['gopage', 'Buka Pasar Live', 'pasar']] };
     if (!_news) { o.v = V_('d', 'Memuat…'); o.lines = []; return o; }
@@ -1625,8 +1627,15 @@
     var list = (newsIdx()[code] || []).filter(function (it) { return it.ts >= cut; });
     if (!list.length) { o.v = V_('d', 'Sepi'); o.lines = ['<p class="sx-why">Tidak ada berita yang menyebut ' + esc(code) + ' dalam 7 hari terakhir.</p>']; return o; }
     o.raw = { list: list };
-    o.v = list.length >= 3 ? V_('n', 'Ramai') : V_('n', list.length + ' berita');
-    o.why = list.length + ' berita dalam 7 hari. Baca isinya untuk menilai positif atau negatif.';
+    // Penilaian kasar dari kata kunci judul. Judul yang memuat kata positif dan negatif sekaligus dilewati.
+    var np = 0, nn = 0;
+    list.forEach(function (it) {
+      var t = String(it.title || ''), p = NEWS_POS.test(t), q = NEWS_NEG.test(t);
+      if (p && !q) np++; else if (q && !p) nn++;
+    });
+    var net = np - nn;
+    o.v = net >= 2 ? V_('g', 'Cenderung positif') : net <= -2 ? V_('r', 'Cenderung negatif') : list.length >= 3 ? V_('n', 'Ramai') : V_('n', list.length + ' berita');
+    o.why = list.length + ' berita dalam 7 hari: ' + np + ' berkata kunci positif, ' + nn + ' negatif. Penilaian otomatis dari kata kunci judul, baca isinya untuk memastikan.';
     o.lines = ['<ul class="sx-nl">' + list.slice(0, 3).map(function (it) {
       return '<li><a href="' + esc(it.link) + '" target="_blank" rel="noopener noreferrer">' + esc(it.title) + '</a><small>' + esc(it.source || '') + ' · ' + esc(timeAgo(it.ts)) + '</small></li>';
     }).join('') + '</ul>'];
@@ -1682,22 +1691,48 @@
   var SEC_KEYS = ['swing', 'cons', 'invest', 'trade', 'news', 'broker', 'insider', 'holder'];
   var SEC_NAME = { swing: 'Swing', cons: 'Konsensus', invest: 'Valuasi', trade: 'Trade', news: 'Berita', broker: 'Broker', insider: 'Insider', holder: 'Kepemilikan' };
   var SEC_FN = { swing: secSwing, cons: secCons, invest: secInvest, trade: secTrade, news: secNews, broker: secBroker, insider: secInsider, holder: secHolder };
+  // Bobot skor StockPro. Modul inti menentukan arah, modul pelengkap hanya menguatkan atau menahan.
+  // Skor = (bobot modul hijau - bobot modul merah) / bobot modul yang berdata x 100  (rentang -100..+100).
+  var SEC_W = { trade: 5, broker: 4, insider: 3, swing: 2, invest: 1, cons: 1, holder: 1, news: 1 };
+  var SEC_CORE = { trade: 1, broker: 1, insider: 1, swing: 1 };
+  var SC_TH = 25;        // skor >= +25 = Layak dibeli, <= -25 = Hindari
+  var SC_MIN_KNOWN = 3;  // minimal modul berdata
+  var SC_MIN_AVAIL = 6;  // minimal total bobot modul berdata (mencegah kesimpulan dari modul pelengkap saja)
   var _sigVer = 0;
   function sigBump() { _sigVer++; if (V.stk && V.stk.sig) { V.stk.sigStale = V.stk.sig; V.stk.sig = null; } }
   function scoreOf(m) {
-    var by = {}, g = 0, r = 0, known = 0;
+    var by = {}, g = 0, r = 0, known = 0, core = 0, raw = 0, avail = 0;
     SEC_KEYS.forEach(function (k) {
       var x; try { x = SEC_FN[k](m, m.code); } catch (e) { x = { t: k, ico: 'info', v: V_('d', 'Error'), lines: [], acts: [] }; }
       x.k = k; by[k] = x;
-      if (x.v.c === 'g') g++; else if (x.v.c === 'r') r++;
-      if (x.v.c !== 'd') known++;
+      if (x.v.c === 'g') { g++; raw += SEC_W[k]; } else if (x.v.c === 'r') { r++; raw -= SEC_W[k]; }
+      if (x.v.c !== 'd') { known++; avail += SEC_W[k]; if (SEC_CORE[k]) core++; }
     });
-    return { m: m, by: by, g: g, r: r, known: known, score: g - r };
+    return { m: m, by: by, g: g, r: r, known: known, core: core, avail: avail, score: avail ? Math.round(raw / avail * 100) : 0 };
+  }
+  function scoreOk(x) { return x.known >= SC_MIN_KNOWN && x.core >= 1 && x.avail >= SC_MIN_AVAIL; }
+  function scoreLab(s) { return s >= SC_TH ? { c: 'g', t: 'Layak dibeli' } : s <= -SC_TH ? { c: 'r', t: 'Hindari' } : { c: 'n', t: 'Netral' }; }
+  // Kolom peta sinyal: -5..+5. Skor 25 = kolom 2, jadi kolom >= 2 selalu berarti Layak dibeli.
+  function scoreBucket(s) { return clamp(s < 0 ? Math.ceil(s / 12.5) : Math.floor(s / 12.5), -5, 5); }
+  // Keterangan bobot untuk pengguna: deret bobot + rumus.
+  function weightsHtml() {
+    var chip = function (k, cls) { return '<span class="' + cls + '"><b>' + SEC_NAME[k] + '</b> ×' + SEC_W[k] + '</span>'; };
+    return '<div class="sp-wt"><div><em>Inti</em>' + ['trade', 'broker', 'insider', 'swing'].map(function (k) { return chip(k, 'c'); }).join('') + '</div>' +
+      '<div><em>Pelengkap</em>' + ['invest', 'cons', 'holder', 'news'].map(function (k) { return chip(k, 'p'); }).join('') + '</div></div>';
+  }
+  function howHtml(calc) {
+    return '<details class="sp-how"><summary>Cara menghitung skor dan arti bobot</summary>' +
+      '<p>Tiap modul bernilai hijau (positif), kuning (netral), merah (waspada), atau tanpa data. Hijau menambah sebesar bobotnya, merah mengurangi, kuning dan tanpa data bernilai 0.</p>' +
+      '<p><b>Skor = (bobot hijau − bobot merah) ÷ bobot modul berdata × 100</b>, rentang −100 sampai +100. <b>Layak dibeli</b> bila skor ≥ +' + SC_TH + ', <b>Hindari</b> bila ≤ −' + SC_TH + ', selain itu Netral.</p>' +
+      '<p>Modul inti (Trade, Broker, Insider, Swing) dibobot lebih besar karena paling dekat ke pergerakan harga. Modul pelengkap (Valuasi, Konsensus, Kepemilikan, Berita) hanya menguatkan atau menahan.</p>' +
+      '<p>Saham dihitung bila minimal ' + SC_MIN_KNOWN + ' modul berdata, minimal 1 di antaranya modul inti, dan total bobot modul berdata minimal ' + SC_MIN_AVAIL + '. Urutan daftar: skor tertinggi, lalu bobot data terbanyak.</p>' +
+      '<p>Berita dinilai otomatis dari kata kunci pada judul 7 hari terakhir, jadi paling kasar. Kesimpulan per gaya (Trading, Swing, Investasi) memakai bobot sendiri yang tertera saat kartunya disentuh.</p>' +
+      (calc ? '<p class="sp-calc">' + calc + '</p>' : '') + '</details>';
   }
   function sigReady() { return !!(_news && _scr && (trkData() || _trkErr)); }
   // Cache hasil hitung sinyal (localStorage). Disegarkan tiap 3 jam; harga tetap live dari ohlc.json.
   // Naikkan nomor di SIG_KEY bila logika scoreOf / SEC_FN berubah, supaya cache lama dibuang.
-  var SIG_KEY = 'es_sm_sig_v1', SIG_TTL = 3 * 60 * 60 * 1000;
+  var SIG_KEY = 'es_sm_sig_v2', SIG_TTL = 3 * 60 * 60 * 1000;
   function sigFresh() { var s0 = V.stk.sig; return s0 && s0.ver === _sigVer && Date.now() - (s0.t || 0) < SIG_TTL ? s0 : null; }
   function sigCacheWrite(map) {
     try {
@@ -1705,7 +1740,7 @@
       Object.keys(map).forEach(function (c) {
         var x = map[c], by = {};
         SEC_KEYS.forEach(function (k) { by[k] = [x.by[k].v.c, x.by[k].v.t]; });
-        out[c] = [x.g, x.r, x.known, x.score, x.liq, by];
+        out[c] = [x.g, x.r, x.known, x.score, x.liq, by, x.core, x.avail];
       });
       localStorage.setItem(SIG_KEY, JSON.stringify({ t: Date.now(), brk: !!U.brokerReady, map: out }));
     } catch (_) { try { localStorage.removeItem(SIG_KEY); } catch (__) {} }
@@ -1719,7 +1754,7 @@
       var m = U.by[c], a = j.map[c]; if (!m || !a) return;
       var by = {};
       SEC_KEYS.forEach(function (k) { var p = a[5][k] || ['d', '']; by[k] = { k: k, v: { c: p[0], t: p[1] } }; });
-      map[c] = { m: m, by: by, g: a[0], r: a[1], known: a[2], score: a[3], liq: a[4] };
+      map[c] = { m: m, by: by, g: a[0], r: a[1], known: a[2], score: a[3], liq: a[4], core: a[6] || 0, avail: a[7] || 0 };
     });
     return Object.keys(map).length ? { t: j.t, brk: !!j.brk, map: map } : null;
   }
@@ -1822,7 +1857,7 @@
   function spRow(x, i, c) {
     var m = x.m, ch = chgOf(m);
     return '<button class="sp-row" data-sx="pick" data-v="' + esc(m.code) + '"><span class="rk">' + (i + 1) + '</span>' +
-      '<div><div class="tk">' + esc(m.code) + '<small>' + esc(m.name) + '</small></div><div class="sp-dots" title="' + x.g + ' positif, ' + x.r + ' waspada">' + dotsOf(x) + '</div></div>' +
+      '<div><div class="tk">' + esc(m.code) + '<small>' + esc(m.name) + '</small></div><div class="sp-dots" title="' + x.g + ' positif, ' + x.r + ' waspada">' + dotsOf(x) + '<b class="sp-scv mono ' + (x.score >= 0 ? 'sx-up' : 'sx-dn') + '" title="Skor berbobot, −100 sampai +100">' + (x.score > 0 ? '+' : '') + x.score + '</b></div></div>' +
       '<div class="pxv mono">' + px(lastPx(m, m.code)) + '<small class="' + sc(ch) + '">' + fp(ch, 2) + '</small></div>' +
       '<div class="tz">' + reasons(x, c) + '<span class="go">Lihat analisis ›</span></div></button>';
   }
@@ -1904,14 +1939,14 @@
     var cur = fresh || st.sigStale || { map: {} };
     var computing = !fresh && !st.sigStale;
     var map0 = cur.map;
-    var all = Object.keys(map0).map(function (c) { return map0[c]; }).filter(function (x) { return x.known >= 3; });
-    var B = all.filter(function (x) { return x.score >= 2; }).sort(function (a, b) { return b.score - a.score || b.liq - a.liq; });
-    var H = all.filter(function (x) { return x.score <= -2; }).sort(function (a, b) { return a.score - b.score || b.liq - a.liq; });
-    var N = all.filter(function (x) { return x.score > -2 && x.score < 2; }).sort(function (a, b) { return b.liq - a.liq; });
+    var all = Object.keys(map0).map(function (c) { return map0[c]; }).filter(scoreOk);
+    var B = all.filter(function (x) { return x.score >= SC_TH; }).sort(function (a, b) { return b.score - a.score || b.avail - a.avail || b.liq - a.liq; });
+    var H = all.filter(function (x) { return x.score <= -SC_TH; }).sort(function (a, b) { return a.score - b.score || b.avail - a.avail || b.liq - a.liq; });
+    var N = all.filter(function (x) { return x.score > -SC_TH && x.score < SC_TH; }).sort(function (a, b) { return b.liq - a.liq; });
     // peta: tiap skor -5..5 menampilkan hingga 4 saham paling likuid
     var bucket = {}, bub = '';
     all.slice().sort(function (a, b) { return b.liq - a.liq; }).forEach(function (x) {
-      var k = clamp(x.score, -5, 5); bucket[k] = bucket[k] || [];
+      var k = scoreBucket(x.score); bucket[k] = bucket[k] || [];
       if (bucket[k].length < 4) bucket[k].push(x);
     });
     var rev = st.rev = st.rev || {};
@@ -1919,7 +1954,7 @@
     Object.keys(bucket).forEach(function (k) {
       k = +k;
       bucket[k].forEach(function (x, j) {
-        bub += '<button class="sp-bub ' + (st.introDone || rev[x.m.code] ? 'sp-done' : 'sp-hid') + '" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
+        bub += '<button class="sp-bub ' + (st.introDone || rev[x.m.code] ? 'sp-done' : 'sp-hid') + '" data-sx="pick" data-v="' + esc(x.m.code) + '" title="' + esc(x.m.name) + ' · skor ' + (x.score > 0 ? '+' : '') + x.score + ' · ' + x.g + ' positif, ' + x.r + ' waspada" style="left:' + ((k + 5.5) / 11 * 100) + '%;top:' + (52 + j * 50 + (((k + 5) % 2) ? 25 : 0)) + 'px;--c:' + (k >= 2 ? 'var(--green)' : k <= -2 ? 'var(--red)' : 'var(--yellow)') + ';--d:' + (di++ * 0.05).toFixed(2) + 's"><i class="sp-lgw"><b>' + esc(x.m.code.slice(0, 2)) + '</b><img class="sp-lg" src="/logos/' + esc(x.m.code) + '.png" alt="" loading="lazy" decoding="async"></i><span>' + esc(x.m.code) + '</span></button>';
       });
     });
     var intro = computing && !st.introDone;
@@ -1937,7 +1972,8 @@
       '<section class="sp-cols"><div><div class="sp-ch" style="--c:var(--green)"><h3>Layak dibeli</h3><span>sinyal terkuat dulu</span></div>' + (B.slice(0, 10).map(function (x, i) { return spRow(x, i, 'g'); }).join('') || skel()) + '</div>' +
         '<div><div class="sp-ch" style="--c:var(--red)"><h3>Hindari atau kurangi</h3><span>peringatan terbanyak dulu</span></div>' + (H.slice(0, 10).map(function (x, i) { return spRow(x, i, 'r'); }).join('') || skel()) + '</div></section>' +
       '<div class="sp-neu"><span>Netral, belum ada sinyal jelas:</span>' + N.slice(0, 24).map(function (x) { return '<button data-sx="pick" data-v="' + esc(x.m.code) + '">' + esc(x.m.code) + '</button>'; }).join('') + '</div>' +
-      '<p class="sx-note">Skor = modul positif dikurangi modul waspada, dari 8 modul. Hanya saham dengan minimal 3 modul berdata yang dihitung. Dibuat dari aturan sederhana dan bukan rekomendasi investasi.</p></div>';
+      '<div class="sp-how-w"><h5 class="sp-h5">Bobot tiap modul</h5>' + weightsHtml() + howHtml('') + '</div>' +
+      '<p class="sx-note">Dibuat dari aturan sederhana dan bukan rekomendasi investasi.</p></div>';
   }
 
   // Kesimpulan per gaya (trading, swing, investasi)
@@ -2014,8 +2050,12 @@
     if (!_scr) loadScr(function () { if (V.view === 'stk') renderBody(); });
     if (!trkData() && !_trkLoading && !_trkErr) loadTrk(function () { if (V.view === 'stk') renderBody(); });
     var s0 = scoreOf(m); by = s0.by;
-    var lab = s0.score >= 2 ? { c: 'g', t: 'Layak dibeli' } : s0.score <= -2 ? { c: 'r', t: 'Hindari' } : { c: 'n', t: 'Netral' };
-    var pos = (clamp(s0.score, -5, 5) + 5) / 10 * 100;
+    var lab = scoreOk(s0) ? scoreLab(s0.score) : { c: 'd', t: 'Data minim' };
+    var pos = (clamp(s0.score, -100, 100) + 100) / 200 * 100;
+    var gSum = 0, rSum = 0;
+    SEC_KEYS.forEach(function (k) { if (by[k].v.c === 'g') gSum += SEC_W[k]; else if (by[k].v.c === 'r') rSum += SEC_W[k]; });
+    var calc = '<b>Saham ini:</b> bobot hijau ' + gSum + ', bobot merah ' + rSum + ', bobot modul berdata ' + s0.avail + ' → (' + gSum + ' − ' + rSum + ') ÷ ' + s0.avail + ' × 100 = <b>' + (s0.score > 0 ? '+' : '') + s0.score + '</b>.' +
+      (scoreOk(s0) ? '' : ' Data belum cukup untuk menyimpulkan (perlu minimal ' + SC_MIN_KNOWN + ' modul berdata, 1 modul inti, bobot data ' + SC_MIN_AVAIL + ').');
     var hz = horizons(by);
     var secs = [
       ['s1', 'Peta harga', 'swing', by.swing], ['s2', 'Konsensus analis', 'cons', by.cons], ['s3', 'Trade', 'trade', by.trade], ['s4', 'Valuasi', 'invest', by.invest],
@@ -2041,12 +2081,13 @@
     return '<div class="sp sp-det"><nav class="sp-dnav" id="spNav"><button class="back" data-sx="spback">‹ Radar</button><i></i>' + navs.map(function (n, i) { return '<button data-sx="spgo" data-v="' + n[0] + '"' + (i === 0 ? ' class="on"' : '') + '>' + n[1] + '</button>'; }).join('') + '</nav>' +
       '<header id="sps-s0"><div class="sp-dhero"><div><div class="sp-crumb">' + esc(m.name) + ' · ' + esc(m.sector || '') + '</div><div class="sp-dtk">' + esc(code) + '</div></div>' +
         '<div class="sp-dpx"><b class="mono">' + px(pxv) + '</b><span class="mono ' + sc(ch) + '">' + fp(ch, 2) + '</span></div>' +
-        '<div class="sp-radar"><div class="sc2 mono ' + (lab.c === 'g' ? 'sx-up' : lab.c === 'r' ? 'sx-dn' : 'sx-y') + '">' + (s0.score > 0 ? '+' : '') + s0.score + '<small> / 8 modul</small></div><div class="sp-rsb"><i style="left:' + pos + '%"></i></div><span class="sp-rv ' + lab.c + '">' + lab.t + '</span>' +
-          '<div class="sp-rl mono"><span>−5 Hindari</span><span>0 Netral</span><span>+5 Layak</span></div></div></div>' +
+        '<div class="sp-radar"><div class="sc2 mono ' + (lab.c === 'g' ? 'sx-up' : lab.c === 'r' ? 'sx-dn' : 'sx-y') + '">' + (s0.score > 0 ? '+' : '') + s0.score + '<small> / 100</small></div><div class="sp-rsb"><i style="left:' + pos + '%"></i></div><span class="sp-rv ' + lab.c + '">' + lab.t + '</span>' +
+          '<div class="sp-rl mono"><span>≤ −' + SC_TH + ' Hindari</span><span>Netral</span><span>≥ +' + SC_TH + ' Layak</span></div></div></div>' +
         '<div class="sp-mods">' + SEC_KEYS.map(function (k) { var x = by[k], tg = { swing: 's1', cons: 's2', invest: 's4', trade: 's3', news: 's7', broker: 's5', insider: 's6', holder: 's7' }[k];
-          return '<button class="sp-mod" data-sx="spgo" data-v="' + tg + '" style="--c:' + colorOf(x.v.c) + '"><i></i><div><b>' + SEC_NAME[k] + '</b><span>' + esc(x.v.t) + '</span></div></button>'; }).join('') + '</div>' +
+          return '<button class="sp-mod" data-sx="spgo" data-v="' + tg + '" style="--c:' + colorOf(x.v.c) + '"><i></i><div><b>' + SEC_NAME[k] + ' <em class="sp-wx" title="' + (SEC_CORE[k] ? 'Modul inti' : 'Modul pelengkap') + ', bobot ' + SEC_W[k] + '">×' + SEC_W[k] + '</em></b><span>' + esc(x.v.t) + '</span></div></button>'; }).join('') + '</div>' +
+        howHtml(calc) +
         '<div class="sp-hz">' + hz.map(function (z) {
-          return '<div style="--c:' + colorOf(z.c) + '"><em>' + z.h.t + ' · ' + z.h.sub + '</em><strong>' + esc(z.label) + '</strong><small>' +
+          return '<div style="--c:' + colorOf(z.c) + '" title="' + esc('Bobot ' + z.h.t + ': ' + Object.keys(z.h.w).map(function (k) { return SEC_NAME[k] + ' ×' + z.h.w[k]; }).join(', ') + '. Layak bila ≥ +2, Hindari bila ≤ −2.') + '"><em>' + z.h.t + ' · ' + z.h.sub + '</em><strong>' + esc(z.label) + '</strong><small>' +
             (z.pos.length || z.neg.length ? (z.pos.length ? 'Didukung ' + esc(z.pos.join(', ')) : '') + (z.neg.length ? (z.pos.length ? '. ' : '') + 'Hati-hati: ' + esc(z.neg.join(', ')) : '') : 'Belum ada sinyal searah') +
             (z.pos.length && z.neg.length ? '. Sinyal bertentangan.' : '') + '</small></div>'; }).join('') + '</div></header>' +
       out + '<p class="sx-note">Kesimpulan dibuat dari aturan sederhana pada data yang tersedia dan bukan rekomendasi investasi. Cocokkan dengan profil risiko dan tujuan Anda (investasi, swing, atau trading).</p></div>';
@@ -2373,7 +2414,14 @@
     '.sp-row .rk{font-size:14px;font-weight:700;color:var(--text3)}',
     '.sp-row .tk{font-size:21px;line-height:1;font-weight:800}.sp-row .tk small{font-size:12px;font-weight:400;color:var(--text3);margin-left:8px}',
     '.sp-row .pxv{text-align:right;font-weight:700}.sp-row .pxv small{display:block;font-size:12px}',
-    '.sp-dots{display:flex;gap:3px;margin-top:8px}',
+    '.sp-dots{display:flex;gap:3px;margin-top:8px;align-items:center}',
+    '.sp-scv{margin-left:8px;font-size:11px;font-weight:800}',
+    '.sp-wx{font-style:normal;font-size:11px;font-weight:700;color:var(--text3)}',
+    '.sp-wt{display:grid;gap:8px}.sp-wt>div{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.sp-wt em{font-style:normal;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);min-width:74px}',
+    '.sp-wt span{font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--border);color:var(--text2)}.sp-wt span.c{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:transparent;color:var(--text)}',
+    '.sp-how{margin-top:10px;border:1px solid var(--border);border-radius:12px;padding:8px 12px;font-size:12px;line-height:1.55;color:var(--text2)}',
+    '.sp-how summary{cursor:pointer;font-weight:700;color:var(--text)}.sp-how p{margin:8px 0 0}.sp-how .sp-calc{padding:8px 10px;border-radius:8px;background:var(--card)}',
+    '.sp-how-w{margin-top:18px}.sp-how-w .sp-h5{margin-top:0}',
     '.sp-dots i{width:16px;height:5px;border-radius:3px;background:var(--border2)}.sp-dots i.p{background:var(--green)}.sp-dots i.w{background:var(--red)}',
     '.sp-row .tz{grid-column:2/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:2px}',
     '.sp-rs{font-size:11.5px;padding:2px 9px;border-radius:99px;background:var(--border);color:var(--text2)}',
