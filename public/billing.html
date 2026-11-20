@@ -441,7 +441,7 @@ a{color:inherit;text-decoration:none}
           <div class="acct-name" id="acctName">—</div>
           <div class="acct-email" id="acctEmail">—</div>
           <button type="button" class="acct-ref-copy" id="acctRefCopy" onclick="acctCopyRef(this)">🔗 Salin link referral</button>
-          <div class="acct-ref-note" id="acctRefNote">Tiap teman baru yang daftar lewat link ini memberi kamu +3 hari akses menu Tracker.</div>
+          <div class="acct-ref-note" id="acctRefNote">+3 hari akses Tracker per teman baru.</div>
         </div>
       </div>
       <div class="acct-row"><span class="acct-label">Status</span><span class="acct-val" id="acctStatus">—</span></div>
@@ -747,7 +747,7 @@ function acctShowRefCopy(j){
   var n = document.getElementById('acctRefNote');
   if (j && j.authenticated && j.enabled !== false && j.link) {
     window.__ES_REF_LINK = j.link; b.classList.add('show');
-    if (n) { n.textContent = 'Tiap teman baru yang daftar lewat link ini memberi kamu +' + (j.per || 3) + ' hari akses menu Tracker.'; n.classList.add('show'); }
+    if (n) { n.textContent = '+' + (j.per || 3) + ' hari akses Tracker per teman baru.'; n.classList.add('show'); }
   } else {
     window.__ES_REF_LINK = null; b.classList.remove('show');
     if (n) n.classList.remove('show');
