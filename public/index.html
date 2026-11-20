@@ -21188,7 +21188,7 @@ async function _loadReferralStat() {
     const el = document.getElementById('acctRef');
     const row = document.getElementById('acctRefRow');
     if (j && j.authenticated) {
-      if (el) el.textContent = (j.count || 0) + ' orang · ' + (j.days || 0) + ' hari';
+      if (el) el.textContent = (j.count || 0) + ' orang · ' + (j.days || 0) + ' hari Tracker';
       if (row) row.style.display = '';
     }
   } catch (_) { /* abaikan */ }

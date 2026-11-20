@@ -133,9 +133,11 @@ export async function setFeatureFlags(env, flags) {
 }
 
 // ── REFERRAL (ajak teman) ──
-// Reward +REFERRAL_DAYS hari (default 3) ke REFERRER tiap berhasil mengajak
-// USER BARU mendaftar. Kelipatan tanpa batas, STACKING (lewat activateSubscription),
-// source='referral' → TIDAK dihitung pendapatan. Semua fungsi FAIL-SAFE: bila
+// Reward +REFERRAL_DAYS hari (default 3) akses menu TRACKER ke REFERRER tiap berhasil
+// mengajak USER BARU mendaftar (scope='tracker', bukan full akses). Kelipatan tanpa batas,
+// STACKING (lewat activateSubscription), source='referral' → TIDAK dihitung pendapatan.
+// Pengecualian: referrer yang sedang punya langganan AKTIF ber-scope 'full' tidak diturunkan
+// ke 'tracker' (hari bonus tetap menambah masa aktifnya). Semua fungsi FAIL-SAFE: bila
 // kolom/tabel referral belum ada (migration belum jalan) → diam-diam dilewati.
 const _REF_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // tanpa I,O,0,1 (anti-ambigu)
 function _genReferralCode() {
@@ -222,7 +224,11 @@ export async function rewardReferralIfEligible(env, { newUser, refCode, ip } = {
     const admins = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
     const referrerIsAdmin = referrer.email && admins.includes(String(referrer.email).toLowerCase());
     if (!referrerIsAdmin) {
-      await activateSubscription(env, referrer.id, 'referral', days, 'referral', null);
+      // Bonus = akses Tracker saja. Jangan menurunkan langganan full yang sedang aktif
+      // (null = pertahankan scope existing). Baris kedaluwarsa/baru/trial-selesai → 'tracker'.
+      const act = await getActiveSubscription(env, referrer.id);
+      const keepFull = !!(act && act.expires_at > t && normalizeScope(act.scope) === 'full');
+      await activateSubscription(env, referrer.id, 'referral', days, 'referral', null, keepFull ? null : 'tracker');
     }
     return { referrerId: referrer.id, days };
   } catch { return null; }
