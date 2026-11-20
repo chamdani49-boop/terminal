@@ -33428,6 +33428,18 @@ document.addEventListener('keydown', (e) => {
 
   var LOCKED_MENUS = ['dashboard','pasar','consensus','valuasi'];
   var LOCKED_META = {
+    smartmoney: {
+      title: '💰 Smart Money',
+      desc: 'Broker Activity, transaksi orang dalam (Insider), dan kepemilikan saham: lihat siapa yang mengumpulkan dan siapa yang melepas.'
+    },
+    screener: {
+      title: '🔎 Screener Smart Money',
+      desc: 'Saring ratusan saham dari pola bandar, arus asing, dan teknikal. Preset Bullish dan Risk, skor 0-100, dan backtest sinyal.'
+    },
+    stockpro: {
+      title: '⚡ StockPro',
+      desc: 'Satu halaman per saham: swing, konsensus, valuasi, stock pick, broker, insider, dan kepemilikan dengan skor berbobot Layak dibeli atau Hindari.'
+    },
     tracker: {
       title: '📈 Tracker Rekomendasi',
       desc: 'Rekomendasi Entry/TP/SL dari sekuritas, status berjalan, dan statistik winrate per sekuritas. Tersedia di paket Tracker dan Full Akses.'
@@ -33607,7 +33619,51 @@ document.addEventListener('keydown', (e) => {
       '</table></div></div>';
   }
 
+  // ── Smart Money / Screener / StockPro preview ────────────────────
+  function _lpvRows(rows){ return rows.map(function(r){ return '<div class="lpv-row"><span>' + r[0] + '</span><span>' + r[1] + '</span>' + (r[2] || '') + '</div>'; }).join(''); }
+  function _previewSmartMoney(){
+    var bk = [['CC · Mandiri Sekuritas','+300,0 Jt'],['AK · UBS','+9,5 Jt'],['YJ · Lotus','+8,7 Jt'],['XL · Stockbit','−107,3 Jt'],['XC · Ajaib','−96,4 Jt']];
+    var cal = []; for (var i = 0; i < 20; i++){ var up = Math.random() > 0.45; cal.push('<div style="background:' + (up ? '#10b981' : '#ef4444') + '">' + (i + 1) + '</div>'); }
+    return _tickerTape() +
+      '<div class="lpv-sec"><h1 class="lpv-h1">💰 Smart Money — Broker Activity</h1><div class="lpv-sub">Bandar · Asing · Ritel · Insider · Kepemilikan</div></div>' +
+      '<div class="lpv-grid-3">' +
+        '<div class="lpv-card"><div class="lpv-sub">Sinyal smart money</div><div class="lpv-stat-num" style="margin-top:8px">Uang besar MASUK</div><div class="lpv-stat-lbl" style="margin-top:6px">Bandar akumulasi · Asing net beli</div></div>' +
+        '<div class="lpv-card"><div class="lpv-sub">📈 Broker Flow</div><div class="lpv-chart"><svg viewBox="0 0 1000 200" preserveAspectRatio="none"><path d="' + _sparkPath() + '" fill="none" stroke="#10b981" stroke-width="3"/></svg></div></div>' +
+        '<div class="lpv-card"><div class="lpv-sub">🕵 Orang dalam</div><div class="lpv-stat-num" style="margin-top:8px">Rp' + _fakeNum(10, 90) + ',2 M</div><div class="lpv-stat-lbl" style="margin-top:6px">Orang dalam MEMBELI</div></div>' +
+      '</div>' +
+      '<div class="lpv-grid-2">' +
+        '<div class="lpv-card"><div class="lpv-sub">📊 Broker Summary</div>' + _lpvRows(bk) + '</div>' +
+        '<div class="lpv-card"><div class="lpv-sub">📅 Kalender flow</div><div class="lpv-heatmap">' + cal.join('') + '</div></div>' +
+      '</div>';
+  }
+  function _previewScreener(){
+    var t = ['BBRI','ADRO','ANTM','MDKA','BRPT','PGAS','INCO','TPIA','AMMN','MEDC'];
+    var rows = t.map(function(c){ var sc = Math.round(55 + Math.random() * 40), b = sc >= 70 ? '<span class="lpv-badge buy">Bullish</span>' : '<span class="lpv-badge neu">Pantau</span>'; return [c + ' · Akumulasi bandar', 'Skor ' + sc, b]; });
+    return _tickerTape() +
+      '<div class="lpv-sec"><h1 class="lpv-h1">🔎 Screener Smart Money</h1><div class="lpv-sub">Top Gems · Akumulasi · Nampung Retail · Radar Asing · Backtest</div></div>' +
+      '<div class="lpv-grid-3">' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Saham akumulasi</div><div class="lpv-stat-num">' + _fakeNum(60, 140) + '</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Saham distribusi</div><div class="lpv-stat-num">' + _fakeNum(40, 110) + '</div></div>' +
+        '<div class="lpv-card"><div class="lpv-stat-lbl">Net asing 5 hari</div><div class="lpv-stat-num">+Rp' + _fakeNum(1, 9) + ',4 T</div></div>' +
+      '</div>' +
+      '<div class="lpv-sec"><div class="lpv-card"><div class="lpv-sub">⭐ Top Gems · preset Bullish</div>' + _lpvRows(rows) + '</div></div>';
+  }
+  function _previewStockPro(){
+    var buy = ['BBCA','TLKM','ASII','ICBP','KLBF'].map(function(c){ return [c + ' · Trade, Broker, Swing', '+' + _fakeNum(30, 80), '<span class="lpv-badge buy">Layak dibeli</span>']; });
+    var sell = ['GOTO','BUKA','EMTK','ARTO','WIFI'].map(function(c){ return [c + ' · Broker, Insider', '−' + _fakeNum(30, 70), '<span class="lpv-badge sell">Hindari</span>']; });
+    return _tickerTape() +
+      '<div class="lpv-sec"><h1 class="lpv-h1">⚡ StockPro</h1><div class="lpv-sub">Skor berbobot dari Trade, Broker, Insider, Swing, Valuasi, Konsensus, Kepemilikan, Berita</div></div>' +
+      '<div class="lpv-sec"><div class="lpv-card"><div class="lpv-sub">Peta sinyal · Hindari ← Netral → Layak dibeli</div><div class="lpv-chart"><svg viewBox="0 0 1000 200" preserveAspectRatio="none"><path d="' + _sparkPath() + '" fill="none" stroke="#a78bfa" stroke-width="3"/></svg></div></div></div>' +
+      '<div class="lpv-grid-2">' +
+        '<div class="lpv-card"><div class="lpv-sub">✅ Layak dibeli</div>' + _lpvRows(buy) + '</div>' +
+        '<div class="lpv-card"><div class="lpv-sub">⛔ Hindari atau kurangi</div>' + _lpvRows(sell) + '</div>' +
+      '</div>';
+  }
+
   var PREVIEWS = {
+    smartmoney: _previewSmartMoney,
+    screener: _previewScreener,
+    stockpro: _previewStockPro,
     dashboard: _previewDashboard,
     pasar: _previewPasar,
     consensus: _previewConsensus,
@@ -33643,9 +33699,12 @@ document.addEventListener('keydown', (e) => {
     if (titleEl) titleEl.textContent = meta.title;
     if (descEl) descEl.textContent = meta.desc;
     var subEl = overlay.querySelector('.locked-cta-sub');
-    if (subEl) subEl.textContent = window.__ES_SCOPE === 'none'
-      ? 'Kamu belum berlangganan · Menu Smart Money tetap terbuka'
-      : 'Kamu sedang di Paket Tracker · Ini fitur Full Akses';
+    var fullOnly = name === 'screener' || name === 'stockpro';
+    if (subEl) subEl.textContent = name === 'smartmoney'
+      ? 'Smart Money untuk pelanggan paket Tracker & Full Akses'
+      : window.__ES_SCOPE === 'none'
+        ? (fullOnly ? 'Kamu belum berlangganan · Ini fitur Full Akses' : 'Kamu belum berlangganan · Menu Smart Money tetap terbuka')
+        : 'Kamu sedang di Paket Tracker · Ini fitur Full Akses';
     var gen = PREVIEWS[name];
     content.innerHTML = gen ? gen() : '';
 
@@ -33663,10 +33722,18 @@ document.addEventListener('keydown', (e) => {
     if (content) content.innerHTML = ''; // free memory
   }
   window.__hideLockedPreview = hideLockedPreview;
+  window.__showLockedPreview = showLockedPreview;   // dipakai smartmoney.js (Screener, StockPro, Smart Money)
 
   // ── Hook showPage() untuk intercept navigasi user scope='tracker' ─
   function isTrackerScope(){
     return (window.__ES_SCOPE === 'tracker' || window.__ES_SCOPE === 'none') && !window.__ES_IS_ADMIN;
+  }
+  // Halaman terkunci: menu Full untuk scope tracker/none, Tracker untuk scope none,
+  // dan Smart Money bila akun tidak punya akses (switch admin).
+  function isLockedPage(name){
+    if (window.__ES_IS_ADMIN) return false;
+    if (name === 'smartmoney') return !!(window.__ES_SMM && !window.__ES_SMM.allowed);
+    return isTrackerScope() && lockedMenus().indexOf(name) >= 0;
   }
   // Belum berlangganan (scope 'none'): Tracker ikut terkunci, hanya Smart Money terbuka.
   function lockedMenus(){
@@ -33683,7 +33750,7 @@ document.addEventListener('keydown', (e) => {
 
     var original = window.showPage;
     window.showPage = function(name){
-      if (isTrackerScope() && lockedMenus().indexOf(name) >= 0){
+      if (isLockedPage(name)){
         showLockedPreview(name);
         return;
       }

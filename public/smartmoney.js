@@ -322,6 +322,7 @@
     '.smm-sheet{position:relative;width:min(560px,calc(100vw - 32px));max-height:min(86vh,820px);display:flex;flex-direction:column;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.35);transform:translateY(12px);transition:transform .2s}',
     '.smm-sheet.smm-sheet-sm{width:min(440px,calc(100vw - 32px))}.smm-sheet.smm-sheet-lg{width:min(860px,calc(100vw - 32px))}',
     '.smm-sheet-bg.open .smm-sheet{transform:none}',
+    '.nav-tab.smm-nav.smm-locked{opacity:.55}.nav-tab.smm-nav.smm-locked::before{content:"🔒 ";font-size:11px;opacity:.85;margin-right:2px}',
     '.smm-sheet-bg.anchored{background:rgba(10,6,24,.25);-webkit-backdrop-filter:none;backdrop-filter:none}',
     '.smm-sheet-bg.anchored .smm-sheet{position:fixed;margin:0}',
     '.smm-dp-free{margin:8px 2px 0;font-size:11.5px;line-height:1.45;color:var(--text3)}',
@@ -4179,6 +4180,12 @@
   };
   // Screener & StockPro hanya untuk admin dan langganan Full (seperti Dashboard).
   function smmFull() { return window.__ES_IS_ADMIN === true || !!(window.__ES_SMM && window.__ES_SMM.full); }
+  function smmAllowed() { return window.__ES_IS_ADMIN === true || !!(window.__ES_SMM && window.__ES_SMM.allowed); }
+  // Tampilkan overlay kunci (pratinjau buram + CTA paket) seperti menu Full lain. false = overlay belum tersedia.
+  function smmLocked(name) {
+    if (typeof window.__showLockedPreview !== 'function') return false;
+    window.__showLockedPreview(name); return true;
+  }
   function screenerLockHtml() {
     return '<div class="smm-card" style="text-align:center;padding:40px 16px;line-height:1.6">' +
       '<div style="font-size:34px">🔒</div>' +
@@ -4195,6 +4202,11 @@
   }
   function setSub(v, noScroll) {
     if (v !== 'broker' && v !== 'insider' && v !== 'holder' && v !== 'screener') v = 'broker';
+    if (v === 'screener' && !smmFull()) {
+      var pv = window.__smmScrPending; window.__smmScrPending = null;
+      if (smmLocked(pv && pv.view === 'stk' ? 'stockpro' : 'screener')) return;
+      window.__smmScrPending = pv;   // overlay tidak ada → kartu kunci di halaman Screener
+    }
     S.sub = v;
     try { localStorage.setItem('smm_sub', v); } catch (_) {}
     document.getElementById('smmPgBroker').hidden = v !== 'broker';
@@ -4458,6 +4470,7 @@
   // Tanpa itu (nav atas / bawah): bila sedang di Screener, kembali ke Broker Activity.
   var _resume = false;
   function open(keepSub) {
+    if (!smmAllowed()) { smmLocked('smartmoney'); return; }   // tanpa akses: overlay kunci, data tidak dimuat
     root = document.getElementById('page-smartmoney');
     if (!root) return;
     if (!_built) {
@@ -4529,6 +4542,7 @@
       tab.setAttribute('onclick', "showPage('smartmoney');SmartMoney.open()");
       tab.innerHTML = '<span class="smm-nav-ico" aria-hidden="true">💰</span><span class="smm-nav-lbl"> Smart Money</span>';
       tab.title = 'Smart Money';
+      if (!smmAllowed()) tab.classList.add('smm-locked');
       var tr = document.getElementById('tabTracker');
       if (tr && tr.parentNode === tabs) tabs.insertBefore(tab, tr.nextSibling); else tabs.appendChild(tab);
     }
@@ -4549,6 +4563,10 @@
         e.preventDefault(); e.stopPropagation();
         var menu = document.getElementById('acctMenu'), wrap = document.getElementById('acctWrap');
         if (menu) menu.classList.remove('open'); if (wrap) wrap.classList.remove('menu-open');
+        if (!smmAllowed()) { if (smmLocked('smartmoney')) return; }
+        if (btn.getAttribute('data-smm-sub') === 'screener' && !smmFull()) {
+          if (smmLocked(btn.getAttribute('data-smm-view') === 'stk' ? 'stockpro' : 'screener')) return;
+        }
         if (typeof window.showPage === 'function') window.showPage('smartmoney');
         open(true);
         var sub = btn.getAttribute('data-smm-sub');
@@ -4607,7 +4625,7 @@
   // Menu tampil untuk admin, atau user yang diizinkan (switch Smart Money di panel admin).
   var tries = 0;
   function waitAdmin() {
-    if (window.__ES_IS_ADMIN === true || (window.__ES_SMM && window.__ES_SMM.allowed)) { inject(); return; }
+    if (window.__ES_IS_ADMIN === true || window.__ES_SMM) { inject(); return; }   // tanpa akses: menu tampil terkunci (overlay)
     if (++tries < 300) setTimeout(waitAdmin, 300);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', waitAdmin);
