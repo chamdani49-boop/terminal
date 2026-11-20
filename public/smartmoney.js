@@ -1576,6 +1576,9 @@
 
       // ═════════ HALAMAN 4: SCREENER (modul terpisah: smartmoney-screener.js) ═════════
       '<div class="smm-pg" id="smmPgScreener" hidden></div>' +
+
+      // Disclaimer edukasi: tampil di semua sub-halaman Smart Money (Broker, Insider, Kepemilikan, Screener, StockPro)
+      '<div class="dm-disclaimer" style="margin:8px 0 0;max-width:none">' + 'Konten ini murni informasi <b>edukasi</b> dan <b>bukan</b> ajakan/rekomendasi membeli atau menjual saham. <b>Data Economstock Terminal</b> adalah rangkuman ringkas yang dikumpulkan untuk keperluan analisis edukatif — kami <b>tidak menyalin, mereproduksi, maupun menyebarluaskan</b> laporan asli. <b>Hak cipta atas laporan penuh tetap milik sekuritas penerbitnya</b>. Selalu lakukan riset secara mandiri dan pastikan kamu memahami risikonya sebelum mengambil keputusan investasi.' + '</div>' +
     '</div>';
   }
 
