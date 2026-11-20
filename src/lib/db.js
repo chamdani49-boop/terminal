@@ -41,9 +41,12 @@ export async function ensureUser(env, email, name = null, picture = null) {
 
 // ── SUBSCRIPTIONS ──
 // Ambil langganan aktif (status active & belum kedaluwarsa), terbaru dulu
+// Bila user punya >1 baris aktif (hanya terjadi pada bonus referral Tracker yang antre di
+// belakang langganan full), baris FULL dipilih lebih dulu; setelah full habis, baris Tracker
+// otomatis menjadi yang aktif. User dengan satu baris tidak terpengaruh.
 export async function getActiveSubscription(env, userId) {
   return db(env).prepare(
-    "SELECT * FROM subscriptions WHERE user_id = ? AND status = 'active' AND expires_at > ? ORDER BY expires_at DESC LIMIT 1"
+    "SELECT * FROM subscriptions WHERE user_id = ? AND status = 'active' AND expires_at > ? ORDER BY CASE WHEN scope = 'tracker' THEN 1 ELSE 0 END, expires_at DESC LIMIT 1"
   ).bind(userId, now()).first();
 }
 
@@ -135,9 +138,8 @@ export async function setFeatureFlags(env, flags) {
 // ── REFERRAL (ajak teman) ──
 // Reward +REFERRAL_DAYS hari (default 3) akses menu TRACKER ke REFERRER tiap berhasil
 // mengajak USER BARU mendaftar (scope='tracker', bukan full akses). Kelipatan tanpa batas,
-// STACKING (lewat activateSubscription), source='referral' → TIDAK dihitung pendapatan.
-// Pengecualian: referrer yang sedang punya langganan AKTIF ber-scope 'full' tidak diturunkan
-// ke 'tracker' (hari bonus tetap menambah masa aktifnya). Semua fungsi FAIL-SAFE: bila
+// STACKING, source='referral' → TIDAK dihitung pendapatan. Referrer yang sedang full aktif
+// dibiarkan (tidak diperpanjang/diturunkan); bonus antre sebagai Tracker setelah full habis. Semua fungsi FAIL-SAFE: bila
 // kolom/tabel referral belum ada (migration belum jalan) → diam-diam dilewati.
 const _REF_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // tanpa I,O,0,1 (anti-ambigu)
 function _genReferralCode() {
@@ -192,6 +194,31 @@ export async function getReferralInfo(env, userId) {
   return { code, count, days: count * per };
 }
 
+// Bonus referral = hari akses TRACKER, bukan full.
+//   - tanpa langganan aktif / kedaluwarsa / sudah Tracker → langganan Tracker (stacking).
+//   - sedang FULL aktif → langganan full TIDAK diperpanjang dan TIDAK diturunkan. Hari bonus
+//     dicatat sebagai baris Tracker terpisah yang mulai saat full berakhir (bonus berikutnya
+//     menambah baris itu). Prioritas baris diatur di getActiveSubscription.
+async function grantReferralTracker(env, userId, days) {
+  const t = now();
+  const act = await getActiveSubscription(env, userId);
+  if (!act || normalizeScope(act.scope) !== 'full') {
+    return activateSubscription(env, userId, 'referral', days, 'referral', null, 'tracker');
+  }
+  const queued = await db(env).prepare(
+    "SELECT * FROM subscriptions WHERE user_id = ? AND scope = 'tracker' AND source = 'referral' AND status = 'active' AND expires_at > ? ORDER BY expires_at DESC LIMIT 1"
+  ).bind(userId, t).first();
+  if (queued) {
+    await db(env).prepare('UPDATE subscriptions SET expires_at = expires_at + ? WHERE id = ?')
+      .bind(days * 86400, queued.id).run();
+    return queued;
+  }
+  const id = randomId(16);
+  await db(env).prepare('INSERT INTO subscriptions (id, user_id, plan, status, started_at, expires_at, source, mayar_txn_id, created_at, scope) VALUES (?,?,?,?,?,?,?,?,?,?)')
+    .bind(id, userId, 'referral', 'active', act.expires_at, act.expires_at + days * 86400, 'referral', null, t, 'tracker').run();
+  return null;
+}
+
 // Beri reward referral SAAT user baru daftar (dipanggil dari alur login).
 // Anti-curang B+: 1 reward/referee (referee_id UNIQUE), IP referee != IP referrer.
 export async function rewardReferralIfEligible(env, { newUser, refCode, ip } = {}) {
@@ -224,11 +251,7 @@ export async function rewardReferralIfEligible(env, { newUser, refCode, ip } = {
     const admins = (env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
     const referrerIsAdmin = referrer.email && admins.includes(String(referrer.email).toLowerCase());
     if (!referrerIsAdmin) {
-      // Bonus = akses Tracker saja. Jangan menurunkan langganan full yang sedang aktif
-      // (null = pertahankan scope existing). Baris kedaluwarsa/baru/trial-selesai → 'tracker'.
-      const act = await getActiveSubscription(env, referrer.id);
-      const keepFull = !!(act && act.expires_at > t && normalizeScope(act.scope) === 'full');
-      await activateSubscription(env, referrer.id, 'referral', days, 'referral', null, keepFull ? null : 'tracker');
+      await grantReferralTracker(env, referrer.id, days);
     }
     return { referrerId: referrer.id, days };
   } catch { return null; }
@@ -433,7 +456,8 @@ export async function adminSetStatus(env, email, status) {
   if (!u) throw new Error('User tidak ditemukan');
   const latest = await getLatestSubscription(env, u.id);
   if (!latest) throw new Error('User belum punya langganan');
-  await db(env).prepare('UPDATE subscriptions SET status = ? WHERE id = ?').bind(status, latest.id).run();
+  // Semua baris user (bonus Tracker antre ikut), supaya suspend/aktifkan konsisten.
+  await db(env).prepare('UPDATE subscriptions SET status = ? WHERE user_id = ?').bind(status, u.id).run();
   return { ok: true };
 }
 
@@ -443,7 +467,8 @@ export async function adminSetStatus(env, email, status) {
 export async function autoSuspendByUserId(env, userId) {
   const active = await getActiveSubscription(env, userId);
   if (!active) return false;
-  await db(env).prepare("UPDATE subscriptions SET status = 'suspended' WHERE id = ?").bind(active.id).run();
+  // Semua baris aktif user (bonus Tracker antre juga ikut), supaya suspend tidak menyisakan akses.
+  await db(env).prepare("UPDATE subscriptions SET status = 'suspended' WHERE user_id = ? AND status = 'active'").bind(userId).run();
   return true;
 }
 
