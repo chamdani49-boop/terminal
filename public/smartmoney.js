@@ -322,6 +322,8 @@
     '.smm-sheet{position:relative;width:min(560px,calc(100vw - 32px));max-height:min(86vh,820px);display:flex;flex-direction:column;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.35);transform:translateY(12px);transition:transform .2s}',
     '.smm-sheet.smm-sheet-sm{width:min(440px,calc(100vw - 32px))}.smm-sheet.smm-sheet-lg{width:min(860px,calc(100vw - 32px))}',
     '.smm-sheet-bg.open .smm-sheet{transform:none}',
+    '.smm-sheet-bg.anchored{background:rgba(10,6,24,.25);-webkit-backdrop-filter:none;backdrop-filter:none}',
+    '.smm-sheet-bg.anchored .smm-sheet{position:fixed;margin:0}',
     '.smm-dp-free{margin:8px 2px 0;font-size:11.5px;line-height:1.45;color:var(--text3)}',
     '.smm-uppop{position:fixed;inset:0;z-index:10050;background:rgba(8,5,25,.72);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .2s}',
     '.smm-uppop.show{opacity:1}',
@@ -2211,14 +2213,20 @@
       root.appendChild(bg);
       bg.addEventListener('click', function (e) { if (e.target === bg) closeSheet(); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && bg.classList.contains('open')) closeSheet(); });
+      window.addEventListener('resize', function () {
+        var t = _sheetStack[_sheetStack.length - 1];
+        if (t && bg.classList.contains('open')) placeSheet(bg, bg.querySelector('.smm-sheet'), t.anchor);
+      });
     }
     return bg;
   }
   // render: fungsi yang mengembalikan HTML. Dipanggil ulang dengan sheetRender().
+  // opts.anchor: elemen pemicu. Di PC/tablet (>640px) popup ditempel di dekat elemen itu,
+  // bukan di tengah layar. Di HP tetap bottom sheet.
   function openSheet(kind, render, opts) {
     var bg = sheetEl(), top = _sheetStack[_sheetStack.length - 1];
     if (!(opts && opts.stack) && top) _sheetStack = [];
-    _sheetStack.push({ kind: kind, render: render, cls: (opts && opts.cls) || '' });
+    _sheetStack.push({ kind: kind, render: render, cls: (opts && opts.cls) || '', anchor: (opts && opts.anchor) || null });
     sheetRender();
     bg.classList.add('open');
     document.documentElement.classList.add('smm-noscroll');
@@ -2230,6 +2238,26 @@
     var inner = document.getElementById('smmSheetIn'), sc = inner.scrollTop;
     inner.innerHTML = top.render();
     inner.scrollTop = sc;
+    placeSheet(bg, box, top.anchor);
+  }
+  function placeSheet(bg, box, anchor) {
+    var mobile = window.matchMedia && window.matchMedia('(max-width:640px)').matches;
+    var r = anchor && anchor.isConnected ? anchor.getBoundingClientRect() : null;
+    if (mobile || !r || !r.width) {
+      bg.classList.remove('anchored'); box.style.left = box.style.top = box.style.maxHeight = '';
+      return;
+    }
+    bg.classList.add('anchored');
+    var vw = window.innerWidth, vh = window.innerHeight, gap = 6, pad = 12;
+    box.style.maxHeight = '';
+    var w = box.offsetWidth, h = box.scrollHeight;
+    var below = vh - r.bottom - gap - pad, above = r.top - gap - pad;
+    var down = below >= Math.min(h, 420) || below >= above;
+    var room = Math.max(220, down ? below : above);
+    var hh = Math.min(h, room);
+    box.style.maxHeight = room + 'px';
+    box.style.left = Math.round(Math.max(pad, Math.min(r.left, vw - w - pad))) + 'px';
+    box.style.top = Math.round(down ? Math.min(r.bottom + gap, vh - pad - hh) : Math.max(pad, r.top - gap - hh)) + 'px';
   }
   function closeSheet() {
     _sheetStack.pop();
@@ -2301,7 +2329,7 @@
   function openDatePick(o) {
     if (o.limit7 && smmLimit7()) o.minIdx = freeMinIdx(o.days, o.L);
     _dp = { o: o, s: o.start, e: o.end, k: o.preset || 'custom' };
-    openSheet('date', renderDatePick, { stack: true, cls: 'smm-sheet-sm' });
+    openSheet('date', renderDatePick, { stack: true, cls: 'smm-sheet-sm', anchor: o.anchor || _lastActEl });
   }
   function renderDatePick() {
     var d = _dp, days = d.o.days, list = (d.o.all ? [['all', 'Semua tanggal']] : []).concat(DP_PRESETS);
@@ -4235,12 +4263,14 @@
     if (c) c.classList.add('flash');
   }
 
+  var _lastActEl = null;   // tombol terakhir yang diklik → titik tempel pemilih tanggal di PC/tablet
   function onClick(e) {
     var el = e.target.closest && e.target.closest('[data-act]');
     if (!el || !root.contains(el)) {
       var m = document.getElementById('smmAddMenu'); if (m) m.classList.remove('open');
       return;
     }
+    _lastActEl = el;
     var act = el.getAttribute('data-act'), v = el.getAttribute('data-v');
     switch (act) {
       case 'sub': setSub(v); break;
