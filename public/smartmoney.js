@@ -1381,7 +1381,7 @@
     cr: {},   // tanggal khusus per kartu: { flow|vxv|orbit|radar: { k, from, to } }. Kosong = ikut tanggal global.
     actEnd: 0, actStart: 0, actPreset: '7d', actMode: 'net', actSort: { side: 'b', key: 'val' }, actAll: false,
     skMetric: 'value', skFocus: null, bsView: 'sum', bsAll: false, obMetric: 'value', obFocus: null, obView: 'orbit', vxv: 'both',
-    insSrc: 'ALL', insAct: 'ALL', insName: null, insRange: '2Y', insHl: null,
+    insSrc: 'ALL', insAct: 'ALL', insName: null, insRange: '6M', insHl: null,
     cal: { grp: 'sm', ym: null, end: null },
     broker: null, person: null, personAll: false, hoMonth: null, hoSide: 'all', hoChart: 'lf'
   };
