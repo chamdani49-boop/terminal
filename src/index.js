@@ -21,6 +21,7 @@ import { getBillingConfig, publicBilling } from './lib/billing.js';
 import { rateLimit, reportAbuse, trackDevice } from './lib/abuse.js';
 import { TOS_VERSION, hasAcceptedCurrent, saveConsent } from './lib/legal.js';
 import { getWhatsapp, saveWhatsapp, normalizeWhatsapp } from './lib/contact.js';
+import { handleSmartMoneyApi } from './lib/smartmoney.js';
 
 // Path yang butuh langganan aktif saat gating menyala.
 // /tracker.json butuh scope IN ('tracker','full'), path lain butuh 'full'.
@@ -122,6 +123,11 @@ async function guardProtected(request, env, ctx, path) {
       sub = await getActiveSubscription(env, session.uid);
       allowed = !!sub;
     } catch { allowed = false; }
+    // Smart Money dibuka untuk semua user login → harga harian (/ohlc.json) ikut dibuka
+    // untuk grafiknya. Data lain (data.json, valuasi, dst.) tetap butuh langganan.
+    if (!allowed && path === '/ohlc.json') {
+      try { allowed = (await getFeatureFlags(env)).smartmoney_all !== false; } catch { allowed = false; }
+    }
   }
   if (!allowed) {
     const accept = request.headers.get('Accept') || '';
@@ -180,6 +186,20 @@ async function guardProtected(request, env, ctx, path) {
     }));
   }
   return null;
+}
+
+// Akses menu Smart Money (Broker Activity, Insider, Kepemilikan).
+//   admin                → selalu boleh, termasuk Screener & StockPro
+//   flag smartmoney_all  → ON: semua user login · OFF: hanya pelanggan aktif (Tracker & Full)
+//   full                 → Screener & StockPro (hanya admin / langganan scope 'full')
+async function smartMoneyAccess(env, session) {
+  if (!session) return { allowed: false, full: false, admin: false };
+  if (adminList(env).includes((session.email || '').toLowerCase())) return { allowed: true, full: true, admin: true };
+  let all = true;
+  try { all = (await getFeatureFlags(env)).smartmoney_all !== false; } catch { all = true; }
+  let sub = null;
+  try { sub = await getActiveSubscription(env, session.uid); } catch { sub = null; }
+  return { allowed: all || !!sub, full: !!(sub && sub.scope !== 'tracker'), admin: false };
 }
 
 async function hasActiveSub(request, env) {
@@ -247,6 +267,7 @@ async function handleApi(request, env, url, ctx) {
       whatsapp_missing: whatsappMissing,  // true → pop up Ketentuan minta nomor WA
       guide_seen: guideSeen,    // panduan tur sudah dilihat (per email/akun)
       pwa,                       // { should_prompt, is_installed } — per email/akun
+      smartmoney: await smartMoneyAccess(env, session),   // { allowed, full, admin }
     });
   }
 
@@ -277,6 +298,24 @@ async function handleApi(request, env, url, ctx) {
     if (!session) return json({ ok: false }, 401);
     try { await markPwaInstalled(env, session.uid); } catch { /* fail-safe */ }
     return json({ ok: true });
+  }
+
+  // ── Smart Money untuk user (bukan admin) ──
+  // Data R2 yang sama dengan /api/admin/smartmoney*. Aturan akses: smartMoneyAccess().
+  // /screener ikut dibuka karena radar Broker Activity memakainya; halaman Screener &
+  // StockPro dikunci di tampilan untuk non-Full (seperti Dashboard untuk paket Tracker).
+  if (path === '/api/smartmoney' || path.startsWith('/api/smartmoney/')) {
+    if (method !== 'GET') return json({ error: 'Method not allowed' }, 405);
+    const session = await getSession(request, env);
+    if (!session) return json({ error: 'Belum login' }, 401);
+    const acc = await smartMoneyAccess(env, session);
+    if (!acc.allowed) return json({ error: 'Smart Money hanya untuk pelanggan aktif.', upgrade_required: true }, 402);
+    if (!acc.admin) {
+      const limitPerMin = parseInt(env.RATE_LIMIT_PER_MIN || '120', 10) || 120;
+      const rl = await rateLimit(env, { identity: session.uid, limit: limitPerMin });
+      if (!rl.ok) return json({ error: 'Terlalu banyak request. Coba lagi sebentar.' }, 429, { 'Retry-After': String(rl.retryAfter || 30) });
+    }
+    return handleSmartMoneyApi(request, env, url);
   }
 
   // ── Referral: kode ajakan + statistik (N orang · M hari) ──

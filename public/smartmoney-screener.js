@@ -277,7 +277,7 @@
     derive(m);
   }
   function loadSummary() {
-    return (A.cachedJson ? A.cachedJson('/api/admin/smartmoney/screener') : fetch('/api/admin/smartmoney/screener', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }))
+    return (A.cachedJson ? A.cachedJson('/api/smartmoney/screener') : fetch('/api/smartmoney/screener', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }))
       .then(function (j) {
         if (!j || !j.stocks || !Array.isArray(j.days)) return 0;
         var cnt = 0;

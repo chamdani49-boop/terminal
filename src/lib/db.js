@@ -102,7 +102,8 @@ export async function txnAlreadyProcessed(env, txnId) {
 // Default: kedua fitur AKTIF (perilaku tidak berubah sampai admin mematikan).
 // FAIL-SAFE: bila tabel belum ada / D1 error → kembalikan default (aktif).
 export async function getFeatureFlags(env) {
-  const out = { trial: true, referral: true, trial_minutes: null };
+  // smartmoney_all: true = menu Smart Money untuk semua user login; false = hanya pelanggan aktif (Tracker & Full).
+  const out = { trial: true, referral: true, trial_minutes: null, smartmoney_all: true };
   try {
     await db(env).prepare('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)').run();
     const row = await db(env).prepare('SELECT value FROM app_settings WHERE key = ?').bind('feature_flags').first();
@@ -110,6 +111,7 @@ export async function getFeatureFlags(env) {
       const v = JSON.parse(row.value);
       if (typeof v.trial === 'boolean') out.trial = v.trial;
       if (typeof v.referral === 'boolean') out.referral = v.referral;
+      if (typeof v.smartmoney_all === 'boolean') out.smartmoney_all = v.smartmoney_all;
       // Durasi trial (menit) — khusus testing, diatur dari panel admin. null = pakai env TRIAL_MINUTES.
       if (Number.isFinite(v.trial_minutes) && v.trial_minutes > 0) out.trial_minutes = v.trial_minutes;
     }
@@ -122,6 +124,7 @@ export async function setFeatureFlags(env, flags) {
   const next = {
     trial: typeof (flags && flags.trial) === 'boolean' ? flags.trial : cur.trial,
     referral: typeof (flags && flags.referral) === 'boolean' ? flags.referral : cur.referral,
+    smartmoney_all: typeof (flags && flags.smartmoney_all) === 'boolean' ? flags.smartmoney_all : cur.smartmoney_all,
     // Durasi trial (menit): simpan bila angka valid > 0, selain itu pertahankan nilai lama.
     trial_minutes: (flags && Number.isFinite(Number(flags.trial_minutes)) && Number(flags.trial_minutes) > 0)
       ? Math.floor(Number(flags.trial_minutes))

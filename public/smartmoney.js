@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════════
- * Economstock Terminal — Menu "Smart Money" (KHUSUS ADMIN)
+ * Economstock Terminal — Menu "Smart Money" (admin + user login sesuai switch di panel admin)
  *
  * Melacak ke mana uang besar bergerak:
  *   1. Ringkasan & skor Smart Money (bahasa awam)
@@ -15,7 +15,7 @@
  *   - Navigasi memakai showPage() yang sudah ada, tanpa mengubahnya.
  *   - Tidak membaca / menulis data menu inti.
  *
- * HANYA DATA ASLI dari R2 (endpoint /api/admin/smartmoney*). Tidak ada data
+ * HANYA DATA ASLI dari R2 (endpoint /api/smartmoney*). Tidak ada data
  * dummy: saham tanpa file di R2 menampilkan kotak kosong.
  * ══════════════════════════════════════════════════════════════════════ */
 (function () {
@@ -1042,7 +1042,7 @@
   ].join('\n');
 
   // ─────────────────────────── Data asli (R2 via Worker) ───────────────────────────
-  // /api/admin/smartmoney?code=KODE → { broker, insider } (lihat src/lib/smartmoney.js).
+  // /api/smartmoney?code=KODE → { broker, insider } (lihat src/lib/smartmoney.js).
   // Format file yang diunggah upload_smartmoney.py:
   //   broker:  { code, updated, days:[iso], ohlc?:[[iso,o,h,l,c]],
   //              brokers:[{ code, bv:[], sv:[], bl:[], sl:[], fbv?:[], fsv?:[], fbl?:[], fsl?:[] }] }
@@ -1078,7 +1078,7 @@
     return _ohlcAll;
   }
   function loadIndex() {
-    return cachedJson('/api/admin/smartmoney/index')
+    return cachedJson('/api/smartmoney/index')
       .then(function (j) {
         var codes = j && j.ok && j.index && Array.isArray(j.index.codes) ? j.index.codes : [];
         _index = codes.map(function (c) { return String(c).toUpperCase(); }).filter(function (c) { return /^[A-Z0-9]{2,6}$/.test(c); });
@@ -1091,7 +1091,7 @@
   // perlu memuat ulang /ohlc.json (±3,5 MB).
   var _rawOf = {}, _rawStr = {};
   function fetchRaw(code) {
-    return cachedJson('/api/admin/smartmoney?code=' + encodeURIComponent(code))
+    return cachedJson('/api/smartmoney?code=' + encodeURIComponent(code))
       .then(function (j) {
         if (!j || !j.ok || (!j.broker && !j.insider && !j.holder)) return null;
         var needPx = !(j.broker && Array.isArray(j.broker.ohlc) && j.broker.ohlc.length);
@@ -1680,7 +1680,7 @@
   var _sum = null, _sumP = null, _ohlcJ = null;
   function loadSum() {
     if (_sumP) return _sumP;
-    return (_sumP = cachedJson('/api/admin/smartmoney/screener').then(function (j) {
+    return (_sumP = cachedJson('/api/smartmoney/screener').then(function (j) {
       _sum = j && j.stocks && Array.isArray(j.days) && j.days.length ? j : false; return _sum;
     }).catch(function () { _sum = false; return false; }));
   }
@@ -2438,7 +2438,7 @@
   function loadBrokerIdx(code) {
     if (_bkIdx[code] !== undefined) return Promise.resolve(_bkIdx[code]);
     // Data broker selalu dari server (tanpa Cache Storage browser), supaya semua perangkat menampilkan data yang sama.
-    return (_bkIdx[code] = fetchJsonNet('/api/admin/smartmoney/broker?b=' + encodeURIComponent(code))
+    return (_bkIdx[code] = fetchJsonNet('/api/smartmoney/broker?b=' + encodeURIComponent(code))
       .then(function (t) {
         var j = null; try { j = t ? JSON.parse(t) : null; } catch (_) { j = null; }
         _bkIdx[code] = j && j.s && Array.isArray(j.days) ? j : false; return _bkIdx[code];
@@ -2599,7 +2599,7 @@
   var _people = null;   // Promise | objek | false
   function loadPeople() {
     if (_people !== null) return Promise.resolve(_people);
-    return (_people = cachedJson('/api/admin/smartmoney/people')
+    return (_people = cachedJson('/api/smartmoney/people')
       .then(function (j) { _people = j && j.p ? j.p : false; return _people; })
       .catch(function () { _people = false; return false; }));
   }
@@ -4113,8 +4113,18 @@
     code: function () { return S.code; },
     openStock: function (code) { setCode(code); setSub('broker'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   };
+  // Screener & StockPro hanya untuk admin dan langganan Full (seperti Dashboard).
+  function smmFull() { return window.__ES_IS_ADMIN === true || !!(window.__ES_SMM && window.__ES_SMM.full); }
+  function screenerLockHtml() {
+    return '<div class="smm-card" style="text-align:center;padding:40px 16px;line-height:1.6">' +
+      '<div style="font-size:34px">🔒</div>' +
+      '<h3 style="margin:8px 0 4px;font-size:18px">Screener &amp; StockPro khusus Full Akses</h3>' +
+      '<p style="margin:0 auto 16px;max-width:460px;color:var(--text2);font-size:13px">Broker Activity, Insider, dan Kepemilikan tetap bisa kamu pakai. Upgrade ke paket Full Akses untuk membuka Screener dan StockPro.</p>' +
+      '<a class="smm-btn primary" href="/billing?upgrade=1" style="display:inline-block;text-decoration:none">🔓 Lihat Paket Full Akses</a></div>';
+  }
   function showScreener() {
     var pg = document.getElementById('smmPgScreener');
+    if (!smmFull()) { pg.innerHTML = screenerLockHtml(); return; }
     if (!window.SmartMoneyScreener) pg.innerHTML = '<div class="smm-card" style="text-align:center;padding:40px 16px;color:var(--text2)">Memuat Screener…</div>';
     ensureScreener().then(function () { if (S.sub === 'screener') window.SmartMoneyScreener.show(pg, screenerApi); })
       .catch(function () { pg.innerHTML = '<div class="smm-card" style="text-align:center;padding:40px 16px;color:var(--red)">Screener gagal dimuat. Periksa koneksi lalu buka lagi tab ini.</div>'; });
@@ -4430,7 +4440,7 @@
     updateSticky();
   }
 
-  // ─────────────────────────── Injeksi (hanya admin) ───────────────────────────
+  // ─────────── Injeksi (admin + user yang diizinkan switch Smart Money) ───────────
   function inject() {
     if (document.getElementById('page-smartmoney')) return;
     var st = document.createElement('style'); st.id = 'smmStyle'; st.textContent = CSS; document.head.appendChild(st);
@@ -4448,7 +4458,7 @@
       tab.className = 'nav-tab smm-nav';
       tab.setAttribute('onclick', "showPage('smartmoney');SmartMoney.open()");
       tab.innerHTML = '<span class="smm-nav-ico" aria-hidden="true">💰</span><span class="smm-nav-lbl"> Smart Money</span>';
-      tab.title = 'Smart Money (admin)';
+      tab.title = 'Smart Money';
       var tr = document.getElementById('tabTracker');
       if (tr && tr.parentNode === tabs) tabs.insertBefore(tab, tr.nextSibling); else tabs.appendChild(tab);
     }
@@ -4498,13 +4508,13 @@
       grp.addEventListener('click', go);
       var scr = document.createElement('div');
       scr.className = 'acct-nav-group'; scr.setAttribute('data-page', 'smm-screener');
-      scr.innerHTML = '<button type="button" class="acct-nav-page" data-smm-sub="screener" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">🔎</span>Screener</button>';
+      scr.innerHTML = '<button type="button" class="acct-nav-page" data-smm-sub="screener" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">🔎</span>Screener' + (smmFull() ? '' : ' 🔒') + '</button>';
       an.appendChild(scr);
       scr.addEventListener('click', go);
       // StockPro: halaman Per Saham dipisah dari Screener. Hanya di bilah samping.
       var spro = document.createElement('div');
       spro.className = 'acct-nav-group'; spro.setAttribute('data-page', 'smm-stockpro');
-      spro.innerHTML = '<button type="button" class="acct-nav-page" data-smm-sub="screener" data-smm-view="stk" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">⚡</span>StockPro</button>';
+      spro.innerHTML = '<button type="button" class="acct-nav-page" data-smm-sub="screener" data-smm-view="stk" data-smm-go=""><span class="acct-nav-ico" aria-hidden="true">⚡</span>StockPro' + (smmFull() ? '' : ' 🔒') + '</button>';
       an.appendChild(spro);
       spro.addEventListener('click', go);
     }
@@ -4523,10 +4533,11 @@
 
   window.SmartMoney = { open: open, restore: restore };
 
-  // Tunggu hasil /api/me (window.__ES_IS_ADMIN di-set oleh _ensureAccess).
+  // Tunggu hasil /api/me (window.__ES_IS_ADMIN & window.__ES_SMM di-set oleh _ensureAccess).
+  // Menu tampil untuk admin, atau user yang diizinkan (switch Smart Money di panel admin).
   var tries = 0;
   function waitAdmin() {
-    if (window.__ES_IS_ADMIN === true) { inject(); return; }
+    if (window.__ES_IS_ADMIN === true || (window.__ES_SMM && window.__ES_SMM.allowed)) { inject(); return; }
     if (++tries < 300) setTimeout(waitAdmin, 300);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', waitAdmin);
