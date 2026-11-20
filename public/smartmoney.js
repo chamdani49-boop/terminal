@@ -1172,6 +1172,36 @@
   }
   function num(v) { var n = typeof v === 'number' ? v : parseFloat(String(v == null ? '' : v).replace(/,/g, '')); return isFinite(n) ? n : 0; }
 
+  // Sebelum harga harian tersedia, isi hari-hari itu dari harga bulanan (price_history di data.json,
+  // sumber grafik IHSG/TLKM di Dashboard). Nilainya interpolasi linear antar penutupan bulan.
+  // Hari isian diberi approx=true supaya tidak dipakai untuk return atau statistik.
+  function fillHistPx(code, px) {
+    var ph = (typeof DATA !== 'undefined' && DATA && Array.isArray(DATA.price_history)) ? DATA.price_history : null;
+    var ks = Object.keys(px).sort(), first = ks[0], last = ks[ks.length - 1];
+    if (!ph || !first) return px;
+    var from = new Date(Date.parse(last) - 760 * 864e5).toISOString().slice(0, 10);   // cukup untuk rentang 2Y
+    var anc = [];
+    ph.forEach(function (r) {
+      var v = r && r[code], d = r && r.date;
+      if (typeof v !== 'number' || !(v > 0) || typeof d !== 'string') return;
+      var me = new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7), 0)).toISOString().slice(0, 10);   // akhir bulan
+      if (me < first) anc.push({ d: me, c: v });
+    });
+    if (!anc.length) return px;
+    anc.sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+    anc.push({ d: first, c: px[first].close });
+    var out = Object.assign({}, px), k = 0, t1 = Date.parse(first);
+    for (var t = Math.max(Date.parse(anc[0].d), Date.parse(from)); t < t1; t += 864e5) {
+      var dt = new Date(t), wd = dt.getUTCDay();
+      if (wd === 0 || wd === 6) continue;
+      var iso = dt.toISOString().slice(0, 10);
+      while (k + 1 < anc.length && anc[k + 1].d <= iso) k++;
+      var a = anc[k], b = anc[Math.min(k + 1, anc.length - 1)], span = Date.parse(b.d) - Date.parse(a.d);
+      var c = Math.round(span > 0 ? a.c + (b.c - a.c) * (t - Date.parse(a.d)) / span : a.c);
+      out[iso] = { open: c, high: c, low: c, close: c, approx: true };
+    }
+    return out;
+  }
   function adapt(code, B, I, ohlcAll, H) {
     // 1) harga: dari file broker, atau /ohlc.json
     var px = {};
@@ -1179,6 +1209,7 @@
     else if (ohlcAll && ohlcAll.tickers && ohlcAll.tickers[code] && Array.isArray(ohlcAll.tickers[code].candles)) {
       ohlcAll.tickers[code].candles.forEach(function (c) { var d = isoOf(c[0]); if (d) px[d] = { open: num(c[1]), high: num(c[2]), low: num(c[3]), close: num(c[4]) }; });
     }
+    px = fillHistPx(code, px);
     var bDays = B && Array.isArray(B.days) ? B.days.map(isoOf) : [];
     var set = {};
     Object.keys(px).forEach(function (d) { set[d] = 1; });
@@ -1232,7 +1263,7 @@
         var avg = l > 0 ? v / (l * 100) : (prev ? prev.close : 0);
         c = { open: avg, high: avg, low: avg, close: avg };
       }
-      c = { time: d, open: c.open || c.close, high: Math.max(c.high, c.open, c.close), low: Math.min(c.low || c.close, c.open, c.close), close: c.close };
+      c = { time: d, open: c.open || c.close, high: Math.max(c.high, c.open, c.close), low: Math.min(c.low || c.close, c.open, c.close), close: c.close, approx: !!c.approx };
       ohlc.push(c); prev = c;
     });
 
@@ -3200,7 +3231,9 @@
   }
   function retAfter(g, t, h) {
     if (t.idx < 0 || t.idx + h >= g.nP) return null;
-    return (g.ohlc[t.idx + h].close / t.price - 1) * 100;
+    var c = g.ohlc[t.idx + h];
+    if (c.approx) return null;   // harga isian bulanan tidak dipakai untuk return
+    return (c.close / t.price - 1) * 100;
   }
 
   function buildInsChart() {
@@ -3242,7 +3275,13 @@
       insChart.timeScale().setVisibleRange({ from: g.days[a], to: g.days[b] });
       return;
     }
-    var n = { '6M': 126, '1Y': 252, '2Y': g.nP }[S.insRange] || g.nP;
+    if (S.insRange === '2Y') {   // 2 tahun kalender dari data terakhir (hari isian bulanan ikut tampil)
+      var tgt = new Date(Date.parse(g.end) - 730 * 864e5).toISOString().slice(0, 10), i0 = 0;
+      while (i0 < g.nP - 1 && g.days[i0] < tgt) i0++;
+      insChart.timeScale().setVisibleRange({ from: g.days[i0], to: g.end });
+      return;
+    }
+    var n = { '6M': 126, '1Y': 252 }[S.insRange] || g.nP;
     insChart.timeScale().setVisibleRange({ from: g.days[Math.max(0, g.nP - n)], to: g.end });
   }
 
