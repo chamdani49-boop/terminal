@@ -192,14 +192,21 @@ async function guardProtected(request, env, ctx, path) {
 //   admin                → selalu boleh, termasuk Screener & StockPro
 //   flag smartmoney_all  → ON: semua user login · OFF: hanya pelanggan aktif (Tracker & Full)
 //   full                 → Screener & StockPro (hanya admin / langganan scope 'full')
+//   limit7               → akun tanpa langganan hanya bisa memilih 7 hari terakhir di Broker Activity
+//                          (flag smartmoney_free_7d). Dibatasi di tampilan; Kalender flow tidak dibatasi.
 async function smartMoneyAccess(env, session) {
-  if (!session) return { allowed: false, full: false, admin: false };
-  if (adminList(env).includes((session.email || '').toLowerCase())) return { allowed: true, full: true, admin: true };
-  let all = true;
-  try { all = (await getFeatureFlags(env)).smartmoney_all !== false; } catch { all = true; }
+  if (!session) return { allowed: false, full: false, admin: false, limit7: false };
+  if (adminList(env).includes((session.email || '').toLowerCase())) return { allowed: true, full: true, admin: true, limit7: false };
+  let flags = { smartmoney_all: true, smartmoney_free_7d: true };
+  try { flags = await getFeatureFlags(env); } catch { /* default */ }
   let sub = null;
   try { sub = await getActiveSubscription(env, session.uid); } catch { sub = null; }
-  return { allowed: all || !!sub, full: !!(sub && sub.scope !== 'tracker'), admin: false };
+  return {
+    allowed: flags.smartmoney_all !== false || !!sub,
+    full: !!(sub && sub.scope !== 'tracker'),
+    admin: false,
+    limit7: !sub && flags.smartmoney_free_7d !== false,
+  };
 }
 
 async function hasActiveSub(request, env) {
@@ -267,7 +274,7 @@ async function handleApi(request, env, url, ctx) {
       whatsapp_missing: whatsappMissing,  // true → pop up Ketentuan minta nomor WA
       guide_seen: guideSeen,    // panduan tur sudah dilihat (per email/akun)
       pwa,                       // { should_prompt, is_installed } — per email/akun
-      smartmoney: await smartMoneyAccess(env, session),   // { allowed, full, admin }
+      smartmoney: await smartMoneyAccess(env, session),   // { allowed, full, admin, limit7 }
     });
   }
 

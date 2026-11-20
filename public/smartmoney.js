@@ -322,6 +322,14 @@
     '.smm-sheet{position:relative;width:min(560px,calc(100vw - 32px));max-height:min(86vh,820px);display:flex;flex-direction:column;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.35);transform:translateY(12px);transition:transform .2s}',
     '.smm-sheet.smm-sheet-sm{width:min(440px,calc(100vw - 32px))}.smm-sheet.smm-sheet-lg{width:min(860px,calc(100vw - 32px))}',
     '.smm-sheet-bg.open .smm-sheet{transform:none}',
+    '.smm-dp-free{margin:8px 2px 0;font-size:11.5px;line-height:1.45;color:var(--text3)}',
+    '.smm-uppop{position:fixed;inset:0;z-index:10050;background:rgba(8,5,25,.72);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .2s}',
+    '.smm-uppop.show{opacity:1}',
+    '.smm-uppop-box{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:16px;max-width:400px;width:100%;padding:26px 24px;text-align:center;box-shadow:0 16px 60px rgba(0,0,0,.45)}',
+    '.smm-uppop-box .e{font-size:38px;margin-bottom:8px}.smm-uppop-box .t{font-size:17px;font-weight:800;margin-bottom:8px;line-height:1.25}',
+    '.smm-uppop-box .b{font-size:13.5px;color:var(--text2);line-height:1.55;margin-bottom:18px}',
+    '.smm-uppop-box .r{display:flex;gap:10px}.smm-uppop-box .r button{flex:1;font:inherit;cursor:pointer;border:0;border-radius:10px;font-size:14px;font-weight:800;padding:11px 16px;background:var(--accent);color:#fff}',
+    '.smm-uppop-box .r button.alt{background:transparent;color:var(--text);border:1px solid var(--border)}.smm-uppop-box .r button:hover{filter:brightness(1.08)}',
     '.smm-sheet-grip{display:none;width:44px;height:5px;border-radius:3px;background:var(--border);margin:8px auto 0;flex-shrink:0}',
     '.smm-sheet-in{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 18px 18px}',
     '.smm-sh-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}',
@@ -2267,9 +2275,31 @@
       default: return [L, L];
     }
   }
+  // ── Akun gratis (login tanpa langganan): pilihan tanggal Broker Activity dibatasi 7 hari terakhir
+  // (switch di panel admin). Kalender flow tidak dibatasi. Pembatasan ini di tampilan.
+  function smmLimit7() { return window.__ES_IS_ADMIN !== true && !!(window.__ES_SMM && window.__ES_SMM.limit7); }
+  function freeMinIdx(days, L) { return presetRange(days, L, '7d')[0]; }
+  function showUpgradePop() {
+    if (document.getElementById('smmUpPop')) return;
+    var ov = document.createElement('div'); ov.id = 'smmUpPop'; ov.className = 'smm-uppop';
+    ov.innerHTML = '<div class="smm-uppop-box" role="dialog" aria-modal="true" aria-labelledby="smmUpT">' +
+      '<div class="e">🔒</div><div class="t" id="smmUpT">Rentang lebih dari 7 hari butuh langganan</div>' +
+      '<div class="b">Akun gratis bisa melihat Broker Activity 7 hari terakhir. Berlangganan paket Tracker atau Full Akses untuk memilih rentang tanggal yang lebih panjang. Kalender flow tetap bisa dipakai.</div>' +
+      '<div class="r"><button type="button" class="alt" data-up="close">Nanti Saja</button><button type="button" data-up="plans">Lihat Paket</button></div></div>';
+    document.body.appendChild(ov);
+    requestAnimationFrame(function () { ov.classList.add('show'); });
+    var closeIt = function () { ov.classList.remove('show'); setTimeout(function () { try { ov.remove(); } catch (_) {} }, 200); };
+    ov.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-up]');
+      if (e.target === ov || (b && b.getAttribute('data-up') === 'close')) { closeIt(); return; }
+      if (b && b.getAttribute('data-up') === 'plans') location.href = '/billing';
+    });
+  }
   var _dp = null;
-  // o: { title, days, L, start, end, preset, all:bool, onApply(start, end, preset) }
+  // o: { title, days, L, start, end, preset, all:bool, limit7:bool, onApply(start, end, preset) }
+  // limit7: true = pemilih tanggal Broker Activity (dibatasi 7 hari untuk akun gratis).
   function openDatePick(o) {
+    if (o.limit7 && smmLimit7()) o.minIdx = freeMinIdx(o.days, o.L);
     _dp = { o: o, s: o.start, e: o.end, k: o.preset || 'custom' };
     openSheet('date', renderDatePick, { stack: true, cls: 'smm-sheet-sm' });
   }
@@ -2284,14 +2314,16 @@
     };
     return sheetHead(esc(d.o.title || 'Pilih tanggal')) +
       '<div class="smm-dp-list" role="radiogroup">' + list.map(function (p) {
-        var on = d.k === p[0];
-        return '<button class="smm-dp-opt' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" data-act="dppre" data-v="' + p[0] + '"><span>' + p[1] + '</span><i></i></button>';
+        var on = d.k === p[0], lk = d.o.minIdx != null && presetRange(days, d.o.L, p[0])[0] < d.o.minIdx;
+        return '<button class="smm-dp-opt' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" data-act="dppre" data-v="' + p[0] + '"><span>' + p[1] + (lk ? ' 🔒' : '') + '</span><i></i></button>';
       }).join('') + '</div>' +
+      (d.o.minIdx != null ? '<p class="smm-dp-free">Akun gratis: 7 hari terakhir. Rentang lebih panjang untuk paket Tracker &amp; Full Akses.</p>' : '') +
       '<div class="smm-dp-row">' + step('s', d.s) + step('e', d.e) + '</div>' +
       '<button class="smm-dp-apply" data-act="dpapply">Terapkan</button>';
   }
   function dpPreset(k) {
     var d = _dp, r = presetRange(d.o.days, d.o.L, k);
+    if (d.o.minIdx != null && r[0] < d.o.minIdx) { showUpgradePop(); return; }
     d.k = k; d.s = r[0]; d.e = r[1]; sheetRender();
   }
   function dpStep(v) {
@@ -2306,7 +2338,11 @@
     if (which === 's') { d.s = idx; if (d.s > d.e) d.e = d.s; } else { d.e = idx; if (d.e < d.s) d.s = d.e; }
     d.k = 'custom'; sheetRender();
   }
-  function dpApply() { var d = _dp; closeSheet(); d.o.onApply(d.s, d.e, d.k); }
+  function dpApply() {
+    var d = _dp;
+    if (d.o.minIdx != null && d.s < d.o.minIdx) { showUpgradePop(); return; }   // sheet tetap terbuka
+    closeSheet(); d.o.onApply(d.s, d.e, d.k);
+  }
   function rangeLabel(days, s, e, k) {
     var t = s === e ? fmtDate(days[e]) : fmtDate(days[s]) + ' – ' + fmtDate(days[e]);
     return (k && k !== 'custom' && k !== 'latest' ? dpLabel(k) + ' · ' : '') + t;
@@ -2340,7 +2376,7 @@
     var g = G(), days = actDays(g);
     if (!g.hasBroker || !days.length) { toast('Belum ada data broker untuk ' + S.code); return; }
     var r = PR(g);
-    openDatePick({ title: 'Tanggal semua kartu', days: days, L: lastDataIdx(g), start: r[0], end: r[1], preset: S.period,
+    openDatePick({ title: 'Tanggal semua kartu', days: days, L: lastDataIdx(g), start: r[0], end: r[1], preset: S.period, limit7: true,
       onApply: function (a, b, k) {
         S.cr = {};   // tanggal global = semua kartu; hapus tanggal khusus per kartu
         S.period = k; S.pFrom = k === 'custom' ? days[a] : null; S.pTo = k === 'custom' ? days[b] : null;
@@ -2404,7 +2440,7 @@
     var g = cardRefG(key), days = actDays(g);
     if (!g.hasBroker || !days.length) { toast('Belum ada data broker untuk ' + S.code); return; }
     var r = cardRange(g, key), o = S.cr[key];
-    openDatePick({ title: 'Tanggal ' + CARD_NAME[key], days: days, L: lastDataIdx(g), start: r[0], end: r[1],
+    openDatePick({ title: 'Tanggal ' + CARD_NAME[key], days: days, L: lastDataIdx(g), start: r[0], end: r[1], limit7: true,
       preset: o ? o.k : (key === 'orbit' ? S.actPreset : S.period),
       onApply: function (a, b, k) {
         S.cr[key] = { k: k, from: k === 'custom' ? days[a] : null, to: k === 'custom' ? days[b] : null };
@@ -2429,7 +2465,7 @@
   function actPresetDefault(g) { var r = presetRange(actDays(g), lastDataIdx(g), '7d'); S.actStart = r[0]; S.actEnd = r[1]; S.actPreset = '7d'; }
   function openActDate() {
     var g = G(); if (!g.hasBroker) return;
-    openDatePick({ title: 'Tanggal Broker Summary', days: actDays(g), L: lastDataIdx(g), start: actRange()[0], end: actRange()[1], preset: S.actPreset,
+    openDatePick({ title: 'Tanggal Broker Summary', days: actDays(g), L: lastDataIdx(g), start: actRange()[0], end: actRange()[1], preset: S.actPreset, limit7: true,
       onApply: setActRange });
   }
 
@@ -2591,7 +2627,7 @@
   function bpDate() {
     var D = _bp && _bp.data; if (!D || !D.days.length) return;
     var rg = bpRange(D);
-    openDatePick({ title: 'Tanggal · broker ' + _bp.code, days: D.days, L: D.days.length - 1, start: rg[0], end: rg[1], preset: _bp.k,
+    openDatePick({ title: 'Tanggal · broker ' + _bp.code, days: D.days, L: D.days.length - 1, start: rg[0], end: rg[1], preset: _bp.k, limit7: true,
       onApply: function (s, e, k) { _bp.from = D.days[s]; _bp.to = D.days[e]; _bp.k = k; sheetRender(); } });
   }
 
@@ -4247,7 +4283,11 @@
       case 'chipx': e.stopPropagation(); S.chips = S.chips.filter(function (c) { return c !== v; }); delete S.colors[v]; renderFlowAll(); break;
       case 'addopen': e.stopPropagation(); document.getElementById('smmAddMenu').classList.toggle('open'); break;
       case 'chipadd': addChip(v); break;
-      case 'dprev': { var r1 = actRange(); if (r1[0] > 0) setActRange(r1[0] - 1, r1[1] - 1, 'custom'); } break;
+      case 'dprev': {
+        var r1 = actRange();
+        if (r1[0] > 0 && smmLimit7() && r1[0] - 1 < freeMinIdx(actDays(G()), lastDataIdx(G()))) { showUpgradePop(); break; }
+        if (r1[0] > 0) setActRange(r1[0] - 1, r1[1] - 1, 'custom');
+      } break;
       case 'actdate': openActDate(); break;
       case 'calday': setActRange(+v, +v, 'custom'); { var ab = document.getElementById('smmBSumCard'); if (ab && window.innerWidth < 1100) ab.scrollIntoView({ block: 'start', behavior: 'smooth' }); } break;
       case 'calmon': { var cp = S.cal.ym.split('-'), cd = new Date(Date.UTC(+cp[0], +cp[1] - 1 + +v, 1)); S.cal.ym = cd.toISOString().slice(0, 7); renderCal(); } break;
