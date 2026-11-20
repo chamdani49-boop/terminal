@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<script>
+/* Kode saham terakhir yang DIPILIH user, dipakai bersama semua menu yang punya pencarian saham
+   (Dashboard, Valuasi, Tracker > Analisis, Pasar Live chart 1, Smart Money, StockPro).
+   Per browser (localStorage), hanya kode saham. Ditulis HANYA saat user sendiri memilih saham;
+   dibaca saat user membuka menu, dan hanya dipakai bila kode itu ada di daftar saham menu tsb. */
+(function(){
+  var KEY = 'es_code', RE = /^[A-Z0-9]{2,6}$/;
+  function norm(c){ c = String(c || '').trim().toUpperCase(); return RE.test(c) && c !== 'IHSG' ? c : null; }
+  window.ESCode = {
+    get: function(){ try { return norm(localStorage.getItem(KEY)); } catch(_){ return null; } },
+    set: function(c){ c = norm(c); if (!c) return; try { localStorage.setItem(KEY, c); } catch(_){} }
+  };
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Economstock Terminal — Dashboard Saham IDX</title>
@@ -12549,6 +12563,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   // ── Tab switcher ──────────────────────────────────────────────────
   function switchTab(name){
     if (!VALID_PANES[name]) name = 'ringkasan';
+    if (name === 'analisis') setTimeout(function(){ if (typeof window.__TR_syncAnl === 'function') window.__TR_syncAnl(); }, 60);
 
     var btns = document.querySelectorAll('#tr-subtabs .tr-subtab-btn');
     for (var i = 0; i < btns.length; i++) {
@@ -17669,6 +17684,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
   }
   function pickSearchItem(ticker){
     if (!ticker || !_recsByTicker[ticker]) return;
+    try { if (window.ESCode) window.ESCode.set(ticker); } catch(_){}   // pilihan user → kode bersama
     switchTicker(ticker);
     var inp = $('trAnlSearch');
     if (inp){ inp.value = ''; try { inp.blur(); } catch(_){} }
@@ -18283,7 +18299,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
     if (typeof window.__TR_switchTab === 'function') window.__TR_switchTab('analisis');
     // Data mungkin belum ready → kalau aggregate belum di-build, tunggu sebentar.
     var tryPick = function(retriesLeft){
-      if (_recsByTicker[t]) { switchTicker(t); return; }
+      if (_recsByTicker[t]) { try { if (window.ESCode) window.ESCode.set(t); } catch(_){} switchTicker(t); return; }
       if (retriesLeft > 0) setTimeout(function(){ tryPick(retriesLeft - 1); }, 120);
     };
     // Delay awal biar tab-switch selesai animasi & scroll settle.
@@ -18319,9 +18335,21 @@ body.is-mobile-device.force-desktop .pl-col-main{
     $('trAnlPending').style.display = 'none';
     $('trAnlContent').style.display = '';
     var saved = null; try { saved = localStorage.getItem('tr_anl_ticker'); } catch(_){}
-    var pick = (saved && _recsByTicker[saved]) ? saved : _tickers[0];
+    var shared = window.ESCode && window.ESCode.get();
+    // Urutan: saham yang sedang tampil (refresh data) → kode bersama → pilihan terakhir di Analisis → teratas.
+    var pick = (_current && _recsByTicker[_current]) ? _current
+      : (shared && _recsByTicker[shared]) ? shared
+      : (saved && _recsByTicker[saved]) ? saved : _tickers[0];
     switchTicker(pick);
   }
+  // Masuk Tracker / tab Analisis → ikut kode bersama bila saham itu punya rekomendasi.
+  window.__TR_syncAnl = function(){
+    var c = window.ESCode && window.ESCode.get();
+    var pane = document.getElementById('tr-view-analisis');
+    if (!c || c === _current || !_recsByTicker[c] || !pane || pane.offsetParent === null) return;
+    switchTicker(c);
+  };
+  document.addEventListener('es:page', function(e){ if (e.detail === 'tracker') setTimeout(window.__TR_syncAnl, 60); });
 
   // ── Wire events ───────────────────────────────────────────────────
   // Search input: ketik → filter, focus → open, keyboard nav
@@ -22483,6 +22511,8 @@ function init() {
   buildSavingStockList();
   buildDateOptions();
   attachMoneyInputFormatters();
+  // Saham awal: kode bersama (pilihan terakhir user di menu mana pun) bila ada di daftar saham.
+  try { const _es = window.ESCode && window.ESCode.get(); if (_es && _esHasStock(_es)) currentStock = _es; } catch (_) {}
   renderDashboard(currentStock);
   buildConsensusAll();
   buildOverview();
@@ -22519,6 +22549,10 @@ function showPage(name) {
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
   const bn = document.getElementById('bn-' + name);
   if (bn) bn.classList.add('active');
+
+  // Menu dibuka → menu terkait menyesuaikan saham ke kode bersama (ESCode).
+  // Halaman terkunci tidak sampai ke sini (overlay mencegat showPage).
+  try { document.dispatchEvent(new CustomEvent('es:page', { detail: name })); } catch (_) {}
 }
 
 // Alias untuk bottom nav — biar tidak break onclick lama.
@@ -23677,7 +23711,7 @@ function plSearchPick(code) {
 
 // Jalankan aksi: ganti simbol chart atau render seasonality
 function plSearchDispatch(kind, code) {
-  if (kind === 'chartA') { if (_plSyms.A !== code) plSetChartSymbol('A', code); }
+  if (kind === 'chartA') { try { if (window.ESCode) window.ESCode.set(code); } catch (_) {} if (_plSyms.A !== code) plSetChartSymbol('A', code); }
   else if (kind === 'chartB') { if (_plSyms.B !== code) plSetChartSymbol('B', code); }
   else if (kind === 'seas') { if (_plSeasCode !== code) plRenderSeasonality(code); }
 }
@@ -23754,6 +23788,15 @@ function plResizeStart(e) {
   window.addEventListener('pointerup', up);
 }
 
+// Buka Pasar Live → chart 1 ikut kode bersama (bila valid). Sebelum panel dibangun cukup ganti simbol awal.
+document.addEventListener('es:page', function (e) {
+  if (e.detail !== 'pasar') return;
+  const c = window.ESCode && window.ESCode.get();
+  if (!c || _plSyms.A === c) return;
+  const ok = _plCodesSet ? _plCodesSet.has(c) : _esHasStock(c);
+  if (!ok) return;
+  if (_plInit) plSetChartSymbol('A', c); else _plSyms.A = c;
+});
 function plSetChartSymbol(slot, code) {  _plSyms[slot] = code;
   const sel = document.getElementById('plSel' + slot);
   if (sel && sel.value !== code) sel.value = code;
@@ -24658,6 +24701,7 @@ function buildSearchIndex() {
 
 
 function selectStock(code) {
+  try { if (window.ESCode) window.ESCode.set(code); } catch (_) {}   // pilihan user → kode bersama
   currentStock = code;
   showPage('dashboard');   // sudah otomatis menyinkronkan nav-tab aktif (Dashboard)
   renderDashboard(code);
@@ -24682,6 +24726,20 @@ function selectStock(code) {
   // seperti Price Target Blueprint). Di tampilan PC tidak diubah.
   try { if (typeof isDesktopView === 'function' && !isDesktopView()) window.scrollTo(0, 0); } catch (e) {}
 }
+
+function _esHasStock(code) {
+  try { return !!(DATA && Array.isArray(DATA.stock_list) && DATA.stock_list.some(s => s.code === code)); } catch (_) { return false; }
+}
+// Buka Dashboard → tampilkan saham kode bersama bila beda dan tersedia.
+document.addEventListener('es:page', function (e) {
+  if (e.detail !== 'dashboard') return;
+  const c = window.ESCode && window.ESCode.get();
+  if (!c || c === currentStock || !_esHasStock(c)) return;
+  currentStock = c;
+  try { renderDashboard(c); } catch (_) {}
+  document.querySelectorAll('.watchlist-item').forEach(el => el.classList.toggle('active', el.dataset.code === c));
+  document.querySelectorAll('.st-item').forEach(el => el.classList.toggle('active', el.dataset.code === c));
+});
 
 // ═══════════════════════════════════════════
 // STOCK TICKER (running sideways) — click to load detail
@@ -32336,17 +32394,28 @@ function vlTtmLabelFull(s){
       else if(e.key==='Enter'){ e.preventDefault(); const tgt = visible[idx>=0?idx:0]; if(tgt){ window.vlSelectStock(tgt.getAttribute('data-code')); inp.blur(); } }
     });
   }
+  // Buka Valuasi → ikut kode bersama bila saham itu ada di indeks valuasi.
+  document.addEventListener('es:page', function(e){
+    if (e.detail !== 'valuasi' || !state.index) return;
+    const c = window.ESCode && window.ESCode.get();
+    if (c && c !== state.code && state.index.some(it => it.code === c)) window.vlSelectStock(c, true);
+  });
   function pickDefaultCode(){
     if(!state.index || !state.index.length) return null;
+    const _es = window.ESCode && window.ESCode.get();
+    if(_es && state.index.some(it => it.code === _es)) return _es;   // kode bersama dulu
     const ap = state.index.find(it=>it.applicable);
     return (ap && ap.code) || state.index[0].code;
   }
 
-  window.vlSelectStock = async function(code){
+  let _vlSelTok = 0;   // pemilihan terakhir menang (cegah balapan dua pemilihan async)
+  window.vlSelectStock = async function(code, auto){
     if(!state.index) return;
     code = String(code).toUpperCase();
+    const tok = ++_vlSelTok;
     const s = await ensureStock(code);   // lazy: muat file saham bila belum ada
-    if(!s) return;
+    if(!s || tok !== _vlSelTok) return;
+    if(!auto){ try { if (window.ESCode) window.ESCode.set(code); } catch(_){} }   // pilihan user → kode bersama
     state.code = code;
     vlSyncStockSearchInput();
     renderAll();

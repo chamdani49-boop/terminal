@@ -2252,7 +2252,7 @@
       case 'csort': V.cons.sort = v; renderView(); return;
       case 'cmore': V.cons.limit += 30; renderBody(); return;
       case 'gocons': e.stopPropagation(); goConsensus(v); return;
-      case 'pick': V.stk.code = v; V.stk.q = ''; store('sx_stk', v); renderView(); window.scrollTo(0, 0); return;
+      case 'pick': V.stk.code = v; V.stk.q = ''; store('sx_stk', v); try { if (window.ESCode) window.ESCode.set(v); } catch (_) {} renderView(); window.scrollTo(0, 0); return;
       case 'gotr': e.stopPropagation(); goTr(v); return;
       case 'spzoom': spZoomStep(v === 'in' ? 1 : -1); return;
       case 'spback': V.stk.code = ''; V.stk.q = ''; renderView(); window.scrollTo(0, 0); return;
