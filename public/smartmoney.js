@@ -3983,7 +3983,16 @@
     toast('Tidak ditemukan: ' + q);
   }
   // Dari Screener: kalender ikut saham baru; tampilan lain pindah ke Broker Activity.
+  // Kode saham bersama antar menu (window.ESCode di index.html). Ditulis saat user memilih saham.
+  function shareCode(code) { try { if (window.ESCode) window.ESCode.set(code); } catch (_) {} }
+  // Buka Smart Money → ikut kode bersama bila saham itu punya data Smart Money.
+  function syncShared() {
+    var c = window.ESCode && window.ESCode.get();
+    if (!c || c === S.code || !(_index && _index.indexOf(c) >= 0)) return;
+    setCode(c);
+  }
   function openCodeFromSearch(code) {
+    shareCode(code);
     if (S.sub === 'screener') {
       var sx = window.SmartMoneyScreener;
       setCode(code);
@@ -4176,7 +4185,7 @@
     loadOhlc: function () { return loadOhlc(); }, loadReal: loadReal,
     index: function () { return _index; },
     code: function () { return S.code; },
-    openStock: function (code) { setCode(code); setSub('broker'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    openStock: function (code) { shareCode(code); setCode(code); setSub('broker'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   };
   // Screener & StockPro hanya untuk admin dan langganan Full (seperti Dashboard).
   function smmFull() { return window.__ES_IS_ADMIN === true || !!(window.__ES_SMM && window.__ES_SMM.full); }
@@ -4305,7 +4314,7 @@
       case 'ppall': _pp.all = !_pp.all; sheetRender(); break;
       case 'ppdate': ppDate(); break;
       case 'ppfilter': { var nm = _pp.name; closeSheet(); setPerson(nm); } break;
-      case 'ppstock': closeSheet(); setCode(v); setSub('insider'); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+      case 'ppstock': closeSheet(); shareCode(v); setCode(v); setSub('insider'); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
       case 'gobroker': if (S.broker) setBroker(S.broker); break;
       case 'goperson': if (S.person) setPerson(S.person); break;
       case 'clrbroker': e.stopPropagation(); S.broker = null; renderFilters(); renderBrokerProfile(); renderAction(); break;
@@ -4501,9 +4510,10 @@
       if (hyd) setCode(S.code);
       // 2) Server: indeks → saham aktif (bila belum dari cache) → saham lain utk Radar di belakang
       loadIndex().then(function (codes) {
-        if (hyd) { rebuildSuggest(); return revalidate(S.code); }
+        if (hyd) { rebuildSuggest(); syncShared(); return revalidate(S.code); }
         var saved = null; try { saved = localStorage.getItem('smm_code'); } catch (_) {}
-        var want = saved || S.code;
+        var want = (window.ESCode && window.ESCode.get()) || saved || S.code;
+        if (codes.indexOf(want) < 0 && saved) want = saved;   // kode bersama tak punya data Smart Money → pilihan terakhir di sini
         if (codes.length) S.code = codes.indexOf(want) >= 0 ? want : codes.indexOf(S.code) >= 0 ? S.code : codes[0];
         return loadReal(S.code).then(function () { setCode(S.code); root.classList.remove('smm-loading'); });
       }).then(function () {
@@ -4517,8 +4527,10 @@
       });
     } else if (!keepSub && S.sub === 'screener') {
       setSub('broker', true);
-    } else if (S.sub === 'broker') {
-      renderSankey(); // lebar container bisa berubah saat halaman tersembunyi
+      syncShared();
+    } else {
+      if (S.sub === 'broker') renderSankey(); // lebar container bisa berubah saat halaman tersembunyi
+      syncShared();
     }
     updateSticky();
   }
