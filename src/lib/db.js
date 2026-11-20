@@ -191,7 +191,7 @@ export async function getReferralInfo(env, userId) {
   let per = (raw === undefined || raw === null || String(raw).trim() === '') ? 3 : parseInt(raw, 10);
   if (!Number.isFinite(per) || per < 0) per = 3;
   const count = user.referrals_count || 0;
-  return { code, count, days: count * per };
+  return { code, count, days: count * per, per };
 }
 
 // Bonus referral = hari akses TRACKER, bukan full.
