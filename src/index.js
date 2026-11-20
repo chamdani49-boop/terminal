@@ -298,6 +298,7 @@ async function handleApi(request, env, url, ctx) {
         link,
         count: (info && info.count) || 0,
         days: (info && info.days) || 0,
+        per: (info && info.per) || 0,
       });
     } catch {
       // Migration belum jalan / D1 error → kembalikan kosong (UI sembunyikan).

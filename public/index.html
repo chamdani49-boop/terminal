@@ -296,6 +296,8 @@ body.is-mobile-device .view-toggle{display:inline-flex}
 .acct-email{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .acct-ref-copy{display:none;align-items:center;gap:4px;margin-top:5px;padding:3px 9px;border:1px solid var(--border);border-radius:999px;background:var(--bg2);color:var(--text2);font-family:inherit;font-size:11px;font-weight:600;line-height:1.3;cursor:pointer;white-space:nowrap;max-width:100%;transition:background .15s,border-color .15s,color .15s}
 .acct-ref-copy.show{display:inline-flex}
+.acct-ref-note{display:none;margin-top:6px;font-size:10.5px;line-height:1.4;color:var(--text3);white-space:normal}
+.acct-ref-note.show{display:block}
 .acct-ref-copy:hover{border-color:var(--accent);color:var(--accent)}
 .acct-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0}
 .acct-label{color:var(--text2)}
@@ -6228,6 +6230,7 @@ body.is-mobile-device.force-desktop .pl-col-main{
           <div class="acct-name" id="acctName">—</div>
           <div class="acct-email" id="acctEmail">—</div>
           <button type="button" class="acct-ref-copy" id="acctRefCopy" onclick="acctCopyRef(this)">🔗 Salin link referral</button>
+          <div class="acct-ref-note" id="acctRefNote">Tiap teman baru yang daftar lewat link ini memberi kamu +3 hari akses menu Tracker.</div>
         </div>
         <button type="button" class="info-btn" style="margin-left:auto" aria-label="Panduan menu sesuai gaya" title="Menu sesuai tujuan (invest / swing / trading)" onclick="showInfoModal('🧭 Menu Sesuai Tujuanmu','Pilih menu sesuai gaya kamu:<br><br>&bull; Untuk <strong>investasi</strong> (jangka panjang) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Valuasi</strong>.<br><br>&bull; Untuk <strong>swing</strong> (jangka menengah) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Dashboard</strong>.<br><br>&bull; Untuk <strong>trading</strong> (jangka pendek) &rarr; gunakan menu <strong style=&quot;color:var(--accent)&quot;>Tracker</strong>.')">?</button>
       </div>
@@ -21176,8 +21179,14 @@ function acctCopyRef(btn){
 function acctShowRefCopy(j){
   var b = document.getElementById('acctRefCopy');
   if (!b) return;
-  if (j && j.authenticated && j.enabled !== false && j.link) { window.__ES_REF_LINK = j.link; b.classList.add('show'); }
-  else { window.__ES_REF_LINK = null; b.classList.remove('show'); }
+  var n = document.getElementById('acctRefNote');
+  if (j && j.authenticated && j.enabled !== false && j.link) {
+    window.__ES_REF_LINK = j.link; b.classList.add('show');
+    if (n) { n.textContent = 'Tiap teman baru yang daftar lewat link ini memberi kamu +' + (j.per || 3) + ' hari akses menu Tracker.'; n.classList.add('show'); }
+  } else {
+    window.__ES_REF_LINK = null; b.classList.remove('show');
+    if (n) n.classList.remove('show');
+  }
 }
 // Statistik referral (N orang · M hari) untuk pop-up akun. Fail-safe.
 async function _loadReferralStat() {
