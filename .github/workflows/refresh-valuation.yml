@@ -11,7 +11,8 @@ name: Refresh valuation.json dari Excel
 # TRIGGER (intentionally TIDAK ada cron):
 #   - push ke main yang menyentuh data/valuation/** atau script-nya →
 #     auto-rebuild begitu file Excel diupload via GitHub web/CLI.
-#   - workflow_dispatch → tombol manual (mis. setelah ubah ASSUMPTIONS
+#   - workflow_dispatch → tombol "Perbarui terminal" di web Pantau (data laporan keuangan
+#     baru di R2 ikut digabung), atau tombol manual (mis. setelah ubah ASSUMPTIONS
 #     di build-valuation.py atau setelah mesin DCF/DDM di-tweak).
 #
 # Catatan: script ini PURE Python stdlib (zip + xml), tidak butuh
@@ -24,6 +25,8 @@ on:
     paths:
       - 'data/valuation/**'
       - 'scripts/build-valuation.py'
+      - 'scripts/financials_overlay.py'
+      - 'scripts/fetch-financials-r2.py'
       - 'public/history-yearly.json'
       - '.github/workflows/refresh-valuation.yml'
   workflow_dispatch:
@@ -47,6 +50,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      # Laporan keuangan baru (Q3 2026 dst.) dari R2, ditulis scraper web Pantau. Tanpa secret R2 → dilewati.
+      - name: Ambil laporan keuangan baru dari R2
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          if [ -n "$R2_ACCESS_KEY_ID" ]; then pip install --quiet boto3; fi
+          python scripts/fetch-financials-r2.py
 
       - name: Build valuation.json
         run: python scripts/build-valuation.py
