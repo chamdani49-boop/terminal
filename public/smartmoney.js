@@ -1835,6 +1835,12 @@
     return out;
   }
 
+  // Pas: batang pertama menempel di tepi kiri area grafik, batang terakhir di tepi kanan.
+  function flowFit(n) {
+    if (!flowChart || !n) return;
+    try { flowChart.timeScale().setVisibleLogicalRange({ from: -0.5, to: n - 0.5 }); }
+    catch (_) { try { flowChart.timeScale().fitContent(); } catch (__) {} }
+  }
   function buildFlow() {
     if (!G().hasBroker) return;
     var el = document.getElementById('smmFlowChart');
@@ -1854,8 +1860,13 @@
     if (flowChart) { try { flowChart.remove(); } catch (_) {} flowChart = null; }
     flowSeries = {}; _flowCum = {}; _flowIdx = {};
     var th = chartTheme();
+    // Grafik dikunci: tidak bisa digeser/di-zoom, dan rentangnya pas dari tanggal awal sampai tanggal
+    // akhir yang dipilih (tanpa ruang kosong di kiri/kanan). Grafik Insider tetap bisa digeser.
     flowChart = LightweightCharts.createChart(el, baseChartOpts(th, {
-      leftPriceScale: { visible: true, borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.08 } }
+      leftPriceScale: { visible: true, borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.08 } },
+      timeScale: { borderVisible: false, tickMarkFormatter: tickFmt, rightOffset: 0, lockVisibleTimeRangeOnResize: true },
+      handleScroll: false, handleScale: false,
+      kineticScroll: { touch: false, mouse: false }
     }));
     var px = g.ohlc.slice(g.off + t0, t1 >= lastDataIdx(g) ? g.nP : g.off + t1 + 1);
     px.forEach(function (c, i) { _flowIdx[c.time] = c; });
@@ -1886,7 +1897,7 @@
     if (S.chips.length && flowSeries[S.chips[0]]) {
       flowSeries[S.chips[0]].createPriceLine({ price: 0, color: th.text, lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: '' });
     }
-    flowChart.timeScale().fitContent();
+    flowFit(px.length);
     flowChart.subscribeCrosshairMove(function (param) { flowLegend(timeKey(param && param.time)); });
     flowLegend(null);
   }
