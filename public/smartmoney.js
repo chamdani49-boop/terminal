@@ -3319,7 +3319,11 @@
     if (!window.LightweightCharts) { setTimeout(buildInsChart, 300); return; }
     if (insChart) { try { insChart.remove(); } catch (_) {} insChart = null; }
     var g = G(), th = chartTheme();
-    insChart = LightweightCharts.createChart(el, baseChartOpts(th, {}));
+    // Grafik dikunci (tidak bisa digeser/di-zoom). Rentang diatur tombol 6M/1Y/2Y dan klik pada tabel.
+    insChart = LightweightCharts.createChart(el, baseChartOpts(th, {
+      handleScroll: false, handleScale: false,
+      kineticScroll: { touch: false, mouse: false }
+    }));
     insSeries = insChart.addAreaSeries({
       lineColor: '#2dd4bf', topColor: 'rgba(45,212,191,.35)', bottomColor: 'rgba(45,212,191,0)', lineWidth: 2,
       priceFormat: { type: 'price', precision: 0, minMove: 1 }, priceLineVisible: false
