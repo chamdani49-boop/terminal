@@ -19,6 +19,9 @@ yang ditandai jelas. Nanti diganti dengan rumus proyeksi 5 tahun dari pemilik.
 import os, sys, glob, json, zipfile, re, datetime
 import xml.etree.ElementTree as ET
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import financials_overlay   # laporan keuangan baru dari R2 (web Pantau) disambung ke data Excel
+
 NS  = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
 RNS = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
 
@@ -1075,6 +1078,11 @@ def main():
     fill_totals = {'price': 0, 'market_cap': 0, 'ratio': 0}
     empty_stocks = []
 
+    r2_docs = financials_overlay.load_docs()
+    r2_used = {}
+    if r2_docs:
+        print(f'[build-valuation] R2: {sum(len(v) for v in r2_docs.values())} file laporan keuangan untuk {len(r2_docs)} saham')
+
     for path in files:
         source_files.append(os.path.basename(path))
         try:
@@ -1084,12 +1092,21 @@ def main():
             continue
         for name, rid in sheets:
             try:
-                data = parse_sheet(name, read_sheet(rid))
+                grid = read_sheet(rid)
+                data = parse_sheet(name, grid)
             except Exception as e:
                 warnings.append(f"Sheet '{name}' di {os.path.basename(path)}: parse gagal "
                                 f"({type(e).__name__}: {e}) — dilewati")
                 continue
             code = data.get('code') or name
+            # Laporan keuangan lebih baru dari R2: hanya menambah periode yang belum ada di Excel (Excel selalu menang).
+            if r2_docs.get(code):
+                try:
+                    ov = financials_overlay.apply(data, grid, r2_docs[code], hist_monthly, hist_close_at)
+                    if ov:
+                        r2_used[code] = ov
+                except Exception as e:
+                    warnings.append(f"{code}: data R2 gagal digabung ({type(e).__name__}: {e}) — memakai Excel saja")
             # Lewati saham yang SEMUA datanya 0/kosong (Excel belum terhitung —
             # rumus cached 0). Tidak ditampilkan sbg 'Rp 0'; tunggu re-upload.
             if _is_empty_stock(data):
@@ -1227,6 +1244,8 @@ def main():
     index_payload = {
         'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
         'source_files': source_files,
+        'r2_overlay': {'stocks': len(r2_used), 'latest': max((v.get('latest') or '' for v in r2_used.values()), default=None,
+                                                           key=lambda x: (x[-4:], x[:2]) if x else ('', ''))},
         'count': len(stocks),
         'assumptions': ASSUMPTIONS,
         'note': note,
@@ -1281,6 +1300,10 @@ def main():
           f"(index.json + {len(stocks)} file; {removed} basi dihapus)")
     if empty_stocks:
         print(f"[build-valuation] {len(empty_stocks)} saham dilewati (data 0/kosong).")
+    if r2_used:
+        print(f"[build-valuation] R2 digabung ke {len(r2_used)} saham: " + ', '.join(
+            f"{c}({v.get('latest')}{'; tahun ' + ','.join(v['years_from_r2']) if v.get('years_from_r2') else ''})" for c, v in sorted(r2_used.items())[:20])
+            + (' ...' if len(r2_used) > 20 else ''))
     if warnings:
         print('[build-valuation] WARNINGS:')
         for w in warnings:
