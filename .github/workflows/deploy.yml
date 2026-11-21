@@ -1,0 +1,46 @@
+name: Deploy Worker to Cloudflare
+
+# ═══════════════════════════════════════════════════════════════════════
+# Auto-deploy worker "terminal" tiap ada push ke main.
+#
+# Menggantikan Cloudflare Workers Build (Git integration) yang sempat rusak.
+# Cara kerja:
+#   - Setiap merge PR / push ke main → jalankan `wrangler deploy` (root
+#     wrangler.toml, name = "terminal") → langsung live.
+#   - Commit data mode "live" memakai [skip ci] (lihat refresh-data.yml) →
+#     GitHub Actions otomatis MELEWATI commit itu, jadi tidak deploy tiap 5
+#     menit. Commit consensus/history/full (tanpa [skip ci]) tetap memicu
+#     deploy supaya data.json same-origin ikut segar.
+#
+# Secret yang dibutuhkan (Settings → Secrets and variables → Actions):
+#   - CLOUDFLARE_API_TOKEN : token dgn permission "Edit Cloudflare Workers"
+#     (account_id terdeteksi otomatis dari token, jadi cukup 1 secret ini)
+#
+# Secret runtime worker (SESSION_SECRET, GOOGLE_*, MAYAR_*, LIVE_TOKEN_SECRET,
+# CF_API_TOKEN, dll) TIDAK tersentuh — `wrangler deploy` tidak menghapusnya.
+# ═══════════════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: deploy
