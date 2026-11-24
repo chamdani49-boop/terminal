@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-11-24T07:00:55+00:00",
+"generated_at": "2026-11-24T07:15:52+00:00",
 "count": 300,
 "items": [
 {
@@ -21,6 +21,12 @@
 "ts": 1795501200
 },
 {
+"title": "BI Rate Naik, Stabilitas Rupiah Jadi Prioritas",
+"link": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQNllBUE85WGNGb0Z3eC1TZHJ4WUVYaTdGd1I3WnJjVk5aN1h1WUpPMHdkWHB2d3JiVExUNG9jZlk3bFBLb1RENjB4d0MtRzIwc2JzRGhWMkNsYUhSLWNRcURuWGVrNFdreFBTbkx6cjh4WHdPZGRBMHFIY1l6Y0xYS3JtWWJEcklrQVBQWFlESE82ZDBNVWtiY9IBngFBVV95cUxPWENSUEs1WWxuT3NFZG5lRGxGcmswazBmckFsVTNaV0NsVlRfbTFfY2lEam93SWpaV1JTQkVJMzRRN3Q3UHV3b2hlaHpKUm5jWnFJU2g2V3pUd0cwVmhWSW1DNm4zVGo2VDhfSlFjVVJNT20tQzBUOFQtRFY2S1VXcE9UdmhkZWJpeDFiUkdlemF0OVdUWWQ4cnMxVVB6UQ?oc=5",
+"source": "Katadata",
+"ts": 1795500540
+},
+{
 "title": "PGN (PGAS) dan Astrindo (BIPI) Berpacu di Pasar LNG, Royal Kucurkan Capex Ekspansi",
 "link": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQM3dxaFFZQkptTEdPbzVJakpaRkl3eG1PT1JTTzJYdmZLNFhFSTd5OEdveFNFVEU3a3pqb1Q5dENjNTN2b2dqYmdsSWs3Rm9oT1dtc3hBYWpxcVQtbzZkRzhrMUYtT1dUVGNycWRsR0NWNmYtWEdoU0pDc2dXRXRSbXVRNXZaNkhyal9PSllwY05XSzA1eVM0N0pRdWVuWExMU2pYRGt1SFJHYjROQjJZdDBEWHhxQS1BcG8tTkRDbVNEd3hIZzllRzZB?oc=5",
 "source": "Bisnis.com",
@@ -36,6 +42,12 @@
 "title": "Emiten Prajogo CDIA Siapkan Buyback Rp 1 T, Investor Ritel Perlu Cermati Apa?",
 "link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQenREdW45UnZGRUg3MGRhLTV3UW5vdkhucHZKT051SE5Ncks0QXU4TWNMOFFlMEE0SGdqd3djS2VkOGp1aVdyUXJ6d0xrZ00wSnd0QzNxd2tsbUdTaFBjaTU2VFE2akdsWFQxdzRBMW5PSEhSdkJrV1h0OUlJQUFYYmNWR29HN0M5REdOcGUzVlZPN0NpdkhVMXRkblBtX0RwSkU0cW5Wal9iZUhhV25MRjBFVHlab2k0UWtkU25zTlB6RnFSclc40gHMAUFVX3lxTE1vSHRDaHp2QU8wYWhrZFYyZ0MzaW4tY3NiWVNNaUtqS3RnYmRIU0pIaDVnakpEZVA3RGdRTW5KdnlsNklKRXktOHVjbGgybEJta1E4ZGs2RkkxSHkxUjBQdGJ3OWZtNDJ2WUdZLWpzWFNkeUU0OHF5SVdiTnppeUQ2a1R1YU1COXM0YlM3RXFEVXZaTVBLSkllSERRNXVSN1AyWkxlMERvNXh1NlZHOUFFV3R1VDJDaV9IOGhNSTRUUmhxRGR6SDZDM29DbA?oc=5",
 "source": "Katadata",
+"ts": 1795499400
+},
+{
+"title": "Penjelasan Ahli Soal Dentuman Misterius yang Terdengar di RI",
+"link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxOSmRSZkoyMmRFQUlTM2tpaUR1VG9fenhVVW5UMEM0MkFTNURZaHNDXy1QVzBYQUJ3WnN0eDMzM09Gdk0xZW83OE5XMmpBMkxyRFBmekJFQjBFVTJwdU1mWDRJWFN2UjNoYUI4Wjg2dzQ0QTVwdlFGQ2REekFQd3MyVmZyaDJhLUJwQUk1ZXlRaTQzMG1SQmdUNVdKUVMzSFlfb0w4NXFQQ3Q3c2c4RDNBZnhR?oc=5",
+"source": "Bloomberg Technoz",
 "ts": 1795499400
 },
 {
@@ -1789,18 +1801,6 @@
 "link": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPZHdxZ2w4WFNjb0g1ODFSS01rSHZVbmtwRUtaMGxBVkJMR05iMW1GQmxibGRPTWlUNHg4a0NzNHFBTWowcmpNZ3BYX3g5cWUtclVtSUNxcVU5M2NHSWRHZEZlWFFDblBBbVRFT3BPb01kMjJwN0lycnRfWHplVGJDaVF5WTdlTGpqWEFMQTFlS2JnVHZZaDItY3NwNmIyNXBZVEl2Zkg4T3EzYXNuR0ZsYk5nZGJtUW52Q0VVZWdjSm1MWUE?oc=5",
 "source": "InvestorTrust",
 "ts": 1795424040
-},
-{
-"title": "Telkomsel hingga Indosat Jualan Token AI, Pasar B2B Dinilai Lebih Seksi dari B2C",
-"link": "https://news.google.com/rss/articles/CBMizwFBVV95cUxNNjFxbmhfRnV4TXVzeXlNYXZfTURrdDQ3elFtelNicHZ0dXpUY2xVb0ZkSzBqQ3dBZnFpRk9nbGZvenJQVjY2Z3cwQ2tjSURCMmotNmlNYlA2NHJBTU5EM2NDM2FHX2szWUpFOFBCSGFqZktkMnhXMEJ6TnpCczlBaEs2SldaajlkZlBLalJMYXhJUk9ERHVZZnVTeGVRdVNXbE9RRzdEX2tROWVvSGVXcE4yQnFMZmlvclBkTDluWTRhd0FQTTRvbUNZdUpXOG8?oc=5",
-"source": "Bisnis.com",
-"ts": 1795424002
-},
-{
-"title": "Transaksi Perdagangan Berjangka Komoditi Melonjak 54%, Bappebti Ungkap Pendorongnya",
-"link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNZTIyS1JQbzV2WWxOalA5MVRhdGtLWkZRSThnRzZORlVUcHZSVUlMN0h3d19jbHNVYzVrdnNFSFctTk1sMEluQ3FaaHFQbjRCMGx5SGNQY0FIczdaUWs1Zjd0TGd1TTU3T2ZZaGNXbDg2OC1VU3YwckF4NXNkY3dXY041X1dUUEUtS2s5aUx0eTVEWHVvbTVORVJWZDFfaGREQ3RHN3VBVm1yLWdGWDRZX1hVMXo1cWZZOVh6Xw?oc=5",
-"source": "InvestorTrust",
-"ts": 1795423980
 }
 ]
 }
