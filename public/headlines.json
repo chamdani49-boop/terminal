@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-11-26T13:45:44+00:00",
+"generated_at": "2026-11-26T14:01:00+00:00",
 "count": 300,
 "items": [
 {
@@ -19,6 +19,12 @@
 "link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxPWm00ZVFtaWd6UjY3ZEdocmtSTlhiQmhOby1Jb1BvTm0zdXQwUE4zYUdreHJVRVhSMkZ6ckVzM0NjMVQxeHp1MmlQb3hLTE54MU5CaTc5cmVCWWVGVlgwSUNHYmhyY011anNNLXAxSW1kRHFsQmp1VVVKNDd1THNZZTNkeGtva0pKUVBpOEt0MkhyMERiQjNBS0NTSVBnWHJJd1hhVG5lRVFiaS0zLVFrcFR5VXYtUE5zVDl0VVp2SnluZEJLVEhEMFVLTQ?oc=5",
 "source": "Bisnis.com",
 "ts": 1795695514
+},
+{
+"title": "Naoki Tamura - Berita",
+"link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE1pckxEdkprUDZaNTVBRm1RY1Zuc0Q4MElEVFRpdTAyUWl5M045OWpPcW5DX0NMbktnLVRpdmZpWm9GTHVDVkcxSEpHSkxycWNVd0dtTllmQzR5bzZjNmQ2bTAxOUFZbjQ?oc=5",
+"source": "IDN Financials",
+"ts": 1795692000
 },
 {
 "title": "EmitenTrust",
@@ -253,6 +259,12 @@
 "link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxPck5mdW1DUWZYNVBfWUxzcVROTFYtR1FmbHNDWkMxZTRWaW5Td3lYdHpjYXc4bGtXbVdMVkcwcFFNbnlnSHJSX1BWRmhwOW4yaVNPQjBvbHdYSXV5Z0VaQUJtQ0VyRlZFN3hqUU9RS01ScE44VUM1ci1pNVUwOFFrYnhyWUhlYk56QTBoa0I0TTh0NldwZ05jMURfQWh2Y3V4WWZkNFRZRXBMTTlJZVlIcExhdFRiVGtSMVB6ODV3eW0xWHFkOW04?oc=5",
 "source": "Katadata",
 "ts": 1795680123
+},
+{
+"title": "Pefindo Tarik Peringkat Obligasi MEDC, INKP, Angkasa Pura Indonesia, dan Pegadaian, Ini Alasannya",
+"link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxQaUZGd053Y005eWlqc1dBSXVkMkU0cHc4dkMtR19GVUpiVzFORmFqMzZQZFR6U01vaXhLNnJOdm1GbkhRaE5ONVp5SzRkeUhXVlV0VjJWa3BKNlBoQkl4c3ZYdS1LNmhPMUN0MzR0WVhMc0h3QkZqemd2QmdwZXpNR29JR0ZEU0g5aGd3N2MyWFhKQUg5UXVIclJIUDhlZlZFblZmV0tFMGkza3NyYzMyUTRZd3dYOVU?oc=5",
+"source": "Stockwatch",
+"ts": 1795679424
 },
 {
 "title": "Fondasi Kuat Danantara Pacu Ekspansi Portofolio Jangka Panjang",
@@ -1789,18 +1801,6 @@
 "link": "https://news.google.com/rss/articles/CBMimgFBVV95cUxNdjg4T0tUaWZ3RDQzejZrMXlrenJWaUR5MVBQa0dwY2pBZi11bnZYYktGSEVZUFlRdzR2azVQTk51TmY1SUhMNkRxZjlWOVhBVjFYSW5Xa1lsV0lHZEh0RnBIVGREM3otU2ZjWDdVd29YeHBoMlRYYWZHZF9IcndpaUVhVWxOWUxXQVNUa09mcFBIai1PRzc3eEdn?oc=5",
 "source": "EmitenNews",
 "ts": 1795597560
-},
-{
-"title": "IHSG Ditutup Melemah 0,84%, Mayoritas Sektor Saham Ditutup Anjlok",
-"link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOck5uZHJwUTFfZjFBdVVibEhuNThQWlVKZDZwTk5VR3M0NDljaUxRODI2d2VXNE03cEJkbUs1OXhIMjBTYkdNdWczOWpBTmttZVdDMFdEU2laempFU21oWE9VYmt4dlBwc0phSEl0WXg0cFpLb3Y1MVNkTzRhdkotYW5fVzY1TjlzVHNWUHBnYVRMazFzbV9PajBjMGg0bkpSRDZxdg?oc=5",
-"source": "InvestorTrust",
-"ts": 1795597560
-},
-{
-"title": "KAI Daop 1 Jakarta Tertibkan 155 Bangunan Liar di Bantaran Rel Kampung Bahari",
-"link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOOXJkczY2enlpRG4tNmtyOEppdGtrVjJDaWhaZWczTDNLM3VOTWJMYk9HTXhoa1F1THBURTZzTDlyd3dRSF9lUmVoUlVpQm5oOGozX2Zxa1ZCaVdXRFRJMVZabWk5c3F3UlVUZ3BBWVc1bzRrQm80LWRhc0lzTXpyOW9mOHkxSVZldG1ycEdrZHZzRUY2MU5qWW5EYlE0Z2ZnX2VvZ24xWEFyQzFCZmfSAbMBQVVfeXFMT1BPRVlTR1pRMjQ5eDVBWXJvaFZKaDhaaGNKN2pfdXhzUXU4cXUtUkRzdDhyTlhFSXVUeV9yWUFYWFNNY29NRU9DLXB5cENZTl9hd001MDBoNTZ2SWduZDJBVG9IcEpwVk82ek9VNDZoeEo3b0Iydm54YlRaYUxPZnZFNGJaWU5CTUNqMzNtR3IxSm0wYnRXYUpJU2tMRjV4eWsyTVNwYUFGS3R4VnpoT2Q5SlU?oc=5",
-"source": "IDX Channel",
-"ts": 1795597440
 }
 ]
 }
